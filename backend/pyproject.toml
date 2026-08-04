@@ -1,0 +1,28 @@
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503"]
+exclude = [".venv", "data", "artifacts"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = ['\.venv']
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers --disable-warnings --import-mode=importlib"
+testpaths = ["tests"]
+pythonpath = ["."]
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

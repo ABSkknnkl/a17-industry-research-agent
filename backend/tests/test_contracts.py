@@ -1,0 +1,53 @@
+import json
+from pathlib import Path
+from typing import Any
+
+from jsonschema import Draft202012Validator
+
+from app.schemas.workflow import ReviewAction, StageName, StageStatus
+
+CONTRACT_ROOT = Path(__file__).resolve().parents[2] / "contracts" / "schemas"
+
+
+def load_schema(name: str) -> dict[str, Any]:
+    return json.loads((CONTRACT_ROOT / name).read_text(encoding="utf-8"))
+
+
+def test_contract_schemas_are_valid_draft_2020_12() -> None:
+    for name in (
+        "workflow-state.schema.json",
+        "review-action.schema.json",
+        "chapter-writing-result.schema.json",
+    ):
+        Draft202012Validator.check_schema(load_schema(name))
+
+
+def test_workflow_enums_match_runtime_models() -> None:
+    schema = load_schema("workflow-state.schema.json")
+
+    assert schema["$defs"]["stageName"]["enum"] == [item.value for item in StageName]
+    assert schema["$defs"]["stageStatus"]["enum"] == [item.value for item in StageStatus]
+
+
+def test_review_actions_match_runtime_model() -> None:
+    schema = load_schema("review-action.schema.json")
+
+    assert schema["properties"]["action"]["enum"] == [item.value for item in ReviewAction]
+    assert schema["properties"]["comment"]["maxLength"] == 2_000
+    assert schema["x-stage-edit-whitelist"]["data_interpret"] == [
+        "focus_questions",
+        "analysis_depth",
+        "risk_preference",
+        "evidence_items",
+        "rejected_claim_ids",
+    ]
+    assert schema["x-stage-edit-whitelist"]["chapter_write"] == ["chapter_write_options"]
+
+
+def test_chapter_writing_contract_keeps_seven_by_twenty_one_shape() -> None:
+    schema = load_schema("chapter-writing-result.schema.json")
+
+    assert schema["properties"]["chapters"]["minItems"] == 7
+    assert schema["properties"]["chapters"]["maxItems"] == 7
+    assert schema["$defs"]["chapterDraft"]["properties"]["sections"]["minItems"] == 3
+    assert schema["$defs"]["chapterDraft"]["properties"]["sections"]["maxItems"] == 3

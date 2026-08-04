@@ -1,0 +1,1 @@
+"""Artifact storage package."""

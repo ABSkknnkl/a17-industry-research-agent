@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skillhub.local/schemas/workflow-state.schema.json",
+  "title": "WorkflowState",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project_id",
+    "run_id",
+    "current_stage",
+    "status",
+    "revision",
+    "stage_results",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "project_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "current_stage": { "$ref": "#/$defs/stageName" },
+    "status": { "$ref": "#/$defs/stageStatus" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "stage_results": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/stageResult" }
+    },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "stageName": {
+      "type": "string",
+      "enum": [
+        "data_fetch",
+        "data_interpret",
+        "chart_generate",
+        "chapter_write",
+        "report_fusion"
+      ]
+    },
+    "stageStatus": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "running",
+        "waiting_review",
+        "approved",
+        "rejected",
+        "completed",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "artifactRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "kind", "uri", "revision"],
+      "properties": {
+        "artifact_id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "minLength": 1 },
+        "uri": { "type": "string", "minLength": 1 },
+        "checksum": { "type": ["string", "null"] },
+        "revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "stageResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage",
+        "status",
+        "revision",
+        "data",
+        "artifacts",
+        "evidence_sources"
+      ],
+      "properties": {
+        "stage": { "$ref": "#/$defs/stageName" },
+        "status": { "$ref": "#/$defs/stageStatus" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "data": { "type": "object" },
+        "artifacts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/artifactRef" }
+        },
+        "evidence_sources": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "error": { "type": ["string", "null"] }
+      }
+    }
+  }
+}
+

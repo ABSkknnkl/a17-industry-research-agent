@@ -1,0 +1,27 @@
+# Web/API and configuration
+fastapi>=0.115.0,<1.0.0
+uvicorn[standard]>=0.34.0,<1.0.0
+pydantic>=2.10.0,<3.0.0
+pydantic-settings>=2.7.0,<3.0.0
+
+# HTTP, retry, and persistence
+httpx>=0.28.0,<1.0.0
+tenacity>=9.0.0,<10.0.0
+SQLAlchemy>=2.0.0,<3.0.0
+aiosqlite>=0.20.0,<1.0.0
+langgraph-checkpoint-sqlite>=3.1.0,<4.0.0
+
+# Tabular and time-series data processing
+pandas>=3.0.0,<4.0.0
+
+# AI workflow and OpenAI-compatible LLM providers
+langchain>=1.0.0,<2.0.0
+langgraph>=1.0.0,<2.0.0
+langchain-openai>=1.0.0,<2.0.0
+
+# SkillHub/Wencai data access
+pywencai>=0.12.0,<1.0.0
+
+# Chart and report rendering
+pyecharts>=2.0.0,<3.0.0
+playwright>=1.61.0,<2.0.0

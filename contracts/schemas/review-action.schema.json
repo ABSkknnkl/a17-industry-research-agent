@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skillhub.local/schemas/review-action.schema.json",
+  "title": "ReviewRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["run_id", "stage", "action", "expected_revision"],
+  "properties": {
+    "run_id": { "type": "string", "minLength": 1 },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "data_fetch",
+        "data_interpret",
+        "chart_generate",
+        "chapter_write",
+        "report_fusion"
+      ]
+    },
+    "action": {
+      "type": "string",
+      "enum": ["approve", "revise", "regenerate", "cancel"]
+    },
+    "expected_revision": { "type": "integer", "minimum": 1 },
+    "comment": { "type": ["string", "null"], "maxLength": 2000 },
+    "edited_data": { "type": ["object", "null"], "maxProperties": 5 }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "action": { "enum": ["approve", "cancel"] } },
+        "required": ["action"]
+      },
+      "then": {
+        "properties": { "edited_data": { "type": "null" } }
+      }
+    }
+  ],
+  "x-stage-edit-whitelist": {
+    "data_fetch": ["data_fetch_options"],
+    "data_interpret": [
+      "focus_questions",
+      "analysis_depth",
+      "risk_preference",
+      "evidence_items",
+      "rejected_claim_ids"
+    ],
+    "chart_generate": ["chart_generate_options"],
+    "chapter_write": ["chapter_write_options"],
+    "report_fusion": ["report_fusion_options"]
+  }
+}
