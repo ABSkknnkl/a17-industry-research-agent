@@ -15,5 +15,6 @@
 - `schemas/workflow-state.schema.json`：Pipeline 运行状态、阶段结果和产物引用。
 - `schemas/review-action.schema.json`：人工审核命令。
 - `schemas/chapter-writing-result.schema.json`：Agent 4的7章21节结构化结果，供Agent 5、前端和持久化层使用。
+- `schemas/chart-generation-result.schema.json`：Agent 3 的 P0 图表引用、ECharts Option、去重与质量结果。
 
 后续 API 开始实现后，以 FastAPI 生成的 OpenAPI 描述 HTTP 端点；本目录继续定义跨 Agent 和持久化状态。

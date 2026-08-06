@@ -229,7 +229,13 @@ async def test_data_interpret_stage_can_pause_for_review_and_resume() -> None:
 
 
 @pytest.mark.asyncio
-async def test_default_registry_runs_real_interpreter_between_mock_stages() -> None:
+async def test_default_registry_runs_real_interpreter_and_chart_generator(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path / "artifacts")
     graph = build_pipeline_graph(create_stage_registry(MockAnalysisModel()))
 
     result = await graph.ainvoke(
@@ -274,7 +280,10 @@ async def test_default_registry_runs_real_interpreter_between_mock_stages() -> N
     )
     assert analysis.claims[0].evidence_ids == ["E-001"]
     assert result["stage_results"][StageName.DATA_FETCH.value]["data"]["evidence_items"]
-    assert result["stage_results"][StageName.CHART_GENERATE.value]["data"]["mock"] is True
+    chart_result = result["stage_results"][StageName.CHART_GENERATE.value]
+    assert chart_result["data"]["quality"]["passed"] is True
+    assert chart_result["data"]["charts"][0]["status"] == "ready"
+    assert chart_result["artifacts"][0]["kind"] == "echarts_option_json"
     chapters = ChapterWritingResult.model_validate(
         result["stage_results"][StageName.CHAPTER_WRITE.value]["data"]
     )

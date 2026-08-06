@@ -43,6 +43,46 @@ export interface StageResult {
   error: string | null
 }
 
+export type P0ChartType = 'line' | 'bar' | 'industry_chain'
+export type ChartVariant = 'line' | 'vertical' | 'horizontal' | 'grouped' | 'stacked' | 'graph'
+
+export interface ChartReference {
+  chart_id: string
+  title: string
+  chart_type: P0ChartType
+  status: 'planned' | 'ready'
+  evidence_ids: string[]
+  artifact_id: string | null
+}
+
+export interface ChartSpec {
+  chart_id: string
+  title: string
+  chart_type: P0ChartType
+  variant: ChartVariant
+  option: Record<string, unknown>
+  evidence_ids: string[]
+  data_fingerprint: string
+  dedupe_key: string
+}
+
+export interface ChartGenerationResult {
+  charts: ChartReference[]
+  chart_specs: ChartSpec[]
+  suppressed_candidates: Array<{
+    title: string
+    reason_code: string
+    reason: string
+    evidence_ids: string[]
+  }>
+  quality: {
+    passed: boolean
+    ready_count: number
+    suppressed_count: number
+    issues: string[]
+  }
+}
+
 export interface WorkflowState {
   project_id: string
   run_id: string

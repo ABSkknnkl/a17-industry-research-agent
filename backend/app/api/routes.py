@@ -73,7 +73,7 @@ async def create_run(
     principal: Annotated[SecurityPrincipal, Depends(require_principal)],
     workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
 ) -> WorkflowState:
-    """Start the current real-interpreter/mocked-neighbour workflow."""
+    """Start the current real Agent 2/3/4 workflow with placeholder Agent 1/5."""
 
     _enforce_rate_limit(
         principal=principal,

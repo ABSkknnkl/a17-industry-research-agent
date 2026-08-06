@@ -119,3 +119,61 @@ def test_frontend_can_review_and_regenerate_one_chapter(api_client: TestClient) 
 
     assert approved.status_code == 200
     assert approved.json()["status"] == "completed"
+
+
+def test_frontend_can_review_and_regenerate_chart_configuration(
+    api_client: TestClient,
+) -> None:
+    api_client.headers["Authorization"] = "Bearer test-bearer-token"
+    payload = _run_payload()
+    payload["review_stages"] = ["chart_generate"]
+    started = api_client.post("/api/v1/runs", json=payload)
+
+    assert started.status_code == 201
+    snapshot = started.json()
+    assert snapshot["current_stage"] == "chart_generate"
+    assert snapshot["status"] == "waiting_review"
+    assert snapshot["stage_results"]["chart_generate"]["data"]["quality"]["passed"]
+    run_id = snapshot["run_id"]
+
+    revised_response = api_client.post(
+        f"/api/v1/runs/{run_id}/reviews",
+        json={
+            "run_id": run_id,
+            "stage": "chart_generate",
+            "action": "revise",
+            "expected_revision": 1,
+            "comment": "改用横向柱状图并调整标题。",
+            "edited_data": {
+                "chart_generate_options": {
+                    "title": "组件产量增速对比",
+                    "bar_variant": "horizontal",
+                    "color_theme": "colorblind_safe",
+                }
+            },
+        },
+    )
+
+    assert revised_response.status_code == 200
+    revised = revised_response.json()
+    assert revised["status"] == "waiting_review"
+    assert revised["revision"] == 2
+    chart_data = revised["stage_results"]["chart_generate"]["data"]
+    assert chart_data["chart_specs"][0]["title"] == "组件产量增速对比"
+    assert chart_data["chart_specs"][0]["variant"] == "horizontal"
+    assert revised["stage_results"]["chart_generate"]["artifacts"][0]["revision"] == 2
+
+    approved = api_client.post(
+        f"/api/v1/runs/{run_id}/reviews",
+        json={
+            "run_id": run_id,
+            "stage": "chart_generate",
+            "action": "approve",
+            "expected_revision": 2,
+            "comment": "图表审核通过。",
+            "edited_data": None,
+        },
+    )
+
+    assert approved.status_code == 200
+    assert approved.json()["status"] == "completed"

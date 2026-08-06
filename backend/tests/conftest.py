@@ -23,9 +23,13 @@ def isolate_test_security_state(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.fixture
-def api_client(tmp_path: Path) -> Iterator[TestClient]:
+def api_client(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[TestClient]:
     """Run each API test with lifespan startup and an isolated checkpoint database."""
 
     checkpoint_path = tmp_path / "checkpoints.sqlite"
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path / "artifacts")
     with TestClient(create_app(checkpoint_database_path=checkpoint_path)) as client:
         yield client

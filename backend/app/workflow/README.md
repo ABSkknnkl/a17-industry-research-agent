@@ -54,6 +54,7 @@ class StageAgent(Protocol):
 ## Agent接入约束
 
 - Agent 1/3/5仍实现同一个`StageAgent.run(context)`接口，不自行创建无限循环。
+- Agent 3 已替换 Mock：使用确定性 Router + P0 Builder 生成 ECharts JSON；Agent 1 当前仍通过开发适配器提供测试用 `ChartDataset`。
 - 外部API、SkillHub和可执行工具必须通过`app.runtime.tool_gateway.ToolGateway`调用，顺序固定为：工具查找、Pydantic参数校验、before Hook、限时执行、after Hook、结构化结果回灌。
 - `ToolResult.is_error=true`是可交给Agent纠正的正常结果；不得把供应商原始异常、Cookie、Token或完整请求参数写入结果和日志。
 - 工具结果超过`MAX_TOOL_RESULT_CHARS`会返回截断预览。Agent 1应拆分查询；P1产物存储完成后再升级为“摘要+产物引用”。

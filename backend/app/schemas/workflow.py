@@ -95,7 +95,8 @@ class DataInterpretReviewEdits(ContractModel):
 
 
 class ChartGenerationOptions(ContractModel):
-    chart_type: Literal["line", "bar", "pie", "radar", "industry_chain"] | None = None
+    chart_type: Literal["line", "bar", "industry_chain"] | None = None
+    bar_variant: Literal["vertical", "horizontal", "grouped", "stacked"] | None = None
     metric_ids: list[LabelText] = Field(default_factory=list, max_length=20)
     title: str | None = Field(default=None, min_length=1, max_length=200)
     color_theme: str | None = Field(default=None, min_length=1, max_length=100)

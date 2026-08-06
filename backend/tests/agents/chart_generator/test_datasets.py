@@ -1,0 +1,89 @@
+from app.agents.chart_generator.datasets import (
+    match_datasets,
+    validate_dataset_consistency,
+)
+from app.schemas.chart import ChainEdge, ChartDataset, ChartPoint
+
+
+def test_dataset_matching_requires_all_candidate_evidence_ids(
+    time_series_dataset: ChartDataset,
+) -> None:
+    partial = time_series_dataset.model_copy(
+        update={"dataset_id": "DS-PARTIAL", "evidence_ids": ["E-001"]}
+    )
+
+    result = match_datasets(
+        "行业收入趋势",
+        ["E-001", "E-002"],
+        [partial, time_series_dataset],
+    )
+
+    assert [dataset.dataset_id for dataset in result.datasets] == ["DS-REVENUE"]
+    assert result.review_required is False
+
+
+def test_multiple_exact_dataset_matches_require_review(
+    time_series_dataset: ChartDataset,
+) -> None:
+    duplicate = time_series_dataset.model_copy(update={"dataset_id": "DS-REVENUE-ALT"})
+
+    result = match_datasets(
+        "行业收入趋势",
+        ["E-001", "E-002"],
+        [time_series_dataset, duplicate],
+    )
+
+    assert result.review_required is True
+    assert len(result.datasets) == 2
+
+
+def test_time_series_rejects_duplicate_series_period(
+    time_series_dataset: ChartDataset,
+) -> None:
+    duplicate_point = time_series_dataset.points[0].model_copy(update={"value": 999})
+    dataset = time_series_dataset.model_copy(
+        update={"points": [*time_series_dataset.points, duplicate_point]}
+    )
+
+    issues = validate_dataset_consistency(dataset, "行业收入趋势")
+
+    assert {issue.reason_code for issue in issues} == {"duplicate_time_point"}
+
+
+def test_chain_rejects_unknown_node_self_loop_and_duplicate_edge(
+    chain_dataset: ChartDataset,
+) -> None:
+    dataset = chain_dataset.model_copy(
+        update={
+            "edges": [
+                *chain_dataset.edges,
+                chain_dataset.edges[0],
+                ChainEdge(source="battery", target="battery", evidence_ids=["E-202"]),
+                ChainEdge(source="missing", target="vehicle", evidence_ids=["E-203"]),
+            ]
+        }
+    )
+
+    issues = validate_dataset_consistency(dataset, "新能源产业链")
+    codes = {issue.reason_code for issue in issues}
+
+    assert {"duplicate_edge", "self_loop", "invalid_edge_source"} <= codes
+
+
+def test_dataset_rejects_unknown_evidence_reference() -> None:
+    dataset = ChartDataset(
+        dataset_id="DS-UNKNOWN-EVIDENCE",
+        kind="categorical",
+        metric_name="市场份额",
+        unit="%",
+        points=[ChartPoint(label="公司A", value=10, evidence_id="E-MISSING")],
+        evidence_ids=["E-MISSING"],
+    )
+
+    issues = validate_dataset_consistency(
+        dataset,
+        "市场份额",
+        known_evidence_ids={"E-001"},
+    )
+
+    assert {issue.reason_code for issue in issues} == {"unknown_evidence"}

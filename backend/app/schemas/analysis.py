@@ -92,8 +92,8 @@ class CollaborationRequest(BaseModel):
 class ChartCandidate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    title: str
-    chart_type: Literal["line", "bar", "pie", "radar", "industry_chain"]
+    title: str = Field(min_length=1, max_length=200)
+    chart_type: Literal["line", "bar", "industry_chain"]
     evidence_ids: list[str] = Field(min_length=1)
 
 

@@ -18,6 +18,7 @@ def test_contract_schemas_are_valid_draft_2020_12() -> None:
         "workflow-state.schema.json",
         "review-action.schema.json",
         "chapter-writing-result.schema.json",
+        "chart-generation-result.schema.json",
     ):
         Draft202012Validator.check_schema(load_schema(name))
 
@@ -51,3 +52,14 @@ def test_chapter_writing_contract_keeps_seven_by_twenty_one_shape() -> None:
     assert schema["properties"]["chapters"]["maxItems"] == 7
     assert schema["$defs"]["chapterDraft"]["properties"]["sections"]["minItems"] == 3
     assert schema["$defs"]["chapterDraft"]["properties"]["sections"]["maxItems"] == 3
+
+
+def test_chart_generation_contract_only_exposes_p0_types() -> None:
+    schema = load_schema("chart-generation-result.schema.json")
+
+    assert schema["$defs"]["p0ChartType"]["enum"] == [
+        "line",
+        "bar",
+        "industry_chain",
+    ]
+    assert schema["properties"]["chart_specs"]["items"]["$ref"] == "#/$defs/chartSpec"

@@ -55,6 +55,9 @@ class DataInterpreterAgent:
             source_data = {**fetch_result.data, **context.input_data}
 
         request_data = dict(source_data)
+        # Agent 1 also emits datasets for Agent 3. They belong to the shared
+        # stage payload but are intentionally outside AnalysisRequest.
+        request_data.pop("chart_datasets", None)
         if context.review_feedback:
             request_data["review_feedback"] = context.review_feedback
         if context.rejected_claim_ids:
