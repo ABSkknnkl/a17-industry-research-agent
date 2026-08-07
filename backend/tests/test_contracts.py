@@ -19,6 +19,8 @@ def test_contract_schemas_are_valid_draft_2020_12() -> None:
         "review-action.schema.json",
         "chapter-writing-result.schema.json",
         "chart-generation-result.schema.json",
+        "report-fusion-result.schema.json",
+        "decision-package.schema.json",
     ):
         Draft202012Validator.check_schema(load_schema(name))
 
@@ -54,12 +56,32 @@ def test_chapter_writing_contract_keeps_seven_by_twenty_one_shape() -> None:
     assert schema["$defs"]["chapterDraft"]["properties"]["sections"]["maxItems"] == 3
 
 
-def test_chart_generation_contract_only_exposes_p0_types() -> None:
+def test_chart_generation_contract_exposes_p0_and_audited_p1_types() -> None:
     schema = load_schema("chart-generation-result.schema.json")
 
-    assert schema["$defs"]["p0ChartType"]["enum"] == [
+    assert schema["$defs"]["chartType"]["enum"] == [
         "line",
         "bar",
+        "pie",
+        "radar",
         "industry_chain",
+        "combo",
+        "area",
+        "scatter",
+        "bubble",
+        "heatmap",
+        "boxplot",
+        "treemap",
     ]
     assert schema["properties"]["chart_specs"]["items"]["$ref"] == "#/$defs/chartSpec"
+
+
+def test_report_fusion_contract_exposes_three_formats_and_manifest() -> None:
+    schema = load_schema("report-fusion-result.schema.json")
+
+    assert schema["$defs"]["reportFormat"]["enum"] == ["markdown", "html", "pdf"]
+    assert schema["properties"]["included_chart_ids"]["maxItems"] == 8
+    assert (
+        "artifact_manifest"
+        in schema["$defs"]["artifactManifestEntry"]["properties"]["kind"]["enum"]
+    )

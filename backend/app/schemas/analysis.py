@@ -93,8 +93,36 @@ class ChartCandidate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     title: str = Field(min_length=1, max_length=200)
-    chart_type: Literal["line", "bar", "industry_chain"]
+    chart_type: Literal[
+        "line",
+        "bar",
+        "pie",
+        "radar",
+        "industry_chain",
+        "combo",
+        "area",
+        "scatter",
+        "bubble",
+        "heatmap",
+        "boxplot",
+        "treemap",
+    ]
     evidence_ids: list[str] = Field(min_length=1)
+    analysis_purpose: Literal[
+        "auto",
+        "trend",
+        "comparison",
+        "composition",
+        "scoring",
+        "positioning",
+        "distribution",
+        "relationship",
+    ] = "auto"
+    insight_goal: str | None = Field(default=None, min_length=1, max_length=500)
+    priority: int = Field(default=50, ge=0, le=100)
+    chapter_hint: str | None = Field(default=None, pattern=r"^CH-\d{2}$")
+    alternative_chapter_ids: list[str] = Field(default_factory=list)
+    user_requested: bool = False
 
 
 class AnalysisDraft(BaseModel):

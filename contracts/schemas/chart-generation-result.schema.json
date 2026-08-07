@@ -21,13 +21,42 @@
     "quality": { "$ref": "#/$defs/chartQualityReport" }
   },
   "$defs": {
-    "p0ChartType": {
+    "chartType": {
       "type": "string",
-      "enum": ["line", "bar", "industry_chain"]
+      "enum": [
+        "line",
+        "bar",
+        "pie",
+        "radar",
+        "industry_chain",
+        "combo",
+        "area",
+        "scatter",
+        "bubble",
+        "heatmap",
+        "boxplot",
+        "treemap"
+      ]
     },
     "chartVariant": {
       "type": "string",
-      "enum": ["line", "vertical", "horizontal", "grouped", "stacked", "graph"]
+      "enum": [
+        "line",
+        "vertical",
+        "horizontal",
+        "grouped",
+        "stacked",
+        "pie",
+        "radar",
+        "graph",
+        "combo",
+        "area",
+        "scatter",
+        "bubble",
+        "heatmap",
+        "boxplot",
+        "treemap"
+      ]
     },
     "chartReference": {
       "type": "object",
@@ -43,7 +72,7 @@
       "properties": {
         "chart_id": { "type": "string", "pattern": "^CHART-[A-Za-z0-9_-]+$" },
         "title": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "chart_type": { "$ref": "#/$defs/p0ChartType" },
+        "chart_type": { "$ref": "#/$defs/chartType" },
         "status": { "type": "string", "enum": ["planned", "ready"] },
         "evidence_ids": {
           "type": "array",
@@ -69,7 +98,7 @@
       "properties": {
         "chart_id": { "type": "string", "pattern": "^CHART-[A-Za-z0-9_-]+$" },
         "title": { "type": "string", "minLength": 1, "maxLength": 200 },
-        "chart_type": { "$ref": "#/$defs/p0ChartType" },
+        "chart_type": { "$ref": "#/$defs/chartType" },
         "variant": { "$ref": "#/$defs/chartVariant" },
         "option": { "type": "object" },
         "evidence_ids": {

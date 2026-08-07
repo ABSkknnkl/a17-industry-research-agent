@@ -30,7 +30,10 @@ class StageStatus(StrEnum):
 
 
 class ReviewAction(StrEnum):
-    APPROVE = "approve"
+    APPROVE = "approve"  # 兼容旧接口，无风险时等价于 accept_recommendation
+    ACCEPT_RECOMMENDATION = "accept_recommendation"
+    ACCEPT_WITH_RISKS = "accept_with_risks"
+    CUSTOMIZE = "customize"
     REVISE = "revise"
     REGENERATE = "regenerate"
     CANCEL = "cancel"
@@ -95,7 +98,23 @@ class DataInterpretReviewEdits(ContractModel):
 
 
 class ChartGenerationOptions(ContractModel):
-    chart_type: Literal["line", "bar", "industry_chain"] | None = None
+    chart_type: (
+        Literal[
+            "line",
+            "bar",
+            "pie",
+            "radar",
+            "industry_chain",
+            "combo",
+            "area",
+            "scatter",
+            "bubble",
+            "heatmap",
+            "boxplot",
+            "treemap",
+        ]
+        | None
+    ) = None
     bar_variant: Literal["vertical", "horizontal", "grouped", "stacked"] | None = None
     metric_ids: list[LabelText] = Field(default_factory=list, max_length=20)
     title: str | None = Field(default=None, min_length=1, max_length=200)
@@ -133,6 +152,10 @@ class ReviewRequest(ContractModel):
     expected_revision: int = Field(ge=1)
     comment: str | None = Field(default=None, max_length=2_000)
     edited_data: dict[str, Any] | None = None
+    accepted_risk_codes: list[str] = Field(default_factory=list)
+    release_mode: Literal["formal", "draft_with_warnings"] = "formal"
+    selected_chart_ids: list[str] | None = None
+    placement_overrides: dict[str, str] | None = None
 
     @model_validator(mode="after")
     def validate_stage_edit_whitelist(self) -> "ReviewRequest":

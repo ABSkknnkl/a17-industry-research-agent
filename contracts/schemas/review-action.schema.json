@@ -19,11 +19,35 @@
     },
     "action": {
       "type": "string",
-      "enum": ["approve", "revise", "regenerate", "cancel"]
+      "enum": [
+        "approve",
+        "accept_recommendation",
+        "accept_with_risks",
+        "customize",
+        "revise",
+        "regenerate",
+        "cancel"
+      ]
     },
     "expected_revision": { "type": "integer", "minimum": 1 },
     "comment": { "type": ["string", "null"], "maxLength": 2000 },
-    "edited_data": { "type": ["object", "null"], "maxProperties": 5 }
+    "edited_data": { "type": ["object", "null"], "maxProperties": 5 },
+    "accepted_risk_codes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "release_mode": {
+      "type": "string",
+      "enum": ["formal", "draft_with_warnings"]
+    },
+    "selected_chart_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "placement_overrides": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    }
   },
   "allOf": [
     {
