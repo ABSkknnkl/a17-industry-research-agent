@@ -628,6 +628,14 @@ Agent 2 输出的候选类似：
 
 否则会被拒绝。
 
+#### 饼图 `pie`
+
+只用于单时点、不超过5类、全为正值且互斥的构成占比。数据不满足条件时不硬画饼图，而是降级为柱状图并记录原因。
+
+#### 雷达图 `radar`
+
+只用于3—8个已标准化、共享同一刻度的指标。数据不满足条件时降级为柱状图并保留审计记录。
+
 #### 产业链图 `industry_chain`
 
 使用：
@@ -645,15 +653,15 @@ nodes + edges + stage
 - 默认上游→中游→下游从左到右展示。
 - 没有流量数据时不生成边权。
 
-### 10.2 未完成的 P1/P2 图表
+### 10.2 P1 条件扩展图表
 
-暂时不进入代码契约：
+已进入代码契约，但仅在数据条件满足时生成：
 
 ```text
-pie、radar、area、combo、scatter、bubble、heatmap、boxplot、treemap
+area、combo、scatter、bubble、heatmap、boxplot、treemap
 ```
 
-新增图表必须新增数据结构、Builder、路由规则、互斥规则和测试，不能只在前端临时加一个图标。
+这些图表均已配套数据结构、Builder、路由规则、互斥规则和测试，不会只在前端临时加一个图标。
 
 ---
 
@@ -862,11 +870,11 @@ Builder 生成普通 Python 字典，例如：
 系统用 SHA-256 生成数据指纹：
 
 ```text
-data_fingerprint = SHA256(图表类型 + 标准化数据)
-dedupe_key = 图表族 + data_fingerprint
+data_fingerprint = SHA256(标准化数据)
+dedupe_key = 图表族 + 分析目的 + 洞察目标 + data_fingerprint
 ```
 
-相同数据不会重复生成同族图表。单份报告最多生成 8 张 P0 核心图表。
+相同数据不会重复生成表达同一结论的同族图表。单份报告最多8张，P1最多3张，同族最多2张，同章最多2张，产业链图最多1张。
 
 ### 第八步：保存 Artifact
 
@@ -977,7 +985,7 @@ SQLite Checkpoint 主要保存工作流状态；图表 JSON 和未来的图片�
 | 项目骨架 | 已完成 | 前后端目录、契约、基础启动和验证脚本已建立 |
 | Agent 1 | 开发中 | 需要正式接入 SkillHub 并输出 `ChartDataset[]` |
 | Agent 2 | 已完成真实实现 | 多市场金融分析、证据校验、Router + 金融 Skills |
-| Agent 3 | P0 已完成 | line、bar、industry_chain 后端确定性生成 |
+| Agent 3 | P0 已完成 | line、bar、pie、radar、industry_chain 后端确定性生成，P1已有条件路由 |
 | Agent 4 | 已完成真实实现 | 7 章 21 节内容生成和质量门 |
 | Agent 5 | 开发中 | 需要完成报告融合、HTML/PDF 产物 |
 | 前端基础 | 已完成骨架 | Vue、路由、Store、API 类型和测试 |
@@ -1199,7 +1207,7 @@ Playwright Chromium 基础 PDF 测试已通过，但 Agent 5 仍未完成完整�
 - Agent 2 真实金融分析能力。
 - Agent 4 真实 7 章 21 节内容生成能力。
 - Agent 3 P0 确定性图表生成能力。
-- line、bar、industry_chain 三类图表的校验、路由、去重和 Artifact 存储。
+- line、bar、pie、radar、industry_chain 五类 P0 图表的校验、路由、降级、去重和 Artifact 存储。
 - 图表审核、修改和 revision 重新生成。
 - 后端全量测试、类型检查、代码检查和前端构建验证。
 

@@ -10,10 +10,14 @@ from app.schemas.chart import ChartDataset, ChartPoint
 def test_router_maps_supported_dataset_kinds(
     time_series_dataset: ChartDataset,
     categorical_dataset: ChartDataset,
+    composition_dataset: ChartDataset,
+    radar_dataset: ChartDataset,
     chain_dataset: ChartDataset,
 ) -> None:
     assert route_chart("line", time_series_dataset).chart_type == "line"
     assert route_chart("bar", categorical_dataset).chart_type == "bar"
+    assert route_chart("pie", composition_dataset).chart_type == "pie"
+    assert route_chart("radar", radar_dataset).chart_type == "radar"
     assert route_chart("industry_chain", chain_dataset).chart_type == "industry_chain"
 
 

@@ -3,6 +3,7 @@
 from app.agents.data_interpreter.service import DataInterpreterAgent
 from app.agents.chapter_writer.service import ChapterWriterAgent
 from app.agents.chart_generator.service import ChartGeneratorAgent
+from app.agents.report_fusion.service import ReportFusionAgent
 from app.integrations.llm.mock import MockChapterWritingModel
 from app.integrations.llm.protocol import AnalysisModel, ChapterWritingModel
 from app.schemas.workflow import StageName
@@ -30,6 +31,6 @@ def create_stage_registry(
             SecuredStageAgent(DataInterpreterAgent(model=analysis_model)),
             ChartGeneratorAgent(),
             SecuredStageAgent(ChapterWriterAgent(model=writer_model)),
-            MockStageAgent(StageName.REPORT_FUSION),
+            ReportFusionAgent(),
         ]
     )

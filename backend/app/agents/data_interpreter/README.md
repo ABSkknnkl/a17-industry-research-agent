@@ -17,7 +17,8 @@
 - 产业链技能受到额外限制：只复用链路拆解、利润池、议价权、咽喉节点和验证指标方法，禁止执行技能内的主动检索、投资映射、星级评分、长期预测和无证据定调。
 - 三个技能均不得替代证据源；固定阈值、收益概率、经验数字及任何事实判断必须由当前`evidence_id`支撑，证据不足时转入`collaboration_requests`。
 - 使用`AnalysisModel`协议支持Mock与OpenAI兼容模型。
-- 使用结构化输出生成`AnalysisDraft`。
+- 使用结构化输出生成`AnalysisDraft`；DeepSeek兼容模型采用`json_mode`并注入完整的机器可读JSON Schema，技术契约优先于金融提示词中的报告展示模板。
+- 首次JSON解析或Pydantic校验失败时最多执行一次结构修复；修复回合会携带上一份可读响应并明确冻结金融事实、数字、结论和`evidence_id`，第二次仍不合规则安全失败。
 - Agent内部执行`Router → selected Skills → LangGraph`，Router为确定性代码，不调用LLM。
 - LangGraph内部执行`prepare → generate → audit → revise/finalize`。
 - 检查未知证据ID、已否决结论和金融内容红线，最多自动修订两次。

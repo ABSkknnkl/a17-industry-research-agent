@@ -24,8 +24,9 @@ def match_datasets(
 
     Rules:
     - Single dataset matched: proceed normally
-    - Multiple datasets matched: flag for human review
-    - No dataset matched: suppress the candidate
+    - Multiple datasets matched: deterministically select the closest dataset and
+      retain a warning for the user; chart generation must not stop here
+    - No dataset matched: skip this candidate and retain a warning
     """
     candidate_evidence_set = set(candidate_evidence_ids)
     matched: list[ChartDataset] = []
@@ -48,10 +49,22 @@ def match_datasets(
         )
 
     if len(matched) > 1:
+        # Prefer an exact evidence set, then the least amount of unrelated evidence,
+        # and finally a stable dataset id.  This keeps retries reproducible.
+        matched.sort(
+            key=lambda dataset: (
+                set(dataset.evidence_ids) != candidate_evidence_set,
+                len(set(dataset.evidence_ids) - candidate_evidence_set),
+                dataset.dataset_id,
+            )
+        )
         return DatasetMatchResult(
-            datasets=matched,
+            datasets=[matched[0]],
             review_required=True,
-            review_reason=f"候选图表匹配到 {len(matched)} 个数据集，需要人工审核选择",
+            review_reason=(
+                f"候选图表匹配到 {len(matched)} 个数据集，系统已按证据贴合度"
+                f"自动选择 {matched[0].dataset_id}；请在风险清单中复核"
+            ),
         )
 
     return DatasetMatchResult(datasets=matched)
@@ -69,6 +82,7 @@ def validate_dataset_consistency(
     - time_series: >1 valid points, consistent unit/currency, no duplicate period+series
     - categorical: >0 points, at most 12 categories
     - industry_chain: has nodes and edges, all edges reference valid nodes
+    - xy/matrix/distribution/hierarchy: every value remains linked to evidence
     """
     suppressed: list[SuppressedChart] = []
 
@@ -79,6 +93,14 @@ def validate_dataset_consistency(
     )
     referenced_evidence_ids.update(
         evidence_id for edge in dataset.edges for evidence_id in edge.evidence_ids
+    )
+    referenced_evidence_ids.update(
+        evidence_id for point in dataset.xy_points for evidence_id in point.evidence_ids
+    )
+    referenced_evidence_ids.update(cell.evidence_id for cell in dataset.matrix_cells)
+    referenced_evidence_ids.update(sample.evidence_id for sample in dataset.distribution_samples)
+    referenced_evidence_ids.update(
+        evidence_id for node in dataset.hierarchy_nodes for evidence_id in node.evidence_ids
     )
     if known_evidence_ids is not None:
         unknown = sorted(referenced_evidence_ids - known_evidence_ids)

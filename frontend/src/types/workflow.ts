@@ -229,6 +229,11 @@ export interface ReportFusionResult {
     evidence_coverage: number
     issues: string[]
   }
+  release_mode: 'formal' | 'draft_with_warnings'
+  formal_eligible: boolean
+  draft_eligible: boolean
+  acknowledged_risks: string[]
+  unresolved_risks: string[]
 }
 
 export interface WorkflowState {

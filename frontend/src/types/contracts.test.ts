@@ -2,7 +2,13 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
-import { reviewActions, stageNames, stageStatuses } from '@/types/workflow'
+import {
+  chartTypes,
+  reportFormats,
+  reviewActions,
+  stageNames,
+  stageStatuses,
+} from '@/types/workflow'
 
 interface WorkflowContractSchema {
   $defs: {
@@ -14,6 +20,18 @@ interface WorkflowContractSchema {
 interface ReviewContractSchema {
   properties: {
     action: { enum: string[] }
+  }
+}
+
+interface ReportContractSchema {
+  $defs: {
+    reportFormat: { enum: string[] }
+  }
+}
+
+interface ChartContractSchema {
+  $defs: {
+    chartType: { enum: string[] }
   }
 }
 
@@ -34,5 +52,17 @@ describe('public contract mirrors', () => {
     const schema = loadSchema<ReviewContractSchema>('review-action.schema.json')
 
     expect(reviewActions).toEqual(schema.properties.action.enum)
+  })
+
+  it('matches report output formats', () => {
+    const schema = loadSchema<ReportContractSchema>('report-fusion-result.schema.json')
+
+    expect(reportFormats).toEqual(schema.$defs.reportFormat.enum)
+  })
+
+  it('matches chart types', () => {
+    const schema = loadSchema<ChartContractSchema>('chart-generation-result.schema.json')
+
+    expect(chartTypes).toEqual(schema.$defs.chartType.enum)
   })
 })

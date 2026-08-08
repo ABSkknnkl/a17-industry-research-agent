@@ -47,6 +47,15 @@
     "placement_overrides": {
       "type": "object",
       "additionalProperties": { "type": "string" }
+    },
+    "decision_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "risk_snapshot_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[a-f0-9]{64}$"
     }
   },
   "allOf": [

@@ -10,8 +10,9 @@
 - Prompt以只读资源加载，固定版本`1.0.0`和SHA-256；运行时为每章构建最小证据上下文。
 - 内部LangGraph顺序执行`generate → audit → revise/accept → finalize`，每章最多自动修订2次，不会无界循环。
 - 质量门校验章节标题、claim/evidence引用、数值出处、图表就绪状态、聚合ID及金融内容红线。
+- 图表可为空；达到修订上限后仍返回完整草稿并附质量风险。模型、解析或章节持久化异常时，只使用Agent 2已验证的claim/evidence生成确定性7章21节兜底稿，缺证据处明确标记。
 - 支持整章重新生成以及指定小节修订；小节修订保留未选中小节，必须基于上一版完整结果。
-- 已接入顶层五阶段Workflow，默认在`chapter_write`结束后进入人工审核，支持`approve/revise/regenerate/cancel`。
+- 已接入顶层五阶段Workflow；默认不在`chapter_write`暂停，但仍支持将本阶段显式加入`review_stages`以及`approve/revise/regenerate/cancel`。
 
 ## 上下游交接
 
@@ -19,7 +20,7 @@ Agent 2必须输出可通过`AnalysisResult.model_validate()`且`quality.passed=
 
 Agent 5从`StageResult.data`读取`ChapterWritingResult`，应按以下优先级处理：
 
-1. `quality.passed=false`或`collaboration_requests`非空时，禁止发布正式报告。
+1. `quality.passed=false`或`collaboration_requests`非空时，以`draft_with_warnings`继续组装并展示风险，不得把风险草稿标记为正式无风险报告。
 2. 以`chapters[].sections[].paragraphs[].text`为正文，保留claim/evidence关联，不得只拼接`summary`。
 3. 只渲染`chart_ids`引用的已就绪图表；`chart_requests`是待Agent 3完成的请求，不是可展示产物。
 4. 输出契约以`contracts/schemas/chapter-writing-result.schema.json`为跨端唯一来源。

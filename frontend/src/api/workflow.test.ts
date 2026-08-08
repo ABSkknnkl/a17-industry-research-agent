@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import api from '@/api'
-import { createRun, getRun, reviewRun } from '@/api/workflow'
+import { createRun, downloadArtifact, getRun, reviewRun } from '@/api/workflow'
 import type { ReviewRequest, RunCreateRequest, WorkflowState } from '@/types/workflow'
 
 vi.mock('@/api', () => ({
@@ -47,9 +47,13 @@ describe('workflow API', () => {
     await createRun(createRequest)
     await getRun('run-1')
     await reviewRun('run-1', reviewRequest)
+    await downloadArtifact('run-1', 'ARTIFACT-REPORT-HTML')
 
     expect(api.post).toHaveBeenNthCalledWith(1, '/runs', createRequest)
     expect(api.get).toHaveBeenCalledWith('/runs/run-1')
     expect(api.post).toHaveBeenNthCalledWith(2, '/runs/run-1/reviews', reviewRequest)
+    expect(api.get).toHaveBeenNthCalledWith(2, '/runs/run-1/artifacts/ARTIFACT-REPORT-HTML', {
+      responseType: 'blob',
+    })
   })
 })

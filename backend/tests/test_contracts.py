@@ -5,6 +5,7 @@ from typing import Any
 from jsonschema import Draft202012Validator
 
 from app.schemas.workflow import ReviewAction, StageName, StageStatus
+from app.schemas.run import RunCreateRequest
 
 CONTRACT_ROOT = Path(__file__).resolve().parents[2] / "contracts" / "schemas"
 
@@ -80,8 +81,14 @@ def test_report_fusion_contract_exposes_three_formats_and_manifest() -> None:
     schema = load_schema("report-fusion-result.schema.json")
 
     assert schema["$defs"]["reportFormat"]["enum"] == ["markdown", "html", "pdf"]
-    assert schema["properties"]["included_chart_ids"]["maxItems"] == 8
+    assert schema["properties"]["included_chart_ids"]["maxItems"] == 30
     assert (
         "artifact_manifest"
         in schema["$defs"]["artifactManifestEntry"]["properties"]["kind"]["enum"]
     )
+
+
+def test_default_human_review_stops_after_agent_two_only() -> None:
+    factory = RunCreateRequest.model_fields["review_stages"].default_factory
+    assert factory is not None
+    assert factory() == [StageName.DATA_INTERPRET]

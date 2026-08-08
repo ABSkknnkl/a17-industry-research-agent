@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ report.title }}</title>
+  <style>
+    :root { --ink:#0f172a; --muted:#64748b; --line:#dbe4ef; --blue:#1d4ed8; --paper:#fff; --soft:#f4f7fb; }
+    * { box-sizing:border-box; }
+    html { background:#e9eef5; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif; line-height:1.75; font-size:15px; }
+    main { max-width:1040px; margin:0 auto; padding:56px 64px 80px; }
+    .cover { min-height:760px; display:flex; flex-direction:column; justify-content:center; border-top:8px solid var(--blue); position:relative; page-break-after:always; }
+    .eyebrow { color:var(--blue); font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { font-size:44px; line-height:1.22; margin:18px 0; letter-spacing:-.02em; }
+    .subtitle { font-size:19px; color:var(--muted); max-width:720px; }
+    .meta-grid { margin-top:56px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .meta { border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+    .meta span { display:block; color:var(--muted); font-size:12px; }
+    .meta strong { display:block; margin-top:4px; overflow-wrap:anywhere; }
+    h2 { margin:48px 0 20px; padding-bottom:10px; border-bottom:2px solid var(--ink); font-size:28px; page-break-after:avoid; }
+    h3 { margin:30px 0 12px; font-size:20px; color:#162b4d; page-break-after:avoid; }
+    p { margin:10px 0; text-align:justify; }
+    .summary { background:linear-gradient(135deg,#eff6ff,#f8fafc); border:1px solid #bfdbfe; border-radius:14px; padding:26px 30px; }
+    .headline { font-size:21px; font-weight:700; line-height:1.55; }
+    .conclusion { border-left:4px solid var(--blue); padding:8px 14px; margin:14px 0; background:#fff; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+    .chip { color:#334155; background:#e2e8f0; border-radius:999px; padding:2px 9px; font-size:11px; }
+    .toc { columns:2; column-gap:36px; padding:0; list-style:none; }
+    .toc li { break-inside:avoid; padding:5px 0; border-bottom:1px dotted var(--line); }
+    .chapter { page-break-before:always; }
+    .chapter-summary { color:#334155; font-size:16px; background:var(--soft); padding:12px 16px; border-radius:8px; }
+    .reference { color:var(--muted); font-size:12px; margin-top:5px; }
+    .chart { margin:22px 0 28px; border:1px solid var(--line); border-radius:14px; padding:14px; break-inside:avoid; background:#fff; }
+    .chart svg { width:100%; height:auto; display:block; }
+    .chart figcaption { margin:8px 8px 2px; color:var(--muted); font-size:12px; }
+    .uncertainty { border:1px solid #fcd34d; background:#fffbeb; border-radius:8px; padding:10px 14px; margin:14px 0; break-inside:avoid; page-break-inside:avoid; }
+    .uncertainty strong { color:#92400e; }
+    .risk-list li, .boundary-list li { margin:6px 0; }
+    .footer-note { margin-top:48px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:12px; }
+    .draft-watermark { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0.08; font-size:72px; font-weight:900; color:#dc2626; transform:rotate(-20deg); letter-spacing:0.3em; }
+    .draft-banner { background:#fef2f2; border:2px solid #dc2626; border-radius:10px; padding:14px 20px; margin-bottom:24px; color:#991b1b; }
+    .draft-banner strong { color:#dc2626; }
+    .risk-appendix { page-break-before:always; }
+    @page { size:A4; margin:14mm 12mm 16mm; @bottom-center { content:"A17 行业研究报告  ·  " counter(page); color:#64748b; font-size:9pt; } }
+    @media print {
+      html,body { background:#fff; }
+      body { font-size:13.5px; line-height:1.62; }
+      main { max-width:none; padding:0; }
+      .cover { min-height:245mm; }
+      h1 { font-size:32pt; }
+      h2 { margin:32px 0 14px; }
+      h3 { margin:20px 0 8px; }
+      p { margin:7px 0; }
+      .summary { padding:18px 22px; }
+      .conclusion { margin:9px 0; padding:6px 12px; }
+      .chapter-summary { padding:9px 14px; }
+      .chart { margin:16px 0 18px; padding:10px; box-shadow:none; }
+      .chart svg { max-height:78mm; }
+      .uncertainty { margin:10px 0; padding:7px 12px; }
+      .footer-note { margin-top:18px; padding-top:12px; font-size:10.5px; line-height:1.45; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  {% if report.release_mode == 'draft_with_warnings' %}
+  <div class="draft-watermark">内部审核草稿</div>
+  {% endif %}
+
+  <section class="cover">
+    <div class="eyebrow">A17 · Industry Research</div>
+    <h1>{{ report.title }}</h1>
+    <p class="subtitle">{{ report.executive_summary.headline }}</p>
+    <div class="meta-grid">
+      <div class="meta"><span>研究时点</span><strong>{{ report.research_as_of }}</strong></div>
+      <div class="meta"><span>报告编号</span><strong>{{ report.report_id }}</strong></div>
+      <div class="meta"><span>生成时间</span><strong>{{ report.generated_at.strftime('%Y-%m-%d %H:%M UTC') }}</strong></div>
+    </div>
+  </section>
+
+  {% if report.release_mode == 'draft_with_warnings' %}
+  <div class="draft-banner">
+    <strong>内部审核草稿</strong> — 部分内容尚未通过完整证据校验
+  </div>
+  {% endif %}
+
+  <h2>目录</h2>
+  <ol class="toc">
+  {% for chapter in report.chapters %}<li>{{ chapter.chapter_id }} · {{ chapter.title }}</li>{% endfor %}
+  </ol>
+
+  <h2>执行摘要</h2>
+  <section class="summary">
+    <p class="headline">{{ report.executive_summary.headline }}</p>
+    {% for item in report.executive_summary.conclusions %}
+    <div class="conclusion">
+      <strong>{{ item.claim_id }}</strong> · {{ item.text }}
+      <div class="chips"><span class="chip">置信度 {{ item.confidence }}</span>{% for eid in item.evidence_ids %}<span class="chip">{{ eid }}</span>{% endfor %}</div>
+      <p class="reference">不确定性：{{ item.uncertainty }}</p>
+    </div>
+    {% endfor %}
+  </section>
+  <h3>三种情景</h3><ul>{% for item in report.executive_summary.scenarios %}<li>{{ item }}</li>{% endfor %}</ul>
+  <h3>核心风险</h3><ul class="risk-list">{% for item in report.executive_summary.risks %}<li>{{ item }}</li>{% endfor %}</ul>
+  <h3>研究边界</h3><ul class="boundary-list">{% for item in report.executive_summary.research_boundaries %}<li>{{ item }}</li>{% endfor %}</ul>
+  <div class="footer-note"><p>{{ report.methodology_note }}</p><p><strong>免责声明：</strong>{{ report.disclaimer }}</p></div>
+
+  {% for chapter in report.chapters %}
+  <section class="chapter">
+    <h2>{{ chapter.chapter_id }} · {{ chapter.title }}</h2>
+    <p class="chapter-summary">{{ chapter.summary }}</p>
+    {% for section in chapter.sections %}
+      <h3>{{ section.section_id }} · {{ section.title }}</h3>
+      {% for paragraph in section.paragraphs %}
+        <p>{{ paragraph.text }}</p>
+        {% if paragraph.evidence_ids %}<p class="reference">证据引用：{{ paragraph.evidence_ids|join('、') }}</p>{% endif %}
+      {% endfor %}
+      {% for chart in charts_by_section.get(section.section_id, []) %}
+      <figure class="chart">{{ chart.svg }}<figcaption>{{ chart.title }} · 证据 {{ chart.evidence_ids|join('、') }}</figcaption></figure>
+      {% endfor %}
+      {% if section.uncertainties %}<div class="uncertainty"><strong>待验证事项</strong><ul>{% for item in section.uncertainties %}<li>{{ item }}</li>{% endfor %}</ul></div>{% endif %}
+    {% endfor %}
+  </section>
+  {% endfor %}
+
+  {% if unplaced_charts %}
+  <section class="chapter"><h2>附录 · 图表</h2>{% for chart in unplaced_charts %}<figure class="chart">{{ chart.svg }}<figcaption>{{ chart.title }} · 证据 {{ chart.evidence_ids|join('、') }}</figcaption></figure>{% endfor %}</section>
+  {% endif %}
+
+  {% if report.release_mode == 'draft_with_warnings' and report.unresolved_risks %}
+  <section class="risk-appendix chapter">
+    <h2>未解决问题清单</h2>
+    <ul>
+    {% for risk in report.unresolved_risks %}<li>{{ risk }}</li>{% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</main>
+</body>
+</html>

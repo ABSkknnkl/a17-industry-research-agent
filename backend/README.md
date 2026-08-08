@@ -27,7 +27,7 @@ mypy app
 uvicorn app.main:app --reload --port 8000
 ```
 
-当前`data_interpret`与`chapter_write`已接入真实业务节点，`data_fetch`、`chart_generate`与`report_fusion`仍使用Mock边界。接入新Agent时必须保持`StageAgent`协议和`contracts/schemas/`跨端契约一致。
+当前 `data_interpret`、`chart_generate`、`chapter_write` 和 `report_fusion` 已接入真实业务节点，仅 `data_fetch` 仍使用 Mock 数据边界。Agent 5 会将正式产物保存到 `artifacts/{run_id}/reports/r{revision}/`，并通过带 Bearer Token 和 owner_id 校验的下载接口返回文件。接入新 Agent 时必须保持 `StageAgent` 协议和 `contracts/schemas/` 跨端契约一致。
 
 Workflow已启用Pi风格P0运行护栏：失败阶段停止下游并进入恢复审核；单任务限制阶段、模型和工具调用次数；阶段与工具调用有超时；工具错误以结构化结果回灌Agent。该实现是LangGraph上的独立Python运行层，不依赖或嵌套第二套Agent框架。
 

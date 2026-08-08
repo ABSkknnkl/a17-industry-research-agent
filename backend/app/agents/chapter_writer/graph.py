@@ -43,6 +43,7 @@ _OUTLINE_BY_ID = {chapter.chapter_id: chapter for chapter in REPORT_OUTLINE}
 
 
 class ChapterWriterGraphState(TypedDict):
+    run_id: str
     analysis: dict[str, Any]
     charts: list[dict[str, Any]]
     options: dict[str, Any]
@@ -100,6 +101,11 @@ def _audit_chapter(
     paragraph_claim_ids: set[str] = set()
     paragraph_evidence_ids: set[str] = set()
     section_chart_ids: set[str] = set()
+    chart_evidence_by_id = {
+        chart.chart_id: set(chart.evidence_ids)
+        for chart in charts
+        if chart.status == "ready" and chart.artifact_id is not None
+    }
 
     for section in chapter.sections:
         section_chart_ids.update(section.chart_ids)
@@ -122,15 +128,53 @@ def _audit_chapter(
             paragraph_evidence_ids.update(paragraph.evidence_ids)
 
             if paragraph.kind == "analysis":
-                allowed_numbers = {
-                    token for claim in cited_claims for token in _NUMBER_PATTERN.findall(claim.text)
-                }
-                unsupported_numbers = set(_NUMBER_PATTERN.findall(paragraph.text)) - allowed_numbers
-                if unsupported_numbers:
-                    issues.append(
-                        f"{paragraph.paragraph_id}包含未由结论支持的数值："
-                        f"{sorted(unsupported_numbers)}"
+                # 数字溯源检查：使用分类器替代简单的"不在结论中就报错"
+                from app.agents.chapter_writer.numeric_refs import (
+                    classify_number,
+                    extract_numbers,
+                    validate_numeric_references,
+                )
+
+                known_fact_numbers = set()
+                for claim in cited_claims:
+                    known_fact_numbers.update(extract_numbers(claim.text))
+
+                paragraph_numbers = extract_numbers(paragraph.text)
+                numeric_refs = [
+                    classify_number(
+                        num,
+                        known_fact_numbers=known_fact_numbers,
+                        claim_evidence_ids=paragraph.evidence_ids,
                     )
+                    for num in paragraph_numbers
+                ]
+                num_issues = validate_numeric_references(numeric_refs)
+                for issue in num_issues:
+                    issues.append(f"{paragraph.paragraph_id}:{issue}")
+
+                # 检查是否有完全无归类且无证据的数字（真正的"不支持"数字）
+                truly_unsupported = [
+                    ref.raw_text
+                    for ref in numeric_refs
+                    if ref.numeric_type == "calculation"
+                    and not ref.formula
+                    and ref.raw_text not in known_fact_numbers
+                    and not paragraph.evidence_ids
+                ]
+                if truly_unsupported:
+                    issues.append(
+                        f"{paragraph.paragraph_id}包含无法验证来源的数值："
+                        f"{sorted(truly_unsupported)}"
+                    )
+
+        # 校验小节级引用，要求每张图的证据在所在小节中真实出现。
+        from app.agents.chapter_writer.provenance import validate_section_references
+
+        sec_issues = validate_section_references(
+            section,
+            chart_evidence_by_id=chart_evidence_by_id,
+        )
+        issues.extend(sec_issues)
 
     if set(chapter.claim_ids) != paragraph_claim_ids:
         issues.append("章节claim_ids与段落引用不一致")
@@ -253,7 +297,7 @@ def build_chapter_writer_graph(
         attempts[chapter_id] = attempts.get(chapter_id, 0) + 1
         return {"attempts": attempts, "revision_count": state["revision_count"] + 1}
 
-    def accept(state: ChapterWriterGraphState) -> dict[str, object]:
+    async def accept(state: ChapterWriterGraphState) -> dict[str, object]:
         chapter_id = state["chapter_ids"][state["current_index"]]
         chapters = dict(state["chapters"])
         draft = ChapterDraft.model_validate(state["draft"])
@@ -269,9 +313,29 @@ def build_chapter_writer_graph(
                 draft,
                 target_section_ids,
             )
+
+        # 自动汇总章节级引用
+        from app.agents.chapter_writer.provenance import aggregate_chapter_references
+
+        draft = aggregate_chapter_references(draft)
+
         chapters[chapter_id] = draft.model_dump(mode="json")
         quality_issues = list(state["quality_issues"])
         quality_issues.extend(f"{chapter_id}:{issue}" for issue in state["current_issues"])
+
+        # 持久化是接受章节的一部分：写入失败必须使阶段失败，不得静默跳过。
+        from app.infrastructure.repositories.chapter_repository import ChapterRepository
+
+        repo = ChapterRepository()
+        await repo.save_chapter(
+            run_id=state["run_id"],
+            chapter_id=chapter_id,
+            revision=state["workflow_revision"],
+            status="quality_passed" if not state["current_issues"] else "needs_review",
+            content_json=draft.model_dump(mode="json"),
+            quality_json={"issues": state["current_issues"]},
+        )
+
         return {
             "chapters": chapters,
             "quality_issues": quality_issues,

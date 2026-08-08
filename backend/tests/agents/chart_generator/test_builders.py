@@ -4,6 +4,8 @@ from app.agents.chart_generator.builders import (
     build_bar_option,
     build_industry_chain_option,
     build_line_option,
+    build_pie_option,
+    build_radar_option,
 )
 from app.schemas.chart import ChartDataset
 
@@ -41,3 +43,27 @@ def test_industry_chain_builder_uses_fixed_stage_layout(
     assert series["layout"] == "none"
     assert series["links"][0]["source"] == "lithium"
     json.dumps(option, allow_nan=False)
+
+
+def test_pie_builder_uses_audited_composition_data(
+    composition_dataset: ChartDataset,
+) -> None:
+    option = build_pie_option("市场份额", composition_dataset)
+
+    assert option["series"][0]["type"] == "pie"
+    assert [item["value"] for item in option["series"][0]["data"]] == [45.0, 30.0, 25.0]
+    assert option["series"][0]["data"][0]["evidence_id"] == "E-111"
+
+
+def test_radar_builder_uses_shared_standardized_scale(
+    radar_dataset: ChartDataset,
+) -> None:
+    option = build_radar_option("企业综合能力评分", radar_dataset)
+
+    assert option["radar"]["indicator"] == [
+        {"name": "技术", "min": 0.0, "max": 100.0},
+        {"name": "渠道", "min": 0.0, "max": 100.0},
+        {"name": "盈利", "min": 0.0, "max": 100.0},
+    ]
+    assert option["series"][0]["type"] == "radar"
+    assert {item["name"] for item in option["series"][0]["data"]} == {"公司A", "公司B"}

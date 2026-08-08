@@ -2,6 +2,8 @@ import pytest
 
 from app.agents.chapter_writer.service import ChapterWriterAgent
 from app.integrations.llm.mock import MockChapterWritingModel
+from app.infrastructure.repositories.chapter_repository import ChapterRepository
+from app.core.config import settings
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
 from app.schemas.workflow import StageName, StageResult, StageStatus
@@ -47,6 +49,23 @@ class SectionChangingModel(CountingChapterModel):
         return chapter
 
 
+class FailingChapterModel(MockChapterWritingModel):
+    model_name = "failing-test-model"
+
+    async def generate_chapter(self, *, system_prompt: str, runtime_prompt: str):
+        raise RuntimeError("simulated model outage")
+
+
+class AlwaysRiskyChapterModel(MockChapterWritingModel):
+    async def generate_chapter(self, *, system_prompt: str, runtime_prompt: str):
+        chapter = await super().generate_chapter(
+            system_prompt=system_prompt,
+            runtime_prompt=runtime_prompt,
+        )
+        chapter.sections[0].paragraphs[0].text = "建议买入该行业。"
+        return chapter
+
+
 @pytest.mark.asyncio
 async def test_agent_writes_seven_traceable_chapters_and_repairs_redlines(
     chapter_analysis_result: AnalysisResult,
@@ -85,6 +104,75 @@ async def test_agent_writes_seven_traceable_chapters_and_repairs_redlines(
     assert writing.chart_requests[0].status == "planned"
     assert all(not chapter.chart_ids for chapter in writing.chapters)
     assert "建议买入" not in str(stage_result.data)
+
+    repository = ChapterRepository(settings.CHECKPOINT_DATABASE_PATH)
+    completed_chapters = await repository.get_completed_chapters("run-chapter-1", 1)
+    assert set(completed_chapters) == {f"CH-{index:02d}" for index in range(1, 8)}
+
+
+@pytest.mark.asyncio
+async def test_agent_uses_complete_deterministic_fallback_when_model_fails(
+    chapter_analysis_result: AnalysisResult,
+) -> None:
+    context = StageContext(
+        project_id="project-fallback",
+        run_id="run-chapter-fallback",
+        revision=1,
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.APPROVED,
+                data=chapter_analysis_result.model_dump(mode="json"),
+                evidence_sources=["E-001"],
+            ),
+            StageName.CHART_GENERATE: StageResult(
+                stage=StageName.CHART_GENERATE,
+                status=StageStatus.COMPLETED,
+                data={"charts": []},
+            ),
+        },
+    )
+
+    result = await ChapterWriterAgent(model=FailingChapterModel()).run(context)
+    writing = ChapterWritingResult.model_validate(result.data)
+
+    assert result.status == StageStatus.COMPLETED
+    assert len(writing.chapters) == 7
+    assert sum(len(chapter.sections) for chapter in writing.chapters) == 21
+    assert writing.quality.passed is False
+    assert any("chapter_fallback_used" in issue for issue in writing.quality.issues)
+    assert writing.collaboration_requests
+
+
+@pytest.mark.asyncio
+async def test_agent_completes_with_quality_warning_after_revision_limit(
+    chapter_analysis_result: AnalysisResult,
+) -> None:
+    context = StageContext(
+        project_id="project-warning",
+        run_id="run-chapter-warning",
+        revision=1,
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.APPROVED,
+                data=chapter_analysis_result.model_dump(mode="json"),
+                evidence_sources=["E-001"],
+            ),
+            StageName.CHART_GENERATE: StageResult(
+                stage=StageName.CHART_GENERATE,
+                status=StageStatus.COMPLETED,
+                data={"charts": []},
+            ),
+        },
+    )
+
+    result = await ChapterWriterAgent(model=AlwaysRiskyChapterModel()).run(context)
+    writing = ChapterWritingResult.model_validate(result.data)
+
+    assert result.status == StageStatus.COMPLETED
+    assert writing.quality.passed is False
+    assert writing.collaboration_requests
 
 
 @pytest.mark.asyncio

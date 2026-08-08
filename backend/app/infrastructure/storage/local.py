@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 from typing import Any
@@ -62,3 +63,33 @@ def read_chart_json(run_id: str, revision: int, chart_id: str) -> dict[str, Any]
     if not isinstance(content, dict):
         raise ValueError("chart artifact root must be a JSON object")
     return content
+
+
+def _report_dir(run_id: str, revision: int) -> Path:
+    safe_run_id = _validate_segment(run_id, "run_id")
+    if revision < 1:
+        raise ValueError("revision must be at least 1")
+    return settings.ARTIFACT_ROOT / safe_run_id / "reports" / f"r{revision}"
+
+
+def save_report_bytes(
+    run_id: str,
+    revision: int,
+    filename: str,
+    content: bytes,
+) -> tuple[str, str, int]:
+    """Atomically persist one allow-listed report artifact."""
+
+    allowed = {"report.md", "report.html", "report.pdf", "manifest.json"}
+    if filename not in allowed:
+        raise ValueError("unsupported report artifact filename")
+    if not content:
+        raise ValueError("report artifact must not be empty")
+    directory = _report_dir(run_id, revision)
+    directory.mkdir(parents=True, exist_ok=True)
+    filepath = directory / filename
+    temporary = directory / f".{filename}.tmp"
+    temporary.write_bytes(content)
+    os.replace(temporary, filepath)
+    checksum = hashlib.sha256(content).hexdigest()
+    return str(filepath.relative_to(settings.ARTIFACT_ROOT)), checksum, len(content)

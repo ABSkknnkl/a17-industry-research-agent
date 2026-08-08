@@ -17,17 +17,14 @@ const router = createRouter({
         title: '首页 - 同花顺问财SkillHub',
       },
     },
-    // 后续扩展：报告页、审核页等
-    // {
-    //   path: '/report/:id',
-    //   name: 'report',
-    //   component: () => import('@/views/Report.vue'),
-    // },
-    // {
-    //   path: '/review/:id',
-    //   name: 'review',
-    //   component: () => import('@/views/Review.vue'),
-    // },
+    {
+      path: '/review/:runId',
+      name: 'review',
+      component: () => import('@/views/Review.vue'),
+      meta: {
+        title: '审核 - 同花顺问财SkillHub',
+      },
+    },
   ],
 })
 

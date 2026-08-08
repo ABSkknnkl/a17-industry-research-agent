@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skillhub.local/schemas/report-fusion-result.schema.json",
+  "title": "ReportFusionResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "report_id",
+    "title",
+    "industry_topic",
+    "research_as_of",
+    "generated_at",
+    "tone",
+    "formats",
+    "source_revisions",
+    "included_chart_ids",
+    "artifacts",
+    "quality"
+  ],
+  "properties": {
+    "report_id": { "type": "string", "pattern": "^REPORT-[A-Za-z0-9_-]+$" },
+    "title": { "type": "string", "minLength": 1 },
+    "industry_topic": { "type": "string", "minLength": 2 },
+    "research_as_of": { "type": "string", "format": "date" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "tone": { "type": "string", "enum": ["professional", "plain_language"] },
+    "formats": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/reportFormat" }
+    },
+    "source_revisions": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/sourceRevision" }
+    },
+    "included_chart_ids": {
+      "type": "array",
+      "maxItems": 30,
+      "items": { "type": "string", "pattern": "^CHART-[A-Za-z0-9_-]+$" }
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/artifactManifestEntry" }
+    },
+    "quality": { "$ref": "#/$defs/reportQuality" }
+  },
+  "$defs": {
+    "reportFormat": {
+      "type": "string",
+      "enum": ["markdown", "html", "pdf"]
+    },
+    "sourceRevision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stage", "revision"],
+      "properties": {
+        "stage": {
+          "type": "string",
+          "enum": ["data_interpret", "chart_generate", "chapter_write"]
+        },
+        "revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "artifactManifestEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "kind", "uri", "sha256", "size_bytes"],
+      "properties": {
+        "artifact_id": { "type": "string", "minLength": 1 },
+        "kind": {
+          "type": "string",
+          "enum": ["report_markdown", "report_html", "report_pdf", "artifact_manifest"]
+        },
+        "uri": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "size_bytes": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "reportQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "passed",
+        "chapter_count",
+        "section_count",
+        "included_chart_count",
+        "evidence_coverage",
+        "issues"
+      ],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "chapter_count": { "type": "integer", "minimum": 0 },
+        "section_count": { "type": "integer", "minimum": 0 },
+        "included_chart_count": { "type": "integer", "minimum": 0, "maximum": 8 },
+        "evidence_coverage": { "type": "number", "minimum": 0, "maximum": 1 },
+        "issues": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

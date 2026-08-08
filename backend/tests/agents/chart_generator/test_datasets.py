@@ -22,7 +22,7 @@ def test_dataset_matching_requires_all_candidate_evidence_ids(
     assert result.review_required is False
 
 
-def test_multiple_exact_dataset_matches_require_review(
+def test_multiple_exact_dataset_matches_select_one_and_flag_warning(
     time_series_dataset: ChartDataset,
 ) -> None:
     duplicate = time_series_dataset.model_copy(update={"dataset_id": "DS-REVENUE-ALT"})
@@ -34,7 +34,8 @@ def test_multiple_exact_dataset_matches_require_review(
     )
 
     assert result.review_required is True
-    assert len(result.datasets) == 2
+    assert [dataset.dataset_id for dataset in result.datasets] == ["DS-REVENUE"]
+    assert "自动选择" in result.review_reason
 
 
 def test_time_series_rejects_duplicate_series_period(

@@ -11,6 +11,7 @@ from app.integrations.llm.mock import MockAnalysisModel
 from app.runtime.models import RuntimePolicy
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
+from app.schemas.report import ReportFusionResult
 from app.workflow.factory import create_stage_registry
 from app.workflow.graph import build_pipeline_graph
 from app.workflow.stages import StageAgent, StageContext, StageRegistry
@@ -236,6 +237,11 @@ async def test_default_registry_runs_real_interpreter_and_chart_generator(
     from app.core.config import settings
 
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path / "artifacts")
+
+    async def stable_pdf(_: str) -> bytes:
+        return b"%PDF-1.7\nworkflow-unit-test"
+
+    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", stable_pdf)
     graph = build_pipeline_graph(create_stage_registry(MockAnalysisModel()))
 
     result = await graph.ainvoke(
@@ -289,3 +295,12 @@ async def test_default_registry_runs_real_interpreter_and_chart_generator(
     )
     assert len(chapters.chapters) == 7
     assert chapters.quality.passed is True
+    report_stage = result["stage_results"][StageName.REPORT_FUSION.value]
+    report = ReportFusionResult.model_validate(report_stage["data"])
+    assert report.quality.passed is True
+    assert {artifact["kind"] for artifact in report_stage["artifacts"]} == {
+        "report_markdown",
+        "report_html",
+        "report_pdf",
+        "artifact_manifest",
+    }

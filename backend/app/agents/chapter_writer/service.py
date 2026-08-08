@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.agents.chapter_writer.graph import ChapterWriterGraphState, build_chapter_writer_graph
+from app.agents.chapter_writer.fallback import build_fallback_writing
 from app.agents.chapter_writer.outline import REPORT_OUTLINE
 from app.agents.chapter_writer.prompt_loader import load_chapter_writer_prompt
 from app.integrations.llm.protocol import ChapterWritingModel
@@ -31,6 +32,8 @@ def _planned_charts(analysis: AnalysisResult) -> tuple[ChartReference, ...]:
 def _normalize_charts(
     analysis: AnalysisResult,
     chart_result: StageResult | None,
+    *,
+    selected_chart_ids: list[str] | None = None,
 ) -> tuple[ChartReference, ...]:
     if chart_result is None or chart_result.data.get("mock") is True:
         return _planned_charts(analysis)
@@ -38,7 +41,15 @@ def _normalize_charts(
     if not isinstance(raw_charts, list):
         raise ValueError("chart_generate.data.charts must be a list")
     charts = tuple(ChartReference.model_validate(chart) for chart in raw_charts)
-    return charts or _planned_charts(analysis)
+    if not charts:
+        return ()
+
+    # 用户自定义选择：只保留用户选中的图表
+    if selected_chart_ids:
+        selected_set = set(selected_chart_ids)
+        charts = tuple(c for c in charts if c.chart_id in selected_set)
+
+    return charts
 
 
 def _waiting_review(
@@ -96,11 +107,14 @@ class ChapterWriterAgent:
             )
 
         raw_options: Any = context.input_data.get("chapter_write_options", {})
+        selected_chart_ids = context.input_data.get("selected_chart_ids")
+        placement_overrides = context.input_data.get("placement_overrides")
         try:
             options = ChapterWritingOptions.model_validate(raw_options)
             charts = _normalize_charts(
                 analysis,
                 context.previous_results.get(StageName.CHART_GENERATE),
+                selected_chart_ids=selected_chart_ids,
             )
         except (ValidationError, ValueError) as exc:
             return _waiting_review(
@@ -155,13 +169,30 @@ class ChapterWriterAgent:
                 chapter.chapter_id: chapter.model_dump(mode="json") for chapter in previous.chapters
             }
 
+        # 检查已完成的章节，只处理未完成的（断点恢复）
+        from app.infrastructure.repositories.chapter_repository import ChapterRepository
+        repo = ChapterRepository()
+        await repo.initialize()
+        completed = await repo.get_completed_chapters(context.run_id, context.revision)
+
+        # 恢复已完成的章节内容
+        for chapter_id in completed:
+            saved = await repo.get_chapter(context.run_id, chapter_id, context.revision)
+            if saved and saved["content"]:
+                base_chapters[chapter_id] = saved["content"]
+
         chapter_ids = [
             chapter.chapter_id
             for chapter in REPORT_OUTLINE
-            if not selected_chapter_ids or chapter.chapter_id in selected_chapter_ids
+            if (
+                not selected_chapter_ids
+                or chapter.chapter_id in selected_chapter_ids
+            )
+            and chapter.chapter_id not in completed  # 跳过已完成的章节
         ]
         graph = build_chapter_writer_graph(model=self._model, prompt=self._prompt)
         graph_state: ChapterWriterGraphState = {
+            "run_id": context.run_id,
             "analysis": analysis.model_dump(mode="json"),
             "charts": [chart.model_dump(mode="json") for chart in charts],
             "options": options.model_dump(mode="json"),
@@ -182,27 +213,19 @@ class ChapterWriterAgent:
             final_state = await graph.ainvoke(graph_state)
             writing = ChapterWritingResult.model_validate(final_state["result"])
         except Exception as exc:
-            return StageResult(
-                stage=self.stage,
-                status=StageStatus.FAILED,
+            writing = build_fallback_writing(
+                analysis=analysis,
+                charts=charts,
+                prompt=self._prompt,
+                model_name=self._model.model_name,
                 revision=context.revision,
-                data={
-                    "model_name": self._model.model_name,
-                    "prompt_version": self._prompt.version,
-                    "error_type": type(exc).__name__,
-                },
-                evidence_sources=list(interpretation.evidence_sources),
-                error="chapter_generation_failed",
+                rejected_claim_ids=set(context.rejected_claim_ids),
+                reason=f"{type(exc).__name__}: {exc}",
             )
 
-        status = (
-            StageStatus.COMPLETED
-            if writing.quality.passed and not writing.collaboration_requests
-            else StageStatus.WAITING_REVIEW
-        )
         return StageResult(
             stage=self.stage,
-            status=status,
+            status=StageStatus.COMPLETED,
             revision=context.revision,
             data=writing.model_dump(mode="json"),
             evidence_sources=sorted(

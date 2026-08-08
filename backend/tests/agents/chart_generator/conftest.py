@@ -57,6 +57,46 @@ def categorical_dataset() -> ChartDataset:
 
 
 @pytest.fixture
+def composition_dataset() -> ChartDataset:
+    return ChartDataset(
+        dataset_id="DS-COMPOSITION",
+        kind="categorical",
+        metric_name="市场份额",
+        unit="%",
+        is_additive=True,
+        is_composition=True,
+        points=[
+            ChartPoint(label="公司A", value=45, evidence_id="E-111"),
+            ChartPoint(label="公司B", value=30, evidence_id="E-112"),
+            ChartPoint(label="其他", value=25, evidence_id="E-113"),
+        ],
+        evidence_ids=["E-111", "E-112", "E-113"],
+    )
+
+
+@pytest.fixture
+def radar_dataset() -> ChartDataset:
+    return ChartDataset(
+        dataset_id="DS-RADAR",
+        kind="categorical",
+        metric_name="企业综合能力评分",
+        unit="分",
+        is_standardized=True,
+        scale_min=0,
+        scale_max=100,
+        points=[
+            ChartPoint(label="技术", value=85, series="公司A", evidence_id="E-121"),
+            ChartPoint(label="渠道", value=72, series="公司A", evidence_id="E-122"),
+            ChartPoint(label="盈利", value=68, series="公司A", evidence_id="E-123"),
+            ChartPoint(label="技术", value=75, series="公司B", evidence_id="E-124"),
+            ChartPoint(label="渠道", value=81, series="公司B", evidence_id="E-125"),
+            ChartPoint(label="盈利", value=64, series="公司B", evidence_id="E-126"),
+        ],
+        evidence_ids=["E-121", "E-122", "E-123", "E-124", "E-125", "E-126"],
+    )
+
+
+@pytest.fixture
 def chain_dataset() -> ChartDataset:
     return ChartDataset(
         dataset_id="DS-CHAIN",

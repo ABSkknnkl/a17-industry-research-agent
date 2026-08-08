@@ -252,3 +252,4 @@ class ChartGenerationResult(BaseModel):
     chart_specs: list[ChartSpec] = Field(default_factory=list)
     suppressed_candidates: list[SuppressedChart] = Field(default_factory=list)
     quality: ChartQualityReport
+    decision_package: dict[str, Any] | None = None

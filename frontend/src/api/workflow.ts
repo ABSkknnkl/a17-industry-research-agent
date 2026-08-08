@@ -12,3 +12,9 @@ export function getRun(runId: string): Promise<WorkflowState> {
 export function reviewRun(runId: string, request: ReviewRequest): Promise<WorkflowState> {
   return api.post<WorkflowState, WorkflowState, ReviewRequest>(`/runs/${runId}/reviews`, request)
 }
+
+export function downloadArtifact(runId: string, artifactId: string): Promise<Blob> {
+  return api.get<Blob, Blob>(`/runs/${runId}/artifacts/${artifactId}`, {
+    responseType: 'blob',
+  })
+}

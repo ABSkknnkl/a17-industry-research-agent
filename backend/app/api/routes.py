@@ -3,11 +3,12 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import FileResponse
 
 from app.core.config import settings
 from app.schemas.common import PingResponse
 from app.schemas.run import RunCreateRequest
-from app.schemas.workflow import ReviewRequest, WorkflowState
+from app.schemas.workflow import ReviewAction, ReviewRequest, WorkflowState
 from app.security.audit import SecurityEventType, security_audit_log
 from app.security.auth import SecurityPrincipal, require_principal
 from app.security.policy import detect_prompt_injection
@@ -73,7 +74,7 @@ async def create_run(
     principal: Annotated[SecurityPrincipal, Depends(require_principal)],
     workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
 ) -> WorkflowState:
-    """Start the current real Agent 2/3/4 workflow with placeholder Agent 1/5."""
+    """Start the current real Agent 2/3/4/5 workflow with placeholder Agent 1."""
 
     _enforce_rate_limit(
         principal=principal,
@@ -125,6 +126,55 @@ async def get_run(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.get("/runs/{run_id}/artifacts/{artifact_id}", response_class=FileResponse)
+async def download_artifact(
+    run_id: str,
+    artifact_id: str,
+    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
+    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
+) -> FileResponse:
+    """Download an artifact only after verifying ownership through workflow state."""
+
+    try:
+        workflow = await workflow_runner.get(run_id, owner_id=principal.owner_id)
+    except (PermissionError, LookupError) as exc:
+        security_audit_log.record(
+            SecurityEventType.RUN_ACCESS_DENIED,
+            owner_id=principal.owner_id,
+            run_id=run_id,
+            risk_level="high",
+            reason_code="artifact_owner_mismatch_or_missing",
+            outcome="artifact_download_blocked",
+        )
+        raise HTTPException(status_code=404, detail="Artifact not found") from exc
+    artifact = next(
+        (
+            item
+            for result in workflow.stage_results.values()
+            for item in result.artifacts
+            if item.artifact_id == artifact_id
+        ),
+        None,
+    )
+    if artifact is None:
+        raise HTTPException(status_code=404, detail="Artifact not found")
+    root = settings.ARTIFACT_ROOT.resolve()
+    path = (root / artifact.uri).resolve()
+    if not path.is_relative_to(root) or not path.is_file():
+        raise HTTPException(status_code=404, detail="Artifact not found")
+    media_types = {
+        ".md": "text/markdown; charset=utf-8",
+        ".html": "text/html; charset=utf-8",
+        ".pdf": "application/pdf",
+        ".json": "application/json",
+    }
+    return FileResponse(
+        path,
+        media_type=media_types.get(path.suffix, "application/octet-stream"),
+        filename=path.name,
+    )
+
+
 @router.post("/runs/{run_id}/reviews", response_model=WorkflowState)
 async def review_run(
     run_id: str,
@@ -168,6 +218,23 @@ async def review_run(
                 "rules": sorted({finding.rule_id for finding in findings}),
             },
         )
+
+    # accept_with_risks 必须提供 accepted_risk_codes
+    if request.action == ReviewAction.ACCEPT_WITH_RISKS:
+        if not request.accepted_risk_codes:
+            raise HTTPException(
+                status_code=422,
+                detail={"code": "MISSING_RISK_CODES", "message": "accept_with_risks requires accepted_risk_codes"},
+            )
+
+    # customize 必须提供 selected_chart_ids
+    if request.action == ReviewAction.CUSTOMIZE:
+        if not request.selected_chart_ids:
+            raise HTTPException(
+                status_code=422,
+                detail={"code": "MISSING_CHART_IDS", "message": "customize requires selected_chart_ids"},
+            )
+
     try:
         return await workflow_runner.review(request, owner_id=principal.owner_id)
     except PermissionError as exc:

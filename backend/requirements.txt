@@ -25,3 +25,4 @@ pywencai>=0.12.0,<1.0.0
 # Chart and report rendering
 pyecharts>=2.0.0,<3.0.0
 playwright>=1.61.0,<2.0.0
+jinja2>=3.1.0,<4.0.0

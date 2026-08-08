@@ -1,3 +1,5 @@
 # Reporting
 
-后端 C 维护渲染设施。包含 ECharts/pyecharts 配置、专用打印 HTML 模板、Playwright Chromium PDF 导出和版式测试，不承载 LLM 内容生成逻辑。导出前必须等待字体、图片、SVG、Canvas 和图表渲染完成；浏览器运行文件安装在部署环境，不进入项目仓库。
+渲染层不承载 LLM 逻辑。`svg.py` 将已校验 ECharts Option 转为离线 SVG，`markdown.py` 和 `html.py` 消费同一视图模型，`pdf.py` 使用 Playwright Chromium 打印自包含 HTML。浏览器运行文件安装在部署环境，不进入 Git。
+
+安全约束：Jinja2 全局开启自动转义，仅项目内部 SVG 可跳过转义；HTML 不请求 CDN、字体或其他外部资源。

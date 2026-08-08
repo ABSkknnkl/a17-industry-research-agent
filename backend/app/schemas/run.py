@@ -34,6 +34,8 @@ class RunCreateRequest(BaseModel):
     project_id: str = Field(min_length=1, max_length=100)
     input_data: ResearchInput
     review_stages: list[StageName] = Field(
-        default_factory=lambda: [StageName.DATA_INTERPRET, StageName.CHAPTER_WRITE],
+        # Agent 1/2 form the default fact gate.  Agent 3/4/5 still expose optional
+        # review APIs, but do not pause the standard pipeline for professional warnings.
+        default_factory=lambda: [StageName.DATA_INTERPRET],
         max_length=5,
     )

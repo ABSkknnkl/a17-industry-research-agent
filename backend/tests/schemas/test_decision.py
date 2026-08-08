@@ -16,6 +16,7 @@ from app.schemas.decision import (
     RiskNotice,
     RiskSeverity,
     UserDecision,
+    compute_risk_snapshot_sha256,
 )
 
 
@@ -53,6 +54,25 @@ def test_hard_block_risk_cannot_override() -> None:
 
 
 def test_decision_package_requires_acknowledgement() -> None:
+    notices = [
+        RiskNotice(
+            risk_code="CHART-CHAPTER-DENSITY",
+            stage="chart_generate",
+            severity=RiskSeverity.HIGH,
+            disposition=RiskDisposition.ACKNOWLEDGEMENT_REQUIRED,
+            title="第4章图表密度过高",
+            detail="第4章有5张图表，推荐上限2张",
+            affected_ids=["CH-04"],
+            recommendation="将部分图表分配到其他章节",
+            consequence="PDF中可能连续出现多页图表",
+            can_override=True,
+        )
+    ]
+    snapshot = compute_risk_snapshot_sha256(
+        risk_notices=notices,
+        blocking_risk_codes=[],
+        acknowledgement_required_codes=["CHART-CHAPTER-DENSITY"],
+    )
     package = DecisionPackage(
         decision_id="DP-001",
         run_id="run-123",
@@ -61,27 +81,26 @@ def test_decision_package_requires_acknowledgement() -> None:
         all_candidates=[],
         recommended_selection=[],
         conflict_groups=[],
-        risk_notices=[
-            RiskNotice(
-                risk_code="CHART-CHAPTER-DENSITY",
-                stage="chart_generate",
-                severity=RiskSeverity.HIGH,
-                disposition=RiskDisposition.ACKNOWLEDGEMENT_REQUIRED,
-                title="第4章图表密度过高",
-                detail="第4章有5张图表，推荐上限2张",
-                affected_ids=["CH-04"],
-                recommendation="将部分图表分配到其他章节",
-                consequence="PDF中可能连续出现多页图表",
-                can_override=True,
-            )
-        ],
+        risk_notices=notices,
         blocking_risk_codes=[],
         acknowledgement_required_codes=["CHART-CHAPTER-DENSITY"],
         decision_status=DecisionStatus.AWAITING_USER,
+        risk_snapshot_sha256=snapshot,
         generated_at=datetime.now(UTC),
     )
     assert package.decision_status == DecisionStatus.AWAITING_USER
     assert len(package.acknowledgement_required_codes) == 1
+
+
+def test_decision_package_rejects_tampered_risk_snapshot() -> None:
+    with pytest.raises(ValidationError, match="risk_snapshot_sha256"):
+        DecisionPackage(
+            decision_id="DP-001",
+            run_id="run-123",
+            stage="chart_generate",
+            revision=1,
+            risk_snapshot_sha256="a" * 64,
+        )
 
 
 def test_user_decision_accept_with_risks() -> None:

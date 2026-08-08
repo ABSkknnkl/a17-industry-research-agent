@@ -35,8 +35,19 @@
     "decision_status": {
       "type": "string",
       "enum": ["not_required", "awaiting_user", "accepted_recommendation", "accepted_with_risks", "customized", "cancelled"]
+    },
+    "risk_snapshot_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
     }
   },
+  "required": [
+    "decision_id",
+    "run_id",
+    "stage",
+    "revision",
+    "risk_snapshot_sha256"
+  ],
   "$defs": {
     "riskNotice": {
       "type": "object",

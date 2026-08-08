@@ -1,10 +1,13 @@
 """Risk classification, decision package, and user decision contracts."""
 
+import hashlib
+import json
+from collections.abc import Iterable, Mapping
 from datetime import datetime
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class RiskSeverity(StrEnum):
@@ -42,6 +45,35 @@ class RiskNotice(BaseModel):
     recommendation: str = Field(min_length=1)
     consequence: str = Field(min_length=1)
     can_override: bool = True
+
+
+def compute_risk_snapshot_sha256(
+    *,
+    risk_notices: Iterable[RiskNotice | Mapping[str, Any]],
+    blocking_risk_codes: Iterable[str],
+    acknowledgement_required_codes: Iterable[str],
+) -> str:
+    """Return the canonical digest used to bind a decision to its risk snapshot."""
+
+    normalized_notices = []
+    for notice in risk_notices:
+        if isinstance(notice, RiskNotice):
+            risk_code = notice.risk_code
+            disposition = notice.disposition.value
+        else:
+            risk_code = str(notice.get("risk_code", ""))
+            disposition = str(notice.get("disposition", ""))
+        normalized_notices.append({"risk_code": risk_code, "disposition": disposition})
+    payload = json.dumps(
+        {
+            "risk_notices": normalized_notices,
+            "blocking_risk_codes": sorted(blocking_risk_codes),
+            "acknowledgement_required_codes": sorted(acknowledgement_required_codes),
+        },
+        sort_keys=True,
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 class ChartCandidateStatus(StrEnum):
@@ -95,7 +127,19 @@ class DecisionPackage(BaseModel):
     blocking_risk_codes: list[str] = Field(default_factory=list)
     acknowledgement_required_codes: list[str] = Field(default_factory=list)
     decision_status: DecisionStatus = DecisionStatus.NOT_REQUIRED
+    risk_snapshot_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     generated_at: datetime | None = None
+
+    @model_validator(mode="after")
+    def validate_risk_snapshot(self) -> "DecisionPackage":
+        expected = compute_risk_snapshot_sha256(
+            risk_notices=self.risk_notices,
+            blocking_risk_codes=self.blocking_risk_codes,
+            acknowledgement_required_codes=self.acknowledgement_required_codes,
+        )
+        if self.risk_snapshot_sha256 != expected:
+            raise ValueError("risk_snapshot_sha256 does not match the decision package")
+        return self
 
 
 class ReleaseMode(StrEnum):

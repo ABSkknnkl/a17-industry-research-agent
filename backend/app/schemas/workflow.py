@@ -156,6 +156,8 @@ class ReviewRequest(ContractModel):
     release_mode: Literal["formal", "draft_with_warnings"] = "formal"
     selected_chart_ids: list[str] | None = None
     placement_overrides: dict[str, str] | None = None
+    decision_id: str | None = Field(default=None, min_length=1, max_length=100)
+    risk_snapshot_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
     @model_validator(mode="after")
     def validate_stage_edit_whitelist(self) -> "ReviewRequest":

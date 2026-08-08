@@ -31,6 +31,7 @@ class ParagraphDraft(ChapterContract):
     text: str = Field(min_length=1)
     claim_ids: list[str] = Field(default_factory=list)
     evidence_ids: list[str] = Field(default_factory=list)
+    numeric_refs: list[dict[str, object]] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_analysis_references(self) -> "ParagraphDraft":

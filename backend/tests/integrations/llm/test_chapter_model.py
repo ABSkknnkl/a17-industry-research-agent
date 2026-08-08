@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import pytest
@@ -16,13 +17,33 @@ class FakeStructuredModel:
         return self.response
 
 
+class SequentialStructuredModel:
+    def __init__(self, responses: list[Any]) -> None:
+        self.responses = responses
+        self.messages: list[list[Any]] = []
+
+    async def ainvoke(self, messages: list[Any]) -> Any:
+        self.messages.append(messages)
+        return self.responses.pop(0)
+
+
 class FakeChatModel:
     def __init__(self, structured: FakeStructuredModel) -> None:
         self.structured = structured
         self.schema: type[ChapterDraft] | None = None
+        self.method: str | None = None
+        self.include_raw: bool = False
 
-    def with_structured_output(self, schema: type[ChapterDraft]) -> FakeStructuredModel:
+    def with_structured_output(
+        self,
+        schema: type[ChapterDraft],
+        *,
+        method: str | None = None,
+        include_raw: bool = False,
+    ) -> FakeStructuredModel:
         self.schema = schema
+        self.method = method
+        self.include_raw = include_raw
         return self.structured
 
 
@@ -77,4 +98,104 @@ async def test_openai_compatible_chapter_model_requests_chapter_schema() -> None
 
     assert result.chapter_id == "CH-01"
     assert chat_model.schema is ChapterDraft
+    assert chat_model.method is None
     assert structured.messages[0].content == "chapter writer prompt"
+
+
+def test_deepseek_chapter_uses_json_mode_structured_output() -> None:
+    structured = FakeStructuredModel(_chapter())
+    chat_model = FakeChatModel(structured)
+
+    OpenAICompatibleChapterModel(
+        model_name="deepseek-v4-pro",
+        chat_model=chat_model,
+    )
+
+    assert chat_model.schema is ChapterDraft
+    assert chat_model.method == "json_mode"
+    assert chat_model.include_raw is True
+
+
+class RawMessage:
+    def __init__(self, content: str) -> None:
+        self.content = content
+        self.tool_calls: list[dict[str, Any]] = []
+
+
+@pytest.mark.asyncio
+async def test_deepseek_chapter_accepts_json_content_when_tool_call_is_missing() -> None:
+    response = {
+        "raw": RawMessage(json.dumps(_chapter().model_dump(mode="json"), ensure_ascii=False)),
+        "parsed": None,
+        "parsing_error": None,
+    }
+    structured = FakeStructuredModel(response)  # type: ignore[arg-type]
+    model = OpenAICompatibleChapterModel(
+        model_name="deepseek-v4-pro",
+        chat_model=FakeChatModel(structured),
+    )
+
+    result = await model.generate_chapter(
+        system_prompt="chapter writer prompt",
+        runtime_prompt='{"chapter_config":{}}',
+    )
+
+    assert result.chapter_id == "CH-01"
+    assert "JSON" in structured.messages[0].content
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("alias", ["PARA-01-01-01", "PAR-01-01-01"])
+async def test_deepseek_chapter_normalizes_paragraph_id_alias(alias: str) -> None:
+    payload = _chapter().model_dump(mode="json")
+    payload["sections"][0]["paragraphs"][0]["paragraph_id"] = alias
+    response = {
+        "raw": RawMessage(json.dumps(payload, ensure_ascii=False)),
+        "parsed": None,
+        "parsing_error": None,
+    }
+    model = OpenAICompatibleChapterModel(
+        model_name="deepseek-v4-pro",
+        chat_model=FakeChatModel(FakeStructuredModel(response)),  # type: ignore[arg-type]
+    )
+
+    result = await model.generate_chapter(
+        system_prompt="chapter writer prompt",
+        runtime_prompt='{"chapter_config":{}}',
+    )
+
+    assert result.sections[0].paragraphs[0].paragraph_id == "P-01-01-01"
+
+
+@pytest.mark.asyncio
+async def test_deepseek_chapter_retries_one_invalid_structured_response() -> None:
+    invalid_payload = _chapter().model_dump(mode="json")
+    invalid_payload["sections"][0]["paragraphs"][0]["paragraph_id"] = "invalid-id"
+    responses = [
+        {
+            "raw": RawMessage(json.dumps(invalid_payload, ensure_ascii=False)),
+            "parsed": None,
+            "parsing_error": None,
+        },
+        {
+            "raw": RawMessage(
+                json.dumps(_chapter().model_dump(mode="json"), ensure_ascii=False)
+            ),
+            "parsed": None,
+            "parsing_error": None,
+        },
+    ]
+    structured = SequentialStructuredModel(responses)
+    model = OpenAICompatibleChapterModel(
+        model_name="deepseek-v4-pro",
+        chat_model=FakeChatModel(structured),  # type: ignore[arg-type]
+    )
+
+    result = await model.generate_chapter(
+        system_prompt="chapter writer prompt",
+        runtime_prompt='{"chapter_config":{}}',
+    )
+
+    assert result.chapter_id == "CH-01"
+    assert len(structured.messages) == 2
+    assert "只修正结构和字段格式" in structured.messages[1][1].content

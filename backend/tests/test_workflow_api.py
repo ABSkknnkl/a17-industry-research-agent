@@ -162,6 +162,7 @@ def test_frontend_can_review_and_regenerate_chart_configuration(
     assert chart_data["chart_specs"][0]["title"] == "组件产量增速对比"
     assert chart_data["chart_specs"][0]["variant"] == "horizontal"
     assert revised["stage_results"]["chart_generate"]["artifacts"][0]["revision"] == 2
+    decision_package = chart_data["decision_package"]
 
     approved = api_client.post(
         f"/api/v1/runs/{run_id}/reviews",
@@ -172,6 +173,8 @@ def test_frontend_can_review_and_regenerate_chart_configuration(
             "expected_revision": 2,
             "comment": "图表审核通过。",
             "edited_data": None,
+            "decision_id": decision_package["decision_id"],
+            "risk_snapshot_sha256": decision_package["risk_snapshot_sha256"],
         },
     )
 

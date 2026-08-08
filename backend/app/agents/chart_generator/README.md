@@ -6,17 +6,21 @@ Agent 3 是顶层五阶段 LangGraph 的第三个节点，内部不再创建 Age
 
 - `line`：时间序列，按 `period_end` 排序，保留 `null` 断点，最多五条序列。
 - `bar`：确定性选择 `vertical`、`horizontal`、`grouped`、`stacked`；堆叠要求 `is_additive=true`。
+- `pie`：只接受单时点、正值、互斥且不超过5类的构成数据；不满足时审计降级为柱状图。
+- `radar`：只接受3—8个已标准化、共享同一刻度的指标；不满足时审计降级为柱状图。
 - `industry_chain`：使用 ECharts `graph` 和固定上游→中游→下游布局，不虚构边权。
 
-P1/P2 图表不进入当前代码契约。后续扩展必须新增独立 Skill，并保持现有 P0 路由结果不变。
+P1 已提供 `combo`、`area`、`scatter`、`bubble`、`heatmap`、`boxplot`、`treemap` 的条件路由和降级能力，但不是每份报告的必备图表。P0 五类是比赛要求的基础能力。
 
 ## Router + Skill
 
-`router.py` 只根据候选类型与数据集 `kind` 分发到三个 Builder；`builders.py` 中每个 Builder 都是无副作用的确定性 Skill。相同数据通过 SHA-256 指纹和图表族组成的 `dedupe_key` 只生成一次。
+`router.py` 只根据候选类型与标准化数据特征分发 Builder；`builders.py` 中每个 Builder 都是无副作用的确定性 Skill。同数据、同目的的同族图表通过 SHA-256 指纹和 `dedupe_key` 只保留一张。
+
+5—8张、P1最多3张、同族/同章密度等均为推荐值，只生成风险提示，不阻断流水线。技术上限只会跳过当前不可安全渲染的图表；数据不足时不强行凑数，允许零图表进入 Agent 4/5。
 
 ## 借鉴边界
 
-- Apache ECharts：使用 `dataset/option` 分离思想和 `line`、`bar`、`graph` 公开配置。
+- Apache ECharts：使用 `dataset/option` 分离思想和各图表的公开配置。
 - pyecharts：参考 Python 字典到 ECharts JSON 的字段映射与 `NaN/null` 处理，不依赖其运行时生成主路径。
 - stock-industry-chain：借鉴 `nodes + edges + stage` 数据结构，未复制业务数据。
 - BettaFish：借鉴 Validator/QualityReport 的问题汇总模式。
@@ -24,6 +28,6 @@ P1/P2 图表不进入当前代码契约。后续扩展必须新增独立 Skill�
 
 ## 人工审核
 
-审核接口仅允许修改标题、P0 类型、柱状图变体、数据集选择和白名单主题。多个数据集同时命中、缺少数据集或质量门失败时返回 `waiting_review`；审核接口不能提交任意 ECharts JSON。
+审核接口仅允许修改标题、白名单图表类型、柱状图变体、数据集选择和白名单主题，不能提交任意 ECharts JSON。多个数据集同时命中时按证据贴合度确定性选择并告警；缺少数据集、单图构建失败或质量门未通过时跳过问题图并以 `completed` 返回风险清单。只有上游契约不可读、安全策略、取消或运行预算耗尽才停止。
 
 Agent 1 尚未完成时，`MockStageAgent(DATA_FETCH)` 只把数值型 `EvidenceItem` 原样重组为单点分类数据集，用于集成测试。正式 Agent 1 接入后必须移除这个开发适配器。

@@ -21,8 +21,8 @@ class StageAgent(Protocol):
 ## 当前状态
 
 - `data_interpret`使用真实`DataInterpreterAgent`，`chapter_write`使用真实`ChapterWriterAgent`。
-- `data_fetch`、`chart_generate`和`report_fusion`仍使用契约兼容Mock，便于在其他成员开发期间验证完整流程。
-- `chapter_write`已消费Agent 2真实契约，并兼容Agent 3 Mock；默认在Agent 2和Agent 4后进入人工审核。
+- `data_interpret`、`chart_generate`、`chapter_write`和`report_fusion`均使用真实业务节点；`data_fetch`仍保留开发适配器。
+- 默认只在Agent 2后进入人工审核：Agent 1/2构成事实与证据门，Agent 3/4/5采用“风险告知、继续产出”。五个阶段仍都可显式加入`review_stages`。
 - Checkpointer已使用生命周期托管的`AsyncSqliteSaver`，默认写入`./data/checkpoints.sqlite`；同一`run_id`可在后端重启后继续查询、审核和恢复。
 - SQLite Checkpointer面向比赛版单实例/单Worker部署；多Worker或多实例上线前应迁移到共享的PostgreSQL Checkpointer。
 - 当前进度获取采用`GET /api/v1/runs/{run_id}`轮询，全部智能体完成后再统一评估SSE/WebSocket。
@@ -53,8 +53,8 @@ class StageAgent(Protocol):
 
 ## Agent接入约束
 
-- Agent 1/3/5仍实现同一个`StageAgent.run(context)`接口，不自行创建无限循环。
-- Agent 3 已替换 Mock：使用确定性 Router + P0 Builder 生成 ECharts JSON；Agent 1 当前仍通过开发适配器提供测试用 `ChartDataset`。
+- Agent 1/3/5实现同一个`StageAgent.run(context)`接口，不自行创建无限循环。
+- Agent 3 已替换 Mock：使用确定性 Router + Builder 生成 ECharts JSON，P0 覆盖 `line/bar/pie/radar/industry_chain`；Agent 1 当前仍通过开发适配器提供测试用 `ChartDataset`。
 - 外部API、SkillHub和可执行工具必须通过`app.runtime.tool_gateway.ToolGateway`调用，顺序固定为：工具查找、Pydantic参数校验、before Hook、限时执行、after Hook、结构化结果回灌。
 - `ToolResult.is_error=true`是可交给Agent纠正的正常结果；不得把供应商原始异常、Cookie、Token或完整请求参数写入结果和日志。
 - 工具结果超过`MAX_TOOL_RESULT_CHARS`会返回截断预览。Agent 1应拆分查询；P1产物存储完成后再升级为“摘要+产物引用”。
