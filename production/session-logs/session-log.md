@@ -2383,3 +2383,181 @@ production/session-logs/compaction-log.txt
 production/session-logs/session-log.md
 ---
 
+## Session End: 20260808_230301
+### Commits
+d35f98c feat: complete risk-aware report pipeline
+---
+
+## Session End: 20260809_145837
+### Uncommitted Changes
+production/session-logs/session-log.md
+---
+
+## Session End: 20260809_150134
+### Uncommitted Changes
+production/session-logs/session-log.md
+---
+
+## Session End: 20260809_150714
+### Uncommitted Changes
+production/session-logs/session-log.md
+---
+
+## Session End: 20260809_154111
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+
+## Session End: 20260809_154506
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+
+## Session End: 20260809_154928
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+
+## Session End: 20260809_163013
+### Uncommitted Changes
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+
+## Session End: 20260809_165950
+### Uncommitted Changes
+backend/app/agents/chapter_writer/README.md
+backend/app/agents/chapter_writer/prompt_adapter.py
+backend/app/agents/chapter_writer/service.py
+backend/app/agents/chart_generator/README.md
+backend/app/agents/chart_generator/service.py
+backend/app/agents/data_interpreter/README.md
+backend/app/agents/data_interpreter/graph.py
+backend/app/agents/data_interpreter/prompt_adapter.py
+backend/app/agents/report_fusion/README.md
+backend/app/agents/report_fusion/assembler.py
+backend/app/agents/report_fusion/service.py
+backend/app/reporting/markdown.py
+backend/app/reporting/templates/report.html.j2
+backend/app/schemas/__init__.py
+backend/app/schemas/analysis.py
+backend/app/schemas/chart.py
+backend/app/schemas/report.py
+backend/app/schemas/run.py
+backend/app/schemas/workflow.py
+backend/app/workflow/README.md
+backend/tests/agents/chapter_writer/conftest.py
+backend/tests/agents/chapter_writer/test_prompt_adapter.py
+backend/tests/agents/chart_generator/test_agent.py
+backend/tests/agents/data_interpreter/test_agent.py
+backend/tests/agents/report_fusion/test_agent.py
+backend/tests/schemas/test_global_equity_analysis.py
+backend/tests/test_contracts.py
+contracts/schemas/chart-generation-result.schema.json
+contracts/schemas/report-fusion-result.schema.json
+contracts/schemas/review-action.schema.json
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+
+## Session End: 20260810_080310
+### Uncommitted Changes
+backend/app/agents/chapter_writer/README.md
+backend/app/agents/chapter_writer/prompt_adapter.py
+backend/app/agents/chapter_writer/service.py
+backend/app/agents/chart_generator/README.md
+backend/app/agents/chart_generator/service.py
+backend/app/agents/data_interpreter/README.md
+backend/app/agents/data_interpreter/graph.py
+backend/app/agents/data_interpreter/prompt_adapter.py
+backend/app/agents/report_fusion/README.md
+backend/app/agents/report_fusion/assembler.py
+backend/app/agents/report_fusion/service.py
+backend/app/reporting/markdown.py
+backend/app/reporting/templates/report.html.j2
+backend/app/schemas/__init__.py
+backend/app/schemas/analysis.py
+backend/app/schemas/chart.py
+backend/app/schemas/report.py
+backend/app/schemas/run.py
+backend/app/schemas/workflow.py
+backend/app/workflow/README.md
+backend/tests/agents/chapter_writer/conftest.py
+backend/tests/agents/chapter_writer/test_prompt_adapter.py
+backend/tests/agents/chart_generator/test_agent.py
+backend/tests/agents/data_interpreter/test_agent.py
+backend/tests/agents/report_fusion/test_agent.py
+backend/tests/schemas/test_global_equity_analysis.py
+backend/tests/test_contracts.py
+contracts/schemas/chart-generation-result.schema.json
+contracts/schemas/report-fusion-result.schema.json
+contracts/schemas/review-action.schema.json
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+
+## Session End: 20260810_085839
+### Uncommitted Changes
+backend/.env.example
+backend/app/agents/chapter_writer/README.md
+backend/app/agents/chapter_writer/prompt_adapter.py
+backend/app/agents/chapter_writer/service.py
+backend/app/agents/chart_generator/README.md
+backend/app/agents/chart_generator/service.py
+backend/app/agents/data_interpreter/README.md
+backend/app/agents/data_interpreter/graph.py
+backend/app/agents/data_interpreter/prompt_adapter.py
+backend/app/agents/data_interpreter/service.py
+backend/app/agents/report_fusion/README.md
+backend/app/agents/report_fusion/assembler.py
+backend/app/agents/report_fusion/service.py
+backend/app/core/config.py
+backend/app/integrations/llm/factory.py
+backend/app/integrations/llm/openai_compatible.py
+backend/app/reporting/markdown.py
+backend/app/reporting/templates/report.html.j2
+backend/app/schemas/__init__.py
+backend/app/schemas/analysis.py
+backend/app/schemas/chart.py
+backend/app/schemas/report.py
+backend/app/schemas/run.py
+backend/app/schemas/workflow.py
+backend/app/workflow/README.md
+backend/tests/agents/chapter_writer/conftest.py
+backend/tests/agents/chapter_writer/test_agent.py
+backend/tests/agents/chapter_writer/test_prompt_adapter.py
+backend/tests/agents/chart_generator/test_agent.py
+backend/tests/agents/data_interpreter/test_agent.py
+backend/tests/agents/report_fusion/test_agent.py
+backend/tests/integrations/llm/test_chapter_model.py
+backend/tests/integrations/llm/test_openai_compatible.py
+backend/tests/schemas/test_global_equity_analysis.py
+backend/tests/test_contracts.py
+contracts/schemas/chart-generation-result.schema.json
+contracts/schemas/report-fusion-result.schema.json
+contracts/schemas/review-action.schema.json
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+
+## Session End: 20260810_155240
+### Commits
+f1c1c4f feat: complete P0/P1 agent quality upgrades
+---
+
+## Session End: 20260810_155821
+### Commits
+2ac7547 feat: complete P0/P1 agent quality upgrades
+### Uncommitted Changes
+backend/app/agents/chapter_writer/README.md
+backend/app/agents/chart_generator/README.md
+backend/app/agents/data_interpreter/README.md
+backend/app/agents/report_fusion/README.md
+backend/app/workflow/README.md
+production/session-logs/compaction-log.txt
+production/session-logs/session-log.md
+---
+

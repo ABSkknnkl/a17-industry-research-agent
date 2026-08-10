@@ -18,6 +18,8 @@ P1 已提供 `combo`、`area`、`scatter`、`bubble`、`heatmap`、`boxplot`、`
 
 5—8张、P1最多3张、同族/同章密度等均为推荐值，只生成风险提示，不阻断流水线。技术上限只会跳过当前不可安全渲染的图表；数据不足时不强行凑数，允许零图表进入 Agent 4/5。
 
+每个就绪图表同时透传`insight_goal`、`quality_issue_ids`和`footnotes`。只要底层数值与证据契约可用，数据口径风险不会静默删除图表，而是在图表下方明确显示；无法安全渲染的候选仍会被跳过并写入最终报告附录。
+
 ## 借鉴边界
 
 - Apache ECharts：使用 `dataset/option` 分离思想和各图表的公开配置。

@@ -18,17 +18,25 @@
 - 三个技能均不得替代证据源；固定阈值、收益概率、经验数字及任何事实判断必须由当前`evidence_id`支撑，证据不足时转入`collaboration_requests`。
 - 使用`AnalysisModel`协议支持Mock与OpenAI兼容模型。
 - 使用结构化输出生成`AnalysisDraft`；DeepSeek兼容模型采用`json_mode`并注入完整的机器可读JSON Schema，技术契约优先于金融提示词中的报告展示模板。
-- 首次JSON解析或Pydantic校验失败时最多执行一次结构修复；修复回合会携带上一份可读响应并明确冻结金融事实、数字、结论和`evidence_id`，第二次仍不合规则安全失败。
+- 结构化失败统一分类为污染、JSON语法、Schema、业务语义、输出截断和供应商异常；只记录模型名、请求ID、结束原因、字符/token数量及校验字段路径，不保存密钥或原始证据正文。
+- 安全解析只允许标准JSON、单层Markdown围栏及唯一完整JSON对象；不执行单引号替换、尾逗号修复或JSON5宽松接收。
+- 首次JSON解析或Pydantic校验失败时最多执行一次结构修复；修复回合会携带上一份可读响应并明确冻结金融事实、数字、结论和`evidence_id`，第二次仍不合规则安全失败。供应商明确截断或JSON未闭合时不盲目补括号。
+- 运行时Prompt达到`LLM_SEGMENTED_THRESHOLD_CHARS`（默认36000字符）时，自动拆为“核心分析”和“情景、风险、协同与图表补充”两个小Schema生成，再由服务端合并并通过完整`AnalysisDraft`终检；短请求仍保持单次调用。
 - Agent内部执行`Router → selected Skills → LangGraph`，Router为确定性代码，不调用LLM。
 - LangGraph内部执行`prepare → generate → audit → revise/finalize`。
 - 检查未知证据ID、已否决结论和金融内容红线，最多自动修订两次。
 - 输出`AnalysisResult`并封装为`StageResult(stage=data_interpret)`。
+- 输出统一的`data_quality_issues`，区分缺失、过期、冲突、估算和不可比，并给出影响级别、处理方式与证据ID。
+- 输出顾问式`financial_consistency_checks`，记录财务勾稽、现金利润匹配、营运资金异常或非经常项目；`warning/unavailable`只降低结论强度，不补造数据。
+- 输出五维`dimension_coverage`（`supported/partial/insufficient`）；模型未填写时由确定性规则根据结论和证据补全。
+- 支持可选`research_brief`限定地域、时间、包含/排除主题、重点企业与`brief/standard/deep`报告深度。
 
 ## 下游适配
 
 - Agent 3使用`chart_candidates`及其`evidence_ids`。
-- Agent 4使用`claims`、`dimensions`、`scenarios`和`risks`。
-- Agent 5使用`prompt`、`model_name`、`quality`、结论状态和证据引用。
+- Agent 3还使用`data_quality_issues`为图表增加口径脚注。
+- Agent 4使用`claims`、`dimensions`、`scenarios`、`risks`、维度覆盖和财务一致性检查。
+- Agent 5汇总上述质量信息，生成数据质量与研究边界附录。
 
 关键输入缺失时不调用LLM，直接返回`waiting_review`和`collaboration_requests`。
 
@@ -41,6 +49,7 @@ LLM_USE_MOCK=false
 LLM_API_KEY=...
 LLM_BASE_URL=...
 LLM_MODEL=qwen-plus
+LLM_SEGMENTED_THRESHOLD_CHARS=36000
 ```
 
 密钥只从环境变量读取。

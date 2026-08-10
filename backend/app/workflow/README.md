@@ -35,6 +35,8 @@ class StageAgent(Protocol):
 - 每个阶段由`asyncio.timeout`限制执行时间；未处理异常被转换为脱敏`StageResult`，不会击穿整条Workflow。
 - 模型通过`RuntimeAwareAnalysisModel`和`RuntimeAwareChapterWritingModel`统一计数，不修改Agent 2/4的业务协议或提示词。
 - 运行事件只保存阶段/模型/工具名称、结果码和计数，不保存Prompt、工具参数、外部原文、模型正文或供应商异常信息。
+- Agent 2通过新增的`research_brief`接收用户研究范围；审核白名单允许修改该对象，Agent 5审核可单独切换`brief/standard/deep`阅读深度。
+- Agent 2通过后，数据质量、财务勾稽和维度覆盖问题作为建议风险贯穿Agent 3—5；报告仍完整导出并以`ready_with_limits`明确标记。
 
 ## 运行状态存储
 

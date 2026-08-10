@@ -16,3 +16,10 @@ Agent 5 是确定性组装与导出节点，不调用 LLM，不新增金融事�
 | Jinja2 | `StrictUndefined + autoescape=True`，只对项目内部生成的 SVG 标记为安全 |
 
 借鉴的是架构与质量模式，不直接复制来源项目的业务代码或模板；后续引入任何第三方文件时必须先核验许可证。
+
+## P0/P1研究质量升级
+
+- Markdown和单文件HTML均新增“数据质量与研究边界附录”，统一展示维度覆盖、数据缺口、财务一致性检查和未生成图表原因；PDF沿用同一HTML视图。
+- 输出新增`delivery_status`：无重要告警为`ready`，存在可交付限制为`ready_with_limits`；所有格式均失败时仍由阶段状态返回`failed`。
+- 输出新增`report_depth`：`brief`保留执行摘要与七章摘要，`standard`为默认7章21节，`deep`保留完整正文和详细质量附录。
+- 图表的分析目的、证据和数据脚注在HTML/PDF中共同展示，不依赖外部CDN。

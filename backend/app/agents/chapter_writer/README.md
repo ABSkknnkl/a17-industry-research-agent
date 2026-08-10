@@ -11,8 +11,11 @@
 - 内部LangGraph顺序执行`generate → audit → revise/accept → finalize`，每章最多自动修订2次，不会无界循环。
 - 质量门校验章节标题、claim/evidence引用、数值出处、图表就绪状态、聚合ID及金融内容红线。
 - 图表可为空；达到修订上限后仍返回完整草稿并附质量风险。模型、解析或章节持久化异常时，只使用Agent 2已验证的claim/evidence生成确定性7章21节兜底稿，缺证据处明确标记。
+- Agent 4与Agent 2共用结构化错误分类、截断识别和一次受控修复；截断不按普通格式错误重试。兜底稿只写入脱敏错误码与安全诊断，不写入供应商异常原文、密钥或用户证据正文。
 - 支持整章重新生成以及指定小节修订；小节修订保留未选中小节，必须基于上一版完整结果。
 - 已接入顶层五阶段Workflow；默认不在`chapter_write`暂停，但仍支持将本阶段显式加入`review_stages`以及`approve/revise/regenerate/cancel`。
+- 每章Prompt只接收与该章相关的`data_quality_issues`、`dimension_coverage`和财务一致性检查：`partial`使用条件性表达，`insufficient`明确资料不足，均不阻止7章21节完整交付。
+- `research_brief`作为用户范围约束进入章节上下文；排除主题不得被模型重新加入结论。
 
 ## 上下游交接
 
