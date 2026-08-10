@@ -3,7 +3,11 @@ from typing import Any
 
 import pytest
 
-from app.integrations.llm.openai_compatible import OpenAICompatibleChapterModel
+from app.integrations.llm.openai_compatible import (
+    OpenAICompatibleChapterModel,
+    StructuredOutputError,
+    StructuredOutputFailureCode,
+)
 from app.schemas.chapter import ChapterDraft
 
 
@@ -117,9 +121,15 @@ def test_deepseek_chapter_uses_json_mode_structured_output() -> None:
 
 
 class RawMessage:
-    def __init__(self, content: str) -> None:
+    def __init__(
+        self,
+        content: str,
+        *,
+        response_metadata: dict[str, Any] | None = None,
+    ) -> None:
         self.content = content
         self.tool_calls: list[dict[str, Any]] = []
+        self.response_metadata = response_metadata or {}
 
 
 @pytest.mark.asyncio
@@ -178,9 +188,7 @@ async def test_deepseek_chapter_retries_one_invalid_structured_response() -> Non
             "parsing_error": None,
         },
         {
-            "raw": RawMessage(
-                json.dumps(_chapter().model_dump(mode="json"), ensure_ascii=False)
-            ),
+            "raw": RawMessage(json.dumps(_chapter().model_dump(mode="json"), ensure_ascii=False)),
             "parsed": None,
             "parsing_error": None,
         },
@@ -199,3 +207,29 @@ async def test_deepseek_chapter_retries_one_invalid_structured_response() -> Non
     assert result.chapter_id == "CH-01"
     assert len(structured.messages) == 2
     assert "只修正结构和字段格式" in structured.messages[1][1].content
+
+
+@pytest.mark.asyncio
+async def test_deepseek_chapter_does_not_repair_truncated_output() -> None:
+    response = {
+        "raw": RawMessage(
+            '{"chapter_id":"CH-01"',
+            response_metadata={"finish_reason": "length"},
+        ),
+        "parsed": None,
+        "parsing_error": None,
+    }
+    structured = SequentialStructuredModel([response])
+    model = OpenAICompatibleChapterModel(
+        model_name="deepseek-v4-pro",
+        chat_model=FakeChatModel(structured),  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(StructuredOutputError) as captured:
+        await model.generate_chapter(
+            system_prompt="chapter writer prompt",
+            runtime_prompt='{"chapter_config":{}}',
+        )
+
+    assert captured.value.code is StructuredOutputFailureCode.OUTPUT_TRUNCATED
+    assert len(structured.messages) == 1

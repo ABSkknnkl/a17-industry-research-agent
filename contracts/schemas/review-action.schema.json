@@ -76,7 +76,8 @@
       "analysis_depth",
       "risk_preference",
       "evidence_items",
-      "rejected_claim_ids"
+      "rejected_claim_ids",
+      "research_brief"
     ],
     "chart_generate": ["chart_generate_options"],
     "chapter_write": ["chapter_write_options"],

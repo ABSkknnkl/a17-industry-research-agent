@@ -35,7 +35,7 @@ from app.agents.chart_generator.router import (
     route_chart,
 )
 from app.infrastructure.storage.local import save_chart_json
-from app.schemas.analysis import ChartCandidate
+from app.schemas.analysis import ChartCandidate, DataQualityIssue
 from app.schemas.chart import (
     BarVariant,
     ChartDataset,
@@ -294,8 +294,14 @@ def _build_risk_notices(
                 stage="chart_generate",
                 severity=RiskSeverity.WARNING,
                 disposition=RiskDisposition.ADVISORY,
-                title=f"图表数量 ({total_specs + 1}) 超过推荐上限 ({RECOMMENDED_CHARTS_PER_REPORT[1]})",
-                detail=f"推荐 {RECOMMENDED_CHARTS_PER_REPORT[0]}-{RECOMMENDED_CHARTS_PER_REPORT[1]} 张图表",
+                title=(
+                    f"图表数量 ({total_specs + 1}) 超过推荐上限 "
+                    f"({RECOMMENDED_CHARTS_PER_REPORT[1]})"
+                ),
+                detail=(
+                    f"推荐 {RECOMMENDED_CHARTS_PER_REPORT[0]}-"
+                    f"{RECOMMENDED_CHARTS_PER_REPORT[1]} 张图表"
+                ),
                 recommendation=f"建议保留 {RECOMMENDED_CHARTS_PER_REPORT[1]} 张核心图表",
                 consequence="图表过多会降低报告信息密度，PDF渲染时间增加",
                 can_override=True,
@@ -395,6 +401,10 @@ class ChartGeneratorAgent:
             candidates = [
                 ChartCandidate.model_validate(candidate)
                 for candidate in interpretation.data.get("chart_candidates", [])
+            ]
+            quality_issues = [
+                DataQualityIssue.model_validate(issue)
+                for issue in interpretation.data.get("data_quality_issues", [])
             ]
             datasets = [
                 ChartDataset.model_validate(dataset) for dataset in source.get("chart_datasets", [])
@@ -584,7 +594,10 @@ class ChartGeneratorAgent:
                     SuppressedChart(
                         title=title,
                         reason_code="hard_limit_chapter_exceeded",
-                        reason=f"章节 {candidate.chapter_hint} 超过技术绝对上限 {HARD_LIMIT_CHARTS_PER_CHAPTER} 张",
+                        reason=(
+                            f"章节 {candidate.chapter_hint} 超过技术绝对上限 "
+                            f"{HARD_LIMIT_CHARTS_PER_CHAPTER} 张"
+                        ),
                         evidence_ids=candidate.evidence_ids,
                     )
                 )
@@ -622,6 +635,15 @@ class ChartGeneratorAgent:
 
             chart_identity = hashlib.sha256(dedupe_key.encode("utf-8")).hexdigest()
             chart_id = f"CHART-{chart_identity[:12].upper()}"
+            linked_issues: list[DataQualityIssue] = [
+                issue
+                for issue in quality_issues
+                if set(issue.evidence_ids) & set(dataset.evidence_ids)
+            ]
+            footnotes = [
+                f"{issue.metric}：{issue.description}；处理：{issue.suggested_handling}"
+                for issue in linked_issues
+            ]
             spec = ChartSpec(
                 chart_id=chart_id,
                 title=title,
@@ -629,6 +651,9 @@ class ChartGeneratorAgent:
                 variant=variant,
                 option=option,
                 evidence_ids=dataset.evidence_ids,
+                insight_goal=candidate.insight_goal,
+                quality_issue_ids=[issue.issue_id for issue in linked_issues],
+                footnotes=footnotes,
                 data_fingerprint=fingerprint,
                 dedupe_key=dedupe_key,
             )
@@ -648,6 +673,9 @@ class ChartGeneratorAgent:
                     chart_type=route.chart_type,
                     status="ready",
                     evidence_ids=dataset.evidence_ids,
+                    insight_goal=candidate.insight_goal,
+                    quality_issue_ids=[issue.issue_id for issue in linked_issues],
+                    footnotes=footnotes,
                     artifact_id=artifact_id,
                 )
             )

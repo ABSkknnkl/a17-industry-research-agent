@@ -14,6 +14,9 @@ from app.schemas.analysis import (
     AnalysisDraft,
     AnalysisRequest,
     AnalysisResult,
+    DataQualityIssue,
+    DimensionCoverage,
+    FinancialConsistencyCheck,
     PromptReference,
     QualityReport,
     SkillReference,
@@ -124,6 +127,15 @@ def build_data_interpreter_graph(
             check_evidence_ids(f"validation_card:{card.name}", card.evidence_ids)
         for chart in draft.chart_candidates:
             check_evidence_ids(f"chart:{chart.title}", chart.evidence_ids)
+        for issue in draft.data_quality_issues:
+            check_evidence_ids(f"data_quality_issue:{issue.issue_id}", issue.evidence_ids)
+        for check in draft.financial_consistency_checks:
+            check_evidence_ids(f"financial_check:{check.check_id}", check.evidence_ids)
+        for coverage_item in draft.dimension_coverage:
+            check_evidence_ids(
+                f"dimension_coverage:{coverage_item.dimension}",
+                coverage_item.evidence_ids,
+            )
 
         if any(phrase in draft.headline for phrase in _FORBIDDEN_PHRASES):
             issues.append("headline触发金融内容风控红线")
@@ -157,6 +169,88 @@ def build_data_interpreter_graph(
         request = AnalysisRequest.model_validate(state["request"])
         draft = AnalysisDraft.model_validate(state["draft"])
         quality = QualityReport.model_validate(state["quality"])
+        claims_by_id = {claim.claim_id: claim for claim in draft.claims}
+        covered_dimensions = {item.dimension for item in draft.dimension_coverage}
+        draft.dimension_coverage.extend(
+            [
+                DimensionCoverage(
+                    dimension=dimension.name,
+                    status=(
+                        "insufficient"
+                        if not dimension.claim_ids
+                        else (
+                            "partial"
+                            if any(
+                                claims_by_id[claim_id].status == "unverified"
+                                or claims_by_id[claim_id].confidence == "low"
+                                for claim_id in dimension.claim_ids
+                                if claim_id in claims_by_id
+                            )
+                            else "supported"
+                        )
+                    ),
+                    reason=(
+                        "当前维度缺少可引用结论，仅保留研究边界。"
+                        if not dimension.claim_ids
+                        else "根据当前可追溯结论评估该维度的证据覆盖状态。"
+                    ),
+                    evidence_ids=list(
+                        dict.fromkeys(
+                            evidence_id
+                            for claim_id in dimension.claim_ids
+                            if claim_id in claims_by_id
+                            for evidence_id in claims_by_id[claim_id].evidence_ids
+                        )
+                    ),
+                )
+                for dimension in draft.dimensions
+                if dimension.name not in covered_dimensions
+            ]
+        )
+        if not draft.data_quality_issues:
+            issue_types = {
+                "scope_comparability": "not_comparable",
+                "financial_quality": "missing",
+                "valuation_expectation": "missing",
+            }
+            draft.data_quality_issues = [
+                DataQualityIssue(
+                    issue_id=f"DQ-{card.name.upper()}",
+                    issue_type=issue_types[card.name],
+                    metric=card.name,
+                    description=card.summary,
+                    impact_level="medium",
+                    evidence_ids=card.evidence_ids,
+                    affected_dimensions=(
+                        ["competition"]
+                        if card.name == "scope_comparability"
+                        else ["growth", "risk"]
+                    ),
+                    suggested_handling=(
+                        "保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+                    ),
+                )
+                for card in draft.validation_cards
+                if card.status == "pending_verification"
+            ]
+        if not draft.financial_consistency_checks:
+            financial_card = next(
+                card for card in draft.validation_cards if card.name == "financial_quality"
+            )
+            draft.financial_consistency_checks = [
+                FinancialConsistencyCheck(
+                    check_id="FC-FINANCIAL-QUALITY",
+                    check_type="financial_statement_consistency",
+                    status=("passed" if financial_card.status == "passed" else "warning"),
+                    conclusion=financial_card.summary,
+                    impact=(
+                        "当前证据支持基础财务一致性判断。"
+                        if financial_card.status == "passed"
+                        else "涉及盈利质量和现金流的结论应采用条件性表达并提示人工复核。"
+                    ),
+                    evidence_ids=financial_card.evidence_ids,
+                )
+            ]
         result = AnalysisResult(
             **draft.model_dump(),
             industry_topic=request.industry_topic,
@@ -176,6 +270,7 @@ def build_data_interpreter_graph(
             ],
             model_name=model.model_name,
             quality=quality,
+            research_brief=request.research_brief,
         )
         return {"result": result.model_dump(mode="json")}
 

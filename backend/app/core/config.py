@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "qwen-plus"
     LLM_USE_MOCK: bool = True
     LLM_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=300)
+    LLM_SEGMENTED_THRESHOLD_CHARS: int = Field(default=36_000, ge=5_000, le=500_000)
     SKILLHUB_API_KEY: SecretStr | None = None
 
     WORKFLOW_TIMEOUT_SECONDS: float = Field(default=900, gt=0, le=86_400)

@@ -9,7 +9,14 @@ from app.schemas.workflow import (
     StageStatus,
     WorkflowState,
 )
-from app.schemas.analysis import AnalysisRequest, AnalysisResult
+from app.schemas.analysis import (
+    AnalysisRequest,
+    AnalysisResult,
+    DataQualityIssue,
+    DimensionCoverage,
+    FinancialConsistencyCheck,
+    ResearchBrief,
+)
 from app.schemas.evidence import EvidenceItem, EvidencePackage
 from app.schemas.chart import ChartDataset, ChartGenerationResult, ChartReference, ChartSpec
 from app.schemas.run import RunCreateRequest
@@ -40,8 +47,11 @@ __all__ = [
     "ConflictGroup",
     "DecisionPackage",
     "DecisionStatus",
+    "DataQualityIssue",
+    "DimensionCoverage",
     "EvidenceItem",
     "EvidencePackage",
+    "FinancialConsistencyCheck",
     "ReleaseMode",
     "ReviewAction",
     "ReviewRequest",
@@ -50,6 +60,7 @@ __all__ = [
     "RiskSeverity",
     "RunCreateRequest",
     "ReportFusionResult",
+    "ResearchBrief",
     "StageName",
     "StageResult",
     "StageStatus",

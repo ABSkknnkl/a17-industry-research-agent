@@ -2,6 +2,10 @@ import pytest
 
 from app.agents.data_interpreter.service import DataInterpreterAgent
 from app.integrations.llm.mock import MockAnalysisModel
+from app.integrations.llm.openai_compatible import (
+    StructuredOutputError,
+    StructuredOutputFailureCode,
+)
 from app.schemas.analysis import AnalysisResult
 from app.schemas.workflow import StageName, StageStatus
 from app.workflow.stages import StageContext
@@ -38,6 +42,22 @@ class CapturingModel(MockAnalysisModel):
         return await super().generate_analysis(
             system_prompt=system_prompt,
             runtime_prompt=runtime_prompt,
+        )
+
+
+class TruncatedOutputModel:
+    model_name = "deepseek-v4-pro"
+
+    async def generate_analysis(self, *, system_prompt: str, runtime_prompt: str):
+        raise StructuredOutputError(
+            StructuredOutputFailureCode.OUTPUT_TRUNCATED,
+            "structured model output was truncated by the provider",
+            retryable=True,
+            diagnostics={
+                "finish_reason": "length",
+                "response_chars": 30000,
+                "api_key": "super-secret",
+            },
         )
 
 
@@ -125,6 +145,23 @@ async def test_data_interpreter_returns_traceable_structured_analysis() -> None:
         "upside",
         "downside",
     }
+    assert {item.dimension for item in analysis.dimension_coverage} == {
+        "competition",
+        "growth",
+        "macro_policy",
+        "industry_chain",
+        "risk",
+    }
+    assert (
+        next(item for item in analysis.dimension_coverage if item.dimension == "growth").status
+        == "supported"
+    )
+    assert (
+        next(item for item in analysis.dimension_coverage if item.dimension == "competition").status
+        == "insufficient"
+    )
+    assert analysis.data_quality_issues
+    assert analysis.financial_consistency_checks[0].status == "warning"
     assert analysis.quality.passed is True
 
 
@@ -222,3 +259,55 @@ async def test_financial_redline_triggers_bounded_self_revision() -> None:
     assert analysis.quality.passed is True
     assert analysis.quality.revision_count == 1
     assert "建议买入" not in analysis.claims[0].text
+
+
+@pytest.mark.asyncio
+async def test_data_interpreter_returns_safe_structured_output_diagnostics() -> None:
+    agent = DataInterpreterAgent(model=TruncatedOutputModel())
+    context = StageContext(
+        project_id="project-1",
+        run_id="run-analysis-truncated",
+        revision=1,
+        input_data={
+            "industry_topic": "中国光伏制造行业",
+            "market_scope": ["中国内地"],
+            "security_types": ["普通股"],
+            "reporting_currency": "CNY",
+            "research_as_of": "2026-06-30",
+            "focus_questions": ["行业供需是否改善？"],
+            "evidence_items": [
+                {
+                    "evidence_id": "E-001",
+                    "metric_name": "组件产量同比增速",
+                    "value": 18.2,
+                    "unit": "%",
+                    "period_end": "2026-05-31",
+                    "available_at": "2026-06-20",
+                    "audit_status": "not_applicable",
+                    "restatement_status": "not_applicable",
+                    "scope": "中国光伏组件行业汇总口径",
+                    "market": "中国内地",
+                    "exchange": "不适用",
+                    "security_type": "行业汇总",
+                    "currency": "不适用",
+                    "accounting_standard": "不适用",
+                    "corporate_action_adjustment": "not_applicable",
+                    "source_name": "行业协会月报",
+                    "source_locator": "2026年5月月报表2",
+                    "grade": "C",
+                }
+            ],
+        },
+    )
+
+    result = await agent.run(context)
+
+    assert result.status == StageStatus.FAILED
+    assert result.error == "analysis_generation_failed"
+    assert result.data["error_code"] == "output_truncated"
+    assert result.data["retryable"] is True
+    assert result.data["diagnostics"] == {
+        "finish_reason": "length",
+        "response_chars": 30000,
+    }
+    assert "super-secret" not in str(result.data)

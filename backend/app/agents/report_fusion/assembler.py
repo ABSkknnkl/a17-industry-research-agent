@@ -12,6 +12,7 @@ from app.schemas.report import (
     EmbeddedChart,
     ExecutiveSummary,
     ReportConclusion,
+    ReportQualityAppendix,
     ReportViewModel,
 )
 
@@ -32,6 +33,8 @@ def build_report_view(
     selected_chart_ids: list[str] | None = None,
     placement_overrides: dict[str, str] | None = None,
     risk_acknowledged_at: datetime | None = None,
+    delivery_status: Literal["ready", "ready_with_limits", "blocked"] = "ready",
+    report_depth: Literal["brief", "standard", "deep"] | None = None,
 ) -> ReportViewModel:
     digest = hashlib.sha256(run_id.encode("utf-8")).hexdigest()[:12].upper()
     report_id = f"REPORT-{digest}-R{revision}"
@@ -62,6 +65,16 @@ def build_report_view(
     ]
     if summary_direction:
         boundaries.append(f"人工指定的阅读侧重：{summary_direction}")
+    boundaries.extend(
+        f"{issue.metric}：{issue.description}"
+        for issue in analysis.data_quality_issues
+        if issue.impact_level in {"medium", "high"}
+    )
+    boundaries.extend(
+        f"{item.dimension}维度：{item.reason}"
+        for item in analysis.dimension_coverage
+        if item.status != "supported"
+    )
     ready_ids = {chart.chart_id for chart in chart_result.charts if chart.status == "ready"}
 
     # 用户自定义选择：只包含用户选中的图表
@@ -87,12 +100,14 @@ def build_report_view(
             title=spec.title,
             chart_type=spec.chart_type,
             evidence_ids=spec.evidence_ids,
+            insight_goal=spec.insight_goal,
+            quality_issue_ids=spec.quality_issue_ids,
+            footnotes=spec.footnotes,
             placement_section_id=placements.get(spec.chart_id),
             svg=render_chart_svg(spec),
         )
         for spec in chart_result.chart_specs
-        if spec.chart_id in ready_ids
-        and (user_selected is None or spec.chart_id in user_selected)
+        if spec.chart_id in ready_ids and (user_selected is None or spec.chart_id in user_selected)
     ]
     title = (
         f"{analysis.industry_topic}研究报告"
@@ -106,6 +121,8 @@ def build_report_view(
         research_as_of=analysis.research_as_of,
         generated_at=datetime.now(UTC),
         tone=tone,
+        report_depth=report_depth or analysis.research_brief.report_depth or "standard",
+        delivery_status=delivery_status,
         executive_summary=ExecutiveSummary(
             headline=analysis.headline,
             conclusions=conclusions,
@@ -123,4 +140,12 @@ def build_report_view(
         release_mode=release_mode,
         unresolved_risks=unresolved_risks or [],
         risk_acknowledged_at=risk_acknowledged_at,
+        quality_appendix=ReportQualityAppendix(
+            data_quality_issues=analysis.data_quality_issues,
+            financial_consistency_checks=analysis.financial_consistency_checks,
+            dimension_coverage=analysis.dimension_coverage,
+            skipped_chart_notes=[
+                f"{item.title}：{item.reason}" for item in chart_result.suppressed_candidates
+            ],
+        ),
     )

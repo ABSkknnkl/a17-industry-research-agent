@@ -1,11 +1,14 @@
 """Public StageAgent implementation for financial data interpretation."""
 
+from typing import Any
+
 from pydantic import ValidationError
 
 from app.agents.data_interpreter.graph import AnalysisGraphState, build_data_interpreter_graph
 from app.agents.data_interpreter.prompt_loader import load_global_equity_analysis_prompt
 from app.agents.data_interpreter.skill_loader import load_supporting_skills
 from app.agents.data_interpreter.skill_router import SupportingSkillRouter
+from app.integrations.llm.openai_compatible import StructuredOutputError
 from app.integrations.llm.protocol import AnalysisModel
 from app.schemas.analysis import AnalysisRequest, AnalysisResult
 from app.schemas.workflow import StageName, StageResult, StageStatus
@@ -122,15 +125,24 @@ class DataInterpreterAgent:
             final_state = await graph.ainvoke(graph_state)
             analysis = AnalysisResult.model_validate(final_state["result"])
         except Exception as exc:
+            error_data: dict[str, Any] = {
+                "model_name": self._model.model_name,
+                "prompt_version": self._prompt.version,
+                "error_type": type(exc).__name__,
+            }
+            if isinstance(exc, StructuredOutputError):
+                error_data.update(
+                    {
+                        "error_code": exc.code.value,
+                        "retryable": exc.retryable,
+                        "diagnostics": exc.diagnostics,
+                    }
+                )
             return StageResult(
                 stage=self.stage,
                 status=StageStatus.FAILED,
                 revision=context.revision,
-                data={
-                    "model_name": self._model.model_name,
-                    "prompt_version": self._prompt.version,
-                    "error_type": type(exc).__name__,
-                },
+                data=error_data,
                 evidence_sources=[item.evidence_id for item in request.evidence_items],
                 error="analysis_generation_failed",
             )

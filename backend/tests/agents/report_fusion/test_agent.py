@@ -127,6 +127,100 @@ async def test_agent_exports_draft_with_warning_for_untraceable_chapter(
 
 
 @pytest.mark.asyncio
+async def test_agent_exports_quality_appendix_and_ready_with_limits(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    report_analysis: AnalysisResult,
+    report_charts: ChartGenerationResult,
+    report_chapters: ChapterWritingResult,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    payload = report_analysis.model_dump(mode="json")
+    payload["research_brief"] = {"report_depth": "deep"}
+    payload["data_quality_issues"] = [
+        {
+            "issue_id": "DQ-SCOPE",
+            "issue_type": "not_comparable",
+            "metric": "样本口径",
+            "description": "部分企业财年不一致。",
+            "impact_level": "medium",
+            "evidence_ids": ["E-001"],
+            "affected_dimensions": ["competition"],
+            "suggested_handling": "保留事实并取消绝对排名。",
+        }
+    ]
+    payload["financial_consistency_checks"] = [
+        {
+            "check_id": "FC-CASH-PROFIT",
+            "check_type": "cash_profit_alignment",
+            "status": "warning",
+            "conclusion": "经营现金流与利润方向不一致。",
+            "impact": "盈利质量结论需人工复核。",
+            "evidence_ids": ["E-001"],
+        }
+    ]
+    payload["dimension_coverage"] = [
+        {
+            "dimension": name,
+            "status": "partial" if name == "competition" else "supported",
+            "reason": "样本口径有限。" if name == "competition" else "证据可用。",
+            "evidence_ids": ["E-001"],
+        }
+        for name in ("competition", "growth", "macro_policy", "industry_chain", "risk")
+    ]
+    analysis = AnalysisResult.model_validate(payload)
+
+    result = await ReportFusionAgent().run(
+        _context(
+            analysis,
+            report_charts,
+            report_chapters,
+            input_data={"report_fusion_options": {"output_formats": ["markdown", "html"]}},
+        )
+    )
+    fusion = ReportFusionResult.model_validate(result.data)
+    html_artifact = next(item for item in result.artifacts if item.kind == "report_html")
+    html = (tmp_path / html_artifact.uri).read_text(encoding="utf-8")
+
+    assert fusion.delivery_status == "ready_with_limits"
+    assert fusion.report_depth == "deep"
+    assert "数据质量与研究边界附录" in html
+    assert "部分企业财年不一致" in html
+    assert "经营现金流与利润方向不一致" in html
+
+
+@pytest.mark.asyncio
+async def test_agent_brief_depth_keeps_chapter_summaries_but_omits_section_body(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    report_analysis: AnalysisResult,
+    report_charts: ChartGenerationResult,
+    report_chapters: ChapterWritingResult,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    result = await ReportFusionAgent().run(
+        _context(
+            report_analysis,
+            report_charts,
+            report_chapters,
+            input_data={
+                "report_fusion_options": {
+                    "output_formats": ["html"],
+                    "report_depth": "brief",
+                }
+            },
+        )
+    )
+    fusion = ReportFusionResult.model_validate(result.data)
+    html_artifact = next(item for item in result.artifacts if item.kind == "report_html")
+    html = (tmp_path / html_artifact.uri).read_text(encoding="utf-8")
+
+    assert fusion.report_depth == "brief"
+    assert "CH-01" in html
+    assert "SEC-01-01" not in html
+
+
+@pytest.mark.asyncio
 async def test_agent_ignores_noncanonical_order_and_exports_with_warning(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

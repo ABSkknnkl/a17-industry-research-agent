@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.schemas.analysis import ResearchBrief
 from app.schemas.evidence import EvidenceItem
 from app.schemas.workflow import StageName
 
@@ -26,6 +27,7 @@ class ResearchInput(BaseModel):
     evidence_items: list[EvidenceItem] = Field(min_length=1, max_length=200)
     analysis_depth: Literal["overview", "standard", "deep"] = "standard"
     risk_preference: Literal["conservative", "balanced", "aggressive"] = "balanced"
+    research_brief: ResearchBrief = Field(default_factory=ResearchBrief)
 
 
 class RunCreateRequest(BaseModel):

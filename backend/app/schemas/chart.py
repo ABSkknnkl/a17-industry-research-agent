@@ -193,11 +193,22 @@ class ChartReference(BaseModel):
     chart_type: ChartType
     status: Literal["planned", "ready"]
     evidence_ids: list[str] = Field(min_length=1)
+    insight_goal: str | None = Field(default=None, min_length=1, max_length=500)
+    quality_issue_ids: list[str] = Field(default_factory=list, max_length=100)
+    footnotes: list[str] = Field(default_factory=list, max_length=20)
     artifact_id: str | None = None
-    candidate_status: Literal[
-        "valid", "recommended", "not_recommended", "selected",
-        "excluded_by_user", "hard_blocked", "needs_reassignment",
-    ] | None = None
+    candidate_status: (
+        Literal[
+            "valid",
+            "recommended",
+            "not_recommended",
+            "selected",
+            "excluded_by_user",
+            "hard_blocked",
+            "needs_reassignment",
+        ]
+        | None
+    ) = None
 
     @model_validator(mode="after")
     def validate_ready_artifact(self) -> "ChartReference":
@@ -217,6 +228,9 @@ class ChartSpec(BaseModel):
     variant: ChartVariant
     option: dict[str, Any]
     evidence_ids: list[str] = Field(min_length=1)
+    insight_goal: str | None = Field(default=None, min_length=1, max_length=500)
+    quality_issue_ids: list[str] = Field(default_factory=list, max_length=100)
+    footnotes: list[str] = Field(default_factory=list, max_length=20)
     data_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
     dedupe_key: str = Field(min_length=1)
 

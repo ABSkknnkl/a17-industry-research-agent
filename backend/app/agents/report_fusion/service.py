@@ -1,12 +1,15 @@
 """Deterministic Agent 5: validate, assemble, render, and manifest a report."""
 
 import json
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ValidationError
 
 from app.agents.report_fusion.assembler import build_report_view
-from app.agents.report_fusion.quality import evaluate_report_quality
+from app.agents.report_fusion.quality import (
+    REPORT_QUALITY_ADVISORY_CODE,
+    evaluate_report_quality,
+)
 from app.infrastructure.storage.local import save_report_bytes
 from app.reporting.html import render_html
 from app.reporting.markdown import render_markdown
@@ -142,6 +145,23 @@ class ReportFusionAgent:
             accepted_risk_codes=accepted_risk_codes,
         )
         advisory_issues.extend(option_advisory_issues)
+        if REPORT_QUALITY_ADVISORY_CODE not in set(accepted_risk_codes):
+            advisory_issues.extend(
+                f"数据质量[{issue.issue_id}] {issue.metric}：{issue.description}"
+                for issue in analysis.data_quality_issues
+                if issue.impact_level in {"medium", "high"}
+            )
+            advisory_issues.extend(
+                f"研究维度[{item.dimension}] {item.status}：{item.reason}"
+                for item in analysis.dimension_coverage
+                if item.status != "supported"
+            )
+            advisory_issues.extend(
+                f"财务校验[{check.check_id}] {check.status}：{check.conclusion}"
+                for check in analysis.financial_consistency_checks
+                if check.status in {"warning", "unavailable"}
+            )
+        advisory_issues = list(dict.fromkeys(advisory_issues))
 
         # 有硬阻断问题 → 不能导出
         if blocking_issues:
@@ -159,6 +179,9 @@ class ReportFusionAgent:
         actual_release_mode = release_mode
         if advisory_issues and release_mode == "formal":
             actual_release_mode = "draft_with_warnings"
+        delivery_status: Literal["ready", "ready_with_limits", "blocked"] = (
+            "ready_with_limits" if advisory_issues else "ready"
+        )
         risk_acknowledged_at = None
         focus_notes = [
             item for item in (options.summary_direction, options.final_instruction) if item
@@ -177,6 +200,8 @@ class ReportFusionAgent:
                 selected_chart_ids=selected_chart_ids,
                 placement_overrides=placement_overrides,
                 risk_acknowledged_at=risk_acknowledged_at,
+                delivery_status=delivery_status,
+                report_depth=options.report_depth,
             )
         except Exception as exc:
             import traceback
@@ -234,6 +259,7 @@ class ReportFusionAgent:
         if export_issues:
             actual_release_mode = "draft_with_warnings"
             formal_eligible = False
+            delivery_status = "ready_with_limits"
         generated_formats = [item for item in CANONICAL_FORMAT_ORDER if item in generated]
 
         entries: list[ReportArtifactManifestEntry] = []
@@ -264,6 +290,8 @@ class ReportFusionAgent:
             "generated_at": report.generated_at.isoformat(),
             "source_revisions": [item.model_dump(mode="json") for item in sources],
             "included_chart_ids": [chart.chart_id for chart in report.charts],
+            "report_depth": report.report_depth,
+            "delivery_status": delivery_status,
             "quality": quality.model_dump(mode="json"),
             "artifacts": [item.model_dump(mode="json") for item in entries],
         }
@@ -295,6 +323,8 @@ class ReportFusionAgent:
             research_as_of=report.research_as_of,
             generated_at=report.generated_at,
             tone=report.tone,
+            report_depth=report.report_depth,
+            delivery_status=delivery_status,
             formats=generated_formats,
             source_revisions=sources,
             included_chart_ids=[chart.chart_id for chart in report.charts],

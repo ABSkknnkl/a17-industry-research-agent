@@ -53,7 +53,7 @@ class FailingChapterModel(MockChapterWritingModel):
     model_name = "failing-test-model"
 
     async def generate_chapter(self, *, system_prompt: str, runtime_prompt: str):
-        raise RuntimeError("simulated model outage")
+        raise RuntimeError("simulated model outage; api_key=super-secret")
 
 
 class AlwaysRiskyChapterModel(MockChapterWritingModel):
@@ -142,6 +142,8 @@ async def test_agent_uses_complete_deterministic_fallback_when_model_fails(
     assert writing.quality.passed is False
     assert any("chapter_fallback_used" in issue for issue in writing.quality.issues)
     assert writing.collaboration_requests
+    assert "super-secret" not in str(result.data)
+    assert "RuntimeError" in writing.quality.issues[0]
 
 
 @pytest.mark.asyncio

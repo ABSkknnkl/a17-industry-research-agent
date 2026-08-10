@@ -1,13 +1,34 @@
 """Structured output contract for the data interpretation stage."""
 
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.schemas.evidence import EvidenceItem
 
 Confidence = Literal["high", "medium", "low"]
+DimensionName = Literal[
+    "competition",
+    "growth",
+    "macro_policy",
+    "industry_chain",
+    "risk",
+]
+BriefItem = Annotated[str, Field(min_length=1, max_length=200)]
+
+
+class ResearchBrief(BaseModel):
+    """Optional user-owned scope and delivery preferences shared by Agents 2, 4 and 5."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    geography: str | None = Field(default=None, min_length=1, max_length=200)
+    time_range: str | None = Field(default=None, min_length=1, max_length=200)
+    included_topics: list[BriefItem] = Field(default_factory=list, max_length=12)
+    excluded_topics: list[BriefItem] = Field(default_factory=list, max_length=12)
+    focus_companies: list[BriefItem] = Field(default_factory=list, max_length=20)
+    report_depth: Literal["brief", "standard", "deep"] | None = None
 
 
 class AnalysisRequest(BaseModel):
@@ -24,6 +45,18 @@ class AnalysisRequest(BaseModel):
     risk_preference: Literal["conservative", "balanced", "aggressive"] = "balanced"
     review_feedback: str | None = None
     rejected_claim_ids: list[str] = Field(default_factory=list)
+    research_brief: ResearchBrief = Field(default_factory=ResearchBrief)
+
+    @model_validator(mode="after")
+    def align_report_depth(self) -> "AnalysisRequest":
+        if self.research_brief.report_depth is None:
+            if self.analysis_depth == "overview":
+                self.research_brief.report_depth = "brief"
+            elif self.analysis_depth == "deep":
+                self.research_brief.report_depth = "deep"
+            else:
+                self.research_brief.report_depth = "standard"
+        return self
 
 
 class AnalysisClaim(BaseModel):
@@ -44,13 +77,7 @@ class AnalysisClaim(BaseModel):
 class DimensionAnalysis(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    name: Literal[
-        "competition",
-        "growth",
-        "macro_policy",
-        "industry_chain",
-        "risk",
-    ]
+    name: DimensionName
     summary: str
     claim_ids: list[str] = Field(default_factory=list)
 
@@ -125,6 +152,51 @@ class ChartCandidate(BaseModel):
     user_requested: bool = False
 
 
+class DataQualityIssue(BaseModel):
+    """Evidence-linked limitation that remains advisory after Agent 2 passes."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    issue_id: str = Field(pattern=r"^DQ-[A-Za-z0-9_-]+$")
+    issue_type: Literal["missing", "stale", "conflict", "estimated", "not_comparable"]
+    metric: str = Field(min_length=1, max_length=200)
+    description: str = Field(min_length=1, max_length=2_000)
+    impact_level: Literal["low", "medium", "high"]
+    evidence_ids: list[str] = Field(default_factory=list)
+    affected_dimensions: list[DimensionName] = Field(default_factory=list)
+    suggested_handling: str = Field(min_length=1, max_length=1_000)
+
+
+class FinancialConsistencyCheck(BaseModel):
+    """Advisory financial reconciliation result; it never fabricates missing figures."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    check_id: str = Field(pattern=r"^FC-[A-Za-z0-9_-]+$")
+    check_type: Literal[
+        "financial_statement_consistency",
+        "cash_reconciliation",
+        "cash_profit_alignment",
+        "working_capital_anomaly",
+        "non_recurring_items",
+    ]
+    status: Literal["passed", "warning", "unavailable", "not_applicable"]
+    conclusion: str = Field(min_length=1, max_length=2_000)
+    impact: str = Field(min_length=1, max_length=1_000)
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
+class DimensionCoverage(BaseModel):
+    """States how strongly evidence supports each required research dimension."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    dimension: DimensionName
+    status: Literal["supported", "partial", "insufficient"]
+    reason: str = Field(min_length=1, max_length=1_000)
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
 class AnalysisDraft(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -142,6 +214,12 @@ class AnalysisDraft(BaseModel):
     risks: list[str] = Field(min_length=1)
     collaboration_requests: list[CollaborationRequest] = Field(default_factory=list)
     chart_candidates: list[ChartCandidate] = Field(default_factory=list)
+    data_quality_issues: list[DataQualityIssue] = Field(default_factory=list, max_length=100)
+    financial_consistency_checks: list[FinancialConsistencyCheck] = Field(
+        default_factory=list,
+        max_length=20,
+    )
+    dimension_coverage: list[DimensionCoverage] = Field(default_factory=list, max_length=5)
 
     @model_validator(mode="after")
     def validate_required_sections(self) -> "AnalysisDraft":
@@ -164,6 +242,10 @@ class AnalysisDraft(BaseModel):
         scenario_names = {item.name for item in self.scenarios}
         if scenario_names != {"base", "upside", "downside"}:
             raise ValueError("scenarios must contain base, upside and downside once")
+        if self.dimension_coverage:
+            coverage_names = [item.dimension for item in self.dimension_coverage]
+            if len(coverage_names) != len(set(coverage_names)):
+                raise ValueError("dimension_coverage cannot contain duplicate dimensions")
         return self
 
 
@@ -202,3 +284,4 @@ class AnalysisResult(AnalysisDraft):
     skills: list[SkillReference] = Field(default_factory=list)
     model_name: str
     quality: QualityReport
+    research_brief: ResearchBrief = Field(default_factory=ResearchBrief)

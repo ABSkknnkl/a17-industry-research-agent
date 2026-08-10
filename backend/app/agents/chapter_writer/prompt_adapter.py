@@ -60,6 +60,17 @@ def build_chapter_runtime_prompt(
         if set(dimension.claim_ids) & claim_ids
         or dimension.name == _CHAPTER_DIMENSION.get(chapter.chapter_id)
     ]
+    relevant_dimension_names = {dimension.name for dimension in relevant_dimensions}
+    relevant_quality_issues = [
+        issue
+        for issue in analysis.data_quality_issues
+        if not issue.affected_dimensions
+        or bool(set(issue.affected_dimensions) & relevant_dimension_names)
+        or (chapter.chapter_id == "CH-01" and issue.issue_type == "not_comparable")
+    ]
+    relevant_coverage = [
+        item for item in analysis.dimension_coverage if item.dimension in relevant_dimension_names
+    ]
 
     validation_names: set[str] = set()
     if chapter.chapter_id == "CH-01":
@@ -79,6 +90,7 @@ def build_chapter_runtime_prompt(
             "headline": analysis.headline,
             "overall_confidence": analysis.overall_confidence,
             "financial_quality": analysis.financial_quality,
+            "research_brief": analysis.research_brief.model_dump(mode="json"),
         },
         "allowed_claims": [claim.model_dump(mode="json") for claim in claims],
         "allowed_dimensions": [
@@ -89,6 +101,15 @@ def build_chapter_runtime_prompt(
             for card in analysis.validation_cards
             if card.name in validation_names
         ],
+        "allowed_data_quality_issues": [
+            issue.model_dump(mode="json") for issue in relevant_quality_issues
+        ],
+        "allowed_financial_consistency_checks": (
+            [check.model_dump(mode="json") for check in analysis.financial_consistency_checks]
+            if chapter.chapter_id in {"CH-05", "CH-07"}
+            else []
+        ),
+        "dimension_coverage": [item.model_dump(mode="json") for item in relevant_coverage],
         "allowed_scenarios": (
             [scenario.model_dump(mode="json") for scenario in analysis.scenarios]
             if chapter.chapter_id == "CH-07"
@@ -114,6 +135,9 @@ def build_chapter_runtime_prompt(
                 "analysis段落必须同时引用允许的claim_id和evidence_id",
                 "不得引用planned图表或编造图表数据",
                 "缺少证据时写入missing_inputs",
+                "dimension_coverage为partial时使用条件性表达并写明限制",
+                "dimension_coverage为insufficient时明确说明资料不足，不补造事实或数字",
+                "data_quality_issues和financial_consistency_checks属于必须披露的研究边界，不得改写为已解决",
                 "不得输出投资建议或内部推理过程",
             ],
         },

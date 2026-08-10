@@ -44,6 +44,7 @@ def test_review_actions_match_runtime_model() -> None:
         "risk_preference",
         "evidence_items",
         "rejected_claim_ids",
+        "research_brief",
     ]
     assert schema["x-stage-edit-whitelist"]["chapter_write"] == ["chapter_write_options"]
 

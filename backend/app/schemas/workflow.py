@@ -6,6 +6,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from app.schemas.analysis import ResearchBrief
 from app.schemas.chapter import ChapterWritingOptions
 from app.schemas.evidence import EvidenceItem
 
@@ -95,6 +96,7 @@ class DataInterpretReviewEdits(ContractModel):
     risk_preference: Literal["conservative", "balanced", "aggressive"] | None = None
     evidence_items: list[EvidenceItem] | None = Field(default=None, max_length=200)
     rejected_claim_ids: list[RejectedClaimId] | None = Field(default=None, max_length=100)
+    research_brief: ResearchBrief | None = None
 
 
 class ChartGenerationOptions(ContractModel):
@@ -134,6 +136,7 @@ class ReportFusionOptions(ContractModel):
     summary_direction: str | None = Field(default=None, min_length=1, max_length=500)
     chapter_order: list[str] = Field(default_factory=list, max_length=7)
     tone: Literal["professional", "plain_language"] | None = None
+    report_depth: Literal["brief", "standard", "deep"] | None = None
     output_formats: list[Literal["markdown", "html", "pdf"]] = Field(
         default_factory=list,
         max_length=3,

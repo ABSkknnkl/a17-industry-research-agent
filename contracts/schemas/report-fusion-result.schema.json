@@ -24,6 +24,11 @@
     "research_as_of": { "type": "string", "format": "date" },
     "generated_at": { "type": "string", "format": "date-time" },
     "tone": { "type": "string", "enum": ["professional", "plain_language"] },
+    "report_depth": { "type": "string", "enum": ["brief", "standard", "deep"] },
+    "delivery_status": {
+      "type": "string",
+      "enum": ["ready", "ready_with_limits", "blocked"]
+    },
     "formats": {
       "type": "array",
       "minItems": 1,
@@ -47,7 +52,12 @@
       "minItems": 2,
       "items": { "$ref": "#/$defs/artifactManifestEntry" }
     },
-    "quality": { "$ref": "#/$defs/reportQuality" }
+    "quality": { "$ref": "#/$defs/reportQuality" },
+    "release_mode": { "type": "string", "enum": ["formal", "draft_with_warnings"] },
+    "formal_eligible": { "type": "boolean" },
+    "draft_eligible": { "type": "boolean" },
+    "acknowledged_risks": { "type": "array", "items": { "type": "string" } },
+    "unresolved_risks": { "type": "array", "items": { "type": "string" } }
   },
   "$defs": {
     "reportFormat": {
@@ -96,7 +106,7 @@
         "passed": { "type": "boolean" },
         "chapter_count": { "type": "integer", "minimum": 0 },
         "section_count": { "type": "integer", "minimum": 0 },
-        "included_chart_count": { "type": "integer", "minimum": 0, "maximum": 8 },
+        "included_chart_count": { "type": "integer", "minimum": 0, "maximum": 30 },
         "evidence_coverage": { "type": "number", "minimum": 0, "maximum": 1 },
         "issues": { "type": "array", "items": { "type": "string" } }
       }

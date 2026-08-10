@@ -8,6 +8,7 @@ from app.agents.chapter_writer.graph import ChapterWriterGraphState, build_chapt
 from app.agents.chapter_writer.fallback import build_fallback_writing
 from app.agents.chapter_writer.outline import REPORT_OUTLINE
 from app.agents.chapter_writer.prompt_loader import load_chapter_writer_prompt
+from app.integrations.llm.openai_compatible import StructuredOutputError
 from app.integrations.llm.protocol import ChapterWritingModel
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingOptions, ChapterWritingResult
@@ -27,6 +28,14 @@ def _planned_charts(analysis: AnalysisResult) -> tuple[ChartReference, ...]:
         )
         for index, candidate in enumerate(analysis.chart_candidates, start=1)
     )
+
+
+def _safe_failure_reason(exc: Exception) -> str:
+    if isinstance(exc, StructuredOutputError):
+        diagnostics = ",".join(f"{key}={value}" for key, value in sorted(exc.diagnostics.items()))
+        suffix = f";{diagnostics}" if diagnostics else ""
+        return f"StructuredOutputError:{exc.code.value}{suffix}"
+    return type(exc).__name__
 
 
 def _normalize_charts(
@@ -107,8 +116,15 @@ class ChapterWriterAgent:
             )
 
         raw_options: Any = context.input_data.get("chapter_write_options", {})
+        if isinstance(raw_options, dict) and "target_length" not in raw_options:
+            raw_options = dict(raw_options)
+            raw_options["target_length"] = {
+                "brief": "concise",
+                "standard": "standard",
+                "deep": "detailed",
+                None: "standard",
+            }[analysis.research_brief.report_depth]
         selected_chart_ids = context.input_data.get("selected_chart_ids")
-        placement_overrides = context.input_data.get("placement_overrides")
         try:
             options = ChapterWritingOptions.model_validate(raw_options)
             charts = _normalize_charts(
@@ -171,6 +187,7 @@ class ChapterWriterAgent:
 
         # 检查已完成的章节，只处理未完成的（断点恢复）
         from app.infrastructure.repositories.chapter_repository import ChapterRepository
+
         repo = ChapterRepository()
         await repo.initialize()
         completed = await repo.get_completed_chapters(context.run_id, context.revision)
@@ -184,10 +201,7 @@ class ChapterWriterAgent:
         chapter_ids = [
             chapter.chapter_id
             for chapter in REPORT_OUTLINE
-            if (
-                not selected_chapter_ids
-                or chapter.chapter_id in selected_chapter_ids
-            )
+            if (not selected_chapter_ids or chapter.chapter_id in selected_chapter_ids)
             and chapter.chapter_id not in completed  # 跳过已完成的章节
         ]
         graph = build_chapter_writer_graph(model=self._model, prompt=self._prompt)
@@ -220,7 +234,7 @@ class ChapterWriterAgent:
                 model_name=self._model.model_name,
                 revision=context.revision,
                 rejected_claim_ids=set(context.rejected_claim_ids),
-                reason=f"{type(exc).__name__}: {exc}",
+                reason=_safe_failure_reason(exc),
             )
 
         return StageResult(

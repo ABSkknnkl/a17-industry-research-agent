@@ -52,3 +52,6 @@ def test_runtime_prompt_only_exposes_claims_relevant_to_current_chapter(
     assert payload["review_feedback"] == "保持专业且克制"
     assert payload["rejected_claim_ids"] == ["C-REJECTED"]
     assert payload["writing_options"]["style"] == "professional"
+    assert payload["dimension_coverage"][0]["status"] == "partial"
+    assert payload["allowed_data_quality_issues"][0]["issue_id"] == "DQ-SCOPE"
+    assert payload["research_context"]["research_brief"]["report_depth"] == "deep"

@@ -5,6 +5,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.schemas.analysis import (
+    DataQualityIssue,
+    DimensionCoverage,
+    FinancialConsistencyCheck,
+)
 from app.schemas.chapter import ChapterDraft
 
 ReportFormat = Literal["markdown", "html", "pdf"]
@@ -49,8 +54,21 @@ class EmbeddedChart(ReportContract):
         "treemap",
     ]
     evidence_ids: list[str] = Field(min_length=1)
+    insight_goal: str | None = Field(default=None, min_length=1, max_length=500)
+    quality_issue_ids: list[str] = Field(default_factory=list, max_length=100)
+    footnotes: list[str] = Field(default_factory=list, max_length=20)
     placement_section_id: str | None = Field(default=None, pattern=r"^SEC-\d{2}-\d{2}$")
     svg: str = Field(min_length=1)
+
+
+class ReportQualityAppendix(ReportContract):
+    data_quality_issues: list[DataQualityIssue] = Field(default_factory=list, max_length=100)
+    financial_consistency_checks: list[FinancialConsistencyCheck] = Field(
+        default_factory=list,
+        max_length=20,
+    )
+    dimension_coverage: list[DimensionCoverage] = Field(default_factory=list, max_length=5)
+    skipped_chart_notes: list[str] = Field(default_factory=list, max_length=100)
 
 
 class ReportViewModel(ReportContract):
@@ -60,6 +78,8 @@ class ReportViewModel(ReportContract):
     research_as_of: date
     generated_at: datetime
     tone: Literal["professional", "plain_language"]
+    report_depth: Literal["brief", "standard", "deep"] = "standard"
+    delivery_status: Literal["ready", "ready_with_limits", "blocked"] = "ready"
     executive_summary: ExecutiveSummary
     chapters: list[ChapterDraft] = Field(min_length=7, max_length=7)
     charts: list[EmbeddedChart] = Field(default_factory=list, max_length=30)
@@ -68,6 +88,7 @@ class ReportViewModel(ReportContract):
     release_mode: Literal["formal", "draft_with_warnings"] = "formal"
     unresolved_risks: list[str] = Field(default_factory=list)
     risk_acknowledged_at: datetime | None = None
+    quality_appendix: ReportQualityAppendix = Field(default_factory=ReportQualityAppendix)
 
 
 class SourceRevision(ReportContract):
@@ -99,6 +120,8 @@ class ReportFusionResult(ReportContract):
     research_as_of: date
     generated_at: datetime
     tone: Literal["professional", "plain_language"]
+    report_depth: Literal["brief", "standard", "deep"] = "standard"
+    delivery_status: Literal["ready", "ready_with_limits", "blocked"] = "ready"
     formats: list[ReportFormat] = Field(min_length=1, max_length=3)
     source_revisions: list[SourceRevision] = Field(min_length=3, max_length=3)
     included_chart_ids: list[str] = Field(default_factory=list, max_length=30)

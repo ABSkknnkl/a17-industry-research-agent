@@ -61,13 +61,68 @@ async def test_agent_generates_ready_artifact_and_suppresses_duplicate(
     # 重复图表不在 suppressed_candidates 中，而是生成 risk_notices
     dp = result.data.get("decision_package", {})
     risk_notices = dp.get("risk_notices", [])
-    assert any(n.get("risk_code") == "CHART-DUPLICATE" for n in risk_notices), \
-        "重复图表应产生 CHART-DUPLICATE 风险提示"
+    assert any(
+        n.get("risk_code") == "CHART-DUPLICATE" for n in risk_notices
+    ), "重复图表应产生 CHART-DUPLICATE 风险提示"
     assert len(result.artifacts) == 2
     artifact_path = tmp_path / result.artifacts[0].uri
     raw = artifact_path.read_bytes()
     assert hashlib.sha256(raw).hexdigest() == result.artifacts[0].checksum
     assert json.loads(raw)["chart_type"] == "bar"
+
+
+@pytest.mark.asyncio
+async def test_agent_propagates_data_quality_footnotes_without_suppressing_chart(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    categorical_dataset: ChartDataset,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    context = StageContext(
+        project_id="project-quality-footnote",
+        run_id="run-quality-footnote",
+        revision=1,
+        input_data={
+            "chart_datasets": [categorical_dataset.model_dump(mode="json")],
+            "evidence_items": _evidence_items(categorical_dataset.evidence_ids),
+        },
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.COMPLETED,
+                data={
+                    "chart_candidates": [
+                        {
+                            "title": "市场份额",
+                            "chart_type": "bar",
+                            "evidence_ids": categorical_dataset.evidence_ids,
+                            "insight_goal": "比较样本企业市场份额",
+                        }
+                    ],
+                    "data_quality_issues": [
+                        {
+                            "issue_id": "DQ-SCOPE",
+                            "issue_type": "not_comparable",
+                            "metric": "市场份额",
+                            "description": "样本企业统计口径存在差异。",
+                            "impact_level": "medium",
+                            "evidence_ids": [categorical_dataset.evidence_ids[0]],
+                            "affected_dimensions": ["competition"],
+                            "suggested_handling": "保留图表并增加口径脚注。",
+                        }
+                    ],
+                },
+            )
+        },
+    )
+
+    result = await ChartGeneratorAgent().run(context)
+    chart = result.data["charts"][0]
+
+    assert result.status == StageStatus.COMPLETED
+    assert chart["quality_issue_ids"] == ["DQ-SCOPE"]
+    assert chart["insight_goal"] == "比较样本企业市场份额"
+    assert "样本企业统计口径存在差异" in chart["footnotes"][0]
 
 
 @pytest.mark.asyncio
@@ -113,10 +168,7 @@ async def test_agent_auto_selects_ambiguous_dataset_and_warns(
     assert result.error is None
     assert len(result.data["charts"]) == 1
     risks = result.data["decision_package"]["risk_notices"]
-    assert any(
-        risk["risk_code"] == "CHART-DATASET-AMBIGUOUS-AUTO-SELECTED"
-        for risk in risks
-    )
+    assert any(risk["risk_code"] == "CHART-DATASET-AMBIGUOUS-AUTO-SELECTED" for risk in risks)
 
 
 @pytest.mark.asyncio
@@ -370,10 +422,13 @@ async def test_agent_limits_repeated_advanced_chart_family_without_forcing_minim
     # With risk-based approach, all technically valid scatter candidates are generated
     assert len(result.data["chart_specs"]) == 4
     # Risk notices are generated instead of suppression
-    assert any(
-        "chart_family_budget_exceeded" in item.get("reason_code", "")
-        for item in result.data.get("suppressed_candidates", [])
-    ) or len(result.data["chart_specs"]) == 4
+    assert (
+        any(
+            "chart_family_budget_exceeded" in item.get("reason_code", "")
+            for item in result.data.get("suppressed_candidates", [])
+        )
+        or len(result.data["chart_specs"]) == 4
+    )
 
 
 @pytest.mark.asyncio
