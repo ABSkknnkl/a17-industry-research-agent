@@ -4,6 +4,8 @@ import hashlib
 from datetime import UTC, datetime
 from typing import Literal
 
+from app.agents.report_fusion.evidence import build_evidence_catalog
+from app.reporting.presentation import CONFIDENCE_LABELS, DIMENSION_LABELS
 from app.reporting.svg import render_chart_svg
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
@@ -54,9 +56,14 @@ def build_report_view(
         f"{scenario_names[item.name]}情景：{item.transmission_path}；触发条件：{' / '.join(item.triggers)}"
         for item in analysis.scenarios
     ]
+    financial_quality_labels = {
+        "consistent": "一致",
+        "differences_explained": "差异已解释",
+        "differences_pending_verification": "差异待核验",
+    }
     boundaries = [
-        f"整体置信度：{analysis.overall_confidence}",
-        f"财务质量校验：{analysis.financial_quality}",
+        f"整体置信度：{CONFIDENCE_LABELS[analysis.overall_confidence]}",
+        f"财务质量校验：{financial_quality_labels[analysis.financial_quality]}",
         *[
             card.summary
             for card in analysis.validation_cards
@@ -71,7 +78,7 @@ def build_report_view(
         if issue.impact_level in {"medium", "high"}
     )
     boundaries.extend(
-        f"{item.dimension}维度：{item.reason}"
+        f"{DIMENSION_LABELS[item.dimension]}维度：{item.reason}"
         for item in analysis.dimension_coverage
         if item.status != "supported"
     )
@@ -134,8 +141,8 @@ def build_report_view(
         charts=embedded,
         disclaimer=DISCLAIMER,
         methodology_note=(
-            "报告由 Agent 2 结构化结论、Agent 3 已校验图表与 Agent 4 "
-            "7章21节正文确定性组装；Agent 5 不新增事实、不改写数据结论。"
+            "报告由数据解读智能体的结构化结论、图表智能体的已校验图表与章节撰写"
+            "智能体的七章二十一节正文确定性组装；报告融合智能体不新增事实、不改写数据结论。"
         ),
         release_mode=release_mode,
         unresolved_risks=unresolved_risks or [],
@@ -147,5 +154,11 @@ def build_report_view(
             skipped_chart_notes=[
                 f"{item.title}：{item.reason}" for item in chart_result.suppressed_candidates
             ],
+        ),
+        evidence_catalog=build_evidence_catalog(
+            analysis,
+            chart_result,
+            chapter_result,
+            included_chart_ids={chart.chart_id for chart in embedded},
         ),
     )

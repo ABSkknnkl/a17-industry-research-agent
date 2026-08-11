@@ -90,6 +90,19 @@ def report_analysis() -> AnalysisResult:
             "prompt": {"version": "analysis-v1", "sha256": "1" * 64},
             "model_name": "mock-analysis",
             "quality": {"passed": True, "evidence_coverage": 1, "revision_count": 0},
+            "evidence_catalog": [
+                {
+                    "evidence_id": "E-001",
+                    "metric_name": "样本企业收入同比增速",
+                    "source_name": "中国光伏行业协会月度报告",
+                    "source_locator": "2026年5月月报表2",
+                    "period_end": "2026-05-31",
+                    "available_at": "2026-06-20",
+                    "grade": "C",
+                    "audit_status": "not_applicable",
+                    "scope": "中国光伏制造行业样本企业",
+                }
+            ],
         }
     )
 

@@ -318,6 +318,8 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
         "accept_with_risks",
         "customize",
     }
+    if current_result.status == StageStatus.FAILED and action in decision_actions:
+        raise ValueError("failed stage cannot be approved; regenerate, revise, or cancel")
     decision_decision_id = decision.get("decision_id", "")
     if dp and action in decision_actions:
         if not decision_decision_id:
@@ -339,7 +341,8 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
             raise ValueError("Decision package risk snapshot is invalid")
         if decision_risk_hash != expected_hash:
             raise ValueError(
-                f"Risk snapshot hash mismatch: {decision_risk_hash[:16]}... != {expected_hash[:16]}..."
+                "Risk snapshot hash mismatch: "
+                f"{decision_risk_hash[:16]}... != {expected_hash[:16]}..."
             )
 
     # 校验 selected_chart_ids 归属
@@ -376,8 +379,6 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
 
     # 兼容旧 approve: 无风险时等价于 accept_recommendation
     if action == "approve":
-        if current_result.status == StageStatus.FAILED:
-            raise ValueError("failed stage cannot be approved; regenerate, revise, or cancel")
         if dp:
             required = dp.get("acknowledgement_required_codes", [])
             if required:

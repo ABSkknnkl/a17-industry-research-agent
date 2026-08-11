@@ -88,7 +88,13 @@ async def test_registered_agents_run_in_pipeline_order() -> None:
 
 
 @pytest.mark.asyncio
-async def test_failed_stage_stops_downstream_and_requires_recovery_review() -> None:
+@pytest.mark.parametrize(
+    "action",
+    ["approve", "accept_recommendation", "accept_with_risks", "customize"],
+)
+async def test_failed_stage_stops_downstream_and_requires_recovery_review(
+    action: str,
+) -> None:
     calls: list[StageName] = []
     agents: list[StageAgent] = []
     for stage in StageName:
@@ -116,7 +122,7 @@ async def test_failed_stage_stops_downstream_and_requires_recovery_review() -> N
         await graph.ainvoke(
             Command(
                 resume={
-                    "action": "approve",
+                    "action": action,
                     "expected_revision": 1,
                     "comment": "错误结果不能直接放行",
                 }

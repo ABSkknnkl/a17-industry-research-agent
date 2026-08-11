@@ -5,7 +5,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from app.schemas.evidence import EvidenceItem
+from app.schemas.evidence import AuditStatus, EvidenceGrade, EvidenceItem
 
 Confidence = Literal["high", "medium", "low"]
 DimensionName = Literal[
@@ -273,6 +273,27 @@ class QualityReport(BaseModel):
     revision_count: int = Field(ge=0)
 
 
+class EvidenceCatalogItem(BaseModel):
+    """Agent 2-owned, presentation-safe snapshot of an input evidence item.
+
+    The LLM still reasons with stable evidence_id values.  This catalog carries
+    only the metadata needed by Agent 5 to turn those machine identifiers into
+    readable Chinese citations, without requiring Agent 5 to depend on Agent 1.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    evidence_id: str = Field(pattern=r"^E-[A-Za-z0-9_-]+$")
+    metric_name: str = Field(min_length=1, max_length=200)
+    source_name: str = Field(min_length=1, max_length=500)
+    source_locator: str | None = Field(default=None, max_length=1_000)
+    period_end: date | None = None
+    available_at: date | None = None
+    grade: EvidenceGrade
+    audit_status: AuditStatus = AuditStatus.UNKNOWN
+    scope: str = Field(min_length=1, max_length=5_000)
+
+
 class AnalysisResult(AnalysisDraft):
     industry_topic: str
     market_scope: list[str]
@@ -285,3 +306,4 @@ class AnalysisResult(AnalysisDraft):
     model_name: str
     quality: QualityReport
     research_brief: ResearchBrief = Field(default_factory=ResearchBrief)
+    evidence_catalog: list[EvidenceCatalogItem] = Field(default_factory=list, max_length=200)

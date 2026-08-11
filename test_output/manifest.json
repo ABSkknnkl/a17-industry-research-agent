@@ -1,0 +1,56 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "ARTIFACT-REPORT-458E079AB745-R1-REPORT_MARKDOWN",
+      "kind": "report_markdown",
+      "sha256": "22872e98a6e752fd78681223b6f7d025da9d18c22d2929f0fa440138aa1a5874",
+      "size_bytes": 24136,
+      "uri": "2ae5aca2-2045-4fe6-b52b-17e93701a9fc/reports/r1/report.md"
+    },
+    {
+      "artifact_id": "ARTIFACT-REPORT-458E079AB745-R1-REPORT_HTML",
+      "kind": "report_html",
+      "sha256": "09f0f5671de8457c36eb059e491e2ee6aaac43bed33b9ae7b4399828e34347c6",
+      "size_bytes": 35925,
+      "uri": "2ae5aca2-2045-4fe6-b52b-17e93701a9fc/reports/r1/report.html"
+    },
+    {
+      "artifact_id": "ARTIFACT-REPORT-458E079AB745-R1-REPORT_PDF",
+      "kind": "report_pdf",
+      "sha256": "681fce529f0f8b012a120752b182c81710db7e37a6f179dc4a987bc979f6b13f",
+      "size_bytes": 1274911,
+      "uri": "2ae5aca2-2045-4fe6-b52b-17e93701a9fc/reports/r1/report.pdf"
+    }
+  ],
+  "delivery_status": "ready_with_limits",
+  "generated_at": "2026-08-10T16:20:18.671483+00:00",
+  "included_chart_ids": [],
+  "quality": {
+    "chapter_count": 7,
+    "evidence_coverage": 1.0,
+    "included_chart_count": 0,
+    "issues": [
+      "Agent 3 图表质量门未通过；仅嵌入可安全渲染的图表",
+      "Agent 4 章节质量门未通过"
+    ],
+    "passed": true,
+    "section_count": 21
+  },
+  "report_depth": "standard",
+  "report_id": "REPORT-458E079AB745-R1",
+  "schema_version": "1.0",
+  "source_revisions": [
+    {
+      "revision": 1,
+      "stage": "data_interpret"
+    },
+    {
+      "revision": 1,
+      "stage": "chart_generate"
+    },
+    {
+      "revision": 1,
+      "stage": "chapter_write"
+    }
+  ]
+}

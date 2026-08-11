@@ -8,6 +8,7 @@ the browser chart contract without requiring a CDN or JavaScript at export time.
 from html import escape
 from math import cos, isfinite, pi, sin
 from typing import Any
+from zlib import crc32
 
 from app.schemas.chart import ChartSpec
 
@@ -38,11 +39,14 @@ def _text(x: float, y: float, value: object, *, anchor: str = "middle", size: in
 
 def _shell(spec: ChartSpec, body: str) -> str:
     title = escape(spec.title)
+    # The formal HTML/PDF must not expose Agent 3's machine chart identifier.
+    # A title-derived numeric DOM id keeps aria-labelledby unique and readable.
+    title_dom_id = f"图表标题-{crc32(spec.title.encode('utf-8'))}"
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {HEIGHT}" '
-        f'role="img" aria-labelledby="{escape(spec.chart_id)}-title">'
+        f'role="img" aria-labelledby="{title_dom_id}">'
         '<rect width="100%" height="100%" rx="14" fill="#ffffff"/>'
-        f'<title id="{escape(spec.chart_id)}-title">{title}</title>'
+        f'<title id="{title_dom_id}">{title}</title>'
         f'<text x="{WIDTH / 2}" y="36" text-anchor="middle" font-size="20" '
         f'font-weight="700" fill="#0f172a">{title}</text>{body}</svg>'
     )

@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>全球AI芯片与数据中心加速计算行业——以英伟达(NVIDIA)为核心行业研究报告</title>
+  <style>
+    :root { --ink:#0f172a; --muted:#64748b; --line:#dbe4ef; --blue:#1d4ed8; --paper:#fff; --soft:#f4f7fb; }
+    * { box-sizing:border-box; }
+    html { background:#e9eef5; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif; line-height:1.75; font-size:15px; }
+    main { max-width:1040px; margin:0 auto; padding:56px 64px 80px; }
+    .cover { min-height:760px; display:flex; flex-direction:column; justify-content:center; border-top:8px solid var(--blue); position:relative; page-break-after:always; }
+    .eyebrow { color:var(--blue); font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { font-size:44px; line-height:1.22; margin:18px 0; letter-spacing:-.02em; }
+    .subtitle { font-size:19px; color:var(--muted); max-width:720px; }
+    .meta-grid { margin-top:56px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .meta { border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+    .meta span { display:block; color:var(--muted); font-size:12px; }
+    .meta strong { display:block; margin-top:4px; overflow-wrap:anywhere; }
+    h2 { margin:48px 0 20px; padding-bottom:10px; border-bottom:2px solid var(--ink); font-size:28px; page-break-after:avoid; }
+    h3 { margin:30px 0 12px; font-size:20px; color:#162b4d; page-break-after:avoid; }
+    p { margin:10px 0; text-align:justify; }
+    .summary { background:linear-gradient(135deg,#eff6ff,#f8fafc); border:1px solid #bfdbfe; border-radius:14px; padding:26px 30px; }
+    .headline { font-size:21px; font-weight:700; line-height:1.55; }
+    .conclusion { border-left:4px solid var(--blue); padding:8px 14px; margin:14px 0; background:#fff; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+    .chip { color:#334155; background:#e2e8f0; border-radius:999px; padding:2px 9px; font-size:11px; }
+    .toc { columns:2; column-gap:36px; padding:0; list-style:none; }
+    .toc li { break-inside:avoid; padding:5px 0; border-bottom:1px dotted var(--line); }
+    .chapter { page-break-before:always; }
+    .chapter-summary { color:#334155; font-size:16px; background:var(--soft); padding:12px 16px; border-radius:8px; }
+    .reference { color:var(--muted); font-size:12px; margin-top:5px; }
+    .chart { margin:22px 0 28px; border:1px solid var(--line); border-radius:14px; padding:14px; break-inside:avoid; background:#fff; }
+    .chart svg { width:100%; height:auto; display:block; }
+    .chart figcaption { margin:8px 8px 2px; color:var(--muted); font-size:12px; }
+    .uncertainty { border:1px solid #fcd34d; background:#fffbeb; border-radius:8px; padding:10px 14px; margin:14px 0; break-inside:avoid; page-break-inside:avoid; }
+    .uncertainty strong { color:#92400e; }
+    .risk-list li, .boundary-list li { margin:6px 0; }
+    .footer-note { margin-top:48px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:12px; }
+    .draft-watermark { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0.08; font-size:72px; font-weight:900; color:#dc2626; transform:rotate(-20deg); letter-spacing:0.3em; }
+    .draft-banner { background:#fef2f2; border:2px solid #dc2626; border-radius:10px; padding:14px 20px; margin-bottom:24px; color:#991b1b; }
+    .draft-banner strong { color:#dc2626; }
+    .risk-appendix { page-break-before:always; }
+    .quality-appendix { page-break-before:always; }
+    .quality-table { width:100%; border-collapse:collapse; margin:12px 0 22px; font-size:13px; }
+    .quality-table th,.quality-table td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+    .quality-table th { background:var(--soft); }
+    @page { size:A4; margin:14mm 12mm 16mm; @bottom-center { content:"A17 行业研究报告  ·  " counter(page); color:#64748b; font-size:9pt; } }
+    @media print {
+      html,body { background:#fff; }
+      body { font-size:13.5px; line-height:1.62; }
+      main { max-width:none; padding:0; }
+      .cover { min-height:245mm; }
+      h1 { font-size:32pt; }
+      h2 { margin:32px 0 14px; }
+      h3 { margin:20px 0 8px; }
+      p { margin:7px 0; }
+      .summary { padding:18px 22px; }
+      .conclusion { margin:9px 0; padding:6px 12px; }
+      .chapter-summary { padding:9px 14px; }
+      .chart { margin:16px 0 18px; padding:10px; box-shadow:none; }
+      .chart svg { max-height:78mm; }
+      .uncertainty { margin:10px 0; padding:7px 12px; }
+      .footer-note { margin-top:18px; padding-top:12px; font-size:10.5px; line-height:1.45; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <div class="draft-watermark">内部审核草稿</div>
+
+  <section class="cover">
+    <div class="eyebrow">A17 · Industry Research</div>
+    <h1>全球AI芯片与数据中心加速计算行业——以英伟达(NVIDIA)为核心行业研究报告</h1>
+    <p class="subtitle">英伟达FY2026业绩增长由数据中心业务驱动，Blackwell架构推动毛利率回升，但面临竞争加剧与出口管制风险。</p>
+    <div class="meta-grid">
+      <div class="meta"><span>研究时点</span><strong>2026-08-10</strong></div>
+      <div class="meta"><span>报告编号</span><strong>REPORT-458E079AB745-R1</strong></div>
+      <div class="meta"><span>生成时间</span><strong>2026-08-10 16:20 UTC</strong></div>
+      <div class="meta"><span>报告深度</span><strong>standard</strong></div>
+      <div class="meta"><span>交付状态</span><strong>ready_with_limits</strong></div>
+    </div>
+  </section>
+
+  <div class="draft-banner">
+    <strong>内部审核草稿</strong> — 部分内容尚未通过完整证据校验
+  </div>
+
+  <h2>目录</h2>
+  <ol class="toc">
+<li>CH-01 · 行业定义与研究基础</li><li>CH-02 · 市场规模与成长性</li><li>CH-03 · 产业链与利润分配</li><li>CH-04 · 竞争格局</li><li>CH-05 · 财务质量与估值参照</li><li>CH-06 · 宏观、政策与技术催化</li><li>CH-07 · 情景、风险与研究结论</li>  </ol>
+
+  <h2>执行摘要</h2>
+  <section class="summary">
+    <p class="headline">英伟达FY2026业绩增长由数据中心业务驱动，Blackwell架构推动毛利率回升，但面临竞争加剧与出口管制风险。</p>
+    <div class="conclusion">
+      <strong>C-REV-GROWTH</strong> · 英伟达FY2026全年营收2159.38亿美元，同比增长65%，主要受数据中心业务驱动。
+      <div class="chips"><span class="chip">置信度 high</span><span class="chip">E-FY26-REV</span><span class="chip">E-FY25-REV</span><span class="chip">E-FY26-DC-ANNUAL</span></div>
+      <p class="reference">不确定性：无重大不确定性，数据来自经审计财报。</p>
+    </div>
+    <div class="conclusion">
+      <strong>C-DC-DRIVER</strong> · 数据中心业务是英伟达增长的核心驱动力，FY2026全年数据中心收入1937亿美元，同比增长68%，占总营收约90%。
+      <div class="chips"><span class="chip">置信度 high</span><span class="chip">E-FY26-DC-ANNUAL</span><span class="chip">E-FY26-REV</span></div>
+      <p class="reference">不确定性：数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</p>
+    </div>
+    <div class="conclusion">
+      <strong>C-GM-TREND</strong> · 英伟达FY2026全年GAAP毛利率71.1%，同比下降3.9个百分点，但Q4单季毛利率回升至75.0%，同比提升2个百分点，显示Blackwell爬坡完成后利润率改善。
+      <div class="chips"><span class="chip">置信度 high</span><span class="chip">E-FY26-GM</span><span class="chip">E-FY25-GM</span><span class="chip">E-FY26Q4-GM</span></div>
+      <p class="reference">不确定性：全年毛利率下降受Blackwell初期成本影响，Q4回升表明改善趋势，但需关注后续季度持续性。</p>
+    </div>
+    <div class="conclusion">
+      <strong>C-BLACKWELL-IMPACT</strong> · Blackwell架构对利润率的影响呈先抑后扬：初期爬坡成本压低全年毛利率，但Q4毛利率回升至75%表明Blackwell量产成熟后盈利能力增强。
+      <div class="chips"><span class="chip">置信度 medium</span><span class="chip">E-FY26-GM</span><span class="chip">E-FY26Q4-GM</span><span class="chip">E-FY26Q4-DC</span></div>
+      <p class="reference">不确定性：Q4毛利率回升可能受产品组合、定价和成本优化影响，需更多季度数据验证趋势。</p>
+    </div>
+    <div class="conclusion">
+      <strong>C-RISK-COMPETITION</strong> · 英伟达面临AMD、Intel等竞争对手的挑战，但凭借CUDA生态和产品性能优势，当前竞争格局仍以英伟达为主导。
+      <div class="chips"><span class="chip">置信度 medium</span><span class="chip">E-FY26-REV</span><span class="chip">E-FY26-DC-ANNUAL</span></div>
+      <p class="reference">不确定性：竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</p>
+    </div>
+    <div class="conclusion">
+      <strong>C-RISK-EXPORT</strong> · 出口管制可能限制英伟达对部分市场的销售，但FY2026业绩未受重大影响，未来需关注政策变化。
+      <div class="chips"><span class="chip">置信度 medium</span><span class="chip">E-FY26-REV</span><span class="chip">E-FY26-DC-ANNUAL</span></div>
+      <p class="reference">不确定性：出口管制影响未在财报中量化，需跟踪政策动态和公司披露。</p>
+    </div>
+    <div class="conclusion">
+      <strong>C-SCENARIO-BASE</strong> · 基准情景：数据中心需求持续增长，Blackwell放量，毛利率维持70%以上，营收增速放缓至30-40%。
+      <div class="chips"><span class="chip">置信度 medium</span><span class="chip">E-FY26-REV</span><span class="chip">E-FY26-DC-ANNUAL</span><span class="chip">E-FY26Q4-GM</span></div>
+      <p class="reference">不确定性：基于当前趋势外推，需关注AI投资周期和竞争格局变化。</p>
+    </div>
+    <div class="conclusion">
+      <strong>C-SCENARIO-UP</strong> · 上行情景：AI需求超预期，Blackwell渗透率提升，毛利率回升至75%以上，营收增速超50%。
+      <div class="chips"><span class="chip">置信度 low</span><span class="chip">E-FY26Q4-GM</span><span class="chip">E-FY26Q4-DC</span></div>
+      <p class="reference">不确定性：依赖AI投资持续高增长和产品竞争力，存在不确定性。</p>
+    </div>
+  </section>
+  <h3>三种情景</h3><ul><li>基准情景：AI算力需求增长 → 数据中心GPU出货量提升 → 收入增长 → 规模效应和产品组合优化 → 毛利率稳定 → 净利润增长；触发条件：季度数据中心收入同比增速维持在50%以上 / GAAP毛利率稳定在73%-76%区间 / 主要云厂商资本开支指引未出现大幅下调</li><li>乐观情景：AI需求超预期 → 订单积压增加 → 收入加速增长 → 规模效应增强 → 毛利率提升 → 净利润超预期增长；触发条件：数据中心收入同比增速超过80% / 毛利率连续两个季度超过76% / 新客户或新地区（如中东）大规模采购</li><li>悲观情景：需求放缓或竞争加剧 → 出货量下降或价格承压 → 收入增速放缓 → 毛利率下降 → 净利润增速大幅放缓；触发条件：数据中心收入同比增速降至30%以下 / 毛利率跌破68% / 主要客户自研芯片比例大幅提升</li></ul>
+  <h3>核心风险</h3><ul class="risk-list"><li>AI需求放缓风险：若全球AI资本开支增速显著放缓，或出现AI泡沫破裂，数据中心业务增长将大幅减速，影响整体营收和利润。</li><li>出口管制风险：美国对华出口管制若进一步升级，将限制英伟达在中国市场的销售，影响收入。</li><li>竞争加剧风险：AMD、英特尔及云厂商自研芯片（如谷歌TPU、亚马逊Trainium）的竞争可能侵蚀市场份额，导致价格压力和毛利率下降。</li><li>供应链风险：先进制程产能（台积电CoWoS）和HBM供应紧张可能限制出货量，影响收入增长。</li><li>技术迭代风险：若下一代架构（如Rubin）推出延迟或性能不及预期，可能影响客户采购决策。</li><li>估值风险：当前估值已反映高增长预期，若业绩不及预期，股价可能大幅回调。</li></ul>
+  <h3>研究边界</h3><ul class="boundary-list"><li>整体置信度：high</li><li>财务质量校验：consistent</li><li>缺乏一致预期和估值分位数据，预期差不可验证，需补充市场数据。</li><li>分季度收入、毛利率、数据中心收入：当前证据仅包含FY2026全年和Q4数据，缺乏FY2026前三个季度的数据，无法分析季度趋势和季节性。</li><li>GAAP毛利率：FY2026全年GAAP毛利率为71.1%，但Q4单季毛利率为75.0%，两者差异较大，可能反映全年受Blackwell爬坡影响，Q4已回升。需确认全年与季度口径一致性。</li><li>竞争对手财务数据：当前证据仅包含英伟达数据，缺乏AMD、Intel等竞争对手的财务数据，无法进行横向对比。</li><li>competition维度：当前证据仅包含英伟达自身财务数据，缺乏竞争对手（AMD、Intel）数据，无法全面评估竞争格局。</li><li>macro_policy维度：当前证据未涉及宏观政策、出口管制等具体政策信息，无法分析政策影响。</li><li>industry_chain维度：当前证据未包含产业链上下游数据，如供应商、客户、竞争对手等，无法进行产业链分析。</li><li>risk维度：基于财务数据可识别部分风险（如毛利率下降、依赖数据中心），但缺乏竞争、政策等风险证据。</li></ul>
+  <div class="footer-note"><p>报告由 Agent 2 结构化结论、Agent 3 已校验图表与 Agent 4 7章21节正文确定性组装；Agent 5 不新增事实、不改写数据结论。</p><p><strong>免责声明：</strong>本报告仅用于行业研究与信息交流，不构成证券投资建议、收益保证或交易邀约。</p></div>
+
+  <section class="chapter">
+    <h2>CH-01 · 行业定义与研究基础</h2>
+    <p class="chapter-summary">本章依据 Agent 2 已通过校验的结论生成可审核草稿；因章节生成服务异常，内容采用确定性兜底：StructuredOutputError:semantic_validation_failed;validation_error_count=1,validation_paths=[&#39;sections.2.paragraphs.0&#39;],validation_types=[&#39;value_error&#39;]</p>
+      <h3>SEC-01-01 · 行业定义、研究边界与证券范围</h3>
+        <p>英伟达FY2026全年营收2159.38亿美元，同比增长65%，主要受数据中心业务驱动。 该判断的适用边界为：无重大不确定性，数据来自经审计财报。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY25-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>无重大不确定性，数据来自经审计财报。</li></ul></div>      <h3>SEC-01-02 · 数据口径、研究时点与分析方法</h3>
+        <p>数据中心业务是英伟达增长的核心驱动力，FY2026全年数据中心收入1937亿美元，同比增长68%，占总营收约90%。 该判断的适用边界为：数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</p>
+<p class="reference">证据引用：E-FY26-DC-ANNUAL、E-FY26-REV</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</li></ul></div>      <h3>SEC-01-03 · 行业发展阶段与当前核心矛盾</h3>
+        <p>英伟达FY2026全年GAAP毛利率71.1%，同比下降3.9个百分点，但Q4单季毛利率回升至75.0%，同比提升2个百分点，显示Blackwell爬坡完成后利润率改善。 该判断的适用边界为：全年毛利率下降受Blackwell初期成本影响，Q4回升表明改善趋势，但需关注后续季度持续性。</p>
+<p class="reference">证据引用：E-FY26-GM、E-FY25-GM、E-FY26Q4-GM</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>全年毛利率下降受Blackwell初期成本影响，Q4回升表明改善趋势，但需关注后续季度持续性。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>CH-02 · 市场规模与成长性</h2>
+    <p class="chapter-summary">本章依据 Agent 2 已通过校验的结论生成可审核草稿；因章节生成服务异常，内容采用确定性兜底：StructuredOutputError:semantic_validation_failed;validation_error_count=1,validation_paths=[&#39;sections.2.paragraphs.0&#39;],validation_types=[&#39;value_error&#39;]</p>
+      <h3>SEC-02-01 · 市场规模与历史增长趋势</h3>
+        <p>英伟达FY2026全年营收2159.38亿美元，同比增长65%，主要受数据中心业务驱动。 该判断的适用边界为：无重大不确定性，数据来自经审计财报。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY25-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>无重大不确定性，数据来自经审计财报。</li></ul></div>      <h3>SEC-02-02 · 需求驱动因素与细分市场变化</h3>
+        <p>数据中心业务是英伟达增长的核心驱动力，FY2026全年数据中心收入1937亿美元，同比增长68%，占总营收约90%。 该判断的适用边界为：数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</p>
+<p class="reference">证据引用：E-FY26-DC-ANNUAL、E-FY26-REV</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</li></ul></div>      <h3>SEC-02-03 · 供需关系、产能与行业周期</h3>
+        <p>英伟达FY2026全年GAAP毛利率71.1%，同比下降3.9个百分点，但Q4单季毛利率回升至75.0%，同比提升2个百分点，显示Blackwell爬坡完成后利润率改善。 该判断的适用边界为：全年毛利率下降受Blackwell初期成本影响，Q4回升表明改善趋势，但需关注后续季度持续性。</p>
+<p class="reference">证据引用：E-FY26-GM、E-FY25-GM、E-FY26Q4-GM</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>全年毛利率下降受Blackwell初期成本影响，Q4回升表明改善趋势，但需关注后续季度持续性。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>CH-03 · 产业链与利润分配</h2>
+    <p class="chapter-summary">本章依据 Agent 2 已通过校验的结论生成可审核草稿；因章节生成服务异常，内容采用确定性兜底：StructuredOutputError:semantic_validation_failed;validation_error_count=1,validation_paths=[&#39;sections.2.paragraphs.0&#39;],validation_types=[&#39;value_error&#39;]</p>
+      <h3>SEC-03-01 · 上游资源、原材料与关键供应环节</h3>
+        <p>数据中心业务是英伟达增长的核心驱动力，FY2026全年数据中心收入1937亿美元，同比增长68%，占总营收约90%。 该判断的适用边界为：数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</p>
+<p class="reference">证据引用：E-FY26-DC-ANNUAL、E-FY26-REV</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</li></ul></div>      <h3>SEC-03-02 · 中游核心产品、制造与服务环节</h3>
+        <p>数据中心业务是英伟达增长的核心驱动力，FY2026全年数据中心收入1937亿美元，同比增长68%，占总营收约90%。 该判断的适用边界为：数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</p>
+<p class="reference">证据引用：E-FY26-DC-ANNUAL、E-FY26-REV</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</li></ul></div>      <h3>SEC-03-03 · 下游需求、议价关系与利润迁移</h3>
+        <p>数据中心业务是英伟达增长的核心驱动力，FY2026全年数据中心收入1937亿美元，同比增长68%，占总营收约90%。 该判断的适用边界为：数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</p>
+<p class="reference">证据引用：E-FY26-DC-ANNUAL、E-FY26-REV</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>CH-04 · 竞争格局</h2>
+    <p class="chapter-summary">本章依据 Agent 2 已通过校验的结论生成可审核草稿；因章节生成服务异常，内容采用确定性兜底：StructuredOutputError:semantic_validation_failed;validation_error_count=1,validation_paths=[&#39;sections.2.paragraphs.0&#39;],validation_types=[&#39;value_error&#39;]</p>
+      <h3>SEC-04-01 · 市场结构、集中度与竞争阶段</h3>
+        <p>英伟达面临AMD、Intel等竞争对手的挑战，但凭借CUDA生态和产品性能优势，当前竞争格局仍以英伟达为主导。 该判断的适用边界为：竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</li></ul></div>      <h3>SEC-04-02 · 主要参与者及其竞争位置</h3>
+        <p>英伟达面临AMD、Intel等竞争对手的挑战，但凭借CUDA生态和产品性能优势，当前竞争格局仍以英伟达为主导。 该判断的适用边界为：竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</li></ul></div>      <h3>SEC-04-03 · 竞争壁垒、差异化因素与潜在进入者</h3>
+        <p>英伟达面临AMD、Intel等竞争对手的挑战，但凭借CUDA生态和产品性能优势，当前竞争格局仍以英伟达为主导。 该判断的适用边界为：竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>CH-05 · 财务质量与估值参照</h2>
+    <p class="chapter-summary">本章依据 Agent 2 已通过校验的结论生成可审核草稿；因章节生成服务异常，内容采用确定性兜底：StructuredOutputError:semantic_validation_failed;validation_error_count=1,validation_paths=[&#39;sections.2.paragraphs.0&#39;],validation_types=[&#39;value_error&#39;]</p>
+      <h3>SEC-05-01 · 收入、利润与盈利能力</h3>
+        <p>英伟达FY2026全年营收2159.38亿美元，同比增长65%，主要受数据中心业务驱动。 该判断的适用边界为：无重大不确定性，数据来自经审计财报。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY25-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>无重大不确定性，数据来自经审计财报。</li></ul></div>      <h3>SEC-05-02 · 现金流、资产负债与财务质量</h3>
+        <p>数据中心业务是英伟达增长的核心驱动力，FY2026全年数据中心收入1937亿美元，同比增长68%，占总营收约90%。 该判断的适用边界为：数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</p>
+<p class="reference">证据引用：E-FY26-DC-ANNUAL、E-FY26-REV</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>数据中心收入占比基于全年数据计算，未单独披露其他业务全年数据，但Q4占比91.5%可作参考。</li></ul></div>      <h3>SEC-05-03 · 估值水平、历史区间与跨市场可比性</h3>
+        <p>英伟达FY2026全年GAAP毛利率71.1%，同比下降3.9个百分点，但Q4单季毛利率回升至75.0%，同比提升2个百分点，显示Blackwell爬坡完成后利润率改善。 该判断的适用边界为：全年毛利率下降受Blackwell初期成本影响，Q4回升表明改善趋势，但需关注后续季度持续性。</p>
+<p class="reference">证据引用：E-FY26-GM、E-FY25-GM、E-FY26Q4-GM</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>全年毛利率下降受Blackwell初期成本影响，Q4回升表明改善趋势，但需关注后续季度持续性。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>CH-06 · 宏观、政策与技术催化</h2>
+    <p class="chapter-summary">本章依据 Agent 2 已通过校验的结论生成可审核草稿；因章节生成服务异常，内容采用确定性兜底：StructuredOutputError:semantic_validation_failed;validation_error_count=1,validation_paths=[&#39;sections.2.paragraphs.0&#39;],validation_types=[&#39;value_error&#39;]</p>
+      <h3>SEC-06-01 · 宏观经济变量与行业传导路径</h3>
+        <p>出口管制可能限制英伟达对部分市场的销售，但FY2026业绩未受重大影响，未来需关注政策变化。 该判断的适用边界为：出口管制影响未在财报中量化，需跟踪政策动态和公司披露。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>出口管制影响未在财报中量化，需跟踪政策动态和公司披露。</li></ul></div>      <h3>SEC-06-02 · 政策、监管与合规环境</h3>
+        <p>出口管制可能限制英伟达对部分市场的销售，但FY2026业绩未受重大影响，未来需关注政策变化。 该判断的适用边界为：出口管制影响未在财报中量化，需跟踪政策动态和公司披露。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>出口管制影响未在财报中量化，需跟踪政策动态和公司披露。</li></ul></div>      <h3>SEC-06-03 · 技术趋势、事件催化与监测指标</h3>
+        <p>出口管制可能限制英伟达对部分市场的销售，但FY2026业绩未受重大影响，未来需关注政策变化。 该判断的适用边界为：出口管制影响未在财报中量化，需跟踪政策动态和公司披露。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>出口管制影响未在财报中量化，需跟踪政策动态和公司披露。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>CH-07 · 情景、风险与研究结论</h2>
+    <p class="chapter-summary">本章依据 Agent 2 已通过校验的结论生成可审核草稿；因章节生成服务异常，内容采用确定性兜底：StructuredOutputError:semantic_validation_failed;validation_error_count=1,validation_paths=[&#39;sections.2.paragraphs.0&#39;],validation_types=[&#39;value_error&#39;]</p>
+      <h3>SEC-07-01 · 基准、乐观和悲观三种情景</h3>
+        <p>英伟达面临AMD、Intel等竞争对手的挑战，但凭借CUDA生态和产品性能优势，当前竞争格局仍以英伟达为主导。 该判断的适用边界为：竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</li></ul></div>      <h3>SEC-07-02 · 核心风险、反证条件与跟踪指标</h3>
+        <p>出口管制可能限制英伟达对部分市场的销售，但FY2026业绩未受重大影响，未来需关注政策变化。 该判断的适用边界为：出口管制影响未在财报中量化，需跟踪政策动态和公司披露。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>出口管制影响未在财报中量化，需跟踪政策动态和公司披露。</li></ul></div>      <h3>SEC-07-03 · 核心结论、适用边界与待验证事项</h3>
+        <p>英伟达面临AMD、Intel等竞争对手的挑战，但凭借CUDA生态和产品性能优势，当前竞争格局仍以英伟达为主导。 该判断的适用边界为：竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</p>
+<p class="reference">证据引用：E-FY26-REV、E-FY26-DC-ANNUAL</p><div class="uncertainty"><strong>待验证事项</strong><ul><li>竞争格局分析基于英伟达财务表现推断，缺乏AMD、Intel具体市场份额数据，需补充行业报告。</li></ul></div>  </section>
+
+
+  <section class="quality-appendix chapter">
+    <h2>数据质量与研究边界附录</h2>
+    <h3>研究维度覆盖</h3>
+    <table class="quality-table"><thead><tr><th>维度</th><th>状态</th><th>说明</th></tr></thead><tbody><tr><td>competition</td><td>partial</td><td>当前证据仅包含英伟达自身财务数据，缺乏竞争对手（AMD、Intel）数据，无法全面评估竞争格局。</td></tr><tr><td>growth</td><td>supported</td><td>营收、净利润、数据中心收入等数据充分支持增长趋势分析。</td></tr><tr><td>macro_policy</td><td>insufficient</td><td>当前证据未涉及宏观政策、出口管制等具体政策信息，无法分析政策影响。</td></tr><tr><td>industry_chain</td><td>insufficient</td><td>当前证据未包含产业链上下游数据，如供应商、客户、竞争对手等，无法进行产业链分析。</td></tr><tr><td>risk</td><td>partial</td><td>基于财务数据可识别部分风险（如毛利率下降、依赖数据中心），但缺乏竞争、政策等风险证据。</td></tr></tbody></table>
+    <h3>数据质量问题</h3>
+    <table class="quality-table"><thead><tr><th>编号</th><th>指标</th><th>影响</th><th>说明与处理</th></tr></thead><tbody><tr><td>DQ-MISSING-QUARTERLY</td><td>分季度收入、毛利率、数据中心收入</td><td>medium</td><td>当前证据仅包含FY2026全年和Q4数据，缺乏FY2026前三个季度的数据，无法分析季度趋势和季节性。<br>处理：建议从SEC 10-Q或季度财报中补充FY2026 Q1-Q3数据，以进行季度趋势分析。</td></tr><tr><td>DQ-CONFLICT-GM</td><td>GAAP毛利率</td><td>medium</td><td>FY2026全年GAAP毛利率为71.1%，但Q4单季毛利率为75.0%，两者差异较大，可能反映全年受Blackwell爬坡影响，Q4已回升。需确认全年与季度口径一致性。<br>处理：在报告中明确说明全年与季度毛利率的差异原因，并引用管理层评论。</td></tr><tr><td>DQ-NOT-COMPARABLE-COMPETITORS</td><td>竞争对手财务数据</td><td>high</td><td>当前证据仅包含英伟达数据，缺乏AMD、Intel等竞争对手的财务数据，无法进行横向对比。<br>处理：建议从公开财报中获取AMD、Intel的营收、毛利率等数据，并确保财年口径一致。</td></tr></tbody></table>
+    <h3>财务一致性检查</h3>
+    <table class="quality-table"><thead><tr><th>编号</th><th>状态</th><th>结论</th><th>影响</th></tr></thead><tbody><tr><td>FC-REV-GROWTH</td><td>passed</td><td>FY2026营收2159.38亿美元，较FY2025的1304.97亿美元增长65%，与公司披露的同比增长65%一致。</td><td>收入增长可信。</td></tr><tr><td>FC-NI-GROWTH</td><td>passed</td><td>FY2026 GAAP净利润1200.67亿美元，较FY2025的728.80亿美元增长65%，与公司披露一致。</td><td>净利润增长可信。</td></tr><tr><td>FC-GM-TREND</td><td>warning</td><td>FY2026全年GAAP毛利率71.1%，较FY2025的75.0%下降3.9个百分点，但Q4单季毛利率回升至75.0%。全年与Q4差异较大，需关注季度波动。</td><td>毛利率趋势需结合季度数据进一步分析。</td></tr><tr><td>FC-CASH-PROFIT</td><td>unavailable</td><td>当前证据未提供经营现金流数据，无法进行现金利润对齐校验。</td><td>无法评估利润的现金含量。</td></tr></tbody></table>
+<h3>未生成图表</h3><ul><li>英伟达FY2025-FY2026营收与净利润对比：没有找到与证据编号匹配的数据集</li><li>英伟达FY2026 Q4各业务收入构成：没有找到与证据编号匹配的数据集</li><li>英伟达GAAP毛利率变化趋势（FY2025 vs FY2026）：没有找到与证据编号匹配的数据集</li></ul>  </section>
+
+  <section class="risk-appendix chapter">
+    <h2>未解决问题清单</h2>
+    <ul>
+<li>Agent 3 图表质量门未通过；仅嵌入可安全渲染的图表</li><li>Agent 4 章节质量门未通过</li><li>数据质量[DQ-MISSING-QUARTERLY] 分季度收入、毛利率、数据中心收入：当前证据仅包含FY2026全年和Q4数据，缺乏FY2026前三个季度的数据，无法分析季度趋势和季节性。</li><li>数据质量[DQ-CONFLICT-GM] GAAP毛利率：FY2026全年GAAP毛利率为71.1%，但Q4单季毛利率为75.0%，两者差异较大，可能反映全年受Blackwell爬坡影响，Q4已回升。需确认全年与季度口径一致性。</li><li>数据质量[DQ-NOT-COMPARABLE-COMPETITORS] 竞争对手财务数据：当前证据仅包含英伟达数据，缺乏AMD、Intel等竞争对手的财务数据，无法进行横向对比。</li><li>研究维度[competition] partial：当前证据仅包含英伟达自身财务数据，缺乏竞争对手（AMD、Intel）数据，无法全面评估竞争格局。</li><li>研究维度[macro_policy] insufficient：当前证据未涉及宏观政策、出口管制等具体政策信息，无法分析政策影响。</li><li>研究维度[industry_chain] insufficient：当前证据未包含产业链上下游数据，如供应商、客户、竞争对手等，无法进行产业链分析。</li><li>研究维度[risk] partial：基于财务数据可识别部分风险（如毛利率下降、依赖数据中心），但缺乏竞争、政策等风险证据。</li><li>财务校验[FC-GM-TREND] warning：FY2026全年GAAP毛利率71.1%，较FY2025的75.0%下降3.9个百分点，但Q4单季毛利率回升至75.0%。全年与Q4差异较大，需关注季度波动。</li><li>财务校验[FC-CASH-PROFIT] unavailable：当前证据未提供经营现金流数据，无法进行现金利润对齐校验。</li>    </ul>
+  </section>
+</main>
+</body>
+</html>

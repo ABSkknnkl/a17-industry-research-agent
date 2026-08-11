@@ -26,6 +26,7 @@
 - LangGraph内部执行`prepare → generate → audit → revise/finalize`。
 - 检查未知证据ID、已否决结论和金融内容红线，最多自动修订两次。
 - 输出`AnalysisResult`并封装为`StageResult(stage=data_interpret)`。
+- `AnalysisResult.evidence_catalog`由服务端直接从已校验输入生成，只保存材料名、指标、日期、定位、等级与审计状态等展示元数据；它不属于LLM生成内容，也不改变内部`evidence_id`追溯协议。
 - 输出统一的`data_quality_issues`，区分缺失、过期、冲突、估算和不可比，并给出影响级别、处理方式与证据ID。
 - 输出顾问式`financial_consistency_checks`，记录财务勾稽、现金利润匹配、营运资金异常或非经常项目；`warning/unavailable`只降低结论强度，不补造数据。
 - 输出五维`dimension_coverage`（`supported/partial/insufficient`）；模型未填写时由确定性规则根据结论和证据补全。
@@ -37,6 +38,7 @@
 - Agent 3还使用`data_quality_issues`为图表增加口径脚注。
 - Agent 4使用`claims`、`dimensions`、`scenarios`、`risks`、维度覆盖和财务一致性检查。
 - Agent 5汇总上述质量信息，生成数据质量与研究边界附录。
+- Agent 5使用`evidence_catalog`把内部证据ID映射成中文来源编号；Agent 3、Agent 4仍按原接口传递内部ID，无需承担报告展示逻辑。
 
 关键输入缺失时不调用LLM，直接返回`waiting_review`和`collaboration_requests`。
 

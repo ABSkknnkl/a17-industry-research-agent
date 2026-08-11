@@ -128,6 +128,10 @@ async def test_data_interpreter_returns_traceable_structured_analysis() -> None:
     assert "不得输出买卖建议、仓位建议" in model.system_prompt
     assert "不得执行技能内置的主动检索指令" in model.system_prompt
     assert analysis.claims[0].evidence_ids == ["E-001"]
+    assert len(analysis.evidence_catalog) == 1
+    assert analysis.evidence_catalog[0].evidence_id == "E-001"
+    assert analysis.evidence_catalog[0].source_name == "行业协会月报"
+    assert analysis.evidence_catalog[0].metric_name == "组件产量同比增速"
     assert {dimension.name for dimension in analysis.dimensions} == {
         "competition",
         "growth",

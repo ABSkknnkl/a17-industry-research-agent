@@ -203,6 +203,36 @@ async def test_deepseek_analysis_accepts_json_content() -> None:
 
 
 @pytest.mark.asyncio
+async def test_deepseek_analysis_normalizes_known_dimension_labels() -> None:
+    payload = _draft().model_dump(mode="json")
+    payload["data_quality_issues"] = [
+        {
+            "issue_id": "DQ-001",
+            "issue_type": "missing",
+            "metric": "竞争份额",
+            "description": "部分企业口径缺失",
+            "impact_level": "medium",
+            "evidence_ids": ["E-001"],
+            "affected_dimensions": ["竞争格局", "风险"],
+            "suggested_handling": "保留限制说明",
+        }
+    ]
+    structured = SequentialStructuredModel([_raw_response(payload)])
+    model = OpenAICompatibleAnalysisModel(
+        model_name="deepseek-v4-flash",
+        chat_model=FakeChatModel(structured),
+    )
+
+    result = await model.generate_analysis(
+        system_prompt="financial analysis prompt",
+        runtime_prompt='{"analysis_request":{}}',
+    )
+
+    assert result.data_quality_issues[0].affected_dimensions == ["competition", "risk"]
+    assert len(structured.messages) == 1
+
+
+@pytest.mark.asyncio
 async def test_deepseek_analysis_repairs_one_invalid_structured_response(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -457,12 +487,11 @@ async def test_deepseek_long_analysis_uses_two_smaller_json_contracts() -> None:
     model = OpenAICompatibleAnalysisModel(
         model_name="deepseek-v4-pro",
         chat_model=chat_model,
-        segmented_threshold_chars=20,
     )
 
     result = await model.generate_analysis(
         system_prompt="financial analysis prompt",
-        runtime_prompt='{"analysis_request":{"long":"payload"}}',
+        runtime_prompt='{"analysis_request":{"long":"' + ("x" * 10_000) + '"}}',
     )
 
     assert result == _draft()

@@ -16,6 +16,7 @@ from app.schemas.analysis import (
     AnalysisResult,
     DataQualityIssue,
     DimensionCoverage,
+    EvidenceCatalogItem,
     FinancialConsistencyCheck,
     PromptReference,
     QualityReport,
@@ -271,6 +272,20 @@ def build_data_interpreter_graph(
             model_name=model.model_name,
             quality=quality,
             research_brief=request.research_brief,
+            evidence_catalog=[
+                EvidenceCatalogItem(
+                    evidence_id=item.evidence_id,
+                    metric_name=item.metric_name,
+                    source_name=item.source_name,
+                    source_locator=item.source_locator,
+                    period_end=item.period_end,
+                    available_at=item.available_at,
+                    grade=item.grade,
+                    audit_status=item.audit_status,
+                    scope=item.scope,
+                )
+                for item in request.evidence_items
+            ],
         )
         return {"result": result.model_dump(mode="json")}
 

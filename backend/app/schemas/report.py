@@ -71,6 +71,23 @@ class ReportQualityAppendix(ReportContract):
     skipped_chart_notes: list[str] = Field(default_factory=list, max_length=100)
 
 
+class EvidenceSourceEntry(ReportContract):
+    """Chinese presentation entry backed by one or more internal evidence IDs."""
+
+    citation_number: int = Field(ge=1)
+    display_label: str = Field(min_length=1, max_length=500)
+    material_title: str = Field(min_length=1, max_length=500)
+    metric_names: list[str] = Field(min_length=1, max_length=100)
+    available_dates: list[str] = Field(default_factory=list, max_length=100)
+    reporting_periods: list[str] = Field(default_factory=list, max_length=100)
+    locators: list[str] = Field(default_factory=list, max_length=100)
+    source_levels: list[str] = Field(default_factory=list, max_length=5)
+    audit_labels: list[str] = Field(default_factory=list, max_length=5)
+    scopes: list[str] = Field(default_factory=list, max_length=20)
+    # Kept for machine traceability only. Renderers must never expose this field.
+    evidence_ids: list[str] = Field(min_length=1, max_length=200)
+
+
 class ReportViewModel(ReportContract):
     report_id: str = Field(pattern=r"^REPORT-[A-Za-z0-9_-]+$")
     title: str = Field(min_length=1)
@@ -89,6 +106,7 @@ class ReportViewModel(ReportContract):
     unresolved_risks: list[str] = Field(default_factory=list)
     risk_acknowledged_at: datetime | None = None
     quality_appendix: ReportQualityAppendix = Field(default_factory=ReportQualityAppendix)
+    evidence_catalog: list[EvidenceSourceEntry] = Field(default_factory=list, max_length=200)
 
 
 class SourceRevision(ReportContract):

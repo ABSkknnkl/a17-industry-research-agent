@@ -61,8 +61,10 @@ async def test_agent_exports_self_contained_markdown_html_pdf_and_manifest(
     report_chapters: ChapterWritingResult,
 ) -> None:
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    pdf_html: list[str] = []
 
-    async def stable_pdf(_: str) -> bytes:
+    async def stable_pdf(html: str) -> bytes:
+        pdf_html.append(html)
         return b"%PDF-1.7\nunit-test"
 
     monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", stable_pdf)
@@ -88,10 +90,25 @@ async def test_agent_exports_self_contained_markdown_html_pdf_and_manifest(
         assert hashlib.sha256(raw).hexdigest() == artifact.checksum
     html_artifact = next(item for item in result.artifacts if item.kind == "report_html")
     html = (tmp_path / html_artifact.uri).read_text(encoding="utf-8")
+    markdown_artifact = next(item for item in result.artifacts if item.kind == "report_markdown")
+    markdown = (tmp_path / markdown_artifact.uri).read_text(encoding="utf-8")
     assert "&lt;script&gt;alert" in html
     assert "<script>alert" not in html
     assert "<svg" in html
     assert "cdn.jsdelivr" not in html
+    assert pdf_html == [html]
+    for formal_output in (markdown, html, pdf_html[0]):
+        assert "E-001" not in formal_output
+        assert "C-001" not in formal_output
+        assert "CH-01" not in formal_output
+        assert "SEC-01-01" not in formal_output
+        assert "REPORT-" not in formal_output
+        assert "中国光伏行业协会月度报告" in formal_output
+        assert "来源与证据索引" in formal_output
+    assert "第一章" in markdown
+    assert "第一章" in html
+    assert "折线图" in markdown
+    assert "置信度：中" in markdown
     pdf_artifact = next(item for item in result.artifacts if item.kind == "report_pdf")
     assert (tmp_path / pdf_artifact.uri).read_bytes().startswith(b"%PDF")
     manifest_artifact = next(item for item in result.artifacts if item.kind == "artifact_manifest")
@@ -216,7 +233,7 @@ async def test_agent_brief_depth_keeps_chapter_summaries_but_omits_section_body(
     html = (tmp_path / html_artifact.uri).read_text(encoding="utf-8")
 
     assert fusion.report_depth == "brief"
-    assert "CH-01" in html
+    assert "第一章" in html
     assert "SEC-01-01" not in html
 
 

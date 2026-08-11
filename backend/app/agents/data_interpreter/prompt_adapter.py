@@ -16,8 +16,18 @@ def build_runtime_prompt(
         "audit_feedback": audit_feedback or [],
         "technical_output_contract": {
             "schema": "AnalysisDraft",
+            "allowed_evidence_ids": [item.evidence_id for item in request.evidence_items],
+            "allowed_dimension_names": [
+                "competition",
+                "growth",
+                "macro_policy",
+                "industry_chain",
+                "risk",
+            ],
             "requirements": [
                 "仅引用analysis_request中存在的evidence_id",
+                "claims、scenarios和chart_candidates中的evidence_ids不得为空；没有证据支持的项目不要输出",
+                "维度字段只能使用allowed_dimension_names中的英文枚举，不得翻译或创造别名",
                 "先核对市场、证券类型、交易所、币种、会计准则和复权口径",
                 "跨市场比较必须完成币种换算、财年对齐和多地上市去重",
                 "不得输出Markdown代码围栏或内部推理过程",

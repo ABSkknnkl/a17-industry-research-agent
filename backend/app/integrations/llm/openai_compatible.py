@@ -376,9 +376,58 @@ def _json_from_content(content: Any) -> Any:
         return payload
 
 
+_DIMENSION_ALIASES = {
+    "竞争": "competition",
+    "竞争格局": "competition",
+    "行业竞争": "competition",
+    "增长": "growth",
+    "行业增长": "growth",
+    "宏观政策": "macro_policy",
+    "政策": "macro_policy",
+    "产业链": "industry_chain",
+    "供应链": "industry_chain",
+    "风险": "risk",
+    "风险分析": "risk",
+}
+
+
+def _normalize_dimension(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+    return _DIMENSION_ALIASES.get(value.strip(), value)
+
+
+def _normalize_analysis_aliases(payload: dict[str, Any]) -> None:
+    dimensions = payload.get("dimensions")
+    if isinstance(dimensions, list):
+        for dimension in dimensions:
+            if isinstance(dimension, dict):
+                dimension["name"] = _normalize_dimension(dimension.get("name"))
+
+    quality_issues = payload.get("data_quality_issues")
+    if isinstance(quality_issues, list):
+        for issue in quality_issues:
+            if not isinstance(issue, dict):
+                continue
+            affected = issue.get("affected_dimensions")
+            if isinstance(affected, list):
+                issue["affected_dimensions"] = [_normalize_dimension(value) for value in affected]
+
+    coverage = payload.get("dimension_coverage")
+    if isinstance(coverage, list):
+        for item in coverage:
+            if isinstance(item, dict):
+                item["dimension"] = _normalize_dimension(item.get("dimension"))
+
+
 def _normalize_known_schema_aliases(payload: Any, schema: type[Any]) -> Any:
     """Normalize narrowly defined provider aliases before strict validation."""
-    if schema is not ChapterDraft or not isinstance(payload, dict):
+    if not isinstance(payload, dict):
+        return payload
+    if schema in {AnalysisDraft, AnalysisCoreDraft, AnalysisSupplementDraft}:
+        _normalize_analysis_aliases(payload)
+        return payload
+    if schema is not ChapterDraft:
         return payload
     sections = payload.get("sections")
     if not isinstance(sections, list):
@@ -491,7 +540,7 @@ class OpenAICompatibleAnalysisModel:
         base_url: str | None = None,
         timeout_seconds: float = 60,
         chat_model: Any | None = None,
-        segmented_threshold_chars: int = 36_000,
+        segmented_threshold_chars: int = 10_000,
     ) -> None:
         self.model_name = model_name
         self._requires_json_instruction = _is_deepseek(model_name)

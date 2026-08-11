@@ -147,17 +147,17 @@ class ReportFusionAgent:
         advisory_issues.extend(option_advisory_issues)
         if REPORT_QUALITY_ADVISORY_CODE not in set(accepted_risk_codes):
             advisory_issues.extend(
-                f"数据质量[{issue.issue_id}] {issue.metric}：{issue.description}"
+                f"数据质量问题 · {issue.metric}：{issue.description}"
                 for issue in analysis.data_quality_issues
                 if issue.impact_level in {"medium", "high"}
             )
             advisory_issues.extend(
-                f"研究维度[{item.dimension}] {item.status}：{item.reason}"
+                f"研究维度 · {item.dimension} · {item.status}：{item.reason}"
                 for item in analysis.dimension_coverage
                 if item.status != "supported"
             )
             advisory_issues.extend(
-                f"财务校验[{check.check_id}] {check.status}：{check.conclusion}"
+                f"财务一致性检查 · {check.status}：{check.conclusion}"
                 for check in analysis.financial_consistency_checks
                 if check.status in {"warning", "unavailable"}
             )
