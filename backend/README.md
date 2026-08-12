@@ -27,9 +27,27 @@ mypy app
 uvicorn app.main:app --reload --port 8000
 ```
 
-当前 `data_interpret`、`chart_generate`、`chapter_write` 和 `report_fusion` 已接入真实业务节点，仅 `data_fetch` 仍使用 Mock 数据边界。Agent 5 会将正式产物保存到 `artifacts/{run_id}/reports/r{revision}/`，并通过带 Bearer Token 和 owner_id 校验的下载接口返回文件。接入新 Agent 时必须保持 `StageAgent` 协议和 `contracts/schemas/` 跨端契约一致。
+五个阶段均已接入真实业务节点。`data_fetch` 具备 SkillHub P0/P1 真实适配器、ToolGateway、标准证据和质量门；应用运行只允许真实 SkillHub，Mock 仅保留给 `ENVIRONMENT=test` 的自动化测试。Agent 5 会将正式产物保存到 `artifacts/{run_id}/reports/r{revision}/`，并通过带 Bearer Token 和 owner_id 校验的下载接口返回文件。接入新 Agent 时必须保持 `StageAgent` 协议和公共 Pydantic/JSON Schema 契约一致。
 
 Workflow已启用Pi风格P0运行护栏：失败阶段停止下游并进入恢复审核；单任务限制阶段、模型和工具调用次数；阶段与工具调用有超时；工具错误以结构化结果回灌Agent。该实现是LangGraph上的独立Python运行层，不依赖或嵌套第二套Agent框架。
+
+## 生产模式与团队测试
+
+生产或开发服务启动时会执行 fail-closed 配置检查：Agent 1 禁止使用 SkillHub
+Mock，Agent 2/4 禁止使用 LLM Mock，并要求配置模型密钥、SkillHub 密钥和至少一个
+应用 Bearer Token。任一条件缺失时服务拒绝启动，避免把测试模板误当成真实行业报告。
+
+推荐的职责划分如下：
+
+- Agent 1：真实问财 SkillHub 数据获取；
+- Agent 2：`deepseek-v4-pro` 数据解读；
+- Agent 3：确定性图表路由与 ECharts 配置生成，不调用 LLM；
+- Agent 4：`deepseek-v4-pro` 章节撰写；
+- Agent 5：确定性 Markdown/单文件 HTML/Playwright PDF 融合，不调用 LLM。
+
+模型供应商密钥只能保存在服务器环境变量或密钥管理器中。团队测试者不接触模型密钥，
+只使用管理员分配的应用 Bearer Token 调用后端。启动后可访问`GET /health/ready`确认真实
+适配器、SQLite、产物目录和 PDF 渲染配置均已就绪；该接口不会返回任何密钥。
 
 ## 工作流持久化
 

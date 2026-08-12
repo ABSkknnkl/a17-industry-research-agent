@@ -5,9 +5,11 @@ from app.agents.data_interpreter.prompt_loader import (
 from app.agents.data_interpreter.skill_loader import (
     BEHAVIORAL_FINANCE_SKILL_SHA256,
     COMPETITIVE_LANDSCAPE_SKILL_SHA256,
+    INSTITUTIONAL_RESEARCH_SKILL_SHA256,
     RESTRICTED_INDUSTRY_CHAIN_SKILL_SHA256,
     load_behavioral_finance_skill,
     load_competitive_landscape_skill,
+    load_institutional_research_skill,
     load_restricted_industry_chain_skill,
     load_supporting_skills,
 )
@@ -49,6 +51,15 @@ def test_restricted_industry_chain_skill_is_installed_and_integrity_checked() ->
     assert "# 产业链深度解读与价值研判框架" in skill.content
 
 
+def test_institutional_research_skill_is_installed_and_integrity_checked() -> None:
+    skill = load_institutional_research_skill()
+
+    assert skill.key == "institutional_research"
+    assert skill.name == "受限机构研究解读"
+    assert skill.sha256 == INSTITUTIONAL_RESEARCH_SKILL_SHA256
+    assert "# 问财机构研究与评级 使用指南" in skill.content
+
+
 def test_supporting_skills_have_stable_router_order() -> None:
     skills = load_supporting_skills()
 
@@ -56,4 +67,5 @@ def test_supporting_skills_have_stable_router_order() -> None:
         "behavioral_finance",
         "competitive_landscape",
         "restricted_industry_chain",
+        "institutional_research",
     ]

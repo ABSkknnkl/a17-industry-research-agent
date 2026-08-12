@@ -52,7 +52,7 @@ class RuntimePolicy(BaseModel):
     max_total_stage_runs: int = Field(default=15, ge=5, le=100)
     max_stage_attempts: int = Field(default=3, ge=1, le=10)
     max_model_calls: int = Field(default=64, ge=1, le=1_000)
-    max_tool_calls: int = Field(default=32, ge=1, le=1_000)
+    max_tool_calls: int = Field(default=48, ge=1, le=1_000)
     max_tool_result_chars: int = Field(default=20_000, ge=20, le=1_000_000)
     max_events: int = Field(default=100, ge=10, le=2_000)
 

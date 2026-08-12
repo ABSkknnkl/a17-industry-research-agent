@@ -4,7 +4,7 @@ import json
 from typing import Any
 
 from app.schemas.chart import ChartQualityReport, ChartSpec, SuppressedChart
-from app.schemas.decision import RiskDisposition, RiskNotice
+from app.schemas.decision import RiskNotice
 
 
 def validate_option(option: dict[str, Any]) -> list[str]:

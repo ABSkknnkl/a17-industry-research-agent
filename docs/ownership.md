@@ -5,8 +5,8 @@
 - 负责：`backend/app/agents/data_fetcher/`、`backend/app/integrations/skillhub/`
 - 输入：行业主题、项目配置
 - 输出：满足公共契约的标准化数据与证据来源
-- 首个任务：完成 SkillHub Mock/真实适配器、单接口 Smoke Test、Agent 1 数据清洗
-- 验收：六类数据至少各完成一次可重复调用；错误、超时和空数据有测试
+- 当前状态：Agent 1 P0/P1 已完成，包含 11 个逻辑技能、真实 SkillHub 适配器、ToolGateway、数据清洗、去重与质量门；Mock 只允许自动化测试使用。
+- 待外部验收：使用赛事授权密钥对 6 类 P0 数据各完成一次真实 Smoke Test，并记录接口实际返回字段。
 
 ## 后端 B — AI 生成
 
@@ -46,4 +46,3 @@
 2. 每个功能同时提交测试和 README/API 说明。
 3. 真实外部服务必须配套 Mock，保证其他成员不依赖密钥开发。
 4. 不得绕过 Workflow 直接从 API 调用具体 Agent。
-

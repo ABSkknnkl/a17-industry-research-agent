@@ -35,6 +35,12 @@ from app.workflow.stages import StageContext
 
 CANONICAL_CHAPTER_ORDER = [f"CH-{index:02d}" for index in range(1, 8)]
 CANONICAL_FORMAT_ORDER: tuple[ReportFormat, ...] = ("markdown", "html", "pdf")
+CHART_ONLY_ADVISORY_PREFIXES = (
+    "就绪图表引用与图表规格不一致",
+    "章节引用了未就绪图表",
+    "正式报告嵌入",
+    "Agent 3 图表质量门未通过",
+)
 FORMAT_FILE: dict[ReportFormat, str] = {
     "markdown": "report.md",
     "html": "report.html",
@@ -172,12 +178,17 @@ class ReportFusionAgent:
                 error="report_blocking_issues",
             )
 
-        formal_eligible = not advisory_issues
+        draft_required_issues = [
+            issue for issue in advisory_issues if not issue.startswith(CHART_ONLY_ADVISORY_PREFIXES)
+        ]
+        formal_eligible = not draft_required_issues
         draft_eligible = True  # 只要没有硬阻断就可以导出草稿
 
         # 确定导出模式
         actual_release_mode = release_mode
-        if advisory_issues and release_mode == "formal":
+        # Chart-only advisories do not rewrite a complete report into a draft.
+        # Traceability, structure, analysis, and chapter issues remain stricter.
+        if draft_required_issues and release_mode == "formal":
             actual_release_mode = "draft_with_warnings"
         delivery_status: Literal["ready", "ready_with_limits", "blocked"] = (
             "ready_with_limits" if advisory_issues else "ready"

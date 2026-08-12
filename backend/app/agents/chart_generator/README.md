@@ -32,4 +32,4 @@ P1 已提供 `combo`、`area`、`scatter`、`bubble`、`heatmap`、`boxplot`、`
 
 审核接口仅允许修改标题、白名单图表类型、柱状图变体、数据集选择和白名单主题，不能提交任意 ECharts JSON。多个数据集同时命中时按证据贴合度确定性选择并告警；缺少数据集、单图构建失败或质量门未通过时跳过问题图并以 `completed` 返回风险清单。只有上游契约不可读、安全策略、取消或运行预算耗尽才停止。
 
-Agent 1 尚未完成时，`MockStageAgent(DATA_FETCH)` 只把数值型 `EvidenceItem` 原样重组为单点分类数据集，用于集成测试。正式 Agent 1 接入后必须移除这个开发适配器。
+Agent 1 已直接输出带证据 ID、单位、币种和数据时点的 `ChartDataset[]`。无密钥测试使用 `MockSkillHubClient`，但数据仍经过同一 Agent 1 标准化链路，不再由 Workflow 临时重组。

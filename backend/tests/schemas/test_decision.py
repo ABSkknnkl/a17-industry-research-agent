@@ -6,9 +6,6 @@ import pytest
 from pydantic import ValidationError
 
 from app.schemas.decision import (
-    ChartCandidateResult,
-    ChartCandidateStatus,
-    ConflictGroup,
     DecisionPackage,
     DecisionStatus,
     ReleaseMode,

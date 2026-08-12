@@ -1,0 +1,79 @@
+from datetime import date
+
+from app.agents.data_fetcher.fusion import build_chart_datasets, fuse_evidence
+from app.schemas.evidence import (
+    AuditStatus,
+    CorporateActionAdjustment,
+    EvidenceGrade,
+    EvidenceItem,
+    RestatementStatus,
+)
+
+
+def _evidence(evidence_id: str, scope: str, value: float, source: str) -> EvidenceItem:
+    return EvidenceItem(
+        evidence_id=evidence_id,
+        metric_name="营业收入",
+        value=value,
+        unit="亿元",
+        period_end=date(2025, 12, 31),
+        available_at=date(2026, 3, 31),
+        audit_status=AuditStatus.AUDITED,
+        restatement_status=RestatementStatus.NOT_RESTATED,
+        scope=scope,
+        market="中国内地",
+        exchange="不适用",
+        security_type="普通股",
+        currency="CNY",
+        accounting_standard="中国企业会计准则",
+        corporate_action_adjustment=CorporateActionAdjustment.NOT_APPLICABLE,
+        source_name=source,
+        source_locator=f"https://example.com/{evidence_id}",
+        grade=EvidenceGrade.A,
+    )
+
+
+def test_fusion_deduplicates_exact_values_and_preserves_conflicts() -> None:
+    items = [
+        _evidence("E-001", "公司A", 100, "来源A"),
+        _evidence("E-002", "公司A", 100, "来源B"),
+        _evidence("E-003", "公司A", 110, "来源C"),
+        _evidence("E-004", "公司B", 80, "来源D"),
+    ]
+
+    fused, conflicts, duplicate_groups, uniqueness = fuse_evidence([], items)
+
+    assert len(fused) == 3
+    assert len(conflicts) == 1
+    assert set(conflicts[0].evidence_ids) == {"E-001", "E-003"}
+    assert duplicate_groups[0].merged_evidence_ids == ["E-001", "E-002"]
+    assert len(duplicate_groups[0].source_locators) == 2
+    assert uniqueness == 0.75
+
+
+def test_fusion_merges_numeric_noise_instead_of_creating_false_conflict() -> None:
+    items = [
+        _evidence("E-001", "公司A", 18.2, "来源A"),
+        _evidence("E-002", " 公司 A ", 18.199999, "来源B"),
+    ]
+
+    fused, conflicts, duplicate_groups, uniqueness = fuse_evidence([], items)
+
+    assert len(fused) == 1
+    assert conflicts == []
+    assert len(duplicate_groups) == 1
+    assert uniqueness == 0.5
+
+
+def test_chart_dataset_groups_comparable_entities_in_one_dataset() -> None:
+    evidence = [
+        _evidence("E-001", "公司A", 100, "来源A"),
+        _evidence("E-002", "公司B", 80, "来源B"),
+    ]
+
+    datasets = build_chart_datasets(evidence, [])
+
+    assert len(datasets) == 1
+    assert datasets[0].kind == "categorical"
+    assert len(datasets[0].points) == 2
+    assert datasets[0].evidence_ids == ["E-001", "E-002"]

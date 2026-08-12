@@ -520,7 +520,7 @@ pending → running → waiting_review → approved → completed
 - 直接调用 CLI 或 HTTP 绕过 ToolGateway。
 - 把完整外部异常写入日志。
 
-当前状态：真实 Agent 1 尚未完成。当前 Mock 只为联调生成最简单的测试数据集。
+当前状态：Agent 1 P0/P1 已完成，可输出标准证据、来源索引和 `ChartDataset[]`；Mock 仅供无密钥开发，不可作为正式报告数据。
 
 ### 8.2 Agent 2：数据解读
 
@@ -983,28 +983,19 @@ SQLite Checkpoint 主要保存工作流状态；图表 JSON 和未来的图片�
 | 模块 | 当前状态 | 说明 |
 |---|---|---|
 | 项目骨架 | 已完成 | 前后端目录、契约、基础启动和验证脚本已建立 |
-| Agent 1 | 开发中 | 需要正式接入 SkillHub 并输出 `ChartDataset[]` |
+| Agent 1 | P0/P1 已完成 | SkillHub Router + Skill、证据标准化和 `ChartDataset[]` 已接入；待授权密钥真实 Smoke Test |
 | Agent 2 | 已完成真实实现 | 多市场金融分析、证据校验、Router + 金融 Skills |
 | Agent 3 | P0 已完成 | line、bar、pie、radar、industry_chain 后端确定性生成，P1已有条件路由 |
 | Agent 4 | 已完成真实实现 | 7 章 21 节内容生成和质量门 |
-| Agent 5 | 开发中 | 需要完成报告融合、HTML/PDF 产物 |
+| Agent 5 | P0 已完成 | 已生成 Markdown、单文件 HTML、Playwright PDF 和产物清单 |
 | 前端基础 | 已完成骨架 | Vue、路由、Store、API 类型和测试 |
 | 前端图表工作台 | 未完成 | 需要接入 `chart_specs[].option` |
 | SQLite Checkpointer | 已完成 | 支持暂停、恢复和 revision |
 | Playwright Chromium | 已安装并通过测试 | 用于后续 HTML/PDF 渲染 |
 
-### Agent 1 临时适配器
+### Agent 1 当前适配器
 
-Agent 1 尚未完成时，`MockStageAgent(DATA_FETCH)` 会把数值型证据原样重组为测试用分类数据集。
-
-这个适配器：
-
-- 不调用 SkillHub。
-- 不补充外部数据。
-- 不修改原始数值。
-- 不推断产业链关系。
-
-正式 Agent 1 接入后，应删除它。
+Workflow 已直接注册 `DataFetcherAgent`，不再使用 `MockStageAgent(DATA_FETCH)`。开发环境可以选择确定性 `MockSkillHubClient`，正式环境使用 `IwencaiSkillClient`；两者共用相同协议、ToolGateway 和下游数据契约。Mock 数据会被标记并阻止冒充正式数据。
 
 ---
 
@@ -1207,22 +1198,23 @@ Playwright Chromium 基础 PDF 测试已通过，但 Agent 5 仍未完成完整�
 - Agent 2 真实金融分析能力。
 - Agent 4 真实 7 章 21 节内容生成能力。
 - Agent 3 P0 确定性图表生成能力。
+- Agent 1 P0/P1 SkillHub Router + Skill、数据清洗、来源索引与质量门。
+- Agent 5 P0 报告融合与 Markdown/HTML/PDF 导出。
 - line、bar、pie、radar、industry_chain 五类 P0 图表的校验、路由、降级、去重和 Artifact 存储。
 - 图表审核、修改和 revision 重新生成。
 - 后端全量测试、类型检查、代码检查和前端构建验证。
 
 ### 尚未完成
 
-- Agent 1 正式 SkillHub 数据接入。
+- 使用赛事授权密钥完成 Agent 1 真实 SkillHub Smoke Test。
 - 前端完整 GPT 风格工作台。
 - 前端 ECharts 实际渲染和图表审核界面。
-- Agent 5 完整报告融合。
-- HTML/PDF 最终报告模板和完整导出链路。
+- Agent 5 P1 模板管理和对象存储。
 - 生产环境多 Worker 或多实例部署。
 
 最终结论：
 
-> 当前完成的是“从项目初始化、基础框架、公共契约到 Agent 3 P0 后端”的阶段性成果。新成员可以按照本文档完成环境搭建、启动项目、理解工作流并继续开发 Agent 1、前端和 Agent 5。
+> 当前已完成五阶段后端 P0 主链路，Agent 1 同时包含 P1 辅助数据能力。后续重点是真实 SkillHub 授权联调、前端工作台和生产部署验证。
 
 ---
 

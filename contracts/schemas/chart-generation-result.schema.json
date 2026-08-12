@@ -73,6 +73,10 @@
         "chart_id": { "type": "string", "pattern": "^CHART-[A-Za-z0-9_-]+$" },
         "title": { "type": "string", "minLength": 1, "maxLength": 200 },
         "chart_type": { "$ref": "#/$defs/chartType" },
+        "requested_chart_type": {
+          "oneOf": [{ "$ref": "#/$defs/chartType" }, { "type": "null" }]
+        },
+        "resolution_reason": { "type": ["string", "null"], "minLength": 1, "maxLength": 1000 },
         "status": { "type": "string", "enum": ["planned", "ready"] },
         "evidence_ids": {
           "type": "array",
@@ -110,6 +114,10 @@
         "chart_id": { "type": "string", "pattern": "^CHART-[A-Za-z0-9_-]+$" },
         "title": { "type": "string", "minLength": 1, "maxLength": 200 },
         "chart_type": { "$ref": "#/$defs/chartType" },
+        "requested_chart_type": {
+          "oneOf": [{ "$ref": "#/$defs/chartType" }, { "type": "null" }]
+        },
+        "resolution_reason": { "type": ["string", "null"], "minLength": 1, "maxLength": 1000 },
         "variant": { "$ref": "#/$defs/chartVariant" },
         "option": { "type": "object" },
         "evidence_ids": {

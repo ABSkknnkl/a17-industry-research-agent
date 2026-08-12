@@ -38,7 +38,7 @@ def _request(*focus_questions: str) -> AnalysisRequest:
     )
 
 
-def test_router_selects_all_three_skills_for_matching_research_questions() -> None:
+def test_router_selects_all_existing_domain_skills_for_matching_questions() -> None:
     router = SupportingSkillRouter(load_supporting_skills())
 
     selected = router.route(
@@ -62,3 +62,12 @@ def test_router_does_not_add_unrelated_skills() -> None:
     selected = router.route(_request("利率变化如何影响行业收入增速？"))
 
     assert selected == ()
+
+
+def test_router_selects_institutional_research_only_for_matching_evidence() -> None:
+    router = SupportingSkillRouter(load_supporting_skills())
+    request = _request("盈利预测和一致预期是否出现明显预期差？")
+
+    selected = router.route(request)
+
+    assert [skill.key for skill in selected] == ["institutional_research"]

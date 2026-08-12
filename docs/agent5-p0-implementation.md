@@ -50,6 +50,6 @@ LangGraph 状态中只保存 `ReportFusionResult` 和 `ArtifactRef`，不把整�
 
 ## 后续工作
 
-- Agent 1 真实 SkillHub 数据接入完成后，使用真实行业数据进行端到端验收。
+- 使用赛事授权密钥运行已完成的 Agent 1 SkillHub 适配器，并用真实行业数据进行端到端验收。
 - 前端接入 `ReportFusionResult`，实现 HTML 预览、格式选择、终审和下载按钮。
 - P1 再增加模板管理、报告历史列表、对象存储和更丰富的图表静态化。

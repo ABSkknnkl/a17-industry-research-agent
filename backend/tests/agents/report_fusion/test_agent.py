@@ -310,6 +310,34 @@ async def test_agent_emits_verifiable_decision_package_for_advisory_export(
 
 
 @pytest.mark.asyncio
+async def test_agent_keeps_formal_report_when_only_chart_quality_is_advisory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    report_analysis: AnalysisResult,
+    report_charts: ChartGenerationResult,
+    report_chapters: ChapterWritingResult,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    advisory_charts = report_charts.model_copy(deep=True)
+    advisory_charts.quality.passed = False
+    advisory_charts.quality.issues = ["一张图表已按数据形态自动改型"]
+
+    result = await ReportFusionAgent().run(
+        _context(
+            report_analysis,
+            advisory_charts,
+            report_chapters,
+            input_data={"report_fusion_options": {"output_formats": ["markdown"]}},
+        )
+    )
+
+    assert result.status == StageStatus.COMPLETED
+    assert result.data["release_mode"] == "formal"
+    assert result.data["delivery_status"] == "ready_with_limits"
+    assert any("Agent 3 图表质量门未通过" in item for item in result.data["unresolved_risks"])
+
+
+@pytest.mark.asyncio
 async def test_agent_keeps_markdown_and_html_when_pdf_export_fails(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

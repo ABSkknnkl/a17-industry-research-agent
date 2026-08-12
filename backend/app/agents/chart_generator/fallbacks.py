@@ -9,6 +9,13 @@ def downgrade_chart(
 ) -> tuple[ChartType, ChartDataset] | None:
     """Return the safest compatible fallback without inventing values."""
 
+    # Agent 2 expresses an analysis intention; the normalized dataset remains
+    # authoritative for chart shape.  Cross-kind fallback prevents a valid
+    # time series from disappearing merely because the model requested bars.
+    if requested_type in {"bar", "pie", "radar"} and dataset.kind == "time_series":
+        return "line", dataset
+    if requested_type in {"line", "area", "combo"} and dataset.kind == "categorical":
+        return "bar", dataset
     if requested_type in {"pie", "radar"} and dataset.kind == "categorical":
         return "bar", dataset
     if requested_type in {"area", "combo"} and dataset.kind == "time_series":

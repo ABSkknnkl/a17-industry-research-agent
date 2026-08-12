@@ -100,7 +100,6 @@ def evaluate_report_quality(
     # 上游质量门: 区分风险类型
     # 只有数据完整性、未知引用等硬问题才阻断，其余是建议
     if not analysis.quality.passed:
-        analysis_issues = analysis.quality.issues
         advisory_issues.append("Agent 2 分析质量门未通过")
 
     if not charts.quality.passed:

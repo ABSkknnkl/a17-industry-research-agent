@@ -472,6 +472,7 @@ class ChartGeneratorAgent:
                 continue
 
             route = route_chart(requested_type, dataset)
+            resolution_reason: str | None = None
             if not route.accepted:
                 fallback = downgrade_chart(requested_type, dataset)
                 if fallback is not None:
@@ -483,6 +484,11 @@ class ChartGeneratorAgent:
                     )
                     fallback_route = route_chart(fallback_type, fallback_dataset)
                     if not fallback_issues and fallback_route.accepted:
+                        resolution_reason = (
+                            f"请求图表 {requested_type} 与数据集 {dataset.kind} 不匹配，"
+                            f"已确定性调整为 {fallback_type}："
+                            f"{route.reason or '数据形态不兼容'}"
+                        )
                         suppressed.append(
                             SuppressedChart(
                                 title=title,
@@ -648,6 +654,8 @@ class ChartGeneratorAgent:
                 chart_id=chart_id,
                 title=title,
                 chart_type=route.chart_type,
+                requested_chart_type=requested_type,
+                resolution_reason=resolution_reason,
                 variant=variant,
                 option=option,
                 evidence_ids=dataset.evidence_ids,
@@ -671,6 +679,8 @@ class ChartGeneratorAgent:
                     chart_id=chart_id,
                     title=title,
                     chart_type=route.chart_type,
+                    requested_chart_type=requested_type,
+                    resolution_reason=resolution_reason,
                     status="ready",
                     evidence_ids=dataset.evidence_ids,
                     insight_goal=candidate.insight_goal,

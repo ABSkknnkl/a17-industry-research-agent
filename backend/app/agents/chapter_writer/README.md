@@ -21,6 +21,8 @@
 
 Agent 2必须输出可通过`AnalysisResult.model_validate()`且`quality.passed=true`的数据。Agent 3真实实现后，在`StageResult.data.charts`中输出`ChartReference[]`；字段契约见`app/schemas/chart.py`。
 
+Agent 4不加载或调用晨会纪要、三表模型、SkillHub CLI及其他外部技能。相关材料必须先经过数据获取和Agent 2证据校验；Agent 4只消费已确认结论、质量边界和已校验图表，避免章节阶段产生新的未审核事实。
+
 Agent 5从`StageResult.data`读取`ChapterWritingResult`，应按以下优先级处理：
 
 1. `quality.passed=false`或`collaboration_requests`非空时，以`draft_with_warnings`继续组装并展示风险，不得把风险草稿标记为正式无风险报告。

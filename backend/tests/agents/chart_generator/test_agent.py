@@ -531,6 +531,52 @@ async def test_agent_downgrades_invalid_p0_pie_to_bar_with_audit(
 
 
 @pytest.mark.asyncio
+async def test_agent_resolves_bar_time_series_to_line_instead_of_returning_zero_charts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    time_series_dataset: ChartDataset,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    context = StageContext(
+        project_id="project-kind-fallback",
+        run_id="run-kind-fallback",
+        revision=1,
+        input_data={
+            "chart_datasets": [time_series_dataset.model_dump(mode="json")],
+            "evidence_items": _evidence_items(time_series_dataset.evidence_ids),
+        },
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.COMPLETED,
+                data={
+                    "chart_candidates": [
+                        {
+                            "title": "行业收入趋势",
+                            "chart_type": "bar",
+                            "analysis_purpose": "trend",
+                            "evidence_ids": time_series_dataset.evidence_ids,
+                        }
+                    ]
+                },
+            )
+        },
+    )
+
+    result = await ChartGeneratorAgent().run(context)
+
+    assert result.status == StageStatus.COMPLETED
+    assert result.data["quality"]["ready_count"] == 1
+    spec = result.data["chart_specs"][0]
+    assert spec["chart_type"] == "line"
+    assert spec["requested_chart_type"] == "bar"
+    assert "time_series" in spec["resolution_reason"]
+    reference = result.data["charts"][0]
+    assert reference["chart_type"] == "line"
+    assert reference["requested_chart_type"] == "bar"
+
+
+@pytest.mark.asyncio
 async def test_agent_limits_each_chart_family_to_two_ready_charts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

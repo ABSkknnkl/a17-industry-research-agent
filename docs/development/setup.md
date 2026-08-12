@@ -51,7 +51,18 @@ npm run dev
 - `MAX_REQUEST_BODY_BYTES`、`RATE_LIMIT_WINDOW_SECONDS`
 - `CREATE_RUN_RATE_LIMIT`、`REVIEW_RATE_LIMIT`
 
-成员在尚未取得密钥时应使用 Mock 适配器，不得在代码中放测试密钥。
+Agent 1 的应用联调必须使用真实 SkillHub。成员尚未取得密钥时可运行隔离的自动化单元测试，但不能用 Mock 启动应用或生成演示报告；不得在代码中放测试密钥。
+
+生产/联调环境的模型固定为`deepseek-v4-pro`，用于 Agent 2 和 Agent 4。Agent 3、Agent 5
+属于确定性处理阶段，不设置 Mock/真实模型切换。配置完成并启动服务后执行：
+
+```bash
+curl http://localhost:8000/health/ready
+```
+
+返回`ready: true`且`mock_components`为空才可开始真实报告联调。供应商 API Key 不得分发
+给测试人员；测试人员使用下面的应用 Bearer Token。若某个模型密钥曾出现在聊天、截图或
+提交历史中，应先在供应商控制台撤销并生成新密钥，再写入服务器密钥管理器。
 
 ## 后端认证
 

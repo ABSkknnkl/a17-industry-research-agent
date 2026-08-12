@@ -162,6 +162,8 @@ export interface ChartReference {
   chart_id: string
   title: string
   chart_type: ChartType
+  requested_chart_type?: ChartType | null
+  resolution_reason?: string | null
   status: 'planned' | 'ready'
   evidence_ids: string[]
   artifact_id: string | null
@@ -172,6 +174,8 @@ export interface ChartSpec {
   chart_id: string
   title: string
   chart_type: ChartType
+  requested_chart_type?: ChartType | null
+  resolution_reason?: string | null
   variant: ChartVariant
   option: Record<string, unknown>
   evidence_ids: string[]

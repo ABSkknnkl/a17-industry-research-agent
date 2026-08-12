@@ -7,7 +7,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
 from app.schemas.workflow import StageName, StageResult, StageStatus
-from app.integrations.llm.mock import MockAnalysisModel
+from app.integrations.llm.mock import MockAnalysisModel, MockChapterWritingModel
 from app.runtime.models import RuntimePolicy
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
@@ -248,7 +248,9 @@ async def test_default_registry_runs_real_interpreter_and_chart_generator(
         return b"%PDF-1.7\nworkflow-unit-test"
 
     monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", stable_pdf)
-    graph = build_pipeline_graph(create_stage_registry(MockAnalysisModel()))
+    graph = build_pipeline_graph(
+        create_stage_registry(MockAnalysisModel(), MockChapterWritingModel())
+    )
 
     result = await graph.ainvoke(
         create_pipeline_state(

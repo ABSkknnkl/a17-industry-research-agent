@@ -9,6 +9,7 @@ SkillKey = Literal[
     "behavioral_finance",
     "competitive_landscape",
     "restricted_industry_chain",
+    "institutional_research",
 ]
 
 BEHAVIORAL_FINANCE_SKILL_SHA256 = "be52b6e482a9e135df0c144f48abed0b4a62298258fe3884aa8e1020a0773e30"
@@ -18,6 +19,9 @@ COMPETITIVE_LANDSCAPE_SKILL_SHA256 = (
 RESTRICTED_INDUSTRY_CHAIN_SKILL_SHA256 = (
     "3deba9c62f00b449ac9c82868a579c4ce2462882424625d23852aec690ff56ef"
 )
+INSTITUTIONAL_RESEARCH_SKILL_SHA256 = (
+    "7bd382548fbedf13825fbb023f01f695685f3e9292c1c9ec8cafaaaf110d3ca0"
+)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[4]
 _BEHAVIORAL_FINANCE_SKILL_PATH = (
@@ -25,6 +29,9 @@ _BEHAVIORAL_FINANCE_SKILL_PATH = (
 )
 _COMPETITIVE_LANDSCAPE_SKILL_PATH = _PROJECT_ROOT / "skills" / "竞争格局分析" / "SKILL.md"
 _RESTRICTED_INDUSTRY_CHAIN_SKILL_PATH = _PROJECT_ROOT / "skills" / "产业链解读" / "SKILL.md"
+_INSTITUTIONAL_RESEARCH_SKILL_PATH = (
+    _PROJECT_ROOT / "skills" / "hithink-insresearch-query" / "SKILL.md"
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,6 +103,16 @@ def load_restricted_industry_chain_skill() -> SkillAsset:
     )
 
 
+def load_institutional_research_skill() -> SkillAsset:
+    return _load_skill(
+        key="institutional_research",
+        name="受限机构研究解读",
+        version="1.0.0-restricted",
+        path=_INSTITUTIONAL_RESEARCH_SKILL_PATH,
+        expected_sha256=INSTITUTIONAL_RESEARCH_SKILL_SHA256,
+    )
+
+
 def load_supporting_skills() -> tuple[SkillAsset, ...]:
     """Load the complete Agent 2 skill registry in deterministic order."""
 
@@ -103,4 +120,5 @@ def load_supporting_skills() -> tuple[SkillAsset, ...]:
         load_behavioral_finance_skill(),
         load_competitive_landscape_skill(),
         load_restricted_industry_chain_skill(),
+        load_institutional_research_skill(),
     )

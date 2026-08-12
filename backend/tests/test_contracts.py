@@ -89,7 +89,7 @@ def test_report_fusion_contract_exposes_three_formats_and_manifest() -> None:
     )
 
 
-def test_default_human_review_stops_after_agent_two_only() -> None:
+def test_default_human_review_stops_at_both_fact_gate_agents() -> None:
     factory = RunCreateRequest.model_fields["review_stages"].default_factory
     assert factory is not None
-    assert factory() == [StageName.DATA_INTERPRET]
+    assert factory() == [StageName.DATA_FETCH, StageName.DATA_INTERPRET]

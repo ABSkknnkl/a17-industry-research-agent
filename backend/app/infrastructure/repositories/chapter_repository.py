@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import aiosqlite
+
 from app.core.config import settings
 
 CHAPTER_TABLE_SQL = """
@@ -22,8 +24,6 @@ CREATE TABLE IF NOT EXISTS chapter_checkpoints (
     PRIMARY KEY (run_id, chapter_id, revision)
 )
 """
-
-import aiosqlite
 
 
 class ChapterRepository:

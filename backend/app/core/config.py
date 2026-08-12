@@ -35,11 +35,17 @@ class Settings(BaseSettings):
 
     LLM_API_KEY: SecretStr | None = None
     LLM_BASE_URL: str | None = None
-    LLM_MODEL: str = "qwen-plus"
-    LLM_USE_MOCK: bool = True
+    LLM_MODEL: str = "deepseek-v4-pro"
+    LLM_USE_MOCK: bool = False
     LLM_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=300)
     LLM_SEGMENTED_THRESHOLD_CHARS: int = Field(default=10_000, ge=5_000, le=500_000)
     SKILLHUB_API_KEY: SecretStr | None = None
+    IWENCAI_API_KEY: SecretStr | None = None
+    IWENCAI_BASE_URL: str = "https://openapi.iwencai.com"
+    SKILLHUB_USE_MOCK: bool = False
+    SKILLHUB_MAX_RETRIES: int = Field(default=2, ge=0, le=5)
+    SKILLHUB_MAX_PAGES: int = Field(default=2, ge=1, le=5)
+    SKILLHUB_PAGE_SIZE: int = Field(default=20, ge=1, le=100)
 
     WORKFLOW_TIMEOUT_SECONDS: float = Field(default=900, gt=0, le=86_400)
     STAGE_TIMEOUT_SECONDS: float = Field(default=180, gt=0, le=3_600)
@@ -47,7 +53,7 @@ class Settings(BaseSettings):
     MAX_TOTAL_STAGE_RUNS: int = Field(default=15, ge=5, le=100)
     MAX_STAGE_ATTEMPTS: int = Field(default=3, ge=1, le=10)
     MAX_MODEL_CALLS_PER_RUN: int = Field(default=64, ge=1, le=1_000)
-    MAX_TOOL_CALLS_PER_RUN: int = Field(default=32, ge=1, le=1_000)
+    MAX_TOOL_CALLS_PER_RUN: int = Field(default=48, ge=1, le=1_000)
     MAX_TOOL_RESULT_CHARS: int = Field(default=20_000, ge=20, le=1_000_000)
     MAX_RUNTIME_EVENTS: int = Field(default=100, ge=10, le=2_000)
 

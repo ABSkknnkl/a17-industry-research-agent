@@ -223,7 +223,10 @@ def _add_budget_risk_notices(
                         severity=RiskSeverity.WARNING,
                         disposition=RiskDisposition.ADVISORY,
                         title=f"候选图表数量 ({total}) 超过推荐上限 ({RECOMMENDED_CHARTS[1]})",
-                        detail=f"当前共 {total} 张候选图表，推荐 {RECOMMENDED_CHARTS[0]}-{RECOMMENDED_CHARTS[1]} 张",
+                        detail=(
+                            f"当前共 {total} 张候选图表，推荐 "
+                            f"{RECOMMENDED_CHARTS[0]}-{RECOMMENDED_CHARTS[1]} 张"
+                        ),
                         recommendation=f"建议保留 {RECOMMENDED_CHARTS[1]} 张核心图表",
                         consequence="图表过多会降低报告信息密度",
                         can_override=True,

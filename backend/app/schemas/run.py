@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.analysis import ResearchBrief
 from app.schemas.evidence import EvidenceItem
-from app.schemas.workflow import StageName
+from app.schemas.workflow import DataFetchOptions, StageName
 
 BoundedLabel = Annotated[str, Field(min_length=1, max_length=100)]
 BoundedQuestion = Annotated[str, Field(min_length=1, max_length=200)]
@@ -24,7 +24,8 @@ class ResearchInput(BaseModel):
     reporting_currency: str | None = Field(default=None, min_length=3, max_length=20)
     research_as_of: date
     focus_questions: list[BoundedQuestion] = Field(min_length=1, max_length=3)
-    evidence_items: list[EvidenceItem] = Field(min_length=1, max_length=200)
+    evidence_items: list[EvidenceItem] = Field(default_factory=list, max_length=200)
+    data_fetch_options: DataFetchOptions = Field(default_factory=DataFetchOptions)
     analysis_depth: Literal["overview", "standard", "deep"] = "standard"
     risk_preference: Literal["conservative", "balanced", "aggressive"] = "balanced"
     research_brief: ResearchBrief = Field(default_factory=ResearchBrief)
@@ -38,6 +39,6 @@ class RunCreateRequest(BaseModel):
     review_stages: list[StageName] = Field(
         # Agent 1/2 form the default fact gate.  Agent 3/4/5 still expose optional
         # review APIs, but do not pause the standard pipeline for professional warnings.
-        default_factory=lambda: [StageName.DATA_INTERPRET],
+        default_factory=lambda: [StageName.DATA_FETCH, StageName.DATA_INTERPRET],
         max_length=5,
     )

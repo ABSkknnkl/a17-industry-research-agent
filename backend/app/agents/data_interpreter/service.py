@@ -29,12 +29,10 @@ def _evidence_preflight_issues(request: AnalysisRequest) -> list[str]:
             issues.append(f"{prefix}缺少单位")
         if item.source_locator is None:
             issues.append(f"{prefix}缺少证据定位")
-        if item.audit_status.value == "unknown":
-            issues.append(f"{prefix}缺少审计状态")
-        if item.restatement_status.value == "unknown":
-            issues.append(f"{prefix}缺少追溯调整状态")
-        if item.corporate_action_adjustment.value == "unknown":
-            issues.append(f"{prefix}缺少价格复权/公司行动处理状态")
+        # SkillHub does not guarantee that every response carries audit,
+        # restatement, or corporate-action metadata. Unknown values stay
+        # visible to the model and quality cards, but are advisory rather than
+        # a reason to discard otherwise traceable evidence at this boundary.
         if item.grade.value == "E":
             issues.append(f"{prefix}为E级待核验输入，不得直接支持核心结论")
     return issues
@@ -53,14 +51,31 @@ class DataInterpreterAgent:
         source_data = context.input_data
         fetch_result = context.previous_results.get(StageName.DATA_FETCH)
         if fetch_result is not None:
-            # Agent 1 owns the normalized evidence package. Explicit review edits
-            # kept in pipeline input_data win when this stage is regenerated.
-            source_data = {**fetch_result.data, **context.input_data}
+            # Agent 1 owns the normalized evidence package. The original API
+            # request may contain an empty evidence_items list, so it must not
+            # overwrite newly acquired evidence. Agent 2 review edits win only
+            # after the workflow revision has advanced beyond Agent 1's result.
+            source_data = {**context.input_data, **fetch_result.data}
+            if context.revision > fetch_result.revision:
+                for field_name in (
+                    "focus_questions",
+                    "analysis_depth",
+                    "risk_preference",
+                    "evidence_items",
+                    "research_brief",
+                    "rejected_claim_ids",
+                ):
+                    if field_name in context.input_data:
+                        source_data[field_name] = context.input_data[field_name]
 
-        request_data = dict(source_data)
-        # Agent 1 also emits datasets for Agent 3. They belong to the shared
-        # stage payload but are intentionally outside AnalysisRequest.
-        request_data.pop("chart_datasets", None)
+        # Agent 1 also emits query plans, call traces, source records and chart
+        # datasets. Agent 2 consumes only its declared public input contract so
+        # acquisition metadata cannot become accidental prompt input.
+        request_data = {
+            field_name: source_data[field_name]
+            for field_name in AnalysisRequest.model_fields
+            if field_name in source_data
+        }
         if context.review_feedback:
             request_data["review_feedback"] = context.review_feedback
         if context.rejected_claim_ids:

@@ -224,7 +224,10 @@ async def review_run(
         if not request.accepted_risk_codes:
             raise HTTPException(
                 status_code=422,
-                detail={"code": "MISSING_RISK_CODES", "message": "accept_with_risks requires accepted_risk_codes"},
+                detail={
+                    "code": "MISSING_RISK_CODES",
+                    "message": "accept_with_risks requires accepted_risk_codes",
+                },
             )
 
     # customize 必须提供 selected_chart_ids
@@ -232,7 +235,10 @@ async def review_run(
         if not request.selected_chart_ids:
             raise HTTPException(
                 status_code=422,
-                detail={"code": "MISSING_CHART_IDS", "message": "customize requires selected_chart_ids"},
+                detail={
+                    "code": "MISSING_CHART_IDS",
+                    "message": "customize requires selected_chart_ids",
+                },
             )
 
     try:

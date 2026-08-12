@@ -191,6 +191,8 @@ class ChartReference(BaseModel):
     chart_id: str = Field(pattern=r"^CHART-[A-Za-z0-9_-]+$")
     title: str = Field(min_length=1, max_length=200)
     chart_type: ChartType
+    requested_chart_type: ChartType | None = None
+    resolution_reason: str | None = Field(default=None, min_length=1, max_length=1_000)
     status: Literal["planned", "ready"]
     evidence_ids: list[str] = Field(min_length=1)
     insight_goal: str | None = Field(default=None, min_length=1, max_length=500)
@@ -225,6 +227,8 @@ class ChartSpec(BaseModel):
     chart_id: str = Field(pattern=r"^CHART-[A-Za-z0-9_-]+$")
     title: str = Field(min_length=1, max_length=200)
     chart_type: ChartType
+    requested_chart_type: ChartType | None = None
+    resolution_reason: str | None = Field(default=None, min_length=1, max_length=1_000)
     variant: ChartVariant
     option: dict[str, Any]
     evidence_ids: list[str] = Field(min_length=1)
