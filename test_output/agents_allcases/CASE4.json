@@ -1,0 +1,590 @@
+{
+  "case": "CASE4",
+  "agent1_status": "completed",
+  "agent1_error": null,
+  "evidence_count": 142,
+  "dataset_count": 30,
+  "quality_passed": true,
+  "metric_coverage": [
+    "data_version",
+    "国家",
+    "预测主营业务收入增长率",
+    "summary",
+    "指标",
+    "所属同花顺行业",
+    "最新涨跌幅",
+    "title",
+    "市销率(ps)",
+    "业务利润",
+    "收入占比",
+    "地区级别",
+    "营业成本",
+    "预测净利润增长率",
+    "营业收入 / 营业成本",
+    "指标值",
+    "产业名称",
+    "归母净利润同比增长率",
+    "成交额",
+    "所属概念",
+    "纳入概念原因",
+    "归母净利润",
+    "最新市盈率ttm",
+    "毛利率",
+    "项目名称",
+    "营业收入来源说明",
+    "预测peg值",
+    "最新静态市盈率",
+    "预测主营业务收入平均值",
+    "分类标准",
+    "最新动态市盈率",
+    "营业收入",
+    "最新a股流通市值",
+    "macro_id",
+    "最新价",
+    "业务成本",
+    "归属于母公司所有者的净利润",
+    "净资产收益率roe(加权,公布值)",
+    "macro_name",
+    "上市地点",
+    "最新涨跌幅:前复权",
+    "产业链名称",
+    "周期",
+    "预测每股收益平均值",
+    "上市板块",
+    "a股市值(不含限售股)",
+    "指数简称",
+    "营业收入同比增长率",
+    "最新市净率",
+    "业务收入",
+    "宏观@值",
+    "净利润来源说明",
+    "预测市盈率(pe,最新预测)",
+    "概念解析",
+    "经营活动产生的现金流量净额",
+    "预测净利润平均值"
+  ],
+  "calculated_metrics": [
+    {
+      "calculation_id": "CALC-5D74F13B02A36B26",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "振石股份",
+      "market": "中国",
+      "period_end": "2026-03-31",
+      "value": 12.27816753,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归属于母公司所有者的净利润",
+          "value": 200180135.07,
+          "unit": "未提供",
+          "period_end": "2026-03-31",
+          "evidence_id": "E-58490f7256c04e61"
+        },
+        {
+          "name": "营业收入",
+          "value": 1630374684.61,
+          "unit": "未提供",
+          "period_end": "2026-03-31",
+          "evidence_id": "E-c5246c77a89b4edc"
+        }
+      ],
+      "evidence_ids": [
+        "E-58490f7256c04e61",
+        "E-c5246c77a89b4edc"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-5145B0A1CE2CBB28",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "琏升科技",
+      "market": "中国",
+      "period_end": "2026-03-31",
+      "value": -40.99083977,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归属于母公司所有者的净利润",
+          "value": -20789176.71,
+          "unit": "未提供",
+          "period_end": "2026-03-31",
+          "evidence_id": "E-868d0cb759e76c8c"
+        },
+        {
+          "name": "营业收入",
+          "value": 50716640.17,
+          "unit": "未提供",
+          "period_end": "2026-03-31",
+          "evidence_id": "E-271937031c5efcb2"
+        }
+      ],
+      "evidence_ids": [
+        "E-868d0cb759e76c8c",
+        "E-271937031c5efcb2"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-2DEC719A31C22B70",
+      "calculation_type": "gross_margin",
+      "metric_name": "毛利率",
+      "entity_scope": "南玻A",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": -1068155428128.7628,
+      "unit": "%",
+      "formula": "（营业收入－营业成本）÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "营业收入 / 营业成本",
+          "value": 1.202881118182012,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-a595d237614fb2d6"
+        },
+        {
+          "name": "营业成本",
+          "value": 12848639959.0,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-9ef27aa8d35128fd"
+        }
+      ],
+      "evidence_ids": [
+        "E-a595d237614fb2d6",
+        "E-9ef27aa8d35128fd"
+      ],
+      "methodology_note": "收入与成本来自同一实体、市场、会计口径和报告期。"
+    },
+    {
+      "calculation_id": "CALC-E47922B775E06162",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "南玻A",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 22177779164.344135,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 266772318.0,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-6d9b59fb3f0422a9"
+        },
+        {
+          "name": "营业收入 / 营业成本",
+          "value": 1.202881118182012,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-a595d237614fb2d6"
+        }
+      ],
+      "evidence_ids": [
+        "E-6d9b59fb3f0422a9",
+        "E-a595d237614fb2d6"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-146862C147BB1B7A",
+      "calculation_type": "gross_margin",
+      "metric_name": "毛利率",
+      "entity_scope": "南玻A",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": -1000355170010.4332,
+      "unit": "%",
+      "formula": "（营业收入－营业成本）÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "营业收入 / 营业成本",
+          "value": 1.1710720801999501,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-55609ad207426fba"
+        },
+        {
+          "name": "营业成本",
+          "value": 11714880100.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-56324beb46ea66bb"
+        }
+      ],
+      "evidence_ids": [
+        "E-55609ad207426fba",
+        "E-56324beb46ea66bb"
+      ],
+      "methodology_note": "收入与成本来自同一实体、市场、会计口径和报告期。"
+    },
+    {
+      "calculation_id": "CALC-F92F6B6A552A8B9F",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "南玻A",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 10731046630.241861,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 125668291.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-7829c9d7b68671f6"
+        },
+        {
+          "name": "营业收入 / 营业成本",
+          "value": 1.1710720801999501,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-55609ad207426fba"
+        }
+      ],
+      "evidence_ids": [
+        "E-7829c9d7b68671f6",
+        "E-55609ad207426fba"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-3385103EDDA4BD46",
+      "calculation_type": "revenue_yoy",
+      "metric_name": "营业收入同比增长率",
+      "entity_scope": "南玻A",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": -2.64440413,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "营业收入 / 营业成本",
+          "value": 1.1710720801999501,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-55609ad207426fba"
+        },
+        {
+          "name": "营业收入 / 营业成本",
+          "value": 1.202881118182012,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-a595d237614fb2d6"
+        }
+      ],
+      "evidence_ids": [
+        "E-55609ad207426fba",
+        "E-a595d237614fb2d6"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    },
+    {
+      "calculation_id": "CALC-39D8911F680F40F9",
+      "calculation_type": "net_profit_yoy",
+      "metric_name": "净利润同比增长率",
+      "entity_scope": "南玻A",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": -52.89305429,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 125668291.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-7829c9d7b68671f6"
+        },
+        {
+          "name": "归母净利润",
+          "value": 266772318.0,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-6d9b59fb3f0422a9"
+        }
+      ],
+      "evidence_ids": [
+        "E-7829c9d7b68671f6",
+        "E-6d9b59fb3f0422a9"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    },
+    {
+      "calculation_id": "CALC-D6D828E6C2CDC259",
+      "calculation_type": "net_margin",
+      "metric_name": "销售净利率",
+      "entity_scope": "金盘科技",
+      "market": "中国",
+      "period_end": "2027-12-31",
+      "value": 127.87868804,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "预测净利润增长率",
+          "value": 28.869821,
+          "unit": "未提供",
+          "period_end": "2027-12-31",
+          "evidence_id": "E-d40639b3ee94d8ff"
+        },
+        {
+          "name": "预测主营业务收入增长率",
+          "value": 22.575944,
+          "unit": "未提供",
+          "period_end": "2027-12-31",
+          "evidence_id": "E-562ae2229dbfa5f1"
+        }
+      ],
+      "evidence_ids": [
+        "E-d40639b3ee94d8ff",
+        "E-562ae2229dbfa5f1"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-7CED456CE9199B5B",
+      "calculation_type": "net_margin",
+      "metric_name": "销售净利率",
+      "entity_scope": "金盘科技",
+      "market": "中国",
+      "period_end": "2028-12-31",
+      "value": 135.521957,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "预测净利润增长率",
+          "value": 28.004142,
+          "unit": "未提供",
+          "period_end": "2028-12-31",
+          "evidence_id": "E-de91b20b36160709"
+        },
+        {
+          "name": "预测主营业务收入增长率",
+          "value": 20.663915,
+          "unit": "未提供",
+          "period_end": "2028-12-31",
+          "evidence_id": "E-4b48773bf2ee6ee2"
+        }
+      ],
+      "evidence_ids": [
+        "E-de91b20b36160709",
+        "E-4b48773bf2ee6ee2"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-8803474E54143B8C",
+      "calculation_type": "revenue_yoy",
+      "metric_name": "营业收入同比增长率",
+      "entity_scope": "金盘科技",
+      "market": "中国",
+      "period_end": "2028-12-31",
+      "value": -8.46932026,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "预测主营业务收入增长率",
+          "value": 20.663915,
+          "unit": "未提供",
+          "period_end": "2028-12-31",
+          "evidence_id": "E-4b48773bf2ee6ee2"
+        },
+        {
+          "name": "预测主营业务收入增长率",
+          "value": 22.575944,
+          "unit": "未提供",
+          "period_end": "2027-12-31",
+          "evidence_id": "E-562ae2229dbfa5f1"
+        }
+      ],
+      "evidence_ids": [
+        "E-4b48773bf2ee6ee2",
+        "E-562ae2229dbfa5f1"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    },
+    {
+      "calculation_id": "CALC-91A16C134B37FDF1",
+      "calculation_type": "net_profit_yoy",
+      "metric_name": "净利润同比增长率",
+      "entity_scope": "金盘科技",
+      "market": "中国",
+      "period_end": "2028-12-31",
+      "value": -2.99856033,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "预测净利润增长率",
+          "value": 28.004142,
+          "unit": "未提供",
+          "period_end": "2028-12-31",
+          "evidence_id": "E-de91b20b36160709"
+        },
+        {
+          "name": "预测净利润增长率",
+          "value": 28.869821,
+          "unit": "未提供",
+          "period_end": "2027-12-31",
+          "evidence_id": "E-d40639b3ee94d8ff"
+        }
+      ],
+      "evidence_ids": [
+        "E-de91b20b36160709",
+        "E-d40639b3ee94d8ff"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    }
+  ],
+  "calculation_issues": [
+    {
+      "issue_id": "CI-A3610499C0425141",
+      "calculation_type": "gross_margin",
+      "entity_scope": "海泰新能",
+      "period_end": "2026-03-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-001909cd3e8d30c6"
+      ]
+    },
+    {
+      "issue_id": "CI-B3AA0D99ED8256BC",
+      "calculation_type": "net_margin",
+      "entity_scope": "海泰新能",
+      "period_end": "2026-03-31",
+      "reason": "已取得营业收入，但缺少同口径净利润，净利率不可计算。",
+      "missing_inputs": [
+        "净利润或归母净利润"
+      ],
+      "evidence_ids": [
+        "E-001909cd3e8d30c6"
+      ]
+    },
+    {
+      "issue_id": "CI-03EAC37B49268D6B",
+      "calculation_type": "gross_margin",
+      "entity_scope": "隆基绿能",
+      "period_end": "2026-03-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-7819bac5ae4c3c82"
+      ]
+    },
+    {
+      "issue_id": "CI-74138EE4D7C853B3",
+      "calculation_type": "net_margin",
+      "entity_scope": "隆基绿能",
+      "period_end": "2026-03-31",
+      "reason": "已取得营业收入，但缺少同口径净利润，净利率不可计算。",
+      "missing_inputs": [
+        "净利润或归母净利润"
+      ],
+      "evidence_ids": [
+        "E-7819bac5ae4c3c82"
+      ]
+    },
+    {
+      "issue_id": "CI-34120FAB2F005499",
+      "calculation_type": "gross_margin",
+      "entity_scope": "振石股份",
+      "period_end": "2026-03-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-c5246c77a89b4edc"
+      ]
+    },
+    {
+      "issue_id": "CI-86F71ECAAAA23289",
+      "calculation_type": "gross_margin",
+      "entity_scope": "琏升科技",
+      "period_end": "2026-03-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-271937031c5efcb2"
+      ]
+    },
+    {
+      "issue_id": "CI-4BB959520D0AB3D3",
+      "calculation_type": "gross_margin",
+      "entity_scope": "深赛格",
+      "period_end": "2025-12-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-7e82bf49706ae774"
+      ]
+    },
+    {
+      "issue_id": "CI-FFF80496B1285730",
+      "calculation_type": "net_margin",
+      "entity_scope": "深赛格",
+      "period_end": "2025-12-31",
+      "reason": "已取得营业收入，但缺少同口径净利润，净利率不可计算。",
+      "missing_inputs": [
+        "净利润或归母净利润"
+      ],
+      "evidence_ids": [
+        "E-7e82bf49706ae774"
+      ]
+    },
+    {
+      "issue_id": "CI-C488FDF8F91D8568",
+      "calculation_type": "gross_margin",
+      "entity_scope": "金盘科技",
+      "period_end": "2027-12-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-562ae2229dbfa5f1"
+      ]
+    },
+    {
+      "issue_id": "CI-2AF5BE2D7CC5B0C5",
+      "calculation_type": "gross_margin",
+      "entity_scope": "金盘科技",
+      "period_end": "2028-12-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-4b48773bf2ee6ee2"
+      ]
+    }
+  ],
+  "checkpoints": [
+    "产能利用率",
+    "产销率",
+    "产业链图数量上限",
+    "季度/年度混用拦截"
+  ]
+}

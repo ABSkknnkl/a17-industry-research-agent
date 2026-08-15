@@ -1,0 +1,238 @@
+{
+  "case": "CASE2",
+  "agent1_status": "completed",
+  "agent1_error": null,
+  "evidence_count": 142,
+  "dataset_count": 19,
+  "quality_passed": true,
+  "metric_coverage": [
+    "加权净资产收益率",
+    "data_version",
+    "国家",
+    "summary",
+    "指标",
+    "所属同花顺行业",
+    "最新涨跌幅",
+    "title",
+    "业务利润",
+    "收入占比",
+    "地区级别",
+    "指标单位",
+    "指标值",
+    "归母净利润同比增长率",
+    "所属概念",
+    "纳入概念原因",
+    "归母净利润",
+    "项目名称",
+    "毛利率",
+    "分类标准",
+    "营业收入",
+    "成本占比",
+    "macro_id",
+    "最新价",
+    "业务成本",
+    "市盈率(pe,ttm)",
+    "macro_name",
+    "宏观@id",
+    "上市地点",
+    "周期",
+    "上市板块",
+    "指数简称",
+    "营业收入同比增长率",
+    "净资产收益率",
+    "业务收入",
+    "宏观@值",
+    "利润占比"
+  ],
+  "calculated_metrics": [
+    {
+      "calculation_id": "CALC-D64CA33264941284",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 4.03561039,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 702615804.9,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-3c3887c2a37a82cb"
+        },
+        {
+          "name": "营业收入",
+          "value": 17410397362.62,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-4ff744892fa6b96f"
+        }
+      ],
+      "evidence_ids": [
+        "E-3c3887c2a37a82cb",
+        "E-4ff744892fa6b96f"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-8D6B87A9C5DC1377",
+      "calculation_type": "revenue_yoy",
+      "metric_name": "营业收入同比增长率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2026-03-31",
+      "value": 3.43967327,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 3751777940.11,
+          "unit": "未提供",
+          "period_end": "2026-03-31",
+          "evidence_id": "E-e33e9d09e31e7e51"
+        },
+        {
+          "name": "营业收入",
+          "value": 3627020292.73,
+          "unit": "未提供",
+          "period_end": "2025-03-31",
+          "evidence_id": "E-14bee7376814d16a"
+        }
+      ],
+      "evidence_ids": [
+        "E-e33e9d09e31e7e51",
+        "E-14bee7376814d16a"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    }
+  ],
+  "calculation_issues": [
+    {
+      "issue_id": "CI-17DE60A439E6030C",
+      "calculation_type": "gross_margin",
+      "entity_scope": "富奥股份",
+      "period_end": "2025-03-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-14bee7376814d16a"
+      ]
+    },
+    {
+      "issue_id": "CI-108AFD8FE4B85C4D",
+      "calculation_type": "net_margin",
+      "entity_scope": "富奥股份",
+      "period_end": "2025-03-31",
+      "reason": "已取得营业收入，但缺少同口径净利润，净利率不可计算。",
+      "missing_inputs": [
+        "净利润或归母净利润"
+      ],
+      "evidence_ids": [
+        "E-14bee7376814d16a"
+      ]
+    },
+    {
+      "issue_id": "CI-89352F21CD1B2A56",
+      "calculation_type": "gross_margin",
+      "entity_scope": "富奥股份",
+      "period_end": "2025-06-30",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-6b12dad74e22bb75"
+      ]
+    },
+    {
+      "issue_id": "CI-B8F374EC92D322C3",
+      "calculation_type": "net_margin",
+      "entity_scope": "富奥股份",
+      "period_end": "2025-06-30",
+      "reason": "已取得营业收入，但缺少同口径净利润，净利率不可计算。",
+      "missing_inputs": [
+        "净利润或归母净利润"
+      ],
+      "evidence_ids": [
+        "E-6b12dad74e22bb75"
+      ]
+    },
+    {
+      "issue_id": "CI-0281DBCF5E138979",
+      "calculation_type": "gross_margin",
+      "entity_scope": "富奥股份",
+      "period_end": "2025-09-30",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-8de24f89972b96e9"
+      ]
+    },
+    {
+      "issue_id": "CI-F984DC66587F07AA",
+      "calculation_type": "net_margin",
+      "entity_scope": "富奥股份",
+      "period_end": "2025-09-30",
+      "reason": "已取得营业收入，但缺少同口径净利润，净利率不可计算。",
+      "missing_inputs": [
+        "净利润或归母净利润"
+      ],
+      "evidence_ids": [
+        "E-8de24f89972b96e9"
+      ]
+    },
+    {
+      "issue_id": "CI-2FB26953221DB30C",
+      "calculation_type": "gross_margin",
+      "entity_scope": "富奥股份",
+      "period_end": "2025-12-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-4ff744892fa6b96f"
+      ]
+    },
+    {
+      "issue_id": "CI-6441037C9B342DB0",
+      "calculation_type": "gross_margin",
+      "entity_scope": "富奥股份",
+      "period_end": "2026-03-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-e33e9d09e31e7e51"
+      ]
+    },
+    {
+      "issue_id": "CI-5E0E694FE6B739F1",
+      "calculation_type": "net_margin",
+      "entity_scope": "富奥股份",
+      "period_end": "2026-03-31",
+      "reason": "已取得营业收入，但缺少同口径净利润，净利率不可计算。",
+      "missing_inputs": [
+        "净利润或归母净利润"
+      ],
+      "evidence_ids": [
+        "E-e33e9d09e31e7e51"
+      ]
+    }
+  ],
+  "checkpoints": [
+    "聚合算子CR3",
+    "聚合算子CR5",
+    "图表互斥(饼图/堆叠柱状二选一)",
+    "不捏造缺失份额"
+  ]
+}

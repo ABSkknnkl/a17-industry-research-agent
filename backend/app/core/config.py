@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "deepseek-v4-pro"
     LLM_USE_MOCK: bool = False
     LLM_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=300)
+    LLM_MAX_OUTPUT_TOKENS: int = Field(default=8_192, ge=1_024, le=32_768)
     LLM_SEGMENTED_THRESHOLD_CHARS: int = Field(default=10_000, ge=5_000, le=500_000)
     SKILLHUB_API_KEY: SecretStr | None = None
     IWENCAI_API_KEY: SecretStr | None = None

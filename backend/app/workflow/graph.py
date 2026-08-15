@@ -29,6 +29,9 @@ STAGE_ORDER = (
 )
 REVIEW_NODE = "review_gate"
 FINISH_NODE = "finish"
+REINPUT_REQUIRED_ERRORS = frozenset(
+    {"required_data_unavailable", "requested_calculation_data_unavailable"}
+)
 
 
 def _stage_node(
@@ -318,6 +321,11 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
         "accept_with_risks",
         "customize",
     }
+    if current_result.error in REINPUT_REQUIRED_ERRORS and action in decision_actions:
+        raise ValueError(
+            "当前查询缺少用户要求的数据，不能直接放行；"
+            "请使用 revise/regenerate 调整查询条件后重新获取，或取消任务。"
+        )
     if current_result.status == StageStatus.FAILED and action in decision_actions:
         raise ValueError("failed stage cannot be approved; regenerate, revise, or cancel")
     decision_decision_id = decision.get("decision_id", "")

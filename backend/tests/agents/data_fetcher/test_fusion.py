@@ -65,6 +65,22 @@ def test_fusion_merges_numeric_noise_instead_of_creating_false_conflict() -> Non
     assert uniqueness == 0.5
 
 
+def test_fusion_preserves_large_real_world_conflict_group() -> None:
+    """A high-volume provider response must not crash conflict auditing."""
+
+    items = [
+        _evidence(f"E-{index:03d}", "公司A", float(index), f"来源{index}") for index in range(1, 24)
+    ]
+
+    fused, conflicts, duplicate_groups, uniqueness = fuse_evidence([], items)
+
+    assert len(fused) == 23
+    assert len(conflicts) == 1
+    assert conflicts[0].evidence_ids == [f"E-{index:03d}" for index in range(1, 24)]
+    assert duplicate_groups == []
+    assert uniqueness == 1.0
+
+
 def test_chart_dataset_groups_comparable_entities_in_one_dataset() -> None:
     evidence = [
         _evidence("E-001", "公司A", 100, "来源A"),
@@ -77,3 +93,20 @@ def test_chart_dataset_groups_comparable_entities_in_one_dataset() -> None:
     assert datasets[0].kind == "categorical"
     assert len(datasets[0].points) == 2
     assert datasets[0].evidence_ids == ["E-001", "E-002"]
+
+
+def test_chart_dataset_separates_generic_provider_values_by_metric_scope() -> None:
+    output = _evidence("E-OUT", "全国:集成电路生产量", 4842.8, "来源A")
+    output.metric_name = "宏观@值"
+    output.unit = "亿块"
+    imports = _evidence("E-IMPORT", "集成电路:进口金额:当月值", 638.3, "来源B")
+    imports.metric_name = "宏观@值"
+    imports.unit = "亿美元"
+
+    datasets = build_chart_datasets([output, imports], [])
+
+    assert len(datasets) == 2
+    assert {item.metric_name for item in datasets} == {
+        "全国:集成电路生产量",
+        "集成电路:进口金额:当月值",
+    }

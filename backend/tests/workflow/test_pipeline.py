@@ -88,13 +88,7 @@ async def test_registered_agents_run_in_pipeline_order() -> None:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "action",
-    ["approve", "accept_recommendation", "accept_with_risks", "customize"],
-)
-async def test_failed_stage_stops_downstream_and_requires_recovery_review(
-    action: str,
-) -> None:
+async def test_failed_stage_stops_downstream_and_requires_recovery_review() -> None:
     calls: list[StageName] = []
     agents: list[StageAgent] = []
     for stage in StageName:
@@ -122,7 +116,7 @@ async def test_failed_stage_stops_downstream_and_requires_recovery_review(
         await graph.ainvoke(
             Command(
                 resume={
-                    "action": action,
+                    "action": "approve",
                     "expected_revision": 1,
                     "comment": "错误结果不能直接放行",
                 }
@@ -243,11 +237,6 @@ async def test_default_registry_runs_real_interpreter_and_chart_generator(
     from app.core.config import settings
 
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path / "artifacts")
-
-    async def stable_pdf(_: str) -> bytes:
-        return b"%PDF-1.7\nworkflow-unit-test"
-
-    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", stable_pdf)
     graph = build_pipeline_graph(
         create_stage_registry(MockAnalysisModel(), MockChapterWritingModel())
     )

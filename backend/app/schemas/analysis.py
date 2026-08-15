@@ -5,6 +5,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.schemas.acquisition import RequirementCoverage
 from app.schemas.evidence import AuditStatus, EvidenceGrade, EvidenceItem
 
 Confidence = Literal["high", "medium", "low"]
@@ -16,6 +17,22 @@ DimensionName = Literal[
     "risk",
 ]
 BriefItem = Annotated[str, Field(min_length=1, max_length=200)]
+CalculationType = Literal[
+    "cr3",
+    "cr5",
+    "gross_margin",
+    "net_margin",
+    "revenue_yoy",
+    "net_profit_yoy",
+    "dupont_roe",
+    "asset_turnover",
+    "inventory_turnover",
+    "inventory_days",
+    "receivables_turnover",
+    "receivables_days",
+    "capacity_utilization",
+    "production_sales_ratio",
+]
 
 
 class ResearchBrief(BaseModel):
@@ -39,8 +56,9 @@ class AnalysisRequest(BaseModel):
     security_types: list[str] = Field(min_length=1, max_length=10)
     reporting_currency: str | None = Field(default=None, min_length=3, max_length=20)
     research_as_of: date
-    focus_questions: list[str] = Field(min_length=1, max_length=3)
+    focus_questions: list[str] = Field(min_length=1, max_length=12)
     evidence_items: list[EvidenceItem] = Field(min_length=1)
+    requirement_coverage: list[RequirementCoverage] = Field(default_factory=list, max_length=12)
     analysis_depth: Literal["overview", "standard", "deep"] = "standard"
     risk_preference: Literal["conservative", "balanced", "aggressive"] = "balanced"
     review_feedback: str | None = None
@@ -186,6 +204,51 @@ class FinancialConsistencyCheck(BaseModel):
     evidence_ids: list[str] = Field(default_factory=list)
 
 
+class CalculationInput(BaseModel):
+    """One evidence-backed operand used by a deterministic calculation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str = Field(min_length=1, max_length=200)
+    value: float
+    unit: str | None = Field(default=None, max_length=50)
+    period_end: date | None = None
+    evidence_id: str = Field(pattern=r"^E-[A-Za-z0-9_-]+$")
+
+
+class CalculatedMetric(BaseModel):
+    """Auditable metric produced by code, never by free-form model arithmetic."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    calculation_id: str = Field(pattern=r"^CALC-[A-Za-z0-9_-]+$")
+    calculation_type: CalculationType
+    metric_name: str = Field(min_length=1, max_length=200)
+    entity_scope: str = Field(min_length=1, max_length=5_000)
+    market: str = Field(min_length=1, max_length=100)
+    period_end: date | None = None
+    value: float
+    unit: str = Field(min_length=1, max_length=50)
+    formula: str = Field(min_length=1, max_length=1_000)
+    inputs: list[CalculationInput] = Field(min_length=1, max_length=20)
+    evidence_ids: list[str] = Field(min_length=1, max_length=20)
+    methodology_note: str = Field(min_length=1, max_length=1_000)
+
+
+class CalculationIssue(BaseModel):
+    """A visible reason why a recognized calculation was not produced."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    issue_id: str = Field(pattern=r"^CI-[A-Za-z0-9_-]+$")
+    calculation_type: CalculationType
+    entity_scope: str = Field(min_length=1, max_length=5_000)
+    period_end: date | None = None
+    reason: str = Field(min_length=1, max_length=1_000)
+    missing_inputs: list[str] = Field(default_factory=list, max_length=20)
+    evidence_ids: list[str] = Field(default_factory=list, max_length=20)
+
+
 class DimensionCoverage(BaseModel):
     """States how strongly evidence supports each required research dimension."""
 
@@ -219,6 +282,8 @@ class AnalysisDraft(BaseModel):
         default_factory=list,
         max_length=20,
     )
+    calculated_metrics: list[CalculatedMetric] = Field(default_factory=list, max_length=200)
+    calculation_issues: list[CalculationIssue] = Field(default_factory=list, max_length=200)
     dimension_coverage: list[DimensionCoverage] = Field(default_factory=list, max_length=5)
 
     @model_validator(mode="after")

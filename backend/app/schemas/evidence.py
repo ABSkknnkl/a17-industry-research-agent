@@ -2,7 +2,7 @@
 
 from datetime import date
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -46,6 +46,7 @@ class EvidenceItem(BaseModel):
     value: int | float | Annotated[str, Field(max_length=5_000)] | None
     unit: str | None = Field(default=None, max_length=50)
     period_end: date | None = None
+    fiscal_period: Literal["FY", "H1", "Q1", "Q2", "Q3", "Q4", "TTM"] | None = None
     available_at: date | None = None
     audit_status: AuditStatus = AuditStatus.UNKNOWN
     restatement_status: RestatementStatus = RestatementStatus.UNKNOWN

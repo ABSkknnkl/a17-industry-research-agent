@@ -141,6 +141,17 @@ export const chartTypes = [...p0ChartTypes, ...p1ChartTypes] as const
 export type P0ChartType = (typeof p0ChartTypes)[number]
 export type P1ChartType = (typeof p1ChartTypes)[number]
 export type ChartType = (typeof chartTypes)[number]
+export interface ChartGenerationOptions {
+  chart_type?: ChartType | null
+  requested_chart_count?: number | null
+  requested_chart_types?: ChartType[]
+  user_priority?: boolean
+  allow_multiple_charts_per_dataset?: boolean
+  bar_variant?: 'vertical' | 'horizontal' | 'grouped' | 'stacked' | null
+  metric_ids?: string[]
+  title?: string | null
+  color_theme?: string | null
+}
 export type ChartVariant =
   | 'line'
   | 'vertical'

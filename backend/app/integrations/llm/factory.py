@@ -22,6 +22,7 @@ def create_analysis_model(settings: Settings) -> AnalysisModel:
         api_key=api_key,
         base_url=settings.LLM_BASE_URL,
         timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
+        max_output_tokens=settings.LLM_MAX_OUTPUT_TOKENS,
         segmented_threshold_chars=settings.LLM_SEGMENTED_THRESHOLD_CHARS,
     )
 

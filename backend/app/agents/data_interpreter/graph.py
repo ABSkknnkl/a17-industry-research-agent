@@ -7,6 +7,7 @@ from langgraph.graph.state import CompiledStateGraph
 from typing_extensions import TypedDict
 
 from app.agents.data_interpreter.prompt_adapter import build_runtime_prompt
+from app.agents.data_interpreter.calculations import calculate_p0_metrics
 from app.agents.data_interpreter.prompt_loader import PromptAsset
 from app.agents.data_interpreter.skill_loader import SkillAsset
 from app.integrations.llm.protocol import AnalysisModel
@@ -14,6 +15,8 @@ from app.schemas.analysis import (
     AnalysisDraft,
     AnalysisRequest,
     AnalysisResult,
+    CalculatedMetric,
+    CalculationIssue,
     DataQualityIssue,
     DimensionCoverage,
     EvidenceCatalogItem,
@@ -54,6 +57,8 @@ _SUPPORTING_SKILL_GUARDRAILS = """
 class AnalysisGraphState(TypedDict):
     request: dict[str, Any]
     prepared_evidence_ids: list[str]
+    calculated_metrics: list[dict[str, Any]]
+    calculation_issues: list[dict[str, Any]]
     draft: dict[str, Any] | None
     audit_feedback: list[str]
     revision_count: int
@@ -88,7 +93,12 @@ def build_data_interpreter_graph(
             for item in request.evidence_items
             if item.available_at is None or item.available_at <= request.research_as_of
         ]
-        return {"prepared_evidence_ids": usable_ids}
+        calculated_metrics, calculation_issues = calculate_p0_metrics(request.evidence_items)
+        return {
+            "prepared_evidence_ids": usable_ids,
+            "calculated_metrics": [item.model_dump(mode="json") for item in calculated_metrics],
+            "calculation_issues": [item.model_dump(mode="json") for item in calculation_issues],
+        }
 
     async def generate(state: AnalysisGraphState) -> dict[str, object]:
         request = AnalysisRequest.model_validate(state["request"])
@@ -97,12 +107,22 @@ def build_data_interpreter_graph(
             runtime_prompt=build_runtime_prompt(
                 request,
                 audit_feedback=state.get("audit_feedback", []),
+                calculated_metrics=state.get("calculated_metrics", []),
+                calculation_issues=state.get("calculation_issues", []),
             ),
         )
         return {"draft": draft.model_dump(mode="json")}
 
     def audit(state: AnalysisGraphState) -> dict[str, object]:
         draft = AnalysisDraft.model_validate(state["draft"])
+        # These fields are owned by deterministic code.  Any model-emitted
+        # arithmetic is discarded before the public Agent 2 result is built.
+        draft.calculated_metrics = [
+            CalculatedMetric.model_validate(item) for item in state.get("calculated_metrics", [])
+        ]
+        draft.calculation_issues = [
+            CalculationIssue.model_validate(item) for item in state.get("calculation_issues", [])
+        ]
         valid_ids = set(state["prepared_evidence_ids"])
         issues: list[str] = []
         referenced_ids: set[str] = set()

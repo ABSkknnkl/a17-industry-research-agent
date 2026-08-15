@@ -539,6 +539,7 @@ class OpenAICompatibleAnalysisModel:
         api_key: str | None = None,
         base_url: str | None = None,
         timeout_seconds: float = 60,
+        max_output_tokens: int = 8_192,
         chat_model: Any | None = None,
         segmented_threshold_chars: int = 10_000,
     ) -> None:
@@ -554,6 +555,7 @@ class OpenAICompatibleAnalysisModel:
                 temperature=0.1,
                 timeout=timeout_seconds,
                 max_retries=2,
+                model_kwargs={"max_tokens": max_output_tokens},
                 extra_body=(
                     {"thinking": {"type": "disabled"}} if _is_deepseek(model_name) else None
                 ),

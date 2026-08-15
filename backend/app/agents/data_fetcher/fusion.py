@@ -80,12 +80,19 @@ def build_chart_datasets(
     evidence: list[EvidenceItem],
     chain_rows: list[dict[str, Any]],
 ) -> list[ChartDataset]:
-    numeric_groups: dict[tuple[str, str | None, str], list[EvidenceItem]] = defaultdict(list)
+    numeric_groups: dict[tuple[str, str | None, str, str | None], list[EvidenceItem]] = defaultdict(
+        list
+    )
     for item in evidence:
         if isinstance(item.value, (int, float)) and not isinstance(item.value, bool):
-            numeric_groups[(item.metric_name, item.unit, item.currency)].append(item)
+            # Generic provider columns such as ``宏观@值`` carry their actual
+            # metric identity in scope (for example import amount vs output).
+            # Keeping those scopes separate prevents unrelated time series from
+            # being merged into one misleading chart.
+            scope_key = item.scope if item.metric_name in {"宏观@值", "指标值", "值"} else None
+            numeric_groups[(item.metric_name, item.unit, item.currency, scope_key)].append(item)
     datasets: list[ChartDataset] = []
-    for (metric, unit, currency), items in numeric_groups.items():
+    for (metric, unit, currency, scope_key), items in numeric_groups.items():
         periods = {item.period_end for item in items}
         kind = "time_series" if len(periods) > 1 else "categorical"
         digest = hashlib.sha256(
@@ -100,7 +107,7 @@ def build_chart_datasets(
             ChartDataset(
                 dataset_id=f"DS-{digest}",
                 kind=kind,
-                metric_name=metric,
+                metric_name=scope_key or metric,
                 unit=unit,
                 currency=None if currency == "不适用" else currency,
                 data_as_of=max(

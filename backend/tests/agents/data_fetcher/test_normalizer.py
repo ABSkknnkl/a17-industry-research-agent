@@ -277,6 +277,26 @@ def test_relevance_accepts_provider_subsector_declared_inside_broader_topic() ->
     assert any(item.scope == "测试电池公司" for item in result.evidence)
 
 
+def test_target_company_task_quarantines_sector_constituent_substitution() -> None:
+    executed = _executed(
+        {
+            "股票简称": "富奥股份",
+            "所属概念": "动力电池",
+            "营业收入(亿元)": 10,
+        }
+    )
+    executed = replace(
+        executed,
+        task=executed.task.model_copy(update={"target_entities": ["宁德时代", "比亚迪"]}),
+    )
+
+    result = _normalize_result([executed], industry_topic="动力电池")
+
+    assert result.evidence == []
+    assert result.summary.task_clean_row_counts["Q-01"] == 0
+    assert result.quarantined[0].reason_code == "target_entity_mismatch"
+
+
 def test_source_identity_does_not_collide_when_raw_hash_is_reused() -> None:
     first = _executed({"股票简称": "公司A", "营业收入(亿元)": 1})
     second = _executed({"股票简称": "公司B", "行业指标": 2})

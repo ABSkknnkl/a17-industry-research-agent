@@ -1,0 +1,10 @@
+{
+  "model_name": "deepseek-v4-pro",
+  "prompt_version": "global-equity-analysis-v2",
+  "error_type": "StructuredOutputError",
+  "error_code": "provider_error",
+  "retryable": true,
+  "diagnostics": {
+    "provider_error_type": "LengthFinishReasonError"
+  }
+}

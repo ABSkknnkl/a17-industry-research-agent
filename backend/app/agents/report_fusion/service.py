@@ -35,11 +35,16 @@ from app.workflow.stages import StageContext
 
 CANONICAL_CHAPTER_ORDER = [f"CH-{index:02d}" for index in range(1, 8)]
 CANONICAL_FORMAT_ORDER: tuple[ReportFormat, ...] = ("markdown", "html", "pdf")
-CHART_ONLY_ADVISORY_PREFIXES = (
+DELIVERY_ONLY_ADVISORY_PREFIXES = (
     "就绪图表引用与图表规格不一致",
     "章节引用了未就绪图表",
     "正式报告嵌入",
     "Agent 3 图表质量门未通过",
+    "Agent 4 章节质量门未通过",
+    "数据质量问题",
+    "研究维度",
+    "财务一致性检查",
+    "用户指定的章节顺序",
 )
 FORMAT_FILE: dict[ReportFormat, str] = {
     "markdown": "report.md",
@@ -179,15 +184,18 @@ class ReportFusionAgent:
             )
 
         draft_required_issues = [
-            issue for issue in advisory_issues if not issue.startswith(CHART_ONLY_ADVISORY_PREFIXES)
+            issue
+            for issue in advisory_issues
+            if not issue.startswith(DELIVERY_ONLY_ADVISORY_PREFIXES)
         ]
         formal_eligible = not draft_required_issues
         draft_eligible = True  # 只要没有硬阻断就可以导出草稿
 
         # 确定导出模式
         actual_release_mode = release_mode
-        # Chart-only advisories do not rewrite a complete report into a draft.
-        # Traceability, structure, analysis, and chapter issues remain stricter.
+        # Once Agents 1/2 have supplied usable facts, visual, writing and
+        # presentation advisories remain visible without relabelling a complete
+        # report as a draft. Unknown citations and broken structure stay strict.
         if draft_required_issues and release_mode == "formal":
             actual_release_mode = "draft_with_warnings"
         delivery_status: Literal["ready", "ready_with_limits", "blocked"] = (

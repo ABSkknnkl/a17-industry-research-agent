@@ -62,6 +62,65 @@ class TruncatedOutputModel:
 
 
 @pytest.mark.asyncio
+async def test_requested_calculation_with_missing_inputs_pauses_before_llm() -> None:
+    agent = DataInterpreterAgent(model=FailingIfCalledModel())
+    period = "2025-12-31"
+    common = {
+        "period_end": period,
+        "available_at": "2026-03-31",
+        "audit_status": "audited",
+        "restatement_status": "not_restated",
+        "scope": "测试公司",
+        "market": "中国内地",
+        "exchange": "不适用",
+        "security_type": "普通股",
+        "currency": "CNY",
+        "accounting_standard": "中国企业会计准则",
+        "corporate_action_adjustment": "not_applicable",
+        "source_name": "年度报告",
+        "grade": "A",
+    }
+    context = StageContext(
+        project_id="project-missing-calc",
+        run_id="run-missing-calc",
+        revision=1,
+        input_data={
+            "industry_topic": "动力电池",
+            "market_scope": ["中国内地"],
+            "security_types": ["普通股"],
+            "reporting_currency": "CNY",
+            "research_as_of": "2026-06-30",
+            "focus_questions": ["计算测试公司的存货周转天数"],
+            "evidence_items": [
+                {
+                    **common,
+                    "evidence_id": "E-COST",
+                    "metric_name": "营业成本",
+                    "value": 60,
+                    "unit": "亿元",
+                    "source_locator": "利润表",
+                },
+                {
+                    **common,
+                    "evidence_id": "E-INVENTORY",
+                    "metric_name": "存货",
+                    "value": 10,
+                    "unit": "亿元",
+                    "source_locator": "资产负债表",
+                },
+            ],
+        },
+    )
+
+    result = await agent.run(context)
+
+    assert result.status == StageStatus.WAITING_REVIEW
+    assert result.error == "requested_calculation_data_unavailable"
+    assert result.data["blocking_issues"] == ["requested_calculation_data_unavailable"]
+    assert "重新提交" in result.data["collaboration_requests"][0]["question"]
+
+
+@pytest.mark.asyncio
 async def test_data_interpreter_returns_traceable_structured_analysis() -> None:
     model = CapturingModel()
     agent = DataInterpreterAgent(model=model)
@@ -220,6 +279,52 @@ async def test_missing_evidence_metadata_requests_review_before_llm_call() -> No
     requests = result.data["collaboration_requests"]
     assert requests[0]["request_id"] == "EVIDENCE-METADATA"
     assert "公告日/可得日" in requests[0]["reason"]
+
+
+@pytest.mark.asyncio
+async def test_qualitative_evidence_without_period_or_unit_reaches_model() -> None:
+    agent = DataInterpreterAgent(model=MockAnalysisModel())
+    context = StageContext(
+        project_id="project-qualitative",
+        run_id="run-analysis-qualitative",
+        revision=1,
+        input_data={
+            "industry_topic": "中国半导体行业",
+            "market_scope": ["中国内地"],
+            "security_types": ["行业汇总"],
+            "reporting_currency": "CNY",
+            "research_as_of": "2026-08-13",
+            "focus_questions": ["国产替代进度如何？"],
+            "evidence_items": [
+                {
+                    "evidence_id": "E-QUAL-001",
+                    "metric_name": "国产替代政策进展",
+                    "value": "政策持续推进核心环节自主可控",
+                    "unit": None,
+                    "period_end": None,
+                    "available_at": "2026-08-01",
+                    "audit_status": "not_applicable",
+                    "restatement_status": "not_applicable",
+                    "scope": "中国半导体行业",
+                    "market": "中国内地",
+                    "exchange": "不适用",
+                    "security_type": "行业汇总",
+                    "currency": "不适用",
+                    "accounting_standard": "不适用",
+                    "corporate_action_adjustment": "not_applicable",
+                    "source_name": "公开政策文件",
+                    "source_locator": "政策文件第一章",
+                    "grade": "C",
+                }
+            ],
+        },
+    )
+
+    result = await agent.run(context)
+
+    assert result.status == StageStatus.COMPLETED
+    assert result.error is None
+    assert AnalysisResult.model_validate(result.data).claims
 
 
 @pytest.mark.asyncio

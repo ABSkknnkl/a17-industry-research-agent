@@ -133,6 +133,24 @@ def test_accept_recommendation_propagates_recommended_chart_ids(monkeypatch) -> 
     assert result["input_data"]["selected_chart_ids"] == ["CHART-001"]
 
 
+def test_missing_required_data_cannot_be_approved_without_reinput(monkeypatch) -> None:
+    run_id = "run-missing-data"
+    state = _state(
+        StageName.DATA_FETCH,
+        {"blocking_issues": ["required_data_unavailable"]},
+        run_id=run_id,
+    )
+    state["stage_results"][StageName.DATA_FETCH.value]["error"] = "required_data_unavailable"
+    monkeypatch.setattr(
+        graph_module,
+        "interrupt",
+        lambda _: {"action": "approve", "expected_revision": 1},
+    )
+
+    with pytest.raises(ValueError, match="不能直接放行"):
+        graph_module._review_gate(state)
+
+
 def test_tampered_review_snapshot_is_rejected(monkeypatch) -> None:
     run_id = "run-tampered-snapshot"
     package = _package(

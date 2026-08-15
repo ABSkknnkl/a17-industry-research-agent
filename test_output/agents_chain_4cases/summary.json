@@ -1,0 +1,62 @@
+[
+  {
+    "case": "CASE1",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 6,
+    "suppressed": 4,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "CALCULATION-DATA-MISSING",
+        "reason": "营业收入与营业成本单位不一致，未执行自动换算，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；营业收入与营业成本单位不一致，未执行自动换算，毛利率不可计算。；本期与上年同期单位缺失或不一致，同比增长率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；营业收入与营业成本单位不一致，未执行自动换算，毛利率不可计算。；营业收入与营业成本单位不一致，未执行自动换算，毛利率不可计算。；本期与上年同期单位缺失或不一致，同比增长率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。"
+      }
+    ]
+  },
+  {
+    "case": "CASE2",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "EVIDENCE-METADATA",
+        "reason": "E-bacebe3089b6dcf8公告日/可得日晚于研究时点，存在前视偏差；E-020adb0d34a3608c公告日/可得日晚于研究时点，存在前视偏差；E-15aa99107cfb7365公告日/可得日晚于研究时点，存在前视偏差；E-53a553ab0d69f264公告日/可得日晚于研究时点，存在前视偏差；E-85a388c5624c4bb1公告日/可得日晚于研究时点，存在前视偏差；E-c76390d073e5864e公告日/可得日晚于研究时点，存在前视偏差；E-32bd94488c07fd69公告日/可得日晚于研究时点，存在前视偏差；E-2600a4c71c88dbbc公告日/可得日晚于研究时点，存在前视偏差；E-4b9fb661707adf72公告日/可得日晚于研究时点，存在前视偏差；E-4a3287f34d2a6454公告日/可得日晚于研究时点，存在前视偏差；E-9b64c77783ec3c4d公告日/可得日晚于研究时点，存在前视偏差；E-8d969790cdf5a84a公告日/可得日晚于研究时点，存在前视偏差；E-ca06adc2211bb134公告日/可得日晚于研究时点，存在前视偏差；E-21b64b9a75733fcf公告日/可得日晚于研究时点，存在前视偏差；E-a7f71156d5bbb8d7公告日/可得日晚于研究时点，存在前视偏差"
+      }
+    ]
+  },
+  {
+    "case": "CASE3",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "CONCENTRATION-NO-SAMPLE",
+        "reason": "计算模块未产出CR3/CR5，市占率样本不足，拒绝捏造集中度。"
+      }
+    ]
+  },
+  {
+    "case": "CASE4",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "CAPACITY-INSUFFICIENT",
+        "reason": "未产出：产能利用率、产销率；缺少产量/产能/销量科目，拒绝估算。"
+      }
+    ]
+  }
+]

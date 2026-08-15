@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 from collections.abc import Iterator
-from typing import Any
+from typing import Any, Literal
 
 from app.agents.data_fetcher.executor import ExecutedTask
 from app.schemas.acquisition import (
@@ -22,6 +22,8 @@ from app.schemas.evidence import (
     EvidenceItem,
     RestatementStatus,
 )
+
+FiscalPeriod = Literal["FY", "H1", "Q1", "Q2", "Q3", "Q4", "TTM"]
 
 _ENTITY_FIELDS = (
     "股票简称",
@@ -144,6 +146,8 @@ def normalize_tasks(
     duplicate_raw_row_count = 0
     seen_rows: set[str] = set()
     clean_payload_rows: dict[tuple[str, int], list[dict[str, Any]]] = {}
+    task_clean_row_counts: dict[str, int] = {}
+    task_metric_names: dict[str, set[str]] = {}
 
     # Always inventory every provider payload first.  Evidence is bounded for
     # downstream model context, but provenance must never disappear merely
@@ -182,6 +186,24 @@ def normalize_tasks(
                     continue
                 seen_rows.add(row_hash)
                 entity = _first_text(cleaned, _ENTITY_FIELDS) or industry_topic
+                if result.task.target_entities and not _matches_target_entity(
+                    entity,
+                    result.task.target_entities,
+                ):
+                    quarantined.append(
+                        QuarantinedRecord(
+                            quarantine_id=f"QUAR-{row_hash[:16]}",
+                            skill_name=payload.skill_name,
+                            row_sha256=row_hash,
+                            entity=entity[:500],
+                            reason_code="target_entity_mismatch",
+                            reason=(
+                                f"返回实体“{entity}”不属于用户指定目标"
+                                f"（{'、'.join(result.task.target_entities)}），已隔离。"
+                            ),
+                        )
+                    )
+                    continue
                 if _is_low_relevance(cleaned, industry_topic):
                     quarantined.append(
                         QuarantinedRecord(
@@ -198,6 +220,9 @@ def normalize_tasks(
                     continue
                 cleaned_rows.append(cleaned)
             clean_payload_rows[(result.task.task_id, payload.page)] = cleaned_rows
+            task_clean_row_counts[result.task.task_id] = (
+                task_clean_row_counts.get(result.task.task_id, 0) + len(cleaned_rows)
+            )
             if payload.skill_name == SkillName.INDUSTRY_CHAIN:
                 chain_rows.extend(cleaned_rows)
 
@@ -264,6 +289,11 @@ def normalize_tasks(
                             value=value,
                             unit=unit,
                             period_end=item_period_end,
+                            fiscal_period=_fiscal_period(
+                                str(field_name),
+                                item_period_end,
+                                payload.skill_name,
+                            ),
                             available_at=available_at,
                             audit_status=audit,
                             restatement_status=restatement,
@@ -288,6 +318,7 @@ def normalize_tasks(
                             ),
                         )
                     )
+                    task_metric_names.setdefault(result.task.task_id, set()).add(metric_name)
                     metric_counts[metric_key] = metric_counts.get(metric_key, 0) + 1
                     task_evidence_count += 1
                     if task_evidence_count >= task_budget:
@@ -318,6 +349,10 @@ def normalize_tasks(
             duplicate_raw_row_count=duplicate_raw_row_count,
             quarantined_count=len(quarantined),
             skill_evidence_counts=skill_evidence_counts,
+            task_clean_row_counts=task_clean_row_counts,
+            task_metric_names={
+                task_id: sorted(names) for task_id, names in task_metric_names.items()
+            },
         ),
     )
 
@@ -372,6 +407,14 @@ def _topic_tokens(topic: str) -> set[str]:
 
 def _normalized_identity(value: str) -> str:
     return re.sub(r"[\s（）()\-_/]+", "", value).casefold()
+
+
+def _matches_target_entity(entity: str, targets: list[str]) -> bool:
+    entity_key = _normalized_identity(entity)
+    return any(
+        target_key and (target_key in entity_key or entity_key in target_key)
+        for target_key in (_normalized_identity(target) for target in targets)
+    )
 
 
 def _is_low_relevance(row: dict[str, Any], industry_topic: str) -> bool:
@@ -435,6 +478,36 @@ def _field_period(field_name: str) -> date | None:
         parsed = _parse_date(candidate)
         if parsed is not None:
             return parsed
+    return None
+
+
+def _fiscal_period(
+    field_name: str,
+    period_end: date | None,
+    skill_name: SkillName,
+) -> FiscalPeriod | None:
+    """Preserve provider period semantics without guessing from numeric magnitude."""
+
+    if skill_name != SkillName.FINANCE:
+        return None
+    compact = re.sub(r"[\s_\-]+", "", field_name).casefold()
+    markers: tuple[tuple[tuple[str, ...], FiscalPeriod], ...] = (
+        (("ttm", "滚动十二月"), "TTM"),
+        (("年报", "年度", "全年", "fy"), "FY"),
+        (("中报", "半年", "半年度", "h1"), "H1"),
+        (("一季", "第一季度", "q1"), "Q1"),
+        (("二季", "第二季度", "q2"), "Q2"),
+        (("三季", "第三季度", "q3"), "Q3"),
+        (("四季", "第四季度", "q4"), "Q4"),
+    )
+    for tokens, label in markers:
+        if any(token in compact for token in tokens):
+            return label
+    # Dynamic annual fields frequently contain only a 31-December period. It
+    # is safe to mark those as FY for the finance skill; other dates remain
+    # unknown and therefore cannot be mixed with an explicit fiscal period.
+    if period_end is not None and (period_end.month, period_end.day) == (12, 31):
+        return "FY"
     return None
 
 

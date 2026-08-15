@@ -1,0 +1,5648 @@
+{
+  "charts": [
+    {
+      "chart_id": "CHART-05BC2B8FA312",
+      "title": "宁德时代营收+毛利率双轴趋势（combo）",
+      "chart_type": "combo",
+      "requested_chart_type": "combo",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q6-1",
+        "E-Q6-2",
+        "E-Q6-3",
+        "E-Q6-4",
+        "E-Q6-5",
+        "E-Q6-6",
+        "E-Q6-7",
+        "E-Q6-8"
+      ],
+      "insight_goal": "宁德时代营收+毛利率双轴趋势（combo）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-05BC2B8FA312",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-264642171BA1",
+      "title": "宁德时代vs亿纬锂能储能业务六维雷达图（radar）",
+      "chart_type": "radar",
+      "requested_chart_type": "radar",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q4-1",
+        "E-Q4-2",
+        "E-Q4-3",
+        "E-Q4-4",
+        "E-Q4-5",
+        "E-Q4-6",
+        "E-Q4-7",
+        "E-Q4-8",
+        "E-Q4-9",
+        "E-Q4-10",
+        "E-Q4-11",
+        "E-Q4-12"
+      ],
+      "insight_goal": "宁德时代vs亿纬锂能储能业务六维雷达图（radar）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-264642171BA1",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-24AB6E29D603",
+      "title": "锂电池全产业链供需结构（industry_chain）",
+      "chart_type": "industry_chain",
+      "requested_chart_type": "industry_chain",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q5-1",
+        "E-Q5-2",
+        "E-Q5-3",
+        "E-Q5-4",
+        "E-Q5-5",
+        "E-Q5-6",
+        "E-Q5-7",
+        "E-Q5-8",
+        "E-Q5-9",
+        "E-Q5-10"
+      ],
+      "insight_goal": "锂电池全产业链供需结构（industry_chain）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-24AB6E29D603",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-BC5C7F65886E",
+      "title": "光伏周期复盘：硅料价格历史与预测区间（area）",
+      "chart_type": "area",
+      "requested_chart_type": "area",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q7-1",
+        "E-Q7-2",
+        "E-Q7-3",
+        "E-Q7-4",
+        "E-Q7-5",
+        "E-Q7-6",
+        "E-Q7-7",
+        "E-Q7-8",
+        "E-Q7-9",
+        "E-Q7-10"
+      ],
+      "insight_goal": "光伏周期复盘：硅料价格历史与预测区间（area）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-BC5C7F65886E",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-ADE79911E72E",
+      "title": "人形机器人产业链价值气泡图（bubble）",
+      "chart_type": "bubble",
+      "requested_chart_type": "bubble",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q9-1",
+        "E-Q9-2",
+        "E-Q9-3",
+        "E-Q9-4",
+        "E-Q9-5",
+        "E-Q9-6"
+      ],
+      "insight_goal": "人形机器人产业链价值气泡图（bubble）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-ADE79911E72E",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-ECC59E0944BC",
+      "title": "利率下行对四大板块估值弹性热力图（heatmap）",
+      "chart_type": "heatmap",
+      "requested_chart_type": "heatmap",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q10-1",
+        "E-Q10-2",
+        "E-Q10-3",
+        "E-Q10-4",
+        "E-Q10-5",
+        "E-Q10-6",
+        "E-Q10-7",
+        "E-Q10-8",
+        "E-Q10-9",
+        "E-Q10-10",
+        "E-Q10-11",
+        "E-Q10-12",
+        "E-Q10-13",
+        "E-Q10-14",
+        "E-Q10-15",
+        "E-Q10-16",
+        "E-Q10-17",
+        "E-Q10-18",
+        "E-Q10-19",
+        "E-Q10-20",
+        "E-Q10-21",
+        "E-Q10-22",
+        "E-Q10-23",
+        "E-Q10-24",
+        "E-Q10-25"
+      ],
+      "insight_goal": "利率下行对四大板块估值弹性热力图（heatmap）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-ECC59E0944BC",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-D8D2D264B9C5",
+      "title": "储能上市公司分类型净利率分布箱线图（boxplot）",
+      "chart_type": "boxplot",
+      "requested_chart_type": "boxplot",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q11-1",
+        "E-Q11-2",
+        "E-Q11-3",
+        "E-Q11-4",
+        "E-Q11-5",
+        "E-Q11-6",
+        "E-Q11-7",
+        "E-Q11-8",
+        "E-Q11-9",
+        "E-Q11-10",
+        "E-Q11-11",
+        "E-Q11-12",
+        "E-Q11-13",
+        "E-Q11-14",
+        "E-Q11-15",
+        "E-Q11-16",
+        "E-Q11-17",
+        "E-Q11-18",
+        "E-Q11-19",
+        "E-Q11-20",
+        "E-Q11-21",
+        "E-Q11-22",
+        "E-Q11-23",
+        "E-Q11-24"
+      ],
+      "insight_goal": "储能上市公司分类型净利率分布箱线图（boxplot）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-D8D2D264B9C5",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-00B8F02FF282",
+      "title": "储能产业链价值拆分矩形树图（treemap）",
+      "chart_type": "treemap",
+      "requested_chart_type": "treemap",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q12-1",
+        "E-Q12-2",
+        "E-Q12-3",
+        "E-Q12-4",
+        "E-Q12-5",
+        "E-Q12-6",
+        "E-Q12-7",
+        "E-Q12-8",
+        "E-Q12-9"
+      ],
+      "insight_goal": "储能产业链价值拆分矩形树图（treemap）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-00B8F02FF282",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-5C34594A75CE",
+      "title": "锂电池行业CR5市场占有率（pie）",
+      "chart_type": "pie",
+      "requested_chart_type": "pie",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q3-1",
+        "E-Q3-2",
+        "E-Q3-3",
+        "E-Q3-4",
+        "E-Q3-5"
+      ],
+      "insight_goal": "锂电池行业CR5市场占有率（pie）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-5C34594A75CE",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-EA3F17D15C89",
+      "title": "碳酸锂、钴近一年价格走势（line）",
+      "chart_type": "line",
+      "requested_chart_type": "line",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q1-1",
+        "E-Q1-2",
+        "E-Q1-3",
+        "E-Q1-4",
+        "E-Q1-5",
+        "E-Q1-6",
+        "E-Q1-7",
+        "E-Q1-8",
+        "E-Q1-9",
+        "E-Q1-10",
+        "E-Q1-11",
+        "E-Q1-12",
+        "E-Q1-13",
+        "E-Q1-14",
+        "E-Q1-15",
+        "E-Q1-16",
+        "E-Q1-17",
+        "E-Q1-18",
+        "E-Q1-19",
+        "E-Q1-20",
+        "E-Q1-21",
+        "E-Q1-22",
+        "E-Q1-23",
+        "E-Q1-24"
+      ],
+      "insight_goal": "碳酸锂、钴近一年价格走势（line）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-EA3F17D15C89",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-0652AA33BC5E",
+      "title": "光伏产业链各环节毛利率对比（bar）",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q2-1",
+        "E-Q2-2",
+        "E-Q2-3",
+        "E-Q2-4",
+        "E-Q2-5",
+        "E-Q2-6",
+        "E-Q2-7",
+        "E-Q2-8"
+      ],
+      "insight_goal": "光伏产业链各环节毛利率对比（bar）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-0652AA33BC5E",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-46B4FE6CEE57",
+      "title": "碳酸锂供需平衡：不同情景下均衡价格定位（scatter）",
+      "chart_type": "scatter",
+      "requested_chart_type": "scatter",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-Q8-1",
+        "E-Q8-2",
+        "E-Q8-3",
+        "E-Q8-4",
+        "E-Q8-5",
+        "E-Q8-6",
+        "E-Q8-7",
+        "E-Q8-8"
+      ],
+      "insight_goal": "碳酸锂供需平衡：不同情景下均衡价格定位（scatter）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-46B4FE6CEE57",
+      "candidate_status": null
+    }
+  ],
+  "chart_specs": [
+    {
+      "chart_id": "CHART-05BC2B8FA312",
+      "title": "宁德时代营收+毛利率双轴趋势（combo）",
+      "chart_type": "combo",
+      "requested_chart_type": "combo",
+      "resolution_reason": null,
+      "variant": "combo",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "宁德时代营收+毛利率双轴趋势（combo）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis"
+        },
+        "xAxis": {
+          "type": "category",
+          "data": [
+            "2023",
+            "2024",
+            "2025",
+            "2026H1"
+          ]
+        },
+        "yAxis": [
+          {
+            "type": "value",
+            "name": "亿元",
+            "position": "left",
+            "scale": true
+          },
+          {
+            "type": "value",
+            "name": "%",
+            "position": "right",
+            "scale": true
+          }
+        ],
+        "series": [
+          {
+            "name": "营收",
+            "type": "bar",
+            "yAxisIndex": 0,
+            "data": [
+              {
+                "value": 4237.0,
+                "evidence_id": "E-Q6-1"
+              },
+              {
+                "value": 4600.0,
+                "evidence_id": "E-Q6-3"
+              },
+              {
+                "value": 5000.0,
+                "evidence_id": "E-Q6-5"
+              },
+              {
+                "value": 2600.0,
+                "evidence_id": "E-Q6-7"
+              }
+            ]
+          },
+          {
+            "name": "毛利率",
+            "type": "line",
+            "yAxisIndex": 1,
+            "data": [
+              {
+                "value": 22.5,
+                "evidence_id": "E-Q6-2"
+              },
+              {
+                "value": 24.0,
+                "evidence_id": "E-Q6-4"
+              },
+              {
+                "value": 25.5,
+                "evidence_id": "E-Q6-6"
+              },
+              {
+                "value": 26.0,
+                "evidence_id": "E-Q6-8"
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-Q6-1",
+        "E-Q6-2",
+        "E-Q6-3",
+        "E-Q6-4",
+        "E-Q6-5",
+        "E-Q6-6",
+        "E-Q6-7",
+        "E-Q6-8"
+      ],
+      "insight_goal": "宁德时代营收+毛利率双轴趋势（combo）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "3087276f9ccf64ef9a46e80337209273b97e2ce2e7b968212eae6dbbfc536d3d",
+      "dedupe_key": "trend:trend:宁德时代营收+毛利率双轴趋势（combo）:3087276f9ccf64ef9a46e80337209273b97e2ce2e7b968212eae6dbbfc536d3d"
+    },
+    {
+      "chart_id": "CHART-264642171BA1",
+      "title": "宁德时代vs亿纬锂能储能业务六维雷达图（radar）",
+      "chart_type": "radar",
+      "requested_chart_type": "radar",
+      "resolution_reason": null,
+      "variant": "radar",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "宁德时代vs亿纬锂能储能业务六维雷达图（radar）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "tooltip": {
+          "trigger": "item"
+        },
+        "radar": {
+          "center": [
+            "50%",
+            "56%"
+          ],
+          "radius": "64%",
+          "indicator": [
+            {
+              "name": "储能出货量",
+              "min": 0.0,
+              "max": 100.0
+            },
+            {
+              "name": "海外收入占比",
+              "min": 0.0,
+              "max": 100.0
+            },
+            {
+              "name": "单瓦毛利",
+              "min": 0.0,
+              "max": 100.0
+            },
+            {
+              "name": "在手订单",
+              "min": 0.0,
+              "max": 100.0
+            },
+            {
+              "name": "技术专利数",
+              "min": 0.0,
+              "max": 100.0
+            },
+            {
+              "name": "客户覆盖深度",
+              "min": 0.0,
+              "max": 100.0
+            }
+          ]
+        },
+        "series": [
+          {
+            "type": "radar",
+            "data": [
+              {
+                "name": "亿纬锂能",
+                "value": [
+                  45.0,
+                  42.0,
+                  68.0,
+                  65.0,
+                  40.0,
+                  55.0
+                ],
+                "evidence_ids": [
+                  "E-Q4-2",
+                  "E-Q4-4",
+                  "E-Q4-6",
+                  "E-Q4-8",
+                  "E-Q4-10",
+                  "E-Q4-12"
+                ]
+              },
+              {
+                "name": "宁德时代",
+                "value": [
+                  85.0,
+                  30.0,
+                  82.0,
+                  90.0,
+                  95.0,
+                  88.0
+                ],
+                "evidence_ids": [
+                  "E-Q4-1",
+                  "E-Q4-3",
+                  "E-Q4-5",
+                  "E-Q4-7",
+                  "E-Q4-9",
+                  "E-Q4-11"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-Q4-1",
+        "E-Q4-2",
+        "E-Q4-3",
+        "E-Q4-4",
+        "E-Q4-5",
+        "E-Q4-6",
+        "E-Q4-7",
+        "E-Q4-8",
+        "E-Q4-9",
+        "E-Q4-10",
+        "E-Q4-11",
+        "E-Q4-12"
+      ],
+      "insight_goal": "宁德时代vs亿纬锂能储能业务六维雷达图（radar）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "a6dfe1eb4b04665f800e38b4c6976c8d71e4d7ad7b1a0801261634384f9e1820",
+      "dedupe_key": "scoring:scoring:宁德时代vs亿纬锂能储能业务六维雷达图（radar）:a6dfe1eb4b04665f800e38b4c6976c8d71e4d7ad7b1a0801261634384f9e1820"
+    },
+    {
+      "chart_id": "CHART-24AB6E29D603",
+      "title": "锂电池全产业链供需结构（industry_chain）",
+      "chart_type": "industry_chain",
+      "requested_chart_type": "industry_chain",
+      "resolution_reason": null,
+      "variant": "graph",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "锂电池全产业链供需结构（industry_chain）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "item"
+        },
+        "series": [
+          {
+            "type": "graph",
+            "layout": "none",
+            "left": 80,
+            "right": 80,
+            "top": 80,
+            "bottom": 40,
+            "roam": false,
+            "symbolSize": 62,
+            "categories": [
+              {
+                "name": "上游"
+              },
+              {
+                "name": "中游"
+              },
+              {
+                "name": "下游"
+              },
+              {
+                "name": "支撑"
+              }
+            ],
+            "data": [
+              {
+                "id": "n1",
+                "name": "锂矿开采",
+                "category": 0,
+                "x": 0,
+                "y": 140,
+                "evidence_ids": [
+                  "E-Q5-1"
+                ]
+              },
+              {
+                "id": "n2",
+                "name": "正极材料",
+                "category": 0,
+                "x": 0,
+                "y": 280,
+                "evidence_ids": [
+                  "E-Q5-2"
+                ]
+              },
+              {
+                "id": "n3",
+                "name": "负极材料",
+                "category": 0,
+                "x": 0,
+                "y": 420,
+                "evidence_ids": [
+                  "E-Q5-3"
+                ]
+              },
+              {
+                "id": "n4",
+                "name": "电解液",
+                "category": 0,
+                "x": 0,
+                "y": 560,
+                "evidence_ids": [
+                  "E-Q5-4"
+                ]
+              },
+              {
+                "id": "n5",
+                "name": "隔膜",
+                "category": 0,
+                "x": 0,
+                "y": 700,
+                "evidence_ids": [
+                  "E-Q5-5"
+                ]
+              },
+              {
+                "id": "n6",
+                "name": "电芯制造",
+                "category": 1,
+                "x": 400,
+                "y": 140,
+                "evidence_ids": [
+                  "E-Q5-6"
+                ]
+              },
+              {
+                "id": "n7",
+                "name": "电池Pack",
+                "category": 1,
+                "x": 400,
+                "y": 280,
+                "evidence_ids": [
+                  "E-Q5-7"
+                ]
+              },
+              {
+                "id": "n8",
+                "name": "新能源整车",
+                "category": 2,
+                "x": 800,
+                "y": 140,
+                "evidence_ids": [
+                  "E-Q5-8"
+                ]
+              },
+              {
+                "id": "n9",
+                "name": "储能系统",
+                "category": 2,
+                "x": 800,
+                "y": 280,
+                "evidence_ids": [
+                  "E-Q5-9"
+                ]
+              },
+              {
+                "id": "n10",
+                "name": "电池回收",
+                "category": 3,
+                "x": 400,
+                "y": 210,
+                "evidence_ids": [
+                  "E-Q5-10"
+                ]
+              }
+            ],
+            "links": [
+              {
+                "source": "n1",
+                "target": "n2",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-1"
+                ]
+              },
+              {
+                "source": "n1",
+                "target": "n3",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-2"
+                ]
+              },
+              {
+                "source": "n2",
+                "target": "n6",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-3"
+                ]
+              },
+              {
+                "source": "n3",
+                "target": "n6",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-4"
+                ]
+              },
+              {
+                "source": "n4",
+                "target": "n6",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-5"
+                ]
+              },
+              {
+                "source": "n5",
+                "target": "n6",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-6"
+                ]
+              },
+              {
+                "source": "n6",
+                "target": "n7",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-7"
+                ]
+              },
+              {
+                "source": "n7",
+                "target": "n8",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-8"
+                ]
+              },
+              {
+                "source": "n7",
+                "target": "n9",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-9"
+                ]
+              },
+              {
+                "source": "n8",
+                "target": "n10",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-10"
+                ]
+              },
+              {
+                "source": "n9",
+                "target": "n10",
+                "label": {
+                  "show": false,
+                  "formatter": ""
+                },
+                "evidence_ids": [
+                  "E-Q5-10"
+                ]
+              }
+            ],
+            "edgeSymbol": [
+              "none",
+              "arrow"
+            ],
+            "edgeSymbolSize": 8,
+            "label": {
+              "show": true,
+              "position": "inside"
+            },
+            "lineStyle": {
+              "width": 2,
+              "curveness": 0.08
+            }
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-Q5-1",
+        "E-Q5-2",
+        "E-Q5-3",
+        "E-Q5-4",
+        "E-Q5-5",
+        "E-Q5-6",
+        "E-Q5-7",
+        "E-Q5-8",
+        "E-Q5-9",
+        "E-Q5-10"
+      ],
+      "insight_goal": "锂电池全产业链供需结构（industry_chain）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "b20f4a95dc03d121c76bd05b5e4f9166a39dc8f1cbec6c404cdcdad87e14f56c",
+      "dedupe_key": "relationship:relationship:锂电池全产业链供需结构（industry_chain）:b20f4a95dc03d121c76bd05b5e4f9166a39dc8f1cbec6c404cdcdad87e14f56c"
+    },
+    {
+      "chart_id": "CHART-BC5C7F65886E",
+      "title": "光伏周期复盘：硅料价格历史与预测区间（area）",
+      "chart_type": "area",
+      "requested_chart_type": "area",
+      "resolution_reason": null,
+      "variant": "area",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "光伏周期复盘：硅料价格历史与预测区间（area）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis"
+        },
+        "xAxis": {
+          "type": "category",
+          "boundaryGap": false,
+          "data": [
+            "2021H2",
+            "2022H1",
+            "2022H2",
+            "2023H1",
+            "2023H2",
+            "2024H1",
+            "2024H2",
+            "2025H1",
+            "2025H2",
+            "2026H1"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY 元/kg",
+          "scale": true
+        },
+        "series": [
+          {
+            "name": "历史",
+            "type": "line",
+            "connectNulls": false,
+            "areaStyle": {
+              "opacity": 0.18
+            },
+            "data": [
+              220.0,
+              260.0,
+              300.0,
+              180.0,
+              90.0,
+              55.0,
+              45.0,
+              40.0,
+              null,
+              null
+            ]
+          },
+          {
+            "name": "预测",
+            "type": "line",
+            "connectNulls": false,
+            "lineStyle": {
+              "type": "dashed"
+            },
+            "areaStyle": {
+              "opacity": 0.1
+            },
+            "data": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              38.0,
+              35.0
+            ]
+          }
+        ],
+        "evidenceMap": {
+          "2021H2": "E-Q7-1",
+          "2022H1": "E-Q7-2",
+          "2022H2": "E-Q7-3",
+          "2023H1": "E-Q7-4",
+          "2023H2": "E-Q7-5",
+          "2024H1": "E-Q7-6",
+          "2024H2": "E-Q7-7",
+          "2025H1": "E-Q7-8",
+          "2025H2": "E-Q7-9",
+          "2026H1": "E-Q7-10"
+        }
+      },
+      "evidence_ids": [
+        "E-Q7-1",
+        "E-Q7-2",
+        "E-Q7-3",
+        "E-Q7-4",
+        "E-Q7-5",
+        "E-Q7-6",
+        "E-Q7-7",
+        "E-Q7-8",
+        "E-Q7-9",
+        "E-Q7-10"
+      ],
+      "insight_goal": "光伏周期复盘：硅料价格历史与预测区间（area）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "2ad76c922e679adb6625a243fa0d1baab73352a03c20f18498bdf41db82c66fc",
+      "dedupe_key": "trend:trend:光伏周期复盘：硅料价格历史与预测区间（area）:2ad76c922e679adb6625a243fa0d1baab73352a03c20f18498bdf41db82c66fc"
+    },
+    {
+      "chart_id": "CHART-ADE79911E72E",
+      "title": "人形机器人产业链价值气泡图（bubble）",
+      "chart_type": "bubble",
+      "requested_chart_type": "bubble",
+      "resolution_reason": null,
+      "variant": "bubble",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "人形机器人产业链价值气泡图（bubble）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "item"
+        },
+        "xAxis": {
+          "type": "value",
+          "name": "市占率 %",
+          "scale": true
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "技术壁垒 分",
+          "scale": true
+        },
+        "series": [
+          {
+            "name": "人形机器人零部件竞争",
+            "type": "scatter",
+            "data": [
+              {
+                "name": "汇川技术",
+                "value": [
+                  25.0,
+                  88.0,
+                  2200.0
+                ],
+                "evidence_ids": [
+                  "E-Q9-1"
+                ],
+                "symbolSize": 52.0
+              },
+              {
+                "name": "绿的谐波",
+                "value": [
+                  12.0,
+                  92.0,
+                  350.0
+                ],
+                "evidence_ids": [
+                  "E-Q9-2"
+                ],
+                "symbolSize": 27.95448070434931
+              },
+              {
+                "name": "拓斯达",
+                "value": [
+                  8.0,
+                  70.0,
+                  180.0
+                ],
+                "evidence_ids": [
+                  "E-Q9-3"
+                ],
+                "symbolSize": 23.441551070947106
+              },
+              {
+                "name": "埃斯顿",
+                "value": [
+                  10.0,
+                  65.0,
+                  200.0
+                ],
+                "evidence_ids": [
+                  "E-Q9-4"
+                ],
+                "symbolSize": 24.060453783110546
+              },
+              {
+                "name": "禾川科技",
+                "value": [
+                  5.0,
+                  55.0,
+                  80.0
+                ],
+                "evidence_ids": [
+                  "E-Q9-5"
+                ],
+                "symbolSize": 19.62770071396474
+              },
+              {
+                "name": "步科股份",
+                "value": [
+                  3.0,
+                  45.0,
+                  45.0
+                ],
+                "evidence_ids": [
+                  "E-Q9-6"
+                ],
+                "symbolSize": 17.720775535473553
+              }
+            ],
+            "label": {
+              "show": true,
+              "formatter": "{b}",
+              "position": "top"
+            }
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-Q9-1",
+        "E-Q9-2",
+        "E-Q9-3",
+        "E-Q9-4",
+        "E-Q9-5",
+        "E-Q9-6"
+      ],
+      "insight_goal": "人形机器人产业链价值气泡图（bubble）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "503978fb97628e5b1091cc770aa586fd3cb029d11e1b03930f1e3c67b80045fe",
+      "dedupe_key": "positioning:positioning:人形机器人产业链价值气泡图（bubble）:503978fb97628e5b1091cc770aa586fd3cb029d11e1b03930f1e3c67b80045fe"
+    },
+    {
+      "chart_id": "CHART-ECC59E0944BC",
+      "title": "利率下行对四大板块估值弹性热力图（heatmap）",
+      "chart_type": "heatmap",
+      "requested_chart_type": "heatmap",
+      "resolution_reason": null,
+      "variant": "heatmap",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "利率下行对四大板块估值弹性热力图（heatmap）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 96,
+          "right": 52,
+          "top": 72,
+          "bottom": 72,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "item"
+        },
+        "xAxis": {
+          "type": "category",
+          "data": [
+            "5年期LPR 3.5%",
+            "LPR 3.0%",
+            "LPR 2.5%",
+            "LPR 2.0%",
+            "LPR 1.5%"
+          ],
+          "splitArea": {
+            "show": true
+          }
+        },
+        "yAxis": {
+          "type": "category",
+          "data": [
+            "白酒",
+            "创新药",
+            "光伏储能",
+            "高端制造",
+            "半导体"
+          ],
+          "splitArea": {
+            "show": true
+          }
+        },
+        "visualMap": {
+          "min": -0.5,
+          "max": 1.8,
+          "calculable": false,
+          "orient": "horizontal",
+          "left": "center",
+          "bottom": 8
+        },
+        "series": [
+          {
+            "name": "利率下行估值弹性",
+            "type": "heatmap",
+            "label": {
+              "show": true
+            },
+            "data": [
+              {
+                "value": [
+                  0,
+                  0,
+                  0.8
+                ],
+                "evidence_id": "E-Q10-1"
+              },
+              {
+                "value": [
+                  1,
+                  0,
+                  0.5
+                ],
+                "evidence_id": "E-Q10-2"
+              },
+              {
+                "value": [
+                  2,
+                  0,
+                  0.2
+                ],
+                "evidence_id": "E-Q10-3"
+              },
+              {
+                "value": [
+                  3,
+                  0,
+                  -0.3
+                ],
+                "evidence_id": "E-Q10-4"
+              },
+              {
+                "value": [
+                  4,
+                  0,
+                  -0.5
+                ],
+                "evidence_id": "E-Q10-5"
+              },
+              {
+                "value": [
+                  0,
+                  1,
+                  1.5
+                ],
+                "evidence_id": "E-Q10-6"
+              },
+              {
+                "value": [
+                  1,
+                  1,
+                  1.2
+                ],
+                "evidence_id": "E-Q10-7"
+              },
+              {
+                "value": [
+                  2,
+                  1,
+                  0.8
+                ],
+                "evidence_id": "E-Q10-8"
+              },
+              {
+                "value": [
+                  3,
+                  1,
+                  0.5
+                ],
+                "evidence_id": "E-Q10-9"
+              },
+              {
+                "value": [
+                  4,
+                  1,
+                  0.3
+                ],
+                "evidence_id": "E-Q10-10"
+              },
+              {
+                "value": [
+                  0,
+                  2,
+                  1.2
+                ],
+                "evidence_id": "E-Q10-11"
+              },
+              {
+                "value": [
+                  1,
+                  2,
+                  0.9
+                ],
+                "evidence_id": "E-Q10-12"
+              },
+              {
+                "value": [
+                  2,
+                  2,
+                  0.6
+                ],
+                "evidence_id": "E-Q10-13"
+              },
+              {
+                "value": [
+                  3,
+                  2,
+                  0.3
+                ],
+                "evidence_id": "E-Q10-14"
+              },
+              {
+                "value": [
+                  4,
+                  2,
+                  0.0
+                ],
+                "evidence_id": "E-Q10-15"
+              },
+              {
+                "value": [
+                  0,
+                  3,
+                  1.0
+                ],
+                "evidence_id": "E-Q10-16"
+              },
+              {
+                "value": [
+                  1,
+                  3,
+                  0.7
+                ],
+                "evidence_id": "E-Q10-17"
+              },
+              {
+                "value": [
+                  2,
+                  3,
+                  0.4
+                ],
+                "evidence_id": "E-Q10-18"
+              },
+              {
+                "value": [
+                  3,
+                  3,
+                  0.1
+                ],
+                "evidence_id": "E-Q10-19"
+              },
+              {
+                "value": [
+                  4,
+                  3,
+                  -0.2
+                ],
+                "evidence_id": "E-Q10-20"
+              },
+              {
+                "value": [
+                  0,
+                  4,
+                  1.8
+                ],
+                "evidence_id": "E-Q10-21"
+              },
+              {
+                "value": [
+                  1,
+                  4,
+                  1.4
+                ],
+                "evidence_id": "E-Q10-22"
+              },
+              {
+                "value": [
+                  2,
+                  4,
+                  1.0
+                ],
+                "evidence_id": "E-Q10-23"
+              },
+              {
+                "value": [
+                  3,
+                  4,
+                  0.6
+                ],
+                "evidence_id": "E-Q10-24"
+              },
+              {
+                "value": [
+                  4,
+                  4,
+                  0.4
+                ],
+                "evidence_id": "E-Q10-25"
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-Q10-1",
+        "E-Q10-2",
+        "E-Q10-3",
+        "E-Q10-4",
+        "E-Q10-5",
+        "E-Q10-6",
+        "E-Q10-7",
+        "E-Q10-8",
+        "E-Q10-9",
+        "E-Q10-10",
+        "E-Q10-11",
+        "E-Q10-12",
+        "E-Q10-13",
+        "E-Q10-14",
+        "E-Q10-15",
+        "E-Q10-16",
+        "E-Q10-17",
+        "E-Q10-18",
+        "E-Q10-19",
+        "E-Q10-20",
+        "E-Q10-21",
+        "E-Q10-22",
+        "E-Q10-23",
+        "E-Q10-24",
+        "E-Q10-25"
+      ],
+      "insight_goal": "利率下行对四大板块估值弹性热力图（heatmap）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "35d25a2e4941316c1d142a771cc9e98a80d44f57c8fc951879a3271e4a50a647",
+      "dedupe_key": "comparison:comparison:利率下行对四大板块估值弹性热力图（heatmap）:35d25a2e4941316c1d142a771cc9e98a80d44f57c8fc951879a3271e4a50a647"
+    },
+    {
+      "chart_id": "CHART-D8D2D264B9C5",
+      "title": "储能上市公司分类型净利率分布箱线图（boxplot）",
+      "chart_type": "boxplot",
+      "requested_chart_type": "boxplot",
+      "resolution_reason": null,
+      "variant": "boxplot",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "储能上市公司分类型净利率分布箱线图（boxplot）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "item"
+        },
+        "xAxis": {
+          "type": "category",
+          "data": [
+            "海外储能",
+            "用户侧",
+            "电网侧"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY %",
+          "scale": true
+        },
+        "series": [
+          {
+            "name": "储能业务净利率",
+            "type": "boxplot",
+            "data": [
+              [
+                17.5,
+                18.75,
+                20.25,
+                21.25,
+                23.0
+              ],
+              [
+                6.0,
+                7.875,
+                8.75,
+                9.625,
+                11.0
+              ],
+              [
+                10.5,
+                12.125,
+                13.25,
+                14.375,
+                16.0
+              ]
+            ]
+          }
+        ],
+        "sampleEvidenceMap": {
+          "海外储能": [
+            "E-Q11-21",
+            "E-Q11-17",
+            "E-Q11-20",
+            "E-Q11-18",
+            "E-Q11-24",
+            "E-Q11-22",
+            "E-Q11-19",
+            "E-Q11-23"
+          ],
+          "用户侧": [
+            "E-Q11-14",
+            "E-Q11-13",
+            "E-Q11-9",
+            "E-Q11-15",
+            "E-Q11-16",
+            "E-Q11-10",
+            "E-Q11-11",
+            "E-Q11-12"
+          ],
+          "电网侧": [
+            "E-Q11-7",
+            "E-Q11-6",
+            "E-Q11-1",
+            "E-Q11-5",
+            "E-Q11-8",
+            "E-Q11-2",
+            "E-Q11-3",
+            "E-Q11-4"
+          ]
+        }
+      },
+      "evidence_ids": [
+        "E-Q11-1",
+        "E-Q11-2",
+        "E-Q11-3",
+        "E-Q11-4",
+        "E-Q11-5",
+        "E-Q11-6",
+        "E-Q11-7",
+        "E-Q11-8",
+        "E-Q11-9",
+        "E-Q11-10",
+        "E-Q11-11",
+        "E-Q11-12",
+        "E-Q11-13",
+        "E-Q11-14",
+        "E-Q11-15",
+        "E-Q11-16",
+        "E-Q11-17",
+        "E-Q11-18",
+        "E-Q11-19",
+        "E-Q11-20",
+        "E-Q11-21",
+        "E-Q11-22",
+        "E-Q11-23",
+        "E-Q11-24"
+      ],
+      "insight_goal": "储能上市公司分类型净利率分布箱线图（boxplot）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "dd95b0032d00c4fb4e2921fc04a44a7ec64836e06fe25f65d33b5315b29aba7c",
+      "dedupe_key": "distribution:distribution:储能上市公司分类型净利率分布箱线图（boxplot）:dd95b0032d00c4fb4e2921fc04a44a7ec64836e06fe25f65d33b5315b29aba7c"
+    },
+    {
+      "chart_id": "CHART-00B8F02FF282",
+      "title": "储能产业链价值拆分矩形树图（treemap）",
+      "chart_type": "treemap",
+      "requested_chart_type": "treemap",
+      "resolution_reason": null,
+      "variant": "treemap",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "储能产业链价值拆分矩形树图（treemap）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "tooltip": {
+          "trigger": "item"
+        },
+        "series": [
+          {
+            "name": "储能产业链价值",
+            "type": "treemap",
+            "roam": false,
+            "nodeClick": false,
+            "breadcrumb": {
+              "show": false
+            },
+            "label": {
+              "show": true,
+              "formatter": "{b}"
+            },
+            "upperLabel": {
+              "show": true
+            },
+            "data": [
+              {
+                "id": "root",
+                "name": "储能产业链",
+                "value": 8500.0,
+                "evidence_ids": [
+                  "E-Q12-1"
+                ],
+                "children": [
+                  {
+                    "id": "bms",
+                    "name": "BMS/EMS",
+                    "value": 800.0,
+                    "evidence_ids": [
+                      "E-Q12-4"
+                    ]
+                  },
+                  {
+                    "id": "pcs",
+                    "name": "PCS变流器",
+                    "value": 1200.0,
+                    "evidence_ids": [
+                      "E-Q12-3"
+                    ],
+                    "children": [
+                      {
+                        "id": "inverter",
+                        "name": "逆变器",
+                        "value": 1200.0,
+                        "evidence_ids": [
+                          "E-Q12-9"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "thermal",
+                    "name": "温控消防",
+                    "value": 500.0,
+                    "evidence_ids": [
+                      "E-Q12-6"
+                    ]
+                  },
+                  {
+                    "id": "battery",
+                    "name": "电池系统",
+                    "value": 4500.0,
+                    "evidence_ids": [
+                      "E-Q12-2"
+                    ],
+                    "children": [
+                      {
+                        "id": "pack",
+                        "name": "Pack",
+                        "value": 2000.0,
+                        "evidence_ids": [
+                          "E-Q12-8"
+                        ]
+                      },
+                      {
+                        "id": "cell",
+                        "name": "电芯",
+                        "value": 2500.0,
+                        "evidence_ids": [
+                          "E-Q12-7"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "id": "integration",
+                    "name": "系统集成",
+                    "value": 1500.0,
+                    "evidence_ids": [
+                      "E-Q12-5"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-Q12-1",
+        "E-Q12-2",
+        "E-Q12-3",
+        "E-Q12-4",
+        "E-Q12-5",
+        "E-Q12-6",
+        "E-Q12-7",
+        "E-Q12-8",
+        "E-Q12-9"
+      ],
+      "insight_goal": "储能产业链价值拆分矩形树图（treemap）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "68b1d2faeb2cca77101408fa8c33e8e02b2bd438fd471b844648fdfb9af09bc1",
+      "dedupe_key": "composition:composition:储能产业链价值拆分矩形树图（treemap）:68b1d2faeb2cca77101408fa8c33e8e02b2bd438fd471b844648fdfb9af09bc1"
+    },
+    {
+      "chart_id": "CHART-5C34594A75CE",
+      "title": "锂电池行业CR5市场占有率（pie）",
+      "chart_type": "pie",
+      "requested_chart_type": "pie",
+      "resolution_reason": null,
+      "variant": "pie",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "锂电池行业CR5市场占有率（pie）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "bottom": 8
+        },
+        "tooltip": {
+          "trigger": "item"
+        },
+        "series": [
+          {
+            "name": "锂电池市占率",
+            "type": "pie",
+            "radius": [
+              "42%",
+              "70%"
+            ],
+            "center": [
+              "50%",
+              "52%"
+            ],
+            "avoidLabelOverlap": true,
+            "label": {
+              "show": true,
+              "formatter": "{b}: {d}%"
+            },
+            "data": [
+              {
+                "name": "宁德时代",
+                "value": 37.5,
+                "evidence_id": "E-Q3-1"
+              },
+              {
+                "name": "比亚迪",
+                "value": 18.2,
+                "evidence_id": "E-Q3-2"
+              },
+              {
+                "name": "中创新航",
+                "value": 8.1,
+                "evidence_id": "E-Q3-3"
+              },
+              {
+                "name": "亿纬锂能",
+                "value": 5.6,
+                "evidence_id": "E-Q3-4"
+              },
+              {
+                "name": "其他",
+                "value": 30.6,
+                "evidence_id": "E-Q3-5"
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-Q3-1",
+        "E-Q3-2",
+        "E-Q3-3",
+        "E-Q3-4",
+        "E-Q3-5"
+      ],
+      "insight_goal": "锂电池行业CR5市场占有率（pie）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "2b3ad022f5c3e6664cc30ec2acdeaed9927f48abcf78587fdb35cf22b4ddca85",
+      "dedupe_key": "composition:composition:锂电池行业cr5市场占有率（pie）:2b3ad022f5c3e6664cc30ec2acdeaed9927f48abcf78587fdb35cf22b4ddca85"
+    },
+    {
+      "chart_id": "CHART-EA3F17D15C89",
+      "title": "碳酸锂、钴近一年价格走势（line）",
+      "chart_type": "line",
+      "requested_chart_type": "line",
+      "resolution_reason": null,
+      "variant": "line",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "碳酸锂、钴近一年价格走势（line）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis"
+        },
+        "xAxis": {
+          "type": "category",
+          "boundaryGap": false,
+          "data": [
+            "2025-08",
+            "2025-10",
+            "2025-12",
+            "2026-02",
+            "2026-03",
+            "2026-04",
+            "2026-05",
+            "2026-06",
+            "2026-07",
+            "2026-08",
+            "2026-09",
+            "2026-10"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY 万元/吨",
+          "scale": true
+        },
+        "series": [
+          {
+            "name": "碳酸锂",
+            "type": "line",
+            "connectNulls": false,
+            "showSymbol": true,
+            "data": [
+              50.0,
+              25.0,
+              15.0,
+              10.0,
+              12.0,
+              11.0,
+              20.0,
+              18.0,
+              14.0,
+              9.0,
+              8.0,
+              10.0
+            ]
+          },
+          {
+            "name": "钴",
+            "type": "line",
+            "connectNulls": false,
+            "showSymbol": true,
+            "data": [
+              35.0,
+              30.0,
+              28.0,
+              22.0,
+              20.0,
+              18.0,
+              25.0,
+              24.0,
+              22.0,
+              19.0,
+              17.0,
+              16.0
+            ]
+          }
+        ],
+        "evidenceMap": {
+          "碳酸锂": {
+            "2025-08": "E-Q1-1",
+            "2025-10": "E-Q1-2",
+            "2025-12": "E-Q1-3",
+            "2026-02": "E-Q1-4",
+            "2026-03": "E-Q1-5",
+            "2026-04": "E-Q1-6",
+            "2026-05": "E-Q1-7",
+            "2026-06": "E-Q1-8",
+            "2026-07": "E-Q1-9",
+            "2026-08": "E-Q1-10",
+            "2026-09": "E-Q1-11",
+            "2026-10": "E-Q1-12"
+          },
+          "钴": {
+            "2025-08": "E-Q1-13",
+            "2025-10": "E-Q1-14",
+            "2025-12": "E-Q1-15",
+            "2026-02": "E-Q1-16",
+            "2026-03": "E-Q1-17",
+            "2026-04": "E-Q1-18",
+            "2026-05": "E-Q1-19",
+            "2026-06": "E-Q1-20",
+            "2026-07": "E-Q1-21",
+            "2026-08": "E-Q1-22",
+            "2026-09": "E-Q1-23",
+            "2026-10": "E-Q1-24"
+          }
+        }
+      },
+      "evidence_ids": [
+        "E-Q1-1",
+        "E-Q1-2",
+        "E-Q1-3",
+        "E-Q1-4",
+        "E-Q1-5",
+        "E-Q1-6",
+        "E-Q1-7",
+        "E-Q1-8",
+        "E-Q1-9",
+        "E-Q1-10",
+        "E-Q1-11",
+        "E-Q1-12",
+        "E-Q1-13",
+        "E-Q1-14",
+        "E-Q1-15",
+        "E-Q1-16",
+        "E-Q1-17",
+        "E-Q1-18",
+        "E-Q1-19",
+        "E-Q1-20",
+        "E-Q1-21",
+        "E-Q1-22",
+        "E-Q1-23",
+        "E-Q1-24"
+      ],
+      "insight_goal": "碳酸锂、钴近一年价格走势（line）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "28e04fdfb03bee55d251e56e2abf8e8be5ab2ef43537856b8eeed236eecc9127",
+      "dedupe_key": "trend:trend:碳酸锂、钴近一年价格走势（line）:28e04fdfb03bee55d251e56e2abf8e8be5ab2ef43537856b8eeed236eecc9127"
+    },
+    {
+      "chart_id": "CHART-0652AA33BC5E",
+      "title": "光伏产业链各环节毛利率对比（bar）",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "variant": "grouped",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "光伏产业链各环节毛利率对比（bar）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis",
+          "axisPointer": {
+            "type": "shadow"
+          }
+        },
+        "xAxis": {
+          "type": "category",
+          "data": [
+            "硅料",
+            "硅片",
+            "电池片",
+            "组件"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY %"
+        },
+        "series": [
+          {
+            "name": "2024",
+            "type": "bar",
+            "data": [
+              {
+                "value": 18.5,
+                "evidence_id": "E-Q2-1"
+              },
+              {
+                "value": 8.2,
+                "evidence_id": "E-Q2-3"
+              },
+              {
+                "value": 5.1,
+                "evidence_id": "E-Q2-5"
+              },
+              {
+                "value": 3.8,
+                "evidence_id": "E-Q2-7"
+              }
+            ]
+          },
+          {
+            "name": "2025",
+            "type": "bar",
+            "data": [
+              {
+                "value": 12.3,
+                "evidence_id": "E-Q2-2"
+              },
+              {
+                "value": 6.0,
+                "evidence_id": "E-Q2-4"
+              },
+              {
+                "value": 3.5,
+                "evidence_id": "E-Q2-6"
+              },
+              {
+                "value": 2.1,
+                "evidence_id": "E-Q2-8"
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-Q2-1",
+        "E-Q2-2",
+        "E-Q2-3",
+        "E-Q2-4",
+        "E-Q2-5",
+        "E-Q2-6",
+        "E-Q2-7",
+        "E-Q2-8"
+      ],
+      "insight_goal": "光伏产业链各环节毛利率对比（bar）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "8885fe3422d719293e745e115eacb54fc62fb79e3313b228c4cd9263a8c72056",
+      "dedupe_key": "comparison:comparison:光伏产业链各环节毛利率对比（bar）:8885fe3422d719293e745e115eacb54fc62fb79e3313b228c4cd9263a8c72056"
+    },
+    {
+      "chart_id": "CHART-46B4FE6CEE57",
+      "title": "碳酸锂供需平衡：不同情景下均衡价格定位（scatter）",
+      "chart_type": "scatter",
+      "requested_chart_type": "scatter",
+      "resolution_reason": null,
+      "variant": "scatter",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "碳酸锂供需平衡：不同情景下均衡价格定位（scatter）",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "item"
+        },
+        "xAxis": {
+          "type": "value",
+          "name": "供给量(万吨LCE) 万吨",
+          "scale": true
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "均衡价格 万元/吨",
+          "scale": true
+        },
+        "series": [
+          {
+            "name": "碳酸锂供需情景",
+            "type": "scatter",
+            "data": [
+              {
+                "name": "乐观-2030",
+                "value": [
+                  180.0,
+                  14.0
+                ],
+                "evidence_ids": [
+                  "E-Q8-1"
+                ]
+              },
+              {
+                "name": "基准-2030",
+                "value": [
+                  140.0,
+                  10.0
+                ],
+                "evidence_ids": [
+                  "E-Q8-2"
+                ]
+              },
+              {
+                "name": "悲观-2030",
+                "value": [
+                  100.0,
+                  7.0
+                ],
+                "evidence_ids": [
+                  "E-Q8-3"
+                ]
+              },
+              {
+                "name": "乐观-2028",
+                "value": [
+                  150.0,
+                  16.0
+                ],
+                "evidence_ids": [
+                  "E-Q8-4"
+                ]
+              },
+              {
+                "name": "基准-2028",
+                "value": [
+                  120.0,
+                  12.0
+                ],
+                "evidence_ids": [
+                  "E-Q8-5"
+                ]
+              },
+              {
+                "name": "悲观-2028",
+                "value": [
+                  90.0,
+                  8.0
+                ],
+                "evidence_ids": [
+                  "E-Q8-6"
+                ]
+              },
+              {
+                "name": "乐观-2026",
+                "value": [
+                  120.0,
+                  18.0
+                ],
+                "evidence_ids": [
+                  "E-Q8-7"
+                ]
+              },
+              {
+                "name": "基准-2026",
+                "value": [
+                  100.0,
+                  14.0
+                ],
+                "evidence_ids": [
+                  "E-Q8-8"
+                ]
+              }
+            ],
+            "label": {
+              "show": true,
+              "formatter": "{b}",
+              "position": "top"
+            }
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-Q8-1",
+        "E-Q8-2",
+        "E-Q8-3",
+        "E-Q8-4",
+        "E-Q8-5",
+        "E-Q8-6",
+        "E-Q8-7",
+        "E-Q8-8"
+      ],
+      "insight_goal": "碳酸锂供需平衡：不同情景下均衡价格定位（scatter）",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "46ce417483411e183eeb4b36418a269d6e95a37b32a62d88dcae2a5ebbf3710b",
+      "dedupe_key": "positioning:positioning:碳酸锂供需平衡：不同情景下均衡价格定位（scatter）:46ce417483411e183eeb4b36418a269d6e95a37b32a62d88dcae2a5ebbf3710b"
+    }
+  ],
+  "suppressed_candidates": [],
+  "quality": {
+    "passed": true,
+    "ready_count": 12,
+    "suppressed_count": 0,
+    "issues": []
+  },
+  "decision_package": {
+    "decision_id": "DEC-4375E24A082E",
+    "run_id": "agent3-complex-test",
+    "stage": "chart_generate",
+    "revision": 1,
+    "all_candidates": [
+      {
+        "candidate_id": "CHART-05BC2B8FA312",
+        "title": "宁德时代营收+毛利率双轴趋势（combo）",
+        "chart_type": "combo",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-02",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q6-1",
+          "E-Q6-2",
+          "E-Q6-3",
+          "E-Q6-4",
+          "E-Q6-5",
+          "E-Q6-6",
+          "E-Q6-7",
+          "E-Q6-8"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-02 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-05BC2B8FA312",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-264642171BA1",
+        "title": "宁德时代vs亿纬锂能储能业务六维雷达图（radar）",
+        "chart_type": "radar",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-02",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q4-1",
+          "E-Q4-2",
+          "E-Q4-3",
+          "E-Q4-4",
+          "E-Q4-5",
+          "E-Q4-6",
+          "E-Q4-7",
+          "E-Q4-8",
+          "E-Q4-9",
+          "E-Q4-10",
+          "E-Q4-11",
+          "E-Q4-12"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-02 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-264642171BA1",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-24AB6E29D603",
+        "title": "锂电池全产业链供需结构（industry_chain）",
+        "chart_type": "industry_chain",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-02",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q5-1",
+          "E-Q5-2",
+          "E-Q5-3",
+          "E-Q5-4",
+          "E-Q5-5",
+          "E-Q5-6",
+          "E-Q5-7",
+          "E-Q5-8",
+          "E-Q5-9",
+          "E-Q5-10"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-02 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-24AB6E29D603",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-BC5C7F65886E",
+        "title": "光伏周期复盘：硅料价格历史与预测区间（area）",
+        "chart_type": "area",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-03",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q7-1",
+          "E-Q7-2",
+          "E-Q7-3",
+          "E-Q7-4",
+          "E-Q7-5",
+          "E-Q7-6",
+          "E-Q7-7",
+          "E-Q7-8",
+          "E-Q7-9",
+          "E-Q7-10"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-03 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-BC5C7F65886E",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-ADE79911E72E",
+        "title": "人形机器人产业链价值气泡图（bubble）",
+        "chart_type": "bubble",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-03",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q9-1",
+          "E-Q9-2",
+          "E-Q9-3",
+          "E-Q9-4",
+          "E-Q9-5",
+          "E-Q9-6"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-03 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-ADE79911E72E",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-ECC59E0944BC",
+        "title": "利率下行对四大板块估值弹性热力图（heatmap）",
+        "chart_type": "heatmap",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-03",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q10-1",
+          "E-Q10-2",
+          "E-Q10-3",
+          "E-Q10-4",
+          "E-Q10-5",
+          "E-Q10-6",
+          "E-Q10-7",
+          "E-Q10-8",
+          "E-Q10-9",
+          "E-Q10-10",
+          "E-Q10-11",
+          "E-Q10-12",
+          "E-Q10-13",
+          "E-Q10-14",
+          "E-Q10-15",
+          "E-Q10-16",
+          "E-Q10-17",
+          "E-Q10-18",
+          "E-Q10-19",
+          "E-Q10-20",
+          "E-Q10-21",
+          "E-Q10-22",
+          "E-Q10-23",
+          "E-Q10-24",
+          "E-Q10-25"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-03 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-ECC59E0944BC",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-D8D2D264B9C5",
+        "title": "储能上市公司分类型净利率分布箱线图（boxplot）",
+        "chart_type": "boxplot",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-03",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q11-1",
+          "E-Q11-2",
+          "E-Q11-3",
+          "E-Q11-4",
+          "E-Q11-5",
+          "E-Q11-6",
+          "E-Q11-7",
+          "E-Q11-8",
+          "E-Q11-9",
+          "E-Q11-10",
+          "E-Q11-11",
+          "E-Q11-12",
+          "E-Q11-13",
+          "E-Q11-14",
+          "E-Q11-15",
+          "E-Q11-16",
+          "E-Q11-17",
+          "E-Q11-18",
+          "E-Q11-19",
+          "E-Q11-20",
+          "E-Q11-21",
+          "E-Q11-22",
+          "E-Q11-23",
+          "E-Q11-24"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-03 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-D8D2D264B9C5",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-00B8F02FF282",
+        "title": "储能产业链价值拆分矩形树图（treemap）",
+        "chart_type": "treemap",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-03",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q12-1",
+          "E-Q12-2",
+          "E-Q12-3",
+          "E-Q12-4",
+          "E-Q12-5",
+          "E-Q12-6",
+          "E-Q12-7",
+          "E-Q12-8",
+          "E-Q12-9"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-03 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-00B8F02FF282",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-5C34594A75CE",
+        "title": "锂电池行业CR5市场占有率（pie）",
+        "chart_type": "pie",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-02",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q3-1",
+          "E-Q3-2",
+          "E-Q3-3",
+          "E-Q3-4",
+          "E-Q3-5"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-02 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-5C34594A75CE",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-EA3F17D15C89",
+        "title": "碳酸锂、钴近一年价格走势（line）",
+        "chart_type": "line",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-02",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q1-1",
+          "E-Q1-2",
+          "E-Q1-3",
+          "E-Q1-4",
+          "E-Q1-5",
+          "E-Q1-6",
+          "E-Q1-7",
+          "E-Q1-8",
+          "E-Q1-9",
+          "E-Q1-10",
+          "E-Q1-11",
+          "E-Q1-12",
+          "E-Q1-13",
+          "E-Q1-14",
+          "E-Q1-15",
+          "E-Q1-16",
+          "E-Q1-17",
+          "E-Q1-18",
+          "E-Q1-19",
+          "E-Q1-20",
+          "E-Q1-21",
+          "E-Q1-22",
+          "E-Q1-23",
+          "E-Q1-24"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-02 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-EA3F17D15C89",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-0652AA33BC5E",
+        "title": "光伏产业链各环节毛利率对比（bar）",
+        "chart_type": "bar",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-02",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q2-1",
+          "E-Q2-2",
+          "E-Q2-3",
+          "E-Q2-4",
+          "E-Q2-5",
+          "E-Q2-6",
+          "E-Q2-7",
+          "E-Q2-8"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-02 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-0652AA33BC5E",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-46B4FE6CEE57",
+        "title": "碳酸锂供需平衡：不同情景下均衡价格定位（scatter）",
+        "chart_type": "scatter",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-03",
+        "alternative_chapter_ids": [],
+        "priority": 80,
+        "evidence_ids": [
+          "E-Q8-1",
+          "E-Q8-2",
+          "E-Q8-3",
+          "E-Q8-4",
+          "E-Q8-5",
+          "E-Q8-6",
+          "E-Q8-7",
+          "E-Q8-8"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (treemap) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (9) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (10) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (11) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-P1-COUNT",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "P1高级图表 (scatter) 超过推荐数量 3",
+            "detail": "P1图表渲染复杂度较高",
+            "affected_ids": [],
+            "recommendation": "优先使用P0基础图表",
+            "consequence": "PDF渲染时间可能增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 5 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "图表数量 (12) 超过推荐上限 (8)",
+            "detail": "推荐 5-8 张图表",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+            "stage": "chart_generate",
+            "severity": "warning",
+            "disposition": "advisory",
+            "title": "候选图表数量 (12) 超过推荐上限 (8)",
+            "detail": "当前共 12 张候选图表，推荐 5-8 张",
+            "affected_ids": [],
+            "recommendation": "建议保留 8 张核心图表",
+            "consequence": "图表过多会降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "acknowledgement_required",
+            "title": "CH-03 图表密度过高 (6张，推荐2张)",
+            "detail": "该章节有 6 张图表，推荐上限 2 张",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-46B4FE6CEE57",
+        "suppression_reason": null
+      }
+    ],
+    "recommended_selection": [
+      "CHART-05BC2B8FA312",
+      "CHART-264642171BA1",
+      "CHART-24AB6E29D603",
+      "CHART-BC5C7F65886E",
+      "CHART-ADE79911E72E",
+      "CHART-ECC59E0944BC",
+      "CHART-D8D2D264B9C5",
+      "CHART-00B8F02FF282",
+      "CHART-5C34594A75CE",
+      "CHART-EA3F17D15C89",
+      "CHART-0652AA33BC5E",
+      "CHART-46B4FE6CEE57"
+    ],
+    "conflict_groups": [],
+    "risk_notices": [
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 2 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-P1-COUNT",
+        "stage": "chart_generate",
+        "severity": "info",
+        "disposition": "advisory",
+        "title": "P1高级图表 (heatmap) 超过推荐数量 3",
+        "detail": "P1图表渲染复杂度较高",
+        "affected_ids": [],
+        "recommendation": "优先使用P0基础图表",
+        "consequence": "PDF渲染时间可能增加",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 2 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-P1-COUNT",
+        "stage": "chart_generate",
+        "severity": "info",
+        "disposition": "advisory",
+        "title": "P1高级图表 (boxplot) 超过推荐数量 3",
+        "detail": "P1图表渲染复杂度较高",
+        "affected_ids": [],
+        "recommendation": "优先使用P0基础图表",
+        "consequence": "PDF渲染时间可能增加",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 3 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-P1-COUNT",
+        "stage": "chart_generate",
+        "severity": "info",
+        "disposition": "advisory",
+        "title": "P1高级图表 (treemap) 超过推荐数量 3",
+        "detail": "P1图表渲染复杂度较高",
+        "affected_ids": [],
+        "recommendation": "优先使用P0基础图表",
+        "consequence": "PDF渲染时间可能增加",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 4 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 3 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+        "stage": "chart_generate",
+        "severity": "warning",
+        "disposition": "advisory",
+        "title": "图表数量 (9) 超过推荐上限 (8)",
+        "detail": "推荐 5-8 张图表",
+        "affected_ids": [],
+        "recommendation": "建议保留 8 张核心图表",
+        "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-FAMILY-DUPLICATE",
+        "stage": "chart_generate",
+        "severity": "info",
+        "disposition": "advisory",
+        "title": "同一图表族 (trend) 超过推荐数量 2",
+        "detail": "相似结论重复可视化",
+        "affected_ids": [],
+        "recommendation": "建议每种图表族保留不超过2张",
+        "consequence": "降低报告信息密度",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 4 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+        "stage": "chart_generate",
+        "severity": "warning",
+        "disposition": "advisory",
+        "title": "图表数量 (10) 超过推荐上限 (8)",
+        "detail": "推荐 5-8 张图表",
+        "affected_ids": [],
+        "recommendation": "建议保留 8 张核心图表",
+        "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 5 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+        "stage": "chart_generate",
+        "severity": "warning",
+        "disposition": "advisory",
+        "title": "图表数量 (11) 超过推荐上限 (8)",
+        "detail": "推荐 5-8 张图表",
+        "affected_ids": [],
+        "recommendation": "建议保留 8 张核心图表",
+        "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-P1-COUNT",
+        "stage": "chart_generate",
+        "severity": "info",
+        "disposition": "advisory",
+        "title": "P1高级图表 (scatter) 超过推荐数量 3",
+        "detail": "P1图表渲染复杂度较高",
+        "affected_ids": [],
+        "recommendation": "优先使用P0基础图表",
+        "consequence": "PDF渲染时间可能增加",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-03 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 5 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-COUNT-OVER-RECOMMENDED",
+        "stage": "chart_generate",
+        "severity": "warning",
+        "disposition": "advisory",
+        "title": "图表数量 (12) 超过推荐上限 (8)",
+        "detail": "推荐 5-8 张图表",
+        "affected_ids": [],
+        "recommendation": "建议保留 8 张核心图表",
+        "consequence": "图表过多会降低报告信息密度，PDF渲染时间增加",
+        "can_override": true
+      }
+    ],
+    "blocking_risk_codes": [],
+    "acknowledgement_required_codes": [],
+    "decision_status": "not_required",
+    "risk_snapshot_sha256": "9305c91679bc6be9abaac467483834aee8c20c41862db14b03a9b24b40fd2725",
+    "generated_at": "2026-08-14T16:06:43.212777Z"
+  }
+}

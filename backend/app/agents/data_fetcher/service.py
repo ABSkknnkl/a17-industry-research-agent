@@ -1,7 +1,7 @@
 """Public StageAgent implementation for SkillHub-backed data acquisition."""
 
 from datetime import date
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ValidationError
 
@@ -11,7 +11,7 @@ from app.agents.data_fetcher.normalizer import normalize_tasks
 from app.agents.data_fetcher.planner import QueryPlanner
 from app.agents.data_fetcher.quality import evaluate_quality
 from app.schemas.analysis import ResearchBrief
-from app.schemas.acquisition import NormalizationSummary, SourceRecord
+from app.schemas.acquisition import NormalizationSummary, RequirementCoverage, SourceRecord
 from app.schemas.evidence import EvidenceItem
 from app.schemas.workflow import DataFetchOptions, StageName, StageResult, StageStatus
 from app.security.policy import detect_prompt_injection
@@ -100,6 +100,13 @@ class DataFetcherAgent:
             quarantined = normalized.quarantined
             normalization = normalized.summary
         records = [item.record for item in executed]
+        requirement_coverage = _build_requirement_coverage(
+            plan.requirements,
+            records,
+            normalization.task_clean_row_counts,
+            normalization.task_metric_names,
+            user_evidence_only=user_only,
+        )
         gaps = [item.gap for item in executed if item.gap is not None]
         evidence, conflicts, duplicate_groups, uniqueness = fuse_evidence(
             user_items,
@@ -129,6 +136,7 @@ class DataFetcherAgent:
             "research_brief": request["research_brief"],
             "chart_datasets": [item.model_dump(mode="json") for item in datasets],
             "retrieval_plan": plan.model_dump(mode="json"),
+            "requirement_coverage": [item.model_dump(mode="json") for item in requirement_coverage],
             "skill_calls": [item.model_dump(mode="json") for item in records],
             "source_records": [item.model_dump(mode="json") for item in source_records],
             "data_gaps": [item.model_dump(mode="json") for item in gaps],
@@ -177,6 +185,35 @@ class DataFetcherAgent:
                 evidence_sources=[item.evidence_id for item in evidence],
                 error=error_code,
             )
+        unavailable_requirements = [
+            item for item in requirement_coverage if item.status in {"partial", "missing"}
+        ]
+        if unavailable_requirements:
+            data["blocking_issues"] = ["required_data_unavailable"]
+            data["missing_requirements"] = [
+                item.model_dump(mode="json") for item in unavailable_requirements
+            ]
+            data["collaboration_requests"] = [
+                {
+                    "request_id": f"MISSING-{item.requirement_id}",
+                    "question": (
+                        f"未查询到足以完成“{item.question}”的数据。"
+                        "请调整企业、指标、时间范围或数据来源后重新提交。"
+                    ),
+                    "reason": item.note,
+                    "affected_dimensions": ["data_fetch"],
+                }
+                for item in unavailable_requirements
+            ]
+            data["allowed_review_actions"] = ["revise", "regenerate", "cancel"]
+            return StageResult(
+                stage=self.stage,
+                status=StageStatus.WAITING_REVIEW,
+                revision=context.revision,
+                data=data,
+                evidence_sources=[item.evidence_id for item in evidence],
+                error="required_data_unavailable",
+            )
         return StageResult(
             stage=self.stage,
             status=StageStatus.COMPLETED,
@@ -184,6 +221,117 @@ class DataFetcherAgent:
             data=data,
             evidence_sources=[item.evidence_id for item in evidence],
         )
+
+
+def _build_requirement_coverage(
+    requirements: list[Any],
+    records: list[Any],
+    task_clean_row_counts: dict[str, int],
+    task_metric_names: dict[str, list[str]],
+    *,
+    user_evidence_only: bool = False,
+) -> list[RequirementCoverage]:
+    """Summarise post-normalization coverage for each user requirement."""
+
+    records_by_task = {record.task_id: record for record in records}
+    coverage: list[RequirementCoverage] = []
+    for requirement in requirements:
+        successful = (
+            list(requirement.task_ids)
+            if user_evidence_only
+            else [
+                task_id
+                for task_id in requirement.task_ids
+                if task_id in records_by_task
+                and records_by_task[task_id].status == "succeeded"
+                and task_clean_row_counts.get(task_id, 0) > 0
+                and (
+                    requirement.requested_metric is None
+                    or any(
+                        _metric_matches(requirement.requested_metric, metric_name)
+                        for metric_name in task_metric_names.get(task_id, [])
+                    )
+                )
+            ]
+        )
+        successful_skills = (
+            set(requirement.target_skills)
+            if user_evidence_only
+            else {
+                records_by_task[task_id].skill_name
+                for task_id in successful
+                if task_id in records_by_task
+            }
+        )
+        missing_skills = set(requirement.target_skills) - successful_skills
+        missing = [
+            task_id
+            for task_id in requirement.task_ids
+            if task_id in records_by_task
+            and records_by_task[task_id].skill_name in missing_skills
+        ]
+        status: Literal["supported", "partial", "missing"] = (
+            "supported"
+            if not missing_skills
+            else ("partial" if successful_skills else "missing")
+        )
+        row_count = (
+            1
+            if user_evidence_only and successful
+            else sum(task_clean_row_counts.get(task_id, 0) for task_id in successful)
+        )
+        coverage.append(
+            RequirementCoverage(
+                requirement_id=requirement.requirement_id,
+                question=requirement.question,
+                requirement_class=requirement.requirement_class,
+                status=status,
+                successful_task_ids=successful,
+                missing_task_ids=missing,
+                returned_row_count=row_count,
+                note=(
+                    "相关检索任务已返回通过清洗与目标范围校验的数据，具体指标口径仍由 Agent 2 校验。"
+                    if status == "supported"
+                    else (
+                        "仅部分相关检索任务返回数据，报告必须披露缺口。"
+                        if status == "partial"
+                        else "相关检索任务未返回可用数据，不得补造结论。"
+                    )
+                ),
+            )
+        )
+    return coverage
+
+
+def _metric_matches(requested: str, returned: str) -> bool:
+    aliases = {
+        "市占率": "市场份额",
+        "市场占有率": "市场份额",
+        "销售收入": "营业收入",
+        "归属于母公司股东的净利润": "归母净利润",
+        "实际产能": "有效产能",
+    }
+
+    def identity(value: str) -> str:
+        compact = "".join(value.split()).casefold()
+        for alias, canonical in aliases.items():
+            compact = compact.replace(alias, canonical)
+        return compact
+
+    requested_key = identity(requested)
+    returned_key = identity(returned)
+    if requested_key == returned_key:
+        return True
+    # Provider fields may retain a harmless accounting qualifier, but a
+    # derived rate must never satisfy a request for its underlying raw item.
+    derived_tokens = ("同比", "环比", "增长率", "周转", "毛利率", "净利率", "利用率", "产销率")
+    if any(token in returned_key for token in derived_tokens):
+        return False
+    return (
+        returned_key.endswith(requested_key)
+        or returned_key.startswith(requested_key + "（")
+        or returned_key.startswith(requested_key + "(")
+    )
 
 
 def _parse_request(input_data: dict[str, Any]) -> dict[str, Any] | None:

@@ -95,11 +95,14 @@ def build_evidence_catalog(
         items = groups[key]
         first = items[0]
         number = len(entries) + 1
+        source_name = first.source_name.strip()
+        if len(source_name) > 450:
+            source_name = source_name[:447].rstrip() + "…"
         entries.append(
             EvidenceSourceEntry(
                 citation_number=number,
-                display_label=f"来源{number}：{first.source_name}",
-                material_title=first.source_name,
+                display_label=f"来源{number}：{source_name}",
+                material_title=source_name,
                 metric_names=_unique(item.metric_name for item in items),
                 available_dates=_unique(
                     item.available_at.isoformat() if item.available_at else "未提供"

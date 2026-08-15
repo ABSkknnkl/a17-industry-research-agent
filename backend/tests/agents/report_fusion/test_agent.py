@@ -124,6 +124,34 @@ async def test_agent_exports_self_contained_markdown_html_pdf_and_manifest(
 
 
 @pytest.mark.asyncio
+async def test_agent_truncates_oversized_source_titles_in_formal_catalog(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    report_analysis: AnalysisResult,
+    report_charts: ChartGenerationResult,
+    report_chapters: ChapterWritingResult,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+
+    async def stable_pdf(html: str) -> bytes:
+        return b"%PDF-1.7\nunit-test"
+
+    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", stable_pdf)
+    oversized = "源" * 500
+    report_analysis.evidence_catalog[0].source_name = oversized
+
+    result = await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, report_chapters)
+    )
+
+    assert result.status == StageStatus.COMPLETED
+    html_artifact = next(item for item in result.artifacts if item.kind == "report_html")
+    html = (tmp_path / html_artifact.uri).read_text(encoding="utf-8")
+    assert oversized not in html
+    assert "…" in html
+
+
+@pytest.mark.asyncio
 async def test_agent_exports_draft_with_warning_for_untraceable_chapter(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -139,6 +167,7 @@ async def test_agent_exports_draft_with_warning_for_untraceable_chapter(
 
     assert result.status == StageStatus.COMPLETED
     assert result.data["release_mode"] == "draft_with_warnings"
+    assert result.data["delivery_status"] == "ready_with_limits"
     assert any("未知证据" in issue for issue in result.data["unresolved_risks"])
     assert list(tmp_path.rglob("report.html"))
 
@@ -260,7 +289,9 @@ async def test_agent_ignores_noncanonical_order_and_exports_with_warning(
     )
 
     assert result.status == StageStatus.COMPLETED
-    assert result.data["release_mode"] == "draft_with_warnings"
+    # 非规范章节顺序属于交付提示，不再把事实完整的报告降级为草稿。
+    assert result.data["release_mode"] == "formal"
+    assert result.data["delivery_status"] == "ready_with_limits"
     assert any("章节顺序" in issue for issue in result.data["unresolved_risks"])
 
 
@@ -288,7 +319,8 @@ async def test_agent_emits_verifiable_decision_package_for_advisory_export(
     )
 
     assert completed_without_ack.status == StageStatus.COMPLETED
-    assert completed_without_ack.data["release_mode"] == "draft_with_warnings"
+    assert completed_without_ack.data["release_mode"] == "formal"
+    assert completed_without_ack.data["delivery_status"] == "ready_with_limits"
     assert completed_without_ack.data["unresolved_risks"]
 
     completed = await ReportFusionAgent().run(

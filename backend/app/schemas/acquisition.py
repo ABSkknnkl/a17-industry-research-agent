@@ -73,15 +73,42 @@ class SkillQueryTask(AcquisitionModel):
     depends_on: list[str] = Field(default_factory=list, max_length=10)
     fallback_queries: list[str] = Field(default_factory=list, max_length=2)
     max_pages: int = Field(default=1, ge=1, le=5)
+    requirement_ids: list[str] = Field(default_factory=list, max_length=12)
+    target_entities: list[str] = Field(default_factory=list, max_length=20)
+
+
+class ResearchRequirement(AcquisitionModel):
+    """One bounded A/B-class research requirement mapped to acquisition tasks."""
+
+    requirement_id: str = Field(pattern=r"^REQ-[A-Za-z0-9_-]+$")
+    question: str = Field(min_length=1, max_length=1_000)
+    requirement_class: Literal["quantitative", "qualitative", "mixed"]
+    target_skills: list[SkillName] = Field(min_length=1, max_length=2)
+    task_ids: list[str] = Field(default_factory=list, max_length=20)
+    requested_metric: str | None = Field(default=None, min_length=1, max_length=200)
+
+
+class RequirementCoverage(AcquisitionModel):
+    """Retrieval-level coverage for one user requirement; it is not a fact claim."""
+
+    requirement_id: str = Field(pattern=r"^REQ-[A-Za-z0-9_-]+$")
+    question: str = Field(min_length=1, max_length=1_000)
+    requirement_class: Literal["quantitative", "qualitative", "mixed"]
+    status: Literal["supported", "partial", "missing"]
+    successful_task_ids: list[str] = Field(default_factory=list, max_length=20)
+    missing_task_ids: list[str] = Field(default_factory=list, max_length=20)
+    returned_row_count: int = Field(default=0, ge=0)
+    note: str = Field(min_length=1, max_length=500)
 
 
 class RetrievalPlan(AcquisitionModel):
     plan_id: str = Field(pattern=r"^PLAN-[A-Za-z0-9_-]+$")
     industry_topic: str = Field(min_length=2, max_length=100)
     research_as_of: date
-    tasks: list[SkillQueryTask] = Field(min_length=6, max_length=20)
+    tasks: list[SkillQueryTask] = Field(min_length=6, max_length=40)
     planner_mode: Literal["deterministic", "hybrid"] = "deterministic"
     applied_review_feedback: str | None = Field(default=None, max_length=2_000)
+    requirements: list[ResearchRequirement] = Field(default_factory=list, max_length=12)
 
     @model_validator(mode="after")
     def require_p0_coverage(self) -> "RetrievalPlan":
@@ -137,7 +164,10 @@ class DataGap(AcquisitionModel):
 class ConflictRecord(AcquisitionModel):
     conflict_id: str = Field(pattern=r"^CONFLICT-[A-Za-z0-9_-]+$")
     metric_name: str = Field(min_length=1, max_length=200)
-    evidence_ids: list[str] = Field(min_length=2, max_length=20)
+    # Agent 1 deliberately keeps at most 200 fused evidence items. A conflict
+    # is an audit view over that same bounded set, so it must be able to retain
+    # every conflicting evidence ID rather than crashing or silently truncating.
+    evidence_ids: list[str] = Field(min_length=2, max_length=200)
     description: str = Field(min_length=1, max_length=1_000)
     resolution: Literal["preserved_for_review"] = "preserved_for_review"
 
@@ -156,7 +186,7 @@ class QuarantinedRecord(AcquisitionModel):
     row_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     entity: str = Field(min_length=1, max_length=500)
     relevance_status: Literal["low"] = "low"
-    reason_code: Literal["topic_mismatch"] = "topic_mismatch"
+    reason_code: Literal["topic_mismatch", "target_entity_mismatch"] = "topic_mismatch"
     reason: str = Field(min_length=1, max_length=1_000)
 
 
@@ -168,6 +198,8 @@ class NormalizationSummary(AcquisitionModel):
     duplicate_raw_row_count: int = Field(default=0, ge=0)
     quarantined_count: int = Field(default=0, ge=0)
     skill_evidence_counts: dict[SkillName, int] = Field(default_factory=dict)
+    task_clean_row_counts: dict[str, int] = Field(default_factory=dict)
+    task_metric_names: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class DataQualitySummary(AcquisitionModel):

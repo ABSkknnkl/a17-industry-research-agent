@@ -1,0 +1,1686 @@
+{
+  "case": "CASE1",
+  "agent1_status": "completed",
+  "agent1_error": null,
+  "evidence_count": 158,
+  "dataset_count": 25,
+  "quality_passed": true,
+  "metric_coverage": [
+    "加权净资产收益率",
+    "data_version",
+    "宏观@值",
+    "summary",
+    "所属同花顺行业",
+    "最新涨跌幅",
+    "title",
+    "净资产",
+    "业务利润",
+    "指标单位",
+    "营业成本",
+    "应收账款周转天数",
+    "总资产",
+    "归母净利润同比增长率",
+    "所属概念",
+    "纳入概念原因",
+    "归母净利润",
+    "项目名称",
+    "毛利率",
+    "综合估值百分位",
+    "分类标准",
+    "营业收入",
+    "最新价",
+    "业务成本",
+    "归属于母公司所有者的净利润",
+    "市盈率(pe,ttm)",
+    "宏观@id",
+    "上市地点",
+    "存货",
+    "上市板块",
+    "指数简称",
+    "营业收入同比增长率",
+    "存货周转天数",
+    "净资产收益率",
+    "业务收入",
+    "应收账款",
+    "经营活动产生的现金流量净额"
+  ],
+  "calculated_metrics": [
+    {
+      "calculation_id": "CALC-DA9B14FEC81AA5CB",
+      "calculation_type": "gross_margin",
+      "metric_name": "毛利率",
+      "entity_scope": "比亚迪",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 17.74452923,
+      "unit": "%",
+      "formula": "（营业收入－营业成本）÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 803964958000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-68445b260eb43dc4"
+        },
+        {
+          "name": "营业成本",
+          "value": 661305161000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-61806a267e3dd351"
+        }
+      ],
+      "evidence_ids": [
+        "E-68445b260eb43dc4",
+        "E-61806a267e3dd351"
+      ],
+      "methodology_note": "收入与成本来自同一实体、市场、会计口径和报告期。"
+    },
+    {
+      "calculation_id": "CALC-0005FDE651BBC8F7",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "比亚迪",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 4.05726912,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 32619022000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-b7a4f4093651d027"
+        },
+        {
+          "name": "营业收入",
+          "value": 803964958000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-68445b260eb43dc4"
+        }
+      ],
+      "evidence_ids": [
+        "E-b7a4f4093651d027",
+        "E-68445b260eb43dc4"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-0D5898E4D1364BB9",
+      "calculation_type": "inventory_turnover",
+      "metric_name": "存货周转率",
+      "entity_scope": "比亚迪",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 10346553824.972034,
+      "unit": "次",
+      "formula": "营业成本÷〔（期初存货＋期末存货）÷2〕",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 661305161000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-61806a267e3dd351"
+        },
+        {
+          "name": "存货周转天数",
+          "value": 58.5709,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-3c5d1f44f1fe6f56"
+        },
+        {
+          "name": "存货周转天数",
+          "value": 69.2601,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-7a13c5cbb4974de6"
+        }
+      ],
+      "evidence_ids": [
+        "E-61806a267e3dd351",
+        "E-3c5d1f44f1fe6f56",
+        "E-7a13c5cbb4974de6"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-4FCB04D31949C21E",
+      "calculation_type": "inventory_days",
+      "metric_name": "存货周转天数",
+      "entity_scope": "比亚迪",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 4e-08,
+      "unit": "天",
+      "formula": "365÷存货周转率",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 661305161000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-61806a267e3dd351"
+        },
+        {
+          "name": "存货周转天数",
+          "value": 58.5709,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-3c5d1f44f1fe6f56"
+        },
+        {
+          "name": "存货周转天数",
+          "value": 69.2601,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-7a13c5cbb4974de6"
+        }
+      ],
+      "evidence_ids": [
+        "E-61806a267e3dd351",
+        "E-3c5d1f44f1fe6f56",
+        "E-7a13c5cbb4974de6"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-29A955F24C7327BF",
+      "calculation_type": "receivables_turnover",
+      "metric_name": "应收账款周转率",
+      "entity_scope": "比亚迪",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 31532118195.68807,
+      "unit": "次",
+      "formula": "营业收入÷〔（期初应收账款＋期末应收账款）÷2〕",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 803964958000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-68445b260eb43dc4"
+        },
+        {
+          "name": "应收账款周转天数",
+          "value": 28.7602,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-8bfd7e861aab68c6"
+        },
+        {
+          "name": "应收账款周转天数",
+          "value": 22.2332,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-7c3f95dc245cbfce"
+        }
+      ],
+      "evidence_ids": [
+        "E-68445b260eb43dc4",
+        "E-8bfd7e861aab68c6",
+        "E-7c3f95dc245cbfce"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-5E355E104D12877E",
+      "calculation_type": "receivables_days",
+      "metric_name": "应收账款周转天数",
+      "entity_scope": "比亚迪",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 1e-08,
+      "unit": "天",
+      "formula": "365÷应收账款周转率",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 803964958000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-68445b260eb43dc4"
+        },
+        {
+          "name": "应收账款周转天数",
+          "value": 28.7602,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-8bfd7e861aab68c6"
+        },
+        {
+          "name": "应收账款周转天数",
+          "value": 22.2332,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-7c3f95dc245cbfce"
+        }
+      ],
+      "evidence_ids": [
+        "E-68445b260eb43dc4",
+        "E-8bfd7e861aab68c6",
+        "E-7c3f95dc245cbfce"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-A807EEFD7FBF8F25",
+      "calculation_type": "gross_margin",
+      "metric_name": "毛利率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2023-12-31",
+      "value": 10.04361164,
+      "unit": "%",
+      "formula": "（营业收入－营业成本）÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 15842626034.79,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-e8f704b87900c5e2"
+        },
+        {
+          "name": "营业成本",
+          "value": 14251454202.99,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-67d4ad4db589ee02"
+        }
+      ],
+      "evidence_ids": [
+        "E-e8f704b87900c5e2",
+        "E-67d4ad4db589ee02"
+      ],
+      "methodology_note": "收入与成本来自同一实体、市场、会计口径和报告期。"
+    },
+    {
+      "calculation_id": "CALC-A61FE224D56B06B1",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2023-12-31",
+      "value": 3.8133867,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 604140594.64,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-26d5982a2af506f5"
+        },
+        {
+          "name": "营业收入",
+          "value": 15842626034.79,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-e8f704b87900c5e2"
+        }
+      ],
+      "evidence_ids": [
+        "E-26d5982a2af506f5",
+        "E-e8f704b87900c5e2"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-8316E3237D8418AD",
+      "calculation_type": "inventory_turnover",
+      "metric_name": "存货周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-09-30",
+      "value": 7.34338733,
+      "unit": "次",
+      "formula": "营业成本÷〔（期初存货＋期末存货）÷2〕",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 10204491616.01,
+          "unit": "未提供",
+          "period_end": "2024-09-30",
+          "evidence_id": "E-ee7050f4faed5990"
+        },
+        {
+          "name": "存货",
+          "value": 1402732009.94,
+          "unit": "未提供",
+          "period_end": "2023-09-30",
+          "evidence_id": "E-71912545e3bbd501"
+        },
+        {
+          "name": "存货",
+          "value": 1376500829.68,
+          "unit": "未提供",
+          "period_end": "2024-09-30",
+          "evidence_id": "E-b095686b0f47e42b"
+        }
+      ],
+      "evidence_ids": [
+        "E-ee7050f4faed5990",
+        "E-71912545e3bbd501",
+        "E-b095686b0f47e42b"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-3663959E7FCAD59E",
+      "calculation_type": "inventory_days",
+      "metric_name": "存货周转天数",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-09-30",
+      "value": 49.70458229,
+      "unit": "天",
+      "formula": "365÷存货周转率",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 10204491616.01,
+          "unit": "未提供",
+          "period_end": "2024-09-30",
+          "evidence_id": "E-ee7050f4faed5990"
+        },
+        {
+          "name": "存货",
+          "value": 1402732009.94,
+          "unit": "未提供",
+          "period_end": "2023-09-30",
+          "evidence_id": "E-71912545e3bbd501"
+        },
+        {
+          "name": "存货",
+          "value": 1376500829.68,
+          "unit": "未提供",
+          "period_end": "2024-09-30",
+          "evidence_id": "E-b095686b0f47e42b"
+        }
+      ],
+      "evidence_ids": [
+        "E-ee7050f4faed5990",
+        "E-71912545e3bbd501",
+        "E-b095686b0f47e42b"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-6AC302889AB316D1",
+      "calculation_type": "gross_margin",
+      "metric_name": "毛利率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 11.55822358,
+      "unit": "%",
+      "formula": "（营业收入－营业成本）÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 16468392260.56,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eab10552174100b4"
+        },
+        {
+          "name": "营业成本",
+          "value": 14564938662.27,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-12f3a6a4f96aba45"
+        }
+      ],
+      "evidence_ids": [
+        "E-eab10552174100b4",
+        "E-12f3a6a4f96aba45"
+      ],
+      "methodology_note": "收入与成本来自同一实体、市场、会计口径和报告期。"
+    },
+    {
+      "calculation_id": "CALC-5764E97B37E73FD9",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 4.10598014,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 676188915.08,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-4c1db73d2fdfb2a3"
+        },
+        {
+          "name": "营业收入",
+          "value": 16468392260.56,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eab10552174100b4"
+        }
+      ],
+      "evidence_ids": [
+        "E-4c1db73d2fdfb2a3",
+        "E-eab10552174100b4"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-C2FCE2D0A1805FB0",
+      "calculation_type": "revenue_yoy",
+      "metric_name": "营业收入同比增长率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 3.94988952,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 16468392260.56,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eab10552174100b4"
+        },
+        {
+          "name": "营业收入",
+          "value": 15842626034.79,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-e8f704b87900c5e2"
+        }
+      ],
+      "evidence_ids": [
+        "E-eab10552174100b4",
+        "E-e8f704b87900c5e2"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    },
+    {
+      "calculation_id": "CALC-E702F22C260C260B",
+      "calculation_type": "net_profit_yoy",
+      "metric_name": "净利润同比增长率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 11.92575389,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 676188915.08,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-4c1db73d2fdfb2a3"
+        },
+        {
+          "name": "归母净利润",
+          "value": 604140594.64,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-26d5982a2af506f5"
+        }
+      ],
+      "evidence_ids": [
+        "E-4c1db73d2fdfb2a3",
+        "E-26d5982a2af506f5"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    },
+    {
+      "calculation_id": "CALC-A00E8EE4C53F8119",
+      "calculation_type": "asset_turnover",
+      "metric_name": "总资产周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 0.94073141,
+      "unit": "次",
+      "formula": "营业收入÷〔（期初总资产＋期末总资产）÷2〕",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 16468392260.56,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eab10552174100b4"
+        },
+        {
+          "name": "总资产",
+          "value": 16976862511.9,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-e8e8b1b19b541ddb"
+        },
+        {
+          "name": "总资产",
+          "value": 18035027402.14,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-b63e93738468970e"
+        }
+      ],
+      "evidence_ids": [
+        "E-eab10552174100b4",
+        "E-e8e8b1b19b541ddb",
+        "E-b63e93738468970e"
+      ],
+      "methodology_note": "仅使用相隔约一年的期初、期末资产，避免单季与年度口径混算。"
+    },
+    {
+      "calculation_id": "CALC-EDD9EE8F77257822",
+      "calculation_type": "inventory_turnover",
+      "metric_name": "存货周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 11.4024293,
+      "unit": "次",
+      "formula": "营业成本÷〔（期初存货＋期末存货）÷2〕",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 14564938662.27,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-12f3a6a4f96aba45"
+        },
+        {
+          "name": "存货",
+          "value": 1244079937.47,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-17b8aa9b973bd7b0"
+        },
+        {
+          "name": "存货",
+          "value": 1310628059.1,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-d1cd7901690ea8b1"
+        }
+      ],
+      "evidence_ids": [
+        "E-12f3a6a4f96aba45",
+        "E-17b8aa9b973bd7b0",
+        "E-d1cd7901690ea8b1"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-93AB521FB2CDB2A1",
+      "calculation_type": "inventory_days",
+      "metric_name": "存货周转天数",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 32.01072247,
+      "unit": "天",
+      "formula": "365÷存货周转率",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 14564938662.27,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-12f3a6a4f96aba45"
+        },
+        {
+          "name": "存货",
+          "value": 1244079937.47,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-17b8aa9b973bd7b0"
+        },
+        {
+          "name": "存货",
+          "value": 1310628059.1,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-d1cd7901690ea8b1"
+        }
+      ],
+      "evidence_ids": [
+        "E-12f3a6a4f96aba45",
+        "E-17b8aa9b973bd7b0",
+        "E-d1cd7901690ea8b1"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-C9FB1849043F7578",
+      "calculation_type": "receivables_turnover",
+      "metric_name": "应收账款周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 4.40908645,
+      "unit": "次",
+      "formula": "营业收入÷〔（期初应收账款＋期末应收账款）÷2〕",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 16468392260.56,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eab10552174100b4"
+        },
+        {
+          "name": "应收账款",
+          "value": 3541968417.56,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-b400f2684346e9d8"
+        },
+        {
+          "name": "应收账款",
+          "value": 3928237690.35,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-d4ac617d6b1e8820"
+        }
+      ],
+      "evidence_ids": [
+        "E-eab10552174100b4",
+        "E-b400f2684346e9d8",
+        "E-d4ac617d6b1e8820"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-8FD8A1897EDA4539",
+      "calculation_type": "receivables_days",
+      "metric_name": "应收账款周转天数",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 82.7835889,
+      "unit": "天",
+      "formula": "365÷应收账款周转率",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 16468392260.56,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eab10552174100b4"
+        },
+        {
+          "name": "应收账款",
+          "value": 3541968417.56,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-b400f2684346e9d8"
+        },
+        {
+          "name": "应收账款",
+          "value": 3928237690.35,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-d4ac617d6b1e8820"
+        }
+      ],
+      "evidence_ids": [
+        "E-eab10552174100b4",
+        "E-b400f2684346e9d8",
+        "E-d4ac617d6b1e8820"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-0FF459CB0D6AAB62",
+      "calculation_type": "dupont_roe",
+      "metric_name": "杜邦复算ROE",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2024-12-31",
+      "value": 7.47895919,
+      "unit": "%",
+      "formula": "销售净利率×总资产周转率×权益乘数",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 676188915.08,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-4c1db73d2fdfb2a3"
+        },
+        {
+          "name": "营业收入",
+          "value": 16468392260.56,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eab10552174100b4"
+        },
+        {
+          "name": "总资产",
+          "value": 16976862511.9,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-e8e8b1b19b541ddb"
+        },
+        {
+          "name": "总资产",
+          "value": 18035027402.14,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-b63e93738468970e"
+        },
+        {
+          "name": "净资产",
+          "value": 8802131956.81,
+          "unit": "未提供",
+          "period_end": "2023-12-31",
+          "evidence_id": "E-55d7b599b43d2ccc"
+        },
+        {
+          "name": "净资产",
+          "value": 9280301641.58,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eee224f580e5bdfe"
+        }
+      ],
+      "evidence_ids": [
+        "E-4c1db73d2fdfb2a3",
+        "E-eab10552174100b4",
+        "E-e8e8b1b19b541ddb",
+        "E-b63e93738468970e",
+        "E-55d7b599b43d2ccc",
+        "E-eee224f580e5bdfe"
+      ],
+      "methodology_note": "三因素杜邦法；使用平均总资产和平均股东权益，按年度口径复算。若证据含披露ROE，则同时进行差异校验。"
+    },
+    {
+      "calculation_id": "CALC-F1B9E9D0832CA41D",
+      "calculation_type": "inventory_turnover",
+      "metric_name": "存货周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-03-31",
+      "value": 2.33904105,
+      "unit": "次",
+      "formula": "营业成本÷〔（期初存货＋期末存货）÷2〕",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 3228649555.9,
+          "unit": "未提供",
+          "period_end": "2025-03-31",
+          "evidence_id": "E-5eaf349ecf99a868"
+        },
+        {
+          "name": "存货",
+          "value": 1321650990.57,
+          "unit": "未提供",
+          "period_end": "2024-03-31",
+          "evidence_id": "E-5ee0a7d01e2b10c5"
+        },
+        {
+          "name": "存货",
+          "value": 1439009884.07,
+          "unit": "未提供",
+          "period_end": "2025-03-31",
+          "evidence_id": "E-52be0a2496b2a62d"
+        }
+      ],
+      "evidence_ids": [
+        "E-5eaf349ecf99a868",
+        "E-5ee0a7d01e2b10c5",
+        "E-52be0a2496b2a62d"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-A2AA405EDC53D69C",
+      "calculation_type": "inventory_days",
+      "metric_name": "存货周转天数",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-03-31",
+      "value": 156.04685516,
+      "unit": "天",
+      "formula": "365÷存货周转率",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 3228649555.9,
+          "unit": "未提供",
+          "period_end": "2025-03-31",
+          "evidence_id": "E-5eaf349ecf99a868"
+        },
+        {
+          "name": "存货",
+          "value": 1321650990.57,
+          "unit": "未提供",
+          "period_end": "2024-03-31",
+          "evidence_id": "E-5ee0a7d01e2b10c5"
+        },
+        {
+          "name": "存货",
+          "value": 1439009884.07,
+          "unit": "未提供",
+          "period_end": "2025-03-31",
+          "evidence_id": "E-52be0a2496b2a62d"
+        }
+      ],
+      "evidence_ids": [
+        "E-5eaf349ecf99a868",
+        "E-5ee0a7d01e2b10c5",
+        "E-52be0a2496b2a62d"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-7B19C8CAC6FD130C",
+      "calculation_type": "net_profit_yoy",
+      "metric_name": "净利润同比增长率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-06-30",
+      "value": -4.06854743,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 303891058.22,
+          "unit": "未提供",
+          "period_end": "2025-06-30",
+          "evidence_id": "E-764cd925fb771365"
+        },
+        {
+          "name": "归母净利润",
+          "value": 316779377.45,
+          "unit": "未提供",
+          "period_end": "2024-06-30",
+          "evidence_id": "E-62799009da051f43"
+        }
+      ],
+      "evidence_ids": [
+        "E-764cd925fb771365",
+        "E-62799009da051f43"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    },
+    {
+      "calculation_id": "CALC-0403C1F9F1FC2504",
+      "calculation_type": "inventory_turnover",
+      "metric_name": "存货周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-06-30",
+      "value": 5.19168736,
+      "unit": "次",
+      "formula": "营业成本÷〔（期初存货＋期末存货）÷2〕",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 6959473152.45,
+          "unit": "未提供",
+          "period_end": "2025-06-30",
+          "evidence_id": "E-a5f8b4ec897953c6"
+        },
+        {
+          "name": "存货",
+          "value": 1343635506.27,
+          "unit": "未提供",
+          "period_end": "2024-06-30",
+          "evidence_id": "E-3bbd73d8caceac20"
+        },
+        {
+          "name": "存货",
+          "value": 1337370752.79,
+          "unit": "未提供",
+          "period_end": "2025-06-30",
+          "evidence_id": "E-038477b0f4ee3ef0"
+        }
+      ],
+      "evidence_ids": [
+        "E-a5f8b4ec897953c6",
+        "E-3bbd73d8caceac20",
+        "E-038477b0f4ee3ef0"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-19C998E57A51D60C",
+      "calculation_type": "inventory_days",
+      "metric_name": "存货周转天数",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-06-30",
+      "value": 70.30469571,
+      "unit": "天",
+      "formula": "365÷存货周转率",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 6959473152.45,
+          "unit": "未提供",
+          "period_end": "2025-06-30",
+          "evidence_id": "E-a5f8b4ec897953c6"
+        },
+        {
+          "name": "存货",
+          "value": 1343635506.27,
+          "unit": "未提供",
+          "period_end": "2024-06-30",
+          "evidence_id": "E-3bbd73d8caceac20"
+        },
+        {
+          "name": "存货",
+          "value": 1337370752.79,
+          "unit": "未提供",
+          "period_end": "2025-06-30",
+          "evidence_id": "E-038477b0f4ee3ef0"
+        }
+      ],
+      "evidence_ids": [
+        "E-a5f8b4ec897953c6",
+        "E-3bbd73d8caceac20",
+        "E-038477b0f4ee3ef0"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-8DD709B41536EC2B",
+      "calculation_type": "net_profit_yoy",
+      "metric_name": "净利润同比增长率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-09-30",
+      "value": -0.92266489,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 439834273.53,
+          "unit": "未提供",
+          "period_end": "2025-09-30",
+          "evidence_id": "E-a6b068e266d9d69e"
+        },
+        {
+          "name": "归母净利润",
+          "value": 443930262.2,
+          "unit": "未提供",
+          "period_end": "2024-09-30",
+          "evidence_id": "E-15ba36784de5a296"
+        }
+      ],
+      "evidence_ids": [
+        "E-a6b068e266d9d69e",
+        "E-15ba36784de5a296"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    },
+    {
+      "calculation_id": "CALC-0875771D8D6D762B",
+      "calculation_type": "inventory_turnover",
+      "metric_name": "存货周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-09-30",
+      "value": 7.66603177,
+      "unit": "次",
+      "formula": "营业成本÷〔（期初存货＋期末存货）÷2〕",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 10751970722.48,
+          "unit": "未提供",
+          "period_end": "2025-09-30",
+          "evidence_id": "E-dab531f5573c99ed"
+        },
+        {
+          "name": "存货",
+          "value": 1376500829.68,
+          "unit": "未提供",
+          "period_end": "2024-09-30",
+          "evidence_id": "E-b095686b0f47e42b"
+        },
+        {
+          "name": "存货",
+          "value": 1428593396.54,
+          "unit": "未提供",
+          "period_end": "2025-09-30",
+          "evidence_id": "E-34db90925a43aafc"
+        }
+      ],
+      "evidence_ids": [
+        "E-dab531f5573c99ed",
+        "E-b095686b0f47e42b",
+        "E-34db90925a43aafc"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-A537198EB2FCA6B3",
+      "calculation_type": "inventory_days",
+      "metric_name": "存货周转天数",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-09-30",
+      "value": 47.6126386,
+      "unit": "天",
+      "formula": "365÷存货周转率",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 10751970722.48,
+          "unit": "未提供",
+          "period_end": "2025-09-30",
+          "evidence_id": "E-dab531f5573c99ed"
+        },
+        {
+          "name": "存货",
+          "value": 1376500829.68,
+          "unit": "未提供",
+          "period_end": "2024-09-30",
+          "evidence_id": "E-b095686b0f47e42b"
+        },
+        {
+          "name": "存货",
+          "value": 1428593396.54,
+          "unit": "未提供",
+          "period_end": "2025-09-30",
+          "evidence_id": "E-34db90925a43aafc"
+        }
+      ],
+      "evidence_ids": [
+        "E-dab531f5573c99ed",
+        "E-b095686b0f47e42b",
+        "E-34db90925a43aafc"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-0C9D39E8B8AD9612",
+      "calculation_type": "gross_margin",
+      "metric_name": "毛利率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 12.43877254,
+      "unit": "%",
+      "formula": "（营业收入－营业成本）÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 17410397362.62,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-2962db319d31f3b1"
+        },
+        {
+          "name": "营业成本",
+          "value": 15244757636.33,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-94c18490fe1ba411"
+        }
+      ],
+      "evidence_ids": [
+        "E-2962db319d31f3b1",
+        "E-94c18490fe1ba411"
+      ],
+      "methodology_note": "收入与成本来自同一实体、市场、会计口径和报告期。"
+    },
+    {
+      "calculation_id": "CALC-03595083E7730D3A",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 4.03561039,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 702615804.9,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-57f3179422559f5e"
+        },
+        {
+          "name": "营业收入",
+          "value": 17410397362.62,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-2962db319d31f3b1"
+        }
+      ],
+      "evidence_ids": [
+        "E-57f3179422559f5e",
+        "E-2962db319d31f3b1"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-38062CE3001FC855",
+      "calculation_type": "revenue_yoy",
+      "metric_name": "营业收入同比增长率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 5.72007933,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 17410397362.62,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-2962db319d31f3b1"
+        },
+        {
+          "name": "营业收入",
+          "value": 16468392260.56,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eab10552174100b4"
+        }
+      ],
+      "evidence_ids": [
+        "E-2962db319d31f3b1",
+        "E-eab10552174100b4"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    },
+    {
+      "calculation_id": "CALC-F30F515D11F2C776",
+      "calculation_type": "net_profit_yoy",
+      "metric_name": "净利润同比增长率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 3.90821104,
+      "unit": "%",
+      "formula": "（本期值－上年同期值）÷|上年同期值|×100%",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 702615804.9,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-57f3179422559f5e"
+        },
+        {
+          "name": "归母净利润",
+          "value": 676188915.08,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-4c1db73d2fdfb2a3"
+        }
+      ],
+      "evidence_ids": [
+        "E-57f3179422559f5e",
+        "E-4c1db73d2fdfb2a3"
+      ],
+      "methodology_note": "上年同期为负数时使用绝对值作为分母，并在报告中保留盈亏反转说明。"
+    },
+    {
+      "calculation_id": "CALC-B21DB18A5DA64B8E",
+      "calculation_type": "asset_turnover",
+      "metric_name": "总资产周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 0.91510225,
+      "unit": "次",
+      "formula": "营业收入÷〔（期初总资产＋期末总资产）÷2〕",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 17410397362.62,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-2962db319d31f3b1"
+        },
+        {
+          "name": "总资产",
+          "value": 18035027402.14,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-b63e93738468970e"
+        },
+        {
+          "name": "总资产",
+          "value": 20016233831.85,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-7975bbe699b1706b"
+        }
+      ],
+      "evidence_ids": [
+        "E-2962db319d31f3b1",
+        "E-b63e93738468970e",
+        "E-7975bbe699b1706b"
+      ],
+      "methodology_note": "仅使用相隔约一年的期初、期末资产，避免单季与年度口径混算。"
+    },
+    {
+      "calculation_id": "CALC-096C5E453FAD960E",
+      "calculation_type": "inventory_turnover",
+      "metric_name": "存货周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 11.2485589,
+      "unit": "次",
+      "formula": "营业成本÷〔（期初存货＋期末存货）÷2〕",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 15244757636.33,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-94c18490fe1ba411"
+        },
+        {
+          "name": "存货",
+          "value": 1310628059.1,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-d1cd7901690ea8b1"
+        },
+        {
+          "name": "存货",
+          "value": 1399898288.64,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-a720ec7631091f0a"
+        }
+      ],
+      "evidence_ids": [
+        "E-94c18490fe1ba411",
+        "E-d1cd7901690ea8b1",
+        "E-a720ec7631091f0a"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-65E453819BF6F67B",
+      "calculation_type": "inventory_days",
+      "metric_name": "存货周转天数",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 32.44860104,
+      "unit": "天",
+      "formula": "365÷存货周转率",
+      "inputs": [
+        {
+          "name": "营业成本",
+          "value": 15244757636.33,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-94c18490fe1ba411"
+        },
+        {
+          "name": "存货",
+          "value": 1310628059.1,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-d1cd7901690ea8b1"
+        },
+        {
+          "name": "存货",
+          "value": 1399898288.64,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-a720ec7631091f0a"
+        }
+      ],
+      "evidence_ids": [
+        "E-94c18490fe1ba411",
+        "E-d1cd7901690ea8b1",
+        "E-a720ec7631091f0a"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-081E44E1EEAEBFAB",
+      "calculation_type": "receivables_turnover",
+      "metric_name": "应收账款周转率",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 4.01162726,
+      "unit": "次",
+      "formula": "营业收入÷〔（期初应收账款＋期末应收账款）÷2〕",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 17410397362.62,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-2962db319d31f3b1"
+        },
+        {
+          "name": "应收账款",
+          "value": 3928237690.35,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-d4ac617d6b1e8820"
+        },
+        {
+          "name": "应收账款",
+          "value": 4751729927.03,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-0fdb944773eac97c"
+        }
+      ],
+      "evidence_ids": [
+        "E-2962db319d31f3b1",
+        "E-d4ac617d6b1e8820",
+        "E-0fdb944773eac97c"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-C8BAC36321D9A7A5",
+      "calculation_type": "receivables_days",
+      "metric_name": "应收账款周转天数",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 90.98552188,
+      "unit": "天",
+      "formula": "365÷应收账款周转率",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 17410397362.62,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-2962db319d31f3b1"
+        },
+        {
+          "name": "应收账款",
+          "value": 3928237690.35,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-d4ac617d6b1e8820"
+        },
+        {
+          "name": "应收账款",
+          "value": 4751729927.03,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-0fdb944773eac97c"
+        }
+      ],
+      "evidence_ids": [
+        "E-2962db319d31f3b1",
+        "E-d4ac617d6b1e8820",
+        "E-0fdb944773eac97c"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    },
+    {
+      "calculation_id": "CALC-550961347481CF25",
+      "calculation_type": "dupont_roe",
+      "metric_name": "杜邦复算ROE",
+      "entity_scope": "富奥股份",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 7.23350709,
+      "unit": "%",
+      "formula": "销售净利率×总资产周转率×权益乘数",
+      "inputs": [
+        {
+          "name": "归母净利润",
+          "value": 702615804.9,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-57f3179422559f5e"
+        },
+        {
+          "name": "营业收入",
+          "value": 17410397362.62,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-2962db319d31f3b1"
+        },
+        {
+          "name": "总资产",
+          "value": 18035027402.14,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-b63e93738468970e"
+        },
+        {
+          "name": "总资产",
+          "value": 20016233831.85,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-7975bbe699b1706b"
+        },
+        {
+          "name": "净资产",
+          "value": 9280301641.58,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-eee224f580e5bdfe"
+        },
+        {
+          "name": "净资产",
+          "value": 10146396810.03,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-0bd88d9faaee904b"
+        }
+      ],
+      "evidence_ids": [
+        "E-57f3179422559f5e",
+        "E-2962db319d31f3b1",
+        "E-b63e93738468970e",
+        "E-7975bbe699b1706b",
+        "E-eee224f580e5bdfe",
+        "E-0bd88d9faaee904b"
+      ],
+      "methodology_note": "三因素杜邦法；使用平均总资产和平均股东权益，按年度口径复算。若证据含披露ROE，则同时进行差异校验。"
+    },
+    {
+      "calculation_id": "CALC-D855BC61E8A22D1A",
+      "calculation_type": "gross_margin",
+      "metric_name": "毛利率",
+      "entity_scope": "宁德时代",
+      "market": "中国",
+      "period_end": "2026-03-31",
+      "value": 24.81562199,
+      "unit": "%",
+      "formula": "（营业收入－营业成本）÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 129131041000.0,
+          "unit": "未提供",
+          "period_end": "2026-03-31",
+          "evidence_id": "E-735dd6702f838d8c"
+        },
+        {
+          "name": "营业成本",
+          "value": 97086370000.0,
+          "unit": "未提供",
+          "period_end": "2026-03-31",
+          "evidence_id": "E-e53e926e9530bf35"
+        }
+      ],
+      "evidence_ids": [
+        "E-735dd6702f838d8c",
+        "E-e53e926e9530bf35"
+      ],
+      "methodology_note": "收入与成本来自同一实体、市场、会计口径和报告期。"
+    },
+    {
+      "calculation_id": "CALC-74DCB0807655637E",
+      "calculation_type": "net_margin",
+      "metric_name": "归母净利率",
+      "entity_scope": "宁德时代",
+      "market": "中国",
+      "period_end": "2026-03-31",
+      "value": 16.05943067,
+      "unit": "%",
+      "formula": "净利润÷营业收入×100%",
+      "inputs": [
+        {
+          "name": "归属于母公司所有者的净利润",
+          "value": 20737710000.0,
+          "unit": "未提供",
+          "period_end": "2026-03-31",
+          "evidence_id": "E-514c43aa5d111046"
+        },
+        {
+          "name": "营业收入",
+          "value": 129131041000.0,
+          "unit": "未提供",
+          "period_end": "2026-03-31",
+          "evidence_id": "E-735dd6702f838d8c"
+        }
+      ],
+      "evidence_ids": [
+        "E-514c43aa5d111046",
+        "E-735dd6702f838d8c"
+      ],
+      "methodology_note": "归母净利润优先于口径更宽的净利润。"
+    },
+    {
+      "calculation_id": "CALC-FE8ADF20A6D31D82",
+      "calculation_type": "receivables_turnover",
+      "metric_name": "应收账款周转率",
+      "entity_scope": "比亚迪",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 31532118195.68807,
+      "unit": "次",
+      "formula": "营业收入÷〔（期初应收账款＋期末应收账款）÷2〕",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 803964958000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-aa110e3f157be5a3"
+        },
+        {
+          "name": "应收账款周转天数",
+          "value": 28.7602,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-3d0617ceb2332e3d"
+        },
+        {
+          "name": "应收账款周转天数",
+          "value": 22.2332,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-56cf152aadb9f5f2"
+        }
+      ],
+      "evidence_ids": [
+        "E-aa110e3f157be5a3",
+        "E-3d0617ceb2332e3d",
+        "E-56cf152aadb9f5f2"
+      ],
+      "methodology_note": "按年度口径计算。"
+    },
+    {
+      "calculation_id": "CALC-CBAC198643A0774F",
+      "calculation_type": "receivables_days",
+      "metric_name": "应收账款周转天数",
+      "entity_scope": "比亚迪",
+      "market": "中国",
+      "period_end": "2025-12-31",
+      "value": 1e-08,
+      "unit": "天",
+      "formula": "365÷应收账款周转率",
+      "inputs": [
+        {
+          "name": "营业收入",
+          "value": 803964958000.0,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-aa110e3f157be5a3"
+        },
+        {
+          "name": "应收账款周转天数",
+          "value": 28.7602,
+          "unit": "未提供",
+          "period_end": "2024-12-31",
+          "evidence_id": "E-3d0617ceb2332e3d"
+        },
+        {
+          "name": "应收账款周转天数",
+          "value": 22.2332,
+          "unit": "未提供",
+          "period_end": "2025-12-31",
+          "evidence_id": "E-56cf152aadb9f5f2"
+        }
+      ],
+      "evidence_ids": [
+        "E-aa110e3f157be5a3",
+        "E-3d0617ceb2332e3d",
+        "E-56cf152aadb9f5f2"
+      ],
+      "methodology_note": "年度报告默认按365天计算。"
+    }
+  ],
+  "calculation_issues": [
+    {
+      "issue_id": "CI-4AE1764B1CE27C90",
+      "calculation_type": "gross_margin",
+      "entity_scope": "比亚迪",
+      "period_end": "2025-12-31",
+      "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。",
+      "missing_inputs": [
+        "营业成本"
+      ],
+      "evidence_ids": [
+        "E-aa110e3f157be5a3"
+      ]
+    },
+    {
+      "issue_id": "CI-9116D6C7D8F3BCA1",
+      "calculation_type": "net_margin",
+      "entity_scope": "比亚迪",
+      "period_end": "2025-12-31",
+      "reason": "已取得营业收入，但缺少同口径净利润，净利率不可计算。",
+      "missing_inputs": [
+        "净利润或归母净利润"
+      ],
+      "evidence_ids": [
+        "E-aa110e3f157be5a3"
+      ]
+    }
+  ],
+  "checkpoints": [
+    "杜邦ROE",
+    "存货周转天数",
+    "应收账款周转天数",
+    "毛利率",
+    "营收同比",
+    "期初缺失自动降级",
+    "图表互斥"
+  ]
+}

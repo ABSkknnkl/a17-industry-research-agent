@@ -27,6 +27,9 @@ P1_CHART_TYPES = {"combo", "area", "scatter", "bubble", "heatmap", "boxplot", "t
 def plan_chart_selection(
     candidates: list[ChartCandidateResult],
     chapter_assignments: dict[str, str] | None = None,
+    *,
+    target_count: int | None = None,
+    user_priority: bool = False,
 ) -> list[ChartCandidateResult]:
     """Score and classify all technically valid candidates.
 
@@ -63,16 +66,21 @@ def plan_chart_selection(
         chapter = assign.get(candidate.candidate_id, candidate.recommended_chapter_id or "CH-00")
 
         # Check recommended budgets
-        if len(selections) >= RECOMMENDED_CHARTS[1]:
+        selection_limit = target_count or RECOMMENDED_CHARTS[1]
+        if len(selections) >= selection_limit:
             break
-        if chapter_counts[chapter] >= RECOMMENDED_PER_CHAPTER:
+        if not user_priority and chapter_counts[chapter] >= RECOMMENDED_PER_CHAPTER:
             continue
-        if family_counts[family] >= RECOMMENDED_PER_FAMILY:
+        if not user_priority and family_counts[family] >= RECOMMENDED_PER_FAMILY:
             continue
         is_p1 = chart_type in P1_CHART_TYPES
-        if is_p1 and p1_count >= RECOMMENDED_P1:
+        if not user_priority and is_p1 and p1_count >= RECOMMENDED_P1:
             continue
-        if chart_type == "industry_chain" and chain_count >= RECOMMENDED_CHAIN:
+        if (
+            not user_priority
+            and chart_type == "industry_chain"
+            and chain_count >= RECOMMENDED_CHAIN
+        ):
             continue
 
         selections.append(candidate.candidate_id)

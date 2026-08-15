@@ -2,7 +2,7 @@ import pytest
 
 from app.agents.data_fetcher.executor import RetrievalExecutor
 from app.agents.data_fetcher.planner import QueryPlanner
-from app.agents.data_fetcher.service import DataFetcherAgent
+from app.agents.data_fetcher.service import DataFetcherAgent, _metric_matches
 from app.agents.data_interpreter.service import DataInterpreterAgent
 from app.integrations.llm.mock import MockAnalysisModel
 from app.integrations.skillhub.mock import MockSkillHubClient
@@ -56,6 +56,12 @@ def _user_evidence() -> dict[str, object]:
     }
 
 
+def test_requested_metric_matching_does_not_accept_unrelated_derived_metric() -> None:
+    assert _metric_matches("市占率", "动力电池市场份额") is True
+    assert _metric_matches("营业收入", "营业收入同比增长率") is False
+    assert _metric_matches("存货", "存货周转天数") is False
+
+
 class SelectivelyFailingClient(MockSkillHubClient):
     provider_mode = "live"
 
@@ -105,6 +111,8 @@ async def test_mock_retrieval_exercises_all_p0_p1_but_blocks_formal_release() ->
     assert called == P0_SKILLS | P1_SKILLS
     assert result.data["acquisition_quality"]["passed"] is True
     assert result.data["chart_datasets"]
+    assert result.data["requirement_coverage"][0]["status"] == "supported"
+    assert result.data["requirement_coverage"][0]["returned_row_count"] > 0
     assert "mock_data_not_for_formal_release" in result.data["blocking_issues"]
 
 
@@ -195,6 +203,25 @@ async def test_one_core_skill_failure_is_advisory_when_other_core_data_is_usable
     assert result.data["acquisition_quality"]["core_data_available"] is True
     assert result.data["data_gaps"][0]["blocking"] is False
     assert result.data["blocking_issues"] == []
+
+
+@pytest.mark.asyncio
+async def test_missing_requested_requirement_pauses_for_reinput() -> None:
+    client = SelectivelyFailingClient({SkillName.INDUSTRY_CHAIN})
+    agent = DataFetcherAgent(
+        planner=QueryPlanner(),
+        executor=RetrievalExecutor(create_skillhub_gateway(client)),
+        provider_mode=client.provider_mode,
+    )
+
+    result = await agent.run(_context())
+
+    assert result.status == StageStatus.WAITING_REVIEW
+    assert result.error == "required_data_unavailable"
+    assert result.data["blocking_issues"] == ["required_data_unavailable"]
+    assert result.data["missing_requirements"][0]["question"] == "行业供需格局如何？"
+    assert result.data["allowed_review_actions"] == ["revise", "regenerate", "cancel"]
+    assert "重新提交" in result.data["collaboration_requests"][0]["question"]
 
 
 @pytest.mark.asyncio

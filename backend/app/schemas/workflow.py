@@ -76,6 +76,20 @@ class WorkflowState(ContractModel):
 ShortReviewText = Annotated[str, Field(min_length=1, max_length=200)]
 LabelText = Annotated[str, Field(min_length=1, max_length=100)]
 RejectedClaimId = Annotated[str, Field(pattern=r"^C-[A-Za-z0-9_-]+$")]
+ChartTypeName = Literal[
+    "line",
+    "bar",
+    "pie",
+    "radar",
+    "industry_chain",
+    "combo",
+    "area",
+    "scatter",
+    "bubble",
+    "heatmap",
+    "boxplot",
+    "treemap",
+]
 
 
 class DataFetchOptions(ContractModel):
@@ -100,23 +114,11 @@ class DataInterpretReviewEdits(ContractModel):
 
 
 class ChartGenerationOptions(ContractModel):
-    chart_type: (
-        Literal[
-            "line",
-            "bar",
-            "pie",
-            "radar",
-            "industry_chain",
-            "combo",
-            "area",
-            "scatter",
-            "bubble",
-            "heatmap",
-            "boxplot",
-            "treemap",
-        ]
-        | None
-    ) = None
+    chart_type: ChartTypeName | None = None
+    requested_chart_count: int | None = Field(default=None, ge=1, le=30)
+    requested_chart_types: list[ChartTypeName] = Field(default_factory=list, max_length=12)
+    user_priority: bool = False
+    allow_multiple_charts_per_dataset: bool = False
     bar_variant: Literal["vertical", "horizontal", "grouped", "stacked"] | None = None
     metric_ids: list[LabelText] = Field(default_factory=list, max_length=20)
     title: str | None = Field(default=None, min_length=1, max_length=200)

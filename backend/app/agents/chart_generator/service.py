@@ -35,11 +35,12 @@ from app.agents.chart_generator.router import (
     route_chart,
 )
 from app.infrastructure.storage.local import save_chart_json
-from app.schemas.analysis import ChartCandidate, DataQualityIssue
+from app.schemas.analysis import CalculatedMetric, ChartCandidate, DataQualityIssue
 from app.schemas.chart import (
     BarVariant,
     ChartDataset,
     ChartGenerationResult,
+    ChartPoint,
     ChartReference,
     ChartSpec,
     ChartType,
@@ -122,7 +123,11 @@ def _source_payload(context: StageContext) -> dict[str, Any]:
     fetch_result = context.previous_results.get(StageName.DATA_FETCH)
     if fetch_result is None:
         return dict(context.input_data)
-    return {**fetch_result.data, **context.input_data}
+    # Agent 1 owns normalized evidence and chart datasets.  The initial request
+    # commonly carries ``evidence_items=[]`` as an input placeholder; letting it
+    # overwrite Agent 1 here makes every real dataset appear to cite unknown
+    # evidence.  Preserve user options while keeping upstream output authoritative.
+    return {**context.input_data, **fetch_result.data}
 
 
 def _known_evidence_ids(source: dict[str, Any]) -> set[str]:
@@ -147,6 +152,226 @@ def _select_datasets(
         for dataset in datasets
         if dataset.dataset_id in requested or dataset.metric_name in requested
     ]
+
+
+def _calculated_metric_datasets(raw_metrics: list[dict[str, Any]]) -> list[ChartDataset]:
+    """Expose Agent 2 formula results to Agent 3 without inventing chart data."""
+    grouped: dict[tuple[str, str], list[CalculatedMetric]] = {}
+    for raw in raw_metrics:
+        metric = CalculatedMetric.model_validate(raw)
+        grouped.setdefault((metric.metric_name, metric.unit), []).append(metric)
+
+    datasets: list[ChartDataset] = []
+    for (metric_name, unit), metrics in grouped.items():
+        periods = {metric.period_end for metric in metrics if metric.period_end is not None}
+        entities = {metric.entity_scope for metric in metrics}
+        kind = "time_series" if len(periods) > 1 else "categorical"
+        evidence_ids = list(
+            dict.fromkeys(evidence_id for metric in metrics for evidence_id in metric.evidence_ids)
+        )
+        digest = (
+            hashlib.sha256(
+                "|".join(
+                    [metric_name, unit, *sorted(metric.calculation_id for metric in metrics)]
+                ).encode("utf-8")
+            )
+            .hexdigest()[:12]
+            .upper()
+        )
+        datasets.append(
+            ChartDataset(
+                dataset_id=f"DS-CALC-{digest}",
+                kind=kind,
+                metric_name=metric_name,
+                unit=unit,
+                points=[
+                    ChartPoint(
+                        label=(
+                            metric.period_end.isoformat()
+                            if kind == "time_series" and metric.period_end is not None
+                            else metric.entity_scope[:200]
+                        ),
+                        value=metric.value,
+                        series=(
+                            metric.entity_scope[:100] if len(entities) > 1 else metric_name[:100]
+                        ),
+                        period_end=metric.period_end,
+                        evidence_id=metric.evidence_ids[0],
+                    )
+                    for metric in sorted(
+                        metrics,
+                        key=lambda item: (
+                            item.period_end or datetime.min.date(),
+                            item.entity_scope,
+                        ),
+                    )
+                ],
+                evidence_ids=evidence_ids,
+            )
+        )
+    return datasets
+
+
+def _allow_multiple_views(options: ChartGenerationOptions) -> bool:
+    """Return true only for an explicit same-dataset multi-chart instruction."""
+    return options.allow_multiple_charts_per_dataset or (
+        len(options.metric_ids) == 1 and len(set(options.requested_chart_types)) > 1
+    )
+
+
+def _default_chart_type(dataset: ChartDataset) -> ChartType:
+    """Choose the safest deterministic chart type for an audited dataset."""
+    if dataset.kind == "time_series":
+        return "line"
+    if dataset.kind == "industry_chain":
+        return "industry_chain"
+    if dataset.kind == "xy":
+        return "bubble" if dataset.size_metric else "scatter"
+    if dataset.kind == "matrix":
+        return "heatmap"
+    if dataset.kind == "distribution":
+        return "boxplot"
+    if dataset.kind == "hierarchy":
+        return "treemap"
+    if dataset.is_standardized and dataset.scale_min is not None and dataset.scale_max is not None:
+        return "radar"
+    if dataset.is_composition:
+        return "pie"
+    return "bar"
+
+
+def _backfill_dataset_candidates(
+    candidates: list[ChartCandidate],
+    datasets: list[ChartDataset],
+    *,
+    target_dataset_count: int = RECOMMENDED_CHARTS_PER_REPORT[1],
+    requested_chart_types: list[ChartType] | None = None,
+) -> list[ChartCandidate]:
+    """Supplement sparse LLM suggestions with traceable dataset-native candidates.
+
+    Agent 2 suggests analytical views and may cite evidence spanning several metrics.
+    Agent 3, however, must render every chart from one concrete normalized dataset.
+    This adapter preserves Agent 2's candidates and deterministically adds candidates
+    for otherwise unused audited datasets.  It never derives or invents values.
+    """
+    used_dataset_ids: set[str] = set()
+    used_evidence_sets: set[frozenset[str]] = set()
+    for candidate in candidates:
+        candidate_ids = set(candidate.evidence_ids)
+        matching = [
+            dataset for dataset in datasets if candidate_ids.issubset(set(dataset.evidence_ids))
+        ]
+        if matching:
+            matching.sort(
+                key=lambda dataset: (
+                    set(dataset.evidence_ids) != candidate_ids,
+                    len(set(dataset.evidence_ids) - candidate_ids),
+                    dataset.dataset_id,
+                )
+            )
+            used_dataset_ids.add(matching[0].dataset_id)
+            used_evidence_sets.add(frozenset(matching[0].evidence_ids))
+
+    result = list(candidates)
+
+    # Explicit user types are tried first, but only against compatible audited
+    # data. Unsupported requests become visible risks later; they never force
+    # fabricated values or an invalid ECharts option.
+    represented_types = {candidate.chart_type for candidate in result}
+    for requested_type in requested_chart_types or []:
+        if requested_type in represented_types:
+            continue
+        dataset = next(
+            (
+                item
+                for item in sorted(datasets, key=lambda value: value.dataset_id)
+                if route_chart(requested_type, item).accepted
+            ),
+            None,
+        )
+        if dataset is None:
+            continue
+        result.append(_candidate_for_dataset(dataset, requested_type, user_requested=True))
+        represented_types.add(requested_type)
+        used_dataset_ids.add(dataset.dataset_id)
+        used_evidence_sets.add(frozenset(dataset.evidence_ids))
+
+    for dataset in sorted(datasets, key=lambda item: item.dataset_id):
+        if len(result) >= target_dataset_count:
+            break
+        if dataset.dataset_id in used_dataset_ids:
+            continue
+        evidence_set = frozenset(dataset.evidence_ids)
+        if evidence_set in used_evidence_sets:
+            continue
+        result.append(_candidate_for_dataset(dataset, _default_chart_type(dataset)))
+        used_dataset_ids.add(dataset.dataset_id)
+        used_evidence_sets.add(evidence_set)
+    return result
+
+
+def _candidate_for_dataset(
+    dataset: ChartDataset,
+    chart_type: ChartType,
+    *,
+    user_requested: bool = False,
+) -> ChartCandidate:
+    suffix = {
+        "line": "趋势",
+        "area": "趋势",
+        "combo": "趋势与对比",
+        "industry_chain": "结构",
+        "scatter": "定位",
+        "bubble": "定位",
+        "heatmap": "矩阵",
+        "boxplot": "分布",
+        "treemap": "构成",
+        "radar": "对比",
+        "pie": "构成",
+        "bar": "对比",
+    }[chart_type]
+    chapter_hint = {
+        "industry_chain": "CH-03",
+        "radar": "CH-04",
+        "scatter": "CH-04",
+        "bubble": "CH-04",
+        "heatmap": "CH-04",
+        "boxplot": "CH-04",
+        "treemap": "CH-04",
+        "bar": "CH-04",
+        "line": "CH-02",
+        "pie": "CH-02",
+        "area": "CH-02",
+        "combo": "CH-02",
+    }[chart_type]
+    return ChartCandidate(
+        title=f"{dataset.metric_name}{suffix}",
+        chart_type=chart_type,
+        evidence_ids=list(dataset.evidence_ids),
+        analysis_purpose=(
+            "trend"
+            if chart_type in {"line", "area", "combo"}
+            else (
+                "relationship"
+                if chart_type == "industry_chain"
+                else (
+                    "composition"
+                    if chart_type in {"pie", "treemap"}
+                    else (
+                        "distribution"
+                        if chart_type == "boxplot"
+                        else (
+                            "positioning" if chart_type in {"scatter", "bubble"} else "comparison"
+                        )
+                    )
+                )
+            )
+        ),
+        insight_goal=f"基于标准化数据集呈现{dataset.metric_name}的{suffix}",
+        priority=100 if user_requested else 45,
+        chapter_hint=chapter_hint,
+        user_requested=user_requested,
+    )
 
 
 def _build_option(
@@ -420,6 +645,10 @@ class ChartGeneratorAgent:
                 error="chart_input_invalid",
             )
 
+        datasets.extend(
+            _calculated_metric_datasets(interpretation.data.get("calculated_metrics", []))
+        )
+
         if options.title is not None and len(candidates) != 1:
             return _waiting_review(
                 revision=context.revision,
@@ -429,6 +658,12 @@ class ChartGeneratorAgent:
             )
 
         datasets = _select_datasets(datasets, options)
+        candidates = _backfill_dataset_candidates(
+            candidates,
+            datasets,
+            target_dataset_count=options.requested_chart_count or RECOMMENDED_CHARTS_PER_REPORT[1],
+            requested_chart_types=list(options.requested_chart_types),
+        )
         known_evidence_ids = _known_evidence_ids(source)
         specs: list[ChartSpec] = []
         references: list[ChartReference] = []
@@ -436,12 +671,15 @@ class ChartGeneratorAgent:
         suppressed: list[SuppressedChart] = []
         all_risk_notices: list[RiskNotice] = []
         seen_dedupe_keys: set[str] = set()
+        seen_dataset_fingerprints: set[str] = set()
         chain_generated = False
         ambiguous_reasons: list[str] = []
         theme = options.color_theme or "research_blue"
 
         candidates.sort(
             key=lambda candidate: (
+                candidate.user_requested,
+                candidate.chart_type in options.requested_chart_types,
                 candidate.priority,
                 TYPE_PREFERENCE[candidate.chart_type],
             ),
@@ -537,6 +775,34 @@ class ChartGeneratorAgent:
                 variant = options.bar_variant
 
             fingerprint = build_data_fingerprint(route.chart_type, source_dataset)
+            allow_multiple_views = _allow_multiple_views(options)
+            if fingerprint in seen_dataset_fingerprints and not allow_multiple_views:
+                suppressed.append(
+                    SuppressedChart(
+                        title=title,
+                        reason_code="duplicate_dataset_chart_default",
+                        reason=(
+                            "同一数据集默认只生成一张核心图表；如确需多种表达，"
+                            "请显式设置 allow_multiple_charts_per_dataset=true。"
+                        ),
+                        evidence_ids=candidate.evidence_ids,
+                    )
+                )
+                continue
+            if (
+                route.chart_type == "industry_chain"
+                and chain_generated
+                and not allow_multiple_views
+            ):
+                suppressed.append(
+                    SuppressedChart(
+                        title=title,
+                        reason_code="industry_chain_single_default",
+                        reason="一份报告默认最多生成一张产业链图。",
+                        evidence_ids=candidate.evidence_ids,
+                    )
+                )
+                continue
             dedupe_key = build_dedupe_key(
                 route.chart_type,
                 fingerprint,
@@ -699,6 +965,7 @@ class ChartGeneratorAgent:
                 )
             )
             seen_dedupe_keys.add(dedupe_key)
+            seen_dataset_fingerprints.add(fingerprint)
             chain_generated = chain_generated or route.chart_type == "industry_chain"
             p1_count += int(route.chart_type in P1_CHART_TYPES)
             family_counts[chart_family] = family_counts.get(chart_family, 0) + 1
@@ -708,6 +975,47 @@ class ChartGeneratorAgent:
                 )
             if risk_notices:
                 all_risk_notices.extend(risk_notices)
+            if (
+                options.user_priority
+                and options.requested_chart_count is not None
+                and len(specs) >= options.requested_chart_count
+            ):
+                break
+
+        generated_types = {spec.chart_type for spec in specs}
+        if options.requested_chart_count is not None and len(specs) < options.requested_chart_count:
+            all_risk_notices.append(
+                RiskNotice(
+                    risk_code="CHART-USER-COUNT-NOT-MET",
+                    stage="chart_generate",
+                    severity=RiskSeverity.WARNING,
+                    disposition=RiskDisposition.ADVISORY,
+                    title="可用数据不足以满足用户指定图表数量",
+                    detail=(
+                        f"用户要求 {options.requested_chart_count} 张，实际生成 {len(specs)} 张。"
+                    ),
+                    recommendation="补充结构化数据后重新生成，或接受当前可验证图表。",
+                    consequence="报告继续生成，但图表数量少于用户要求。",
+                    can_override=True,
+                )
+            )
+        missing_requested_types = [
+            item for item in options.requested_chart_types if item not in generated_types
+        ]
+        if missing_requested_types:
+            all_risk_notices.append(
+                RiskNotice(
+                    risk_code="CHART-USER-TYPE-NOT-MET",
+                    stage="chart_generate",
+                    severity=RiskSeverity.WARNING,
+                    disposition=RiskDisposition.ADVISORY,
+                    title="部分用户指定图表类型缺少兼容数据",
+                    detail=f"未生成类型：{', '.join(missing_requested_types)}。",
+                    recommendation="补充对应数据形态，或采用系统已生成的兼容图表。",
+                    consequence="报告继续生成，不兼容类型不会被伪造。",
+                    can_override=True,
+                )
+            )
 
         # 构建 ChartCandidateResult 列表（用于规划器）
         chart_candidates = _build_candidates_from_specs(
@@ -723,7 +1031,12 @@ class ChartGeneratorAgent:
         for spec, candidate in zip(specs, candidates):
             if candidate.chapter_hint:
                 chapter_assignments[spec.chart_id] = candidate.chapter_hint
-        chart_candidates = plan_chart_selection(chart_candidates, chapter_assignments)
+        chart_candidates = plan_chart_selection(
+            chart_candidates,
+            chapter_assignments,
+            target_count=options.requested_chart_count,
+            user_priority=options.user_priority,
+        )
         conflict_groups = detect_conflict_groups(chart_candidates, datasets)
 
         # 过滤软规则抑制：重复图表虽然记录但不应出现在 suppressed_candidates 中

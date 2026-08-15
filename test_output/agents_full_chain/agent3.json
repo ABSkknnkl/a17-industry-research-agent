@@ -1,0 +1,1763 @@
+{
+  "charts": [
+    {
+      "chart_id": "CHART-E18AA32712D6",
+      "title": "经营活动产生的现金流量净额对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-74d4a159e0671655"
+      ],
+      "insight_goal": "基于标准化数据集呈现经营活动产生的现金流量净额的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-E18AA32712D6",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-80A507499303",
+      "title": "营业成本趋势",
+      "chart_type": "line",
+      "requested_chart_type": "line",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-11176eebcf9d0574",
+        "E-88a86eccfd38279f",
+        "E-c45d7bbe55993748",
+        "E-d33075afdc853ee9",
+        "E-e02716a2266a14ce",
+        "E-39bdd983efa144c0",
+        "E-c3fe3eead0eff7a5",
+        "E-e91124c574f8cecf",
+        "E-bf0c171ba7f3a963",
+        "E-a11ff5d339effcc6",
+        "E-0922b097b3bd9aad",
+        "E-eaa0bf7e12819043"
+      ],
+      "insight_goal": "基于标准化数据集呈现营业成本的趋势",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-80A507499303",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-D657224A82F2",
+      "title": "归母净利润同比增长率对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-90d70638fbdc4ca1",
+        "E-2da19b65b053d5fb"
+      ],
+      "insight_goal": "基于标准化数据集呈现归母净利润同比增长率的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-D657224A82F2",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-6EB7F9C952F2",
+      "title": "应收账款趋势",
+      "chart_type": "line",
+      "requested_chart_type": "line",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-a83c6a8113e271be",
+        "E-cab6a0042fcfc963",
+        "E-b9967ff878bc9fd1",
+        "E-e4aa88a062dadd54",
+        "E-426c8adb4179b65a",
+        "E-10ecfb5b5e94c6a2",
+        "E-ea80d5d1a2befbb4",
+        "E-3f7efe85d43cdbb8",
+        "E-c8029cacf214d223",
+        "E-b0851aaed9125924"
+      ],
+      "insight_goal": "基于标准化数据集呈现应收账款的趋势",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-6EB7F9C952F2",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-A8ADBE53307B",
+      "title": "加权净资产收益率对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-630967facb2fe000",
+        "E-61408da309eec542"
+      ],
+      "insight_goal": "基于标准化数据集呈现加权净资产收益率的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-A8ADBE53307B",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-53167059DEB9",
+      "title": "市盈率(pe,ttm)对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-2ad456da156b38bd"
+      ],
+      "insight_goal": "基于标准化数据集呈现市盈率(pe,ttm)的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-53167059DEB9",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-1E0AF4AEC40E",
+      "title": "归属于母公司所有者的净利润对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-f5b91ba2e5099d79"
+      ],
+      "insight_goal": "基于标准化数据集呈现归属于母公司所有者的净利润的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-1E0AF4AEC40E",
+      "candidate_status": null
+    },
+    {
+      "chart_id": "CHART-CA5E01B72A02",
+      "title": "动力电池装车量:比亚迪:当月值趋势",
+      "chart_type": "line",
+      "requested_chart_type": "line",
+      "resolution_reason": null,
+      "status": "ready",
+      "evidence_ids": [
+        "E-5943a9478068df7c",
+        "E-851d48fa27127cd7",
+        "E-100e4de91c85d9b3",
+        "E-5c6725fed69729d4",
+        "E-d28b5324ff3ffc94"
+      ],
+      "insight_goal": "基于标准化数据集呈现动力电池装车量:比亚迪:当月值的趋势",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "artifact_id": "ARTIFACT-CHART-CA5E01B72A02",
+      "candidate_status": null
+    }
+  ],
+  "chart_specs": [
+    {
+      "chart_id": "CHART-E18AA32712D6",
+      "title": "经营活动产生的现金流量净额对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "variant": "vertical",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "经营活动产生的现金流量净额对比",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis",
+          "axisPointer": {
+            "type": "shadow"
+          }
+        },
+        "xAxis": {
+          "type": "category",
+          "data": [
+            "比亚迪"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY 未提供"
+        },
+        "series": [
+          {
+            "name": "比亚迪",
+            "type": "bar",
+            "data": [
+              {
+                "value": 59135544000.0,
+                "evidence_id": "E-74d4a159e0671655"
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-74d4a159e0671655"
+      ],
+      "insight_goal": "基于标准化数据集呈现经营活动产生的现金流量净额的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "611ddb107816baa171c1e9567a347ecd13618ac34c45ef5567b7fe3a88678680",
+      "dedupe_key": "comparison:comparison:基于标准化数据集呈现经营活动产生的现金流量净额的对比:611ddb107816baa171c1e9567a347ecd13618ac34c45ef5567b7fe3a88678680"
+    },
+    {
+      "chart_id": "CHART-80A507499303",
+      "title": "营业成本趋势",
+      "chart_type": "line",
+      "requested_chart_type": "line",
+      "resolution_reason": null,
+      "variant": "line",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "营业成本趋势",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis"
+        },
+        "xAxis": {
+          "type": "category",
+          "boundaryGap": false,
+          "data": [
+            "2023-09-30",
+            "2023-12-31",
+            "2024-03-31",
+            "2024-06-30",
+            "2024-09-30",
+            "2024-12-31",
+            "2025-03-31",
+            "2025-06-30",
+            "2025-09-30",
+            "2025-12-31",
+            "2026-03-31"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY 未提供",
+          "scale": true
+        },
+        "series": [
+          {
+            "name": "宁德时代",
+            "type": "line",
+            "connectNulls": false,
+            "showSymbol": true,
+            "data": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              97086370000.0
+            ]
+          },
+          {
+            "name": "富奥股份",
+            "type": "line",
+            "connectNulls": false,
+            "showSymbol": true,
+            "data": [
+              9916555095.5,
+              14251454202.99,
+              3380032100.45,
+              6764548997.38,
+              10204491616.01,
+              14564938662.27,
+              3228649555.9,
+              6959473152.45,
+              10751970722.48,
+              15244757636.33,
+              null
+            ]
+          },
+          {
+            "name": "比亚迪",
+            "type": "line",
+            "connectNulls": false,
+            "showSymbol": true,
+            "data": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              661305161000.0,
+              null
+            ]
+          }
+        ],
+        "evidenceMap": {
+          "比亚迪": {
+            "2025-12-31": "E-11176eebcf9d0574"
+          },
+          "富奥股份": {
+            "2025-12-31": "E-88a86eccfd38279f",
+            "2025-09-30": "E-c45d7bbe55993748",
+            "2025-06-30": "E-d33075afdc853ee9",
+            "2025-03-31": "E-e02716a2266a14ce",
+            "2024-12-31": "E-39bdd983efa144c0",
+            "2024-09-30": "E-c3fe3eead0eff7a5",
+            "2024-06-30": "E-e91124c574f8cecf",
+            "2024-03-31": "E-bf0c171ba7f3a963",
+            "2023-12-31": "E-a11ff5d339effcc6",
+            "2023-09-30": "E-0922b097b3bd9aad"
+          },
+          "宁德时代": {
+            "2026-03-31": "E-eaa0bf7e12819043"
+          }
+        }
+      },
+      "evidence_ids": [
+        "E-11176eebcf9d0574",
+        "E-88a86eccfd38279f",
+        "E-c45d7bbe55993748",
+        "E-d33075afdc853ee9",
+        "E-e02716a2266a14ce",
+        "E-39bdd983efa144c0",
+        "E-c3fe3eead0eff7a5",
+        "E-e91124c574f8cecf",
+        "E-bf0c171ba7f3a963",
+        "E-a11ff5d339effcc6",
+        "E-0922b097b3bd9aad",
+        "E-eaa0bf7e12819043"
+      ],
+      "insight_goal": "基于标准化数据集呈现营业成本的趋势",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "22a55acbce29ebd034946f43a67b5888942bbc1952c900806e7d166d0764fbd0",
+      "dedupe_key": "trend:trend:基于标准化数据集呈现营业成本的趋势:22a55acbce29ebd034946f43a67b5888942bbc1952c900806e7d166d0764fbd0"
+    },
+    {
+      "chart_id": "CHART-D657224A82F2",
+      "title": "归母净利润同比增长率对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "variant": "grouped",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "归母净利润同比增长率对比",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis",
+          "axisPointer": {
+            "type": "shadow"
+          }
+        },
+        "xAxis": {
+          "type": "category",
+          "data": [
+            "比亚迪",
+            "富奥股份"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY 未提供"
+        },
+        "series": [
+          {
+            "name": "富奥股份",
+            "type": "bar",
+            "data": [
+              {
+                "value": null
+              },
+              {
+                "value": 3.9082,
+                "evidence_id": "E-2da19b65b053d5fb"
+              }
+            ]
+          },
+          {
+            "name": "比亚迪",
+            "type": "bar",
+            "data": [
+              {
+                "value": -18.9677,
+                "evidence_id": "E-90d70638fbdc4ca1"
+              },
+              {
+                "value": null
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-90d70638fbdc4ca1",
+        "E-2da19b65b053d5fb"
+      ],
+      "insight_goal": "基于标准化数据集呈现归母净利润同比增长率的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "9307928523e3ced6544a0ebfe0372348298309f646877136873861e122a9d5d0",
+      "dedupe_key": "comparison:comparison:基于标准化数据集呈现归母净利润同比增长率的对比:9307928523e3ced6544a0ebfe0372348298309f646877136873861e122a9d5d0"
+    },
+    {
+      "chart_id": "CHART-6EB7F9C952F2",
+      "title": "应收账款趋势",
+      "chart_type": "line",
+      "requested_chart_type": "line",
+      "resolution_reason": null,
+      "variant": "line",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "应收账款趋势",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis"
+        },
+        "xAxis": {
+          "type": "category",
+          "boundaryGap": false,
+          "data": [
+            "2023-09-30",
+            "2023-12-31",
+            "2024-03-31",
+            "2024-06-30",
+            "2024-09-30",
+            "2024-12-31",
+            "2025-03-31",
+            "2025-06-30",
+            "2025-09-30",
+            "2025-12-31"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY 未提供",
+          "scale": true
+        },
+        "series": [
+          {
+            "name": "富奥股份",
+            "type": "line",
+            "connectNulls": false,
+            "showSymbol": true,
+            "data": [
+              3320246449.18,
+              3541968417.56,
+              3071417206.93,
+              3296040505.5,
+              3481900205.54,
+              3928237690.35,
+              3453333489.46,
+              3935659384.63,
+              4273333671.42,
+              4751729927.03
+            ]
+          }
+        ],
+        "evidenceMap": {
+          "富奥股份": {
+            "2025-12-31": "E-a83c6a8113e271be",
+            "2025-09-30": "E-cab6a0042fcfc963",
+            "2025-06-30": "E-b9967ff878bc9fd1",
+            "2025-03-31": "E-e4aa88a062dadd54",
+            "2024-12-31": "E-426c8adb4179b65a",
+            "2024-09-30": "E-10ecfb5b5e94c6a2",
+            "2024-06-30": "E-ea80d5d1a2befbb4",
+            "2024-03-31": "E-3f7efe85d43cdbb8",
+            "2023-12-31": "E-c8029cacf214d223",
+            "2023-09-30": "E-b0851aaed9125924"
+          }
+        }
+      },
+      "evidence_ids": [
+        "E-a83c6a8113e271be",
+        "E-cab6a0042fcfc963",
+        "E-b9967ff878bc9fd1",
+        "E-e4aa88a062dadd54",
+        "E-426c8adb4179b65a",
+        "E-10ecfb5b5e94c6a2",
+        "E-ea80d5d1a2befbb4",
+        "E-3f7efe85d43cdbb8",
+        "E-c8029cacf214d223",
+        "E-b0851aaed9125924"
+      ],
+      "insight_goal": "基于标准化数据集呈现应收账款的趋势",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "30ad4d8861c18fdae9b83ad5f9ddbb35755b1fe61601024c2349000ddb05b509",
+      "dedupe_key": "trend:trend:基于标准化数据集呈现应收账款的趋势:30ad4d8861c18fdae9b83ad5f9ddbb35755b1fe61601024c2349000ddb05b509"
+    },
+    {
+      "chart_id": "CHART-A8ADBE53307B",
+      "title": "加权净资产收益率对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "variant": "vertical",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "加权净资产收益率对比",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis",
+          "axisPointer": {
+            "type": "shadow"
+          }
+        },
+        "xAxis": {
+          "type": "category",
+          "data": [
+            "比亚迪"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY 未提供"
+        },
+        "series": [
+          {
+            "name": "比亚迪",
+            "type": "bar",
+            "data": [
+              {
+                "value": 15.310000000000002,
+                "evidence_id": "E-61408da309eec542"
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-630967facb2fe000",
+        "E-61408da309eec542"
+      ],
+      "insight_goal": "基于标准化数据集呈现加权净资产收益率的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "b7b27c7d4ef1266998a748af3c2b98f932318413ed662fc20192f28b15e42bde",
+      "dedupe_key": "comparison:comparison:基于标准化数据集呈现加权净资产收益率的对比:b7b27c7d4ef1266998a748af3c2b98f932318413ed662fc20192f28b15e42bde"
+    },
+    {
+      "chart_id": "CHART-53167059DEB9",
+      "title": "市盈率(pe,ttm)对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "variant": "vertical",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "市盈率(pe,ttm)对比",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis",
+          "axisPointer": {
+            "type": "shadow"
+          }
+        },
+        "xAxis": {
+          "type": "category",
+          "data": [
+            "动力电池"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY pe,ttm"
+        },
+        "series": [
+          {
+            "name": "动力电池",
+            "type": "bar",
+            "data": [
+              {
+                "value": 25.79872,
+                "evidence_id": "E-2ad456da156b38bd"
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-2ad456da156b38bd"
+      ],
+      "insight_goal": "基于标准化数据集呈现市盈率(pe,ttm)的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "0da20c47670186f4d6857f5087c768c2be85ab0bec6e64acb72b6108d3c78d5d",
+      "dedupe_key": "comparison:comparison:基于标准化数据集呈现市盈率(pe,ttm)的对比:0da20c47670186f4d6857f5087c768c2be85ab0bec6e64acb72b6108d3c78d5d"
+    },
+    {
+      "chart_id": "CHART-1E0AF4AEC40E",
+      "title": "归属于母公司所有者的净利润对比",
+      "chart_type": "bar",
+      "requested_chart_type": "bar",
+      "resolution_reason": null,
+      "variant": "vertical",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "归属于母公司所有者的净利润对比",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis",
+          "axisPointer": {
+            "type": "shadow"
+          }
+        },
+        "xAxis": {
+          "type": "category",
+          "data": [
+            "宁德时代"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY 未提供"
+        },
+        "series": [
+          {
+            "name": "宁德时代",
+            "type": "bar",
+            "data": [
+              {
+                "value": 20737710000.0,
+                "evidence_id": "E-f5b91ba2e5099d79"
+              }
+            ]
+          }
+        ]
+      },
+      "evidence_ids": [
+        "E-f5b91ba2e5099d79"
+      ],
+      "insight_goal": "基于标准化数据集呈现归属于母公司所有者的净利润的对比",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "05bf6002aa8ba0b3f9bb3c68d22e7e315dd4b161ebc650d3c281a4b4b31831b4",
+      "dedupe_key": "comparison:comparison:基于标准化数据集呈现归属于母公司所有者的净利润的对比:05bf6002aa8ba0b3f9bb3c68d22e7e315dd4b161ebc650d3c281a4b4b31831b4"
+    },
+    {
+      "chart_id": "CHART-CA5E01B72A02",
+      "title": "动力电池装车量:比亚迪:当月值趋势",
+      "chart_type": "line",
+      "requested_chart_type": "line",
+      "resolution_reason": null,
+      "variant": "line",
+      "option": {
+        "animation": false,
+        "aria": {
+          "enabled": true
+        },
+        "color": [
+          "#2563EB",
+          "#0F766E",
+          "#D97706",
+          "#7C3AED",
+          "#DC2626"
+        ],
+        "title": {
+          "text": "动力电池装车量:比亚迪:当月值趋势",
+          "left": "center"
+        },
+        "legend": {
+          "type": "scroll",
+          "top": 32
+        },
+        "grid": {
+          "left": 72,
+          "right": 32,
+          "top": 72,
+          "bottom": 56,
+          "containLabel": true
+        },
+        "tooltip": {
+          "trigger": "axis"
+        },
+        "xAxis": {
+          "type": "category",
+          "boundaryGap": false,
+          "data": [
+            "2025-08-31",
+            "2025-09-30",
+            "2025-10-31",
+            "2025-11-30",
+            "2025-12-31"
+          ]
+        },
+        "yAxis": {
+          "type": "value",
+          "name": "CNY 未提供",
+          "scale": true
+        },
+        "series": [
+          {
+            "name": "动力电池装车量:比亚迪:当月值",
+            "type": "line",
+            "connectNulls": false,
+            "showSymbol": true,
+            "data": [
+              13.02,
+              16.0,
+              17.89,
+              19.04,
+              17.63
+            ]
+          }
+        ],
+        "evidenceMap": {
+          "动力电池装车量:比亚迪:当月值": {
+            "2025-12-31": "E-5943a9478068df7c",
+            "2025-11-30": "E-851d48fa27127cd7",
+            "2025-10-31": "E-100e4de91c85d9b3",
+            "2025-09-30": "E-5c6725fed69729d4",
+            "2025-08-31": "E-d28b5324ff3ffc94"
+          }
+        }
+      },
+      "evidence_ids": [
+        "E-5943a9478068df7c",
+        "E-851d48fa27127cd7",
+        "E-100e4de91c85d9b3",
+        "E-5c6725fed69729d4",
+        "E-d28b5324ff3ffc94"
+      ],
+      "insight_goal": "基于标准化数据集呈现动力电池装车量:比亚迪:当月值的趋势",
+      "quality_issue_ids": [],
+      "footnotes": [],
+      "data_fingerprint": "0770cea8a84adf5441c786f8c140554acc0559d8b7142cb556bc26c6cf0e7c72",
+      "dedupe_key": "trend:trend:基于标准化数据集呈现动力电池装车量:比亚迪:当月值的趋势:0770cea8a84adf5441c786f8c140554acc0559d8b7142cb556bc26c6cf0e7c72"
+    }
+  ],
+  "suppressed_candidates": [],
+  "quality": {
+    "passed": true,
+    "ready_count": 8,
+    "suppressed_count": 0,
+    "issues": []
+  },
+  "decision_package": {
+    "decision_id": "DEC-1A756336CC40",
+    "run_id": "chain-case1",
+    "stage": "chart_generate",
+    "revision": 1,
+    "all_candidates": [
+      {
+        "candidate_id": "CHART-E18AA32712D6",
+        "title": "经营活动产生的现金流量净额对比",
+        "chart_type": "bar",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-04",
+        "alternative_chapter_ids": [],
+        "priority": 45,
+        "evidence_ids": [
+          "E-74d4a159e0671655"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (comparison) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-E18AA32712D6",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-80A507499303",
+        "title": "营业成本趋势",
+        "chart_type": "line",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-02",
+        "alternative_chapter_ids": [],
+        "priority": 45,
+        "evidence_ids": [
+          "E-11176eebcf9d0574",
+          "E-88a86eccfd38279f",
+          "E-c45d7bbe55993748",
+          "E-d33075afdc853ee9",
+          "E-e02716a2266a14ce",
+          "E-39bdd983efa144c0",
+          "E-c3fe3eead0eff7a5",
+          "E-e91124c574f8cecf",
+          "E-bf0c171ba7f3a963",
+          "E-a11ff5d339effcc6",
+          "E-0922b097b3bd9aad",
+          "E-eaa0bf7e12819043"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (comparison) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-80A507499303",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-D657224A82F2",
+        "title": "归母净利润同比增长率对比",
+        "chart_type": "bar",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-04",
+        "alternative_chapter_ids": [],
+        "priority": 45,
+        "evidence_ids": [
+          "E-90d70638fbdc4ca1",
+          "E-2da19b65b053d5fb"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (comparison) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-D657224A82F2",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-6EB7F9C952F2",
+        "title": "应收账款趋势",
+        "chart_type": "line",
+        "status": "recommended",
+        "recommended_chapter_id": "CH-02",
+        "alternative_chapter_ids": [],
+        "priority": 45,
+        "evidence_ids": [
+          "E-a83c6a8113e271be",
+          "E-cab6a0042fcfc963",
+          "E-b9967ff878bc9fd1",
+          "E-e4aa88a062dadd54",
+          "E-426c8adb4179b65a",
+          "E-10ecfb5b5e94c6a2",
+          "E-ea80d5d1a2befbb4",
+          "E-3f7efe85d43cdbb8",
+          "E-c8029cacf214d223",
+          "E-b0851aaed9125924"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (comparison) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-6EB7F9C952F2",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-A8ADBE53307B",
+        "title": "加权净资产收益率对比",
+        "chart_type": "bar",
+        "status": "not_recommended",
+        "recommended_chapter_id": "CH-04",
+        "alternative_chapter_ids": [],
+        "priority": 45,
+        "evidence_ids": [
+          "E-630967facb2fe000",
+          "E-61408da309eec542"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (comparison) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-A8ADBE53307B",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-53167059DEB9",
+        "title": "市盈率(pe,ttm)对比",
+        "chart_type": "bar",
+        "status": "not_recommended",
+        "recommended_chapter_id": "CH-04",
+        "alternative_chapter_ids": [],
+        "priority": 45,
+        "evidence_ids": [
+          "E-2ad456da156b38bd"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (comparison) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-53167059DEB9",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-1E0AF4AEC40E",
+        "title": "归属于母公司所有者的净利润对比",
+        "chart_type": "bar",
+        "status": "not_recommended",
+        "recommended_chapter_id": "CH-04",
+        "alternative_chapter_ids": [],
+        "priority": 45,
+        "evidence_ids": [
+          "E-f5b91ba2e5099d79"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (comparison) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-1E0AF4AEC40E",
+        "suppression_reason": null
+      },
+      {
+        "candidate_id": "CHART-CA5E01B72A02",
+        "title": "动力电池装车量:比亚迪:当月值趋势",
+        "chart_type": "line",
+        "status": "not_recommended",
+        "recommended_chapter_id": "CH-02",
+        "alternative_chapter_ids": [],
+        "priority": 45,
+        "evidence_ids": [
+          "E-5943a9478068df7c",
+          "E-851d48fa27127cd7",
+          "E-100e4de91c85d9b3",
+          "E-5c6725fed69729d4",
+          "E-d28b5324ff3ffc94"
+        ],
+        "risk_notices": [
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (comparison) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 3 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 4 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-FAMILY-DUPLICATE",
+            "stage": "chart_generate",
+            "severity": "info",
+            "disposition": "advisory",
+            "title": "同一图表族 (trend) 超过推荐数量 2",
+            "detail": "相似结论重复可视化",
+            "affected_ids": [],
+            "recommendation": "建议每种图表族保留不超过2张",
+            "consequence": "降低报告信息密度",
+            "can_override": true
+          },
+          {
+            "risk_code": "CHART-CHAPTER-DENSITY",
+            "stage": "chart_generate",
+            "severity": "high",
+            "disposition": "advisory",
+            "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+            "detail": "该章节已有 2 张图表",
+            "affected_ids": [],
+            "recommendation": "建议将部分图表分配到其他章节",
+            "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+            "can_override": true
+          }
+        ],
+        "conflict_group_id": null,
+        "chart_id": "CHART-CA5E01B72A02",
+        "suppression_reason": null
+      }
+    ],
+    "recommended_selection": [
+      "CHART-E18AA32712D6",
+      "CHART-80A507499303",
+      "CHART-D657224A82F2",
+      "CHART-6EB7F9C952F2"
+    ],
+    "conflict_groups": [],
+    "risk_notices": [
+      {
+        "risk_code": "CHART-FAMILY-DUPLICATE",
+        "stage": "chart_generate",
+        "severity": "info",
+        "disposition": "advisory",
+        "title": "同一图表族 (comparison) 超过推荐数量 2",
+        "detail": "相似结论重复可视化",
+        "affected_ids": [],
+        "recommendation": "建议每种图表族保留不超过2张",
+        "consequence": "降低报告信息密度",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 2 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-FAMILY-DUPLICATE",
+        "stage": "chart_generate",
+        "severity": "info",
+        "disposition": "advisory",
+        "title": "同一图表族 (comparison) 超过推荐数量 2",
+        "detail": "相似结论重复可视化",
+        "affected_ids": [],
+        "recommendation": "建议每种图表族保留不超过2张",
+        "consequence": "降低报告信息密度",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 3 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-FAMILY-DUPLICATE",
+        "stage": "chart_generate",
+        "severity": "info",
+        "disposition": "advisory",
+        "title": "同一图表族 (comparison) 超过推荐数量 2",
+        "detail": "相似结论重复可视化",
+        "affected_ids": [],
+        "recommendation": "建议每种图表族保留不超过2张",
+        "consequence": "降低报告信息密度",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-04 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 4 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-FAMILY-DUPLICATE",
+        "stage": "chart_generate",
+        "severity": "info",
+        "disposition": "advisory",
+        "title": "同一图表族 (trend) 超过推荐数量 2",
+        "detail": "相似结论重复可视化",
+        "affected_ids": [],
+        "recommendation": "建议每种图表族保留不超过2张",
+        "consequence": "降低报告信息密度",
+        "can_override": true
+      },
+      {
+        "risk_code": "CHART-CHAPTER-DENSITY",
+        "stage": "chart_generate",
+        "severity": "high",
+        "disposition": "advisory",
+        "title": "章节 CH-02 图表密度超过推荐值 (2张)",
+        "detail": "该章节已有 2 张图表",
+        "affected_ids": [],
+        "recommendation": "建议将部分图表分配到其他章节",
+        "consequence": "PDF中可能连续出现多页图表，部分图表分析目的相近",
+        "can_override": true
+      }
+    ],
+    "blocking_risk_codes": [],
+    "acknowledgement_required_codes": [],
+    "decision_status": "not_required",
+    "risk_snapshot_sha256": "287f09c8e645f8f71ad8cf2a4487475d5063e26c2b5f2e427e3be803fa53a77d",
+    "generated_at": "2026-08-14T17:17:36.017842Z"
+  }
+}

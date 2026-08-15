@@ -96,8 +96,8 @@ def build_fallback_writing(
                 chapter_id=outline.chapter_id,
                 title=outline.title,
                 summary=(
-                    f"本章依据 Agent 2 已通过校验的结论生成可审核草稿；"
-                    f"因章节生成服务异常，内容采用确定性兜底：{reason}"
+                    "本章依据 Agent 2 已通过校验的结论生成；"
+                    "未通过自动写作校验的内容已采用确定性证据摘要并标记复核边界。"
                 ),
                 sections=sections,
                 claim_ids=claim_ids,

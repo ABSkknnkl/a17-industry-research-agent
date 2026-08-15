@@ -9,10 +9,14 @@ def build_runtime_prompt(
     request: AnalysisRequest,
     *,
     audit_feedback: list[str] | None = None,
+    calculated_metrics: list[dict[str, object]] | None = None,
+    calculation_issues: list[dict[str, object]] | None = None,
 ) -> str:
     payload = {
         "task": "依据全球主要股票市场金融分析框架生成可供后续智能体消费的结构化分析。",
         "analysis_request": request.model_dump(mode="json"),
+        "deterministic_calculations": calculated_metrics or [],
+        "deterministic_calculation_issues": calculation_issues or [],
         "audit_feedback": audit_feedback or [],
         "technical_output_contract": {
             "schema": "AnalysisDraft",
@@ -32,6 +36,7 @@ def build_runtime_prompt(
                 "跨市场比较必须完成币种换算、财年对齐和多地上市去重",
                 "不得输出Markdown代码围栏或内部推理过程",
                 "缺失信息写入collaboration_requests",
+                "逐项读取requirement_coverage；partial或missing只能形成数据缺口/不确定性说明，不得补造用户要求的指标、政策或机构观点",
                 "三种情景必须共享同一事实底座",
                 "P0图表候选仅优先使用line、bar、pie、radar、industry_chain",
                 "line用于时间趋势，bar用于类别对比或排名，pie仅用于单时点且类别不超过5的正值互斥占比",
@@ -40,6 +45,8 @@ def build_runtime_prompt(
                 "用data_quality_issues标记missing、stale、conflict、estimated或"
                 "not_comparable；不得把数据缺口改写成事实",
                 "用financial_consistency_checks记录财务勾稽或盈利质量检查；无法核验时标记unavailable或warning，不得补造数字",
+                "deterministic_calculations由服务端固定公式生成，可解释但不得修改数值、公式、口径或证据引用",
+                "calculated_metrics和calculation_issues字段由服务端最终覆盖，模型保持为空",
                 "用dimension_coverage标记五个研究维度为supported、partial或insufficient，并引用相应evidence_id",
                 "research_brief限定本次研究范围；excluded_topics不得进入结论，资料不足时透明说明",
                 "不得输出投资建议、收益承诺、个股推荐或择时建议",

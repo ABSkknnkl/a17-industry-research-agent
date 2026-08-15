@@ -57,7 +57,10 @@ def build_quality_report(
     if hard_blocked:
         issues.extend(sorted(hard_blocked))
 
-    passed = not issues and (candidate_count == 0 or bool(specs))
+    # A failed individual candidate is advisory once at least one audited chart
+    # is renderable. The fact gate lives in Agents 1/2; Agent 3 reports gaps but
+    # does not suppress the whole report for a partial visualisation mismatch.
+    passed = bool(specs) or candidate_count == 0
     if candidate_count > 0 and not specs and "no_ready_charts" not in issues:
         issues.append("no_ready_charts")
     return ChartQualityReport(

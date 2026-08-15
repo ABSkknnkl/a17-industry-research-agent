@@ -127,3 +127,14 @@ def test_planner_adds_budget_risk_notices() -> None:
             if n.risk_code == "CHART-COUNT-OVER-RECOMMENDED":
                 budget_notices.append(n)
     assert len(budget_notices) > 0
+
+
+def test_user_requested_target_bypasses_recommendation_budgets() -> None:
+    candidates = [
+        _make_candidate(f"C-{i:02d}", f"Chart {i}", "bar", priority=95, chapter_id="CH-04")
+        for i in range(10)
+    ]
+
+    result = plan_chart_selection(candidates, target_count=10, user_priority=True)
+
+    assert len([c for c in result if c.status == ChartCandidateStatus.RECOMMENDED]) == 10

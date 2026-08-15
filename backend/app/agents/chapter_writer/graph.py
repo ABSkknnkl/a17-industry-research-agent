@@ -24,7 +24,9 @@ from app.schemas.chapter import (
 )
 from app.schemas.chart import ChartReference
 
-_MAX_REVISIONS_PER_CHAPTER = 2
+# One corrective pass is enough for A/B-class reports. More retries have shown
+# sharply diminishing quality returns while multiplying end-to-end latency.
+_MAX_REVISIONS_PER_CHAPTER = 1
 _FORBIDDEN_PHRASES = (
     "建议买入",
     "建议卖出",
