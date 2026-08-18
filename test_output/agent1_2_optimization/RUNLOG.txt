@@ -1,0 +1,41 @@
+====================================================================================================
+【场景A】 标准财务指标: 应全部 supported(查复现净资产/净利率/毛利率/费用率/海外收入占比/出货量/市占率)
+  指定指标：毛利率 -> status=supported rows=1 criticality=acknowledgement_required
+  指定指标：净利率 -> status=supported rows=1 criticality=acknowledgement_required
+  指定指标：研发费用率 -> status=supported rows=1 criticality=acknowledgement_required
+  指定指标：海外收入占比 -> status=supported rows=1 criticality=acknowledgement_required
+  指定指标：市占率 -> status=supported rows=3 criticality=acknowledgement_required
+  指定指标：营业成本 -> status=supported rows=1 criticality=acknowledgement_required
+  Agent1 状态: completed error=None blocking_issues=[] advisory=None
+  [注入验证] 含'毛利率'的查询数=12 -> A股、港股 光伏逆变器行业竞争格局 2024年至2025年 行业规模 增速 估值 盈利 景气度 毛利率 净利率 研发费用率 海外收入占比 市占率 营业成本 光伏逆变器行业竞争格局如何？ 龙头企业优势与差异化体现在哪些方面？
+====================================================================================================
+【场景B】 长尾财务指标 -> LLM 应路由到 FINANCE 且 supported
+  semantic_accepted: {'库存周转率': 'hithink_finance_query', '净资产收益率': 'hithink_finance_query'}
+  semantic_rejected: []
+  指定指标：库存周转率 -> status=supported rows=1
+  指定指标：应收账款周转天数 -> status=supported rows=1
+  指定指标：净资产收益率 -> status=supported rows=1
+  Agent1 状态: completed error=None blocking=[]
+====================================================================================================
+【场景C】 无法获取指标 '原神股价' -> 应返回 gap/null, 状态不硬阻断
+  semantic_accepted: {}  rejected: ['原神股价']
+  empty_tasks(provider无法解析): ['Q-09']
+  指定指标：原神股价 -> status=missing rows=0 criticality=acknowledgement_required
+  Agent1 状态: waiting_review error=requested_data_partial blocking=[] advisory=['requested_data_partial']
+  原神相关证据数(应为0, 不能补造): 0; 总证据数=15
+====================================================================================================
+【场景D】 Agent 2 确定性公式: 毛利率/净利率/研发·销售·管理费用率/海外收入占比
+  Agent2 计算得到: {'毛利率': 30.0, '销售净利率': 15.0, '研发费用率': 6.0, '销售费用率': 8.0, '管理费用率': 5.0, '海外收入占比': 40.0}
+    毛利率: 期望 30.0%, 得到 30.0 ✅
+    销售净利率: 期望 15.0%, 得到 15.0 ✅
+    研发费用率: 期望 6.0%, 得到 6.0 ✅
+    销售费用率: 期望 8.0%, 得到 8.0 ✅
+    管理费用率: 期望 5.0%, 得到 5.0 ✅
+    海外收入占比: 期望 40.0%, 得到 40.0 ✅
+  calculation_issues 数=3 (单位一致时不应有比例类 issue)
+====================================================================================================
+【场景E】 Agent 2 软硬质量门: 普通补充建议不阻断; 真阻断项才暂停(依据 service.py)
+  依据 data_interpreter/service.py L311-319:
+    status = COMPLETED if quality.passed and not has_blocking_request else WAITING_REVIEW
+    has_blocking_request = 任一 collaboration_request.blocking 或 severity==blocking
+  普通补充建议(planning_advisory 类) 不会置 blocking -> 报告继续; 已由本机回归测试覆盖
