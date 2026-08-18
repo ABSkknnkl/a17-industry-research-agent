@@ -57,6 +57,23 @@ def test_test_environment_explicitly_permits_deterministic_mocks() -> None:
     assert runtime_configuration_issues(configured) == []
 
 
+def test_enabled_industry_chain_images_require_live_image_configuration() -> None:
+    configured = _production_settings(
+        INDUSTRY_CHAIN_IMAGE_ENABLED=True,
+        IMAGE_USE_MOCK=True,
+        IMAGE_API_KEY=None,
+        IMAGE_BASE_URL="",
+        IMAGE_MODEL="",
+    )
+
+    assert set(runtime_configuration_issues(configured)) == {
+        "production_image_mock_forbidden",
+        "image_api_key_missing",
+        "image_base_url_missing",
+        "image_model_missing",
+    }
+
+
 def test_writable_directory_probe_does_not_retain_artifacts(tmp_path: Path) -> None:
     directory = tmp_path / "runtime"
 

@@ -1,15 +1,17 @@
 """Build one canonical report view model for every output format."""
 
+import base64
 import hashlib
 from datetime import UTC, datetime
 from typing import Literal
 
 from app.agents.report_fusion.evidence import build_evidence_catalog
+from app.infrastructure.storage.local import read_artifact_bytes
 from app.reporting.presentation import CONFIDENCE_LABELS, DIMENSION_LABELS
 from app.reporting.svg import render_chart_svg
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
-from app.schemas.chart import ChartGenerationResult
+from app.schemas.chart import ChartGenerationResult, ChartSpec
 from app.schemas.report import (
     EmbeddedChart,
     ExecutiveSummary,
@@ -19,6 +21,22 @@ from app.schemas.report import (
 )
 
 DISCLAIMER = "本报告仅用于行业研究与信息交流，不构成证券投资建议、收益保证或交易邀约。"
+
+
+def _render_chart(spec: ChartSpec) -> str:
+    if spec.render_mode != "generated_image":
+        return render_chart_svg(spec)
+    image_uri = spec.image_uri
+    mime_type = spec.image_mime_type
+    if not isinstance(image_uri, str) or mime_type not in {"image/png", "image/webp"}:
+        raise ValueError("generated chart image metadata is incomplete")
+    encoded = base64.b64encode(read_artifact_bytes(image_uri)).decode("ascii")
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1536 1024" '
+        'role="img" preserveAspectRatio="xMidYMid meet">'
+        f'<image width="1536" height="1024" href="data:{mime_type};base64,{encoded}"/>'
+        "</svg>"
+    )
 
 
 def build_report_view(
@@ -111,7 +129,7 @@ def build_report_view(
             quality_issue_ids=spec.quality_issue_ids,
             footnotes=spec.footnotes,
             placement_section_id=placements.get(spec.chart_id),
-            svg=render_chart_svg(spec),
+            svg=_render_chart(spec),
         )
         for spec in chart_result.chart_specs
         if spec.chart_id in ready_ids and (user_selected is None or spec.chart_id in user_selected)

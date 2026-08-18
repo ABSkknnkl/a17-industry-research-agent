@@ -6,6 +6,7 @@ import pytest
 
 from app.agents.chart_generator.service import ChartGeneratorAgent
 from app.core.config import settings
+from app.integrations.visuals.mock import MockImageGenerator, MockPromptCompiler
 from app.schemas.chart import ChartDataset
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
@@ -13,6 +14,72 @@ from app.workflow.stages import StageContext
 
 def _evidence_items(evidence_ids: list[str]) -> list[dict[str, str]]:
     return [{"evidence_id": evidence_id} for evidence_id in evidence_ids]
+
+
+@pytest.mark.asyncio
+async def test_agent_generates_industry_chain_image_with_ds_compiled_prompt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    chain_dataset: ChartDataset,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    product_dataset = chain_dataset.model_copy(
+        update={
+            "metric_name": "英伟达显卡产业链",
+            "core_product_name": "英伟达显卡",
+            "chain_template_hint": "product_decomposition",
+        }
+    )
+    context = StageContext(
+        project_id="project-chain-image",
+        run_id="run-chain-image",
+        revision=1,
+        input_data={
+            "industry_topic": "英伟达显卡",
+            "focus_questions": ["显卡零部件与产业链如何构成？"],
+            "chart_datasets": [product_dataset.model_dump(mode="json")],
+            "evidence_items": _evidence_items(product_dataset.evidence_ids),
+        },
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.COMPLETED,
+                data={
+                    "chart_candidates": [
+                        {
+                            "title": "英伟达显卡产业链全景图",
+                            "chart_type": "industry_chain",
+                            "evidence_ids": product_dataset.evidence_ids,
+                        }
+                    ]
+                },
+            )
+        },
+    )
+    agent = ChartGeneratorAgent(
+        prompt_compiler=MockPromptCompiler(),
+        image_generator=MockImageGenerator(),
+        generate_industry_chain_images=True,
+    )
+
+    result = await agent.run(context)
+
+    assert result.status == StageStatus.COMPLETED
+    spec = result.data["chart_specs"][0]
+    assert spec["render_mode"] == "generated_image"
+    assert spec["chain_template"] == "product_decomposition"
+    assert spec["chain_graph"]["core_product_name"] == "英伟达显卡"
+    assert spec["generation_prompt_model"] == "mock-deepseek-prompt-compiler"
+    assert {artifact.kind for artifact in result.artifacts} == {
+        "generated_chart_image",
+        "chart_spec_json",
+    }
+    image_artifact = next(
+        artifact
+        for artifact in result.artifacts
+        if artifact.kind == "generated_chart_image"
+    )
+    assert (tmp_path / image_artifact.uri).read_bytes().startswith(b"\x89PNG")
 
 
 @pytest.mark.asyncio
@@ -166,7 +233,9 @@ async def test_agent_auto_selects_ambiguous_dataset_and_warns(
     assert result.error is None
     assert len(result.data["charts"]) == 1
     risks = result.data["decision_package"]["risk_notices"]
-    assert any(risk["risk_code"] == "CHART-DATASET-AMBIGUOUS-AUTO-SELECTED" for risk in risks)
+    assert any(
+        risk["risk_code"] == "CHART-DATASET-AMBIGUOUS-AUTO-SELECTED" for risk in risks
+    )
 
 
 @pytest.mark.asyncio
@@ -202,7 +271,7 @@ async def test_agent_completes_with_warning_when_candidate_has_no_dataset() -> N
 
 
 @pytest.mark.asyncio
-async def test_agent_backfills_sparse_unmatched_suggestions_from_audited_datasets(
+async def test_agent_does_not_backfill_unmatched_suggestions_from_unrequested_datasets(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     time_series_dataset: ChartDataset,
@@ -219,7 +288,9 @@ async def test_agent_backfills_sparse_unmatched_suggestions_from_audited_dataset
         radar_dataset,
         chain_dataset,
     ]
-    evidence_ids = [evidence_id for dataset in datasets for evidence_id in dataset.evidence_ids]
+    evidence_ids = [
+        evidence_id for dataset in datasets for evidence_id in dataset.evidence_ids
+    ]
     context = StageContext(
         project_id="project-backfill",
         run_id="run-backfill",
@@ -248,15 +319,41 @@ async def test_agent_backfills_sparse_unmatched_suggestions_from_audited_dataset
     result = await ChartGeneratorAgent().run(context)
 
     assert result.status == StageStatus.COMPLETED
-    assert len(result.data["charts"]) == 5
-    assert {chart["chart_type"] for chart in result.data["charts"]} == {
-        "line",
-        "bar",
-        "pie",
-        "radar",
-        "industry_chain",
-    }
-    assert all(chart["evidence_ids"] for chart in result.data["charts"])
+    assert result.data["charts"] == []
+    risks = result.data["decision_package"]["risk_notices"]
+    assert any(risk["risk_code"] == "CHART-NO-MATCHING-DATASET" for risk in risks)
+
+
+@pytest.mark.asyncio
+async def test_agent_refuses_to_run_when_agent2_is_waiting_review(
+    categorical_dataset: ChartDataset,
+) -> None:
+    context = StageContext(
+        project_id="project-stage-gate",
+        run_id="run-stage-gate",
+        revision=1,
+        input_data={
+            "chart_datasets": [categorical_dataset.model_dump(mode="json")],
+            "evidence_items": _evidence_items(categorical_dataset.evidence_ids),
+        },
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.WAITING_REVIEW,
+                data={"chart_candidates": []},
+                error="evidence_metadata_incomplete",
+            )
+        },
+    )
+
+    result = await ChartGeneratorAgent().run(context)
+
+    assert result.status == StageStatus.WAITING_REVIEW
+    assert result.error == "analysis_not_completed"
+    assert (
+        result.data["collaboration_requests"][0]["request_id"]
+        == "ANALYSIS-NOT-COMPLETED"
+    )
 
 
 @pytest.mark.asyncio
@@ -321,7 +418,9 @@ async def test_agent_generates_all_five_p0_chart_families(
         radar_dataset,
         chain_dataset,
     ]
-    evidence_ids = [evidence_id for dataset in datasets for evidence_id in dataset.evidence_ids]
+    evidence_ids = [
+        evidence_id for dataset in datasets for evidence_id in dataset.evidence_ids
+    ]
     context = StageContext(
         project_id="project-p0",
         run_id="run-p0",
@@ -469,7 +568,9 @@ async def test_agent_limits_repeated_advanced_chart_family_without_forcing_minim
     candidates = []
     all_evidence_ids: list[str] = []
     for dataset_index in range(4):
-        evidence_ids = [f"E-P1-{dataset_index}-{point_index}" for point_index in range(5)]
+        evidence_ids = [
+            f"E-P1-{dataset_index}-{point_index}" for point_index in range(5)
+        ]
         all_evidence_ids.extend(evidence_ids)
         dataset = ChartDataset(
             dataset_id=f"DS-P1-{dataset_index}",
@@ -677,7 +778,7 @@ async def test_agent_resolves_bar_time_series_to_line_instead_of_returning_zero_
 
 
 @pytest.mark.asyncio
-async def test_agent_honours_user_chart_count_and_compatible_types(
+async def test_agent_does_not_treat_user_chart_options_as_chart_candidates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     time_series_dataset: ChartDataset,
@@ -713,9 +814,10 @@ async def test_agent_honours_user_chart_count_and_compatible_types(
     result = await ChartGeneratorAgent().run(context)
 
     assert result.status == StageStatus.COMPLETED
-    assert len(result.data["charts"]) == 2
-    assert {chart["chart_type"] for chart in result.data["charts"]} == {"line", "bar"}
-    assert len(result.data["decision_package"]["recommended_selection"]) == 2
+    assert result.data["charts"] == []
+    risks = result.data["decision_package"]["risk_notices"]
+    assert any(item["risk_code"] == "CHART-USER-COUNT-NOT-MET" for item in risks)
+    assert any(item["risk_code"] == "CHART-USER-TYPE-NOT-MET" for item in risks)
 
 
 @pytest.mark.asyncio
@@ -804,7 +906,7 @@ async def test_same_dataset_defaults_to_one_core_chart(
 
 
 @pytest.mark.asyncio
-async def test_explicit_user_request_allows_multiple_views_of_same_dataset(
+async def test_explicit_user_request_still_requires_agent2_candidates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     composition_dataset: ChartDataset,
@@ -837,12 +939,14 @@ async def test_explicit_user_request_allows_multiple_views_of_same_dataset(
     result = await ChartGeneratorAgent().run(context)
 
     assert result.status == StageStatus.COMPLETED
-    assert len(result.data["charts"]) == 2
-    assert {item["chart_type"] for item in result.data["charts"]} == {"pie", "bar"}
+    assert result.data["charts"] == []
+    risks = result.data["decision_package"]["risk_notices"]
+    assert any(item["risk_code"] == "CHART-USER-COUNT-NOT-MET" for item in risks)
+    assert any(item["risk_code"] == "CHART-USER-TYPE-NOT-MET" for item in risks)
 
 
 @pytest.mark.asyncio
-async def test_agent_builds_chart_from_agent2_deterministic_metric(
+async def test_agent_does_not_convert_agent2_metrics_without_chart_candidate(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -905,9 +1009,7 @@ async def test_agent_builds_chart_from_agent2_deterministic_metric(
     result = await ChartGeneratorAgent().run(context)
 
     assert result.status == StageStatus.COMPLETED
-    assert len(result.data["charts"]) == 1
-    assert result.data["charts"][0]["chart_type"] == "bar"
-    assert set(result.data["charts"][0]["evidence_ids"]) == {"E-S1", "E-S2", "E-S3"}
+    assert result.data["charts"] == []
 
 
 @pytest.mark.asyncio

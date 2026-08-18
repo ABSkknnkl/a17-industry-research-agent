@@ -50,5 +50,45 @@ def _mock_rows(skill_name: SkillName) -> list[dict[str, object]]:
         SkillName.BUSINESS: [{**common, "股票简称": "测试公司A", "主营业务占比(%)": 75.0}],
         SkillName.SECTOR: [{**common, "板块名称": "测试行业", "板块涨跌幅(%)": 2.1}],
         SkillName.INSTITUTIONAL_RESEARCH: [{**common, "股票简称": "测试公司A", "机构覆盖数": 12}],
+        SkillName.INDEX: [
+            {
+                **common,
+                "指数代码": "000300.SH",
+                "指数简称": "沪深300",
+                "市盈率(pe,ttm)": 14.3,
+                "市净率": 1.35,
+                "收盘价分位点": 0.91,
+            }
+        ],
+        SkillName.FUTURES: [
+            {
+                **common,
+                "合约代码": "LCZL.GFE",
+                "合约简称": "碳酸锂主连",
+                "收盘价": 153500.0,
+                "最新涨跌幅": -0.44,
+            }
+        ],
+        SkillName.STOCK_SELECTOR: [
+            {
+                **common,
+                "股票代码": "300750.SZ",
+                "股票简称": "测试龙头",
+                "营业收入(2025)": 3000.0,
+                "收入占比": 90.0,
+            }
+        ],
+        SkillName.BASIC_INFO: [
+            {
+                **common,
+                "股票代码": "300750.SZ",
+                "股票简称": "测试公司A",
+                "中文名称": "测试公司A股份有限公司",
+                "所属同花顺行业": "电力设备",
+                "上市地点": "深圳证券交易所",
+                "上市日期": "2018-06-11",
+                "发行主体": "测试公司A股份有限公司",
+            }
+        ],
     }
     return rows[skill_name]

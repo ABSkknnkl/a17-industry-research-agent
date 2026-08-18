@@ -37,6 +37,10 @@ P1 增强能力（`standard`/`deep`深度自动启用）：
   -> StageResult(data_fetch)
 ```
 
+指定指标不再只依赖固定大查询。`metric_registry.py`会把毛利率、净利率、研发/销售/管理费用率、海外收入占比、产销、市场份额和 CR3/CR5 等指标归一化到确定性 Skill，并将直接指标或可复算的必要原始字段动态注入查询。例如毛利率同时查询营业收入与营业成本，CR5 必须至少取得 5 家同口径市场份额才标记为可复算。
+
+长尾指标可启用混合路由：先走指标注册表和确定性关键词，只对未命中的文本调用一次低温度 LLM 分类。LLM 只能从已注册 `SkillName` 枚举中选择，置信度低于阈值、格式错误或模型不可用时均回退确定性路径，不阻断数据获取。
+
 业务节点不允许直接调用 CLI 或 HTTP；所有外部能力都必须通过 `ToolGateway`。这样可统一参数校验、超时、调用上限、脱敏日志和可重试错误。
 
 ## 输出交接
@@ -73,6 +77,8 @@ Agent 2 消费标准 `evidence_items`；Agent 3 消费 `chart_datasets`。审计
 
 `review_feedback` 与上述结构化字段同时进入新版查询计划。修改会增加 `revision`、重跑 Agent 1，不会让后端从自然语言猜测当前阶段。
 
+缺失按需求来源分级：关注问题所需数据缺失保持硬阻断，必须修改条件后重查；单个用户指定指标缺失则生成服务端风险快照，用户可重查，也可在明确接受 `REQUESTED-DATA-PARTIAL` 后以带警示草稿继续。无论哪种选择，系统都不会补造缺失数值。
+
 ## 运行配置
 
 应用默认且强制使用真实 SkillHub。`SKILLHUB_USE_MOCK=true` 只允许在 `ENVIRONMENT=test` 的自动化测试进程中使用；开发、演示和部署环境尝试启用 Mock 会在启动组装 Agent 1 时直接失败。真实调用配置：
@@ -81,6 +87,8 @@ Agent 2 消费标准 `evidence_items`；Agent 3 消费 `chart_datasets`。审计
 SKILLHUB_USE_MOCK=false
 IWENCAI_API_KEY=<your-authorized-key>
 IWENCAI_BASE_URL=https://openapi.iwencai.com
+AGENT1_SEMANTIC_ROUTER_ENABLED=true
+AGENT1_SEMANTIC_ROUTER_CONFIDENCE=0.90
 ```
 
 密钥只能位于本地 `.env` 或部署密钥管理中，不得进入 Git。

@@ -6,6 +6,7 @@ from app.agents.chapter_writer.service import ChapterWriterAgent
 from app.agents.chart_generator.service import ChartGeneratorAgent
 from app.agents.report_fusion.service import ReportFusionAgent
 from app.integrations.llm.protocol import AnalysisModel, ChapterWritingModel
+from app.integrations.visuals.factory import create_image_generator, create_prompt_compiler
 from app.core.config import settings
 from app.runtime.model_gateway import (
     RuntimeAwareAnalysisModel,
@@ -23,12 +24,21 @@ def create_stage_registry(
 
     writer_model = RuntimeAwareChapterWritingModel(chapter_model)
     analysis_model = RuntimeAwareAnalysisModel(model)
+    prompt_compiler = None
+    image_generator = None
+    if settings.INDUSTRY_CHAIN_IMAGE_ENABLED:
+        prompt_compiler = create_prompt_compiler(settings)
+        image_generator = create_image_generator(settings)
 
     return StageRegistry(
         [
             create_data_fetcher_agent(settings),
             SecuredStageAgent(DataInterpreterAgent(model=analysis_model)),
-            ChartGeneratorAgent(),
+            ChartGeneratorAgent(
+                prompt_compiler=prompt_compiler,
+                image_generator=image_generator,
+                generate_industry_chain_images=settings.INDUSTRY_CHAIN_IMAGE_ENABLED,
+            ),
             SecuredStageAgent(ChapterWriterAgent(model=writer_model)),
             ReportFusionAgent(),
         ]

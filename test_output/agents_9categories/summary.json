@@ -1,0 +1,146 @@
+[
+  {
+    "category": "单家公司深度调研",
+    "case_id": "C1",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 7,
+    "suppressed": 4,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "CALCULATION-DATA-MISSING",
+        "reason": "已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；营业收入与营业成本单位不一致，未执行自动换算，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；营业收入与营业成本单位不一致，未执行自动换算，毛利率不可计算。"
+      }
+    ]
+  },
+  {
+    "category": "行业景气度",
+    "case_id": "C2",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "EVIDENCE-METADATA",
+        "reason": "E-93eacc893f2f4754公告日/可得日晚于研究时点，存在前视偏差；E-b2fe8a480b452279公告日/可得日晚于研究时点，存在前视偏差；E-5b89e61c113fbe52公告日/可得日晚于研究时点，存在前视偏差；E-0879baf9c3ebadd6公告日/可得日晚于研究时点，存在前视偏差；E-d860fd29f9da6a65公告日/可得日晚于研究时点，存在前视偏差；E-3512acee6e2fa129公告日/可得日晚于研究时点，存在前视偏差；E-76fa6faa4448c702公告日/可得日晚于研究时点，存在前视偏差；E-b8ce4f31f135d5ad公告日/可得日晚于研究时点，存在前视偏差；E-4c7e5d6b82aede3f公告日/可得日晚于研究时点，存在前视偏差；E-76a05a900ffe881c公告日/可得日晚于研究时点，存在前视偏差"
+      }
+    ]
+  },
+  {
+    "category": "竞争格局/CR",
+    "case_id": "C3",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "EVIDENCE-METADATA",
+        "reason": "E-29ee0b793ae10150公告日/可得日晚于研究时点，存在前视偏差；E-cf65b5645cea110c公告日/可得日晚于研究时点，存在前视偏差；E-9d8ff777fadd60b5公告日/可得日晚于研究时点，存在前视偏差；E-253535e9775e11e3公告日/可得日晚于研究时点，存在前视偏差；E-d8a9eff2b101d44e公告日/可得日晚于研究时点，存在前视偏差；E-d010762a060b3f98公告日/可得日晚于研究时点，存在前视偏差；E-449f57e106fc28b1公告日/可得日晚于研究时点，存在前视偏差；E-38382e362c4437b0公告日/可得日晚于研究时点，存在前视偏差；E-4aadbd9276e69a89公告日/可得日晚于研究时点，存在前视偏差"
+      }
+    ]
+  },
+  {
+    "category": "价格/周期/原材料",
+    "case_id": "C4",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 7,
+    "suppressed": 1,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "EVIDENCE-METADATA",
+        "reason": "E-c9f409ff44e528b6公告日/可得日晚于研究时点，存在前视偏差；E-2e0454fc5dcb3ba9公告日/可得日晚于研究时点，存在前视偏差；E-1c351ff153911dde公告日/可得日晚于研究时点，存在前视偏差；E-578435b5c27bcb9d公告日/可得日晚于研究时点，存在前视偏差"
+      }
+    ]
+  },
+  {
+    "category": "估值/市场/宏观",
+    "case_id": "C5",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "EVIDENCE-METADATA",
+        "reason": "E-e72c139790ab73f7公告日/可得日晚于研究时点，存在前视偏差；E-9e1e6e6d24e1f6be公告日/可得日晚于研究时点，存在前视偏差"
+      }
+    ]
+  },
+  {
+    "category": "政策/舆情/产业事件",
+    "case_id": "C6",
+    "agent1": "completed",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "EVIDENCE-METADATA",
+        "reason": "E-364bc12c7fe8f14c公告日/可得日晚于研究时点，存在前视偏差；E-89b908ea63ad01cb公告日/可得日晚于研究时点，存在前视偏差；E-f1ac2fdc4f27636e公告日/可得日晚于研究时点，存在前视偏差；E-ea0d8a6d92bfe38c公告日/可得日晚于研究时点，存在前视偏差"
+      }
+    ]
+  },
+  {
+    "category": "多维度复合",
+    "case_id": "C7",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "EVIDENCE-METADATA",
+        "reason": "E-27335c8b7458df80公告日/可得日晚于研究时点，存在前视偏差；E-de2b45ac83807c9b公告日/可得日晚于研究时点，存在前视偏差；E-290ab199d133a144公告日/可得日晚于研究时点，存在前视偏差；E-06e3836705473033公告日/可得日晚于研究时点，存在前视偏差"
+      }
+    ]
+  },
+  {
+    "category": "简短口语化",
+    "case_id": "C8",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "EVIDENCE-METADATA",
+        "reason": "E-dbd7e0c7c3e4e245公告日/可得日晚于研究时点，存在前视偏差；E-fb4c22a6c4dedd63公告日/可得日晚于研究时点，存在前视偏差；E-f268da52390241cc公告日/可得日晚于研究时点，存在前视偏差；E-08c561528502e484公告日/可得日晚于研究时点，存在前视偏差；E-880bde6a96f2328a公告日/可得日晚于研究时点，存在前视偏差；E-6ac4e80a7d8ab1cb公告日/可得日晚于研究时点，存在前视偏差；E-11e87f7f91a0bf1c公告日/可得日晚于研究时点，存在前视偏差；E-bc43ece1b60260dd公告日/可得日晚于研究时点，存在前视偏差；E-c3ebd3ed42fc3af0公告日/可得日晚于研究时点，存在前视偏差；E-ca4e2bda679752f2公告日/可得日晚于研究时点，存在前视偏差"
+      }
+    ]
+  },
+  {
+    "category": "风险导向",
+    "case_id": "C9",
+    "agent1": "waiting_review",
+    "agent2": "waiting_review",
+    "agent3": "completed",
+    "charts": 8,
+    "suppressed": 0,
+    "candidates": 0,
+    "collaboration_requests": [
+      {
+        "request_id": "EVIDENCE-METADATA",
+        "reason": "E-71cdffbce5adc745公告日/可得日晚于研究时点，存在前视偏差；E-0c3038601673940f公告日/可得日晚于研究时点，存在前视偏差；E-df908b5930a2dc1f公告日/可得日晚于研究时点，存在前视偏差；E-bf6d3d2586d48400公告日/可得日晚于研究时点，存在前视偏差；E-4280eba2b04c38ef公告日/可得日晚于研究时点，存在前视偏差；E-f4e32299ed54f8be公告日/可得日晚于研究时点，存在前视偏差；E-52e82cba3b41deee公告日/可得日晚于研究时点，存在前视偏差；E-2c7c5feaf1668005公告日/可得日晚于研究时点，存在前视偏差；E-e63fc779b27cc9c8公告日/可得日晚于研究时点，存在前视偏差；E-6313276da66487f4公告日/可得日晚于研究时点，存在前视偏差"
+      }
+    ]
+  }
+]

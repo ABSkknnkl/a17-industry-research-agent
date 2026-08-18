@@ -5,10 +5,11 @@ from pathlib import Path
 import pytest
 
 from app.agents.report_fusion.service import ReportFusionAgent
+from app.agents.report_fusion.assembler import _render_chart
 from app.core.config import settings
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
-from app.schemas.chart import ChartGenerationResult
+from app.schemas.chart import ChartGenerationResult, ChartSpec
 from app.schemas.report import ReportFusionResult
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
@@ -50,6 +51,39 @@ def _context(
             ),
         },
     )
+
+
+def test_generated_chain_image_is_embedded_as_self_contained_svg(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    image_path = tmp_path / "run" / "charts" / "r1" / "chain.png"
+    image_path.parent.mkdir(parents=True)
+    image_path.write_bytes(b"\x89PNG\r\n\x1a\n" + b"test-image")
+    spec = ChartSpec(
+        chart_id="CHART-GENERATED-CHAIN",
+        title="产业链全景图",
+        chart_type="industry_chain",
+        variant="graph",
+        option={"title": {"text": "产业链全景图"}, "series": [{"type": "graph"}]},
+        render_mode="generated_image",
+        image_uri="run/charts/r1/chain.png",
+        image_mime_type="image/png",
+        generation_prompt="券商投行级产业链信息图提示词，严格使用已核验节点和关系。",
+        generation_prompt_model="deepseek-v4-pro",
+        generation_image_model="gpt-image-1",
+        chain_template="horizontal_flow",
+        chain_graph={"nodes": [{"label": "上游"}], "edges": []},
+        evidence_ids=["E-001"],
+        data_fingerprint="a" * 64,
+        dedupe_key="industry-chain:generated",
+    )
+
+    svg = _render_chart(spec)
+
+    assert svg.startswith("<svg")
+    assert "data:image/png;base64," in svg
 
 
 @pytest.mark.asyncio

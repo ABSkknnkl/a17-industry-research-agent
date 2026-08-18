@@ -65,6 +65,42 @@ def read_chart_json(run_id: str, revision: int, chart_id: str) -> dict[str, Any]
     return content
 
 
+def save_chart_image(
+    run_id: str,
+    revision: int,
+    chart_id: str,
+    content: bytes,
+    mime_type: str,
+) -> tuple[str, str]:
+    """Persist one generated chart image and return ``(uri, sha256)``."""
+
+    if not content:
+        raise ValueError("chart image must not be empty")
+    extension_by_type = {"image/png": "png", "image/webp": "webp"}
+    extension = extension_by_type.get(mime_type)
+    if extension is None:
+        raise ValueError("unsupported chart image mime type")
+    safe_chart_id = _validate_segment(chart_id, "chart_id")
+    directory = _artifact_dir(run_id, revision)
+    directory.mkdir(parents=True, exist_ok=True)
+    filepath = directory / f"{safe_chart_id}.{extension}"
+    temporary = directory / f".{safe_chart_id}.{extension}.tmp"
+    temporary.write_bytes(content)
+    os.replace(temporary, filepath)
+    checksum = hashlib.sha256(content).hexdigest()
+    return str(filepath.relative_to(settings.ARTIFACT_ROOT)), checksum
+
+
+def read_artifact_bytes(uri: str) -> bytes:
+    """Read one artifact-root-relative file without allowing path traversal."""
+
+    root = settings.ARTIFACT_ROOT.resolve()
+    path = (root / uri).resolve()
+    if path != root and root not in path.parents:
+        raise ValueError("artifact uri escapes artifact root")
+    return path.read_bytes()
+
+
 def _report_dir(run_id: str, revision: int) -> Path:
     safe_run_id = _validate_segment(run_id, "run_id")
     if revision < 1:

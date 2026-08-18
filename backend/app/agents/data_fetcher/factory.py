@@ -2,6 +2,7 @@
 
 from app.agents.data_fetcher.executor import RetrievalExecutor
 from app.agents.data_fetcher.planner import QueryPlanner
+from app.agents.data_fetcher.semantic_router import OpenAICompatibleSemanticRouter
 from app.agents.data_fetcher.service import DataFetcherAgent
 from app.core.config import Settings
 from app.integrations.skillhub import (
@@ -14,6 +15,16 @@ from app.runtime.models import RuntimePolicy
 
 
 def create_data_fetcher_agent(settings: Settings) -> DataFetcherAgent:
+    semantic_router = None
+    if settings.AGENT1_SEMANTIC_ROUTER_ENABLED:
+        if settings.LLM_API_KEY is None or not settings.LLM_BASE_URL:
+            raise RuntimeError("agent1_semantic_router_configuration_missing")
+        semantic_router = OpenAICompatibleSemanticRouter(
+            model_name=settings.LLM_MODEL,
+            api_key=settings.LLM_API_KEY.get_secret_value(),
+            base_url=settings.LLM_BASE_URL,
+            timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
+        )
     if settings.SKILLHUB_USE_MOCK:
         if settings.ENVIRONMENT != "test":
             raise RuntimeError(
@@ -45,4 +56,6 @@ def create_data_fetcher_agent(settings: Settings) -> DataFetcherAgent:
             page_size=settings.SKILLHUB_PAGE_SIZE,
         ),
         provider_mode=client.provider_mode,
+        semantic_router=semantic_router,
+        semantic_confidence_threshold=settings.AGENT1_SEMANTIC_ROUTER_CONFIDENCE,
     )

@@ -1,0 +1,78 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8">
+<title>C1 智能体1-2-3链路</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+body{font-family:-apple-system,"PingFang SC",sans-serif;margin:24px;background:#f0f2f5;color:#1f2937}
+h1{color:#1e3a5f} h2{color:#2563eb;margin-top:28px}
+.summary{background:#fff;padding:16px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px}
+.summary p{margin:4px 0}
+.req,.supp{background:#fff7ed;color:#9a3412;padding:8px 12px;border-radius:8px;margin:6px 0;font-size:13px}
+.req.ok,.supp.ok{background:#ecfdf5;color:#065f46}
+.req-reason{color:#b45309;font-size:12px;margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:20px;margin-top:16px}
+.card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h3{margin:0 0 6px;font-size:15px}
+.tag{display:inline-block;background:#e0e7ff;color:#3730a3;padding:2px 10px;border-radius:12px;font-size:12px}
+.ids{color:#9ca3af;font-size:11px;margin-top:4px}
+.chart{width:100%;height:360px}
+</style></head><body>
+<h1>C1：单家公司深度调研 — 智能体1→2→3 链路测试</h1>
+<div class="summary">
+  <p><b>话术:</b> 整理宁德时代近四年营收、归母净利润、毛利率、各项费用率，同时梳理主营业务结构...</p>
+  <p><b>话题:</b> 动力电池 | <b>指标:</b> 营业收入, 归母净利润, 毛利率, 销售费用, 管理费用, 研发费用</p>
+  <p><b>智能体1:</b> waiting_review(证据143) | <b>智能体2:</b> waiting_review(候选0)</p>
+  <p><b>质量门:</b> True | <b>生成图表:</b> 7 | <b>抑制:</b> 4</p>
+</div>
+<h2>拦截请求（collaboration_requests）</h2><div class="req"><b>CALCULATION-DATA-MISSING</b> 用户指定的计算缺少必要数据或可比口径。请调整指标、企业或时间范围后重新提交。<div class="req-reason">已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；营业收入与营业成本单位不一致，未执行自动换算，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；已取得营业收入，但缺少同口径营业成本，毛利率不可计算。；营业收入与营业成本单位不一致，未执行自动换算，毛利率不可计算。</div></div>
+<h2>抑制/降级</h2><div class="supp"><b>归属于母公司所有者的净利润趋势</b> [duplicate_time_point] 序列 '宁德时代' 在报告期 2025-12-31 有重复数据点</div><div class="supp"><b>归属于母公司所有者的净利润趋势</b> [duplicate_time_point] 序列 '宁德时代' 在报告期 2024-12-31 有重复数据点</div><div class="supp"><b>归属于母公司所有者的净利润趋势</b> [duplicate_time_point] 序列 '宁德时代' 在报告期 2023-12-31 有重复数据点</div><div class="supp"><b>归属于母公司所有者的净利润趋势</b> [duplicate_time_point] 序列 '宁德时代' 在报告期 2022-12-31 有重复数据点</div>
+<h2>生成的图表（7张）</h2><div class="grid">
+        <div class="card">
+          <h3>最新涨跌幅对比</h3>
+          <div class="tag">bar / grouped</div>
+          <div class="ids">CHART-25C15D8A8CDE</div>
+          <div id="CHART_25C15D8A8CDE" class="chart"></div>
+          <script>var c_CHART_25C15D8A8CDE=echarts.init(document.getElementById('CHART_25C15D8A8CDE'));c_CHART_25C15D8A8CDE.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "最新涨跌幅对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["宁德时代", "富奥股份", "中国宝安"]}, "yAxis": {"type": "value", "name": "CNY 未提供"}, "series": [{"name": "中国宝安", "type": "bar", "data": [{"value": null}, {"value": null}, {"value": -4.358353999999999, "evidence_id": "E-7d0e095b19541b44"}]}, {"name": "宁德时代", "type": "bar", "data": [{"value": -0.598032, "evidence_id": "E-867ca9613268b577"}, {"value": null}, {"value": null}]}, {"name": "富奥股份", "type": "bar", "data": [{"value": null}, {"value": -0.46948399999999996, "evidence_id": "E-b15ce9b881c5df81"}, {"value": null}]}]});</script>
+        </div>
+        <div class="card">
+          <h3>总资产趋势</h3>
+          <div class="tag">line / line</div>
+          <div class="ids">CHART-5981EF000621</div>
+          <div id="CHART_5981EF000621" class="chart"></div>
+          <script>var c_CHART_5981EF000621=echarts.init(document.getElementById('CHART_5981EF000621'));c_CHART_5981EF000621.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "总资产趋势", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "boundaryGap": false, "data": ["2024-12-31", "2025-03-31", "2025-06-30", "2025-09-30", "2025-12-31", "2026-03-31", "2026-06-30"]}, "yAxis": {"type": "value", "name": "CNY 未提供", "scale": true}, "series": [{"name": "宁德时代", "type": "line", "connectNulls": false, "showSymbol": true, "data": [786658123000.0, 820097269000.0, 867181431000.0, 896082131000.0, 974827544000.0, 1046329036000.0, 1138880789000.0]}], "evidenceMap": {"宁德时代": {"2026-06-30": "E-aa8a046ed6cfdb6d", "2026-03-31": "E-65d8680674d61698", "2025-12-31": "E-f484657726067218", "2025-09-30": "E-1fb84804356e1fdb", "2025-06-30": "E-a6d54a1ffcb726d3", "2025-03-31": "E-771032c4cbc97b35", "2024-12-31": "E-bdcad020bdff51be"}}});</script>
+        </div>
+        <div class="card">
+          <h3>存货对比</h3>
+          <div class="tag">bar / vertical</div>
+          <div class="ids">CHART-E8F04935019C</div>
+          <div id="CHART_E8F04935019C" class="chart"></div>
+          <script>var c_CHART_E8F04935019C=echarts.init(document.getElementById('CHART_E8F04935019C'));c_CHART_E8F04935019C.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "存货对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["宁德时代"]}, "yAxis": {"type": "value", "name": "CNY 未提供"}, "series": [{"name": "宁德时代", "type": "bar", "data": [{"value": 94526239000.0, "evidence_id": "E-a46dffea702b199f"}]}]});</script>
+        </div>
+        <div class="card">
+          <h3>研发费用趋势</h3>
+          <div class="tag">line / line</div>
+          <div class="ids">CHART-0CBDF9D27C62</div>
+          <div id="CHART_0CBDF9D27C62" class="chart"></div>
+          <script>var c_CHART_0CBDF9D27C62=echarts.init(document.getElementById('CHART_0CBDF9D27C62'));c_CHART_0CBDF9D27C62.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "研发费用趋势", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "boundaryGap": false, "data": ["2024-12-31", "2025-12-31"]}, "yAxis": {"type": "value", "name": "CNY 未提供", "scale": true}, "series": [{"name": "宁德时代", "type": "line", "connectNulls": false, "showSymbol": true, "data": [18606756000.0, 22146581000.0]}], "evidenceMap": {"宁德时代": {"2025-12-31": "E-74f3c32843be509e", "2024-12-31": "E-76ec628ceee6569c"}}});</script>
+        </div>
+        <div class="card">
+          <h3>市盈率(pe,ttm)对比</h3>
+          <div class="tag">bar / vertical</div>
+          <div class="ids">CHART-D4E0B63AE61F</div>
+          <div id="CHART_D4E0B63AE61F" class="chart"></div>
+          <script>var c_CHART_D4E0B63AE61F=echarts.init(document.getElementById('CHART_D4E0B63AE61F'));c_CHART_D4E0B63AE61F.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "市盈率(pe,ttm)对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["动力电池"]}, "yAxis": {"type": "value", "name": "CNY pe,ttm"}, "series": [{"name": "动力电池", "type": "bar", "data": [{"value": 25.79872, "evidence_id": "E-2ad456da156b38bd"}]}]});</script>
+        </div>
+        <div class="card">
+          <h3>最新价对比</h3>
+          <div class="tag">bar / grouped</div>
+          <div class="ids">CHART-8E8F6D03EFAD</div>
+          <div id="CHART_8E8F6D03EFAD" class="chart"></div>
+          <script>var c_CHART_8E8F6D03EFAD=echarts.init(document.getElementById('CHART_8E8F6D03EFAD'));c_CHART_8E8F6D03EFAD.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "最新价对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["宁德时代", "富奥股份", "中国宝安"]}, "yAxis": {"type": "value", "name": "CNY 未提供"}, "series": [{"name": "中国宝安", "type": "bar", "data": [{"value": null}, {"value": null}, {"value": 7.9, "evidence_id": "E-69267bf99d1418de"}]}, {"name": "宁德时代", "type": "bar", "data": [{"value": 393.93, "evidence_id": "E-c1b7664e61dbe727"}, {"value": null}, {"value": null}]}, {"name": "富奥股份", "type": "bar", "data": [{"value": null}, {"value": 4.24, "evidence_id": "E-b5e5515430ec66e1"}, {"value": null}]}]});</script>
+        </div>
+        <div class="card">
+          <h3>加权净资产收益率对比</h3>
+          <div class="tag">bar / vertical</div>
+          <div class="ids">CHART-16DA5AA7090B</div>
+          <div id="CHART_16DA5AA7090B" class="chart"></div>
+          <script>var c_CHART_16DA5AA7090B=echarts.init(document.getElementById('CHART_16DA5AA7090B'));c_CHART_16DA5AA7090B.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "加权净资产收益率对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["宁德时代"]}, "yAxis": {"type": "value", "name": "CNY 未提供"}, "series": [{"name": "宁德时代", "type": "bar", "data": [{"value": 12.08, "evidence_id": "E-4f3670df84bdf909"}]}]});</script>
+        </div></div>
+</body></html>

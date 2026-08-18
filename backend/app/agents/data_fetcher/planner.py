@@ -4,8 +4,10 @@ import hashlib
 from datetime import date
 from typing import Any, Literal
 
+from app.agents.data_fetcher.metric_registry import get_metric_spec, metric_expected_fields
 from app.integrations.skillhub.catalog import get_skill_spec
 from app.schemas.acquisition import (
+    CONDITIONAL_P1_SKILLS,
     ResearchRequirement,
     RetrievalPlan,
     SkillName,
@@ -41,7 +43,9 @@ class QueryPlanner:
         research_brief: dict[str, Any],
         data_fetch_options: dict[str, Any],
         review_feedback: str | None,
+        semantic_routes: dict[str, SkillName] | None = None,
     ) -> RetrievalPlan:
+        semantic_routes = semantic_routes or {}
         time_range = _time_range(research_as_of, research_brief, data_fetch_options)
         requested_scope = [
             str(item).strip()
@@ -67,14 +71,18 @@ class QueryPlanner:
         review_instruction = " ".join((review_feedback or "").split())[:500]
         suffix = " ".join(
             part
-            for part in (keywords, metrics, preferred_sources, focus, review_instruction)
+            for part in (
+                keywords,
+                metrics,
+                preferred_sources,
+                focus,
+                review_instruction,
+            )
             if part
         ).strip()
         prefix = f"{market_text} {industry_topic} {time_range}"
 
-        definitions: list[
-            tuple[SkillName, ResearchDimension, str, list[str], int, list[str]]
-        ] = [
+        definitions: list[tuple[SkillName, ResearchDimension, str, list[str], int, list[str]]] = [
             (
                 SkillName.INDUSTRY,
                 "industry",
@@ -87,11 +95,40 @@ class QueryPlanner:
                 SkillName.FINANCE,
                 "finance",
                 (
-                    f"{prefix} {company_text} 营业收入 净利润 毛利率 ROE 经营现金流 {suffix}"
+                    f"{prefix} {company_text} 营业收入 营业成本 净利润 ROE "
+                    "经营活动现金流量净额 投资活动现金流量净额 "
+                    "筹资活动现金流量净额 期末现金及现金等价物余额 "
+                    "货币资金 总资产 负债合计 "
+                    f"股东权益 存货 应收账款 {suffix}"
                     if company_text
-                    else f"{prefix} 代表公司 营业收入 净利润 毛利率 ROE 经营现金流 {suffix}"
+                    else (
+                        f"{prefix} 代表公司 营业收入 营业成本 净利润 ROE "
+                        "经营活动现金流量净额 投资活动现金流量净额 "
+                        "筹资活动现金流量净额 期末现金及现金等价物余额 "
+                        "货币资金 总资产 负债合计 "
+                        f"股东权益 存货 应收账款 {suffix}"
+                    )
                 ),
-                ["股票代码", "股票简称", "营业收入", "净利润", "ROE", "报告期"],
+                [
+                    "股票代码",
+                    "股票简称",
+                    "营业收入",
+                    "营业成本",
+                    "净利润",
+                    "ROE",
+                    "经营活动现金流量净额",
+                    "投资活动现金流量净额",
+                    "筹资活动现金流量净额",
+                    "期末现金及现金等价物余额",
+                    "货币资金",
+                    "总资产",
+                    "负债合计",
+                    "股东权益",
+                    "存货",
+                    "应收账款",
+                    "单位",
+                    "报告期",
+                ],
                 95,
                 [],
             ),
@@ -182,10 +219,27 @@ class QueryPlanner:
         requested_metrics = [
             str(item).strip() for item in data_fetch_options.get("metrics", []) if str(item).strip()
         ]
-        requirements = _build_requirements(focus_questions, requested_metrics)
+        requirements = _build_requirements(
+            focus_questions,
+            requested_metrics,
+            semantic_routes=semantic_routes,
+        )
         for metric in list(dict.fromkeys(requested_metrics))[:8]:
-            metric_skill = _metric_skill(metric)
+            metric_skill = semantic_routes.get(metric, _metric_skill(metric))
             dimension, expected_fields, metric_priority = _requirement_task_profile(metric_skill)
+            metric_spec = get_metric_spec(metric)
+            if metric_spec is not None:
+                expected_fields = metric_expected_fields(metric_spec)
+            elif metric in semantic_routes:
+                expected_fields = list(dict.fromkeys([*expected_fields, metric]))
+            metric_query = _market_skill_query(
+                metric_skill,
+                industry_topic=industry_topic,
+                request_text=metric,
+                research_as_of=research_as_of,
+                target_entities=focus_companies,
+                default_query=f"{company_text or industry_topic} {metric} {time_range}",
+            )
             metric_requirement_ids = [
                 item.requirement_id
                 for item in requirements
@@ -195,7 +249,7 @@ class QueryPlanner:
                 (
                     metric_skill,
                     dimension,
-                    f"{company_text or industry_topic} {metric} {time_range}",
+                    metric_query,
                     expected_fields,
                     max(metric_priority, 92),
                     metric_requirement_ids,
@@ -210,8 +264,32 @@ class QueryPlanner:
                 (
                     SkillName.FINANCE,
                     "finance",
-                    f"{company} {time_range} 营业收入 营业成本 归母净利润 总资产 股东权益 存货 应收账款 {suffix}",
-                    ["股票代码", "股票简称", "指标名称", "指标值", "单位", "报告期"],
+                    (
+                        f"{company} {time_range} 营业收入 营业成本 归母净利润 "
+                        "经营活动现金流量净额 投资活动现金流量净额 "
+                        "筹资活动现金流量净额 期末现金及现金等价物余额 "
+                        "货币资金 总资产 负债合计 "
+                        f"股东权益 存货 应收账款 {suffix}"
+                    ),
+                    [
+                        "股票代码",
+                        "股票简称",
+                        "营业收入",
+                        "营业成本",
+                        "归母净利润",
+                        "经营活动现金流量净额",
+                        "投资活动现金流量净额",
+                        "筹资活动现金流量净额",
+                        "期末现金及现金等价物余额",
+                        "货币资金",
+                        "总资产",
+                        "负债合计",
+                        "股东权益",
+                        "存货",
+                        "应收账款",
+                        "单位",
+                        "报告期",
+                    ],
                     99,
                     [],
                 )
@@ -219,7 +297,13 @@ class QueryPlanner:
 
         task_number = len(definitions)
         for requirement in requirements:
-            if not _needs_targeted_queries(requirement.question):
+            if requirement.requested_metric is not None:
+                # Requested metrics already received one dedicated query in
+                # the loop above. Do not duplicate conditional market calls.
+                continue
+            if not _needs_targeted_queries(requirement.question) and not (
+                set(requirement.target_skills) & CONDITIONAL_P1_SKILLS
+            ):
                 continue
             for skill in requirement.target_skills:
                 if task_number >= 30:
@@ -230,7 +314,14 @@ class QueryPlanner:
                     (
                         skill,
                         dimension,
-                        f"{industry_topic} {requirement.question} {time_range}",
+                        _market_skill_query(
+                            skill,
+                            industry_topic=industry_topic,
+                            request_text=requirement.question,
+                            research_as_of=research_as_of,
+                            target_entities=focus_companies,
+                            default_query=f"{industry_topic} {requirement.question} {time_range}",
+                        ),
                         expected,
                         priority,
                         [requirement.requirement_id],
@@ -238,9 +329,14 @@ class QueryPlanner:
                 )
 
         tasks: list[SkillQueryTask] = []
-        for index, (skill, dimension, query, expected, priority, requirement_ids) in enumerate(
-            definitions, 1
-        ):
+        for index, (
+            skill,
+            dimension,
+            query,
+            expected,
+            priority,
+            requirement_ids,
+        ) in enumerate(definitions, 1):
             spec = get_skill_spec(skill)
             compact_query = " ".join(query.split())[:500]
             tasks.append(
@@ -273,6 +369,7 @@ class QueryPlanner:
                             SkillName.ANNOUNCEMENT,
                             SkillName.EVENT,
                             SkillName.INSTITUTIONAL_RESEARCH,
+                            SkillName.BASIC_INFO,
                         }
                         else []
                     ),
@@ -317,7 +414,7 @@ class QueryPlanner:
             industry_topic=industry_topic,
             research_as_of=research_as_of,
             tasks=tasks,
-            planner_mode="deterministic",
+            planner_mode="hybrid" if semantic_routes else "deterministic",
             applied_review_feedback=review_feedback,
             requirements=requirements,
         )
@@ -357,11 +454,20 @@ _QUALITATIVE_TERMS = (
 def _build_requirements(
     focus_questions: list[str],
     requested_metrics: list[str] | None = None,
+    *,
+    semantic_routes: dict[str, SkillName] | None = None,
 ) -> list[ResearchRequirement]:
+    semantic_routes = semantic_routes or {}
     requirements: list[ResearchRequirement] = []
     for index, raw_question in enumerate(focus_questions[:12], 1):
         question = " ".join(str(raw_question).split())[:1_000]
-        has_quantitative = any(term in question for term in _QUANTITATIVE_TERMS)
+        conditional_market_skill = _conditional_market_skill(question)
+        semantic_skill = semantic_routes.get(question)
+        has_quantitative = (
+            any(term in question for term in _QUANTITATIVE_TERMS)
+            or conditional_market_skill is not None
+            or semantic_skill is not None
+        )
         has_qualitative = any(term in question for term in _QUALITATIVE_TERMS)
         requirement_class: Literal["quantitative", "qualitative", "mixed"] = (
             "mixed"
@@ -371,7 +477,7 @@ def _build_requirements(
         corporate = any(term in question for term in ("公司", "企业", "管理层", "财务", "营收"))
         chain = any(term in question for term in ("产业链", "上游", "中游", "下游", "供需"))
         macro = any(term in question for term in ("政策", "利率", "汇率", "宏观"))
-        quantitative_skill = (
+        quantitative_skill = semantic_skill or conditional_market_skill or (
             SkillName.FINANCE
             if corporate
             else (
@@ -419,15 +525,32 @@ def _build_requirements(
                 requirement_id=f"REQ-{len(requirements) + 1:02d}",
                 question=f"指定指标：{metric}",
                 requirement_class="quantitative",
-                target_skills=[_metric_skill(metric)],
+                target_skills=[semantic_routes.get(metric, _metric_skill(metric))],
                 requested_metric=metric,
+                origin="user_metric",
+                criticality="acknowledgement_required",
             )
         )
     return requirements
 
 
 def _metric_skill(metric: str) -> SkillName:
+    deterministic = deterministic_metric_skill(metric)
+    if deterministic is not None:
+        return deterministic
+    return SkillName.INDUSTRY
+
+
+def deterministic_metric_skill(metric: str) -> SkillName | None:
+    """Return ``None`` only when the optional semantic fallback may be used."""
+
+    metric_spec = get_metric_spec(metric)
+    if metric_spec is not None:
+        return metric_spec.primary_skill
     compact = _normalised_requirement_text(metric)
+    conditional = _conditional_market_skill(compact)
+    if conditional is not None:
+        return conditional
     if any(
         token in compact
         for token in (
@@ -441,14 +564,147 @@ def _metric_skill(metric: str) -> SkillName:
             "存货",
             "应收账款",
             "费用率",
+            "股票代码",
+            "证券代码",
+            "上市地点",
+            "上市日期",
+            "发行主体",
         )
     ):
+        if any(
+            token in compact
+            for token in ("股票代码", "证券代码", "上市地点", "上市日期", "发行主体")
+        ):
+            return SkillName.BASIC_INFO
         return SkillName.FINANCE
     if any(token in compact for token in ("gdp", "cpi", "ppi", "pmi", "利率", "汇率", "社融")):
         return SkillName.MACRO
     if any(token in compact for token in ("上游", "中游", "下游", "产业链")):
         return SkillName.INDUSTRY_CHAIN
-    return SkillName.INDUSTRY
+    return None
+
+
+def _is_concentration_metric(metric: str) -> bool:
+    compact = _normalised_requirement_text(metric)
+    return any(token in compact for token in ("cr3", "cr5", "集中度", "市占率", "市场份额"))
+
+
+def _conditional_market_skill(value: str) -> SkillName | None:
+    compact = _normalised_requirement_text(value)
+    if any(
+        token in compact
+        for token in (
+            "基本资料",
+            "基础信息",
+            "股票代码",
+            "证券代码",
+            "上市地点",
+            "上市日期",
+            "发行主体",
+            "基金费率",
+            "期货合约信息",
+            "债券资料",
+        )
+    ):
+        return SkillName.BASIC_INFO
+    if any(
+        token in compact
+        for token in (
+            "财务报表",
+            "三表",
+            "三表勾稽",
+            "现金含量",
+            "经营现金流",
+            "盈利质量",
+            "应计利润",
+            "杜邦",
+            "资产负债表",
+            "现金流量表",
+        )
+    ):
+        return SkillName.FINANCE
+    if any(
+        token in compact
+        for token in (
+            "cr3",
+            "cr5",
+            "集中度",
+            "市占率",
+            "市场份额",
+            "前十大",
+            "龙头排名",
+        )
+    ):
+        return SkillName.STOCK_SELECTOR
+    if any(
+        token in compact
+        for token in (
+            "期货",
+            "结算价",
+            "碳酸锂",
+            "动力煤",
+            "焦煤",
+            "纯碱",
+            "工业硅",
+            "多晶硅",
+            "大宗商品",
+            "现货价格",
+            "库存周期",
+        )
+    ):
+        return SkillName.FUTURES
+    if any(
+        token in compact
+        for token in (
+            "估值分位",
+            "历史分位",
+            "市盈率",
+            "市净率",
+            "pe/pb",
+            "指数估值",
+            "沪深300",
+            "创业板指",
+            "上证指数",
+        )
+    ):
+        return SkillName.INDEX
+    return None
+
+
+def _market_skill_query(
+    skill: SkillName,
+    *,
+    industry_topic: str,
+    request_text: str,
+    research_as_of: date,
+    target_entities: list[str],
+    default_query: str,
+) -> str:
+    metric_spec = get_metric_spec(request_text)
+    metric_fields = list(metric_spec.query_fields) if metric_spec is not None else [request_text]
+    requested_fields = " ".join(dict.fromkeys(field for field in metric_fields if field))
+    if skill == SkillName.BASIC_INFO:
+        subject = " ".join(target_entities) if target_entities else industry_topic
+        if "发行主体" in request_text:
+            return f"{subject} {request_text}"
+        return f"{subject} 公司全称 股票代码 股票简称 上市地点 上市日期 所属行业"
+    if skill == SkillName.FINANCE:
+        subject = " ".join(target_entities) if target_entities else industry_topic
+        periods = f"{research_as_of.year - 1}年 {research_as_of.year}年"
+        return f"{subject} {periods} {requested_fields}"
+    if skill == SkillName.BUSINESS:
+        subject = " ".join(target_entities) if target_entities else f"{industry_topic}概念股"
+        periods = f"{research_as_of.year - 1}年 {research_as_of.year}年"
+        return f"{subject} {periods} {requested_fields}"
+    if skill == SkillName.STOCK_SELECTOR:
+        subject = " ".join(target_entities) if target_entities else f"{industry_topic}概念股"
+        return f"{subject} {research_as_of.year - 1}年 {requested_fields} 从高到低"
+    if skill == SkillName.INDEX:
+        return f"{industry_topic}板块指数 市盈率 市净率 历史分位"
+    if skill == SkillName.FUTURES:
+        compact = " ".join(request_text.split())
+        return compact if "期货" in compact else f"{compact} 期货"
+    return default_query
 
 
 def _normalised_requirement_text(value: str) -> str:
@@ -486,7 +742,25 @@ def _requirement_task_profile(
         ),
         SkillName.FINANCE: (
             "finance",
-            ["股票代码", "股票简称", "指标名称", "指标值", "报告期"],
+            [
+                "股票代码",
+                "股票简称",
+                "营业收入",
+                "营业成本",
+                "净利润",
+                "经营活动现金流量净额",
+                "投资活动现金流量净额",
+                "筹资活动现金流量净额",
+                "期末现金及现金等价物余额",
+                "货币资金",
+                "总资产",
+                "负债合计",
+                "股东权益",
+                "存货",
+                "应收账款",
+                "单位",
+                "报告期",
+            ],
             96,
         ),
         SkillName.MACRO: (
@@ -505,6 +779,26 @@ def _requirement_task_profile(
             "risk",
             ["公告标题", "公司", "公告日期", "链接"],
             90,
+        ),
+        SkillName.INDEX: (
+            "industry",
+            ["指数代码", "指数简称", "市盈率", "市净率", "分位点", "数据日期"],
+            94,
+        ),
+        SkillName.FUTURES: (
+            "industry",
+            ["合约代码", "合约简称", "收盘价", "最新价", "涨跌幅", "数据日期"],
+            94,
+        ),
+        SkillName.STOCK_SELECTOR: (
+            "competition",
+            ["股票代码", "股票简称", "市场份额", "出货量", "销量", "报告期"],
+            96,
+        ),
+        SkillName.BASIC_INFO: (
+            "research",
+            ["股票代码", "股票简称", "中文名称", "上市地点", "上市日期", "所属同花顺行业"],
+            92,
         ),
     }
     return profiles.get(skill, ("research", ["标题", "发布日期", "链接"], 80))
@@ -545,6 +839,23 @@ def _fallback_queries(
         SkillName.SECTOR: [
             f"{industry_topic}概念板块",
             "行业板块涨跌幅排名",
+        ],
+        SkillName.INDEX: [
+            f"{industry_topic}板块指数 市盈率 市净率",
+            "沪深300 市盈率 市净率 历史分位",
+        ],
+        SkillName.FUTURES: [query, f"{industry_topic}期货"],
+        SkillName.STOCK_SELECTOR: [
+            query,
+            f"{industry_topic}概念股 市场份额 从高到低",
+        ],
+        SkillName.BASIC_INFO: [
+            f"{industry_topic} 证券代码 上市地点 上市日期",
+            f"{industry_topic} 基本资料",
+        ],
+        SkillName.FINANCE: [
+            query,
+            f"{industry_topic} 经营活动现金流量净额 总资产 负债合计",
         ],
     }
     if skill in specialized:

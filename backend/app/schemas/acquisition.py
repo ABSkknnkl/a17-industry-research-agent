@@ -24,6 +24,10 @@ class SkillName(StrEnum):
     BUSINESS = "hithink_business_query"
     SECTOR = "hithink_sector_selector"
     INSTITUTIONAL_RESEARCH = "hithink_insresearch_query"
+    INDEX = "hithink_index_query"
+    FUTURES = "hithink_futures_query"
+    STOCK_SELECTOR = "hithink_stock_selector"
+    BASIC_INFO = "hithink_basicinfo_query"
 
 
 P0_SKILLS = frozenset(
@@ -37,12 +41,22 @@ P0_SKILLS = frozenset(
     }
 )
 P1_SKILLS = frozenset(set(SkillName) - P0_SKILLS)
+CONDITIONAL_P1_SKILLS = frozenset(
+    {
+        SkillName.INDEX,
+        SkillName.FUTURES,
+        SkillName.STOCK_SELECTOR,
+        SkillName.BASIC_INFO,
+    }
+)
 CORE_DATA_SKILLS = frozenset(
     {
         SkillName.MACRO,
         SkillName.INDUSTRY,
         SkillName.FINANCE,
         SkillName.INDUSTRY_CHAIN,
+        SkillName.INDEX,
+        SkillName.FUTURES,
     }
 )
 
@@ -86,6 +100,8 @@ class ResearchRequirement(AcquisitionModel):
     target_skills: list[SkillName] = Field(min_length=1, max_length=2)
     task_ids: list[str] = Field(default_factory=list, max_length=20)
     requested_metric: str | None = Field(default=None, min_length=1, max_length=200)
+    origin: Literal["focus_question", "user_metric", "planner_inferred"] = "focus_question"
+    criticality: Literal["blocking", "acknowledgement_required", "advisory"] = "blocking"
 
 
 class RequirementCoverage(AcquisitionModel):
@@ -99,6 +115,8 @@ class RequirementCoverage(AcquisitionModel):
     missing_task_ids: list[str] = Field(default_factory=list, max_length=20)
     returned_row_count: int = Field(default=0, ge=0)
     note: str = Field(min_length=1, max_length=500)
+    origin: Literal["focus_question", "user_metric", "planner_inferred"] = "focus_question"
+    criticality: Literal["blocking", "acknowledgement_required", "advisory"] = "blocking"
 
 
 class RetrievalPlan(AcquisitionModel):

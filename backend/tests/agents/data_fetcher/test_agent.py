@@ -2,13 +2,23 @@ import pytest
 
 from app.agents.data_fetcher.executor import RetrievalExecutor
 from app.agents.data_fetcher.planner import QueryPlanner
-from app.agents.data_fetcher.service import DataFetcherAgent, _metric_matches
+from app.agents.data_fetcher.semantic_router import SemanticRouteDecision
+from app.agents.data_fetcher.service import (
+    DataFetcherAgent,
+    _metric_matches,
+    _metric_requirement_satisfied,
+)
 from app.agents.data_interpreter.service import DataInterpreterAgent
 from app.integrations.llm.mock import MockAnalysisModel
 from app.integrations.skillhub.mock import MockSkillHubClient
 from app.integrations.skillhub.registry import create_skillhub_gateway
 from app.runtime.tool_gateway import ToolExecutionError
-from app.schemas.acquisition import P0_SKILLS, P1_SKILLS, SkillName
+from app.schemas.acquisition import (
+    CONDITIONAL_P1_SKILLS,
+    P0_SKILLS,
+    P1_SKILLS,
+    SkillName,
+)
 from app.schemas.workflow import StageName, StageStatus
 from app.workflow.stages import StageContext
 
@@ -62,6 +72,16 @@ def test_requested_metric_matching_does_not_accept_unrelated_derived_metric() ->
     assert _metric_matches("存货", "存货周转天数") is False
 
 
+def test_metric_requirement_accepts_only_valid_direct_or_formula_inputs() -> None:
+    assert _metric_requirement_satisfied("毛利率", ["营业收入", "营业成本"], 2) is True
+    assert _metric_requirement_satisfied(
+        "海外收入占比", ["境外营业收入", "营业收入"], 2
+    ) is True
+    assert _metric_requirement_satisfied("CR5", ["市场份额"], 4) is False
+    assert _metric_requirement_satisfied("CR5", ["市场份额"], 5) is True
+    assert _metric_requirement_satisfied("市占率", ["销量"], 20) is False
+
+
 class SelectivelyFailingClient(MockSkillHubClient):
     provider_mode = "live"
 
@@ -74,6 +94,57 @@ class SelectivelyFailingClient(MockSkillHubClient):
             self.calls.append((skill_name, args))
             raise ToolExecutionError("provider_unavailable", retryable=False)
         return await super().execute(skill_name, args)
+
+
+class FakeSemanticRouter:
+    def __init__(self) -> None:
+        self.calls: list[list[str]] = []
+
+    async def route(self, texts: list[str]) -> dict[str, SemanticRouteDecision]:
+        self.calls.append(texts)
+        return {
+            text: SemanticRouteDecision(
+                text=text,
+                skill=SkillName.FINANCE,
+                confidence=0.96,
+                reason="该长尾指标属于企业盈利能力数据。",
+            )
+            for text in texts
+        }
+
+
+@pytest.mark.asyncio
+async def test_agent1_llm_router_only_handles_unknown_long_tail_metrics() -> None:
+    client = MockSkillHubClient()
+    client.provider_mode = "live"
+    router = FakeSemanticRouter()
+    agent = DataFetcherAgent(
+        planner=QueryPlanner(),
+        executor=RetrievalExecutor(create_skillhub_gateway(client)),
+        provider_mode=client.provider_mode,
+        semantic_router=router,
+    )
+    context = _context()
+    context.input_data["data_fetch_options"] = {
+        "metrics": ["毛利率", "单瓦盈利"]
+    }
+
+    result = await agent.run(context)
+
+    assert router.calls == [["单瓦盈利"]]
+    assert result.data["retrieval_plan"]["planner_mode"] == "hybrid"
+    routed_requirement = next(
+        item
+        for item in result.data["retrieval_plan"]["requirements"]
+        if item["requested_metric"] == "单瓦盈利"
+    )
+    routed_task = next(
+        item
+        for item in result.data["retrieval_plan"]["tasks"]
+        if routed_requirement["requirement_id"] in item["requirement_ids"]
+    )
+    assert routed_task["skill_name"] == "hithink_finance_query"
+    assert result.data["semantic_routing"]["accepted"]["单瓦盈利"]["confidence"] == 0.96
 
 
 @pytest.mark.asyncio
@@ -95,7 +166,7 @@ async def test_mock_mode_never_replaces_user_evidence() -> None:
 
 
 @pytest.mark.asyncio
-async def test_mock_retrieval_exercises_all_p0_p1_but_blocks_formal_release() -> None:
+async def test_mock_retrieval_exercises_baseline_skills_but_blocks_formal_release() -> None:
     client = MockSkillHubClient()
     agent = DataFetcherAgent(
         planner=QueryPlanner(),
@@ -108,7 +179,7 @@ async def test_mock_retrieval_exercises_all_p0_p1_but_blocks_formal_release() ->
     assert result.status == StageStatus.WAITING_REVIEW
     assert result.error == "mock_data_not_for_formal_release"
     called = {name for name, _ in client.calls}
-    assert called == P0_SKILLS | P1_SKILLS
+    assert called == P0_SKILLS | (P1_SKILLS - CONDITIONAL_P1_SKILLS)
     assert result.data["acquisition_quality"]["passed"] is True
     assert result.data["chart_datasets"]
     assert result.data["requirement_coverage"][0]["status"] == "supported"
@@ -220,8 +291,41 @@ async def test_missing_requested_requirement_pauses_for_reinput() -> None:
     assert result.error == "required_data_unavailable"
     assert result.data["blocking_issues"] == ["required_data_unavailable"]
     assert result.data["missing_requirements"][0]["question"] == "行业供需格局如何？"
+    assert result.data["missing_requirements"][0]["origin"] == "focus_question"
+    assert result.data["missing_requirements"][0]["criticality"] == "blocking"
     assert result.data["allowed_review_actions"] == ["revise", "regenerate", "cancel"]
     assert "重新提交" in result.data["collaboration_requests"][0]["question"]
+
+
+@pytest.mark.asyncio
+async def test_missing_explicit_metric_can_be_accepted_with_a_visible_risk() -> None:
+    client = SelectivelyFailingClient({SkillName.BUSINESS})
+    agent = DataFetcherAgent(
+        planner=QueryPlanner(),
+        executor=RetrievalExecutor(create_skillhub_gateway(client)),
+        provider_mode=client.provider_mode,
+    )
+    context = _context()
+    context.input_data["data_fetch_options"] = {"metrics": ["海外收入占比"]}
+
+    result = await agent.run(context)
+
+    assert result.status == StageStatus.WAITING_REVIEW
+    assert result.error == "requested_data_partial"
+    assert result.data["blocking_issues"] == []
+    assert result.data["advisory_issues"] == ["requested_data_partial"]
+    assert result.data["allowed_review_actions"] == [
+        "revise",
+        "regenerate",
+        "accept_with_risks",
+        "cancel",
+    ]
+    assert result.data["decision_package"]["acknowledgement_required_codes"] == [
+        "REQUESTED-DATA-PARTIAL"
+    ]
+    assert result.data["missing_requirements"][0]["question"] == "指定指标：海外收入占比"
+    assert result.data["missing_requirements"][0]["origin"] == "user_metric"
+    assert result.data["missing_requirements"][0]["criticality"] == "acknowledgement_required"
 
 
 @pytest.mark.asyncio

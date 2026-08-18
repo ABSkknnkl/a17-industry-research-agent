@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -40,6 +41,15 @@ class Settings(BaseSettings):
     LLM_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=300)
     LLM_MAX_OUTPUT_TOKENS: int = Field(default=8_192, ge=1_024, le=32_768)
     LLM_SEGMENTED_THRESHOLD_CHARS: int = Field(default=10_000, ge=5_000, le=500_000)
+    AGENT1_SEMANTIC_ROUTER_ENABLED: bool = False
+    AGENT1_SEMANTIC_ROUTER_CONFIDENCE: float = Field(default=0.9, ge=0.5, le=1)
+    INDUSTRY_CHAIN_IMAGE_ENABLED: bool = False
+    IMAGE_USE_MOCK: bool = False
+    IMAGE_API_KEY: SecretStr | None = None
+    IMAGE_BASE_URL: str = "https://api.openai.com/v1"
+    IMAGE_MODEL: str = "gpt-image-1"
+    IMAGE_SIZE: Literal["1536x1024", "1024x1024"] = "1536x1024"
+    IMAGE_TIMEOUT_SECONDS: float = Field(default=180, gt=0, le=600)
     SKILLHUB_API_KEY: SecretStr | None = None
     IWENCAI_API_KEY: SecretStr | None = None
     IWENCAI_BASE_URL: str = "https://openapi.iwencai.com"

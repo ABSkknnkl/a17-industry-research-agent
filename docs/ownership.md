@@ -5,7 +5,7 @@
 - 负责：`backend/app/agents/data_fetcher/`、`backend/app/integrations/skillhub/`
 - 输入：行业主题、项目配置
 - 输出：满足公共契约的标准化数据与证据来源
-- 当前状态：Agent 1 P0/P1 已完成，包含 11 个逻辑技能、真实 SkillHub 适配器、ToolGateway、数据清洗、去重与质量门；Mock 只允许自动化测试使用。
+- 当前状态：Agent 1 P0/P1 已完成，包含 15 个逻辑技能（含条件型 `hithink-basicinfo-query`）、真实 SkillHub 适配器、ToolGateway、数据清洗、去重与质量门；Mock 只允许自动化测试使用。INDEX、FUTURES、STOCK_SELECTOR、BASIC_INFO 已完成授权账号真实冒烟验收。
 - 待外部验收：使用赛事授权密钥对 6 类 P0 数据各完成一次真实 Smoke Test，并记录接口实际返回字段。
 
 ## 后端 B — AI 生成

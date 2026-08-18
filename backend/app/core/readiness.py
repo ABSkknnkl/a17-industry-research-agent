@@ -30,6 +30,15 @@ def runtime_configuration_issues(settings: Settings) -> list[str]:
         issues.append("llm_base_url_missing")
     if not settings.LLM_MODEL.strip():
         issues.append("llm_model_missing")
+    if settings.INDUSTRY_CHAIN_IMAGE_ENABLED:
+        if settings.IMAGE_USE_MOCK:
+            issues.append("production_image_mock_forbidden")
+        if settings.IMAGE_API_KEY is None or not settings.IMAGE_API_KEY.get_secret_value().strip():
+            issues.append("image_api_key_missing")
+        if not settings.IMAGE_BASE_URL.strip():
+            issues.append("image_base_url_missing")
+        if not settings.IMAGE_MODEL.strip():
+            issues.append("image_model_missing")
     skillhub_secret = settings.IWENCAI_API_KEY or settings.SKILLHUB_API_KEY
     if skillhub_secret is None or not skillhub_secret.get_secret_value().strip():
         issues.append("skillhub_api_key_missing")

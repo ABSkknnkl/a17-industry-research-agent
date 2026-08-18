@@ -32,6 +32,9 @@ _ENTITY_FIELDS = (
     "企业名称",
     "行业名称",
     "板块名称",
+    "指数简称",
+    "合约简称",
+    "品种简称",
     "指标名称",
     "name",
 )
@@ -85,6 +88,8 @@ _METADATA_FIELDS = set(
         "股票代码",
         "证券代码",
         "指数代码",
+        "合约代码",
+        "品种代码",
     )
 )
 _MAX_EVIDENCE_ITEMS = 200
@@ -103,6 +108,23 @@ _METRIC_ALIASES = {
     "母公司股东净利润": "归母净利润",
     "销售毛利率": "毛利率",
     "综合毛利率": "毛利率",
+}
+_FINANCE_BASE_CURRENCY_METRICS = {
+    "营业收入",
+    "营业成本",
+    "归母净利润",
+    "净利润",
+    "经营现金流",
+    "经营活动产生的现金流量净额",
+    "总资产",
+    "股东权益",
+    "存货",
+    "应收账款",
+    "销售费用",
+    "管理费用",
+    "研发费用",
+    "财务费用",
+    "主营业务收入",
 }
 
 
@@ -220,9 +242,9 @@ def normalize_tasks(
                     continue
                 cleaned_rows.append(cleaned)
             clean_payload_rows[(result.task.task_id, payload.page)] = cleaned_rows
-            task_clean_row_counts[result.task.task_id] = (
-                task_clean_row_counts.get(result.task.task_id, 0) + len(cleaned_rows)
-            )
+            task_clean_row_counts[result.task.task_id] = task_clean_row_counts.get(
+                result.task.task_id, 0
+            ) + len(cleaned_rows)
             if payload.skill_name == SkillName.INDUSTRY_CHAIN:
                 chain_rows.extend(cleaned_rows)
 
@@ -265,7 +287,13 @@ def normalize_tasks(
                     metric_key = (_normalized_identity(entity), metric_name)
                     if metric_counts.get(metric_key, 0) >= _MAX_POINTS_PER_METRIC_PER_TASK:
                         continue
-                    value, unit = _parse_value_and_unit(str(field_name), raw_value, row)
+                    value, unit = _parse_value_and_unit(
+                        str(field_name),
+                        raw_value,
+                        row,
+                        skill_name=payload.skill_name,
+                        metric_name=metric_name,
+                    )
                     fingerprint = hashlib.sha256(
                         json.dumps(
                             [
@@ -275,7 +303,7 @@ def normalize_tasks(
                                 metric_name,
                                 raw_value,
                                 entity,
-                                item_period_end.isoformat() if item_period_end else None,
+                                (item_period_end.isoformat() if item_period_end else None),
                             ],
                             ensure_ascii=False,
                             default=str,
@@ -439,6 +467,7 @@ def _is_low_relevance(row: dict[str, Any], industry_topic: str) -> bool:
 def _normalize_metric_name(field_name: str) -> str:
     name = re.sub(r"\[(?:19|20)\d{6}(?:-(?:19|20)\d{6})?\]", "", field_name)
     name = re.sub(r"\s+", " ", name).strip()
+    name = re.sub(r"[（(](?:pe,?ttm|ttm|mrq)[）)]$", "", name, flags=re.IGNORECASE)
     name = re.sub(
         r"[（(](?:元|万元|亿元|股|万股|亿股|%|千瓦|兆瓦|吉瓦|kW|MW|GW|"
         r"千瓦时|兆瓦时|吉瓦时|kWh|MWh|GWh)[）)]$",
@@ -535,16 +564,24 @@ def _parse_value_and_unit(
     field_name: str,
     raw_value: Any,
     row: dict[str, Any],
+    *,
+    skill_name: SkillName,
+    metric_name: str,
 ) -> tuple[int | float | str, str]:
     unit_match = re.search(r"[（(]([^()（）]{1,20})[）)]", field_name)
     unit = unit_match.group(1) if unit_match else None
+    if unit and unit.casefold().replace(" ", "") in {"pe,ttm", "pettm", "ttm", "mrq"}:
+        unit = None
     explicit_unit = row.get("单位")
     if isinstance(explicit_unit, str) and explicit_unit.strip():
         unit = explicit_unit.strip()
+    if unit is None:
+        unit = _provider_contract_unit(skill_name, metric_name)
     if isinstance(raw_value, bool):
         return str(raw_value), unit or "文本"
     if isinstance(raw_value, (int, float)):
         value, normalized_unit = _normalize_numeric_unit(float(raw_value), unit)
+        value = _provider_contract_value(skill_name, metric_name, value)
         return (int(value) if value.is_integer() else value), normalized_unit
     text = str(raw_value).strip()
     numeric = text.replace(",", "").replace("，", "")
@@ -561,9 +598,55 @@ def _parse_value_and_unit(
         suffix_unit = unit_suffix.group(2)
     try:
         value, normalized_unit = _normalize_numeric_unit(float(numeric), unit or suffix_unit)
+        value = _provider_contract_value(skill_name, metric_name, value)
         return (int(value) if value.is_integer() else value), normalized_unit
     except ValueError:
         return text[:5_000], unit or "文本"
+
+
+def _provider_contract_unit(skill_name: SkillName, metric_name: str) -> str | None:
+    """Return only units guaranteed by a known provider field contract.
+
+    This deliberately does not infer units from numeric magnitude. Dynamic
+    finance amount fields from the official finance skill are base-currency
+    values, while rate fields are percentage points.
+    """
+
+    if skill_name in {SkillName.FINANCE, SkillName.STOCK_SELECTOR} and (
+        metric_name in _FINANCE_BASE_CURRENCY_METRICS
+    ):
+        return "元"
+    if skill_name == SkillName.INDEX and metric_name in {"市盈率", "市净率"}:
+        return "倍"
+    compact = metric_name.casefold()
+    if skill_name in {
+        SkillName.FINANCE,
+        SkillName.INDEX,
+        SkillName.FUTURES,
+        SkillName.STOCK_SELECTOR,
+    } and (
+        "率" in metric_name
+        or "同比" in metric_name
+        or "环比" in metric_name
+        or "涨跌幅" in metric_name
+        or "占比" in metric_name
+        or "分位点" in metric_name
+        or compact == "roe"
+    ):
+        return "%"
+    return None
+
+
+def _provider_contract_value(
+    skill_name: SkillName,
+    metric_name: str,
+    value: float,
+) -> float:
+    """Apply value scaling only when confirmed by a provider field contract."""
+
+    if skill_name == SkillName.INDEX and "分位点" in metric_name and 0.0 <= value <= 1.0:
+        return value * 100.0
+    return value
 
 
 def _normalize_numeric_unit(value: float, unit: str | None) -> tuple[float, str]:
@@ -601,7 +684,12 @@ def _financial_posture(skill: SkillName) -> tuple[AuditStatus, RestatementStatus
 
 
 def _grade(skill: SkillName) -> EvidenceGrade:
-    if skill in {SkillName.FINANCE, SkillName.MACRO, SkillName.ANNOUNCEMENT, SkillName.EVENT}:
+    if skill in {
+        SkillName.FINANCE,
+        SkillName.MACRO,
+        SkillName.ANNOUNCEMENT,
+        SkillName.EVENT,
+    }:
         return EvidenceGrade.B
     if skill in {
         SkillName.INDUSTRY,

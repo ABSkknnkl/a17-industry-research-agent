@@ -86,6 +86,77 @@ def test_calculates_financial_p0_metrics_with_auditable_inputs() -> None:
     }
 
 
+def test_calculates_requested_expense_and_overseas_revenue_ratios() -> None:
+    period = date(2025, 12, 31)
+    evidence = [
+        _evidence("E-REV", "营业收入", 200, period=period),
+        _evidence("E-RD", "研发费用", 16, period=period),
+        _evidence("E-SELL", "销售费用", 10, period=period),
+        _evidence("E-MGMT", "管理费用", 8, period=period),
+        _evidence("E-OVERSEAS", "境外营业收入", 70, period=period),
+    ]
+
+    metrics, _ = calculate_p0_metrics(evidence)
+    by_type = {item.calculation_type: item for item in metrics}
+
+    assert by_type["r_and_d_expense_ratio"].value == pytest.approx(8)
+    assert by_type["selling_expense_ratio"].value == pytest.approx(5)
+    assert by_type["management_expense_ratio"].value == pytest.approx(4)
+    assert by_type["overseas_revenue_share"].value == pytest.approx(35)
+    assert by_type["overseas_revenue_share"].formula == "境外营业收入÷营业收入×100%"
+    assert set(by_type["overseas_revenue_share"].evidence_ids) == {"E-REV", "E-OVERSEAS"}
+
+
+def test_calculates_cash_quality_and_balance_sheet_reconciliation() -> None:
+    prior = date(2024, 12, 31)
+    current = date(2025, 12, 31)
+    evidence = [
+        _evidence("E-CASH24", "期末现金及现金等价物余额", 20, period=prior),
+        _evidence("E-ASSET24", "总资产", 80, period=prior),
+        _evidence("E-NP25", "净利润", 12, period=current),
+        _evidence("E-CFO25", "经营活动现金流量净额", 15, period=current),
+        _evidence("E-CFI25", "投资活动现金流量净额", -4, period=current),
+        _evidence("E-CFF25", "筹资活动现金流量净额", 1, period=current),
+        _evidence("E-CASH25", "期末现金及现金等价物余额", 32, period=current),
+        _evidence("E-ASSET25", "总资产", 100, period=current),
+        _evidence("E-DEBT25", "负债合计", 45, period=current),
+    ]
+
+    metrics, issues = calculate_p0_metrics(evidence)
+    current_metrics = {
+        item.calculation_type: item for item in metrics if item.period_end == current
+    }
+
+    assert issues == []
+    assert current_metrics["cash_profit_ratio"].value == pytest.approx(125)
+    assert current_metrics["accrual_ratio"].value == pytest.approx(-3 / 90 * 100)
+    assert current_metrics["asset_liability_ratio"].value == pytest.approx(45)
+    assert current_metrics["cash_reconciliation_difference"].value == pytest.approx(0)
+    assert set(current_metrics["cash_reconciliation_difference"].evidence_ids) == {
+        "E-CASH24",
+        "E-CFO25",
+        "E-CFI25",
+        "E-CFF25",
+        "E-CASH25",
+    }
+
+
+def test_cash_reconciliation_does_not_substitute_balance_sheet_monetary_funds() -> None:
+    prior = date(2024, 12, 31)
+    current = date(2025, 12, 31)
+    evidence = [
+        _evidence("E-CASH24", "货币资金", 20, period=prior),
+        _evidence("E-CFO25", "经营活动现金流量净额", 15, period=current),
+        _evidence("E-CFI25", "投资活动现金流量净额", -4, period=current),
+        _evidence("E-CFF25", "筹资活动现金流量净额", 1, period=current),
+        _evidence("E-CASH25", "货币资金", 32, period=current),
+    ]
+
+    metrics, _ = calculate_p0_metrics(evidence)
+
+    assert not any(item.calculation_type == "cash_reconciliation_difference" for item in metrics)
+
+
 def test_calculates_cr3_and_cr5_only_from_same_period_metric_and_market() -> None:
     period = date(2025, 12, 31)
     shares = [35, 25, 15, 10, 5, 3]
@@ -129,9 +200,7 @@ def test_insufficient_market_share_sample_is_reported_for_cr5() -> None:
 
     assert any(item.calculation_type == "cr3" for item in metrics)
     assert not any(item.calculation_type == "cr5" for item in metrics)
-    assert any(
-        item.calculation_type == "cr5" and "仅取得3家" in item.reason for item in issues
-    )
+    assert any(item.calculation_type == "cr5" and "仅取得3家" in item.reason for item in issues)
 
 
 def test_calculates_operating_ratios_but_excludes_planned_capacity() -> None:

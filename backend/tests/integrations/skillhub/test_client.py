@@ -16,6 +16,34 @@ def test_catalog_registers_all_p0_and_p1_tools() -> None:
     assert set(SKILL_CATALOG) == P0_SKILLS | P1_SKILLS
 
 
+def test_catalog_registers_verified_market_data_skills() -> None:
+    from app.integrations.skillhub.catalog import SKILL_CATALOG
+
+    expected = {
+        "hithink_index_query": "hithink-index-query",
+        "hithink_futures_query": "hithink-futures-query",
+        "hithink_stock_selector": "hithink-stock-selector",
+    }
+
+    for logical_name, provider_id in expected.items():
+        skill = next(item for item in SkillName if item.value == logical_name)
+        spec = SKILL_CATALOG[skill]
+        assert spec.skill_id == provider_id
+        assert spec.endpoint == "query2data"
+        assert spec.tier.value == "p1"
+
+
+def test_catalog_registers_basic_info_as_conditional_p1_skill() -> None:
+    from app.integrations.skillhub.catalog import SKILL_CATALOG
+
+    skill = next(item for item in SkillName if item.value == "hithink_basicinfo_query")
+    spec = SKILL_CATALOG[skill]
+
+    assert spec.skill_id == "hithink-basicinfo-query"
+    assert spec.endpoint == "query2data"
+    assert spec.tier.value == "p1"
+
+
 @pytest.mark.asyncio
 async def test_live_client_uses_skillhub_headers_and_parses_rows() -> None:
     captured: dict[str, object] = {}

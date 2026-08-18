@@ -19,6 +19,8 @@ def isolate_test_security_state(
     # Never spend a developer's real model quota during the deterministic test suite.
     monkeypatch.setattr(settings, "ENVIRONMENT", "test")
     monkeypatch.setattr(settings, "LLM_USE_MOCK", True)
+    monkeypatch.setattr(settings, "INDUSTRY_CHAIN_IMAGE_ENABLED", False)
+    monkeypatch.setattr(settings, "IMAGE_USE_MOCK", True)
     # A developer may keep live SkillHub credentials in backend/.env.  The
     # deterministic suite must never spend that external quota or depend on
     # network availability; live-provider acceptance tests are run explicitly.

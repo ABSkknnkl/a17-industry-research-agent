@@ -419,6 +419,12 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
         input_data["accepted_risk_codes"] = sorted(accepted_codes)
         input_data["risk_acknowledged_at"] = datetime.now(UTC).isoformat()
         input_data["risk_acknowledged_by"] = state.get("owner_id", "")
+        if current_stage == StageName.DATA_FETCH:
+            input_data["accepted_missing_requirement_ids"] = [
+                str(item["requirement_id"])
+                for item in current_result.data.get("missing_requirements", [])
+                if isinstance(item, dict) and item.get("requirement_id")
+            ]
 
     if action == "customize":
         input_data["selected_chart_ids"] = selected_chart_ids

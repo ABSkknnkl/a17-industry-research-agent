@@ -126,6 +126,11 @@ class IwencaiSkillClient:
             async with httpx.AsyncClient(
                 timeout=self._timeout_seconds,
                 transport=self._transport,
+                # Local desktop proxy chains have been observed to terminate
+                # TLS handshakes to openapi.iwencai.com. SkillHub is an HTTPS
+                # origin and should be contacted directly unless a transport
+                # is explicitly injected by the caller.
+                trust_env=False,
             ) as client:
                 response = await client.post(url, headers=headers, json=body)
         except (httpx.TimeoutException, httpx.NetworkError) as exc:

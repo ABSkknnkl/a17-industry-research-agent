@@ -22,6 +22,10 @@ CalculationType = Literal[
     "cr5",
     "gross_margin",
     "net_margin",
+    "r_and_d_expense_ratio",
+    "selling_expense_ratio",
+    "management_expense_ratio",
+    "overseas_revenue_share",
     "revenue_yoy",
     "net_profit_yoy",
     "dupont_roe",
@@ -32,6 +36,10 @@ CalculationType = Literal[
     "receivables_days",
     "capacity_utilization",
     "production_sales_ratio",
+    "cash_profit_ratio",
+    "accrual_ratio",
+    "asset_liability_ratio",
+    "cash_reconciliation_difference",
 ]
 
 
@@ -132,6 +140,16 @@ class CollaborationRequest(BaseModel):
     question: str
     reason: str
     affected_dimensions: list[str] = Field(default_factory=list)
+    severity: Literal["info", "warning", "blocking"] = "warning"
+    blocking: bool = False
+
+    @model_validator(mode="after")
+    def keep_blocking_semantics_consistent(self) -> "CollaborationRequest":
+        if self.severity == "blocking":
+            self.blocking = True
+        elif self.blocking:
+            self.severity = "blocking"
+        return self
 
 
 class ChartCandidate(BaseModel):

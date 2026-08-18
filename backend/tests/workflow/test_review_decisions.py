@@ -151,6 +151,52 @@ def test_missing_required_data_cannot_be_approved_without_reinput(monkeypatch) -
         graph_module._review_gate(state)
 
 
+def test_partial_requested_data_can_continue_after_explicit_acknowledgement(monkeypatch) -> None:
+    run_id = "run-partial-requested-data"
+    package = _package(
+        run_id=run_id,
+        stage=StageName.DATA_FETCH,
+        acknowledgement_required=True,
+    )
+    # Use the Agent 1 risk code instead of the generic test fixture code.
+    package["risk_notices"][0]["risk_code"] = "REQUESTED-DATA-PARTIAL"
+    package["acknowledgement_required_codes"] = ["REQUESTED-DATA-PARTIAL"]
+    package["risk_snapshot_sha256"] = compute_risk_snapshot_sha256(
+        risk_notices=package["risk_notices"],
+        blocking_risk_codes=[],
+        acknowledgement_required_codes=["REQUESTED-DATA-PARTIAL"],
+    )
+    state = _state(
+        StageName.DATA_FETCH,
+        {
+            "blocking_issues": [],
+            "advisory_issues": ["requested_data_partial"],
+            "missing_requirements": [{"requirement_id": "REQ-02"}],
+            "decision_package": package,
+        },
+        run_id=run_id,
+    )
+    state["stage_results"][StageName.DATA_FETCH.value]["error"] = "requested_data_partial"
+    monkeypatch.setattr(
+        graph_module,
+        "interrupt",
+        lambda _: {
+            "action": "accept_with_risks",
+            "expected_revision": 1,
+            "decision_id": package["decision_id"],
+            "risk_snapshot_sha256": package["risk_snapshot_sha256"],
+            "accepted_risk_codes": ["REQUESTED-DATA-PARTIAL"],
+            "release_mode": "draft_with_warnings",
+        },
+    )
+
+    result = graph_module._review_gate(state)
+
+    assert result["status"] == StageStatus.APPROVED
+    assert result["input_data"]["accepted_risk_codes"] == ["REQUESTED-DATA-PARTIAL"]
+    assert result["input_data"]["accepted_missing_requirement_ids"] == ["REQ-02"]
+
+
 def test_tampered_review_snapshot_is_rejected(monkeypatch) -> None:
     run_id = "run-tampered-snapshot"
     package = _package(

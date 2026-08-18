@@ -127,6 +127,21 @@ class ChainNode(BaseModel):
     node_id: str = Field(min_length=1, max_length=100)
     label: str = Field(min_length=1, max_length=200)
     stage: Literal["upstream", "midstream", "downstream", "support"]
+    group: str | None = Field(default=None, max_length=100)
+    node_kind: Literal[
+        "material",
+        "equipment",
+        "component",
+        "manufacturing",
+        "product",
+        "application",
+        "software",
+        "service",
+        "other",
+    ] = "other"
+    companies: list[str] = Field(default_factory=list, max_length=20)
+    logo_names: list[str] = Field(default_factory=list, max_length=20)
+    is_core: bool = False
     evidence_ids: list[str] = Field(min_length=1)
 
 
@@ -138,6 +153,14 @@ class ChainEdge(BaseModel):
     source: str
     target: str
     label: str | None = None
+    flow_type: Literal[
+        "supply",
+        "value",
+        "application",
+        "support",
+        "recycle",
+        "software",
+    ] = "supply"
     evidence_ids: list[str] = Field(min_length=1)
 
 
@@ -180,6 +203,9 @@ class ChartDataset(BaseModel):
     points: list[ChartPoint] = Field(default_factory=list)
     nodes: list[ChainNode] = Field(default_factory=list)
     edges: list[ChainEdge] = Field(default_factory=list)
+    chain_template_hint: Literal["product_decomposition", "horizontal_flow"] | None = None
+    core_product_name: str | None = Field(default=None, min_length=1, max_length=100)
+    chart_subtitle: str | None = Field(default=None, min_length=1, max_length=300)
     evidence_ids: list[str] = Field(min_length=1)
 
 
@@ -220,7 +246,7 @@ class ChartReference(BaseModel):
 
 
 class ChartSpec(BaseModel):
-    """Full ECharts option specification for frontend rendering."""
+    """Full chart specification for deterministic or generated rendering."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -231,12 +257,38 @@ class ChartSpec(BaseModel):
     resolution_reason: str | None = Field(default=None, min_length=1, max_length=1_000)
     variant: ChartVariant
     option: dict[str, Any]
+    render_mode: Literal["echarts", "generated_image"] = "echarts"
+    image_uri: str | None = Field(default=None, min_length=1, max_length=1_000)
+    image_mime_type: Literal["image/png", "image/webp"] | None = None
+    generation_prompt: str | None = Field(default=None, min_length=1, max_length=30_000)
+    generation_prompt_model: str | None = Field(default=None, min_length=1, max_length=200)
+    generation_image_model: str | None = Field(default=None, min_length=1, max_length=200)
+    chain_template: Literal["product_decomposition", "horizontal_flow"] | None = None
+    chain_graph: dict[str, Any] | None = None
     evidence_ids: list[str] = Field(min_length=1)
     insight_goal: str | None = Field(default=None, min_length=1, max_length=500)
     quality_issue_ids: list[str] = Field(default_factory=list, max_length=100)
     footnotes: list[str] = Field(default_factory=list, max_length=20)
     data_fingerprint: str = Field(pattern=r"^[a-f0-9]{64}$")
     dedupe_key: str = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_generated_image_fields(self) -> "ChartSpec":
+        if self.render_mode == "generated_image":
+            required = (
+                self.image_uri,
+                self.image_mime_type,
+                self.generation_prompt,
+                self.generation_prompt_model,
+                self.generation_image_model,
+                self.chain_template,
+                self.chain_graph,
+            )
+            if any(value is None for value in required):
+                raise ValueError("generated image charts require generation metadata")
+            if self.chart_type != "industry_chain":
+                raise ValueError("generated image rendering is limited to industry_chain charts")
+        return self
 
 
 class SuppressedChart(BaseModel):

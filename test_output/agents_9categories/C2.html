@@ -1,0 +1,85 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="UTF-8">
+<title>C2 智能体1-2-3链路</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+body{font-family:-apple-system,"PingFang SC",sans-serif;margin:24px;background:#f0f2f5;color:#1f2937}
+h1{color:#1e3a5f} h2{color:#2563eb;margin-top:28px}
+.summary{background:#fff;padding:16px;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:16px}
+.summary p{margin:4px 0}
+.req,.supp{background:#fff7ed;color:#9a3412;padding:8px 12px;border-radius:8px;margin:6px 0;font-size:13px}
+.req.ok,.supp.ok{background:#ecfdf5;color:#065f46}
+.req-reason{color:#b45309;font-size:12px;margin-top:4px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(520px,1fr));gap:20px;margin-top:16px}
+.card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card h3{margin:0 0 6px;font-size:15px}
+.tag{display:inline-block;background:#e0e7ff;color:#3730a3;padding:2px 10px;border-radius:12px;font-size:12px}
+.ids{color:#9ca3af;font-size:11px;margin-top:4px}
+.chart{width:100%;height:360px}
+</style></head><body>
+<h1>C2：行业景气度 — 智能体1→2→3 链路测试</h1>
+<div class="summary">
+  <p><b>话术:</b> 动力电池行业近5年市场规模、增速、竞争格局，预判未来两年行业景气变化...</p>
+  <p><b>话题:</b> 动力电池 | <b>指标:</b> 市场规模, 装机量, 行业增速, 市场份额</p>
+  <p><b>智能体1:</b> waiting_review(证据118) | <b>智能体2:</b> waiting_review(候选0)</p>
+  <p><b>质量门:</b> True | <b>生成图表:</b> 8 | <b>抑制:</b> 0</p>
+</div>
+<h2>拦截请求（collaboration_requests）</h2><div class="req"><b>EVIDENCE-METADATA</b> 请补充、复核或确认以下证据元数据。<div class="req-reason">E-93eacc893f2f4754公告日/可得日晚于研究时点，存在前视偏差；E-b2fe8a480b452279公告日/可得日晚于研究时点，存在前视偏差；E-5b89e61c113fbe52公告日/可得日晚于研究时点，存在前视偏差；E-0879baf9c3ebadd6公告日/可得日晚于研究时点，存在前视偏差；E-d860fd29f9da6a65公告日/可得日晚于研究时点，存在前视偏差；E-3512acee6e2fa129公告日/可得日晚于研究时点，存在前视偏差；E-76fa6faa4448c702公告日/可得日晚于研究时点，存在前视偏差；E-b8ce4f31f135d5ad公告日/可得日晚于研究时点，存在前视偏差；E-4c7e5d6b82aede3f公告日/可得日晚于研究时点，存在前视偏差；E-76a05a900ffe881c公告日/可得日晚于研究时点，存在前视偏差</div></div>
+<h2>抑制/降级</h2><div class='supp ok'>无抑制图表</div>
+<h2>生成的图表（8张）</h2><div class="grid">
+        <div class="card">
+          <h3>动力电池销量:当月同比趋势</h3>
+          <div class="tag">line / line</div>
+          <div class="ids">CHART-E81EF1A604A7</div>
+          <div id="CHART_E81EF1A604A7" class="chart"></div>
+          <script>var c_CHART_E81EF1A604A7=echarts.init(document.getElementById('CHART_E81EF1A604A7'));c_CHART_E81EF1A604A7.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "动力电池销量:当月同比趋势", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "boundaryGap": false, "data": ["2025-08-31", "2025-09-30", "2025-10-31", "2025-11-30", "2025-12-31", "2026-01-31", "2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31", "2026-06-30"]}, "yAxis": {"type": "value", "name": "CNY 未提供", "scale": true}, "series": [{"name": "动力电池销量:当月同比", "type": "line", "connectNulls": false, "showSymbol": true, "data": [44.4, 44.4, 56.6, 52.7, 49.2, 63.2, 11.4, 31.1, 25.8, 45.2, 41.8]}], "evidenceMap": {"动力电池销量:当月同比": {"2026-06-30": "E-4538b97ae4177c8e", "2026-05-31": "E-04ca9b8595dfb813", "2026-04-30": "E-d0e1da6d706c7554", "2026-03-31": "E-f5b72dbc62c5195f", "2026-02-28": "E-b7342a431c0267d8", "2026-01-31": "E-09c4025b83dcae84", "2025-12-31": "E-77b9aa6b904a05b1", "2025-11-30": "E-eb65dd980c3ce823", "2025-10-31": "E-0153f1e9e74283b2", "2025-09-30": "E-57b125499a82c17b", "2025-08-31": "E-1d0bd2b4d096b51e"}}});</script>
+        </div>
+        <div class="card">
+          <h3>业务成本对比</h3>
+          <div class="tag">bar / vertical</div>
+          <div class="ids">CHART-BFAABF905318</div>
+          <div id="CHART_BFAABF905318" class="chart"></div>
+          <script>var c_CHART_BFAABF905318=echarts.init(document.getElementById('CHART_BFAABF905318'));c_CHART_BFAABF905318.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "业务成本对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["富奥股份"]}, "yAxis": {"type": "value", "name": "CNY 未提供"}, "series": [{"name": "富奥股份", "type": "bar", "data": [{"value": 16203824406.1, "evidence_id": "E-149ed4dcb1a66367"}]}]});</script>
+        </div>
+        <div class="card">
+          <h3>收入占比对比</h3>
+          <div class="tag">bar / vertical</div>
+          <div class="ids">CHART-B41FFD65E725</div>
+          <div id="CHART_B41FFD65E725" class="chart"></div>
+          <script>var c_CHART_B41FFD65E725=echarts.init(document.getElementById('CHART_B41FFD65E725'));c_CHART_B41FFD65E725.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "收入占比对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["富奥股份"]}, "yAxis": {"type": "value", "name": "CNY 未提供"}, "series": [{"name": "富奥股份", "type": "bar", "data": [{"value": 105.79005512317785, "evidence_id": "E-8d4cc71f135fa494"}]}]});</script>
+        </div>
+        <div class="card">
+          <h3>归母净利润对比</h3>
+          <div class="tag">bar / vertical</div>
+          <div class="ids">CHART-0D5C78B13250</div>
+          <div id="CHART_0D5C78B13250" class="chart"></div>
+          <script>var c_CHART_0D5C78B13250=echarts.init(document.getElementById('CHART_0D5C78B13250'));c_CHART_0D5C78B13250.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "归母净利润对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["富奥股份"]}, "yAxis": {"type": "value", "name": "CNY 未提供"}, "series": [{"name": "富奥股份", "type": "bar", "data": [{"value": 702615804.9, "evidence_id": "E-1a1516fef58c769a"}]}]});</script>
+        </div>
+        <div class="card">
+          <h3>市盈率(pe,ttm)对比</h3>
+          <div class="tag">bar / vertical</div>
+          <div class="ids">CHART-D4E0B63AE61F</div>
+          <div id="CHART_D4E0B63AE61F" class="chart"></div>
+          <script>var c_CHART_D4E0B63AE61F=echarts.init(document.getElementById('CHART_D4E0B63AE61F'));c_CHART_D4E0B63AE61F.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "市盈率(pe,ttm)对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["动力电池"]}, "yAxis": {"type": "value", "name": "CNY pe,ttm"}, "series": [{"name": "动力电池", "type": "bar", "data": [{"value": 25.79872, "evidence_id": "E-2ad456da156b38bd"}]}]});</script>
+        </div>
+        <div class="card">
+          <h3>营业收入趋势</h3>
+          <div class="tag">line / line</div>
+          <div class="ids">CHART-32FAAE7D60CE</div>
+          <div id="CHART_32FAAE7D60CE" class="chart"></div>
+          <script>var c_CHART_32FAAE7D60CE=echarts.init(document.getElementById('CHART_32FAAE7D60CE'));c_CHART_32FAAE7D60CE.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "营业收入趋势", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "boundaryGap": false, "data": ["2025-12-31", "2026-03-31"]}, "yAxis": {"type": "value", "name": "CNY 未提供", "scale": true}, "series": [{"name": "富奥股份", "type": "line", "connectNulls": false, "showSymbol": true, "data": [17410397362.62, 3751777940.11]}], "evidenceMap": {"富奥股份": {"2026-03-31": "E-bef2771cb24dc78b", "2025-12-31": "E-035c039299100ec5"}}});</script>
+        </div>
+        <div class="card">
+          <h3>营业收入同比增长率对比</h3>
+          <div class="tag">bar / vertical</div>
+          <div class="ids">CHART-778AAD7B3BAE</div>
+          <div id="CHART_778AAD7B3BAE" class="chart"></div>
+          <script>var c_CHART_778AAD7B3BAE=echarts.init(document.getElementById('CHART_778AAD7B3BAE'));c_CHART_778AAD7B3BAE.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "营业收入同比增长率对比", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}}, "xAxis": {"type": "category", "data": ["富奥股份"]}, "yAxis": {"type": "value", "name": "CNY 未提供"}, "series": [{"name": "富奥股份", "type": "bar", "data": [{"value": 5.7201, "evidence_id": "E-769f5274d6cb36f5"}]}]});</script>
+        </div>
+        <div class="card">
+          <h3>动力电池装车量:合计:当月值趋势</h3>
+          <div class="tag">line / line</div>
+          <div class="ids">CHART-51CDF9B7E253</div>
+          <div id="CHART_51CDF9B7E253" class="chart"></div>
+          <script>var c_CHART_51CDF9B7E253=echarts.init(document.getElementById('CHART_51CDF9B7E253'));c_CHART_51CDF9B7E253.setOption({"animation": false, "aria": {"enabled": true}, "color": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"], "title": {"text": "动力电池装车量:合计:当月值趋势", "left": "center"}, "legend": {"type": "scroll", "top": 32}, "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": true}, "tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "boundaryGap": false, "data": ["2025-07-31", "2025-08-31", "2025-09-30", "2025-10-31", "2025-11-30", "2025-12-31", "2026-01-31", "2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31", "2026-06-30"]}, "yAxis": {"type": "value", "name": "CNY 未提供", "scale": true}, "series": [{"name": "动力电池装车量:合计:当月值", "type": "line", "connectNulls": false, "showSymbol": true, "data": [55900.0, 62500.0, 76000.0, 84100.0, 93500.0, 98100.0, 42000.0, 26300.0, 56500.0, 62400.0, 71900.0, 76500.0]}], "evidenceMap": {"动力电池装车量:合计:当月值": {"2026-06-30": "E-bc4960583bba1f9e", "2026-05-31": "E-d22b9d942a50012e", "2026-04-30": "E-c83c02079f3db285", "2026-03-31": "E-9796d35c3d5f1792", "2026-02-28": "E-794a0d000ba81a1a", "2026-01-31": "E-f0cca0291ba5999f", "2025-12-31": "E-ce5c62024cdcc4d3", "2025-11-30": "E-138b9c4f7c774e65", "2025-10-31": "E-431962208125fcdd", "2025-09-30": "E-34450d2875142e1a", "2025-08-31": "E-ae9a00accfe8522d", "2025-07-31": "E-baffe4900ee60a31"}}});</script>
+        </div></div>
+</body></html>

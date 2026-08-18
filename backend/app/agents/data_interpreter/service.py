@@ -1,46 +1,74 @@
 """Public StageAgent implementation for financial data interpretation."""
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import ValidationError
 
 from app.agents.data_interpreter.calculations import calculate_p0_metrics
-from app.agents.data_interpreter.graph import AnalysisGraphState, build_data_interpreter_graph
+from app.agents.data_interpreter.graph import (
+    AnalysisGraphState,
+    build_data_interpreter_graph,
+)
 from app.agents.data_interpreter.prompt_loader import load_global_equity_analysis_prompt
 from app.agents.data_interpreter.skill_loader import load_supporting_skills
 from app.agents.data_interpreter.skill_router import SupportingSkillRouter
 from app.integrations.llm.openai_compatible import StructuredOutputError
 from app.integrations.llm.protocol import AnalysisModel
-from app.schemas.analysis import AnalysisRequest, AnalysisResult, CalculationIssue
+from app.schemas.analysis import (
+    AnalysisRequest,
+    AnalysisResult,
+    CalculationIssue,
+    DataQualityIssue,
+)
+from app.schemas.evidence import EvidenceItem
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
 
 
-def _evidence_preflight_issues(request: AnalysisRequest) -> list[str]:
-    """Return only metadata defects that make an item unsafe to send to Agent 2.
+def _partition_evidence(
+    request: AnalysisRequest,
+) -> tuple[list[EvidenceItem], list[DataQualityIssue]]:
+    """Separate admissible evidence from item-level metadata failures.
 
     Missing period/unit are valid for qualitative news, reports and policy
-    evidence. They remain visible in the evidence catalog so the model and
-    quality cards can disclose the limitation, but they must not block an
-    otherwise traceable mixed evidence package.
+    evidence. Missing traceability, future availability and E-grade inputs are
+    excluded from model input, but one bad item must not block an otherwise
+    usable mixed evidence package.
     """
 
-    issues: list[str] = []
+    eligible: list[EvidenceItem] = []
+    issues: list[DataQualityIssue] = []
     for item in request.evidence_items:
-        prefix = item.evidence_id
+        reasons: list[str] = []
+        issue_type: Literal["missing", "stale", "not_comparable"] = "not_comparable"
         if item.available_at is None:
-            issues.append(f"{prefix}缺少公告日/可得日")
+            reasons.append(f"{item.evidence_id}缺少公告日/可得日")
         elif item.available_at > request.research_as_of:
-            issues.append(f"{prefix}公告日/可得日晚于研究时点，存在前视偏差")
+            reasons.append(f"{item.evidence_id}公告日/可得日晚于研究时点，存在前视偏差")
+            issue_type = "stale"
         if item.source_locator is None:
-            issues.append(f"{prefix}缺少证据定位")
-        # SkillHub does not guarantee that every response carries audit,
-        # restatement, or corporate-action metadata. Unknown values stay
-        # visible to the model and quality cards, but are advisory rather than
-        # a reason to discard otherwise traceable evidence at this boundary.
+            reasons.append(f"{item.evidence_id}缺少证据定位")
+            issue_type = "missing"
         if item.grade.value == "E":
-            issues.append(f"{prefix}为E级待核验输入，不得直接支持核心结论")
-    return issues
+            reasons.append(f"{item.evidence_id}为E级待核验输入，不得直接支持核心结论")
+        if not reasons:
+            eligible.append(item)
+            continue
+        issues.append(
+            DataQualityIssue(
+                issue_id=f"DQ-PREFLIGHT-{item.evidence_id[2:]}",
+                issue_type=issue_type,
+                metric=item.metric_name,
+                description="；".join(reasons),
+                impact_level="high" if issue_type in {"missing", "stale"} else "medium",
+                evidence_ids=[item.evidence_id],
+                suggested_handling=(
+                    "该证据已从本轮模型输入和确定性计算中隔离；"
+                    "补充元数据或调整研究时点后可重新纳入。"
+                ),
+            )
+        )
+    return eligible, issues
 
 
 _CALCULATION_REQUEST_TERMS: dict[str, tuple[str, ...]] = {
@@ -48,6 +76,10 @@ _CALCULATION_REQUEST_TERMS: dict[str, tuple[str, ...]] = {
     "cr5": ("cr5", "集中度"),
     "gross_margin": ("毛利率",),
     "net_margin": ("净利率",),
+    "r_and_d_expense_ratio": ("研发费用率", "研发投入占比"),
+    "selling_expense_ratio": ("销售费用率",),
+    "management_expense_ratio": ("管理费用率",),
+    "overseas_revenue_share": ("海外收入占比", "境外营收占比"),
     "revenue_yoy": ("营收同比", "营业收入同比"),
     "net_profit_yoy": ("净利润同比",),
     "dupont_roe": ("杜邦", "roe拆解"),
@@ -65,12 +97,16 @@ def _requested_calculation_gaps(
     request: AnalysisRequest,
     issues: list[CalculationIssue],
 ) -> list[CalculationIssue]:
-    request_text = "".join(
-        [
-            *request.focus_questions,
-            *request.research_brief.included_topics,
-        ]
-    ).replace(" ", "").casefold()
+    request_text = (
+        "".join(
+            [
+                *request.focus_questions,
+                *request.research_brief.included_topics,
+            ]
+        )
+        .replace(" ", "")
+        .casefold()
+    )
     gaps: list[CalculationIssue] = []
     for issue in issues:
         terms = _CALCULATION_REQUEST_TERMS.get(issue.calculation_type, ())
@@ -94,6 +130,26 @@ class DataInterpreterAgent:
         source_data = context.input_data
         fetch_result = context.previous_results.get(StageName.DATA_FETCH)
         if fetch_result is not None:
+            if fetch_result.status not in {StageStatus.COMPLETED, StageStatus.APPROVED}:
+                return StageResult(
+                    stage=self.stage,
+                    status=StageStatus.WAITING_REVIEW,
+                    revision=context.revision,
+                    data={
+                        "collaboration_requests": [
+                            {
+                                "request_id": "DATA-FETCH-NOT-COMPLETED",
+                                "question": "请先完成或审核 Agent 1 的数据获取结果。",
+                                "reason": (
+                                    f"Agent 1 当前状态为 {fetch_result.status.value}，"
+                                    "Agent 2 不得越级使用未完成的数据包。"
+                                ),
+                                "affected_dimensions": ["all"],
+                            }
+                        ]
+                    },
+                    error="data_fetch_not_completed",
+                )
             # Agent 1 owns the normalized evidence package. The original API
             # request may contain an empty evidence_items list, so it must not
             # overwrite newly acquired evidence. Agent 2 review edits win only
@@ -144,8 +200,8 @@ class DataInterpreterAgent:
                 error="analysis_input_invalid",
             )
 
-        preflight_issues = _evidence_preflight_issues(request)
-        if preflight_issues:
+        eligible_evidence, preflight_issues = _partition_evidence(request)
+        if not eligible_evidence:
             return StageResult(
                 stage=self.stage,
                 status=StageStatus.WAITING_REVIEW,
@@ -155,7 +211,9 @@ class DataInterpreterAgent:
                         {
                             "request_id": "EVIDENCE-METADATA",
                             "question": "请补充、复核或确认以下证据元数据。",
-                            "reason": "；".join(preflight_issues),
+                            "reason": "；".join(
+                                issue.description for issue in preflight_issues
+                            ),
                             "affected_dimensions": ["all"],
                         }
                     ]
@@ -163,9 +221,12 @@ class DataInterpreterAgent:
                 evidence_sources=[item.evidence_id for item in request.evidence_items],
                 error="evidence_metadata_incomplete",
             )
+        request = request.model_copy(update={"evidence_items": eligible_evidence})
 
         _, calculation_issues = calculate_p0_metrics(request.evidence_items)
-        requested_calculation_gaps = _requested_calculation_gaps(request, calculation_issues)
+        requested_calculation_gaps = _requested_calculation_gaps(
+            request, calculation_issues
+        )
         if requested_calculation_gaps:
             return StageResult(
                 stage=self.stage,
@@ -174,7 +235,8 @@ class DataInterpreterAgent:
                 data={
                     "blocking_issues": ["requested_calculation_data_unavailable"],
                     "calculation_issues": [
-                        item.model_dump(mode="json") for item in requested_calculation_gaps
+                        item.model_dump(mode="json")
+                        for item in requested_calculation_gaps
                     ],
                     "collaboration_requests": [
                         {
@@ -215,6 +277,15 @@ class DataInterpreterAgent:
         try:
             final_state = await graph.ainvoke(graph_state)
             analysis = AnalysisResult.model_validate(final_state["result"])
+            if preflight_issues:
+                analysis = analysis.model_copy(
+                    update={
+                        "data_quality_issues": [
+                            *analysis.data_quality_issues,
+                            *preflight_issues,
+                        ][:100]
+                    }
+                )
         except Exception as exc:
             error_data: dict[str, Any] = {
                 "model_name": self._model.model_name,
@@ -237,9 +308,13 @@ class DataInterpreterAgent:
                 evidence_sources=[item.evidence_id for item in request.evidence_items],
                 error="analysis_generation_failed",
             )
+        has_blocking_request = any(
+            item.blocking or item.severity == "blocking"
+            for item in analysis.collaboration_requests
+        )
         status = (
             StageStatus.COMPLETED
-            if analysis.quality.passed and not analysis.collaboration_requests
+            if analysis.quality.passed and not has_blocking_request
             else StageStatus.WAITING_REVIEW
         )
         return StageResult(

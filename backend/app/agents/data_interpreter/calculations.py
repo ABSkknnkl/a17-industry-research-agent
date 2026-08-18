@@ -33,6 +33,9 @@ _DERIVED_METRIC_TOKENS = (
     "周转天数",
     "产销率",
     "产能利用率",
+    "费用率",
+    "收入占比",
+    "营收占比",
 )
 _UNKNOWN_UNITS = {"", "未提供", "不适用", "unknown", "n/a", "na", "文本"}
 
@@ -97,6 +100,41 @@ def _calculate_period_metrics(
     revenue = current.get("revenue")
     cost = current.get("cost")
     net_profit = current.get("parent_net_profit") or current.get("net_profit")
+    operating_cash_flow = current.get("operating_cash_flow")
+    assets = current.get("total_assets")
+    liabilities = current.get("total_liabilities")
+
+    if net_profit and operating_cash_flow and _compatible_units(net_profit, operating_cash_flow):
+        _ratio_metric(
+            metrics,
+            issues,
+            calculation_type="cash_profit_ratio",
+            metric_name="经营现金流净额/净利润",
+            scope=scope,
+            market=market,
+            period=period,
+            numerator=_value(operating_cash_flow),
+            denominator=_value(net_profit),
+            inputs=[operating_cash_flow, net_profit],
+            formula="经营活动现金流量净额÷净利润×100%",
+            note="只使用同一实体、报告期、币种和会计口径的已披露数值。",
+        )
+
+    if assets and liabilities and _compatible_units(assets, liabilities):
+        _ratio_metric(
+            metrics,
+            issues,
+            calculation_type="asset_liability_ratio",
+            metric_name="资产负债率",
+            scope=scope,
+            market=market,
+            period=period,
+            numerator=_value(liabilities),
+            denominator=_value(assets),
+            inputs=[liabilities, assets],
+            formula="负债合计÷资产总计×100%",
+            note="只使用同一资产负债表日、同一合并口径的资产与负债。",
+        )
 
     if revenue is not None and cost is None:
         issues.append(
@@ -177,6 +215,62 @@ def _calculate_period_metrics(
                 [revenue, net_profit],
             )
         )
+
+    ratio_inputs: tuple[
+        tuple[CalculationType, str, EvidenceItem | None, str], ...
+    ] = (
+        (
+            "r_and_d_expense_ratio",
+            "研发费用率",
+            current.get("r_and_d_expense"),
+            "研发费用÷营业收入×100%",
+        ),
+        (
+            "selling_expense_ratio",
+            "销售费用率",
+            current.get("selling_expense"),
+            "销售费用÷营业收入×100%",
+        ),
+        (
+            "management_expense_ratio",
+            "管理费用率",
+            current.get("management_expense"),
+            "管理费用÷营业收入×100%",
+        ),
+        (
+            "overseas_revenue_share",
+            "海外收入占比",
+            current.get("overseas_revenue"),
+            "境外营业收入÷营业收入×100%",
+        ),
+    )
+    for calculation_type, metric_name, numerator, formula in ratio_inputs:
+        if revenue and numerator and _compatible_units(revenue, numerator):
+            _ratio_metric(
+                metrics,
+                issues,
+                calculation_type=calculation_type,
+                metric_name=metric_name,
+                scope=scope,
+                market=market,
+                period=period,
+                numerator=_value(numerator),
+                denominator=_value(revenue),
+                inputs=[numerator, revenue],
+                formula=formula,
+                note="分子与营业收入来自同一实体、市场、会计口径和报告期。",
+            )
+        elif revenue and numerator:
+            issues.append(
+                _issue(
+                    calculation_type,
+                    scope,
+                    period,
+                    f"{metric_name}的分子与营业收入单位不一致，不可计算。",
+                    [],
+                    [numerator, revenue],
+                )
+            )
 
     _growth_metric(
         metrics,
@@ -335,7 +429,6 @@ def _calculate_period_metrics(
                     )
                 )
         return
-    assets = current.get("total_assets")
     prior_assets = previous.get("total_assets")
     equity = current.get("equity")
     prior_equity = previous.get("equity")
@@ -343,6 +436,77 @@ def _calculate_period_metrics(
     prior_inventory = previous.get("inventory")
     receivables = current.get("receivables")
     prior_receivables = previous.get("receivables")
+
+    if (
+        net_profit
+        and operating_cash_flow
+        and assets
+        and prior_assets
+        and _all_compatible_units(net_profit, operating_cash_flow, assets, prior_assets)
+    ):
+        average_assets = (_value(assets) + _value(prior_assets)) / 2
+        _ratio_metric(
+            metrics,
+            issues,
+            calculation_type="accrual_ratio",
+            metric_name="应计项目占平均总资产比例",
+            scope=scope,
+            market=market,
+            period=period,
+            numerator=_value(net_profit) - _value(operating_cash_flow),
+            denominator=average_assets,
+            inputs=[net_profit, operating_cash_flow, prior_assets, assets],
+            formula="（净利润－经营活动现金流量净额）÷平均总资产×100%",
+            note="用于描述利润与经营现金流的偏离，不依据固定阈值直接判定异常。",
+        )
+
+    cash = current.get("cash_balance")
+    prior_cash = previous.get("cash_balance")
+    investing_cash_flow = current.get("investing_cash_flow")
+    financing_cash_flow = current.get("financing_cash_flow")
+    fx_effect = current.get("cash_fx_effect")
+    reconciliation_inputs = [
+        item
+        for item in (
+            prior_cash,
+            operating_cash_flow,
+            investing_cash_flow,
+            financing_cash_flow,
+            fx_effect,
+            cash,
+        )
+        if item is not None
+    ]
+    if (
+        cash
+        and prior_cash
+        and operating_cash_flow
+        and investing_cash_flow
+        and financing_cash_flow
+        and _all_compatible_units(*reconciliation_inputs)
+    ):
+        flow_total = (
+            _value(operating_cash_flow)
+            + _value(investing_cash_flow)
+            + _value(financing_cash_flow)
+            + (_value(fx_effect) if fx_effect else 0)
+        )
+        _append_metric(
+            metrics,
+            calculation_type="cash_reconciliation_difference",
+            metric_name="现金流量表勾稽差额",
+            scope=scope,
+            market=market,
+            period=period,
+            value=(_value(cash) - _value(prior_cash)) - flow_total,
+            unit=cash.unit or "未提供",
+            formula=(
+                "（期末现金及现金等价物－期初现金及现金等价物）－"
+                "（经营＋投资＋筹资现金流量净额＋汇率变动影响）"
+            ),
+            inputs=reconciliation_inputs,
+            note="汇率变动影响仅在证据包提供该项目时纳入；结果用于勾稽复核。",
+        )
 
     asset_turnover: float | None = None
     if revenue and assets and prior_assets and _all_compatible_units(revenue, assets, prior_assets):
@@ -791,6 +955,14 @@ def _canonical_metric(item: EvidenceItem) -> str | None:
     # which they were originally based (for example 存货周转天数 -> 存货).
     if any(token in name for token in _DERIVED_METRIC_TOKENS):
         return None
+    if any(token in name for token in ("境外营业收入", "海外营业收入", "overseasrevenue")):
+        return "overseas_revenue"
+    if any(token in name for token in ("研发费用", "researchanddevelopmentexpense", "rdexpense")):
+        return "r_and_d_expense"
+    if any(token in name for token in ("销售费用", "sellingexpense")):
+        return "selling_expense"
+    if any(token in name for token in ("管理费用", "managementexpense")):
+        return "management_expense"
     if any(token in name for token in ("归母净利润", "归属于母公司", "parentnetincome")):
         return "parent_net_profit"
     if any(token in name for token in ("净利润", "netincome", "netprofit")):
@@ -801,8 +973,58 @@ def _canonical_metric(item: EvidenceItem) -> str | None:
         token in name for token in ("营业成本", "主营业务成本", "costofrevenue", "operatingcost")
     ):
         return "cost"
+    if any(
+        token in name
+        for token in (
+            "经营活动产生的现金流量净额",
+            "经营活动现金流量净额",
+            "经营现金流",
+            "netcashflowfromoperatingactivities",
+            "operatingcashflow",
+        )
+    ):
+        return "operating_cash_flow"
+    if any(
+        token in name
+        for token in (
+            "投资活动产生的现金流量净额",
+            "投资活动现金流量净额",
+            "netcashflowfrominvestingactivities",
+            "investingcashflow",
+        )
+    ):
+        return "investing_cash_flow"
+    if any(
+        token in name
+        for token in (
+            "筹资活动产生的现金流量净额",
+            "筹资活动现金流量净额",
+            "netcashflowfromfinancingactivities",
+            "financingcashflow",
+        )
+    ):
+        return "financing_cash_flow"
+    if any(
+        token in name
+        for token in (
+            "汇率变动对现金及现金等价物的影响",
+            "effectofexchangeratechangesoncash",
+        )
+    ):
+        return "cash_fx_effect"
+    if any(
+        token in name
+        for token in (
+            "期末现金及现金等价物余额",
+            "现金及现金等价物余额",
+            "cashandcashequivalents",
+        )
+    ):
+        return "cash_balance"
     if any(token in name for token in ("总资产", "totalassets")):
         return "total_assets"
+    if any(token in name for token in ("负债合计", "负债总计", "总负债", "totalliabilities")):
+        return "total_liabilities"
     if any(
         token in name
         for token in ("股东权益", "所有者权益", "净资产", "shareholdersequity", "totalequity")
@@ -842,8 +1064,7 @@ def _previous_comparable_period(
             or (
                 current_type is None
                 and period[1] is None
-                and (current_date.month, current_date.day)
-                == (period[0].month, period[0].day)
+                and (current_date.month, current_date.day) == (period[0].month, period[0].day)
             )
         )
     ]

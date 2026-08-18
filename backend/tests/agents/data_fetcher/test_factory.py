@@ -27,6 +27,19 @@ def test_test_environment_can_build_mock_agent_for_automated_tests() -> None:
     assert agent.stage.value == "data_fetch"
 
 
+def test_enabled_semantic_router_requires_live_llm_configuration() -> None:
+    settings = Settings(
+        ENVIRONMENT="test",
+        SKILLHUB_USE_MOCK=True,
+        AGENT1_SEMANTIC_ROUTER_ENABLED=True,
+        LLM_API_KEY=None,
+        LLM_BASE_URL=None,
+    )
+
+    with pytest.raises(RuntimeError, match="agent1_semantic_router_configuration_missing"):
+        create_data_fetcher_agent(settings)
+
+
 @pytest.mark.asyncio
 async def test_application_without_key_never_falls_back_to_mock_data() -> None:
     settings = Settings(

@@ -50,6 +50,22 @@ SKILL_CATALOG: dict[SkillName, SkillSpec] = {
         "hithink-insresearch-query",
         "query2data",
     ),
+    SkillName.INDEX: SkillSpec(SkillName.INDEX, SkillTier.P1, "hithink-index-query", "query2data"),
+    SkillName.FUTURES: SkillSpec(
+        SkillName.FUTURES, SkillTier.P1, "hithink-futures-query", "query2data"
+    ),
+    SkillName.STOCK_SELECTOR: SkillSpec(
+        SkillName.STOCK_SELECTOR,
+        SkillTier.P1,
+        "hithink-stock-selector",
+        "query2data",
+    ),
+    SkillName.BASIC_INFO: SkillSpec(
+        SkillName.BASIC_INFO,
+        SkillTier.P1,
+        "hithink-basicinfo-query",
+        "query2data",
+    ),
 }
 
 

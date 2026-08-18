@@ -5,11 +5,17 @@ from app.agents.data_interpreter.prompt_loader import (
 from app.agents.data_interpreter.skill_loader import (
     BEHAVIORAL_FINANCE_SKILL_SHA256,
     COMPETITIVE_LANDSCAPE_SKILL_SHA256,
+    COMMODITY_ANALYSIS_SKILL_SHA256,
+    FINANCIAL_STATEMENT_SKILL_SHA256,
     INSTITUTIONAL_RESEARCH_SKILL_SHA256,
+    MACRO_CYCLE_SKILL_SHA256,
     RESTRICTED_INDUSTRY_CHAIN_SKILL_SHA256,
     load_behavioral_finance_skill,
     load_competitive_landscape_skill,
+    load_commodity_analysis_skill,
+    load_financial_statement_skill,
     load_institutional_research_skill,
+    load_macro_cycle_skill,
     load_restricted_industry_chain_skill,
     load_supporting_skills,
 )
@@ -60,6 +66,22 @@ def test_institutional_research_skill_is_installed_and_integrity_checked() -> No
     assert "# 问财机构研究与评级 使用指南" in skill.content
 
 
+def test_new_methodology_skills_are_installed_and_integrity_checked() -> None:
+    financial = load_financial_statement_skill()
+    commodity = load_commodity_analysis_skill()
+    macro = load_macro_cycle_skill()
+
+    assert financial.key == "financial_statement"
+    assert financial.sha256 == FINANCIAL_STATEMENT_SKILL_SHA256
+    assert "# 财报三表解读" in financial.content
+    assert commodity.key == "commodity_analysis"
+    assert commodity.sha256 == COMMODITY_ANALYSIS_SKILL_SHA256
+    assert "# Commodity Analysis" in commodity.content
+    assert macro.key == "macro_cycle"
+    assert macro.sha256 == MACRO_CYCLE_SKILL_SHA256
+    assert "# Macroeconomic Analysis" in macro.content
+
+
 def test_supporting_skills_have_stable_router_order() -> None:
     skills = load_supporting_skills()
 
@@ -68,4 +90,7 @@ def test_supporting_skills_have_stable_router_order() -> None:
         "competitive_landscape",
         "restricted_industry_chain",
         "institutional_research",
+        "financial_statement",
+        "commodity_analysis",
+        "macro_cycle",
     ]
