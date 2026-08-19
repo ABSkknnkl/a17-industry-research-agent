@@ -151,6 +151,15 @@ def get_metric_spec(value: str) -> MetricSpec | None:
     return None
 
 
+def iter_metric_aliases() -> tuple[tuple[str, MetricSpec], ...]:
+    """Expose (alias, spec) pairs for deterministic substring extraction."""
+
+    return tuple(
+        (alias, spec)
+        for alias, spec in sorted(_ALIASES.items(), key=lambda item: len(item[0]), reverse=True)
+    )
+
+
 def metric_expected_fields(spec: MetricSpec) -> list[str]:
     """Provider fields plus stable identity/time fields for each data family."""
 

@@ -7,6 +7,8 @@ from pydantic import ValidationError
 
 from app.agents.data_fetcher.executor import RetrievalExecutor
 from app.agents.data_fetcher.fusion import build_chart_datasets, fuse_evidence
+from app.agents.data_fetcher.intent_merger import IntentDecomposer, build_intent_plan
+from app.agents.data_fetcher.intent_models import ResearchIntentPlan
 from app.agents.data_fetcher.metric_registry import get_metric_spec
 from app.agents.data_fetcher.normalizer import normalize_tasks
 from app.agents.data_fetcher.planner import QueryPlanner, deterministic_metric_skill
@@ -39,6 +41,9 @@ class DataFetcherAgent:
         provider_mode: str,
         semantic_router: SemanticRouter | None = None,
         semantic_confidence_threshold: float = 0.9,
+        intent_decomposer: IntentDecomposer | None = None,
+        intent_confidence_accept: float = 0.90,
+        intent_confidence_review: float = 0.75,
     ) -> None:
         self._planner = planner
         self._executor = executor
@@ -46,6 +51,13 @@ class DataFetcherAgent:
         self._semantic_router = semantic_router
         self._semantic_confidence_threshold = max(
             0.0, min(float(semantic_confidence_threshold), 1.0)
+        )
+        self._intent_decomposer = intent_decomposer
+        self._intent_confidence_accept = max(
+            0.0, min(float(intent_confidence_accept), 1.0)
+        )
+        self._intent_confidence_review = max(
+            0.0, min(float(intent_confidence_review), 1.0)
         )
 
     async def run(self, context: StageContext) -> StageResult:
@@ -112,6 +124,65 @@ class DataFetcherAgent:
                 # disable the deterministic Agent 1 path or expose raw errors.
                 semantic_routing["error"] = type(exc).__name__
 
+        known_entities = [
+            str(item).strip()
+            for item in request["research_brief"].get("focus_companies", [])
+            if str(item).strip()
+        ][:20]
+        intent_plans: list[ResearchIntentPlan] = []
+        intent_routing: dict[str, Any] = {
+            "enabled": True,
+            "plans": {},
+            "clarification_required": [],
+            "warnings": [],
+        }
+        for raw_question in request["focus_questions"][:12]:
+            question = " ".join(str(raw_question).split())[:1_000]
+            if not question:
+                continue
+            intent_plan = await build_intent_plan(
+                question,
+                industry_topic=request["industry_topic"],
+                known_entities=known_entities,
+                decomposer=self._intent_decomposer,
+                confidence_accept=self._intent_confidence_accept,
+                confidence_review=self._intent_confidence_review,
+            )
+            intent_plans.append(intent_plan)
+            intent_routing["plans"][question] = intent_plan.model_dump(mode="json")
+            if intent_plan.requires_clarification:
+                intent_routing["clarification_required"].append(question)
+            intent_routing["warnings"].extend(intent_plan.warnings)
+
+        if intent_routing["clarification_required"]:
+            collaboration_requests = []
+            for intent_plan in intent_plans:
+                if not intent_plan.requires_clarification:
+                    continue
+                questions = intent_plan.clarification_questions or [
+                    f"“{intent_plan.original_input}”的研究主体或数据能力无法确定，请人工确认。"
+                ]
+                collaboration_requests.append(
+                    {
+                        "request_id": f"INTENT-CLARIFY-{len(collaboration_requests) + 1:02d}",
+                        "question": " ".join(questions)[:500],
+                        "reason": "意图识别置信度不足或主体存在歧义，已转人工审核，暂不执行数据获取。",
+                        "affected_dimensions": ["data_fetch"],
+                    }
+                )
+            return StageResult(
+                stage=self.stage,
+                status=StageStatus.WAITING_REVIEW,
+                revision=context.revision,
+                data={
+                    "blocking_issues": [],
+                    "advisory_issues": ["intent_clarification_required"],
+                    "intent_routing": intent_routing,
+                    "collaboration_requests": collaboration_requests,
+                },
+                error="intent_clarification_required",
+            )
+
         plan = self._planner.build(
             industry_topic=request["industry_topic"],
             market_scope=request["market_scope"],
@@ -122,6 +193,7 @@ class DataFetcherAgent:
             data_fetch_options=request["data_fetch_options"],
             review_feedback=context.review_feedback,
             semantic_routes=semantic_routes,
+            intent_plans=intent_plans,
         )
         user_items = request["evidence_items"]
         executed = []
@@ -194,6 +266,7 @@ class DataFetcherAgent:
             "acquisition_quality": quality.model_dump(mode="json"),
             "provider_mode": self._provider_mode,
             "semantic_routing": semantic_routing,
+            "intent_routing": intent_routing,
             "blocking_issues": [],
         }
         if self._provider_mode == "mock" and not user_only:

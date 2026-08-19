@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     LLM_SEGMENTED_THRESHOLD_CHARS: int = Field(default=10_000, ge=5_000, le=500_000)
     AGENT1_SEMANTIC_ROUTER_ENABLED: bool = False
     AGENT1_SEMANTIC_ROUTER_CONFIDENCE: float = Field(default=0.9, ge=0.5, le=1)
+    AGENT1_INTENT_DECOMPOSER_ENABLED: bool = False
+    AGENT1_INTENT_CONFIDENCE_ACCEPT: float = Field(default=0.90, ge=0.5, le=1)
+    AGENT1_INTENT_CONFIDENCE_REVIEW: float = Field(default=0.75, ge=0.3, le=1)
     INDUSTRY_CHAIN_IMAGE_ENABLED: bool = False
     IMAGE_USE_MOCK: bool = False
     IMAGE_API_KEY: SecretStr | None = None

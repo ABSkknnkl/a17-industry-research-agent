@@ -89,6 +89,16 @@ class SkillQueryTask(AcquisitionModel):
     max_pages: int = Field(default=1, ge=1, le=5)
     requirement_ids: list[str] = Field(default_factory=list, max_length=12)
     target_entities: list[str] = Field(default_factory=list, max_length=20)
+    # RUNLOG 10.4: distinguish default baseline calls from user-intent-driven
+    # calls so routing accuracy is scored only on the latter.
+    task_origin: Literal[
+        "baseline",
+        "deterministic_intent",
+        "llm_intent",
+        "hybrid_intent",
+        "fallback",
+    ] = "baseline"
+    intent_requirement_id: str | None = Field(default=None, max_length=64)
 
 
 class ResearchRequirement(AcquisitionModel):
@@ -97,7 +107,8 @@ class ResearchRequirement(AcquisitionModel):
     requirement_id: str = Field(pattern=r"^REQ-[A-Za-z0-9_-]+$")
     question: str = Field(min_length=1, max_length=1_000)
     requirement_class: Literal["quantitative", "qualitative", "mixed"]
-    target_skills: list[SkillName] = Field(min_length=1, max_length=2)
+    # RUNLOG 10.1: each intent sub-requirement may carry up to 3 skills.
+    target_skills: list[SkillName] = Field(min_length=1, max_length=3)
     task_ids: list[str] = Field(default_factory=list, max_length=20)
     requested_metric: str | None = Field(default=None, min_length=1, max_length=200)
     origin: Literal["focus_question", "user_metric", "planner_inferred"] = "focus_question"

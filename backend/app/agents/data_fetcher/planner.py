@@ -5,6 +5,7 @@ from datetime import date
 from typing import Any, Literal
 
 from app.agents.data_fetcher.metric_registry import get_metric_spec, metric_expected_fields
+from app.agents.data_fetcher.intent_models import ResearchIntentPlan
 from app.integrations.skillhub.catalog import get_skill_spec
 from app.schemas.acquisition import (
     CONDITIONAL_P1_SKILLS,
@@ -44,8 +45,10 @@ class QueryPlanner:
         data_fetch_options: dict[str, Any],
         review_feedback: str | None,
         semantic_routes: dict[str, SkillName] | None = None,
+        intent_plans: list[ResearchIntentPlan] | None = None,
     ) -> RetrievalPlan:
         semantic_routes = semantic_routes or {}
+        intent_plans = intent_plans or []
         time_range = _time_range(research_as_of, research_brief, data_fetch_options)
         requested_scope = [
             str(item).strip()
@@ -219,10 +222,12 @@ class QueryPlanner:
         requested_metrics = [
             str(item).strip() for item in data_fetch_options.get("metrics", []) if str(item).strip()
         ]
+        intent_question_texts = {plan.original_input for plan in intent_plans}
         requirements = _build_requirements(
             focus_questions,
             requested_metrics,
             semantic_routes=semantic_routes,
+            intent_plans=intent_plans,
         )
         for metric in list(dict.fromkeys(requested_metrics))[:8]:
             metric_skill = semantic_routes.get(metric, _metric_skill(metric))
@@ -297,6 +302,10 @@ class QueryPlanner:
 
         task_number = len(definitions)
         for requirement in requirements:
+            if requirement.question in intent_question_texts:
+                # Intent-driven sub-requirements own their dedicated queries;
+                # the legacy two-skill catch-all must not duplicate them.
+                continue
             if requirement.requested_metric is not None:
                 # Requested metrics already received one dedicated query in
                 # the loop above. Do not duplicate conditional market calls.
@@ -328,6 +337,62 @@ class QueryPlanner:
                     )
                 )
 
+        # RUNLOG 10.2: every intent sub-requirement gets its own independent
+        # query preserving entities, metrics, time range and qualifiers.
+        intent_task_meta: dict[tuple[SkillName, str], tuple[str, str | None]] = {}
+        requirement_by_question = {item.question: item for item in requirements}
+        for plan in intent_plans:
+            if plan.complexity == "simple":
+                # Simple questions reuse the mandatory baseline queries via
+                # requirement mapping; only compound/ambiguous plans own
+                # dedicated per-sub-requirement queries (RUNLOG 10.2).
+                continue
+            for sub in plan.sub_requirements:
+                requirement = requirement_by_question.get(plan.original_input)
+                if requirement is None:
+                    continue
+                if not sub.candidate_skills:
+                    # No capable skill (e.g. 资金流向): keep the requirement
+                    # auditable but generate no fabricated query.
+                    continue
+                sub_entities = [entity.name for entity in sub.entities] or focus_companies
+                qualifiers = _intent_qualifiers(sub.normalized_text)
+                for raw_skill in sub.candidate_skills[:3]:
+                    try:
+                        skill = SkillName(raw_skill)
+                    except ValueError:
+                        continue
+                    if task_number >= 30:
+                        break
+                    task_number += 1
+                    dimension, expected, priority = _requirement_task_profile(skill)
+                    query = _intent_skill_query(
+                        skill,
+                        sub_text=sub.normalized_text,
+                        entities=sub_entities,
+                        qualifiers=qualifiers,
+                        time_text=(
+                            sub.time_range.raw_text if sub.time_range is not None else None
+                        ),
+                        industry_topic=industry_topic,
+                        research_as_of=research_as_of,
+                        focus_companies=focus_companies,
+                    )
+                    definitions.append(
+                        (
+                            skill,
+                            dimension,
+                            query,
+                            expected,
+                            max(priority, 90),
+                            [requirement.requirement_id],
+                        )
+                    )
+                    intent_task_meta[(skill, " ".join(query.split())[:500])] = (
+                        _task_origin(sub.source),
+                        sub.requirement_id,
+                    )
+
         tasks: list[SkillQueryTask] = []
         for index, (
             skill,
@@ -339,6 +404,9 @@ class QueryPlanner:
         ) in enumerate(definitions, 1):
             spec = get_skill_spec(skill)
             compact_query = " ".join(query.split())[:500]
+            origin, intent_requirement_id = intent_task_meta.get(
+                (skill, compact_query), ("baseline", None)
+            )
             tasks.append(
                 SkillQueryTask(
                     task_id=f"Q-{index:02d}",
@@ -373,6 +441,8 @@ class QueryPlanner:
                         }
                         else []
                     ),
+                    task_origin=origin,
+                    intent_requirement_id=intent_requirement_id,
                 )
             )
         task_ids_by_requirement: dict[str, list[str]] = {}
@@ -414,7 +484,7 @@ class QueryPlanner:
             industry_topic=industry_topic,
             research_as_of=research_as_of,
             tasks=tasks,
-            planner_mode="hybrid" if semantic_routes else "deterministic",
+            planner_mode="hybrid" if (semantic_routes or intent_plans) else "deterministic",
             applied_review_feedback=review_feedback,
             requirements=requirements,
         )
@@ -456,11 +526,67 @@ def _build_requirements(
     requested_metrics: list[str] | None = None,
     *,
     semantic_routes: dict[str, SkillName] | None = None,
+    intent_plans: list[ResearchIntentPlan] | None = None,
 ) -> list[ResearchRequirement]:
     semantic_routes = semantic_routes or {}
+    intent_plans = intent_plans or []
+    intent_by_text = {plan.original_input: plan for plan in intent_plans}
     requirements: list[ResearchRequirement] = []
     for index, raw_question in enumerate(focus_questions[:12], 1):
         question = " ".join(str(raw_question).split())[:1_000]
+        intent_plan = intent_by_text.get(question)
+        if intent_plan is not None:
+            # RUNLOG 10.1: a complex question becomes one requirement whose
+            # target skills are the union of its decomposed sub-requirements.
+            skills: list[SkillName] = []
+            for sub in intent_plan.sub_requirements:
+                for raw_skill in sub.candidate_skills:
+                    try:
+                        skill = SkillName(raw_skill)
+                    except ValueError:
+                        continue
+                    if skill not in skills:
+                        skills.append(skill)
+            if not skills:
+                skills = [SkillName.REPORT]
+            has_quantitative = any(
+                skill
+                in {
+                    SkillName.FINANCE,
+                    SkillName.STOCK_SELECTOR,
+                    SkillName.MACRO,
+                    SkillName.FUTURES,
+                    SkillName.INDEX,
+                    SkillName.INDUSTRY,
+                    SkillName.BUSINESS,
+                }
+                for skill in skills
+            )
+            has_qualitative = any(
+                skill
+                in {
+                    SkillName.NEWS,
+                    SkillName.REPORT,
+                    SkillName.ANNOUNCEMENT,
+                    SkillName.EVENT,
+                    SkillName.INSTITUTIONAL_RESEARCH,
+                }
+                for skill in skills
+            )
+            requirement_class: Literal["quantitative", "qualitative", "mixed"] = (
+                "mixed"
+                if has_quantitative and has_qualitative
+                else ("quantitative" if has_quantitative else "qualitative")
+            )
+            requirements.append(
+                ResearchRequirement(
+                    requirement_id=f"REQ-{index:02d}",
+                    question=question,
+                    requirement_class=requirement_class,
+                    target_skills=skills[:3],
+                )
+            )
+            continue
         conditional_market_skill = _conditional_market_skill(question)
         semantic_skill = semantic_routes.get(question)
         has_quantitative = (
@@ -539,6 +665,96 @@ def _metric_skill(metric: str) -> SkillName:
     if deterministic is not None:
         return deterministic
     return SkillName.INDUSTRY
+
+
+def _task_origin(source: str) -> str:
+    return {
+        "deterministic": "deterministic_intent",
+        "llm": "llm_intent",
+        "hybrid": "hybrid_intent",
+    }.get(source, "fallback")
+
+
+_QUALIFIER_TOKENS: tuple[str, ...] = (
+    "海外",
+    "境外",
+    "国内",
+    "国内外",
+    "回收",
+    "出口",
+    "政策",
+    "对比",
+    "比较",
+    "排序",
+    "排名",
+    "分业务",
+    "按产品",
+    "按地区",
+)
+
+
+def _intent_qualifiers(text: str) -> str:
+    compact = "".join(text.split()).casefold()
+    found = [token for token in _QUALIFIER_TOKENS if token in compact]
+    return " ".join(dict.fromkeys(found))
+
+
+def _registered_metric_fields(text: str) -> list[str]:
+    from app.agents.data_fetcher.metric_registry import iter_metric_aliases
+
+    compact = "".join(text.split()).casefold()
+    fields: list[str] = []
+    for alias, spec in iter_metric_aliases():
+        normalized_alias = "".join(alias.split()).casefold()
+        if normalized_alias and normalized_alias in compact:
+            for field in spec.query_fields:
+                if field not in fields:
+                    fields.append(field)
+    return fields
+
+
+def _intent_skill_query(
+    skill: SkillName,
+    *,
+    sub_text: str,
+    entities: list[str],
+    qualifiers: str,
+    time_text: str | None,
+    industry_topic: str,
+    research_as_of: date,
+    focus_companies: list[str],
+) -> str:
+    """Deterministic per-sub-requirement query (RUNLOG 10.2/10.3).
+
+    Structured skills receive subject + time + registered metric fields; all
+    skills keep the original sub-text qualifiers (海外/回收/排序/对比...).
+    """
+
+    base = " ".join(sub_text.split())[:400]
+    if skill in {SkillName.FINANCE, SkillName.BUSINESS}:
+        subject = " ".join(entities[:6]) if entities else industry_topic
+        time_part = time_text or f"{research_as_of.year - 1}年 {research_as_of.year}年"
+        fields = _registered_metric_fields(sub_text) or ["营业收入", "净利润"]
+        parts = [subject, time_part, *fields]
+        if qualifiers:
+            parts.append(qualifiers)
+        return " ".join(part for part in parts if part)[:500]
+    if skill == SkillName.STOCK_SELECTOR:
+        subject = " ".join(entities[:6]) if entities else f"{industry_topic}概念股"
+        parts = [subject]
+        if time_text:
+            parts.append(time_text)
+        parts.append(base)
+        return " ".join(dict.fromkeys(parts))[:500]
+    # Qualitative/industry skills preserve the full sub-text verbatim so that
+    # qualifiers such as 海外/回收/政策 survive into the provider query.
+    parts = []
+    if industry_topic and industry_topic not in base:
+        parts.append(industry_topic)
+    parts.append(base)
+    if time_text and time_text not in base:
+        parts.append(time_text)
+    return " ".join(parts)[:500]
 
 
 def deterministic_metric_skill(metric: str) -> SkillName | None:
