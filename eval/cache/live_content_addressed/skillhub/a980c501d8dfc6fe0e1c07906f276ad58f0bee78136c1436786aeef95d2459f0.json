@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "a980c501d8dfc6fe0e1c07906f276ad58f0bee78136c1436786aeef95d2459f0",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 创新药 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 药明康德存货周转率是多少",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":392,\"query\":\"中国内地 创新药 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 药明康德存货周转率是多少\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"children\\\":[],\\\"node_type\\\":\\\"op\\\",\\\"sonSize\\\":4.0,\\\"chunkedResult\\\":\\\"中国内地 创新药 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 药明康德存货周转率是多少\\\",\\\"ci\\\":false,\\\"opName\\\":\\\"and\\\",\\\"opPropertyMap\\\":{},\\\"opPropertiesMap\\\":{},\\\"opProperty\\\":\\\"\\\"},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"主营业务是创新药\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@主营业务\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"创新药\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_主营业务\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含创新药\\\"]},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"children\\\":[],\\\"node_type\\\":\\\"op\\\",\\\"sonSize\\\":2.0,\\\"ci\\\":false,\\\"opName\\\":\\\"and\\\",\\\"opPropertyMap\\\":{},\\\"opPropertiesMap\\\":{},\\\"opProperty\\\":\\\"\\\"},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"正股简称是药明康德\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@正股简称\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"药明康德\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_正股简称\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含药明康德\\\"]},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"2024年1月1日到2026年6月30日的存货周转率\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@存货周转率\\\",\\\"indexPropertiesMap\\\":{\\\"起始交易日期\\\":\\\"20240331\\\",\\\"截止交易日期\\\":\\\"20260630\\\"},\\\"reportType\\\":\\\"QUARTER\\\",\\\"valueType\\\":\\\"_浮点型数值(元)\\\",\\\"dateType\\\":\\\"报告期\\\",\\\"dateText\\\":\\\"2024-01-01至2026-08-11\\\",\\\"dateUnit\\\":\\\"日\\\",\\\"indexProperties\\\":[\\\"起始交易日期 20240331\\\",\\\"截止交易日期 20260630\\\"]}]\",\"columns\":[],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":-1208.0,\"status_msg\":\"未找到相关指标 债券@主营业务\",\"chunks_info\":\"[]\"}",
+  "raw_sha256": "6c4d355a9c59fc3e97f4e13a3e309fb87dbd3eec108ceb3535f0cecd97503557",
+  "recorded_at": "2026-08-22T06:36:15.164882+00:00"
+}

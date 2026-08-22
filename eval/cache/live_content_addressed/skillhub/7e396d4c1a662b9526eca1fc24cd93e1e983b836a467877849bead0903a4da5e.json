@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "7e396d4c1a662b9526eca1fc24cd93e1e983b836a467877849bead0903a4da5e",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-index-query",
+  "request": {
+    "query": "新能源车 历史分位",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":371,\"query\":\"新能源车 历史分位\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_a指领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"指数简称是新能源车\\\",\\\"chunkedResult\\\":\\\"新能源车 _\\u0026_历史分位\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"指数简称\\\",\\\"indexPropertiesMap\\\":{\\\"EQUAL\\\":\\\"300008\\u003e-\\u003c新能源汽车\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_指数简称\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"EQUAL 300008\\u003e-\\u003c新能源汽车\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_a指领域\",\"source\":\"fixed_index\",\"label\":\"code\",\"feKey\":\"指数代码\",\"type\":\"STR\",\"index_name\":\"指数代码\",\"key\":\"指数代码\"},{\"unit\":\"\",\"domain\":\"abs_a指领域\",\"source\":\"fixed_index\",\"label\":\"name\",\"feKey\":\"指数简称\",\"type\":\"STR\",\"index_name\":\"指数简称\",\"key\":\"指数简称\"}],\"datas\":[{\"指数代码\":\"885431.TI\",\"指数简称\":\"新能源汽车\"}],\"row_count\":1.0,\"code_count\":1.0,\"domain\":\"zhishu\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac9912917874148235425392\",\"chunks_info\":\"[\\\"指数简称是新能源车 (1)\\\"]\"}",
+  "raw_sha256": "c943ef5f7ec3a2d31e75dd14edf5baa2bace7b0d624bb60571dcdd9d5a6e352c",
+  "recorded_at": "2026-08-22T16:07:03.499244+00:00"
+}

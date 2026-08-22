@@ -93,6 +93,7 @@ async def test_agent_generates_ready_artifact_and_suppresses_duplicate(
         "title": "市场份额",
         "chart_type": "bar",
         "evidence_ids": categorical_dataset.evidence_ids,
+        "chapter_hint": "CH-03",
     }
     context = StageContext(
         project_id="project-1",
@@ -125,6 +126,7 @@ async def test_agent_generates_ready_artifact_and_suppresses_duplicate(
     # 同一数据集默认只保留一张核心图表，重复候选保留可见原因。
     assert len(result.data["charts"]) == 1
     assert result.data["charts"][0]["status"] == "ready"
+    assert result.data["charts"][0]["recommended_chapter_id"] == "CH-03"
     assert any(
         item["reason_code"] == "duplicate_dataset_chart_default"
         for item in result.data["suppressed_candidates"]

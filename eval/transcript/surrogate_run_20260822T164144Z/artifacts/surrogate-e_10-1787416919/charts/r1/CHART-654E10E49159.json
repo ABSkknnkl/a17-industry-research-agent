@@ -1,0 +1,80 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-654E10E49159",
+  "chart_type": "bar",
+  "data_fingerprint": "5d81a98718c29e63daa57cd358129f4a17a6fb4cc880d517aa5e51a118d3dcc5",
+  "dedupe_key": "comparison:comparison:以bar图呈现负债的证据分布，支撑ch-02的论述。:5d81a98718c29e63daa57cd358129f4a17a6fb4cc880d517aa5e51a118d3dcc5",
+  "evidence_ids": [
+    "E-c29205cf5253cd61"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现负债的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-c29205cf5253cd61",
+            "value": 46954432394.95
+          }
+        ],
+        "name": "贵州茅台",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "负债（贵州茅台）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "贵州茅台"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "负债（贵州茅台）",
+  "variant": "vertical"
+}

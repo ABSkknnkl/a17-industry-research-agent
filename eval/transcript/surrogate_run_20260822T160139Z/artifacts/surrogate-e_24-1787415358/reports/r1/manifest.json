@@ -1,0 +1,110 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "ARTIFACT-REPORT-E33EC88CF6BC-R1-REPORT_MARKDOWN",
+      "kind": "report_markdown",
+      "sha256": "116dbc6cb471e88a0ae9363c5f030b58d11f22d37a9d6f0f5ee07e2873c18c80",
+      "size_bytes": 86393,
+      "uri": "surrogate-e_24-1787415358/reports/r1/report.md"
+    },
+    {
+      "artifact_id": "ARTIFACT-REPORT-E33EC88CF6BC-R1-REPORT_HTML",
+      "kind": "report_html",
+      "sha256": "15e7682e8459586166aa0dbf2e7429f2cc3d0acb8394c38086a222924c8242a2",
+      "size_bytes": 123759,
+      "uri": "surrogate-e_24-1787415358/reports/r1/report.html"
+    },
+    {
+      "artifact_id": "ARTIFACT-REPORT-E33EC88CF6BC-R1-REPORT_PDF",
+      "kind": "report_pdf",
+      "sha256": "8c1841bf5f88483b714e3466afd2ece2411feed2bd80bfa20acc8a2425b25d7a",
+      "size_bytes": 1925090,
+      "uri": "surrogate-e_24-1787415358/reports/r1/report.pdf"
+    }
+  ],
+  "delivery_status": "ready_with_limits",
+  "generated_at": "2026-08-22T16:15:58.456373+00:00",
+  "included_chart_ids": [
+    "CHART-6135C961DFD0",
+    "CHART-53C521609695",
+    "CHART-D64DA3EDAB3B",
+    "CHART-6821FC1576B2",
+    "CHART-B9D78727A3B2"
+  ],
+  "quality": {
+    "chapter_count": 7,
+    "evidence_coverage": 1.0,
+    "included_chart_count": 5,
+    "issues": [],
+    "passed": true,
+    "section_count": 21
+  },
+  "report_depth": "standard",
+  "report_id": "REPORT-E33EC88CF6BC-R1",
+  "schema_version": "1.0",
+  "source_revisions": [
+    {
+      "revision": 1,
+      "stage": "data_interpret"
+    },
+    {
+      "revision": 1,
+      "stage": "chart_generate"
+    },
+    {
+      "revision": 1,
+      "stage": "chapter_write"
+    }
+  ],
+  "visual_decision": {
+    "chart_density": "medium",
+    "density": "balanced",
+    "effective_style": "analysis_note",
+    "override_warnings": [],
+    "per_chapter_strategy": {
+      "CH-01": {
+        "chart_count": 0,
+        "dominant_content": "summary",
+        "table_candidate_count": 0
+      },
+      "CH-02": {
+        "chart_count": 3,
+        "dominant_content": "time_series",
+        "table_candidate_count": 0
+      },
+      "CH-03": {
+        "chart_count": 0,
+        "dominant_content": "industry_chain",
+        "table_candidate_count": 0
+      },
+      "CH-04": {
+        "chart_count": 0,
+        "dominant_content": "comparison",
+        "table_candidate_count": 3
+      },
+      "CH-05": {
+        "chart_count": 0,
+        "dominant_content": "financial_detail",
+        "table_candidate_count": 2
+      },
+      "CH-06": {
+        "chart_count": 2,
+        "dominant_content": "narrative",
+        "table_candidate_count": 0
+      },
+      "CH-07": {
+        "chart_count": 0,
+        "dominant_content": "risk",
+        "table_candidate_count": 0
+      }
+    },
+    "recommendation_reasons": [
+      "图表、精确数据与解释性文字相对均衡",
+      "采用默认分析笔记型以保持阅读节奏"
+    ],
+    "recommended_style": "analysis_note",
+    "requested_style": "auto",
+    "selection_source": "agent_recommendation",
+    "table_priority": "high"
+  }
+}

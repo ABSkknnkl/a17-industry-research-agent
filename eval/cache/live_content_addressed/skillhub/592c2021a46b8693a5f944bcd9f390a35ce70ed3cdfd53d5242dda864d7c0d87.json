@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "592c2021a46b8693a5f944bcd9f390a35ce70ed3cdfd53d5242dda864d7c0d87",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "中国内地 动力电池 2024-01-01至2026-08-11 代表公司 营业收入 营业成本 净利润 ROE 经营活动现金流量净额 投资活动现金流量净额 筹资活动现金流量净额 期末现金及现金等价物余额 货币资金 总资产 负债合计 股东权益 存货 应收账款 算一下宁德时代氢能业务市占率",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":21,\"columns\":[],\"datas\":[],\"row_count\":0,\"code_count\":0,\"status_code\":-1225}",
+  "raw_sha256": "1ae235cff3b2d0e21237a7b5a3bfb063e4d4c8539883439dbcad37ea6120e48d",
+  "recorded_at": "2026-08-22T07:05:29.586694+00:00"
+}

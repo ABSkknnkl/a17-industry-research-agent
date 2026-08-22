@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "bcc3ffbe4b46f86a34b820d881752e990cea6395728d08e780916502b580bca0",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 消费成长 2024-01-01至2026-08-11 行业规模",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":199,\"query\":\"中国内地 消费成长 2024-01-01至2026-08-11 行业规模\",\"model_sql\":\"[{\\\"chunk\\\":\\\"中国内地 消费成长 2024-01-01至2026-08-11 行业规模\\\",\\\"condition\\\":\\\"[{}]\\\",\\\"domain\\\":\\\"bond\\\"}]\",\"condition\":\"null\",\"columns\":[],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"intent\":\"iwencai\",\"status_code\":1201.0,\"status_msg\":\"解析失败\",\"chunks_info\":\"[]\"}",
+  "raw_sha256": "043671875d449cd9153511ff04a9d121358e03e7e62457a6941214ef7805156a",
+  "recorded_at": "2026-08-22T16:28:03.926012+00:00"
+}

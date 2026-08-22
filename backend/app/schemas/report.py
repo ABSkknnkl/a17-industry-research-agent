@@ -14,6 +14,9 @@ from app.schemas.chapter import ChapterDraft
 
 ReportFormat = Literal["markdown", "html", "pdf"]
 ReportArtifactKind = Literal["report_markdown", "report_html", "report_pdf", "artifact_manifest"]
+VisualStyle = Literal["data_manual", "analysis_note", "deep_research"]
+RequestedVisualStyle = Literal["auto", "data_manual", "analysis_note", "deep_research"]
+VisualDensity = Literal["compact", "balanced", "detailed"]
 
 
 class ReportContract(BaseModel):
@@ -77,6 +80,8 @@ class EvidenceSourceEntry(ReportContract):
     citation_number: int = Field(ge=1)
     display_label: str = Field(min_length=1, max_length=500)
     material_title: str = Field(min_length=1, max_length=500)
+    publishers: list[str] = Field(default_factory=list, max_length=20)
+    retrieval_methods: list[str] = Field(default_factory=list, max_length=20)
     metric_names: list[str] = Field(min_length=1, max_length=100)
     available_dates: list[str] = Field(default_factory=list, max_length=100)
     reporting_periods: list[str] = Field(default_factory=list, max_length=100)
@@ -86,6 +91,37 @@ class EvidenceSourceEntry(ReportContract):
     scopes: list[str] = Field(default_factory=list, max_length=20)
     # Kept for machine traceability only. Renderers must never expose this field.
     evidence_ids: list[str] = Field(min_length=1, max_length=200)
+
+
+class ChapterVisualStrategy(ReportContract):
+    chart_count: int = Field(default=0, ge=0, le=30)
+    table_candidate_count: int = Field(default=0, ge=0, le=21)
+    dominant_content: Literal[
+        "narrative",
+        "time_series",
+        "comparison",
+        "financial_detail",
+        "industry_chain",
+        "risk",
+        "scenario",
+        "summary",
+    ]
+
+
+class VisualDecision(ReportContract):
+    recommended_style: VisualStyle
+    requested_style: RequestedVisualStyle = "auto"
+    effective_style: VisualStyle
+    selection_source: Literal["user", "agent_recommendation", "default"]
+    density: VisualDensity = "balanced"
+    chart_density: Literal["low", "medium", "high"] = "medium"
+    table_priority: Literal["low", "medium", "high"] = "medium"
+    recommendation_reasons: list[str] = Field(default_factory=list, max_length=20)
+    override_warnings: list[str] = Field(default_factory=list, max_length=20)
+    per_chapter_strategy: dict[str, ChapterVisualStrategy] = Field(
+        default_factory=dict,
+        max_length=7,
+    )
 
 
 class ReportViewModel(ReportContract):
@@ -107,6 +143,7 @@ class ReportViewModel(ReportContract):
     risk_acknowledged_at: datetime | None = None
     quality_appendix: ReportQualityAppendix = Field(default_factory=ReportQualityAppendix)
     evidence_catalog: list[EvidenceSourceEntry] = Field(default_factory=list, max_length=200)
+    visual_decision: VisualDecision
 
 
 class SourceRevision(ReportContract):
@@ -150,6 +187,7 @@ class ReportFusionResult(ReportContract):
     draft_eligible: bool = True
     acknowledged_risks: list[str] = Field(default_factory=list)
     unresolved_risks: list[str] = Field(default_factory=list)
+    visual_decision: VisualDecision
 
     @model_validator(mode="after")
     def validate_artifact_formats(self) -> "ReportFusionResult":

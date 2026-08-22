@@ -1,0 +1,241 @@
+{
+  "case_id": "T-02",
+  "run_id": "run-t-02-1787398796",
+  "recorded_at": "2026-08-22T11:39:56.811494+00:00",
+  "mode": "record",
+  "llm_mode": "mock",
+  "input": {
+    "text": "动力电池回收相关产业政策梳理",
+    "industry_topic": "动力电池",
+    "focus_questions": [
+      "动力电池回收相关产业政策梳理"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 0.44
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "mock_data_not_for_formal_release"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "report_fusion",
+      "status": "completed",
+      "error": null
+    }
+  ],
+  "intent_routing": {
+    "enabled": false,
+    "strategy": "deterministic_only",
+    "clarification_required": [],
+    "warnings": [],
+    "plans": [
+      {
+        "question": "动力电池回收相关产业政策梳理",
+        "parser_mode": "deterministic",
+        "complexity": "simple",
+        "locked_skills": [
+          "news_search"
+        ],
+        "accepted_skills": [],
+        "rejected_skills": [],
+        "requires_clarification": false,
+        "sub_requirements": [
+          {
+            "text": "动力电池回收相关产业政策梳理",
+            "skills": [
+              "news_search"
+            ],
+            "source": "deterministic",
+            "clarify": false
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [
+    {
+      "skill": "hithink_industry_query",
+      "query": "中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 动力电池回收相关产业政策梳理",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.369968+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "33726e29aea11060c070d530cd492c1228fdc5e4fcb246998166a7211b3d1e8e",
+      "source_name": "本地测试桩 hithink_industry_query",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "hithink_finance_query",
+      "query": "中国内地 动力电池 2024-01-01至2026-08-11 代表公司 营业收入 营业成本 净利润 ROE 经营活动现金流量净额 投资活动现金流量净额 筹资活动现金流量净额 期末现金及现金等价物余额 货币资金 总资产 负债合计 股东权益 存货 应收账款 动力电池回收相关产业政策梳理",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370085+00:00",
+      "ok": true,
+      "rows": 2,
+      "total_count": 2,
+      "raw_sha256": "87bea1f6408b5f428f6e1727d9d67e9cf8977ea88b23f2c9371b438b6f390aa0",
+      "source_name": "本地测试桩 hithink_finance_query",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "hithink_macro_query",
+      "query": "中国内地 动力电池 2024-01-01至2026-08-11 GDP CPI PPI PMI 利率 汇率 社融 工业增加值 动力电池回收相关产业政策梳理",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370147+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "6bf53c3a4d0b90e5dff0f85ba60c5b21aff773640c9278cdbcb0ca10d999de5d",
+      "source_name": "本地测试桩 hithink_macro_query",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "industry_chain_analysis",
+      "query": "动力电池产业链结构",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370193+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "91db49938029b92dfd331152f409537e126e734444cf2840c70198b318b21684",
+      "source_name": "本地测试桩 industry_chain_analysis",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "report_search",
+      "query": "动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 动力电池回收相关产业政策梳理",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370235+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "534e97206fcb1d380aef1b88c9a1b2b8a7c23be28dd467e4967c0800a088318c",
+      "source_name": "本地测试桩 report_search",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "news_search",
+      "query": "动力电池 政策 行业新闻 技术进展 风险事件 截至2026-08-11 动力电池回收相关产业政策梳理",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370280+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "ad947eee069583202faea47b248a8bafa312ac49238128ecdce48544bb2189ed",
+      "source_name": "本地测试桩 news_search",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "announcement_search",
+      "query": "动力电池 代表公司 财报 回购 重组 风险公告 2024-01-01至2026-08-11",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370321+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "e7654e14923a47953f63aac730c754c435f9382cdf22d06d6f849a9572db010e",
+      "source_name": "本地测试桩 announcement_search",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "hithink_event_query",
+      "query": "动力电池概念股业绩预告",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370357+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "ad0f9a8f6bb8a7bc969aa3c20f7ef6d43ae14fa8dcb262f61e48adc5a80ff499",
+      "source_name": "本地测试桩 hithink_event_query",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "hithink_business_query",
+      "query": "动力电池概念股主营业务构成",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370396+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "2ee1e36c50b59f7bb51c94211648f0f3436c1ea35c0458309f3155701ffafdcd",
+      "source_name": "本地测试桩 hithink_business_query",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "hithink_sector_selector",
+      "query": "动力电池板块",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370433+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "73258ab5cf258678c1cc51bf61213ba1d5238eec2ed21d82ed7b83ace1293aa6",
+      "source_name": "本地测试桩 hithink_sector_selector",
+      "duration_ms": 0.0
+    },
+    {
+      "skill": "hithink_insresearch_query",
+      "query": "动力电池 机构覆盖 盈利预测 评级 目标价 2024-01-01至2026-08-11",
+      "page": 1,
+      "limit": 20,
+      "started_at": "2026-08-22T11:39:56.370471+00:00",
+      "ok": true,
+      "rows": 1,
+      "total_count": 1,
+      "raw_sha256": "1c5b76bb7ca370d8de5db63e1a08d42aca9144c3f20ec2840f1cddf6b9c83b47",
+      "source_name": "本地测试桩 hithink_insresearch_query",
+      "duration_ms": 0.0
+    }
+  ],
+  "skill_call_count": 11,
+  "evidence_count": 12,
+  "task_count": 11,
+  "report_artifacts": [
+    {
+      "kind": "report_markdown",
+      "uri": "run-t-02-1787398796/reports/r1/report.md"
+    },
+    {
+      "kind": "report_html",
+      "uri": "run-t-02-1787398796/reports/r1/report.html"
+    },
+    {
+      "kind": "report_pdf",
+      "uri": "run-t-02-1787398796/reports/r1/report.pdf"
+    },
+    {
+      "kind": "artifact_manifest",
+      "uri": "run-t-02-1787398796/reports/r1/manifest.json"
+    }
+  ]
+}

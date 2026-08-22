@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "a78bdafe1d7b02da18ee2d0f932a5c6774d4df55f870a8b67e9e93461b0f1406",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-event-query",
+  "request": {
+    "query": "宁德时代 业绩预告 事件",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1413,\"query\":\"宁德时代 业绩预告 事件\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"最新净利润来源说明\",\"key\":\"净利润来源说明\",\"feKey\":\"净利润来源说明\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"300750.SZ\",\"股票简称\":\"宁德时代\",\"最新价\":\"391.15\",\"最新涨跌幅\":1.597403}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"宁德时代 (1)\\\",\\\"宁德时代 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9a91d17874234353455100\"}",
+  "raw_sha256": "0635ad901ff7125cd20e39a23e096dfa0ede44421ccf36f69aac73bce4bd415b",
+  "recorded_at": "2026-08-22T18:30:35.207614+00:00"
+}

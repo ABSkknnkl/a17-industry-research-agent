@@ -62,13 +62,24 @@ class QueryPlanner:
         preferred_sources = " ".join(
             str(item) for item in data_fetch_options.get("data_sources", [])
         )
-        focus_companies = list(
-            dict.fromkeys(
-                str(item).strip()
-                for item in research_brief.get("focus_companies", [])
-                if str(item).strip()
-            )
-        )[:20]
+        brief_companies = [
+            str(item).strip()
+            for item in research_brief.get("focus_companies", [])
+            if str(item).strip()
+        ]
+        intent_companies = [
+            entity.name.strip()
+            for intent_plan in intent_plans
+            for sub in intent_plan.sub_requirements
+            for entity in sub.entities
+            if entity.entity_type == "company"
+            and entity.name.strip()
+            and entity.name.strip() != industry_topic
+        ]
+        # LLM-first intent extraction must constrain actual provider queries,
+        # not merely annotate the audit plan. Explicit brief entities retain
+        # priority; calibrated LLM companies fill missing scope.
+        focus_companies = list(dict.fromkeys([*brief_companies, *intent_companies]))[:20]
         company_text = "、".join(focus_companies)
         focus = " ".join(focus_questions)
         review_instruction = " ".join((review_feedback or "").split())[:500]
@@ -250,6 +261,27 @@ class QueryPlanner:
                 for item in requirements
                 if item.question == f"指定指标：{metric}"
             ]
+            metric_key = _normalised_requirement_text(metric)
+            intent_questions = {
+                intent_plan.original_input
+                for intent_plan in intent_plans
+                if any(
+                    metric_key
+                    in {
+                        _normalised_requirement_text(item.original_name),
+                        _normalised_requirement_text(item.normalized_name or ""),
+                    }
+                    for sub in intent_plan.sub_requirements
+                    for item in sub.metrics
+                )
+            }
+            for requirement in requirements:
+                if (
+                    requirement.origin == "focus_question"
+                    and requirement.question in intent_questions
+                    and requirement.requirement_id not in metric_requirement_ids
+                ):
+                    metric_requirement_ids.append(requirement.requirement_id)
             definitions.append(
                 (
                     metric_skill,
@@ -341,12 +373,26 @@ class QueryPlanner:
         # query preserving entities, metrics, time range and qualifiers.
         intent_task_meta: dict[tuple[SkillName, str], tuple[str, str | None]] = {}
         requirement_by_question = {item.question: item for item in requirements}
+        conditional_skill_values = {skill.value for skill in CONDITIONAL_P1_SKILLS}
         for plan in intent_plans:
             if plan.complexity == "simple":
                 # Simple questions reuse the mandatory baseline queries via
                 # requirement mapping; only compound/ambiguous plans own
                 # dedicated per-sub-requirement queries (RUNLOG 10.2).
-                continue
+                # Exception: conditional P1 skills (stock selector /
+                # futures / index / basic info) are never part of the
+                # baseline scan, so a sub-requirement routed to one must
+                # still own a dedicated query — otherwise the locked
+                # routing is silently dropped and the requirement fails
+                # as data-unavailable (surrogate E-14 root cause).
+                has_conditional = any(
+                    skill in conditional_skill_values
+                    for sub in plan.sub_requirements
+                    for skill in sub.candidate_skills
+                )
+                has_named_entity = any(sub.entities for sub in plan.sub_requirements)
+                if not has_conditional and not has_named_entity:
+                    continue
             for sub in plan.sub_requirements:
                 requirement = requirement_by_question.get(plan.original_input)
                 if requirement is None:
@@ -355,9 +401,26 @@ class QueryPlanner:
                     # No capable skill (e.g. 资金流向): keep the requirement
                     # auditable but generate no fabricated query.
                     continue
+                sub_skills = list(sub.candidate_skills[:3])
+                if plan.complexity == "simple":
+                    # Baseline P0 queries already cover non-conditional
+                    # skills; two exceptions own a dedicated task:
+                    # conditional skills (never in the baseline scan) and
+                    # entity-named sub-requirements whose entity + intent
+                    # keywords cannot be expressed by the sector-level
+                    # baseline query text (E-41/E-44: the provider needs
+                    # 宁德时代 股权激励公告, not the sector boilerplate).
+                    if sub.entities:
+                        pass  # entity-named: keep all its routed skills
+                    else:
+                        sub_skills = [
+                            value for value in sub_skills if value in conditional_skill_values
+                        ]
+                        if not sub_skills:
+                            continue
                 sub_entities = [entity.name for entity in sub.entities] or focus_companies
                 qualifiers = _intent_qualifiers(sub.normalized_text)
-                for raw_skill in sub.candidate_skills[:3]:
+                for raw_skill in sub_skills:
                     try:
                         skill = SkillName(raw_skill)
                     except ValueError:
@@ -388,9 +451,28 @@ class QueryPlanner:
                             [requirement.requirement_id],
                         )
                     )
+                    _TEXT_SEARCH = {
+                        SkillName.ANNOUNCEMENT,
+                        SkillName.EVENT,
+                        SkillName.INSTITUTIONAL_RESEARCH,
+                        SkillName.NEWS,
+                        SkillName.REPORT,
+                    }
+                    # Text-search channels return rows whose entity column
+                    # is a system value (admin) or an unrelated company even
+                    # when the query itself targets the entity; binding the
+                    # entity filter quarantines every row (E-41/E-44 root
+                    # cause). The query text already carries the entity, so
+                    # these skills keep their rows unfiltered.
+                    _intent_entities = (
+                        []
+                        if skill in _TEXT_SEARCH
+                        else [e.name for e in sub.entities if e.name != industry_topic]
+                    )
                     intent_task_meta[(skill, " ".join(query.split())[:500])] = (
                         _task_origin(sub.source),
                         sub.requirement_id,
+                        _intent_entities,
                     )
 
         tasks: list[SkillQueryTask] = []
@@ -404,9 +486,11 @@ class QueryPlanner:
         ) in enumerate(definitions, 1):
             spec = get_skill_spec(skill)
             compact_query = " ".join(query.split())[:500]
-            origin, intent_requirement_id = intent_task_meta.get(
-                (skill, compact_query), ("baseline", None)
-            )
+            meta = intent_task_meta.get((skill, compact_query))
+            if meta is None:
+                origin, intent_requirement_id, intent_entities = "baseline", None, []
+            else:
+                origin, intent_requirement_id, intent_entities = meta
             tasks.append(
                 SkillQueryTask(
                     task_id=f"Q-{index:02d}",
@@ -427,19 +511,46 @@ class QueryPlanner:
                         self._max_pages if skill in {SkillName.FINANCE, SkillName.INDUSTRY} else 1
                     ),
                     requirement_ids=requirement_ids,
+                    # Text-search channels (announcement/event/research/
+                    # news/report) never bind the entity filter: their row
+                    # entity column is a system value (admin) or an unrelated
+                    # company even when the query targets the entity, so the
+                    # filter quarantines every row (E-11/E-41/E-44 root
+                    # cause). Structured skills keep the binding: intent
+                    # tasks bind their own sub-requirement entities, baseline
+                    # tasks bind focus companies.
                     target_entities=(
-                        focus_companies
-                        if focus_companies
-                        and skill
+                        []
+                        if skill
                         in {
-                            SkillName.FINANCE,
-                            SkillName.BUSINESS,
                             SkillName.ANNOUNCEMENT,
                             SkillName.EVENT,
                             SkillName.INSTITUTIONAL_RESEARCH,
-                            SkillName.BASIC_INFO,
+                            SkillName.NEWS,
+                            SkillName.REPORT,
                         }
-                        else []
+                        else (
+                            intent_entities
+                            if intent_entities
+                            and skill
+                            in {
+                                SkillName.FINANCE,
+                                SkillName.BUSINESS,
+                                SkillName.BASIC_INFO,
+                            }
+                            else (
+                                focus_companies
+                                if origin == "baseline"
+                                and focus_companies
+                                and skill
+                                in {
+                                    SkillName.FINANCE,
+                                    SkillName.BUSINESS,
+                                    SkillName.BASIC_INFO,
+                                }
+                                else []
+                            )
+                        )
                     ),
                     task_origin=origin,
                     intent_requirement_id=intent_requirement_id,
@@ -460,16 +571,20 @@ class QueryPlanner:
                 # the requested metric was returned.
                 continue
             for skill in requirement.target_skills:
-                baseline = next(
-                    (
-                        task
-                        for task in tasks
-                        if task.skill_name == skill and not task.requirement_ids
-                    ),
-                    None,
-                )
-                if baseline is not None and baseline.task_id not in mapped:
-                    mapped.append(baseline.task_id)
+                # Map EVERY baseline task of the skill, not just the first:
+                # when the user names a company, the sector-level baseline
+                # task is entity-bound too and its industry rows are
+                # entity-filtered by the normalizer, so coverage must also
+                # see the dedicated company task (E-16 final-run root cause:
+                # Q-02 filtered to 0 clean rows while Q-12 carried the
+                # company data but was never mapped to the requirement).
+                for baseline in tasks:
+                    if (
+                        baseline.skill_name == skill
+                        and not baseline.requirement_ids
+                        and baseline.task_id not in mapped
+                    ):
+                        mapped.append(baseline.task_id)
         requirements = [
             requirement.model_copy(
                 update={"task_ids": task_ids_by_requirement.get(requirement.requirement_id, [])}
@@ -748,6 +863,22 @@ def _intent_skill_query(
         return " ".join(dict.fromkeys(parts))[:500]
     # Qualitative/industry skills preserve the full sub-text verbatim so that
     # qualifiers such as 海外/回收/政策 survive into the provider query.
+    # Entity-named sub-text already carries its subject (宁德时代 ...公告);
+    # prefixing the sector would dilute the entity semantics and the
+    # provider returns sector-level rows instead (E-41/E-42 root cause).
+    # Natural-language sub-text additionally resolves poorly on the
+    # event/announcement/research endpoints (market-wide rows that the
+    # entity filter then quarantines); a structured entity + domain-terms
+    # query resolves to the entity itself (E-41/E-44 root cause).
+    if entities and entities[0] in base:
+        domain_terms = {
+            SkillName.EVENT: "业绩预告 事件",
+            SkillName.ANNOUNCEMENT: "公告",
+            SkillName.INSTITUTIONAL_RESEARCH: "机构覆盖 盈利预测 评级 目标价",
+        }.get(skill)
+        if domain_terms is not None:
+            return f"{entities[0]} {domain_terms}"[:500]
+        return base[:500]
     parts = []
     if industry_topic and industry_topic not in base:
         parts.append(industry_topic)

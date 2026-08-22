@@ -1,0 +1,103 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-4A0B02B2ACDD",
+  "chart_type": "line",
+  "data_fingerprint": "bb22a4b34bf2daae0e64ac7fd41005012d4be2d78eb7b52d42f872bc57db6a06",
+  "dedupe_key": "trend:trend:以bar图呈现归母净利润的证据分布，支撑ch-02的论述。:bb22a4b34bf2daae0e64ac7fd41005012d4be2d78eb7b52d42f872bc57db6a06",
+  "evidence_ids": [
+    "E-94d4ce62e60c5ed7",
+    "E-28628dae1308f3cd",
+    "E-1705e58c131eab3d",
+    "E-ccdff640672c590e",
+    "E-1d0d11d753f6dfaa",
+    "E-90cca86d8a69680b"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现归母净利润的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "比亚迪": {
+        "2024-12-31": "E-90cca86d8a69680b",
+        "2025-03-31": "E-1d0d11d753f6dfaa",
+        "2025-06-30": "E-ccdff640672c590e",
+        "2025-09-30": "E-1705e58c131eab3d",
+        "2025-12-31": "E-28628dae1308f3cd",
+        "2026-03-31": "E-94d4ce62e60c5ed7"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          40254346000.0,
+          9154985000.0,
+          15510533000.0,
+          23333173000.0,
+          32619022000.0,
+          4084551000.0
+        ],
+        "name": "比亚迪",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "归母净利润（比亚迪）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2024-12-31",
+        "2025-03-31",
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "归母净利润（比亚迪）",
+  "variant": "line"
+}

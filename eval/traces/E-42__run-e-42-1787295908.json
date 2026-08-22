@@ -1,0 +1,110 @@
+{
+  "case_id": "E-42",
+  "run_id": "run-e-42-1787295908",
+  "recorded_at": "2026-08-21T07:05:15.756439+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "梳理比亚迪近半年业绩预告与增发事件",
+    "industry_topic": "动力电池",
+    "focus_questions": [
+      "梳理比亚迪近半年业绩预告与增发事件"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 6.98
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "intent_clarification_required"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "approved",
+      "error": "analysis_input_invalid"
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "approved",
+      "error": "chapter_input_invalid"
+    },
+    {
+      "stage": "report_fusion",
+      "status": "approved",
+      "error": "report_input_invalid"
+    }
+  ],
+  "intent_routing": {
+    "enabled": true,
+    "strategy": "llm_first_with_deterministic_calibration",
+    "clarification_required": [
+      "梳理比亚迪近半年业绩预告与增发事件"
+    ],
+    "warnings": [],
+    "plans": [
+      {
+        "question": "梳理比亚迪近半年业绩预告与增发事件",
+        "parser_mode": "hybrid",
+        "complexity": "compound",
+        "locked_skills": [
+          "hithink_event_query",
+          "announcement_search"
+        ],
+        "accepted_skills": [],
+        "rejected_skills": [],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "梳理比亚迪近半年业绩预告",
+            "skills": [
+              "hithink_event_query"
+            ],
+            "source": "deterministic",
+            "clarify": false
+          },
+          {
+            "text": "增发事件",
+            "skills": [
+              "hithink_event_query",
+              "announcement_search"
+            ],
+            "source": "deterministic",
+            "clarify": false
+          },
+          {
+            "text": "梳理比亚迪近半年业绩预告事件",
+            "skills": [
+              "hithink_event_query",
+              "announcement_search"
+            ],
+            "source": "llm",
+            "clarify": false
+          },
+          {
+            "text": "梳理比亚迪近半年增发事件",
+            "skills": [
+              "hithink_event_query",
+              "announcement_search"
+            ],
+            "source": "llm",
+            "clarify": false
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

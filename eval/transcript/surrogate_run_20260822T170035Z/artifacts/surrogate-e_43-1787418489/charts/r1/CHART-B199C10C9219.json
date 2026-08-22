@@ -1,0 +1,97 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-B199C10C9219",
+  "chart_type": "line",
+  "data_fingerprint": "8e10c4801e4b27b55861d12b320d28dceb64b01baa1f9813762b2ac2c1a303c2",
+  "dedupe_key": "trend:trend:以line图呈现营业收入同比增长率的证据分布，支撑ch-02的论述。:8e10c4801e4b27b55861d12b320d28dceb64b01baa1f9813762b2ac2c1a303c2",
+  "evidence_ids": [
+    "E-0eccced73ca96502",
+    "E-840af2f3a9e89100",
+    "E-b179ee334b7437b8"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以line图呈现营业收入同比增长率的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "上汽集团": {
+        "2025-12-31": "E-840af2f3a9e89100"
+      },
+      "比亚迪": {
+        "2025-12-31": "E-0eccced73ca96502"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          5.2238
+        ],
+        "name": "上汽集团",
+        "showSymbol": true,
+        "type": "line"
+      },
+      {
+        "connectNulls": false,
+        "data": [
+          3.4568000000000003
+        ],
+        "name": "比亚迪",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业收入同比增长率（比亚迪）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-12-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY %",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": null,
+  "title": "营业收入同比增长率（比亚迪）",
+  "variant": "line"
+}

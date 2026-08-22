@@ -1,0 +1,122 @@
+{
+  "case_id": "E-11",
+  "run_id": "run-e-11-1787295730",
+  "recorded_at": "2026-08-21T07:02:19.592272+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "国内风电整机厂商订单量、交付能力对比",
+    "industry_topic": "风电",
+    "focus_questions": [
+      "国内风电整机厂商订单量、交付能力对比"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 8.9
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "intent_clarification_required"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "approved",
+      "error": "analysis_input_invalid"
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "approved",
+      "error": "chapter_input_invalid"
+    },
+    {
+      "stage": "report_fusion",
+      "status": "approved",
+      "error": "report_input_invalid"
+    }
+  ],
+  "intent_routing": {
+    "enabled": true,
+    "strategy": "llm_first_with_deterministic_calibration",
+    "clarification_required": [
+      "国内风电整机厂商订单量、交付能力对比"
+    ],
+    "warnings": [
+      "unresolved_sub_requirement:SUB-01",
+      "unresolved_sub_requirement:SUB-02",
+      "llm_skill_capability_mismatch:hithink_industry_query",
+      "llm_skill_capability_mismatch:hithink_insresearch_query",
+      "llm_skill_capability_mismatch:report_search",
+      "llm_skill_capability_mismatch:news_search",
+      "llm_skill_pending_review:hithink_business_query",
+      "llm_skill_capability_mismatch:hithink_industry_query",
+      "llm_skill_capability_mismatch:hithink_insresearch_query",
+      "llm_skill_capability_mismatch:report_search",
+      "llm_skill_capability_mismatch:news_search",
+      "llm_skill_capability_mismatch:announcement_search",
+      "llm_skill_pending_review:hithink_business_query"
+    ],
+    "plans": [
+      {
+        "question": "国内风电整机厂商订单量、交付能力对比",
+        "parser_mode": "hybrid",
+        "complexity": "compound",
+        "locked_skills": [],
+        "accepted_skills": [
+          "hithink_business_query"
+        ],
+        "rejected_skills": [
+          "hithink_industry_query",
+          "hithink_insresearch_query",
+          "report_search",
+          "news_search",
+          "announcement_search"
+        ],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "国内风电整机厂商订单量",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "交付能力对比",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "国内风电整机厂商订单量对比",
+            "skills": [
+              "hithink_business_query"
+            ],
+            "source": "llm",
+            "clarify": true
+          },
+          {
+            "text": "国内风电整机厂商交付能力对比",
+            "skills": [
+              "hithink_business_query"
+            ],
+            "source": "llm",
+            "clarify": true
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

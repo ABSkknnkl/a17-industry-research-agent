@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "7ae9f9a6e60c3e847c58707305c81fd3ee61b8b5f7cb35616e195f72f6821dc1",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-insresearch-query",
+  "request": {
+    "query": "汇总机构对储能行业2026年的一致预期",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1621,\"query\":\"汇总机构对储能行业2026年的一致预期\",\"columns\":[{\"index_name\":\"预测净利润中值(虚拟表)\",\"key\":\"预测净利润中值合计值[20261231]\",\"feKey\":\"预测净利润中值合计值[20261231]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"timestamp\":\"20261231\",\"source\":\"index\"}],\"datas\":[{}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"汇总机构对储能行业2026年的一致预期 (1)\\\"]\",\"status_code\":0,\"token\":\"0ac9a91d17874163158947759\"}",
+  "raw_sha256": "bb7a79fbfb711ad8331c47d642f8d0ff9ebe57a2291bfbfb5c8d9452574b7f12",
+  "recorded_at": "2026-08-22T16:31:55.871036+00:00"
+}

@@ -27,6 +27,13 @@ def _unique(values: Iterable[str]) -> list[str]:
     return list(dict.fromkeys(value for value in values if value))
 
 
+def _truncate(value: str, limit: int) -> str:
+    normalized = " ".join(value.split())
+    if len(normalized) <= limit:
+        return normalized
+    return normalized[: limit - 1].rstrip() + "…"
+
+
 def _referenced_ids(
     analysis: AnalysisResult,
     charts: ChartGenerationResult,
@@ -95,14 +102,16 @@ def build_evidence_catalog(
         items = groups[key]
         first = items[0]
         number = len(entries) + 1
-        source_name = first.source_name.strip()
-        if len(source_name) > 450:
-            source_name = source_name[:447].rstrip() + "…"
+        source_name = _truncate(first.source_name, 30)
         entries.append(
             EvidenceSourceEntry(
                 citation_number=number,
                 display_label=f"来源{number}：{source_name}",
                 material_title=source_name,
+                publishers=_unique(item.publisher or "未提供" for item in items),
+                retrieval_methods=_unique(
+                    item.retrieval_method or "未提供" for item in items
+                ),
                 metric_names=_unique(item.metric_name for item in items),
                 available_dates=_unique(
                     item.available_at.isoformat() if item.available_at else "未提供"
@@ -128,6 +137,8 @@ def build_evidence_catalog(
                 citation_number=number,
                 display_label=f"来源{number}：来源信息待补充",
                 material_title="来源信息待补充",
+                publishers=["未提供"],
+                retrieval_methods=["未提供"],
                 metric_names=["相关指标待补充"],
                 available_dates=["未提供"],
                 reporting_periods=["未提供"],

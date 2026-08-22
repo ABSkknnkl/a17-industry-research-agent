@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "823cee19974521bfdd88dce2df406c8ae978eceae5b86e757411bab3abae0684",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "report-search",
+  "request": {
+    "query": "动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 宁德时代近四年营收、归母净利润、毛利率、各项费用率并梳理主营业务结构",
+    "channels": [
+      "report"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[],\"abtest_info\":\"\",\"took\":140,\"total\":0,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 宁德时代近四年营收、归母净利润、毛利率、各项费用率并梳理主营业务结构\"],\"query\":\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 宁德时代近四年营收、归母净利润、毛利率、各项费用率并梳理主营业务结构\",\"integrity_result\":true,\"intents\":[],\"intent\":\"资讯消息-研报\"},\"content_data\":[]}",
+  "raw_sha256": "d1f5787c4bae9556910d038a30692b1aa039ff81651ec6d79e003d193baba1c0",
+  "recorded_at": "2026-08-22T06:34:09.908696+00:00"
+}

@@ -16,7 +16,12 @@ from app.runtime.guard import (
     RuntimeSession,
     runtime_session_scope,
 )
-from app.runtime.models import RuntimePolicy, RuntimeState, create_runtime_state
+from app.runtime.models import (
+    RuntimePolicy,
+    RuntimeState,
+    create_runtime_state,
+    runtime_policy_from_settings,
+)
 from app.workflow.stages import StageContext, StageRegistry
 from app.workflow.state import PipelineGraphState
 
@@ -129,6 +134,17 @@ def _stage_node(
         in_review_stages = stage.value in state["review_stages"]
         if result.status == StageStatus.WAITING_REVIEW and not in_review_stages:
             input_data = dict(state["input_data"])
+            # An error-bearing result is never a recommendation.  Preserve the
+            # clarification/recovery payload and stop before downstream stages.
+            if result.error is not None:
+                return {
+                    "current_stage": stage,
+                    "status": StageStatus.WAITING_REVIEW,
+                    "stage_results": stage_results,
+                    "input_data": input_data,
+                    "runtime": session.state.model_dump(mode="json"),
+                    "updated_at": datetime.now(UTC).isoformat(),
+                }
             result_data = dict(result.data)
             result_data.pop("collaboration_requests", None)
             dp = result_data.get("decision_package", {})
@@ -212,9 +228,21 @@ def _stage_node(
                 }
 
             # 检查是否有除collaboration_requests外的实质数据
-            has_substantive_data = any(
-                k not in ("collaboration_requests", "error", "blocking_issues") for k in result_data
-            )
+            audit_only_keys = {
+                "advisory_issues",
+                "allowed_review_actions",
+                "blocking_issues",
+                "intent_routing",
+                "semantic_routing",
+                "provider_mode",
+                "retrieval_plan",
+                "requirement_coverage",
+                "skill_calls",
+                "source_records",
+                "normalization_summary",
+                "acquisition_quality",
+            }
+            has_substantive_data = any(k not in audit_only_keys for k in result_data)
             if not has_substantive_data:
                 # 没有实质数据，不能自动接受，保持WAITING_REVIEW
                 return {
@@ -494,7 +522,7 @@ def build_pipeline_graph(
     """Compile a five-stage graph using only the public StageAgent interface."""
 
     registry.validate_complete()
-    policy = runtime_policy or RuntimePolicy()
+    policy = runtime_policy or runtime_policy_from_settings()
     builder = StateGraph(PipelineGraphState)
 
     for stage in STAGE_ORDER:

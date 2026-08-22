@@ -1,0 +1,12 @@
+{
+  "llm_mode": "real",
+  "mode": "record",
+  "total": 56,
+  "pass": 44,
+  "intercept": 11,
+  "fail": 0,
+  "blocked": 1,
+  "trace_saved": 55,
+  "trace_failed": 0,
+  "traces_dir": "/Users/Zhuanz1/PycharmProjects/同花顺/eval/traces"
+}

@@ -1,0 +1,80 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-DF151D72A395",
+  "chart_type": "bar",
+  "data_fingerprint": "64e9b0fa1cebc57b1e32e1d22d47edd7b28c30f715ef40cb9a44fc1ae70a40dd",
+  "dedupe_key": "comparison:comparison:以bar图呈现经营活动产生的现金流量净额的证据分布，支撑ch-02的论述。:64e9b0fa1cebc57b1e32e1d22d47edd7b28c30f715ef40cb9a44fc1ae70a40dd",
+  "evidence_ids": [
+    "E-84e0418772d1cef8"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现经营活动产生的现金流量净额的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-84e0418772d1cef8",
+            "value": 365235010.65
+          }
+        ],
+        "name": "德赛电池",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "经营活动产生的现金流量净额（德赛电池）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "德赛电池"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "经营活动产生的现金流量净额（德赛电池）",
+  "variant": "vertical"
+}

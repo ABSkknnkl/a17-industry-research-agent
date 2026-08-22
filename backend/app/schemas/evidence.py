@@ -58,6 +58,8 @@ class EvidenceItem(BaseModel):
     accounting_standard: str = Field(min_length=1, max_length=100)
     corporate_action_adjustment: CorporateActionAdjustment = CorporateActionAdjustment.UNKNOWN
     source_name: str = Field(min_length=1, max_length=500)
+    publisher: str | None = Field(default=None, max_length=500)
+    retrieval_method: str | None = Field(default=None, max_length=100)
     source_locator: str | None = Field(default=None, max_length=1_000)
     grade: EvidenceGrade
     notes: str | None = Field(default=None, max_length=5_000)

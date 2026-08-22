@@ -215,7 +215,11 @@ class QuarantinedRecord(AcquisitionModel):
     row_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     entity: str = Field(min_length=1, max_length=500)
     relevance_status: Literal["low"] = "low"
-    reason_code: Literal["topic_mismatch", "target_entity_mismatch"] = "topic_mismatch"
+    reason_code: Literal[
+        "topic_mismatch",
+        "target_entity_mismatch",
+        "future_availability",
+    ] = "topic_mismatch"
     reason: str = Field(min_length=1, max_length=1_000)
 
 

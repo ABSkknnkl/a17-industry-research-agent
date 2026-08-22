@@ -1,0 +1,127 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-46AA92FBE5A5",
+  "chart_type": "line",
+  "data_fingerprint": "07c1da5b903c60a3e0cf1cd4fefcd2f4621fbbb16d0dc371061c0d3c9003e18c",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-02的论述。:07c1da5b903c60a3e0cf1cd4fefcd2f4621fbbb16d0dc371061c0d3c9003e18c",
+  "evidence_ids": [
+    "E-a569641bb5e23a13",
+    "E-8fe06c0bd9e932d3",
+    "E-1d61205aae3727a0",
+    "E-4e9f431764c0337c",
+    "E-5066a26a1132c73d",
+    "E-441ff49fbfa907bd",
+    "E-32913269e6994ead",
+    "E-c247f170412841cd",
+    "E-b4fd5afab371a79a",
+    "E-585832b3e9a4e351",
+    "E-e4c46099727153f1",
+    "E-0a67bbee60c36f52"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德市:市国资委企业:营业收入:累计值": {
+        "2025-01-31": "E-0a67bbee60c36f52",
+        "2025-02-28": "E-e4c46099727153f1",
+        "2025-03-31": "E-585832b3e9a4e351",
+        "2025-04-30": "E-b4fd5afab371a79a",
+        "2025-05-31": "E-c247f170412841cd",
+        "2025-06-30": "E-32913269e6994ead",
+        "2025-07-31": "E-441ff49fbfa907bd",
+        "2025-08-31": "E-5066a26a1132c73d",
+        "2025-09-30": "E-4e9f431764c0337c",
+        "2025-10-31": "E-1d61205aae3727a0",
+        "2025-11-30": "E-8fe06c0bd9e932d3",
+        "2025-12-31": "E-a569641bb5e23a13"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          396000000.0,
+          782000000.0,
+          1199000000.0,
+          1557000000.0,
+          1912000000.0,
+          2279000000.0,
+          2638000000.0,
+          3010000000.0,
+          3445000000.0000005,
+          3784000000.0000005,
+          4142000000.0,
+          5012000000.0
+        ],
+        "name": "宁德市:市国资委企业:营业收入:累计值",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（宁德市:市国资委企业:营业收入:累计值）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-01-31",
+        "2025-02-28",
+        "2025-03-31",
+        "2025-04-30",
+        "2025-05-31",
+        "2025-06-30",
+        "2025-07-31",
+        "2025-08-31",
+        "2025-09-30",
+        "2025-10-31",
+        "2025-11-30",
+        "2025-12-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（宁德市:市国资委企业:营业收入:累计值）",
+  "variant": "line"
+}

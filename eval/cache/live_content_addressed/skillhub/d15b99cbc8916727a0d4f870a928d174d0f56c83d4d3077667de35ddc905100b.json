@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "d15b99cbc8916727a0d4f870a928d174d0f56c83d4d3077667de35ddc905100b",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "中国内地 创新药 2024-01-01至2026-08-11 代表公司 营业收入 营业成本 净利润 ROE 经营活动现金流量净额 投资活动现金流量净额 筹资活动现金流量净额 期末现金及现金等价物余额 货币资金 总资产 负债合计 股东权益 存货 应收账款 药明康德存货周转率、应收周转率",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":10,\"columns\":[],\"datas\":[],\"row_count\":0,\"code_count\":0,\"status_code\":-1225}",
+  "raw_sha256": "afce182bb3c896370f8d7d6b1ac8dde8c4ac5add76525e85e0af037cd7a42160",
+  "recorded_at": "2026-08-22T12:52:06.967983+00:00"
+}

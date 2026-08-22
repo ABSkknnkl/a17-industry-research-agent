@@ -1,0 +1,109 @@
+{
+  "case_id": "E-49",
+  "run_id": "run-e-49-1787295944",
+  "recorded_at": "2026-08-21T07:05:51.829174+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "动力电池板块近期市场情绪与资金流向分析",
+    "industry_topic": "动力电池",
+    "focus_questions": [
+      "动力电池板块近期市场情绪与资金流向分析"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 7.49
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "intent_clarification_required"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "approved",
+      "error": "analysis_input_invalid"
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "approved",
+      "error": "chapter_input_invalid"
+    },
+    {
+      "stage": "report_fusion",
+      "status": "approved",
+      "error": "report_input_invalid"
+    }
+  ],
+  "intent_routing": {
+    "enabled": true,
+    "strategy": "llm_first_with_deterministic_calibration",
+    "clarification_required": [
+      "动力电池板块近期市场情绪与资金流向分析"
+    ],
+    "warnings": [
+      "unresolved_sub_requirement:SUB-02",
+      "llm_skill_capability_mismatch:hithink_sector_selector",
+      "llm_skill_capability_mismatch:hithink_industry_query",
+      "llm_skill_capability_mismatch:hithink_sector_selector",
+      "llm_skill_capability_mismatch:hithink_industry_query",
+      "llm_skill_capability_mismatch:hithink_finance_query"
+    ],
+    "plans": [
+      {
+        "question": "动力电池板块近期市场情绪与资金流向分析",
+        "parser_mode": "hybrid",
+        "complexity": "compound",
+        "locked_skills": [
+          "hithink_sector_selector",
+          "news_search"
+        ],
+        "accepted_skills": [],
+        "rejected_skills": [
+          "hithink_sector_selector",
+          "hithink_industry_query",
+          "hithink_finance_query"
+        ],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "动力电池板块近期市场情绪",
+            "skills": [
+              "hithink_sector_selector",
+              "news_search"
+            ],
+            "source": "deterministic",
+            "clarify": false
+          },
+          {
+            "text": "资金流向分析",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "动力电池板块近期市场情绪分析",
+            "skills": [
+              "news_search"
+            ],
+            "source": "llm",
+            "clarify": true
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

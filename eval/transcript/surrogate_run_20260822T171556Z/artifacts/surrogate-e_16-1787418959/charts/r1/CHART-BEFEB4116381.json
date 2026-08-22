@@ -1,0 +1,119 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-BEFEB4116381",
+  "chart_type": "line",
+  "data_fingerprint": "d6a1d9ab273ee6a03712988476d3cd5d694f1e934cf920963867133a22a317b9",
+  "dedupe_key": "trend:trend:以bar图呈现净资产的证据分布，支撑ch-02的论述。:d6a1d9ab273ee6a03712988476d3cd5d694f1e934cf920963867133a22a317b9",
+  "evidence_ids": [
+    "E-f0799701401dbdb4",
+    "E-293feef6b744c4e9",
+    "E-610ea013271eddc8",
+    "E-5eac000cb66b1704",
+    "E-27f4d7f809d2492f",
+    "E-025b53ff960d7bf4",
+    "E-706f852501549b10",
+    "E-9e891300c908173a",
+    "E-01c7f8e2065819f2",
+    "E-719cb4cbdbb00c62"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现净资产的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "药明康德": {
+        "2024-03-31": "E-719cb4cbdbb00c62",
+        "2024-06-30": "E-01c7f8e2065819f2",
+        "2024-09-30": "E-9e891300c908173a",
+        "2024-12-31": "E-706f852501549b10",
+        "2025-03-31": "E-025b53ff960d7bf4",
+        "2025-06-30": "E-27f4d7f809d2492f",
+        "2025-09-30": "E-5eac000cb66b1704",
+        "2025-12-31": "E-610ea013271eddc8",
+        "2026-03-31": "E-293feef6b744c4e9",
+        "2026-06-30": "E-f0799701401dbdb4"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          56048297011.56,
+          55094761179.28,
+          55583242101.99,
+          59085613635.57,
+          62778761757.31,
+          60409081754.8,
+          71472497304.7,
+          80247713601.52,
+          84771629408.9,
+          83883995279.46
+        ],
+        "name": "药明康德",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "净资产（药明康德）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2024-03-31",
+        "2024-06-30",
+        "2024-09-30",
+        "2024-12-31",
+        "2025-03-31",
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "净资产（药明康德）",
+  "variant": "line"
+}

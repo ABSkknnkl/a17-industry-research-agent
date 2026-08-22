@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "b2280c5fca9bf173ac01f174d8dd3969af4fff4b6662dea1347bd2e7bdc33099",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "news-search",
+  "request": {
+    "query": "光伏 政策 行业新闻 技术进展 风险事件 截至2026-08-11 查询隆基绿能公司概况与主营业务介绍",
+    "channels": [
+      "news"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[{\"channel\":\"news\",\"id\":\"8eb6f1bb0685ad6d\",\"uid\":\"8eb6f1bb0685ad6d\",\"url\":\"http://news.10jqka.com.cn/19700122/c678851929.shtml\",\"title\":\"昨日估值：隆基绿能 市盈率（TTM）-14.19倍，处于分位18.3%（2026年8月10日）\",\"summary\":\"据同花顺iFind数据，截至2026年8月10日收盘，隆基绿能市盈率（TTM）为-14.19倍，位于18.3%历史分位，处于历史低位区间。，当日值较行业估值低7.57倍。 此前最近一次接近18.3%历史分位是在2026年8月7日。 2016年8月11日至2026年8月10日，隆基绿能市盈率（TTM）的30%和70%分位值分别为13.11倍和28.32倍。 从出现频次看，统计区间内隆基绿能市盈率（TTM）落在-15倍至-10倍区间的交易日共140个，占全部有效交易日的5.8%。 \",\"index\":\"robot_universal_search\",\"score\":0.09615276,\"extra\":{\"seq\":\"678851929\",\"publish_source\":\"同花顺财经\",\"real_publish_source\":\"股势追踪\",\"host_name\":\"news.10jqka.com.cn\",\"de_groupid\":\"c447b90d620d073a\",\"site_tags\":[],\"author_name\":\"机器人\",\"image_url_list\":[],\"is_forbidden_source\":false},\"name\":\"admin\",\"status\":0,\"data_source\":\"UNIVERSAL_SENTIMENT\",\"source_original\":\"据同花顺iFind数据，截至2026年8月10日收盘，隆基绿能市盈率（TTM）为-14.19倍，位于18.3%历史分位，处于历史低位区间。，当日值较行业估值低7.57倍。此前最近一次接近18.3%历史分位是在2026年8月7日。 2016年8月11日至2026年8月10日，隆基绿能市盈率（TTM）的30%和70%分位值分别为13.11倍和28.32倍。 从出现频次看，统计区间内隆基绿能市盈率（TTM）落在-15倍至-10倍区间的交易日共140个，占全部有效交易日的5.8%。 市盈率（TTM）通常以公司当前总市值除以最近12个月归属于母公司股东的净利润计算，用于描述市场价格相对于公司近12个月盈利的估值倍数。该指标会随股价和滚动净利润变化；不同行业的盈利模式、增长阶段及会计口径存在差异，不宜脱离成长性等比较。 本文仅作客观信息展示，不构成任何投资建议。\",\"publish_time\":1786415520,\"publish_date\":\"2026-08-11 10:32:00\",\"data_version\":\"v1\",\"traceability_type\":0,\"site_authority\":2,\"modify_time\":0,\"operation_type\":0}],\"abtest_info\":\"\",\"took\":234,\"total\":1,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"光伏 政策 行业新闻 技术进展 风险事件 截至2026-08-11 查询隆基绿能公司概况与主营业务介绍\"],\"query\":\"光伏 政策 行业新闻 技术进展 风险事件 截至2026-08-11 查询隆基绿能公司概况与主营业务介绍\",\"integrity_result\":true,\"intents\":[\"个股正负面新闻\"],\"intent\":\"资讯消息-新闻\"},\"content_data\":[]}",
+  "raw_sha256": "17c4ef9a1c33a1335bf107e7614143620411459e0c63ca79b25f8ccc0c32f008",
+  "recorded_at": "2026-08-22T16:25:32.485455+00:00"
+}

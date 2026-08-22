@@ -1,0 +1,2786 @@
+{
+  "run_id": "real-estate-no-llm-a38ea5fe28",
+  "user_query": "请分析中国房地产行业2021—2025年商品房销售面积、销售额、开发投资和新开工变化，结合政策、库存与风险形成简版行业研究报告，并生成至少3张图表。",
+  "llm_provider_called": false,
+  "timings_seconds": {
+    "agent2": 0.01,
+    "agent3": 0.002,
+    "agent4": 0.024,
+    "agent5": 0.015
+  },
+  "stages": {
+    "data_interpret": {
+      "stage": "data_interpret",
+      "status": "completed",
+      "revision": 1,
+      "data": {
+        "headline": "模拟数据反映房地产需求与供给端同步收缩，行业仍处于调整阶段。",
+        "overall_confidence": "medium",
+        "financial_quality": "differences_pending_verification",
+        "claims": [
+          {
+            "claim_id": "C-SALES-AREA",
+            "claim_type": "fact",
+            "text": "模拟样本中，商品房销售面积指数由2021年的100下降至2025年的50。",
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025"
+            ],
+            "counter_evidence_ids": [],
+            "confidence": "high",
+            "uncertainty": "本测试使用模拟指数，仅验证系统流程，不能作为现实市场判断。",
+            "status": "pending_review"
+          },
+          {
+            "claim_id": "C-SALES-VALUE",
+            "claim_type": "fact",
+            "text": "模拟样本中，商品房销售额指数由2021年的100下降至2025年的52。",
+            "evidence_ids": [
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025"
+            ],
+            "counter_evidence_ids": [],
+            "confidence": "high",
+            "uncertainty": "金额被转换为指数，未表达实际销售额规模。",
+            "status": "pending_review"
+          },
+          {
+            "claim_id": "C-SUPPLY",
+            "claim_type": "inference",
+            "text": "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。",
+            "evidence_ids": [
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025",
+              "E-START-2021",
+              "E-START-2022",
+              "E-START-2023",
+              "E-START-2024",
+              "E-START-2025"
+            ],
+            "counter_evidence_ids": [],
+            "confidence": "medium",
+            "uncertainty": "指数不包含城市分化、土地成交和企业信用差异。",
+            "status": "pending_review"
+          },
+          {
+            "claim_id": "C-POLICY-RISK",
+            "claim_type": "inference",
+            "text": "政策支持与库存消化速度是后续需求修复的重要观察变量。",
+            "evidence_ids": [
+              "E-POLICY",
+              "E-INVENTORY"
+            ],
+            "counter_evidence_ids": [],
+            "confidence": "medium",
+            "uncertainty": "政策与库存材料均为测试文本，不代表现实政策结论。",
+            "status": "pending_review"
+          },
+          {
+            "claim_id": "C-CHAIN",
+            "claim_type": "fact",
+            "text": "房地产产业链测试结构覆盖土地与融资、开发建设、销售与物业服务环节。",
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "counter_evidence_ids": [],
+            "confidence": "medium",
+            "uncertainty": "产业链节点为流程测试所需的简化结构。",
+            "status": "pending_review"
+          }
+        ],
+        "dimensions": [
+          {
+            "name": "competition",
+            "summary": "企业竞争结论资料不足。",
+            "claim_ids": []
+          },
+          {
+            "name": "growth",
+            "summary": "需求和供给指数均呈下降趋势。",
+            "claim_ids": [
+              "C-SALES-AREA",
+              "C-SALES-VALUE",
+              "C-SUPPLY"
+            ]
+          },
+          {
+            "name": "macro_policy",
+            "summary": "政策支持力度是需求端的重要变量。",
+            "claim_ids": [
+              "C-POLICY-RISK"
+            ]
+          },
+          {
+            "name": "industry_chain",
+            "summary": "产业链覆盖开发前、中、后端。",
+            "claim_ids": [
+              "C-CHAIN"
+            ]
+          },
+          {
+            "name": "risk",
+            "summary": "库存消化、需求恢复和融资条件存在不确定性。",
+            "claim_ids": [
+              "C-POLICY-RISK"
+            ]
+          }
+        ],
+        "validation_cards": [
+          {
+            "name": "scope_comparability",
+            "status": "passed",
+            "summary": "四组指数均采用全国年度测试口径。",
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025",
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025",
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025",
+              "E-START-2021",
+              "E-START-2022",
+              "E-START-2023",
+              "E-START-2024",
+              "E-START-2025"
+            ]
+          },
+          {
+            "name": "financial_quality",
+            "status": "pending_verification",
+            "summary": "测试未提供上市公司财务报表。",
+            "evidence_ids": [
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025"
+            ]
+          },
+          {
+            "name": "valuation_expectation",
+            "status": "pending_verification",
+            "summary": "本测试不分析估值或投资预期。",
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025"
+            ]
+          }
+        ],
+        "scenarios": [
+          {
+            "name": "base",
+            "assumptions": [
+              "库存缓慢消化"
+            ],
+            "triggers": [
+              "销售指数降幅收窄"
+            ],
+            "transmission_path": "政策与库存变化 → 销售变化 → 投资与新开工调整",
+            "evidence_ids": [
+              "E-POLICY",
+              "E-INVENTORY",
+              "E-SA-2025"
+            ],
+            "disconfirming_conditions": [
+              "后续同口径数据与当前方向相反"
+            ],
+            "monitoring_indicators": [
+              "销售面积指数",
+              "库存状态",
+              "开发投资指数"
+            ]
+          },
+          {
+            "name": "upside",
+            "assumptions": [
+              "政策支持增强且需求改善"
+            ],
+            "triggers": [
+              "销售指数连续改善"
+            ],
+            "transmission_path": "政策与库存变化 → 销售变化 → 投资与新开工调整",
+            "evidence_ids": [
+              "E-POLICY",
+              "E-INVENTORY",
+              "E-SA-2025"
+            ],
+            "disconfirming_conditions": [
+              "后续同口径数据与当前方向相反"
+            ],
+            "monitoring_indicators": [
+              "销售面积指数",
+              "库存状态",
+              "开发投资指数"
+            ]
+          },
+          {
+            "name": "downside",
+            "assumptions": [
+              "需求恢复偏慢"
+            ],
+            "triggers": [
+              "库存压力继续上升"
+            ],
+            "transmission_path": "政策与库存变化 → 销售变化 → 投资与新开工调整",
+            "evidence_ids": [
+              "E-POLICY",
+              "E-INVENTORY",
+              "E-SA-2025"
+            ],
+            "disconfirming_conditions": [
+              "后续同口径数据与当前方向相反"
+            ],
+            "monitoring_indicators": [
+              "销售面积指数",
+              "库存状态",
+              "开发投资指数"
+            ]
+          }
+        ],
+        "risks": [
+          "测试数据不是真实金融数据。",
+          "缺少城市能级和企业主体差异。"
+        ],
+        "collaboration_requests": [],
+        "chart_candidates": [
+          {
+            "title": "商品房销售面积与销售额指数",
+            "chart_type": "combo",
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025",
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025"
+            ],
+            "analysis_purpose": "trend",
+            "insight_goal": "对比需求数量与金额口径变化",
+            "priority": 95,
+            "chapter_hint": "CH-02",
+            "alternative_chapter_ids": [],
+            "user_requested": true
+          },
+          {
+            "title": "房地产开发投资指数",
+            "chart_type": "line",
+            "evidence_ids": [
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025"
+            ],
+            "analysis_purpose": "trend",
+            "insight_goal": "展示开发投资变化",
+            "priority": 90,
+            "chapter_hint": "CH-02",
+            "alternative_chapter_ids": [],
+            "user_requested": true
+          },
+          {
+            "title": "房屋新开工指数",
+            "chart_type": "bar",
+            "evidence_ids": [
+              "E-START-2021",
+              "E-START-2022",
+              "E-START-2023",
+              "E-START-2024",
+              "E-START-2025"
+            ],
+            "analysis_purpose": "comparison",
+            "insight_goal": "比较各年度新开工指数",
+            "priority": 85,
+            "chapter_hint": "CH-05",
+            "alternative_chapter_ids": [],
+            "user_requested": true
+          },
+          {
+            "title": "房地产产业链简图",
+            "chart_type": "industry_chain",
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "analysis_purpose": "relationship",
+            "insight_goal": "展示产业链上下游关系",
+            "priority": 80,
+            "chapter_hint": "CH-03",
+            "alternative_chapter_ids": [],
+            "user_requested": true
+          }
+        ],
+        "data_quality_issues": [
+          {
+            "issue_id": "DQ-FINANCIAL_QUALITY",
+            "issue_type": "missing",
+            "metric": "financial_quality",
+            "description": "测试未提供上市公司财务报表。",
+            "impact_level": "medium",
+            "evidence_ids": [
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025"
+            ],
+            "affected_dimensions": [
+              "growth",
+              "risk"
+            ],
+            "suggested_handling": "保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+          },
+          {
+            "issue_id": "DQ-VALUATION_EXPECTATION",
+            "issue_type": "missing",
+            "metric": "valuation_expectation",
+            "description": "本测试不分析估值或投资预期。",
+            "impact_level": "medium",
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025"
+            ],
+            "affected_dimensions": [
+              "growth",
+              "risk"
+            ],
+            "suggested_handling": "保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+          }
+        ],
+        "financial_consistency_checks": [
+          {
+            "check_id": "FC-FINANCIAL-QUALITY",
+            "check_type": "financial_statement_consistency",
+            "status": "warning",
+            "conclusion": "测试未提供上市公司财务报表。",
+            "impact": "涉及盈利质量和现金流的结论应采用条件性表达并提示人工复核。",
+            "evidence_ids": [
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025"
+            ]
+          }
+        ],
+        "calculated_metrics": [],
+        "calculation_issues": [],
+        "dimension_coverage": [
+          {
+            "dimension": "competition",
+            "status": "insufficient",
+            "reason": "当前维度缺少可引用结论，仅保留研究边界。",
+            "evidence_ids": []
+          },
+          {
+            "dimension": "growth",
+            "status": "supported",
+            "reason": "根据当前可追溯结论评估该维度的证据覆盖状态。",
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025",
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025",
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025",
+              "E-START-2021",
+              "E-START-2022",
+              "E-START-2023",
+              "E-START-2024",
+              "E-START-2025"
+            ]
+          },
+          {
+            "dimension": "macro_policy",
+            "status": "supported",
+            "reason": "根据当前可追溯结论评估该维度的证据覆盖状态。",
+            "evidence_ids": [
+              "E-POLICY",
+              "E-INVENTORY"
+            ]
+          },
+          {
+            "dimension": "industry_chain",
+            "status": "supported",
+            "reason": "根据当前可追溯结论评估该维度的证据覆盖状态。",
+            "evidence_ids": [
+              "E-CHAIN"
+            ]
+          },
+          {
+            "dimension": "risk",
+            "status": "supported",
+            "reason": "根据当前可追溯结论评估该维度的证据覆盖状态。",
+            "evidence_ids": [
+              "E-POLICY",
+              "E-INVENTORY"
+            ]
+          }
+        ],
+        "industry_topic": "中国房地产行业",
+        "market_scope": [
+          "中国内地"
+        ],
+        "security_types": [
+          "行业汇总"
+        ],
+        "reporting_currency": "CNY",
+        "research_as_of": "2026-06-30",
+        "version": 1,
+        "prompt": {
+          "version": "global-equity-analysis-v2",
+          "sha256": "7dac7a3d697fa137f33640d57de78e71b2b366062a7aa60f36d08fe733fb20bf"
+        },
+        "skills": [
+          {
+            "name": "受限产业链解读",
+            "version": "3.0.0-restricted",
+            "sha256": "5e8d0269be231bc8b318b5b5ab8150eb874c6890ff5b1fc5e4753aba22bcf22d"
+          }
+        ],
+        "model_name": "codex-human-simulation-no-provider",
+        "quality": {
+          "passed": true,
+          "evidence_coverage": 1.0,
+          "issues": [],
+          "revision_count": 0
+        },
+        "research_brief": {
+          "geography": null,
+          "time_range": null,
+          "included_topics": [],
+          "excluded_topics": [],
+          "focus_companies": [],
+          "report_depth": "standard"
+        },
+        "evidence_catalog": [
+          {
+            "evidence_id": "E-SA-2021",
+            "metric_name": "商品房销售面积指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SA-2021",
+            "period_end": "2021-12-31",
+            "available_at": "2022-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-SA-2022",
+            "metric_name": "商品房销售面积指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SA-2022",
+            "period_end": "2022-12-31",
+            "available_at": "2023-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-SA-2023",
+            "metric_name": "商品房销售面积指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SA-2023",
+            "period_end": "2023-12-31",
+            "available_at": "2024-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-SA-2024",
+            "metric_name": "商品房销售面积指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SA-2024",
+            "period_end": "2024-12-31",
+            "available_at": "2025-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-SA-2025",
+            "metric_name": "商品房销售面积指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SA-2025",
+            "period_end": "2025-12-31",
+            "available_at": "2026-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-SV-2021",
+            "metric_name": "商品房销售额指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SV-2021",
+            "period_end": "2021-12-31",
+            "available_at": "2022-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-SV-2022",
+            "metric_name": "商品房销售额指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SV-2022",
+            "period_end": "2022-12-31",
+            "available_at": "2023-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-SV-2023",
+            "metric_name": "商品房销售额指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SV-2023",
+            "period_end": "2023-12-31",
+            "available_at": "2024-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-SV-2024",
+            "metric_name": "商品房销售额指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SV-2024",
+            "period_end": "2024-12-31",
+            "available_at": "2025-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-SV-2025",
+            "metric_name": "商品房销售额指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-SV-2025",
+            "period_end": "2025-12-31",
+            "available_at": "2026-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-INV-2021",
+            "metric_name": "房地产开发投资指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-INV-2021",
+            "period_end": "2021-12-31",
+            "available_at": "2022-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-INV-2022",
+            "metric_name": "房地产开发投资指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-INV-2022",
+            "period_end": "2022-12-31",
+            "available_at": "2023-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-INV-2023",
+            "metric_name": "房地产开发投资指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-INV-2023",
+            "period_end": "2023-12-31",
+            "available_at": "2024-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-INV-2024",
+            "metric_name": "房地产开发投资指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-INV-2024",
+            "period_end": "2024-12-31",
+            "available_at": "2025-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-INV-2025",
+            "metric_name": "房地产开发投资指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-INV-2025",
+            "period_end": "2025-12-31",
+            "available_at": "2026-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-START-2021",
+            "metric_name": "房屋新开工指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-START-2021",
+            "period_end": "2021-12-31",
+            "available_at": "2022-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-START-2022",
+            "metric_name": "房屋新开工指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-START-2022",
+            "period_end": "2022-12-31",
+            "available_at": "2023-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-START-2023",
+            "metric_name": "房屋新开工指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-START-2023",
+            "period_end": "2023-12-31",
+            "available_at": "2024-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-START-2024",
+            "metric_name": "房屋新开工指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-START-2024",
+            "period_end": "2024-12-31",
+            "available_at": "2025-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-START-2025",
+            "metric_name": "房屋新开工指数",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-START-2025",
+            "period_end": "2025-12-31",
+            "available_at": "2026-02-01",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-POLICY",
+            "metric_name": "政策环境测试说明",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-POLICY",
+            "period_end": null,
+            "available_at": "2026-01-15",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-INVENTORY",
+            "metric_name": "库存风险测试说明",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-INVENTORY",
+            "period_end": null,
+            "available_at": "2026-01-15",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          },
+          {
+            "evidence_id": "E-CHAIN",
+            "metric_name": "房地产产业链测试结构",
+            "source_name": "Codex流程测试夹具（非真实数据）",
+            "source_locator": "fixture://E-CHAIN",
+            "period_end": null,
+            "available_at": "2026-01-15",
+            "grade": "C",
+            "audit_status": "not_applicable",
+            "scope": "中国房地产行业模拟测试口径"
+          }
+        ]
+      },
+      "artifacts": [],
+      "evidence_sources": [
+        "E-SA-2021",
+        "E-SA-2022",
+        "E-SA-2023",
+        "E-SA-2024",
+        "E-SA-2025",
+        "E-SV-2021",
+        "E-SV-2022",
+        "E-SV-2023",
+        "E-SV-2024",
+        "E-SV-2025",
+        "E-INV-2021",
+        "E-INV-2022",
+        "E-INV-2023",
+        "E-INV-2024",
+        "E-INV-2025",
+        "E-START-2021",
+        "E-START-2022",
+        "E-START-2023",
+        "E-START-2024",
+        "E-START-2025",
+        "E-POLICY",
+        "E-INVENTORY",
+        "E-CHAIN"
+      ],
+      "error": null
+    },
+    "chart_generate": {
+      "stage": "chart_generate",
+      "status": "completed",
+      "revision": 1,
+      "data": {
+        "charts": [
+          {
+            "chart_id": "CHART-3D4F6CCAE9A1",
+            "title": "商品房销售面积与销售额指数",
+            "chart_type": "line",
+            "requested_chart_type": "combo",
+            "resolution_reason": "请求图表 combo 与数据集 time_series 不匹配，已确定性调整为 line：组合图要求两个业务相关、时间轴一致且量纲不同的完整序列",
+            "status": "ready",
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025",
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025"
+            ],
+            "insight_goal": "对比需求数量与金额口径变化",
+            "quality_issue_ids": [
+              "DQ-VALUATION_EXPECTATION"
+            ],
+            "footnotes": [
+              "valuation_expectation：本测试不分析估值或投资预期。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+            ],
+            "artifact_id": "ARTIFACT-CHART-3D4F6CCAE9A1",
+            "recommended_chapter_id": "CH-02",
+            "candidate_status": null
+          },
+          {
+            "chart_id": "CHART-0CE3A210EC90",
+            "title": "房地产开发投资指数",
+            "chart_type": "line",
+            "requested_chart_type": "line",
+            "resolution_reason": null,
+            "status": "ready",
+            "evidence_ids": [
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025"
+            ],
+            "insight_goal": "展示开发投资变化",
+            "quality_issue_ids": [
+              "DQ-FINANCIAL_QUALITY"
+            ],
+            "footnotes": [
+              "financial_quality：测试未提供上市公司财务报表。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+            ],
+            "artifact_id": "ARTIFACT-CHART-0CE3A210EC90",
+            "recommended_chapter_id": "CH-02",
+            "candidate_status": null
+          },
+          {
+            "chart_id": "CHART-C24F8F57825E",
+            "title": "房屋新开工指数",
+            "chart_type": "bar",
+            "requested_chart_type": "bar",
+            "resolution_reason": null,
+            "status": "ready",
+            "evidence_ids": [
+              "E-START-2021",
+              "E-START-2022",
+              "E-START-2023",
+              "E-START-2024",
+              "E-START-2025"
+            ],
+            "insight_goal": "比较各年度新开工指数",
+            "quality_issue_ids": [],
+            "footnotes": [],
+            "artifact_id": "ARTIFACT-CHART-C24F8F57825E",
+            "recommended_chapter_id": "CH-05",
+            "candidate_status": null
+          },
+          {
+            "chart_id": "CHART-8C91A1E90F54",
+            "title": "房地产产业链简图",
+            "chart_type": "industry_chain",
+            "requested_chart_type": "industry_chain",
+            "resolution_reason": null,
+            "status": "ready",
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "insight_goal": "展示产业链上下游关系",
+            "quality_issue_ids": [],
+            "footnotes": [],
+            "artifact_id": "ARTIFACT-CHART-8C91A1E90F54",
+            "recommended_chapter_id": "CH-03",
+            "candidate_status": null
+          }
+        ],
+        "chart_specs": [
+          {
+            "chart_id": "CHART-3D4F6CCAE9A1",
+            "title": "商品房销售面积与销售额指数",
+            "chart_type": "line",
+            "requested_chart_type": "combo",
+            "resolution_reason": "请求图表 combo 与数据集 time_series 不匹配，已确定性调整为 line：组合图要求两个业务相关、时间轴一致且量纲不同的完整序列",
+            "variant": "line",
+            "option": {
+              "animation": false,
+              "aria": {
+                "enabled": true
+              },
+              "color": [
+                "#2563EB",
+                "#0F766E",
+                "#D97706",
+                "#7C3AED",
+                "#DC2626"
+              ],
+              "title": {
+                "text": "商品房销售面积与销售额指数",
+                "left": "center"
+              },
+              "legend": {
+                "type": "scroll",
+                "top": 32
+              },
+              "grid": {
+                "left": 72,
+                "right": 32,
+                "top": 72,
+                "bottom": 56,
+                "containLabel": true
+              },
+              "tooltip": {
+                "trigger": "axis"
+              },
+              "xAxis": {
+                "type": "category",
+                "boundaryGap": false,
+                "data": [
+                  "2021",
+                  "2022",
+                  "2023",
+                  "2024",
+                  "2025"
+                ]
+              },
+              "yAxis": {
+                "type": "value",
+                "name": "指数",
+                "scale": true
+              },
+              "series": [
+                {
+                  "name": "销售面积指数",
+                  "type": "line",
+                  "connectNulls": false,
+                  "showSymbol": true,
+                  "data": [
+                    100.0,
+                    76.0,
+                    62.0,
+                    54.0,
+                    50.0
+                  ]
+                },
+                {
+                  "name": "销售额指数",
+                  "type": "line",
+                  "connectNulls": false,
+                  "showSymbol": true,
+                  "data": [
+                    100.0,
+                    73.0,
+                    64.0,
+                    56.0,
+                    52.0
+                  ]
+                }
+              ],
+              "evidenceMap": {
+                "销售面积指数": {
+                  "2021": "E-SA-2021",
+                  "2022": "E-SA-2022",
+                  "2023": "E-SA-2023",
+                  "2024": "E-SA-2024",
+                  "2025": "E-SA-2025"
+                },
+                "销售额指数": {
+                  "2021": "E-SV-2021",
+                  "2022": "E-SV-2022",
+                  "2023": "E-SV-2023",
+                  "2024": "E-SV-2024",
+                  "2025": "E-SV-2025"
+                }
+              }
+            },
+            "render_mode": "echarts",
+            "image_uri": null,
+            "image_mime_type": null,
+            "generation_prompt": null,
+            "generation_prompt_model": null,
+            "generation_image_model": null,
+            "chain_template": null,
+            "chain_graph": null,
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025",
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025"
+            ],
+            "insight_goal": "对比需求数量与金额口径变化",
+            "quality_issue_ids": [
+              "DQ-VALUATION_EXPECTATION"
+            ],
+            "footnotes": [
+              "valuation_expectation：本测试不分析估值或投资预期。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+            ],
+            "data_fingerprint": "a9688c5c049d6445f43054ea443ce56d41a661ebe60cf7d9ecccf40da3b605cf",
+            "dedupe_key": "trend:trend:对比需求数量与金额口径变化:a9688c5c049d6445f43054ea443ce56d41a661ebe60cf7d9ecccf40da3b605cf"
+          },
+          {
+            "chart_id": "CHART-0CE3A210EC90",
+            "title": "房地产开发投资指数",
+            "chart_type": "line",
+            "requested_chart_type": "line",
+            "resolution_reason": null,
+            "variant": "line",
+            "option": {
+              "animation": false,
+              "aria": {
+                "enabled": true
+              },
+              "color": [
+                "#2563EB",
+                "#0F766E",
+                "#D97706",
+                "#7C3AED",
+                "#DC2626"
+              ],
+              "title": {
+                "text": "房地产开发投资指数",
+                "left": "center"
+              },
+              "legend": {
+                "type": "scroll",
+                "top": 32
+              },
+              "grid": {
+                "left": 72,
+                "right": 32,
+                "top": 72,
+                "bottom": 56,
+                "containLabel": true
+              },
+              "tooltip": {
+                "trigger": "axis"
+              },
+              "xAxis": {
+                "type": "category",
+                "boundaryGap": false,
+                "data": [
+                  "2021",
+                  "2022",
+                  "2023",
+                  "2024",
+                  "2025"
+                ]
+              },
+              "yAxis": {
+                "type": "value",
+                "name": "指数",
+                "scale": true
+              },
+              "series": [
+                {
+                  "name": "默认",
+                  "type": "line",
+                  "connectNulls": false,
+                  "showSymbol": true,
+                  "data": [
+                    100.0,
+                    90.0,
+                    81.0,
+                    72.0,
+                    67.0
+                  ]
+                }
+              ],
+              "evidenceMap": {
+                "默认": {
+                  "2021": "E-INV-2021",
+                  "2022": "E-INV-2022",
+                  "2023": "E-INV-2023",
+                  "2024": "E-INV-2024",
+                  "2025": "E-INV-2025"
+                }
+              }
+            },
+            "render_mode": "echarts",
+            "image_uri": null,
+            "image_mime_type": null,
+            "generation_prompt": null,
+            "generation_prompt_model": null,
+            "generation_image_model": null,
+            "chain_template": null,
+            "chain_graph": null,
+            "evidence_ids": [
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025"
+            ],
+            "insight_goal": "展示开发投资变化",
+            "quality_issue_ids": [
+              "DQ-FINANCIAL_QUALITY"
+            ],
+            "footnotes": [
+              "financial_quality：测试未提供上市公司财务报表。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+            ],
+            "data_fingerprint": "2d58c9017a78ab0cb7624b28ff734d36a1e63678d74c0941c3717dcda3fc7925",
+            "dedupe_key": "trend:trend:展示开发投资变化:2d58c9017a78ab0cb7624b28ff734d36a1e63678d74c0941c3717dcda3fc7925"
+          },
+          {
+            "chart_id": "CHART-C24F8F57825E",
+            "title": "房屋新开工指数",
+            "chart_type": "bar",
+            "requested_chart_type": "bar",
+            "resolution_reason": null,
+            "variant": "vertical",
+            "option": {
+              "animation": false,
+              "aria": {
+                "enabled": true
+              },
+              "color": [
+                "#2563EB",
+                "#0F766E",
+                "#D97706",
+                "#7C3AED",
+                "#DC2626"
+              ],
+              "title": {
+                "text": "房屋新开工指数",
+                "left": "center"
+              },
+              "legend": {
+                "type": "scroll",
+                "top": 32
+              },
+              "grid": {
+                "left": 72,
+                "right": 32,
+                "top": 72,
+                "bottom": 56,
+                "containLabel": true
+              },
+              "tooltip": {
+                "trigger": "axis",
+                "axisPointer": {
+                  "type": "shadow"
+                }
+              },
+              "xAxis": {
+                "type": "category",
+                "data": [
+                  "2021",
+                  "2022",
+                  "2023",
+                  "2024",
+                  "2025"
+                ]
+              },
+              "yAxis": {
+                "type": "value",
+                "name": "指数"
+              },
+              "series": [
+                {
+                  "name": "默认",
+                  "type": "bar",
+                  "data": [
+                    {
+                      "value": 100.0,
+                      "evidence_id": "E-START-2021"
+                    },
+                    {
+                      "value": 61.0,
+                      "evidence_id": "E-START-2022"
+                    },
+                    {
+                      "value": 48.0,
+                      "evidence_id": "E-START-2023"
+                    },
+                    {
+                      "value": 37.0,
+                      "evidence_id": "E-START-2024"
+                    },
+                    {
+                      "value": 32.0,
+                      "evidence_id": "E-START-2025"
+                    }
+                  ]
+                }
+              ]
+            },
+            "render_mode": "echarts",
+            "image_uri": null,
+            "image_mime_type": null,
+            "generation_prompt": null,
+            "generation_prompt_model": null,
+            "generation_image_model": null,
+            "chain_template": null,
+            "chain_graph": null,
+            "evidence_ids": [
+              "E-START-2021",
+              "E-START-2022",
+              "E-START-2023",
+              "E-START-2024",
+              "E-START-2025"
+            ],
+            "insight_goal": "比较各年度新开工指数",
+            "quality_issue_ids": [],
+            "footnotes": [],
+            "data_fingerprint": "ead3382616f2f0ad1aca57d37ffa3ea851fdd3dbfa03f043dc171036fc53723a",
+            "dedupe_key": "comparison:comparison:比较各年度新开工指数:ead3382616f2f0ad1aca57d37ffa3ea851fdd3dbfa03f043dc171036fc53723a"
+          },
+          {
+            "chart_id": "CHART-8C91A1E90F54",
+            "title": "房地产产业链简图",
+            "chart_type": "industry_chain",
+            "requested_chart_type": "industry_chain",
+            "resolution_reason": null,
+            "variant": "graph",
+            "option": {
+              "animation": false,
+              "aria": {
+                "enabled": true
+              },
+              "color": [
+                "#2563EB",
+                "#0F766E",
+                "#D97706",
+                "#7C3AED",
+                "#DC2626"
+              ],
+              "title": {
+                "text": "房地产产业链简图",
+                "left": "center"
+              },
+              "legend": {
+                "type": "scroll",
+                "top": 32
+              },
+              "grid": {
+                "left": 72,
+                "right": 32,
+                "top": 72,
+                "bottom": 56,
+                "containLabel": true
+              },
+              "tooltip": {
+                "trigger": "item"
+              },
+              "series": [
+                {
+                  "type": "graph",
+                  "layout": "none",
+                  "left": 80,
+                  "right": 80,
+                  "top": 80,
+                  "bottom": 40,
+                  "roam": false,
+                  "symbolSize": 62,
+                  "categories": [
+                    {
+                      "name": "上游"
+                    },
+                    {
+                      "name": "中游"
+                    },
+                    {
+                      "name": "下游"
+                    },
+                    {
+                      "name": "支撑"
+                    }
+                  ],
+                  "data": [
+                    {
+                      "id": "land",
+                      "name": "土地与融资",
+                      "category": 0,
+                      "x": 0,
+                      "y": 140,
+                      "evidence_ids": [
+                        "E-CHAIN"
+                      ]
+                    },
+                    {
+                      "id": "build",
+                      "name": "开发建设",
+                      "category": 1,
+                      "x": 400,
+                      "y": 140,
+                      "evidence_ids": [
+                        "E-CHAIN"
+                      ]
+                    },
+                    {
+                      "id": "sale",
+                      "name": "销售与物业",
+                      "category": 2,
+                      "x": 800,
+                      "y": 140,
+                      "evidence_ids": [
+                        "E-CHAIN"
+                      ]
+                    }
+                  ],
+                  "links": [
+                    {
+                      "source": "land",
+                      "target": "build",
+                      "label": {
+                        "show": true,
+                        "formatter": "开发投入"
+                      },
+                      "evidence_ids": [
+                        "E-CHAIN"
+                      ]
+                    },
+                    {
+                      "source": "build",
+                      "target": "sale",
+                      "label": {
+                        "show": true,
+                        "formatter": "项目交付"
+                      },
+                      "evidence_ids": [
+                        "E-CHAIN"
+                      ]
+                    }
+                  ],
+                  "edgeSymbol": [
+                    "none",
+                    "arrow"
+                  ],
+                  "edgeSymbolSize": 8,
+                  "label": {
+                    "show": true,
+                    "position": "inside"
+                  },
+                  "lineStyle": {
+                    "width": 2,
+                    "curveness": 0.08
+                  }
+                }
+              ]
+            },
+            "render_mode": "echarts",
+            "image_uri": null,
+            "image_mime_type": null,
+            "generation_prompt": null,
+            "generation_prompt_model": null,
+            "generation_image_model": null,
+            "chain_template": null,
+            "chain_graph": null,
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "insight_goal": "展示产业链上下游关系",
+            "quality_issue_ids": [],
+            "footnotes": [],
+            "data_fingerprint": "04ffd2ee1c2d45b88dda68f135923335e8deb297923f8553a9f23053072a4c0d",
+            "dedupe_key": "relationship:relationship:展示产业链上下游关系:04ffd2ee1c2d45b88dda68f135923335e8deb297923f8553a9f23053072a4c0d"
+          }
+        ],
+        "suppressed_candidates": [
+          {
+            "title": "商品房销售面积与销售额指数",
+            "reason_code": "chart_downgraded",
+            "reason": "combo 条件不满足，已确定性降级为 line：组合图要求两个业务相关、时间轴一致且量纲不同的完整序列",
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025",
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025"
+            ]
+          }
+        ],
+        "quality": {
+          "passed": true,
+          "ready_count": 4,
+          "suppressed_count": 1,
+          "issues": []
+        },
+        "decision_package": {
+          "decision_id": "DEC-77FCA7C428AA",
+          "run_id": "real-estate-no-llm-a38ea5fe28",
+          "stage": "chart_generate",
+          "revision": 1,
+          "all_candidates": [
+            {
+              "candidate_id": "CHART-3D4F6CCAE9A1",
+              "title": "商品房销售面积与销售额指数",
+              "chart_type": "line",
+              "status": "recommended",
+              "recommended_chapter_id": "CH-02",
+              "alternative_chapter_ids": [],
+              "priority": 95,
+              "evidence_ids": [
+                "E-SA-2021",
+                "E-SA-2022",
+                "E-SA-2023",
+                "E-SA-2024",
+                "E-SA-2025",
+                "E-SV-2021",
+                "E-SV-2022",
+                "E-SV-2023",
+                "E-SV-2024",
+                "E-SV-2025"
+              ],
+              "risk_notices": [
+                {
+                  "risk_code": "CHART-USER-TYPE-NOT-MET",
+                  "stage": "chart_generate",
+                  "severity": "warning",
+                  "disposition": "advisory",
+                  "title": "部分用户指定图表类型缺少兼容数据",
+                  "detail": "未生成类型：combo。",
+                  "affected_ids": [],
+                  "recommendation": "补充对应数据形态，或采用系统已生成的兼容图表。",
+                  "consequence": "报告继续生成，不兼容类型不会被伪造。",
+                  "can_override": true
+                }
+              ],
+              "conflict_group_id": null,
+              "chart_id": "CHART-3D4F6CCAE9A1",
+              "suppression_reason": null
+            },
+            {
+              "candidate_id": "CHART-0CE3A210EC90",
+              "title": "房地产开发投资指数",
+              "chart_type": "line",
+              "status": "recommended",
+              "recommended_chapter_id": "CH-02",
+              "alternative_chapter_ids": [],
+              "priority": 90,
+              "evidence_ids": [
+                "E-INV-2021",
+                "E-INV-2022",
+                "E-INV-2023",
+                "E-INV-2024",
+                "E-INV-2025"
+              ],
+              "risk_notices": [
+                {
+                  "risk_code": "CHART-USER-TYPE-NOT-MET",
+                  "stage": "chart_generate",
+                  "severity": "warning",
+                  "disposition": "advisory",
+                  "title": "部分用户指定图表类型缺少兼容数据",
+                  "detail": "未生成类型：combo。",
+                  "affected_ids": [],
+                  "recommendation": "补充对应数据形态，或采用系统已生成的兼容图表。",
+                  "consequence": "报告继续生成，不兼容类型不会被伪造。",
+                  "can_override": true
+                }
+              ],
+              "conflict_group_id": null,
+              "chart_id": "CHART-0CE3A210EC90",
+              "suppression_reason": null
+            },
+            {
+              "candidate_id": "CHART-C24F8F57825E",
+              "title": "房屋新开工指数",
+              "chart_type": "bar",
+              "status": "recommended",
+              "recommended_chapter_id": "CH-05",
+              "alternative_chapter_ids": [],
+              "priority": 85,
+              "evidence_ids": [
+                "E-START-2021",
+                "E-START-2022",
+                "E-START-2023",
+                "E-START-2024",
+                "E-START-2025"
+              ],
+              "risk_notices": [
+                {
+                  "risk_code": "CHART-USER-TYPE-NOT-MET",
+                  "stage": "chart_generate",
+                  "severity": "warning",
+                  "disposition": "advisory",
+                  "title": "部分用户指定图表类型缺少兼容数据",
+                  "detail": "未生成类型：combo。",
+                  "affected_ids": [],
+                  "recommendation": "补充对应数据形态，或采用系统已生成的兼容图表。",
+                  "consequence": "报告继续生成，不兼容类型不会被伪造。",
+                  "can_override": true
+                }
+              ],
+              "conflict_group_id": null,
+              "chart_id": "CHART-C24F8F57825E",
+              "suppression_reason": null
+            },
+            {
+              "candidate_id": "CHART-8C91A1E90F54",
+              "title": "房地产产业链简图",
+              "chart_type": "industry_chain",
+              "status": "recommended",
+              "recommended_chapter_id": "CH-03",
+              "alternative_chapter_ids": [],
+              "priority": 80,
+              "evidence_ids": [
+                "E-CHAIN"
+              ],
+              "risk_notices": [
+                {
+                  "risk_code": "CHART-USER-TYPE-NOT-MET",
+                  "stage": "chart_generate",
+                  "severity": "warning",
+                  "disposition": "advisory",
+                  "title": "部分用户指定图表类型缺少兼容数据",
+                  "detail": "未生成类型：combo。",
+                  "affected_ids": [],
+                  "recommendation": "补充对应数据形态，或采用系统已生成的兼容图表。",
+                  "consequence": "报告继续生成，不兼容类型不会被伪造。",
+                  "can_override": true
+                }
+              ],
+              "conflict_group_id": null,
+              "chart_id": "CHART-8C91A1E90F54",
+              "suppression_reason": null
+            }
+          ],
+          "recommended_selection": [
+            "CHART-3D4F6CCAE9A1",
+            "CHART-0CE3A210EC90",
+            "CHART-C24F8F57825E",
+            "CHART-8C91A1E90F54"
+          ],
+          "conflict_groups": [],
+          "risk_notices": [
+            {
+              "risk_code": "CHART-USER-TYPE-NOT-MET",
+              "stage": "chart_generate",
+              "severity": "warning",
+              "disposition": "advisory",
+              "title": "部分用户指定图表类型缺少兼容数据",
+              "detail": "未生成类型：combo。",
+              "affected_ids": [],
+              "recommendation": "补充对应数据形态，或采用系统已生成的兼容图表。",
+              "consequence": "报告继续生成，不兼容类型不会被伪造。",
+              "can_override": true
+            },
+            {
+              "risk_code": "CHART-CHART-DOWNGRADED",
+              "stage": "chart_generate",
+              "severity": "warning",
+              "disposition": "advisory",
+              "title": "图表候选未能渲染：商品房销售面积与销售额指数",
+              "detail": "combo 条件不满足，已确定性降级为 line：组合图要求两个业务相关、时间轴一致且量纲不同的完整序列",
+              "affected_ids": [],
+              "recommendation": "可补充数据或在后续人工审核中调整图表类型",
+              "consequence": "该图表不会进入报告，但正文和其他图表仍会继续生成",
+              "can_override": true
+            }
+          ],
+          "blocking_risk_codes": [],
+          "acknowledgement_required_codes": [],
+          "decision_status": "not_required",
+          "risk_snapshot_sha256": "3a118dec92617d99a42bb07fd19e8d290adc79a1469e6d4ef5549b0d307d4182",
+          "generated_at": "2026-08-20T14:22:46.412972Z"
+        }
+      },
+      "artifacts": [
+        {
+          "artifact_id": "ARTIFACT-CHART-3D4F6CCAE9A1",
+          "kind": "echarts_option_json",
+          "uri": "real-estate-no-llm-a38ea5fe28/charts/r1/CHART-3D4F6CCAE9A1.json",
+          "checksum": "e054920834e2985c58ff009ff85a01ee6d29fb766811d16868dddee390ea4d94",
+          "revision": 1
+        },
+        {
+          "artifact_id": "ARTIFACT-CHART-0CE3A210EC90",
+          "kind": "echarts_option_json",
+          "uri": "real-estate-no-llm-a38ea5fe28/charts/r1/CHART-0CE3A210EC90.json",
+          "checksum": "46a0c19cf8fc79dcc1753104277e4fa090e3a44e942e06a3e97eee02e62b9b52",
+          "revision": 1
+        },
+        {
+          "artifact_id": "ARTIFACT-CHART-C24F8F57825E",
+          "kind": "echarts_option_json",
+          "uri": "real-estate-no-llm-a38ea5fe28/charts/r1/CHART-C24F8F57825E.json",
+          "checksum": "554d9f91329f7c3b5a9bd59ceb01e4957a73d8d009205658fad95d2a3f9a0755",
+          "revision": 1
+        },
+        {
+          "artifact_id": "ARTIFACT-CHART-8C91A1E90F54",
+          "kind": "echarts_option_json",
+          "uri": "real-estate-no-llm-a38ea5fe28/charts/r1/CHART-8C91A1E90F54.json",
+          "checksum": "0596cb87e22b53c2c12da4cc2d3ea762ba080dbf5b79d12d6521786907122e57",
+          "revision": 1
+        }
+      ],
+      "evidence_sources": [
+        "E-CHAIN",
+        "E-INV-2021",
+        "E-INV-2022",
+        "E-INV-2023",
+        "E-INV-2024",
+        "E-INV-2025",
+        "E-SA-2021",
+        "E-SA-2022",
+        "E-SA-2023",
+        "E-SA-2024",
+        "E-SA-2025",
+        "E-START-2021",
+        "E-START-2022",
+        "E-START-2023",
+        "E-START-2024",
+        "E-START-2025",
+        "E-SV-2021",
+        "E-SV-2022",
+        "E-SV-2023",
+        "E-SV-2024",
+        "E-SV-2025"
+      ],
+      "error": null
+    },
+    "chapter_write": {
+      "stage": "chapter_write",
+      "status": "completed",
+      "revision": 1,
+      "data": {
+        "industry_topic": "中国房地产行业",
+        "research_as_of": "2026-06-30",
+        "chapters": [
+          {
+            "chapter_id": "CH-01",
+            "title": "行业定义与研究基础",
+            "summary": "本章依据可追溯的模拟证据展开，并明确披露未覆盖内容。",
+            "sections": [
+              {
+                "section_id": "SEC-01-01",
+                "title": "行业定义、研究边界与证券范围",
+                "purpose": "界定行业、市场和证券类型范围。",
+                "key_points": [
+                  "模拟样本中，商品房销售面积指数由2021年的100下降至2025年的50。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-01-01-01",
+                    "kind": "analysis",
+                    "text": "模拟样本中，商品房销售面积指数由2021年的100下降至2025年的50。 本节仅解释已给出的模拟证据；研究边界为：本测试使用模拟指数，仅验证系统流程，不能作为现实市场判断。",
+                    "claim_ids": [
+                      "C-SALES-AREA"
+                    ],
+                    "evidence_ids": [
+                      "E-SA-2021",
+                      "E-SA-2022",
+                      "E-SA-2023",
+                      "E-SA-2024",
+                      "E-SA-2025"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "本测试使用模拟指数，仅验证系统流程，不能作为现实市场判断。"
+                ],
+                "visual_semantics": {
+                  "content_type": "summary",
+                  "quantitative_density": 0.25,
+                  "qualitative_density": 0.75,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-01-02",
+                "title": "数据口径、研究时点与分析方法",
+                "purpose": "说明数据可得日、币种和可比性边界。",
+                "key_points": [
+                  "模拟样本中，商品房销售额指数由2021年的100下降至2025年的52。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-01-02-01",
+                    "kind": "analysis",
+                    "text": "模拟样本中，商品房销售额指数由2021年的100下降至2025年的52。 本节仅解释已给出的模拟证据；研究边界为：金额被转换为指数，未表达实际销售额规模。",
+                    "claim_ids": [
+                      "C-SALES-VALUE"
+                    ],
+                    "evidence_ids": [
+                      "E-SV-2021",
+                      "E-SV-2022",
+                      "E-SV-2023",
+                      "E-SV-2024",
+                      "E-SV-2025"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "金额被转换为指数，未表达实际销售额规模。"
+                ],
+                "visual_semantics": {
+                  "content_type": "summary",
+                  "quantitative_density": 0.25,
+                  "qualitative_density": 0.75,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-01-03",
+                "title": "行业发展阶段与当前核心矛盾",
+                "purpose": "概括已获证据支持的发展阶段与核心矛盾。",
+                "key_points": [
+                  "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-01-03-01",
+                    "kind": "analysis",
+                    "text": "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。 本节仅解释已给出的模拟证据；研究边界为：指数不包含城市分化、土地成交和企业信用差异。",
+                    "claim_ids": [
+                      "C-SUPPLY"
+                    ],
+                    "evidence_ids": [
+                      "E-INV-2021",
+                      "E-INV-2022",
+                      "E-INV-2023",
+                      "E-INV-2024",
+                      "E-INV-2025",
+                      "E-START-2021",
+                      "E-START-2022",
+                      "E-START-2023",
+                      "E-START-2024",
+                      "E-START-2025"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "指数不包含城市分化、土地成交和企业信用差异。"
+                ],
+                "visual_semantics": {
+                  "content_type": "narrative",
+                  "quantitative_density": 0.2,
+                  "qualitative_density": 0.8,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              }
+            ],
+            "claim_ids": [
+              "C-SALES-AREA",
+              "C-SALES-VALUE",
+              "C-SUPPLY"
+            ],
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025",
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025",
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025",
+              "E-START-2021",
+              "E-START-2022",
+              "E-START-2023",
+              "E-START-2024",
+              "E-START-2025"
+            ],
+            "chart_ids": [],
+            "missing_inputs": [],
+            "revision": 1
+          },
+          {
+            "chapter_id": "CH-02",
+            "title": "市场规模与成长性",
+            "summary": "本章依据可追溯的模拟证据展开，并明确披露未覆盖内容。",
+            "sections": [
+              {
+                "section_id": "SEC-02-01",
+                "title": "市场规模与历史增长趋势",
+                "purpose": "呈现可追溯的规模与增长证据。",
+                "key_points": [
+                  "模拟样本中，商品房销售面积指数由2021年的100下降至2025年的50。",
+                  "模拟样本中，商品房销售额指数由2021年的100下降至2025年的52。",
+                  "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-02-01-01",
+                    "kind": "analysis",
+                    "text": "模拟样本中，商品房销售面积指数由2021年的100下降至2025年的50。 模拟样本中，商品房销售额指数由2021年的100下降至2025年的52。 模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。 本节仅解释已给出的模拟证据；研究边界为：本测试使用模拟指数，仅验证系统流程，不能作为现实市场判断。；金额被转换为指数，未表达实际销售额规模。；指数不包含城市分化、土地成交和企业信用差异。",
+                    "claim_ids": [
+                      "C-SALES-AREA",
+                      "C-SALES-VALUE",
+                      "C-SUPPLY"
+                    ],
+                    "evidence_ids": [
+                      "E-SA-2021",
+                      "E-SA-2022",
+                      "E-SA-2023",
+                      "E-SA-2024",
+                      "E-SA-2025",
+                      "E-SV-2021",
+                      "E-SV-2022",
+                      "E-SV-2023",
+                      "E-SV-2024",
+                      "E-SV-2025",
+                      "E-INV-2021",
+                      "E-INV-2022",
+                      "E-INV-2023",
+                      "E-INV-2024",
+                      "E-INV-2025",
+                      "E-START-2021",
+                      "E-START-2022",
+                      "E-START-2023",
+                      "E-START-2024",
+                      "E-START-2025"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [
+                  "CHART-3D4F6CCAE9A1",
+                  "CHART-0CE3A210EC90"
+                ],
+                "uncertainties": [
+                  "本测试使用模拟指数，仅验证系统流程，不能作为现实市场判断。",
+                  "金额被转换为指数，未表达实际销售额规模。",
+                  "指数不包含城市分化、土地成交和企业信用差异。"
+                ],
+                "visual_semantics": {
+                  "content_type": "time_series",
+                  "quantitative_density": 0.75,
+                  "qualitative_density": 0.25,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-02-02",
+                "title": "需求驱动因素与细分市场变化",
+                "purpose": "说明需求端驱动因素及其边界。",
+                "key_points": [
+                  "模拟样本中，商品房销售额指数由2021年的100下降至2025年的52。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-02-02-01",
+                    "kind": "analysis",
+                    "text": "模拟样本中，商品房销售额指数由2021年的100下降至2025年的52。 本节仅解释已给出的模拟证据；研究边界为：金额被转换为指数，未表达实际销售额规模。",
+                    "claim_ids": [
+                      "C-SALES-VALUE"
+                    ],
+                    "evidence_ids": [
+                      "E-SV-2021",
+                      "E-SV-2022",
+                      "E-SV-2023",
+                      "E-SV-2024",
+                      "E-SV-2025"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "金额被转换为指数，未表达实际销售额规模。"
+                ],
+                "visual_semantics": {
+                  "content_type": "summary",
+                  "quantitative_density": 0.25,
+                  "qualitative_density": 0.75,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-02-03",
+                "title": "供需关系、产能与行业周期",
+                "purpose": "分析供需、产能和周期传导关系。",
+                "key_points": [
+                  "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-02-03-01",
+                    "kind": "analysis",
+                    "text": "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。 本节仅解释已给出的模拟证据；研究边界为：指数不包含城市分化、土地成交和企业信用差异。",
+                    "claim_ids": [
+                      "C-SUPPLY"
+                    ],
+                    "evidence_ids": [
+                      "E-INV-2021",
+                      "E-INV-2022",
+                      "E-INV-2023",
+                      "E-INV-2024",
+                      "E-INV-2025",
+                      "E-START-2021",
+                      "E-START-2022",
+                      "E-START-2023",
+                      "E-START-2024",
+                      "E-START-2025"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "指数不包含城市分化、土地成交和企业信用差异。"
+                ],
+                "visual_semantics": {
+                  "content_type": "time_series",
+                  "quantitative_density": 0.75,
+                  "qualitative_density": 0.25,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              }
+            ],
+            "claim_ids": [
+              "C-SALES-AREA",
+              "C-SALES-VALUE",
+              "C-SUPPLY"
+            ],
+            "evidence_ids": [
+              "E-SA-2021",
+              "E-SA-2022",
+              "E-SA-2023",
+              "E-SA-2024",
+              "E-SA-2025",
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025",
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025",
+              "E-START-2021",
+              "E-START-2022",
+              "E-START-2023",
+              "E-START-2024",
+              "E-START-2025"
+            ],
+            "chart_ids": [
+              "CHART-3D4F6CCAE9A1",
+              "CHART-0CE3A210EC90"
+            ],
+            "missing_inputs": [],
+            "revision": 1
+          },
+          {
+            "chapter_id": "CH-03",
+            "title": "产业链与利润分配",
+            "summary": "本章依据可追溯的模拟证据展开，并明确披露未覆盖内容。",
+            "sections": [
+              {
+                "section_id": "SEC-03-01",
+                "title": "上游资源、原材料与关键供应环节",
+                "purpose": "说明上游供应与约束。",
+                "key_points": [
+                  "房地产产业链测试结构覆盖土地与融资、开发建设、销售与物业服务环节。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-03-01-01",
+                    "kind": "analysis",
+                    "text": "房地产产业链测试结构覆盖土地与融资、开发建设、销售与物业服务环节。 本节仅解释已给出的模拟证据；研究边界为：产业链节点为流程测试所需的简化结构。",
+                    "claim_ids": [
+                      "C-CHAIN"
+                    ],
+                    "evidence_ids": [
+                      "E-CHAIN"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [
+                  "CHART-8C91A1E90F54"
+                ],
+                "uncertainties": [
+                  "产业链节点为流程测试所需的简化结构。"
+                ],
+                "visual_semantics": {
+                  "content_type": "industry_chain",
+                  "quantitative_density": 0.35,
+                  "qualitative_density": 0.65,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-03-02",
+                "title": "中游核心产品、制造与服务环节",
+                "purpose": "说明中游价值创造与竞争因素。",
+                "key_points": [
+                  "房地产产业链测试结构覆盖土地与融资、开发建设、销售与物业服务环节。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-03-02-01",
+                    "kind": "analysis",
+                    "text": "房地产产业链测试结构覆盖土地与融资、开发建设、销售与物业服务环节。 本节仅解释已给出的模拟证据；研究边界为：产业链节点为流程测试所需的简化结构。",
+                    "claim_ids": [
+                      "C-CHAIN"
+                    ],
+                    "evidence_ids": [
+                      "E-CHAIN"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "产业链节点为流程测试所需的简化结构。"
+                ],
+                "visual_semantics": {
+                  "content_type": "industry_chain",
+                  "quantitative_density": 0.35,
+                  "qualitative_density": 0.65,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-03-03",
+                "title": "下游需求、议价关系与利润迁移",
+                "purpose": "说明下游需求及利润传导方向。",
+                "key_points": [
+                  "房地产产业链测试结构覆盖土地与融资、开发建设、销售与物业服务环节。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-03-03-01",
+                    "kind": "analysis",
+                    "text": "房地产产业链测试结构覆盖土地与融资、开发建设、销售与物业服务环节。 本节仅解释已给出的模拟证据；研究边界为：产业链节点为流程测试所需的简化结构。",
+                    "claim_ids": [
+                      "C-CHAIN"
+                    ],
+                    "evidence_ids": [
+                      "E-CHAIN"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "产业链节点为流程测试所需的简化结构。"
+                ],
+                "visual_semantics": {
+                  "content_type": "industry_chain",
+                  "quantitative_density": 0.35,
+                  "qualitative_density": 0.65,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              }
+            ],
+            "claim_ids": [
+              "C-CHAIN"
+            ],
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "chart_ids": [
+              "CHART-8C91A1E90F54"
+            ],
+            "missing_inputs": [],
+            "revision": 1
+          },
+          {
+            "chapter_id": "CH-04",
+            "title": "竞争格局",
+            "summary": "本章依据可追溯的模拟证据展开，并明确披露未覆盖内容。",
+            "sections": [
+              {
+                "section_id": "SEC-04-01",
+                "title": "市场结构、集中度与竞争阶段",
+                "purpose": "概括可验证的竞争结构。",
+                "key_points": [
+                  "当前模拟证据不足"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-04-01-01",
+                    "kind": "methodology",
+                    "text": "当前模拟证据未覆盖本节，本节仅保留研究框架，不补造事实。",
+                    "claim_ids": [],
+                    "evidence_ids": [],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "需要补充对应口径的真实资料"
+                ],
+                "visual_semantics": {
+                  "content_type": "comparison",
+                  "quantitative_density": 0.65,
+                  "qualitative_density": 0.35,
+                  "preferred_table": true,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-04-02",
+                "title": "主要参与者及其竞争位置",
+                "purpose": "在可比口径下说明参与者位置。",
+                "key_points": [
+                  "当前模拟证据不足"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-04-02-01",
+                    "kind": "methodology",
+                    "text": "当前模拟证据未覆盖本节，本节仅保留研究框架，不补造事实。",
+                    "claim_ids": [],
+                    "evidence_ids": [],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "需要补充对应口径的真实资料"
+                ],
+                "visual_semantics": {
+                  "content_type": "comparison",
+                  "quantitative_density": 0.65,
+                  "qualitative_density": 0.35,
+                  "preferred_table": true,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-04-03",
+                "title": "竞争壁垒、差异化因素与潜在进入者",
+                "purpose": "分析壁垒及其可持续性。",
+                "key_points": [
+                  "当前模拟证据不足"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-04-03-01",
+                    "kind": "methodology",
+                    "text": "当前模拟证据未覆盖本节，本节仅保留研究框架，不补造事实。",
+                    "claim_ids": [],
+                    "evidence_ids": [],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "需要补充对应口径的真实资料"
+                ],
+                "visual_semantics": {
+                  "content_type": "comparison",
+                  "quantitative_density": 0.65,
+                  "qualitative_density": 0.35,
+                  "preferred_table": true,
+                  "key_metric_count": 0
+                }
+              }
+            ],
+            "claim_ids": [],
+            "evidence_ids": [],
+            "chart_ids": [],
+            "missing_inputs": [
+              "缺少本章对应证据"
+            ],
+            "revision": 1
+          },
+          {
+            "chapter_id": "CH-05",
+            "title": "财务质量与估值参照",
+            "summary": "本章依据可追溯的模拟证据展开，并明确披露未覆盖内容。",
+            "sections": [
+              {
+                "section_id": "SEC-05-01",
+                "title": "收入、利润与盈利能力",
+                "purpose": "呈现盈利指标及其可持续性边界。",
+                "key_points": [
+                  "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-05-01-01",
+                    "kind": "analysis",
+                    "text": "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。 本节仅解释已给出的模拟证据；研究边界为：指数不包含城市分化、土地成交和企业信用差异。",
+                    "claim_ids": [
+                      "C-SUPPLY"
+                    ],
+                    "evidence_ids": [
+                      "E-INV-2021",
+                      "E-INV-2022",
+                      "E-INV-2023",
+                      "E-INV-2024",
+                      "E-INV-2025",
+                      "E-START-2021",
+                      "E-START-2022",
+                      "E-START-2023",
+                      "E-START-2024",
+                      "E-START-2025"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [
+                  "CHART-C24F8F57825E"
+                ],
+                "uncertainties": [
+                  "指数不包含城市分化、土地成交和企业信用差异。"
+                ],
+                "visual_semantics": {
+                  "content_type": "financial_detail",
+                  "quantitative_density": 0.85,
+                  "qualitative_density": 0.15,
+                  "preferred_table": true,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-05-02",
+                "title": "现金流、资产负债与财务质量",
+                "purpose": "说明三表勾稽和财务质量校验结果。",
+                "key_points": [
+                  "模拟样本中，商品房销售额指数由2021年的100下降至2025年的52。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-05-02-01",
+                    "kind": "analysis",
+                    "text": "模拟样本中，商品房销售额指数由2021年的100下降至2025年的52。 本节仅解释已给出的模拟证据；研究边界为：金额被转换为指数，未表达实际销售额规模。",
+                    "claim_ids": [
+                      "C-SALES-VALUE"
+                    ],
+                    "evidence_ids": [
+                      "E-SV-2021",
+                      "E-SV-2022",
+                      "E-SV-2023",
+                      "E-SV-2024",
+                      "E-SV-2025"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "金额被转换为指数，未表达实际销售额规模。"
+                ],
+                "visual_semantics": {
+                  "content_type": "financial_detail",
+                  "quantitative_density": 0.85,
+                  "qualitative_density": 0.15,
+                  "preferred_table": true,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-05-03",
+                "title": "估值水平、历史区间与跨市场可比性",
+                "purpose": "在完成口径校验后呈现估值参照。",
+                "key_points": [
+                  "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-05-03-01",
+                    "kind": "analysis",
+                    "text": "模拟样本显示，开发投资和新开工指数下降，供给侧扩张意愿偏弱。 本节仅解释已给出的模拟证据；研究边界为：指数不包含城市分化、土地成交和企业信用差异。",
+                    "claim_ids": [
+                      "C-SUPPLY"
+                    ],
+                    "evidence_ids": [
+                      "E-INV-2021",
+                      "E-INV-2022",
+                      "E-INV-2023",
+                      "E-INV-2024",
+                      "E-INV-2025",
+                      "E-START-2021",
+                      "E-START-2022",
+                      "E-START-2023",
+                      "E-START-2024",
+                      "E-START-2025"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "指数不包含城市分化、土地成交和企业信用差异。"
+                ],
+                "visual_semantics": {
+                  "content_type": "narrative",
+                  "quantitative_density": 0.2,
+                  "qualitative_density": 0.8,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              }
+            ],
+            "claim_ids": [
+              "C-SUPPLY",
+              "C-SALES-VALUE"
+            ],
+            "evidence_ids": [
+              "E-INV-2021",
+              "E-INV-2022",
+              "E-INV-2023",
+              "E-INV-2024",
+              "E-INV-2025",
+              "E-START-2021",
+              "E-START-2022",
+              "E-START-2023",
+              "E-START-2024",
+              "E-START-2025",
+              "E-SV-2021",
+              "E-SV-2022",
+              "E-SV-2023",
+              "E-SV-2024",
+              "E-SV-2025"
+            ],
+            "chart_ids": [
+              "CHART-C24F8F57825E"
+            ],
+            "missing_inputs": [],
+            "revision": 1
+          },
+          {
+            "chapter_id": "CH-06",
+            "title": "宏观、政策与技术催化",
+            "summary": "本章依据可追溯的模拟证据展开，并明确披露未覆盖内容。",
+            "sections": [
+              {
+                "section_id": "SEC-06-01",
+                "title": "宏观经济变量与行业传导路径",
+                "purpose": "说明宏观变量与行业的传导关系。",
+                "key_points": [
+                  "政策支持与库存消化速度是后续需求修复的重要观察变量。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-06-01-01",
+                    "kind": "analysis",
+                    "text": "政策支持与库存消化速度是后续需求修复的重要观察变量。 本节仅解释已给出的模拟证据；研究边界为：政策与库存材料均为测试文本，不代表现实政策结论。",
+                    "claim_ids": [
+                      "C-POLICY-RISK"
+                    ],
+                    "evidence_ids": [
+                      "E-POLICY",
+                      "E-INVENTORY"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "政策与库存材料均为测试文本，不代表现实政策结论。"
+                ],
+                "visual_semantics": {
+                  "content_type": "narrative",
+                  "quantitative_density": 0.2,
+                  "qualitative_density": 0.8,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-06-02",
+                "title": "政策、监管与合规环境",
+                "purpose": "说明政策时点、范围和可能影响。",
+                "key_points": [
+                  "政策支持与库存消化速度是后续需求修复的重要观察变量。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-06-02-01",
+                    "kind": "analysis",
+                    "text": "政策支持与库存消化速度是后续需求修复的重要观察变量。 本节仅解释已给出的模拟证据；研究边界为：政策与库存材料均为测试文本，不代表现实政策结论。",
+                    "claim_ids": [
+                      "C-POLICY-RISK"
+                    ],
+                    "evidence_ids": [
+                      "E-POLICY",
+                      "E-INVENTORY"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "政策与库存材料均为测试文本，不代表现实政策结论。"
+                ],
+                "visual_semantics": {
+                  "content_type": "risk",
+                  "quantitative_density": 0.15,
+                  "qualitative_density": 0.85,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-06-03",
+                "title": "技术趋势、事件催化与监测指标",
+                "purpose": "说明催化条件和后续验证指标。",
+                "key_points": [
+                  "政策支持与库存消化速度是后续需求修复的重要观察变量。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-06-03-01",
+                    "kind": "analysis",
+                    "text": "政策支持与库存消化速度是后续需求修复的重要观察变量。 本节仅解释已给出的模拟证据；研究边界为：政策与库存材料均为测试文本，不代表现实政策结论。",
+                    "claim_ids": [
+                      "C-POLICY-RISK"
+                    ],
+                    "evidence_ids": [
+                      "E-POLICY",
+                      "E-INVENTORY"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "政策与库存材料均为测试文本，不代表现实政策结论。"
+                ],
+                "visual_semantics": {
+                  "content_type": "time_series",
+                  "quantitative_density": 0.75,
+                  "qualitative_density": 0.25,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              }
+            ],
+            "claim_ids": [
+              "C-POLICY-RISK"
+            ],
+            "evidence_ids": [
+              "E-POLICY",
+              "E-INVENTORY"
+            ],
+            "chart_ids": [],
+            "missing_inputs": [],
+            "revision": 1
+          },
+          {
+            "chapter_id": "CH-07",
+            "title": "情景、风险与研究结论",
+            "summary": "本章依据可追溯的模拟证据展开，并明确披露未覆盖内容。",
+            "sections": [
+              {
+                "section_id": "SEC-07-01",
+                "title": "基准、乐观和悲观三种情景",
+                "purpose": "呈现共享事实底座下的三种情景。",
+                "key_points": [
+                  "政策支持与库存消化速度是后续需求修复的重要观察变量。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-07-01-01",
+                    "kind": "analysis",
+                    "text": "政策支持与库存消化速度是后续需求修复的重要观察变量。 本节仅解释已给出的模拟证据；研究边界为：政策与库存材料均为测试文本，不代表现实政策结论。",
+                    "claim_ids": [
+                      "C-POLICY-RISK"
+                    ],
+                    "evidence_ids": [
+                      "E-POLICY",
+                      "E-INVENTORY"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "政策与库存材料均为测试文本，不代表现实政策结论。"
+                ],
+                "visual_semantics": {
+                  "content_type": "scenario",
+                  "quantitative_density": 0.45,
+                  "qualitative_density": 0.55,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-07-02",
+                "title": "核心风险、反证条件与跟踪指标",
+                "purpose": "说明风险传导及可证伪条件。",
+                "key_points": [
+                  "政策支持与库存消化速度是后续需求修复的重要观察变量。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-07-02-01",
+                    "kind": "analysis",
+                    "text": "政策支持与库存消化速度是后续需求修复的重要观察变量。 本节仅解释已给出的模拟证据；研究边界为：政策与库存材料均为测试文本，不代表现实政策结论。",
+                    "claim_ids": [
+                      "C-POLICY-RISK"
+                    ],
+                    "evidence_ids": [
+                      "E-POLICY",
+                      "E-INVENTORY"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "政策与库存材料均为测试文本，不代表现实政策结论。"
+                ],
+                "visual_semantics": {
+                  "content_type": "risk",
+                  "quantitative_density": 0.15,
+                  "qualitative_density": 0.85,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              },
+              {
+                "section_id": "SEC-07-03",
+                "title": "核心结论、适用边界与待验证事项",
+                "purpose": "汇总结论且保留不确定性。",
+                "key_points": [
+                  "政策支持与库存消化速度是后续需求修复的重要观察变量。"
+                ],
+                "paragraphs": [
+                  {
+                    "paragraph_id": "P-07-03-01",
+                    "kind": "analysis",
+                    "text": "政策支持与库存消化速度是后续需求修复的重要观察变量。 本节仅解释已给出的模拟证据；研究边界为：政策与库存材料均为测试文本，不代表现实政策结论。",
+                    "claim_ids": [
+                      "C-POLICY-RISK"
+                    ],
+                    "evidence_ids": [
+                      "E-POLICY",
+                      "E-INVENTORY"
+                    ],
+                    "numeric_refs": []
+                  }
+                ],
+                "chart_ids": [],
+                "uncertainties": [
+                  "政策与库存材料均为测试文本，不代表现实政策结论。"
+                ],
+                "visual_semantics": {
+                  "content_type": "risk",
+                  "quantitative_density": 0.15,
+                  "qualitative_density": 0.85,
+                  "preferred_table": false,
+                  "key_metric_count": 0
+                }
+              }
+            ],
+            "claim_ids": [
+              "C-POLICY-RISK"
+            ],
+            "evidence_ids": [
+              "E-POLICY",
+              "E-INVENTORY"
+            ],
+            "chart_ids": [],
+            "missing_inputs": [],
+            "revision": 1
+          }
+        ],
+        "chart_requests": [],
+        "collaboration_requests": [],
+        "outline_version": "2026.1",
+        "prompt_version": "1.0.0",
+        "prompt_sha256": "f876a77aaa877f1c810e965ad63d27847f7963e6dd18249dc58d8a668c097b38",
+        "model_name": "codex-human-simulation-no-provider",
+        "quality": {
+          "passed": true,
+          "evidence_coverage": 1.0,
+          "issues": [],
+          "revision_count": 0
+        }
+      },
+      "artifacts": [],
+      "evidence_sources": [
+        "E-CHAIN",
+        "E-INV-2021",
+        "E-INV-2022",
+        "E-INV-2023",
+        "E-INV-2024",
+        "E-INV-2025",
+        "E-INVENTORY",
+        "E-POLICY",
+        "E-SA-2021",
+        "E-SA-2022",
+        "E-SA-2023",
+        "E-SA-2024",
+        "E-SA-2025",
+        "E-START-2021",
+        "E-START-2022",
+        "E-START-2023",
+        "E-START-2024",
+        "E-START-2025",
+        "E-SV-2021",
+        "E-SV-2022",
+        "E-SV-2023",
+        "E-SV-2024",
+        "E-SV-2025"
+      ],
+      "error": null
+    },
+    "report_fusion": {
+      "stage": "report_fusion",
+      "status": "completed",
+      "revision": 1,
+      "data": {
+        "report_id": "REPORT-77FCA7C428AA-R1",
+        "title": "中国房地产行业研究报告",
+        "industry_topic": "中国房地产行业",
+        "research_as_of": "2026-06-30",
+        "generated_at": "2026-08-20T14:22:46.437503Z",
+        "tone": "professional",
+        "report_depth": "standard",
+        "delivery_status": "ready_with_limits",
+        "formats": [
+          "html"
+        ],
+        "source_revisions": [
+          {
+            "stage": "data_interpret",
+            "revision": 1
+          },
+          {
+            "stage": "chart_generate",
+            "revision": 1
+          },
+          {
+            "stage": "chapter_write",
+            "revision": 1
+          }
+        ],
+        "included_chart_ids": [
+          "CHART-3D4F6CCAE9A1",
+          "CHART-0CE3A210EC90",
+          "CHART-C24F8F57825E",
+          "CHART-8C91A1E90F54"
+        ],
+        "artifacts": [
+          {
+            "artifact_id": "ARTIFACT-REPORT-77FCA7C428AA-R1-REPORT_HTML",
+            "kind": "report_html",
+            "uri": "real-estate-no-llm-a38ea5fe28/reports/r1/report.html",
+            "sha256": "48165ddbf2818d33347e7748fe39ebd0e51b5571ee45d3b34ba541ba53ede353",
+            "size_bytes": 40426
+          },
+          {
+            "artifact_id": "ARTIFACT-REPORT-77FCA7C428AA-R1-ARTIFACT_MANIFEST",
+            "kind": "artifact_manifest",
+            "uri": "real-estate-no-llm-a38ea5fe28/reports/r1/manifest.json",
+            "sha256": "4fecefa82b9bdd696031e058f0d119568e01e69d3f9c019d12adbb7797b7fede",
+            "size_bytes": 2424
+          }
+        ],
+        "quality": {
+          "passed": true,
+          "chapter_count": 7,
+          "section_count": 21,
+          "included_chart_count": 4,
+          "evidence_coverage": 1.0,
+          "issues": []
+        },
+        "release_mode": "formal",
+        "formal_eligible": true,
+        "draft_eligible": true,
+        "acknowledged_risks": [],
+        "unresolved_risks": [
+          "数据质量问题 · financial_quality：测试未提供上市公司财务报表。",
+          "数据质量问题 · valuation_expectation：本测试不分析估值或投资预期。",
+          "研究维度 · competition · insufficient：当前维度缺少可引用结论，仅保留研究边界。",
+          "财务一致性检查 · warning：测试未提供上市公司财务报表。"
+        ],
+        "visual_decision": {
+          "recommended_style": "analysis_note",
+          "requested_style": "analysis_note",
+          "effective_style": "analysis_note",
+          "selection_source": "user",
+          "density": "balanced",
+          "chart_density": "low",
+          "table_priority": "high",
+          "recommendation_reasons": [
+            "图表、精确数据与解释性文字相对均衡",
+            "采用默认分析笔记型以保持阅读节奏"
+          ],
+          "override_warnings": [],
+          "per_chapter_strategy": {
+            "CH-01": {
+              "chart_count": 0,
+              "table_candidate_count": 0,
+              "dominant_content": "summary"
+            },
+            "CH-02": {
+              "chart_count": 2,
+              "table_candidate_count": 0,
+              "dominant_content": "time_series"
+            },
+            "CH-03": {
+              "chart_count": 1,
+              "table_candidate_count": 0,
+              "dominant_content": "industry_chain"
+            },
+            "CH-04": {
+              "chart_count": 0,
+              "table_candidate_count": 3,
+              "dominant_content": "comparison"
+            },
+            "CH-05": {
+              "chart_count": 1,
+              "table_candidate_count": 2,
+              "dominant_content": "financial_detail"
+            },
+            "CH-06": {
+              "chart_count": 0,
+              "table_candidate_count": 0,
+              "dominant_content": "narrative"
+            },
+            "CH-07": {
+              "chart_count": 0,
+              "table_candidate_count": 0,
+              "dominant_content": "risk"
+            }
+          }
+        }
+      },
+      "artifacts": [
+        {
+          "artifact_id": "ARTIFACT-REPORT-77FCA7C428AA-R1-REPORT_HTML",
+          "kind": "report_html",
+          "uri": "real-estate-no-llm-a38ea5fe28/reports/r1/report.html",
+          "checksum": "48165ddbf2818d33347e7748fe39ebd0e51b5571ee45d3b34ba541ba53ede353",
+          "revision": 1
+        },
+        {
+          "artifact_id": "ARTIFACT-REPORT-77FCA7C428AA-R1-ARTIFACT_MANIFEST",
+          "kind": "artifact_manifest",
+          "uri": "real-estate-no-llm-a38ea5fe28/reports/r1/manifest.json",
+          "checksum": "4fecefa82b9bdd696031e058f0d119568e01e69d3f9c019d12adbb7797b7fede",
+          "revision": 1
+        }
+      ],
+      "evidence_sources": [
+        "E-CHAIN",
+        "E-INV-2021",
+        "E-INV-2022",
+        "E-INV-2023",
+        "E-INV-2024",
+        "E-INV-2025",
+        "E-INVENTORY",
+        "E-POLICY",
+        "E-SA-2021",
+        "E-SA-2022",
+        "E-SA-2023",
+        "E-SA-2024",
+        "E-SA-2025",
+        "E-START-2021",
+        "E-START-2022",
+        "E-START-2023",
+        "E-START-2024",
+        "E-START-2025",
+        "E-SV-2021",
+        "E-SV-2022",
+        "E-SV-2023",
+        "E-SV-2024",
+        "E-SV-2025"
+      ],
+      "error": null
+    }
+  }
+}

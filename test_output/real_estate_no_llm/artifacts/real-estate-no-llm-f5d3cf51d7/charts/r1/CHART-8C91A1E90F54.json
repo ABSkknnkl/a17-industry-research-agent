@@ -1,0 +1,150 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-8C91A1E90F54",
+  "chart_type": "industry_chain",
+  "data_fingerprint": "04ffd2ee1c2d45b88dda68f135923335e8deb297923f8553a9f23053072a4c0d",
+  "dedupe_key": "relationship:relationship:展示产业链上下游关系:04ffd2ee1c2d45b88dda68f135923335e8deb297923f8553a9f23053072a4c0d",
+  "evidence_ids": [
+    "E-CHAIN"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "展示产业链上下游关系",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "bottom": 40,
+        "categories": [
+          {
+            "name": "上游"
+          },
+          {
+            "name": "中游"
+          },
+          {
+            "name": "下游"
+          },
+          {
+            "name": "支撑"
+          }
+        ],
+        "data": [
+          {
+            "category": 0,
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "id": "land",
+            "name": "土地与融资",
+            "x": 0,
+            "y": 140
+          },
+          {
+            "category": 1,
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "id": "build",
+            "name": "开发建设",
+            "x": 400,
+            "y": 140
+          },
+          {
+            "category": 2,
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "id": "sale",
+            "name": "销售与物业",
+            "x": 800,
+            "y": 140
+          }
+        ],
+        "edgeSymbol": [
+          "none",
+          "arrow"
+        ],
+        "edgeSymbolSize": 8,
+        "label": {
+          "position": "inside",
+          "show": true
+        },
+        "layout": "none",
+        "left": 80,
+        "lineStyle": {
+          "curveness": 0.08,
+          "width": 2
+        },
+        "links": [
+          {
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "label": {
+              "formatter": "开发投入",
+              "show": true
+            },
+            "source": "land",
+            "target": "build"
+          },
+          {
+            "evidence_ids": [
+              "E-CHAIN"
+            ],
+            "label": {
+              "formatter": "项目交付",
+              "show": true
+            },
+            "source": "build",
+            "target": "sale"
+          }
+        ],
+        "right": 80,
+        "roam": false,
+        "symbolSize": 62,
+        "top": 80,
+        "type": "graph"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "房地产产业链简图"
+    },
+    "tooltip": {
+      "trigger": "item"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "industry_chain",
+  "resolution_reason": null,
+  "title": "房地产产业链简图",
+  "variant": "graph"
+}

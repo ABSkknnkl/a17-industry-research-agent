@@ -1,0 +1,114 @@
+{
+  "case_id": "E-24",
+  "run_id": "run-e-24-1787295815",
+  "recorded_at": "2026-08-21T07:03:42.357977+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "光伏逆变器国内外厂商市占率及海外政策影响",
+    "industry_topic": "光伏逆变器",
+    "focus_questions": [
+      "光伏逆变器国内外厂商市占率及海外政策影响"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 7.28
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "intent_clarification_required"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "approved",
+      "error": "analysis_input_invalid"
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "approved",
+      "error": "chapter_input_invalid"
+    },
+    {
+      "stage": "report_fusion",
+      "status": "approved",
+      "error": "report_input_invalid"
+    }
+  ],
+  "intent_routing": {
+    "enabled": true,
+    "strategy": "llm_first_with_deterministic_calibration",
+    "clarification_required": [
+      "光伏逆变器国内外厂商市占率及海外政策影响"
+    ],
+    "warnings": [
+      "llm_skill_capability_mismatch:hithink_industry_query",
+      "llm_skill_capability_mismatch:hithink_sector_selector",
+      "llm_skill_capability_mismatch:news_search",
+      "llm_skill_capability_mismatch:hithink_macro_query",
+      "llm_skill_capability_mismatch:hithink_industry_query",
+      "llm_skill_pending_review:report_search"
+    ],
+    "plans": [
+      {
+        "question": "光伏逆变器国内外厂商市占率及海外政策影响",
+        "parser_mode": "hybrid",
+        "complexity": "compound",
+        "locked_skills": [
+          "hithink_stock_selector",
+          "news_search"
+        ],
+        "accepted_skills": [
+          "report_search"
+        ],
+        "rejected_skills": [
+          "hithink_industry_query",
+          "hithink_sector_selector",
+          "news_search",
+          "hithink_macro_query"
+        ],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "光伏逆变器国内外厂商市占率",
+            "skills": [
+              "hithink_stock_selector"
+            ],
+            "source": "hybrid",
+            "clarify": false
+          },
+          {
+            "text": "海外政策影响",
+            "skills": [
+              "news_search"
+            ],
+            "source": "deterministic",
+            "clarify": false
+          },
+          {
+            "text": "海外政策对光伏逆变器行业的影响",
+            "skills": [
+              "news_search",
+              "report_search"
+            ],
+            "source": "llm",
+            "clarify": true
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

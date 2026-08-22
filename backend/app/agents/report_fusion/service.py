@@ -221,6 +221,8 @@ class ReportFusionAgent:
                 risk_acknowledged_at=risk_acknowledged_at,
                 delivery_status=delivery_status,
                 report_depth=options.report_depth,
+                requested_visual_style=options.visual_style,
+                requested_visual_density=options.visual_density,
             )
         except Exception as exc:
             import traceback
@@ -276,8 +278,8 @@ class ReportFusionAgent:
 
         advisory_issues.extend(export_issues)
         if export_issues:
-            actual_release_mode = "draft_with_warnings"
-            formal_eligible = False
+            # 导出失败属于交付层限制：保持风险可见，但不把内容合格的
+            # 正式报告改标为草稿（与 DELIVERY_ONLY_ADVISORY_PREFIXES 同一哲学）。
             delivery_status = "ready_with_limits"
         generated_formats = [item for item in CANONICAL_FORMAT_ORDER if item in generated]
 
@@ -311,6 +313,7 @@ class ReportFusionAgent:
             "included_chart_ids": [chart.chart_id for chart in report.charts],
             "report_depth": report.report_depth,
             "delivery_status": delivery_status,
+            "visual_decision": report.visual_decision.model_dump(mode="json"),
             "quality": quality.model_dump(mode="json"),
             "artifacts": [item.model_dump(mode="json") for item in entries],
         }
@@ -354,6 +357,7 @@ class ReportFusionAgent:
             draft_eligible=draft_eligible,
             acknowledged_risks=accepted_risk_codes,
             unresolved_risks=advisory_issues,
+            visual_decision=report.visual_decision,
         )
         stage_artifacts = [
             ArtifactRef(

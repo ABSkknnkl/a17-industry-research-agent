@@ -1,0 +1,32 @@
+{
+  "case_id": "E-05",
+  "run_id": "-",
+  "recorded_at": "2026-08-21T06:59:48.910085+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "整理宁德时代近四年营收、归母净利润",
+    "industry_topic": "动力电池",
+    "focus_questions": [
+      "整理宁德时代近四年营收、归母净利润"
+    ]
+  },
+  "verdict": {
+    "verdict": "blocked",
+    "reason": "isolated_fault:TypeError:run_case() got an unexpected keyword argument 'client'",
+    "elapsed_s": 0
+  },
+  "stages": [],
+  "intent_routing": {
+    "enabled": false,
+    "strategy": "",
+    "clarification_required": [],
+    "warnings": [],
+    "plans": []
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

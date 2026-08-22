@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "93f89460297695f622cc36ed609bdd2c5c919d56cb072030a2b78c9731ce8f8b",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 储能 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 结合规模、格局、原材料、政策四维分析储能投资逻辑",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":397,\"query\":\"中国内地 储能 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 结合规模、格局、原材料、政策四维分析储能投资逻辑\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"children\\\":[],\\\"node_type\\\":\\\"op\\\",\\\"sonSize\\\":1.0,\\\"chunkedResult\\\":\\\"中国内地 储能 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 结合规模、格局、原材料、政策四维分析储能投资逻辑\\\",\\\"ci\\\":false,\\\"opName\\\":\\\"and\\\",\\\"opPropertyMap\\\":{},\\\"opPropertiesMap\\\":{},\\\"opProperty\\\":\\\"\\\"},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"正股简称是*st新亿\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@正股简称\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"*st新亿\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_正股简称\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含*st新亿\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"code\",\"feKey\":\"债券代码\",\"type\":\"STR\",\"index_name\":\"债券@债券代码\",\"key\":\"债券@债券代码\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"name\",\"feKey\":\"债券简称\",\"type\":\"STR\",\"index_name\":\"债券@债券简称\",\"key\":\"债券@债券简称\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"indexId\":\"\",\"source\":\"new_parser\",\"feKey\":\"正股简称\",\"type\":\"STR\",\"index_name\":\"债券@正股简称\",\"key\":\"债券@正股简称\",\"timestamp\":\"\"}],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac9917c17874065753152707\",\"chunks_info\":\"[\\\"正股简称是*st新亿 (0)\\\"]\"}",
+  "raw_sha256": "dab3c0da35baa0a721af9590ebc842ba21438073a24b13f0027048a2e62b453f",
+  "recorded_at": "2026-08-22T13:49:35.315931+00:00"
+}

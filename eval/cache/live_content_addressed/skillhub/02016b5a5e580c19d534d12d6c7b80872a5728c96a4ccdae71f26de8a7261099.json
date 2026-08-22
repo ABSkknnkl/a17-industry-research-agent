@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "02016b5a5e580c19d534d12d6c7b80872a5728c96a4ccdae71f26de8a7261099",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "report-search",
+  "request": {
+    "query": "动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 对比宁德时代与比亚迪电池业务成本、客户、技术路线",
+    "channels": [
+      "report"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[],\"abtest_info\":\"\",\"took\":150,\"total\":0,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 对比宁德时代与比亚迪电池业务成本、客户、技术路线\"],\"query\":\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 对比宁德时代与比亚迪电池业务成本、客户、技术路线\",\"integrity_result\":true,\"intents\":[],\"intent\":\"资讯消息-研报\"},\"content_data\":[]}",
+  "raw_sha256": "715e6e65678337536fe14803f5b708f6ca71cb607cfd8288b127241158fd10da",
+  "recorded_at": "2026-08-22T17:07:23.448859+00:00"
+}

@@ -152,10 +152,15 @@ AMBIGUOUS_REFERENCE_PATTERNS: tuple[str, ...] = (
 )
 
 _TIME_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
-    (re.compile(r"近\s*(\d+)\s*年"), "year"),
-    (re.compile(r"近\s*(\d+)\s*个季度"), "quarter"),
-    (re.compile(r"近\s*(\d+)\s*个?月"), "month"),
+    (re.compile(r"近\s*[一二三四五六七八九十两\d]+\s*年"), "year"),
+    (re.compile(r"近\s*[一二三四五六七八九十两\d]+\s*个季度"), "quarter"),
+    (re.compile(r"近\s*半年"), "month"),
+    (re.compile(r"近\s*[一二三四五六七八九十两\d]+\s*个?月"), "month"),
     (re.compile(r"(20\d{2})\s*年"), "year"),
+)
+
+_INSTRUCTION_ONLY_PATTERN = re.compile(
+    r"^(?:请)?(?:获取|查询|核验|分析|整理|梳理|统计|汇总|对比|补充|说明|研究)+$"
 )
 
 
@@ -238,7 +243,11 @@ def _split_segments(text: str, entities: list[str]) -> list[str]:
     tail = "".join(current).strip()
     if tail:
         segments.append(tail)
-    return [segment for segment in segments if len(segment) >= 2]
+    return [
+        segment
+        for segment in segments
+        if len(segment) >= 2 and _INSTRUCTION_ONLY_PATTERN.fullmatch(segment) is None
+    ]
 
 
 def _segment_skills(text: str) -> tuple[list[SkillName], bool]:
@@ -267,16 +276,22 @@ def _segment_skills(text: str) -> tuple[list[SkillName], bool]:
     if _contains_any(text, ANNOUNCEMENT_KEYWORDS):
         add(SkillName.ANNOUNCEMENT)
 
-    metric_spec = get_metric_spec(text)
-    business_metric = metric_spec is not None and metric_spec.primary_skill == SkillName.BUSINESS
-    finance_metric = metric_spec is not None and metric_spec.primary_skill == SkillName.FINANCE
+    # Route from metrics extracted anywhere in the sentence.  Looking up the
+    # whole sentence loses a metric surrounded by entity/time/question words.
+    metric_specs = [
+        spec
+        for metric in _segment_metrics(text)
+        if (spec := get_metric_spec(metric)) is not None
+    ]
+    for metric_spec in metric_specs:
+        add(metric_spec.primary_skill)
+    business_metric = any(
+        spec.primary_skill == SkillName.BUSINESS for spec in metric_specs
+    )
+    finance_metric = any(spec.primary_skill == SkillName.FINANCE for spec in metric_specs)
     if _contains_any(text, BUSINESS_KEYWORDS) or business_metric:
         add(SkillName.BUSINESS)
-    if (
-        _contains_any(text, FINANCE_EXTRA_KEYWORDS)
-        or finance_metric
-        or (metric_spec is not None and metric_spec.primary_skill == SkillName.FINANCE)
-    ):
+    if _contains_any(text, FINANCE_EXTRA_KEYWORDS) or finance_metric:
         add(SkillName.FINANCE)
     if _contains_any(text, INSRESEARCH_KEYWORDS):
         add(SkillName.INSTITUTIONAL_RESEARCH)
@@ -293,13 +308,22 @@ def _segment_skills(text: str) -> tuple[list[SkillName], bool]:
 
 def _segment_metrics(text: str) -> list[str]:
     found: list[str] = []
+    matched_aliases: list[str] = []
     compact = _compact(text)
     # Canonical registry aliases (营业收入/净利率/市占率/海外收入占比...).
     from app.agents.data_fetcher.metric_registry import iter_metric_aliases
 
     for alias, spec in iter_metric_aliases():
-        if _compact(alias) in compact and spec.display_name not in found:
+        compact_alias = _compact(alias)
+        if compact_alias not in compact:
+            continue
+        # Aliases are longest-first.  Do not turn “归母净利润” into both
+        # “归母净利润” and the nested generic “净利润”.
+        if any(compact_alias in matched for matched in matched_aliases):
+            continue
+        if spec.display_name not in found:
             found.append(spec.display_name)
+            matched_aliases.append(compact_alias)
     for keyword in ("社融", "业绩预告", "增发", "评级", "盈利预测"):
         if keyword in compact and keyword not in found:
             found.append(keyword)

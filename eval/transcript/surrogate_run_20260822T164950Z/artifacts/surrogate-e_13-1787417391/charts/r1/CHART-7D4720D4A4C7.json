@@ -1,0 +1,119 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-7D4720D4A4C7",
+  "chart_type": "line",
+  "data_fingerprint": "cde4f073baadecd4c2aaee60e904acec1d0528c0266ce758fa1f870199c65201",
+  "dedupe_key": "trend:trend:以bar图呈现总资产的证据分布，支撑ch-02的论述。:cde4f073baadecd4c2aaee60e904acec1d0528c0266ce758fa1f870199c65201",
+  "evidence_ids": [
+    "E-1af5ab509bffc027",
+    "E-37570308a9829030",
+    "E-5e26eb1a40385550",
+    "E-595a84edb2b8203d",
+    "E-4d58708fcae833b9",
+    "E-38897bbfda8849ed",
+    "E-dbc431cce302c5f3",
+    "E-4ad48b9aa439a0ff",
+    "E-181e478a9be57530",
+    "E-129c804e2e652f62"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现总资产的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德时代": {
+        "2024-03-31": "E-129c804e2e652f62",
+        "2024-06-30": "E-181e478a9be57530",
+        "2024-09-30": "E-4ad48b9aa439a0ff",
+        "2024-12-31": "E-dbc431cce302c5f3",
+        "2025-03-31": "E-38897bbfda8849ed",
+        "2025-06-30": "E-4d58708fcae833b9",
+        "2025-09-30": "E-595a84edb2b8203d",
+        "2025-12-31": "E-5e26eb1a40385550",
+        "2026-03-31": "E-37570308a9829030",
+        "2026-06-30": "E-1af5ab509bffc027"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          731286481500.0,
+          715251888900.0,
+          738235004400.0,
+          786658123000.0,
+          820097269000.0,
+          867181431000.0,
+          896082131000.0,
+          974827544000.0,
+          1046329036000.0,
+          1138880789000.0
+        ],
+        "name": "宁德时代",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "总资产（宁德时代）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2024-03-31",
+        "2024-06-30",
+        "2024-09-30",
+        "2024-12-31",
+        "2025-03-31",
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "总资产（宁德时代）",
+  "variant": "line"
+}

@@ -1,0 +1,89 @@
+{
+  "case_id": "E-03",
+  "run_id": "run-e-03-1787295681",
+  "recorded_at": "2026-08-21T07:01:26.536888+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "储能未来三年市场空间大概有多大",
+    "industry_topic": "储能",
+    "focus_questions": [
+      "储能未来三年市场空间大概有多大"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 5.19
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "intent_clarification_required"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "approved",
+      "error": "analysis_input_invalid"
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "approved",
+      "error": "chapter_input_invalid"
+    },
+    {
+      "stage": "report_fusion",
+      "status": "approved",
+      "error": "report_input_invalid"
+    }
+  ],
+  "intent_routing": {
+    "enabled": true,
+    "strategy": "llm_first_with_deterministic_calibration",
+    "clarification_required": [
+      "储能未来三年市场空间大概有多大"
+    ],
+    "warnings": [
+      "unresolved_sub_requirement:SUB-01",
+      "llm_skill_capability_mismatch:hithink_insresearch_query"
+    ],
+    "plans": [
+      {
+        "question": "储能未来三年市场空间大概有多大",
+        "parser_mode": "hybrid",
+        "complexity": "simple",
+        "locked_skills": [],
+        "accepted_skills": [
+          "hithink_industry_query",
+          "industry_chain_analysis"
+        ],
+        "rejected_skills": [
+          "hithink_insresearch_query"
+        ],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "储能未来三年市场空间大概有多大",
+            "skills": [
+              "hithink_industry_query",
+              "industry_chain_analysis"
+            ],
+            "source": "hybrid",
+            "clarify": false
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

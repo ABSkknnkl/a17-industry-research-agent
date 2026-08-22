@@ -1,0 +1,127 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-115AE860160B",
+  "chart_type": "line",
+  "data_fingerprint": "4d4dee483e17a17cb0d3e2b1320f48efd2c9e560521d8e223d5b4cc18d1d8b4a",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:4d4dee483e17a17cb0d3e2b1320f48efd2c9e560521d8e223d5b4cc18d1d8b4a",
+  "evidence_ids": [
+    "E-ef113178d2b49d90",
+    "E-6792b381ce3e0256",
+    "E-df5ec3839dbcc843",
+    "E-eac0fe83ce45c4b5",
+    "E-c7305ae9b6c47449",
+    "E-06aecace124af196",
+    "E-9bf031f7eac1a940",
+    "E-aadc12baf809b15a",
+    "E-3ba26e0da512d72f",
+    "E-ce7c200bd77e170f",
+    "E-736ee7ec241d066e",
+    "E-503cdb4cbc9124dc"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "贷款市场报价利率(LPR):5年": {
+        "2025-08-20": "E-503cdb4cbc9124dc",
+        "2025-09-22": "E-736ee7ec241d066e",
+        "2025-10-20": "E-ce7c200bd77e170f",
+        "2025-11-20": "E-3ba26e0da512d72f",
+        "2025-12-22": "E-aadc12baf809b15a",
+        "2026-01-20": "E-9bf031f7eac1a940",
+        "2026-02-24": "E-06aecace124af196",
+        "2026-03-20": "E-c7305ae9b6c47449",
+        "2026-04-20": "E-eac0fe83ce45c4b5",
+        "2026-05-20": "E-df5ec3839dbcc843",
+        "2026-06-22": "E-6792b381ce3e0256",
+        "2026-07-20": "E-ef113178d2b49d90"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          3.5,
+          3.5,
+          3.5,
+          3.5,
+          3.5,
+          3.5,
+          3.5,
+          3.5,
+          3.5,
+          3.5,
+          3.5,
+          3.5
+        ],
+        "name": "贷款市场报价利率(LPR):5年",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（贷款市场报价利率(LPR):5年）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-08-20",
+        "2025-09-22",
+        "2025-10-20",
+        "2025-11-20",
+        "2025-12-22",
+        "2026-01-20",
+        "2026-02-24",
+        "2026-03-20",
+        "2026-04-20",
+        "2026-05-20",
+        "2026-06-22",
+        "2026-07-20"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（贷款市场报价利率(LPR):5年）",
+  "variant": "line"
+}

@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "028fb185b7e6287059bce0437bb5b55741f34b6619f2abcd6a2de5a98454a705",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 通用 2024-01-01至2026-08-11 行业规模",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":388,\"query\":\"中国内地 通用 2024-01-01至2026-08-11 行业规模\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"正股简称是通用股份\\\",\\\"chunkedResult\\\":\\\"中国内地 通用 2024-01-01至2026-08-11 行业规模\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@正股简称\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"通用股份\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_正股简称\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含通用股份\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"code\",\"feKey\":\"债券代码\",\"type\":\"STR\",\"index_name\":\"债券@债券代码\",\"key\":\"债券@债券代码\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"name\",\"feKey\":\"债券简称\",\"type\":\"STR\",\"index_name\":\"债券@债券简称\",\"key\":\"债券@债券简称\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"indexId\":\"\",\"source\":\"new_parser\",\"feKey\":\"正股简称\",\"type\":\"STR\",\"index_name\":\"债券@正股简称\",\"key\":\"债券@正股简称\",\"timestamp\":\"\"}],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac99e1217873822861094078\",\"chunks_info\":\"[\\\"正股简称是通用股份 (0)\\\"]\"}",
+  "raw_sha256": "b774c13ba55a0fccadca49cd347ea32a75e96ecf5c4fdef91466a3531066d653",
+  "recorded_at": "2026-08-22T07:04:45.570747+00:00"
+}

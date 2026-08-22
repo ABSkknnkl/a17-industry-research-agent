@@ -122,6 +122,10 @@ def build_chapter_runtime_prompt(
             if chart.status == "ready"
             and chart.artifact_id is not None
             and set(chart.evidence_ids).issubset(allowed_evidence_ids)
+            and (
+                chart.recommended_chapter_id is None
+                or chart.recommended_chapter_id == chapter.chapter_id
+            )
         ],
         "rejected_claim_ids": sorted(rejected),
         "review_feedback": review_feedback,
@@ -130,6 +134,28 @@ def build_chapter_runtime_prompt(
         "writing_options": options.model_dump(mode="json"),
         "technical_output_contract": {
             "schema": "ChapterDraft",
+            "field_constraints": {
+                "paragraphs.kind": [
+                    "analysis",
+                    "methodology",
+                    "risk",
+                    "transition",
+                ],
+                "visual_semantics.content_type": [
+                    "auto",
+                    "narrative",
+                    "time_series",
+                    "comparison",
+                    "financial_detail",
+                    "industry_chain",
+                    "risk",
+                    "scenario",
+                    "summary",
+                ],
+                "visual_semantics.quantitative_density": "0到1之间的数字或null",
+                "visual_semantics.qualitative_density": "0到1之间的数字或null",
+                "visual_semantics.preferred_table": "true、false或null；不得改名",
+            },
             "requirements": [
                 "每次仅生成chapter_config指定的一章",
                 "analysis段落必须同时引用允许的claim_id和evidence_id",
@@ -138,6 +164,7 @@ def build_chapter_runtime_prompt(
                 "dimension_coverage为partial时使用条件性表达并写明限制",
                 "dimension_coverage为insufficient时明确说明资料不足，不补造事实或数字",
                 "data_quality_issues和financial_consistency_checks属于必须披露的研究边界，不得改写为已解决",
+                "为每个section填写visual_semantics，只描述内容类型、量化/定性密度和是否适合精确表格，不得指定颜色、CSS或最终报告风格",
                 "不得输出投资建议或内部推理过程",
             ],
         },

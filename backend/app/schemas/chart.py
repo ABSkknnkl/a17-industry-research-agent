@@ -214,6 +214,8 @@ class ChartReference(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    # 用户显式请求的图表（G2 多图豁免信号），由 A2 候选透传。
+    user_requested: bool = False
     chart_id: str = Field(pattern=r"^CHART-[A-Za-z0-9_-]+$")
     title: str = Field(min_length=1, max_length=200)
     chart_type: ChartType
@@ -225,6 +227,10 @@ class ChartReference(BaseModel):
     quality_issue_ids: list[str] = Field(default_factory=list, max_length=100)
     footnotes: list[str] = Field(default_factory=list, max_length=20)
     artifact_id: str | None = None
+    recommended_chapter_id: str | None = Field(
+        default=None,
+        pattern=r"^CH-\d{2}$",
+    )
     candidate_status: (
         Literal[
             "valid",
@@ -250,6 +256,8 @@ class ChartSpec(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    # 用户显式请求的图表（G2 多图豁免信号），由 A2 候选经 ChartReference 透传。
+    user_requested: bool = False
     chart_id: str = Field(pattern=r"^CHART-[A-Za-z0-9_-]+$")
     title: str = Field(min_length=1, max_length=200)
     chart_type: ChartType

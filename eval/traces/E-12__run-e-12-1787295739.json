@@ -1,0 +1,94 @@
+{
+  "case_id": "E-12",
+  "run_id": "run-e-12-1787295739",
+  "recorded_at": "2026-08-21T07:02:26.947564+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "沪深300、创业板当前估值水平对比历史区间",
+    "industry_topic": "A股指数",
+    "focus_questions": [
+      "沪深300、创业板当前估值水平对比历史区间"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 7.32
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "intent_clarification_required"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "approved",
+      "error": "analysis_input_invalid"
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "approved",
+      "error": "chapter_input_invalid"
+    },
+    {
+      "stage": "report_fusion",
+      "status": "approved",
+      "error": "report_input_invalid"
+    }
+  ],
+  "intent_routing": {
+    "enabled": true,
+    "strategy": "llm_first_with_deterministic_calibration",
+    "clarification_required": [
+      "沪深300、创业板当前估值水平对比历史区间"
+    ],
+    "warnings": [
+      "unresolved_sub_requirement:SUB-01",
+      "unresolved_sub_requirement:SUB-02",
+      "llm_skill_capability_mismatch:hithink_index_query",
+      "llm_skill_capability_mismatch:hithink_basicinfo_query",
+      "llm_skill_capability_mismatch:hithink_index_query",
+      "llm_skill_capability_mismatch:hithink_basicinfo_query"
+    ],
+    "plans": [
+      {
+        "question": "沪深300、创业板当前估值水平对比历史区间",
+        "parser_mode": "hybrid",
+        "complexity": "compound",
+        "locked_skills": [],
+        "accepted_skills": [],
+        "rejected_skills": [
+          "hithink_index_query",
+          "hithink_basicinfo_query"
+        ],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "沪深300",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "创业板当前估值水平对比历史区间",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

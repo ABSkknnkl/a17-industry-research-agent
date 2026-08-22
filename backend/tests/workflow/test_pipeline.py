@@ -53,6 +53,28 @@ class SlowStageAgent(RecordingStageAgent):
         return await super().run(context)
 
 
+class WaitingReviewErrorAgent(RecordingStageAgent):
+    async def run(self, context: StageContext) -> StageResult:
+        self._calls.append(self.stage)
+        return StageResult(
+            stage=self.stage,
+            status=StageStatus.WAITING_REVIEW,
+            revision=context.revision,
+            data={
+                "intent_routing": {"strategy": "deterministic_only"},
+                "collaboration_requests": [
+                    {
+                        "request_id": "INTENT-CLARIFY-01",
+                        "question": "请明确研究主体。",
+                        "reason": "主体存在歧义。",
+                        "affected_dimensions": ["data_fetch"],
+                    }
+                ],
+            },
+            error="intent_clarification_required",
+        )
+
+
 @pytest.mark.asyncio
 async def test_registered_agents_run_in_pipeline_order() -> None:
     calls: list[StageName] = []
@@ -125,6 +147,84 @@ async def test_failed_stage_stops_downstream_and_requires_recovery_review() -> N
         )
 
 
+class WaitingReviewAuditOnlyAgent(RecordingStageAgent):
+    """BUG-002 second guard: audit-only payload must not count as substantive."""
+
+    async def run(self, context: StageContext) -> StageResult:
+        self._calls.append(self.stage)
+        return StageResult(
+            stage=self.stage,
+            status=StageStatus.WAITING_REVIEW,
+            revision=context.revision,
+            data={
+                "intent_routing": {"strategy": "deterministic_only"},
+                "semantic_routing": {"accepted": {}, "rejected": []},
+                "collaboration_requests": [
+                    {
+                        "request_id": "INTENT-CLARIFY-01",
+                        "question": "请明确研究主体。",
+                        "reason": "主体存在歧义。",
+                        "affected_dimensions": ["data_fetch"],
+                    }
+                ],
+            },
+        )
+
+
+@pytest.mark.asyncio
+async def test_audit_only_payload_is_never_auto_completed() -> None:
+    calls: list[StageName] = []
+    agents: list[StageAgent] = [
+        WaitingReviewAuditOnlyAgent(StageName.DATA_FETCH, calls),
+        *[RecordingStageAgent(stage, calls) for stage in tuple(StageName)[1:]],
+    ]
+    graph = build_pipeline_graph(StageRegistry(agents), checkpointer=InMemorySaver())
+
+    interrupted = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-1",
+            run_id="run-audit-only",
+            input_data={"industry": "动力电池"},
+        ),
+        {"configurable": {"thread_id": "run-audit-only"}},
+    )
+    assert calls == [StageName.DATA_FETCH]
+    assert interrupted["status"] == StageStatus.WAITING_REVIEW
+    fetch = interrupted["stage_results"][StageName.DATA_FETCH.value]
+    assert fetch["status"] == StageStatus.WAITING_REVIEW
+    assert fetch["data"]["collaboration_requests"]
+
+
+def test_runtime_policy_default_allows_realistic_agent2_latency() -> None:
+    assert RuntimePolicy().stage_timeout_seconds == 600
+
+
+@pytest.mark.asyncio
+async def test_waiting_review_with_error_is_never_auto_completed() -> None:
+    calls: list[StageName] = []
+    agents: list[StageAgent] = [
+        WaitingReviewErrorAgent(StageName.DATA_FETCH, calls),
+        *[RecordingStageAgent(stage, calls) for stage in tuple(StageName)[1:]],
+    ]
+    graph = build_pipeline_graph(StageRegistry(agents), checkpointer=InMemorySaver())
+
+    interrupted = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-1",
+            run_id="run-waiting-review-error",
+            input_data={"industry": "动力电池"},
+        ),
+        {"configurable": {"thread_id": "run-waiting-review-error"}},
+    )
+
+    assert calls == [StageName.DATA_FETCH]
+    assert interrupted["status"] == StageStatus.WAITING_REVIEW
+    fetch = interrupted["stage_results"][StageName.DATA_FETCH.value]
+    assert fetch["status"] == StageStatus.WAITING_REVIEW
+    assert fetch["error"] == "intent_clarification_required"
+    assert fetch["data"]["collaboration_requests"]
+
+
 @pytest.mark.asyncio
 async def test_stage_attempt_budget_prevents_unbounded_regeneration() -> None:
     calls: list[StageName] = []
@@ -191,6 +291,34 @@ async def test_stage_timeout_becomes_recoverable_failure_without_running_downstr
     failed = interrupted["stage_results"][StageName.DATA_INTERPRET.value]
     assert failed["error"] == "stage_timeout"
     assert failed["data"]["runtime_alert"]["recoverable"] is True
+
+
+@pytest.mark.asyncio
+async def test_graph_without_explicit_policy_uses_configured_stage_timeout(monkeypatch) -> None:
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "STAGE_TIMEOUT_SECONDS", 0.01)
+    calls: list[StageName] = []
+    agents: list[StageAgent] = []
+    for stage in StageName:
+        agent_type = SlowStageAgent if stage == StageName.DATA_INTERPRET else RecordingStageAgent
+        agents.append(agent_type(stage, calls))
+    graph = build_pipeline_graph(
+        StageRegistry(agents),
+        checkpointer=InMemorySaver(),
+    )
+
+    interrupted = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-config-timeout",
+            run_id="run-config-timeout",
+            input_data={"industry": "光伏"},
+        ),
+        {"configurable": {"thread_id": "run-config-timeout"}},
+    )
+
+    failed = interrupted["stage_results"][StageName.DATA_INTERPRET.value]
+    assert failed["error"] == "stage_timeout"
 
 
 @pytest.mark.asyncio

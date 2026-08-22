@@ -1,0 +1,67 @@
+{
+  "case_id": "E-09",
+  "run_id": "run-e-09-1787398783",
+  "recorded_at": "2026-08-22T11:39:43.439178+00:00",
+  "mode": "record",
+  "llm_mode": "mock",
+  "input": {
+    "text": "汇总隆基绿能硅片、组件业务盈利水平",
+    "industry_topic": "光伏",
+    "focus_questions": [
+      "汇总隆基绿能硅片、组件业务盈利水平"
+    ]
+  },
+  "verdict": {
+    "verdict": "intercept",
+    "reason": "合法拦截（intent_clarification_required）",
+    "elapsed_s": 0.0
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "cancelled",
+      "error": "intent_clarification_required"
+    }
+  ],
+  "intent_routing": {
+    "enabled": false,
+    "strategy": "deterministic_only",
+    "clarification_required": [
+      "汇总隆基绿能硅片、组件业务盈利水平"
+    ],
+    "warnings": [
+      "unresolved_sub_requirement:SUB-01",
+      "unresolved_sub_requirement:SUB-02"
+    ],
+    "plans": [
+      {
+        "question": "汇总隆基绿能硅片、组件业务盈利水平",
+        "parser_mode": "deterministic",
+        "complexity": "compound",
+        "locked_skills": [],
+        "accepted_skills": [],
+        "rejected_skills": [],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "汇总隆基绿能硅片",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "组件业务盈利水平",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

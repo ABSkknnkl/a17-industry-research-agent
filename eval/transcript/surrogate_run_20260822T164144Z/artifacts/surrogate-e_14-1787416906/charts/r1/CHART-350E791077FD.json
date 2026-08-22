@@ -1,0 +1,99 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-350E791077FD",
+  "chart_type": "line",
+  "data_fingerprint": "1fc4f31a5e69e225a22fcac2805adfa234937d019b252b3f423ed2e78194af6e",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:1fc4f31a5e69e225a22fcac2805adfa234937d019b252b3f423ed2e78194af6e",
+  "evidence_ids": [
+    "E-37de1c9e35714332",
+    "E-d89822c4afee5be4",
+    "E-e195e94aaf6446ef",
+    "E-c49e960319626b4d",
+    "E-d2db77296aa71810"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "中国:GDP:元(含预测)": {
+        "2021-12-31": "E-d2db77296aa71810",
+        "2022-12-31": "E-c49e960319626b4d",
+        "2023-12-31": "E-e195e94aaf6446ef",
+        "2024-12-31": "E-d89822c4afee5be4",
+        "2025-12-31": "E-37de1c9e35714332"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          123364568705100.0,
+          124361302280899.98,
+          124559049871200.02,
+          128480066050400.0,
+          133099319279900.0
+        ],
+        "name": "中国:GDP:元(含预测)",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（中国:GDP:元(含预测)）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2021-12-31",
+        "2022-12-31",
+        "2023-12-31",
+        "2024-12-31",
+        "2025-12-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（中国:GDP:元(含预测)）",
+  "variant": "line"
+}

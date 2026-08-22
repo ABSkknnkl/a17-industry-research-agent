@@ -1,0 +1,111 @@
+{
+  "case_id": "E-09",
+  "run_id": "run-e-09-1787295712",
+  "recorded_at": "2026-08-21T07:02:02.934769+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "汇总隆基绿能硅片、组件业务盈利水平",
+    "industry_topic": "光伏",
+    "focus_questions": [
+      "汇总隆基绿能硅片、组件业务盈利水平"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 10.51
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "intent_clarification_required"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "approved",
+      "error": "analysis_input_invalid"
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "approved",
+      "error": "chapter_input_invalid"
+    },
+    {
+      "stage": "report_fusion",
+      "status": "approved",
+      "error": "report_input_invalid"
+    }
+  ],
+  "intent_routing": {
+    "enabled": true,
+    "strategy": "llm_first_with_deterministic_calibration",
+    "clarification_required": [
+      "汇总隆基绿能硅片、组件业务盈利水平"
+    ],
+    "warnings": [
+      "unresolved_sub_requirement:SUB-01",
+      "unresolved_sub_requirement:SUB-02",
+      "llm_skill_capability_mismatch:hithink_finance_query",
+      "llm_skill_pending_review:hithink_business_query",
+      "llm_skill_capability_mismatch:hithink_finance_query",
+      "llm_skill_pending_review:hithink_business_query"
+    ],
+    "plans": [
+      {
+        "question": "汇总隆基绿能硅片、组件业务盈利水平",
+        "parser_mode": "hybrid",
+        "complexity": "compound",
+        "locked_skills": [],
+        "accepted_skills": [
+          "hithink_business_query"
+        ],
+        "rejected_skills": [
+          "hithink_finance_query"
+        ],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "汇总隆基绿能硅片",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "组件业务盈利水平",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "查询隆基绿能硅片业务盈利水平",
+            "skills": [
+              "hithink_business_query"
+            ],
+            "source": "llm",
+            "clarify": true
+          },
+          {
+            "text": "查询隆基绿能组件业务盈利水平",
+            "skills": [
+              "hithink_business_query"
+            ],
+            "source": "llm",
+            "clarify": true
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

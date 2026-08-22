@@ -1,0 +1,104 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-C24F8F57825E",
+  "chart_type": "bar",
+  "data_fingerprint": "ead3382616f2f0ad1aca57d37ffa3ea851fdd3dbfa03f043dc171036fc53723a",
+  "dedupe_key": "comparison:comparison:比较各年度新开工指数:ead3382616f2f0ad1aca57d37ffa3ea851fdd3dbfa03f043dc171036fc53723a",
+  "evidence_ids": [
+    "E-START-2021",
+    "E-START-2022",
+    "E-START-2023",
+    "E-START-2024",
+    "E-START-2025"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "比较各年度新开工指数",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-START-2021",
+            "value": 100.0
+          },
+          {
+            "evidence_id": "E-START-2022",
+            "value": 61.0
+          },
+          {
+            "evidence_id": "E-START-2023",
+            "value": 48.0
+          },
+          {
+            "evidence_id": "E-START-2024",
+            "value": 37.0
+          },
+          {
+            "evidence_id": "E-START-2025",
+            "value": 32.0
+          }
+        ],
+        "name": "默认",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "房屋新开工指数"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "2021",
+        "2022",
+        "2023",
+        "2024",
+        "2025"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "指数",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "房屋新开工指数",
+  "variant": "vertical"
+}

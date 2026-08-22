@@ -1,0 +1,107 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "ARTIFACT-REPORT-2DB8705DC1BE-R1-REPORT_MARKDOWN",
+      "kind": "report_markdown",
+      "sha256": "b6b716102fc6529774ebf63aa45b82e9a1bc14eaa64f2fb1b2b9238fea1a6f7f",
+      "size_bytes": 23693,
+      "uri": "surrogate-e_31-1787419459/reports/r1/report.md"
+    },
+    {
+      "artifact_id": "ARTIFACT-REPORT-2DB8705DC1BE-R1-REPORT_HTML",
+      "kind": "report_html",
+      "sha256": "a61147047278d0df45557eb9ea6c3c13801fb10c305b08e2fe7c6140ecba50c3",
+      "size_bytes": 48612,
+      "uri": "surrogate-e_31-1787419459/reports/r1/report.html"
+    },
+    {
+      "artifact_id": "ARTIFACT-REPORT-2DB8705DC1BE-R1-REPORT_PDF",
+      "kind": "report_pdf",
+      "sha256": "d4a16ce4937f89b9de2a5b03d4f353e907caa54e9030fcf164942d95026ff174",
+      "size_bytes": 1251529,
+      "uri": "surrogate-e_31-1787419459/reports/r1/report.pdf"
+    }
+  ],
+  "delivery_status": "ready_with_limits",
+  "generated_at": "2026-08-22T17:24:19.999014+00:00",
+  "included_chart_ids": [
+    "CHART-2D3E721BB42C",
+    "CHART-57FE47AACF42"
+  ],
+  "quality": {
+    "chapter_count": 7,
+    "evidence_coverage": 1.0,
+    "included_chart_count": 2,
+    "issues": [],
+    "passed": true,
+    "section_count": 21
+  },
+  "report_depth": "standard",
+  "report_id": "REPORT-2DB8705DC1BE-R1",
+  "schema_version": "1.0",
+  "source_revisions": [
+    {
+      "revision": 1,
+      "stage": "data_interpret"
+    },
+    {
+      "revision": 1,
+      "stage": "chart_generate"
+    },
+    {
+      "revision": 1,
+      "stage": "chapter_write"
+    }
+  ],
+  "visual_decision": {
+    "chart_density": "low",
+    "density": "balanced",
+    "effective_style": "data_manual",
+    "override_warnings": [],
+    "per_chapter_strategy": {
+      "CH-01": {
+        "chart_count": 0,
+        "dominant_content": "summary",
+        "table_candidate_count": 0
+      },
+      "CH-02": {
+        "chart_count": 0,
+        "dominant_content": "time_series",
+        "table_candidate_count": 0
+      },
+      "CH-03": {
+        "chart_count": 0,
+        "dominant_content": "industry_chain",
+        "table_candidate_count": 0
+      },
+      "CH-04": {
+        "chart_count": 0,
+        "dominant_content": "comparison",
+        "table_candidate_count": 3
+      },
+      "CH-05": {
+        "chart_count": 0,
+        "dominant_content": "financial_detail",
+        "table_candidate_count": 2
+      },
+      "CH-06": {
+        "chart_count": 2,
+        "dominant_content": "narrative",
+        "table_candidate_count": 0
+      },
+      "CH-07": {
+        "chart_count": 0,
+        "dominant_content": "risk",
+        "table_candidate_count": 0
+      }
+    },
+    "recommendation_reasons": [
+      "量化内容占比约44%",
+      "识别到5个精确表格候选"
+    ],
+    "recommended_style": "data_manual",
+    "requested_style": "auto",
+    "selection_source": "agent_recommendation",
+    "table_priority": "high"
+  }
+}

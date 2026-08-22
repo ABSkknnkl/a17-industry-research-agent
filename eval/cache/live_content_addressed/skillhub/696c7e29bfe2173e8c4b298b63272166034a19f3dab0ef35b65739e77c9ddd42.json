@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "696c7e29bfe2173e8c4b298b63272166034a19f3dab0ef35b65739e77c9ddd42",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-event-query",
+  "request": {
+    "query": "比亚迪 业绩预告 事件",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1359,\"query\":\"比亚迪 业绩预告 事件\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"最新净利润来源说明\",\"key\":\"净利润来源说明\",\"feKey\":\"净利润来源说明\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"002594.SZ\",\"股票简称\":\"比亚迪\",\"最新价\":\"90.47\",\"最新涨跌幅\":-0.011052000000000001}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"比亚迪 (1)\\\",\\\"比亚迪 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9898517874234503083765\"}",
+  "raw_sha256": "6b1823024f7ac5a7ea46e13df476f83eb68c7ed986470b4d49b341a11967cefe",
+  "recorded_at": "2026-08-22T18:30:50.122693+00:00"
+}

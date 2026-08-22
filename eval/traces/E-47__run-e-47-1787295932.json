@@ -1,0 +1,105 @@
+{
+  "case_id": "E-47",
+  "run_id": "run-e-47-1787295932",
+  "recorded_at": "2026-08-21T07:05:38.107720+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "动力电池产业链各环节盈利分配与议价能力",
+    "industry_topic": "动力电池",
+    "focus_questions": [
+      "动力电池产业链各环节盈利分配与议价能力"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 5.6
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "intent_clarification_required"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "approved",
+      "error": "analysis_input_invalid"
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "approved",
+      "error": "chapter_input_invalid"
+    },
+    {
+      "stage": "report_fusion",
+      "status": "approved",
+      "error": "report_input_invalid"
+    }
+  ],
+  "intent_routing": {
+    "enabled": true,
+    "strategy": "llm_first_with_deterministic_calibration",
+    "clarification_required": [
+      "动力电池产业链各环节盈利分配与议价能力"
+    ],
+    "warnings": [
+      "unresolved_sub_requirement:SUB-02",
+      "llm_skill_capability_mismatch:industry_chain_analysis",
+      "llm_skill_capability_mismatch:hithink_industry_query"
+    ],
+    "plans": [
+      {
+        "question": "动力电池产业链各环节盈利分配与议价能力",
+        "parser_mode": "hybrid",
+        "complexity": "compound",
+        "locked_skills": [
+          "industry_chain_analysis"
+        ],
+        "accepted_skills": [
+          "hithink_insresearch_query"
+        ],
+        "rejected_skills": [
+          "industry_chain_analysis",
+          "hithink_industry_query"
+        ],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "动力电池产业链各环节盈利分配",
+            "skills": [
+              "industry_chain_analysis"
+            ],
+            "source": "deterministic",
+            "clarify": false
+          },
+          {
+            "text": "议价能力",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "动力电池产业链各环节盈利分配与议价能力",
+            "skills": [
+              "hithink_insresearch_query"
+            ],
+            "source": "llm",
+            "clarify": false
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

@@ -18,7 +18,10 @@ from app.schemas.report import (
     ReportConclusion,
     ReportQualityAppendix,
     ReportViewModel,
+    RequestedVisualStyle,
+    VisualDensity,
 )
+from app.agents.report_fusion.visual import plan_visual_decision
 
 DISCLAIMER = "本报告仅用于行业研究与信息交流，不构成证券投资建议、收益保证或交易邀约。"
 
@@ -55,6 +58,8 @@ def build_report_view(
     risk_acknowledged_at: datetime | None = None,
     delivery_status: Literal["ready", "ready_with_limits", "blocked"] = "ready",
     report_depth: Literal["brief", "standard", "deep"] | None = None,
+    requested_visual_style: RequestedVisualStyle = "auto",
+    requested_visual_density: VisualDensity = "balanced",
 ) -> ReportViewModel:
     digest = hashlib.sha256(run_id.encode("utf-8")).hexdigest()[:12].upper()
     report_id = f"REPORT-{digest}-R{revision}"
@@ -139,6 +144,12 @@ def build_report_view(
         if analysis.industry_topic.endswith("行业")
         else f"{analysis.industry_topic}行业研究报告"
     )
+    visual_decision = plan_visual_decision(
+        chapters=chapter_result.chapters,
+        charts=embedded,
+        requested_style=requested_visual_style,
+        requested_density=requested_visual_density,
+    )
     return ReportViewModel(
         report_id=report_id,
         title=title,
@@ -179,4 +190,5 @@ def build_report_view(
             chapter_result,
             included_chart_ids={chart.chart_id for chart in embedded},
         ),
+        visual_decision=visual_decision,
     )

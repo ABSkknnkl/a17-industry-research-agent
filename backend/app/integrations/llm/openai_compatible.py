@@ -21,7 +21,12 @@ from app.schemas.analysis import (
     ScenarioAnalysis,
     ValidationCard,
 )
-from app.schemas.chapter import ChapterDraft
+from app.schemas.chapter import (
+    ChapterDraft,
+    ParagraphDraft,
+    SectionDraft,
+    SectionVisualSemantics,
+)
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 logger = logging.getLogger(__name__)
@@ -429,24 +434,95 @@ def _normalize_known_schema_aliases(payload: Any, schema: type[Any]) -> Any:
         return payload
     if schema is not ChapterDraft:
         return payload
+    for key in tuple(payload):
+        if key not in ChapterDraft.model_fields:
+            payload.pop(key, None)
     sections = payload.get("sections")
     if not isinstance(sections, list):
         return payload
     for section in sections:
         if not isinstance(section, dict):
             continue
+        for key in tuple(section):
+            if key not in SectionDraft.model_fields:
+                section.pop(key, None)
+        visual = section.get("visual_semantics")
+        if isinstance(visual, dict):
+            content_aliases = {
+                "叙述": "narrative",
+                "叙事": "narrative",
+                "趋势": "time_series",
+                "时间序列": "time_series",
+                "对比": "comparison",
+                "比较": "comparison",
+                "财务": "financial_detail",
+                "财务明细": "financial_detail",
+                "产业链": "industry_chain",
+                "风险": "risk",
+                "情景": "scenario",
+                "预测": "scenario",
+                "总结": "summary",
+                "摘要": "summary",
+            }
+            content_type = visual.get("content_type")
+            if isinstance(content_type, str):
+                visual["content_type"] = content_aliases.get(
+                    content_type.strip(), content_type.strip()
+                )
+            density_aliases = {
+                "高": 0.85,
+                "较高": 0.75,
+                "中": 0.5,
+                "一般": 0.5,
+                "较低": 0.25,
+                "低": 0.15,
+            }
+            for field_name in ("quantitative_density", "qualitative_density"):
+                density = visual.get(field_name)
+                if isinstance(density, str):
+                    compact = density.strip()
+                    if compact in density_aliases:
+                        visual[field_name] = density_aliases[compact]
+                    else:
+                        try:
+                            number = float(compact.removesuffix("%"))
+                            visual[field_name] = number / 100 if "%" in compact else number
+                        except ValueError:
+                            visual[field_name] = None
+            if "preferred_table" not in visual and "suitable_for_precise_table" in visual:
+                visual["preferred_table"] = bool(visual["suitable_for_precise_table"])
+            visual.pop("suitable_for_precise_table", None)
+            for key in tuple(visual):
+                if key not in SectionVisualSemantics.model_fields:
+                    visual.pop(key, None)
         paragraphs = section.get("paragraphs")
         if not isinstance(paragraphs, list):
             continue
         for paragraph in paragraphs:
             if not isinstance(paragraph, dict):
                 continue
+            for key in tuple(paragraph):
+                if key not in ParagraphDraft.model_fields:
+                    paragraph.pop(key, None)
             paragraph_id = paragraph.get("paragraph_id")
             if isinstance(paragraph_id, str):
                 for alias in ("PARA-", "PAR-"):
                     if paragraph_id.startswith(alias):
                         paragraph["paragraph_id"] = "P-" + paragraph_id.removeprefix(alias)
                         break
+            kind_aliases = {
+                "分析": "analysis",
+                "观点": "analysis",
+                "方法": "methodology",
+                "方法说明": "methodology",
+                "风险": "risk",
+                "风险提示": "risk",
+                "过渡": "transition",
+                "衔接": "transition",
+            }
+            kind = paragraph.get("kind")
+            if isinstance(kind, str):
+                paragraph["kind"] = kind_aliases.get(kind.strip(), kind.strip())
     return payload
 
 

@@ -3,6 +3,12 @@ from datetime import date
 from app.agents.data_fetcher.planner import QueryPlanner
 import pytest
 
+from app.agents.data_fetcher.intent_models import (
+    IntentEntity,
+    IntentMetric,
+    IntentSubRequirement,
+    ResearchIntentPlan,
+)
 from app.schemas.acquisition import P0_SKILLS, P1_SKILLS, SkillName
 
 
@@ -125,6 +131,63 @@ def test_focus_companies_are_bound_to_company_data_tasks() -> None:
     assert any(task.query.startswith("比亚迪 ") for task in finance_tasks)
 
 
+def test_llm_intent_company_is_bound_when_research_brief_has_no_focus_company() -> None:
+    question = "请查询宁德时代2025年营业收入。"
+    intent_plan = ResearchIntentPlan(
+        original_input=question,
+        normalized_input=question.rstrip("。"),
+        complexity="simple",
+        sub_requirements=[
+            IntentSubRequirement(
+                requirement_id="SUB-LLM-01",
+                original_text=question,
+                normalized_text=question.rstrip("。"),
+                entities=[IntentEntity(name="宁德时代", entity_type="company", confidence=0.98)],
+                metrics=[
+                    IntentMetric(
+                        original_name="营业收入",
+                        normalized_name="营业收入",
+                        metric_type="financial",
+                        confidence=0.98,
+                    )
+                ],
+                intent_type="financial_query",
+                candidate_skills=[SkillName.FINANCE.value],
+                confidence=0.98,
+                reason="LLM语义识别结果已通过确定性校准。",
+                source="hybrid",
+            )
+        ],
+        locked_skills=[SkillName.FINANCE.value],
+        parser_mode="hybrid",
+    )
+
+    plan = QueryPlanner().build(
+        industry_topic="动力电池行业",
+        market_scope=["中国内地"],
+        research_as_of=date(2026, 8, 21),
+        analysis_depth="overview",
+        focus_questions=[question],
+        research_brief={},
+        data_fetch_options={"metrics": ["营业收入"], "time_range": ["2025年"]},
+        review_feedback=None,
+        intent_plans=[intent_plan],
+    )
+
+    finance_tasks = [task for task in plan.tasks if task.skill_name == SkillName.FINANCE]
+    assert finance_tasks
+    assert all(task.target_entities == ["宁德时代"] for task in finance_tasks)
+    assert any(task.query.startswith("宁德时代 ") for task in finance_tasks)
+    focus_requirement = next(item for item in plan.requirements if item.origin == "focus_question")
+    metric_requirement = next(item for item in plan.requirements if item.origin == "user_metric")
+    shared_metric_task = next(
+        task
+        for task in finance_tasks
+        if metric_requirement.requirement_id in task.requirement_ids
+    )
+    assert focus_requirement.requirement_id in shared_metric_task.requirement_ids
+
+
 def test_concentration_metrics_request_company_market_share_cross_section() -> None:
     plan = QueryPlanner().build(
         industry_topic="锂电池",
@@ -160,6 +223,8 @@ def test_concentration_metrics_request_company_market_share_cross_section() -> N
         ("研发费用率", "hithink_finance_query", ["研发费用率", "研发费用", "营业收入"]),
         ("海外收入占比", "hithink_business_query", ["海外收入占比", "境外营业收入", "营业收入"]),
         ("出货量", "hithink_business_query", ["出货量"]),
+        ("商品房销售面积", "hithink_macro_query", ["商品房销售面积"]),
+        ("房地产开发投资额", "hithink_macro_query", ["房地产开发投资额"]),
     ],
 )
 def test_requested_metric_is_injected_with_required_source_fields(
@@ -338,3 +403,171 @@ def test_semantic_route_is_used_only_as_an_explicit_hybrid_override() -> None:
     assert task.skill_name == SkillName.FINANCE
     assert "单瓦盈利" in task.query
     assert "单瓦盈利" in task.expected_fields
+
+def test_simple_plan_with_conditional_skill_keeps_dedicated_query() -> None:
+    """simple 计划路由到条件技能时必须保留专属查询（E-14 回归）。
+
+    条件 P1 技能（股票筛选器/期货/指数/基本面）不在基线全量扫描内；
+    若 simple 计划跳过子需求专属查询，锁定路由会被静默丢弃，
+    需求将以 required_data_unavailable 失败。
+    """
+    question = "锂电池行业CR3、CR5市场占有率变化"
+    intent_plan = ResearchIntentPlan(
+        original_input=question,
+        normalized_input=question,
+        complexity="simple",
+        sub_requirements=[
+            IntentSubRequirement(
+                requirement_id="SUB-LLM-01",
+                original_text=question,
+                normalized_text=question,
+                entities=[],
+                metrics=[],
+                intent_type="competition_query",
+                candidate_skills=[SkillName.STOCK_SELECTOR.value],
+                confidence=0.95,
+                reason="LLM语义识别结果已通过确定性校准。",
+                source="hybrid",
+            )
+        ],
+        locked_skills=[SkillName.STOCK_SELECTOR.value],
+        parser_mode="hybrid",
+    )
+
+    plan = QueryPlanner().build(
+        industry_topic="锂电池",
+        market_scope=["中国内地"],
+        research_as_of=date(2026, 8, 21),
+        analysis_depth="standard",
+        focus_questions=[question],
+        research_brief={},
+        data_fetch_options={},
+        review_feedback=None,
+        intent_plans=[intent_plan],
+    )
+
+    selector_tasks = [
+        task for task in plan.tasks if task.skill_name == SkillName.STOCK_SELECTOR
+    ]
+    assert selector_tasks, (
+        "simple 计划路由到条件技能时必须生成专属查询，否则锁定路由被静默丢弃"
+    )
+    assert any("市场" in task.query or "份额" in task.query for task in selector_tasks)
+
+
+def test_simple_plan_without_conditional_skill_reuses_baseline_only() -> None:
+    """simple 计划仅含 P0 技能时不新增重复查询（RUNLOG 10.2 语义保持）。"""
+    question = "请查询宁德时代2025年营业收入"
+    intent_plan = ResearchIntentPlan(
+        original_input=question,
+        normalized_input=question,
+        complexity="simple",
+        sub_requirements=[
+            IntentSubRequirement(
+                requirement_id="SUB-LLM-01",
+                original_text=question,
+                normalized_text=question,
+                entities=[
+                    IntentEntity(name="宁德时代", entity_type="company", confidence=0.98)
+                ],
+                metrics=[],
+                intent_type="financial_query",
+                candidate_skills=[SkillName.FINANCE.value],
+                confidence=0.98,
+                reason="LLM语义识别结果已通过确定性校准。",
+                source="hybrid",
+            )
+        ],
+        locked_skills=[SkillName.FINANCE.value],
+        parser_mode="hybrid",
+    )
+
+    plan = QueryPlanner().build(
+        industry_topic="动力电池行业",
+        market_scope=["中国内地"],
+        research_as_of=date(2026, 8, 21),
+        analysis_depth="standard",
+        focus_questions=[question],
+        research_brief={},
+        data_fetch_options={},
+        review_feedback=None,
+        intent_plans=[intent_plan],
+    )
+
+    finance_tasks = [
+        task for task in plan.tasks if task.skill_name == SkillName.FINANCE
+    ]
+    company_finance = [task for task in finance_tasks if task.target_entities]
+    assert company_finance, "实体绑定查询应保留"
+    # RUNLOG 10.2：simple 计划的纯行业级 P0 子需求不追加意图查询；
+    # 实体命名子需求例外——意图专属查询合法（E-41/E-44 修复语义：
+    # 实体+意图关键词无法由行业级基线表达），至多一条且必须绑实体。
+    intent_tasks = [
+        task for task in finance_tasks if task.task_origin != "baseline"
+    ]
+    assert len(intent_tasks) <= 1, [
+        (t.task_id, t.task_origin) for t in intent_tasks
+    ]
+    assert all(task.target_entities for task in intent_tasks), [
+        t.target_entities for t in intent_tasks
+    ]
+
+
+def test_company_task_is_mapped_to_focus_requirement_coverage() -> None:
+    """实体命名需求的覆盖必须映射到公司专属任务（E-16 最终轮回归）。
+
+    行业级基线任务带 target_entities 后，其行业行会被 normalizer 按实体
+    过滤清零；若覆盖映射只取首个基线任务，公司查询数据将永远无法满足
+    需求，正向用例会在 data_fetch 被 required_data_unavailable 拦截。
+    """
+    question = "药明康德存货周转率、应收周转率"
+    intent_plan = ResearchIntentPlan(
+        original_input=question,
+        normalized_input=question,
+        complexity="simple",
+        sub_requirements=[
+            IntentSubRequirement(
+                requirement_id="SUB-LLM-01",
+                original_text=question,
+                normalized_text=question,
+                entities=[
+                    IntentEntity(name="药明康德", entity_type="company", confidence=0.95)
+                ],
+                metrics=[],
+                intent_type="financial_query",
+                candidate_skills=[SkillName.FINANCE.value],
+                confidence=0.95,
+                reason="LLM语义识别结果已通过确定性校准。",
+                source="hybrid",
+            )
+        ],
+        locked_skills=[SkillName.FINANCE.value],
+        parser_mode="hybrid",
+    )
+
+    plan = QueryPlanner().build(
+        industry_topic="创新药",
+        market_scope=["中国内地"],
+        research_as_of=date(2026, 8, 21),
+        analysis_depth="standard",
+        focus_questions=[question],
+        research_brief={},
+        data_fetch_options={},
+        review_feedback=None,
+        intent_plans=[intent_plan],
+    )
+
+    focus_requirement = next(
+        item for item in plan.requirements if item.origin == "focus_question"
+    )
+    finance_tasks = [
+        task for task in plan.tasks if task.skill_name == SkillName.FINANCE
+    ]
+    company_task_ids = {
+        task.task_id for task in finance_tasks if task.target_entities == ["药明康德"]
+    }
+    assert company_task_ids, "应存在药明康德专属财务查询任务"
+    # 覆盖映射必须包含公司专属任务，否则其实体过滤后的清洗行无法计入需求
+    assert company_task_ids & set(focus_requirement.task_ids), (
+        "公司专属任务必须映射到焦点需求：" + str(focus_requirement.task_ids)
+    )

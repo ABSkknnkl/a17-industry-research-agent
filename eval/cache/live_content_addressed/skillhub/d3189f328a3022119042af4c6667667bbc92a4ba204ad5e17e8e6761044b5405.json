@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "d3189f328a3022119042af4c6667667bbc92a4ba204ad5e17e8e6761044b5405",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-stock-selector",
+  "request": {
+    "query": "动力电池概念股 算一下宁德时代氢能业务市占率",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1522,\"query\":\"动力电池概念股 算一下宁德时代氢能业务市占率\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"最新主营构成收入占比\",\"key\":\"收入占比\",\"feKey\":\"收入占比\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成业务利润\",\"key\":\"业务利润\",\"feKey\":\"业务利润\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成分类标准\",\"key\":\"分类标准\",\"feKey\":\"分类标准\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成项目名称\",\"key\":\"项目名称\",\"feKey\":\"项目名称\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成业务收入\",\"key\":\"业务收入\",\"feKey\":\"业务收入\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成业务成本\",\"key\":\"业务成本\",\"feKey\":\"业务成本\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成毛利率\",\"key\":\"毛利率\",\"feKey\":\"毛利率\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成成本占比\",\"key\":\"成本占比\",\"feKey\":\"成本占比\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成利润占比\",\"key\":\"利润占比\",\"feKey\":\"利润占比\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"300750.SZ\",\"股票简称\":\"宁德时代\",\"最新价\":\"391.15\",\"最新涨跌幅\":1.597403}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"宁德时代 (1)\\\",\\\"宁德时代项目名称等于氢能的收入占比 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9822717873823398905446\"}",
+  "raw_sha256": "fd7caf0052505b90fa150760b9423ab813405aa82d8cbe949c91e2bd625ac8a6",
+  "recorded_at": "2026-08-22T07:05:39.315967+00:00"
+}

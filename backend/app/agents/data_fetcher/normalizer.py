@@ -36,6 +36,7 @@ _ENTITY_FIELDS = (
     "合约简称",
     "品种简称",
     "指标名称",
+    "macro_name",
     "name",
 )
 _PERIOD_FIELDS = (
@@ -90,6 +91,11 @@ _METADATA_FIELDS = set(
         "指数代码",
         "合约代码",
         "品种代码",
+        "国家",
+        "指标",
+        "周期",
+        "macro_id",
+        "地区级别",
     )
 )
 _MAX_EVIDENCE_ITEMS = 200
@@ -103,6 +109,13 @@ _RELEVANCE_FIELDS = (
     "项目名称",
     "业务名称",
 )
+_TEXT_SEARCH_SKILLS = {
+    SkillName.ANNOUNCEMENT,
+    SkillName.EVENT,
+    SkillName.INSTITUTIONAL_RESEARCH,
+    SkillName.NEWS,
+    SkillName.REPORT,
+}
 _METRIC_ALIASES = {
     "归属于母公司股东的净利润": "归母净利润",
     "母公司股东净利润": "归母净利润",
@@ -211,6 +224,8 @@ def normalize_tasks(
                 if result.task.target_entities and not _matches_target_entity(
                     entity,
                     result.task.target_entities,
+                    row=cleaned,
+                    skill_name=payload.skill_name,
                 ):
                     quarantined.append(
                         QuarantinedRecord(
@@ -226,7 +241,27 @@ def normalize_tasks(
                         )
                     )
                     continue
-                if _is_low_relevance(cleaned, industry_topic):
+                available_at = _first_date(cleaned, _AVAILABLE_FIELDS)
+                if available_at is not None and available_at > research_as_of:
+                    quarantined.append(
+                        QuarantinedRecord(
+                            quarantine_id=f"QUAR-{row_hash[:16]}",
+                            skill_name=payload.skill_name,
+                            row_sha256=row_hash,
+                            entity=entity[:500],
+                            reason_code="future_availability",
+                            reason=(
+                                f"返回数据的可得日{available_at.isoformat()}晚于研究时点"
+                                f"{research_as_of.isoformat()}，已隔离以防止前视偏差。"
+                            ),
+                        )
+                    )
+                    continue
+                if _is_low_relevance(
+                    cleaned,
+                    industry_topic,
+                    require_text_match=payload.skill_name in _TEXT_SEARCH_SKILLS,
+                ):
                     quarantined.append(
                         QuarantinedRecord(
                             quarantine_id=f"QUAR-{row_hash[:16]}",
@@ -264,10 +299,7 @@ def normalize_tasks(
                 entity = _first_text(row, _ENTITY_FIELDS) or industry_topic
                 period_end = _first_date(row, _PERIOD_FIELDS)
                 available_at = _first_date(row, _AVAILABLE_FIELDS) or research_as_of
-                row_source = _first_text(
-                    row,
-                    ("来源", "发布主体", "机构", "source_original", "data_source"),
-                )
+                row_source = _publisher_from_row(row)
                 source_name = (
                     f"{row_source}（经同花顺问财SkillHub获取）"
                     if row_source and row_source != "本地测试桩"
@@ -283,7 +315,11 @@ def normalize_tasks(
                     if field_name in _METADATA_FIELDS or _is_missing(raw_value):
                         continue
                     item_period_end = period_end or _field_period(str(field_name))
-                    metric_name = _normalize_metric_name(str(field_name))
+                    metric_name = _metric_name_from_row(
+                        str(field_name),
+                        row,
+                        payload.skill_name,
+                    )
                     metric_key = (_normalized_identity(entity), metric_name)
                     if metric_counts.get(metric_key, 0) >= _MAX_POINTS_PER_METRIC_PER_TASK:
                         continue
@@ -337,6 +373,8 @@ def normalize_tasks(
                             ),
                             corporate_action_adjustment=CorporateActionAdjustment.NOT_APPLICABLE,
                             source_name=source_name[:500],
+                            publisher=(row_source[:500] if row_source else None),
+                            retrieval_method="同花顺问财 SkillHub",
                             source_locator=locator[:1_000],
                             grade=_grade(payload.skill_name),
                             notes=(
@@ -429,6 +467,9 @@ def _row_hash(row: dict[str, Any], skill_name: SkillName) -> str:
 def _topic_tokens(topic: str) -> set[str]:
     compact = re.sub(r"(?:行业|产业链|产业|板块|概念|市场)$", "", topic.strip())
     tokens = {compact} if compact else set()
+    for prefix in ("中国", "国内", "全球", "海外"):
+        if compact.startswith(prefix) and len(compact) - len(prefix) >= 2:
+            tokens.add(compact[len(prefix) :])
     tokens.update(token for token in re.split(r"[、/\s-]+", compact) if len(token) >= 2)
     return tokens
 
@@ -437,18 +478,52 @@ def _normalized_identity(value: str) -> str:
     return re.sub(r"[\s（）()\-_/]+", "", value).casefold()
 
 
-def _matches_target_entity(entity: str, targets: list[str]) -> bool:
-    entity_key = _normalized_identity(entity)
-    return any(
-        target_key and (target_key in entity_key or entity_key in target_key)
-        for target_key in (_normalized_identity(target) for target in targets)
-    )
+def _matches_target_entity(
+    entity: str,
+    targets: list[str],
+    *,
+    row: dict[str, Any] | None = None,
+    skill_name: SkillName | None = None,
+) -> bool:
+    if not targets:
+        return True
+    identity = _normalized_identity(entity)
+    target_ids = {(_normalized_identity(t), t) for t in targets}
+    for norm, raw in target_ids:
+        if norm and norm == identity:
+            return True
+        if norm and identity and (norm in identity or identity in norm):
+            return True
+    # Text-search channels (announcement/event/research/news/report) return
+    # rows whose entity column is often a system value (admin) or the source
+    # account rather than the subject company; the subject only appears in
+    # the row text itself.  For those skills a target name found anywhere in
+    # the row is a real subject match (E-41 announcement rows about
+    # 宁德时代 were quarantined because their entity column read admin).
+    if row is not None and skill_name in _TEXT_SEARCH_SKILLS:
+        haystack = " ".join(
+            str(value) for value in row.values() if isinstance(value, str)
+        )
+        for _, raw in target_ids:
+            if raw and raw in haystack:
+                return True
+    return False
 
 
-def _is_low_relevance(row: dict[str, Any], industry_topic: str) -> bool:
+def _is_low_relevance(
+    row: dict[str, Any],
+    industry_topic: str,
+    *,
+    require_text_match: bool = False,
+) -> bool:
     declared = [str(row[field]).strip() for field in _RELEVANCE_FIELDS if row.get(field)]
     if not declared:
-        return False
+        if not require_text_match:
+            return False
+        searchable = " ".join(
+            str(value) for value in row.values() if isinstance(value, str)
+        )
+        return not any(token in searchable for token in _topic_tokens(industry_topic))
     haystack = " ".join(declared)
     if any(token in haystack for token in _topic_tokens(industry_topic)):
         return False
@@ -480,6 +555,43 @@ def _normalize_metric_name(field_name: str) -> str:
             suffix = name[len(alias) :]
             return f"{canonical}{suffix}"
     return name
+
+
+def _metric_name_from_row(
+    field_name: str,
+    row: dict[str, Any],
+    skill_name: SkillName,
+) -> str:
+    """Recover the actual macro indicator name from generic provider columns."""
+
+    if skill_name == SkillName.MACRO and field_name in {"指标值", "value", "数值"}:
+        indicator = _first_text(row, ("指标", "指标名称", "macro_name"))
+        if indicator:
+            return re.sub(r"^(?:全国|中国)[:：]", "", indicator).strip()[:200]
+    metric_name = _normalize_metric_name(field_name)
+    business_metrics = {
+        "业务收入": "主营业务收入",
+        "业务成本": "主营业务成本",
+        "业务利润": "主营业务利润",
+        "收入占比": "主营业务收入占比",
+        "成本占比": "主营业务成本占比",
+        "利润占比": "主营业务利润占比",
+        "毛利率": "主营业务毛利率",
+    }
+    if skill_name == SkillName.BUSINESS and metric_name in business_metrics:
+        business_item = _first_text(row, ("项目名称", "业务名称"))
+        if business_item and business_item not in metric_name:
+            return f"{business_metrics[metric_name]}-{business_item}"[:200]
+    return metric_name
+
+
+def _publisher_from_row(row: dict[str, Any]) -> str | None:
+    """Accept only compact publisher labels, never full provider content blobs."""
+
+    value = _first_text(row, ("发布主体", "机构", "作者", "publisher", "来源"))
+    if value is None or len(value) > 200 or value.count("|") >= 3 or "\n" in value:
+        return None
+    return value
 
 
 def _first_text(row: dict[str, Any], fields: tuple[str, ...]) -> str | None:

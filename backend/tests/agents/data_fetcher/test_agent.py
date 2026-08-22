@@ -241,6 +241,35 @@ async def test_live_provider_mode_returns_a_downstream_compatible_package() -> N
 
 
 @pytest.mark.asyncio
+async def test_partial_intent_fetches_known_data_before_disclosing_unknown_gap() -> None:
+    client = MockSkillHubClient()
+    client.provider_mode = "live"
+    agent = DataFetcherAgent(
+        planner=QueryPlanner(),
+        executor=RetrievalExecutor(create_skillhub_gateway(client)),
+        provider_mode=client.provider_mode,
+    )
+    context = _context()
+    context.input_data["focus_questions"] = [
+        "整理储能行业市场规模、尚未注册的自定义口径"
+    ]
+
+    result = await agent.run(context)
+
+    assert client.calls, "已识别的市场规模子需求必须先执行真实取数链路"
+    assert result.data["evidence_items"]
+    assert result.status == StageStatus.WAITING_REVIEW
+    assert result.error == "required_data_unavailable"
+    assert result.data["requirement_coverage"][0]["status"] == "partial"
+    assert "【已完成】" in result.data["intent_routing"]["partial_results"][0]["message"]
+    assert "【无法处理】" in result.data["intent_routing"]["partial_results"][0]["message"]
+    assert any(
+        "unresolved_sub_requirement" in warning
+        for warning in result.data["intent_routing"]["warnings"]
+    )
+
+
+@pytest.mark.asyncio
 async def test_p1_failure_is_reported_but_does_not_block_complete_p0_data() -> None:
     client = SelectivelyFailingClient({SkillName.INSTITUTIONAL_RESEARCH})
     agent = DataFetcherAgent(
@@ -298,7 +327,7 @@ async def test_missing_requested_requirement_pauses_for_reinput() -> None:
 
 
 @pytest.mark.asyncio
-async def test_missing_explicit_metric_can_be_accepted_with_a_visible_risk() -> None:
+async def test_missing_explicit_metric_requires_reinput() -> None:
     client = SelectivelyFailingClient({SkillName.BUSINESS})
     agent = DataFetcherAgent(
         planner=QueryPlanner(),
@@ -311,18 +340,10 @@ async def test_missing_explicit_metric_can_be_accepted_with_a_visible_risk() -> 
     result = await agent.run(context)
 
     assert result.status == StageStatus.WAITING_REVIEW
-    assert result.error == "requested_data_partial"
-    assert result.data["blocking_issues"] == []
-    assert result.data["advisory_issues"] == ["requested_data_partial"]
-    assert result.data["allowed_review_actions"] == [
-        "revise",
-        "regenerate",
-        "accept_with_risks",
-        "cancel",
-    ]
-    assert result.data["decision_package"]["acknowledgement_required_codes"] == [
-        "REQUESTED-DATA-PARTIAL"
-    ]
+    assert result.error == "required_data_unavailable"
+    assert result.data["blocking_issues"] == ["required_data_unavailable"]
+    assert result.data["allowed_review_actions"] == ["revise", "regenerate", "cancel"]
+    assert "重新提交" in result.data["collaboration_requests"][0]["question"]
     assert result.data["missing_requirements"][0]["question"] == "指定指标：海外收入占比"
     assert result.data["missing_requirements"][0]["origin"] == "user_metric"
     assert result.data["missing_requirements"][0]["criticality"] == "acknowledgement_required"
@@ -346,6 +367,8 @@ async def test_all_core_skills_without_usable_data_stop_at_group_quality_gate() 
     assert result.data["acquisition_quality"]["passed"] is False
     assert result.data["acquisition_quality"]["core_data_available"] is False
     assert result.data["blocking_issues"] == ["core_data_group_unavailable"]
+    assert result.data["allowed_review_actions"] == ["revise", "regenerate", "cancel"]
+    assert "重新提交" in result.data["collaboration_requests"][0]["question"]
 
 
 @pytest.mark.asyncio
@@ -385,3 +408,5 @@ async def test_core_return_that_is_fully_quarantined_requires_review() -> None:
     ]
     assert result.data["acquisition_quality"]["core_data_skills_usable"] == []
     assert result.data["quarantined_records"]
+    assert result.data["allowed_review_actions"] == ["revise", "regenerate", "cancel"]
+    assert "重新提交" in result.data["collaboration_requests"][0]["question"]

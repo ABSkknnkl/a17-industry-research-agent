@@ -47,7 +47,7 @@ class RuntimePolicy(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     workflow_timeout_seconds: float = Field(default=900, gt=0, le=86_400)
-    stage_timeout_seconds: float = Field(default=180, gt=0, le=3_600)
+    stage_timeout_seconds: float = Field(default=600, gt=0, le=3_600)
     tool_timeout_seconds: float = Field(default=30, gt=0, le=600)
     max_total_stage_runs: int = Field(default=15, ge=5, le=100)
     max_stage_attempts: int = Field(default=3, ge=1, le=10)
@@ -55,6 +55,24 @@ class RuntimePolicy(BaseModel):
     max_tool_calls: int = Field(default=48, ge=1, le=1_000)
     max_tool_result_chars: int = Field(default=20_000, ge=20, le=1_000_000)
     max_events: int = Field(default=100, ge=10, le=2_000)
+
+
+def runtime_policy_from_settings() -> RuntimePolicy:
+    """Build one policy from the authoritative application settings."""
+
+    from app.core.config import settings
+
+    return RuntimePolicy(
+        workflow_timeout_seconds=settings.WORKFLOW_TIMEOUT_SECONDS,
+        stage_timeout_seconds=settings.STAGE_TIMEOUT_SECONDS,
+        tool_timeout_seconds=settings.TOOL_TIMEOUT_SECONDS,
+        max_total_stage_runs=settings.MAX_TOTAL_STAGE_RUNS,
+        max_stage_attempts=settings.MAX_STAGE_ATTEMPTS,
+        max_model_calls=settings.MAX_MODEL_CALLS_PER_RUN,
+        max_tool_calls=settings.MAX_TOOL_CALLS_PER_RUN,
+        max_tool_result_chars=settings.MAX_TOOL_RESULT_CHARS,
+        max_events=settings.MAX_RUNTIME_EVENTS,
+    )
 
 
 class RuntimeState(BaseModel):

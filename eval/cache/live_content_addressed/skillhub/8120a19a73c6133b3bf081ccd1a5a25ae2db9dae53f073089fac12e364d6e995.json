@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "8120a19a73c6133b3bf081ccd1a5a25ae2db9dae53f073089fac12e364d6e995",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "宁德时代 2025年 2026年 营业收入 净利润",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":252,\"query\":\"宁德时代 2025年 2026年 营业收入 净利润\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"营业收入\",\"key\":\"营业收入[20251231]\",\"feKey\":\"营业收入[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"财务报表\",\"timestamp\":\"20251231\",\"source\":\"index\"},{\"index_name\":\"归属于母公司所有者的净利润\",\"key\":\"归母净利润[20251231]\",\"feKey\":\"归母净利润[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"财务报表\",\"timestamp\":\"20251231\",\"source\":\"index\"},{\"index_name\":\"营业收入(同比增长率)\",\"key\":\"营业收入同比增长率[20261231]\",\"feKey\":\"营业收入同比增长率[20261231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"风险等级B\",\"timestamp\":\"20261231\",\"source\":\"index\"},{\"index_name\":\"营业收入(同比增长率)\",\"key\":\"营业收入同比增长率[20251231]\",\"feKey\":\"营业收入同比增长率[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"风险等级B\",\"timestamp\":\"20251231\",\"source\":\"index\"},{\"index_name\":\"归属母公司股东的净利润(同比增长率)\",\"key\":\"归母净利润同比增长率[20261231]\",\"feKey\":\"归母净利润同比增长率[20261231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"财务报表\",\"timestamp\":\"20261231\",\"source\":\"index\"},{\"index_name\":\"归属母公司股东的净利润(同比增长率)\",\"key\":\"归母净利润同比增长率[20251231]\",\"feKey\":\"归母净利润同比增长率[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"财务报表\",\"timestamp\":\"20251231\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"300750.SZ\",\"股票简称\":\"宁德时代\",\"最新价\":\"391.15\",\"最新涨跌幅\":1.597403,\"营业收入[20251231]\":4.23701834E11,\"归母净利润[20251231]\":7.2201282E10,\"营业收入同比增长率[20251231]\":17.0406,\"归母净利润同比增长率[20251231]\":42.2834}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"宁德时代 (1)\\\",\\\"从2025年到2026年宁德时代的营业收入,归母净利润 (1)\\\"]\",\"status_code\":0,\"token\":\"0ac9eb8f17873814078196863\"}",
+  "raw_sha256": "206c858e3c1a8e383f17c3a17fbdb2b24c950ee214618a3e5a48392572070dc9",
+  "recorded_at": "2026-08-22T06:50:07.257963+00:00"
+}

@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "f0ce0f6a4d661134f680a72a714fa064982e1647124c1427f8e0c6d93b3e1269",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-macro-query",
+  "request": {
+    "query": "中国内地 动力电池 2024-01-01至2026-08-11 GDP CPI PPI PMI 利率 汇率 社融 工业增加值 对比特斯拉和宁德时代估值",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"status_code\":-1203,\"status_msg\":\"问句解析结果异常：{\\\"status_code\\\":-208,\\\"status_msg\\\":\\\"com.myhexin.nlu.exception.AimeSqlException: langchain res error\\\",\\\"response\\\":null}\"}",
+  "raw_sha256": "323a78eb8ea3eff98cae108c0bb58ee6a408d9cf49e2cff26717f9d62fc8b727",
+  "recorded_at": "2026-08-22T16:21:08.411694+00:00"
+}

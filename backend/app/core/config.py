@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     SKILLHUB_PAGE_SIZE: int = Field(default=20, ge=1, le=100)
 
     WORKFLOW_TIMEOUT_SECONDS: float = Field(default=900, gt=0, le=86_400)
-    STAGE_TIMEOUT_SECONDS: float = Field(default=180, gt=0, le=3_600)
+    STAGE_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3_600)
     TOOL_TIMEOUT_SECONDS: float = Field(default=30, gt=0, le=600)
     MAX_TOTAL_STAGE_RUNS: int = Field(default=15, ge=5, le=100)
     MAX_STAGE_ATTEMPTS: int = Field(default=3, ge=1, le=10)

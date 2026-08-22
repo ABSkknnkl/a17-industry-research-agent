@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import Iterable
+from datetime import date
 
 from app.schemas.report import EvidenceSourceEntry
 
@@ -107,3 +108,86 @@ def citation_text(
     if detailed:
         return "〔" + "；".join(entry.display_label for entry in entries) + "〕"
     return "〔" + "、".join(f"来源{entry.citation_number}" for entry in entries) + "〕"
+
+
+def _compact_text(value: str, limit: int) -> str:
+    normalized = " ".join(value.split())
+    if len(normalized) <= limit:
+        return normalized
+    return normalized[: limit - 1].rstrip() + "…"
+
+
+def _compact_values(values: Iterable[str], limit: int) -> str:
+    unique = list(dict.fromkeys(value for value in values if value and value != "未提供"))
+    if not unique:
+        return "未提供"
+    first = _compact_text(unique[0], limit)
+    return first if len(unique) == 1 else f"{first}等{len(unique)}项"
+
+
+def _compact_dates(values: Iterable[str]) -> str:
+    unique = list(dict.fromkeys(value for value in values if value and value != "未提供"))
+    if not unique:
+        return "未提供"
+    parsed: list[date] = []
+    for value in unique:
+        try:
+            parsed.append(date.fromisoformat(value))
+        except ValueError:
+            return _compact_values(unique, 15)
+    parsed.sort()
+    if len(parsed) == 1:
+        return parsed[0].isoformat()
+    if parsed[0].year == parsed[-1].year:
+        return f"{parsed[0].year}年（{len(parsed)}期）"
+    return f"{parsed[0].year}—{parsed[-1].year}年（{len(parsed)}期）"
+
+
+def _compact_locator(values: Iterable[str]) -> str:
+    unique = list(dict.fromkeys(value for value in values if value and value != "未提供"))
+    if not unique:
+        return "未提供"
+    labels: list[str] = []
+    for value in unique:
+        lowered = value.lower()
+        if lowered.startswith("fixture://"):
+            label = "流程测试定位"
+        elif lowered.startswith(("http://", "https://")):
+            label = "网页原文"
+        else:
+            label = _compact_text(value, 20)
+        if label not in labels:
+            labels.append(label)
+    first = labels[0]
+    return first if len(labels) == 1 else f"{first}等{len(labels)}处"
+
+
+def source_table_rows(entries: Iterable[EvidenceSourceEntry]) -> list[dict[str, str | int]]:
+    """Build the same compact, presentation-safe source rows for HTML/PDF/Markdown."""
+
+    rows: list[dict[str, str | int]] = []
+    for entry in entries:
+        level = _compact_values(
+            (re.sub(r"（.*?）", "", value) for value in entry.source_levels),
+            8,
+        )
+        audit = _compact_values(
+            (value for value in entry.audit_labels if value not in {"不适用", "未提供"}),
+            8,
+        )
+        method = _compact_values(entry.retrieval_methods, 16)
+        method_level = f"{method} / {level}"
+        if audit != "未提供":
+            method_level += f" · {audit}"
+        rows.append(
+            {
+                "citation_number": entry.citation_number,
+                "material": _compact_text(entry.material_title, 30),
+                "publisher": _compact_values(entry.publishers, 16),
+                "available_date": _compact_dates(entry.available_dates),
+                "reporting_period": _compact_dates(entry.reporting_periods),
+                "locator": _compact_locator(entry.locators),
+                "method_level": _compact_text(method_level, 30),
+            }
+        )
+    return rows

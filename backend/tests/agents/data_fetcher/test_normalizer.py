@@ -246,6 +246,119 @@ def test_metric_aliases_and_units_are_canonicalized_before_fusion() -> None:
     assert by_metric["新增装机量"].unit == "兆瓦"
 
 
+def test_macro_indicator_value_uses_provider_indicator_name() -> None:
+    macro = _executed_for_skill(
+        SkillName.MACRO,
+        {
+            "国家": "中国",
+            "时间": "20251231",
+            "指标": "商品房销售面积",
+            "指标值": 881_013_711.0,
+            "周期": "年",
+            "macro_id": "S000048054",
+            "macro_name": "全国:商品房销售面积",
+            "单位": "平方米",
+            "地区级别": ["国家"],
+        },
+        query="中国房地产行业 商品房销售面积 2021-01-01至2025-12-31",
+        dimension="macro_policy",
+        task_id="Q-MACRO",
+    )
+
+    result = _normalize_result([macro], industry_topic="中国房地产行业")
+
+    assert len(result.evidence) == 1
+    item = result.evidence[0]
+    assert item.metric_name == "商品房销售面积"
+    assert item.value == 881_013_711
+    assert item.unit == "平方米"
+    assert item.period_end == date(2025, 12, 31)
+    assert item.scope == "全国:商品房销售面积"
+    assert result.summary.task_metric_names["Q-MACRO"] == ["商品房销售面积"]
+
+
+def test_business_metric_name_contains_project_dimension() -> None:
+    business = _executed_for_skill(
+        SkillName.BUSINESS,
+        {
+            "股票简称": "宁德时代",
+            "项目名称": "动力电池系统",
+            "报告期": "2025-12-31",
+            "业务收入(亿元)": 3000,
+        },
+        query="宁德时代动力电池系统业务收入",
+        dimension="company",
+        task_id="Q-BUSINESS",
+    )
+
+    result = _normalize_result([business], industry_topic="动力电池")
+
+    assert any(
+        item.metric_name == "主营业务收入-动力电池系统"
+        and item.scope == "宁德时代"
+        for item in result.evidence
+    )
+
+
+def test_future_available_row_is_quarantined_before_evidence_generation() -> None:
+    announcement = _executed_for_skill(
+        SkillName.ANNOUNCEMENT,
+        {
+            "title": "储能行业公告",
+            "发布日期": "2026-08-12",
+            "url": "https://example.invalid/report.pdf",
+        },
+        query="储能行业公告",
+        dimension="research",
+        task_id="Q-ANN",
+    )
+
+    result = _normalize_result([announcement], industry_topic="储能行业")
+
+    assert result.evidence == []
+    assert result.quarantined[0].reason_code == "future_availability"
+
+
+def test_text_search_row_without_topic_match_is_quarantined() -> None:
+    announcement = _executed_for_skill(
+        SkillName.ANNOUNCEMENT,
+        {
+            "title": "苏常柴B 2026年半年度报告",
+            "发布日期": "2026-08-10",
+            "url": "https://example.invalid/report.pdf",
+        },
+        query="房地产行业公告",
+        dimension="research",
+        task_id="Q-ANN",
+    )
+
+    result = _normalize_result([announcement], industry_topic="中国房地产行业")
+
+    assert result.evidence == []
+    assert result.quarantined[0].reason_code == "topic_mismatch"
+
+
+def test_provider_content_is_not_misidentified_as_publisher() -> None:
+    announcement = _executed_for_skill(
+        SkillName.ANNOUNCEMENT,
+        {
+            "title": "储能行业公告",
+            "发布日期": "2026-08-10",
+            "source_original": "这是正文内容，不是发布主体。" * 30,
+            "url": "https://example.invalid/report.pdf",
+        },
+        query="储能行业公告",
+        dimension="research",
+        task_id="Q-ANN",
+    )
+
+    result = _normalize_result([announcement], industry_topic="储能行业")
+
+    assert result.evidence
+    assert all(item.publisher is None for item in result.evidence)
+    assert all(item.source_name == "同花顺问财 announcement_search" for item in result.evidence)
+
+
 def test_finance_provider_contract_supplies_units_when_dynamic_fields_omit_them() -> None:
     result = _normalize_result(
         [

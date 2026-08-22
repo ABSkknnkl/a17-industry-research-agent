@@ -173,6 +173,7 @@ async def test_agent_truncates_oversized_source_titles_in_formal_catalog(
     monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", stable_pdf)
     oversized = "源" * 500
     report_analysis.evidence_catalog[0].source_name = oversized
+    report_analysis.evidence_catalog[0].source_locator = "fixture://E-001/internal/raw/path"
 
     result = await ReportFusionAgent().run(
         _context(report_analysis, report_charts, report_chapters)
@@ -181,8 +182,17 @@ async def test_agent_truncates_oversized_source_titles_in_formal_catalog(
     assert result.status == StageStatus.COMPLETED
     html_artifact = next(item for item in result.artifacts if item.kind == "report_html")
     html = (tmp_path / html_artifact.uri).read_text(encoding="utf-8")
+    markdown_artifact = next(item for item in result.artifacts if item.kind == "report_markdown")
+    markdown = (tmp_path / markdown_artifact.uri).read_text(encoding="utf-8")
     assert oversized not in html
-    assert "…" in html
+    for formal_output in (html, markdown):
+        assert "源" * 29 + "…" in formal_output
+        assert "支持指标" not in formal_output
+        assert "数据日期与报告期" not in formal_output
+        assert "发布主体" in formal_output
+        assert "页码/章节" in formal_output
+        assert "获取方式/层级" in formal_output
+        assert "fixture://" not in formal_output
 
 
 @pytest.mark.asyncio
@@ -330,6 +340,33 @@ async def test_agent_ignores_noncanonical_order_and_exports_with_warning(
 
 
 @pytest.mark.asyncio
+async def test_agent_keeps_formal_release_when_single_format_export_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    report_analysis: AnalysisResult,
+    report_charts: ChartGenerationResult,
+    report_chapters: ChapterWritingResult,
+) -> None:
+    """导出失败是交付层限制，不得把内容合格的正式报告降级为草稿。"""
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+
+    async def broken_pdf(html: str) -> bytes:
+        raise RuntimeError("playwright browser unavailable")
+
+    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", broken_pdf)
+    result = await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, report_chapters)
+    )
+
+    assert result.status == StageStatus.COMPLETED
+    assert result.data["release_mode"] == "formal"
+    assert result.data["formal_eligible"] is True
+    assert result.data["delivery_status"] == "ready_with_limits"
+    assert any("PDF导出失败" in issue for issue in result.data["unresolved_risks"])
+    assert "pdf" not in result.data["formats"]
+
+
+@pytest.mark.asyncio
 async def test_agent_emits_verifiable_decision_package_for_advisory_export(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -424,7 +461,9 @@ async def test_agent_keeps_markdown_and_html_when_pdf_export_fails(
 
     assert result.status == StageStatus.COMPLETED
     assert fusion.formats == ["markdown", "html"]
-    assert fusion.release_mode == "draft_with_warnings"
+    # 导出失败是交付层限制，内容合格的报告保持正式版（与章节顺序等交付提示同语义）。
+    assert fusion.release_mode == "formal"
+    assert fusion.formal_eligible is True
     assert any("PDF导出失败" in issue for issue in fusion.unresolved_risks)
     assert {artifact.kind for artifact in result.artifacts} == {
         "report_markdown",

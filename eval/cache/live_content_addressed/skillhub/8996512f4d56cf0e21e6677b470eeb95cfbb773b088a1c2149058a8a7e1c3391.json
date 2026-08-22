@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "8996512f4d56cf0e21e6677b470eeb95cfbb773b088a1c2149058a8a7e1c3391",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 汇总机构对宁德时代的盈利预测与评级变化",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":990,\"query\":\"中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 汇总机构对宁德时代的盈利预测与评级变化\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"发行人中文简称是宁德时代\\\",\\\"chunkedResult\\\":\\\"中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 汇总机构对宁德时代的盈利预测与评级变化\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@发行人中文简称\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"宁德时代\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_发行人中文简称\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含宁德时代\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"code\",\"feKey\":\"债券代码\",\"type\":\"STR\",\"index_name\":\"债券@债券代码\",\"key\":\"债券@债券代码\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"name\",\"feKey\":\"债券简称\",\"type\":\"STR\",\"index_name\":\"债券@债券简称\",\"key\":\"债券@债券简称\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"indexId\":\"\",\"source\":\"new_parser\",\"feKey\":\"发行人中文简称\",\"type\":\"STR\",\"index_name\":\"债券@发行人中文简称\",\"key\":\"债券@发行人中文简称\",\"timestamp\":\"\"}],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac9d3b217874158483288737\",\"chunks_info\":\"[\\\"发行人中文简称是宁德时代 (0)\\\"]\"}",
+  "raw_sha256": "d76f281510182790ca0f0cefac7f9ccf482752687091a62c64e4b2f57e33f11b",
+  "recorded_at": "2026-08-22T16:24:08.281612+00:00"
+}

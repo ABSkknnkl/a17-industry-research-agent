@@ -144,6 +144,13 @@ class ReportFusionOptions(ContractModel):
         max_length=3,
     )
     final_instruction: str | None = Field(default=None, min_length=1, max_length=2_000)
+    visual_style: Literal[
+        "auto",
+        "data_manual",
+        "analysis_note",
+        "deep_research",
+    ] = "auto"
+    visual_density: Literal["compact", "balanced", "detailed"] = "balanced"
 
 
 class ReportFusionReviewEdits(ContractModel):

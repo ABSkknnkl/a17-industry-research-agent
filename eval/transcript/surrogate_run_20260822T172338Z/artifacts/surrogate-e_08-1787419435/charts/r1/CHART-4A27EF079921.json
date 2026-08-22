@@ -1,0 +1,131 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-4A27EF079921",
+  "chart_type": "line",
+  "data_fingerprint": "9b70b88ae6151d96824be656d0cef7818bbc5c037b6a4ad9408701cdb9d6660b",
+  "dedupe_key": "trend:trend:以line图呈现宏观@值的证据分布，支撑ch-06的论述。:9b70b88ae6151d96824be656d0cef7818bbc5c037b6a4ad9408701cdb9d6660b",
+  "evidence_ids": [
+    "E-33f0c76b387c3d51",
+    "E-98348cc437c8baa0",
+    "E-ec5227285cae14bd",
+    "E-f971c45c02020884",
+    "E-92c02e51bee23db0",
+    "E-e3ab0d7f3cab4813",
+    "E-f88ae8ab77cf6c9b",
+    "E-0d2f9b76e3ba61b3",
+    "E-698cf1a8ea8377d1",
+    "E-0684a93ede8bf828",
+    "E-3e8ea2bc7d2daa4c",
+    "E-dc61befe6d8cbf10"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以line图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "PPI:当月同比": {
+        "2025-08-31": "E-dc61befe6d8cbf10",
+        "2025-09-30": "E-3e8ea2bc7d2daa4c",
+        "2025-10-31": "E-0684a93ede8bf828",
+        "2025-11-30": "E-698cf1a8ea8377d1",
+        "2025-12-31": "E-0d2f9b76e3ba61b3",
+        "2026-01-31": "E-f88ae8ab77cf6c9b",
+        "2026-02-28": "E-e3ab0d7f3cab4813",
+        "2026-03-31": "E-92c02e51bee23db0",
+        "2026-04-30": "E-f971c45c02020884",
+        "2026-05-31": "E-ec5227285cae14bd",
+        "2026-06-30": "E-98348cc437c8baa0",
+        "2026-07-31": "E-33f0c76b387c3d51"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          -2.9,
+          -2.3,
+          -2.1,
+          -2.2,
+          -1.9,
+          -1.4,
+          -0.9,
+          0.5,
+          2.8,
+          3.9,
+          4.1,
+          3.5
+        ],
+        "name": "PPI:当月同比",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（PPI:当月同比）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-08-31",
+        "2025-09-30",
+        "2025-10-31",
+        "2025-11-30",
+        "2025-12-31",
+        "2026-01-31",
+        "2026-02-28",
+        "2026-03-31",
+        "2026-04-30",
+        "2026-05-31",
+        "2026-06-30",
+        "2026-07-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": null,
+  "title": "宏观@值（PPI:当月同比）",
+  "variant": "line"
+}

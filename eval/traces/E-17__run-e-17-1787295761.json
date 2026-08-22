@@ -1,0 +1,86 @@
+{
+  "case_id": "E-17",
+  "run_id": "run-e-17-1787295761",
+  "recorded_at": "2026-08-21T07:02:46.590778+00:00",
+  "mode": "record",
+  "llm_mode": "real",
+  "input": {
+    "text": "缺期初存货时算存货周转率",
+    "industry_topic": "创新药",
+    "focus_questions": [
+      "缺期初存货时算存货周转率"
+    ]
+  },
+  "verdict": {
+    "verdict": "pass",
+    "reason": "五阶段全部完成",
+    "elapsed_s": 5.1
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "approved",
+      "error": "intent_clarification_required"
+    },
+    {
+      "stage": "data_interpret",
+      "status": "approved",
+      "error": "analysis_input_invalid"
+    },
+    {
+      "stage": "chart_generate",
+      "status": "completed",
+      "error": null
+    },
+    {
+      "stage": "chapter_write",
+      "status": "approved",
+      "error": "chapter_input_invalid"
+    },
+    {
+      "stage": "report_fusion",
+      "status": "approved",
+      "error": "report_input_invalid"
+    }
+  ],
+  "intent_routing": {
+    "enabled": true,
+    "strategy": "llm_first_with_deterministic_calibration",
+    "clarification_required": [
+      "缺期初存货时算存货周转率"
+    ],
+    "warnings": [
+      "llm_low_confidence_not_executed:SUB-LLM-01"
+    ],
+    "plans": [
+      {
+        "question": "缺期初存货时算存货周转率",
+        "parser_mode": "hybrid",
+        "complexity": "ambiguous",
+        "locked_skills": [
+          "hithink_finance_query"
+        ],
+        "accepted_skills": [],
+        "rejected_skills": [
+          "hithink_finance_query"
+        ],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "缺期初存货时算存货周转率",
+            "skills": [
+              "hithink_finance_query"
+            ],
+            "source": "deterministic",
+            "clarify": false
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

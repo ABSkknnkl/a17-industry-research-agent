@@ -1,0 +1,95 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-A3B243CC5B9A",
+  "chart_type": "line",
+  "data_fingerprint": "87f49302872f57f99fa062587abf373663dec9b94f5cff869cca6d8d1e60e841",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:87f49302872f57f99fa062587abf373663dec9b94f5cff869cca6d8d1e60e841",
+  "evidence_ids": [
+    "E-5cba981eac054bb7",
+    "E-ae5d58203dde770d",
+    "E-6e948deade1e4ecf",
+    "E-b153409c7410b560"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "中国:存款利率": {
+        "2021-12-31": "E-b153409c7410b560",
+        "2022-12-31": "E-6e948deade1e4ecf",
+        "2023-12-31": "E-ae5d58203dde770d",
+        "2024-12-31": "E-5cba981eac054bb7"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          1.5,
+          1.5,
+          1.5,
+          1.5
+        ],
+        "name": "中国:存款利率",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（中国:存款利率）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2021-12-31",
+        "2022-12-31",
+        "2023-12-31",
+        "2024-12-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（中国:存款利率）",
+  "variant": "line"
+}

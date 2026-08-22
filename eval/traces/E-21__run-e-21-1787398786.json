@@ -1,0 +1,81 @@
+{
+  "case_id": "E-21",
+  "run_id": "run-e-21-1787398786",
+  "recorded_at": "2026-08-22T11:39:46.725977+00:00",
+  "mode": "record",
+  "llm_mode": "mock",
+  "input": {
+    "text": "对比宁德时代与比亚迪电池业务成本、客户、技术路线",
+    "industry_topic": "动力电池",
+    "focus_questions": [
+      "对比宁德时代与比亚迪电池业务成本、客户、技术路线"
+    ]
+  },
+  "verdict": {
+    "verdict": "intercept",
+    "reason": "合法拦截（intent_clarification_required）",
+    "elapsed_s": 0.0
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "cancelled",
+      "error": "intent_clarification_required"
+    }
+  ],
+  "intent_routing": {
+    "enabled": false,
+    "strategy": "deterministic_only",
+    "clarification_required": [
+      "对比宁德时代与比亚迪电池业务成本、客户、技术路线"
+    ],
+    "warnings": [
+      "unresolved_sub_requirement:SUB-01",
+      "unresolved_sub_requirement:SUB-02",
+      "unresolved_sub_requirement:SUB-03",
+      "unresolved_sub_requirement:SUB-04"
+    ],
+    "plans": [
+      {
+        "question": "对比宁德时代与比亚迪电池业务成本、客户、技术路线",
+        "parser_mode": "deterministic",
+        "complexity": "compound",
+        "locked_skills": [],
+        "accepted_skills": [],
+        "rejected_skills": [],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "对比宁德时代",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "比亚迪电池业务成本",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "客户",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          },
+          {
+            "text": "技术路线",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

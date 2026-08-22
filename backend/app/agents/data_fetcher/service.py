@@ -131,7 +131,12 @@ class DataFetcherAgent:
         ][:20]
         intent_plans: list[ResearchIntentPlan] = []
         intent_routing: dict[str, Any] = {
-            "enabled": True,
+            "enabled": self._intent_decomposer is not None,
+            "strategy": (
+                "llm_first_with_deterministic_calibration"
+                if self._intent_decomposer is not None
+                else "deterministic_only"
+            ),
             "plans": {},
             "clarification_required": [],
             "warnings": [],
@@ -154,7 +159,15 @@ class DataFetcherAgent:
                 intent_routing["clarification_required"].append(question)
             intent_routing["warnings"].extend(intent_plan.warnings)
 
-        if intent_routing["clarification_required"]:
+        # BUG-001 fix: a clarification only blocks the whole request when no
+        # sub-requirement of any question could be routed.  Executable plans
+        # proceed to data acquisition with the questions kept as advisory.
+        any_actionable_sub_requirement = any(
+            sub.candidate_skills
+            for plan in intent_plans
+            for sub in plan.sub_requirements
+        )
+        if intent_routing["clarification_required"] and not any_actionable_sub_requirement:
             collaboration_requests = []
             for intent_plan in intent_plans:
                 if not intent_plan.requires_clarification:
@@ -182,6 +195,21 @@ class DataFetcherAgent:
                 },
                 error="intent_clarification_required",
             )
+
+        if intent_routing["clarification_required"]:
+            # Partial clarification: executable plans proceed to data
+            # acquisition while non-executable questions ride along as
+            # advisory context instead of blocking the whole request.
+            intent_routing["advisory_clarifications"] = [
+                {
+                    "question": intent_plan.original_input,
+                    "clarification_questions": list(
+                        intent_plan.clarification_questions or []
+                    )[:5],
+                }
+                for intent_plan in intent_plans
+                if intent_plan.requires_clarification
+            ]
 
         plan = self._planner.build(
             industry_topic=request["industry_topic"],
@@ -225,6 +253,14 @@ class DataFetcherAgent:
             normalization.task_clean_row_counts,
             normalization.task_metric_names,
             user_evidence_only=user_only,
+        )
+        requirement_coverage = _apply_unresolved_intent_gaps(
+            requirement_coverage,
+            intent_plans,
+        )
+        intent_routing["partial_results"] = _build_partial_intent_results(
+            requirement_coverage,
+            intent_plans,
         )
         gaps = [item.gap for item in executed if item.gap is not None]
         evidence, conflicts, duplicate_groups, uniqueness = fuse_evidence(
@@ -298,6 +334,29 @@ class DataFetcherAgent:
                 )
             )
             data["blocking_issues"] = [error_code]
+            quality_gate_messages = {
+                "core_data_group_unavailable": (
+                    "未查询到可用于本次研究的核心金融数据。"
+                    "请调整研究主题、企业、指标、时间范围或数据来源后重新提交。"
+                ),
+                "core_data_normalization_failed": (
+                    "查询结果未能通过相关性或字段清洗，当前没有可交给后续智能体的数据。"
+                    "请明确研究主体、指标和时间范围后重新提交。"
+                ),
+                "data_quality_gate_failed": (
+                    "查询结果未达到最低完整性与可追溯性要求。"
+                    "请缩小查询范围或补充更明确的指标、企业和时间后重新提交。"
+                ),
+            }
+            data["collaboration_requests"] = [
+                {
+                    "request_id": "DATA-QUALITY-REINPUT",
+                    "question": quality_gate_messages[error_code],
+                    "reason": "Agent 1未生成可安全传递给后续智能体的证据包。",
+                    "affected_dimensions": ["data_fetch"],
+                }
+            ]
+            data["allowed_review_actions"] = ["revise", "regenerate", "cancel"]
             return StageResult(
                 stage=self.stage,
                 status=StageStatus.WAITING_REVIEW,
@@ -316,7 +375,10 @@ class DataFetcherAgent:
             hard_missing = [
                 item
                 for item in unavailable_requirements
-                if requirements_by_id[item.requirement_id].criticality == "blocking"
+                if (
+                    requirements_by_id[item.requirement_id].criticality == "blocking"
+                    or requirements_by_id[item.requirement_id].origin == "user_metric"
+                )
             ]
             if not hard_missing:
                 risk_code = "REQUESTED-DATA-PARTIAL"
@@ -401,6 +463,21 @@ class DataFetcherAgent:
                 }
                 for item in unavailable_requirements
             ]
+            partial_messages = [
+                str(item.get("message", "")).strip()
+                for item in intent_routing.get("partial_results", [])
+                if str(item.get("message", "")).strip()
+            ]
+            if partial_messages:
+                data["collaboration_requests"].insert(
+                    0,
+                    {
+                        "request_id": "INTENT-PARTIAL-RESULT",
+                        "question": " ".join(partial_messages)[:500],
+                        "reason": "已识别部分已完成取数，未识别部分未调用任何不匹配的技能。",
+                        "affected_dimensions": ["data_fetch"],
+                    },
+                )
             data["allowed_review_actions"] = ["revise", "regenerate", "cancel"]
             return StageResult(
                 stage=self.stage,
@@ -497,6 +574,97 @@ def _build_requirement_coverage(
             )
         )
     return coverage
+
+
+def _apply_unresolved_intent_gaps(
+    coverage: list[RequirementCoverage],
+    intent_plans: list[ResearchIntentPlan],
+) -> list[RequirementCoverage]:
+    """Mark a partly routable question as partial after known tasks execute."""
+
+    # Presentation directives (各出一张图 / 画三张图) are rendering
+    # wishes, not data requirements: an unroutable directive fragment must
+    # not turn a partly routable question into a data gap (E-28 root cause).
+    _PRESENTATION_TERMS = ("一张图", "两张图", "三张图", "出图", "画图", "绘图", "可视化")
+    def _is_directive(text: str) -> bool:
+        compact = "".join(str(text).split())
+        return any(term in compact for term in _PRESENTATION_TERMS) and len(compact) <= 12
+
+    unresolved_by_question = {
+        plan.original_input: [
+            sub.original_text
+            for sub in plan.sub_requirements
+            if not sub.candidate_skills and not _is_directive(sub.original_text)
+        ]
+        for plan in intent_plans
+        if any(sub.candidate_skills for sub in plan.sub_requirements)
+        and any(not sub.candidate_skills for sub in plan.sub_requirements)
+    }
+    if not unresolved_by_question:
+        return coverage
+
+    adjusted: list[RequirementCoverage] = []
+    for item in coverage:
+        unresolved = unresolved_by_question.get(item.question, [])
+        if unresolved and item.status == "supported":
+            names = "、".join(f"“{name}”" for name in unresolved)
+            adjusted.append(
+                item.model_copy(
+                    update={
+                        "status": "partial",
+                        "note": (
+                            f"已识别部分返回{item.returned_row_count}条清洗后数据；"
+                            f"{names}暂无对应查询技能，未执行不匹配调用。"
+                        ),
+                    }
+                )
+            )
+        else:
+            adjusted.append(item)
+    return adjusted
+
+
+def _build_partial_intent_results(
+    coverage: list[RequirementCoverage],
+    intent_plans: list[ResearchIntentPlan],
+) -> list[dict[str, Any]]:
+    """Build a UI-ready completed/unavailable summary without inventing values."""
+
+    coverage_by_question = {item.question: item for item in coverage}
+    results: list[dict[str, Any]] = []
+    for plan in intent_plans:
+        completed = [sub for sub in plan.sub_requirements if sub.candidate_skills]
+        unavailable = [sub for sub in plan.sub_requirements if not sub.candidate_skills]
+        item = coverage_by_question.get(plan.original_input)
+        if not completed or not unavailable or item is None or not item.successful_task_ids:
+            continue
+        completed_text = "、".join(f"“{sub.original_text}”" for sub in completed)
+        unavailable_text = "、".join(f"“{sub.original_text}”" for sub in unavailable)
+        results.append(
+            {
+                "question": plan.original_input,
+                "completed": [
+                    {
+                        "text": sub.original_text,
+                        "candidate_skills": list(sub.candidate_skills),
+                    }
+                    for sub in completed
+                ],
+                "unavailable": [
+                    {
+                        "text": sub.original_text,
+                        "reason": "暂无对应查询技能",
+                    }
+                    for sub in unavailable
+                ],
+                "returned_row_count": item.returned_row_count,
+                "message": (
+                    f"【已完成】{completed_text}已获取{item.returned_row_count}条数据；"
+                    f"【无法处理】{unavailable_text}暂无对应查询技能，请修改后重试。"
+                ),
+            }
+        )
+    return results
 
 
 def _metric_matches(requested: str, returned: str) -> bool:

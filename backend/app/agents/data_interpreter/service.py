@@ -92,10 +92,59 @@ _CALCULATION_REQUEST_TERMS: dict[str, tuple[str, ...]] = {
     "production_sales_ratio": ("产销率",),
 }
 
+_DIRECT_DISCLOSURE_TERMS: dict[str, tuple[str, ...]] = {
+    "gross_margin": ("毛利率",),
+    "net_margin": ("净利率", "净利润率"),
+    "r_and_d_expense_ratio": ("研发费用率", "研发投入占比"),
+    "selling_expense_ratio": ("销售费用率",),
+    "management_expense_ratio": ("管理费用率",),
+    "overseas_revenue_share": ("海外收入占比", "境外营收占比"),
+    "revenue_yoy": ("营收同比", "营业收入同比", "营业收入同比增长率"),
+    "net_profit_yoy": ("净利润同比", "净利润同比增长率"),
+    "dupont_roe": ("roe", "净资产收益率"),
+    "asset_turnover": ("总资产周转率",),
+    "inventory_turnover": ("存货周转率",),
+    "inventory_days": ("存货周转天数",),
+    "receivables_turnover": ("应收账款周转率",),
+    "receivables_days": ("应收账款周转天数",),
+    "capacity_utilization": ("产能利用率",),
+    "production_sales_ratio": ("产销率",),
+}
+
+
+def _has_directly_disclosed_metric(
+    evidence_items: list[EvidenceItem],
+    issue: CalculationIssue,
+) -> bool:
+    """Return whether the failed calculation is already disclosed as a fact.
+
+    A missing formula input must not hide a provider-disclosed derived metric.
+    The match remains strict on entity and reporting period so a value from a
+    different company or year cannot silently satisfy the request.
+    """
+
+    terms = _DIRECT_DISCLOSURE_TERMS.get(issue.calculation_type, ())
+    if not terms:
+        return False
+    issue_scope = issue.entity_scope.replace(" ", "").casefold()
+    for item in evidence_items:
+        metric_name = item.metric_name.replace(" ", "").casefold()
+        if item.value is None or not any(term.casefold() in metric_name for term in terms):
+            continue
+        item_scope = item.scope.replace(" ", "").casefold()
+        if issue_scope != item_scope:
+            continue
+        if issue.period_end is not None and item.period_end != issue.period_end:
+            continue
+        return True
+    return False
+
 
 def _requested_calculation_gaps(
     request: AnalysisRequest,
     issues: list[CalculationIssue],
+    *,
+    calculated_types: frozenset[str] | None = None,
 ) -> list[CalculationIssue]:
     request_text = (
         "".join(
@@ -112,7 +161,17 @@ def _requested_calculation_gaps(
         terms = _CALCULATION_REQUEST_TERMS.get(issue.calculation_type, ())
         if not terms or not any(term.casefold() in request_text for term in terms):
             continue
+        if _has_directly_disclosed_metric(request.evidence_items, issue):
+            continue
         if issue.missing_inputs or "单位" in issue.reason or "报告期" in issue.reason:
+            # Partial coverage: the same calculation already succeeded for
+            # other scopes (e.g. gross margin is computable for industrial
+            # names while banks disclose no cost-of-sales line at all).
+            # A single uncomputable scope must not block the whole request
+            # when the user-requested metric has usable results; the gap
+            # stays visible in calculation_issues for report disclosure.
+            if calculated_types and issue.calculation_type in calculated_types:
+                continue
             gaps.append(issue)
     return gaps
 
@@ -211,9 +270,7 @@ class DataInterpreterAgent:
                         {
                             "request_id": "EVIDENCE-METADATA",
                             "question": "请补充、复核或确认以下证据元数据。",
-                            "reason": "；".join(
-                                issue.description for issue in preflight_issues
-                            ),
+                            "reason": "；".join(issue.description for issue in preflight_issues),
                             "affected_dimensions": ["all"],
                         }
                     ]
@@ -223,9 +280,15 @@ class DataInterpreterAgent:
             )
         request = request.model_copy(update={"evidence_items": eligible_evidence})
 
-        _, calculation_issues = calculate_p0_metrics(request.evidence_items)
+        calculated_metrics, calculation_issues = calculate_p0_metrics(
+            request.evidence_items
+        )
         requested_calculation_gaps = _requested_calculation_gaps(
-            request, calculation_issues
+            request,
+            calculation_issues,
+            calculated_types=frozenset(
+                item.calculation_type for item in calculated_metrics
+            ),
         )
         if requested_calculation_gaps:
             return StageResult(
@@ -235,8 +298,7 @@ class DataInterpreterAgent:
                 data={
                     "blocking_issues": ["requested_calculation_data_unavailable"],
                     "calculation_issues": [
-                        item.model_dump(mode="json")
-                        for item in requested_calculation_gaps
+                        item.model_dump(mode="json") for item in requested_calculation_gaps
                     ],
                     "collaboration_requests": [
                         {
@@ -309,8 +371,7 @@ class DataInterpreterAgent:
                 error="analysis_generation_failed",
             )
         has_blocking_request = any(
-            item.blocking or item.severity == "blocking"
-            for item in analysis.collaboration_requests
+            item.blocking or item.severity == "blocking" for item in analysis.collaboration_requests
         )
         status = (
             StageStatus.COMPLETED

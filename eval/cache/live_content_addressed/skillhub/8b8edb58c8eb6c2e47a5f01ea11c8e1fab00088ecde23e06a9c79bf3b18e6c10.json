@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "8b8edb58c8eb6c2e47a5f01ea11c8e1fab00088ecde23e06a9c79bf3b18e6c10",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 锂电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 （基准）CR3集中度",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":933,\"query\":\"中国内地 锂电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 （基准）CR3集中度\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"所属同花顺行业是锂电池\\\",\\\"chunkedResult\\\":\\\"中国内地 锂电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 (基准)cr3集中度\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@所属同花顺行业\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"锂电池\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_所属同花顺行业(债券)\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含锂电池\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"code\",\"feKey\":\"债券代码\",\"type\":\"STR\",\"index_name\":\"债券@债券代码\",\"key\":\"债券@债券代码\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"name\",\"feKey\":\"债券简称\",\"type\":\"STR\",\"index_name\":\"债券@债券简称\",\"key\":\"债券@债券简称\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"indexId\":\"\",\"source\":\"new_parser\",\"feKey\":\"所属同花顺行业\",\"type\":\"STR\",\"index_name\":\"债券@所属同花顺行业\",\"key\":\"债券@所属同花顺行业\",\"timestamp\":\"\"}],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac9a12217873836990397221\",\"chunks_info\":\"[\\\"所属同花顺行业是锂电池 (0)\\\"]\"}",
+  "raw_sha256": "3c6a0881754950f9b28978697ce7b022d919f188bc3bb9073274c4283b61eb32",
+  "recorded_at": "2026-08-22T07:28:18.552566+00:00"
+}

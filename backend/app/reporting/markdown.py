@@ -14,6 +14,7 @@ from app.reporting.presentation import (
     citation_text,
     humanize_internal_ids,
     section_label,
+    source_table_rows,
 )
 from app.schemas.report import EmbeddedChart, ReportViewModel
 
@@ -158,19 +159,16 @@ def render_markdown(report: ReportViewModel) -> str:
             "",
             "## 来源与证据索引",
             "",
-            "| 序号 | 材料或来源 | 支持指标 | 数据日期与报告期 | 页码、章节或定位 | 获取层级与审计状态 |",
-            "|---:|---|---|---|---|---|",
+            "| 序号 | 材料 | 发布主体 | 日期 | 报告期 | 页码/章节 | 获取方式/层级 |",
+            "|---:|---|---|---|---|---|---|",
         ]
     )
-    for source in report.evidence_catalog:
+    for source in source_table_rows(report.evidence_catalog):
         lines.append(
-            f"| {source.citation_number} | {_cell(source.material_title)} | "
-            f"{_cell('、'.join(source.metric_names))} | "
-            f"可得：{_cell('、'.join(source.available_dates) or '未提供')}；"
-            f"报告期：{_cell('、'.join(source.reporting_periods) or '未提供')} | "
-            f"{_cell('；'.join(source.locators) or '未提供')} | "
-            f"{_cell('、'.join(source.source_levels) or '未提供')}；"
-            f"{_cell('、'.join(source.audit_labels) or '未提供')} |"
+            f"| {source['citation_number']} | {_cell(str(source['material']))} | "
+            f"{_cell(str(source['publisher']))} | {_cell(str(source['available_date']))} | "
+            f"{_cell(str(source['reporting_period']))} | {_cell(str(source['locator']))} | "
+            f"{_cell(str(source['method_level']))} |"
         )
     lines.extend(
         [

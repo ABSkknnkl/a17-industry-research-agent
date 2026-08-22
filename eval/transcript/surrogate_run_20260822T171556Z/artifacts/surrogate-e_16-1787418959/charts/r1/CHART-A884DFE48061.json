@@ -1,0 +1,119 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-A884DFE48061",
+  "chart_type": "line",
+  "data_fingerprint": "7a9b775226d4455461a69ddf737fdb07e3e7c631b1852f27c2fae7bc817076a9",
+  "dedupe_key": "trend:trend:以bar图呈现期末现金及现金等价物余额的证据分布，支撑ch-02的论述。:7a9b775226d4455461a69ddf737fdb07e3e7c631b1852f27c2fae7bc817076a9",
+  "evidence_ids": [
+    "E-68295dedbd60ef88",
+    "E-cf7ba8ea4dc4cb1b",
+    "E-a9f1e14e1cd20cb6",
+    "E-e708e43015ad9efc",
+    "E-8e5c4ef0c65e5814",
+    "E-30e2947240e505b0",
+    "E-9b01458c3bb8fee5",
+    "E-6a9f5c9936d7aaf5",
+    "E-caf9eba2d559d3a3",
+    "E-12fb809628265fc3"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现期末现金及现金等价物余额的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "药明康德": {
+        "2024-03-31": "E-12fb809628265fc3",
+        "2024-06-30": "E-caf9eba2d559d3a3",
+        "2024-09-30": "E-6a9f5c9936d7aaf5",
+        "2024-12-31": "E-9b01458c3bb8fee5",
+        "2025-03-31": "E-30e2947240e505b0",
+        "2025-06-30": "E-8e5c4ef0c65e5814",
+        "2025-09-30": "E-e708e43015ad9efc",
+        "2025-12-31": "E-a9f1e14e1cd20cb6",
+        "2026-03-31": "E-cf7ba8ea4dc4cb1b",
+        "2026-06-30": "E-68295dedbd60ef88"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          11516961256.25,
+          9699515166.25,
+          9271602732.61,
+          13444711217.64,
+          20014855483.97,
+          17552483822.56,
+          25475956893.38,
+          29455830548.95,
+          27429517958.95,
+          26953584194.57
+        ],
+        "name": "药明康德",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "期末现金及现金等价物余额（药明康德）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2024-03-31",
+        "2024-06-30",
+        "2024-09-30",
+        "2024-12-31",
+        "2025-03-31",
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "期末现金及现金等价物余额（药明康德）",
+  "variant": "line"
+}

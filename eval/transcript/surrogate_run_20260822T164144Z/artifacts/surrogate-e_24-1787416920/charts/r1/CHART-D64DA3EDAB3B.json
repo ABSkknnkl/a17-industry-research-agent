@@ -1,0 +1,80 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-D64DA3EDAB3B",
+  "chart_type": "bar",
+  "data_fingerprint": "9143313de03747ffc483aaf1acf01d2adad53ccf9bb35021e20c481a2fdc91e7",
+  "dedupe_key": "comparison:comparison:以bar图呈现经营活动产生的现金流量净额的证据分布，支撑ch-02的论述。:9143313de03747ffc483aaf1acf01d2adad53ccf9bb35021e20c481a2fdc91e7",
+  "evidence_ids": [
+    "E-6cf9908507d0d8a2"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现经营活动产生的现金流量净额的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-6cf9908507d0d8a2",
+            "value": -211488894.3
+          }
+        ],
+        "name": "正泰电源",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "经营活动产生的现金流量净额（正泰电源）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "正泰电源"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "经营活动产生的现金流量净额（正泰电源）",
+  "variant": "vertical"
+}

@@ -1,0 +1,15 @@
+{
+  "_说明": "确定性计算10组基准（EVALUATION_PLAN §5.3）。expected 为手工基准值，需在首跑 record 模式从同花顺真实快照回填后锁定；禁止凭空编造业务数值（否则会掩盖真实缺陷、报告失真）。expected=null 时，C1 判定按「无基准值」跳过。",
+  "baselines": [
+    {"key": "dupont_roe", "calculation_type": "dupont_roe", "inputs": ["净利润", "营业收入", "总资产", "净资产"], "expected": null},
+    {"key": "cr3", "calculation_type": "cr3", "inputs": ["市场份额"], "expected": null, "minimum_samples": 3},
+    {"key": "cr5", "calculation_type": "cr5", "inputs": ["市场份额"], "expected": null, "minimum_samples": 5},
+    {"key": "revenue_yoy", "calculation_type": "revenue_yoy", "inputs": ["营业收入"], "expected": null},
+    {"key": "net_profit_yoy", "calculation_type": "net_profit_yoy", "inputs": ["归母净利润"], "expected": null},
+    {"key": "inventory_turnover", "calculation_type": "inventory_turnover", "inputs": ["营业成本", "期初存货", "期末存货"], "expected": null},
+    {"key": "receivables_turnover", "calculation_type": "receivables_turnover", "inputs": ["营业收入", "期初应收账款", "期末应收账款"], "expected": null},
+    {"key": "capacity_utilization", "calculation_type": "capacity_utilization", "inputs": ["实际产能", "设计产能"], "expected": null},
+    {"key": "gross_margin", "calculation_type": "gross_margin", "inputs": ["营业收入", "营业成本"], "expected": null},
+    {"key": "net_margin", "calculation_type": "net_margin", "inputs": ["归母净利润", "营业收入"], "expected": null}
+  ]
+}

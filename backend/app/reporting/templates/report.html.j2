@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ report.title }}</title>
   <style>
-    :root { --ink:#0f172a; --muted:#64748b; --line:#dbe4ef; --blue:#1d4ed8; --paper:#fff; --soft:#f4f7fb; }
+    :root { --ink:#0f172a; --muted:#64748b; --line:#dbe4ef; --blue:#1d4ed8; --paper:#fff; --soft:#f4f7fb; --accent-soft:#eff6ff; }
     * { box-sizing:border-box; }
     html { background:#e9eef5; }
     body { margin:0; color:var(--ink); background:var(--paper); font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif; line-height:1.75; font-size:15px; }
@@ -21,7 +21,7 @@
     h2 { margin:48px 0 20px; padding-bottom:10px; border-bottom:2px solid var(--ink); font-size:28px; page-break-after:avoid; }
     h3 { margin:30px 0 12px; font-size:20px; color:#162b4d; page-break-after:avoid; }
     p { margin:10px 0; text-align:justify; }
-    .summary { background:linear-gradient(135deg,#eff6ff,#f8fafc); border:1px solid #bfdbfe; border-radius:14px; padding:26px 30px; }
+    .summary { background:var(--accent-soft); border:1px solid #bfdbfe; border-radius:14px; padding:26px 30px; }
     .headline { font-size:21px; font-weight:700; line-height:1.55; }
     .conclusion { border-left:4px solid var(--blue); padding:8px 14px; margin:14px 0; background:#fff; }
     .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
@@ -36,6 +36,8 @@
     .chart { margin:22px 0 28px; border:1px solid var(--line); border-radius:14px; padding:14px; break-inside:avoid; background:#fff; }
     .chart svg { width:100%; height:auto; display:block; }
     .chart figcaption { margin:8px 8px 2px; color:var(--muted); font-size:12px; }
+    .chart-number { color:var(--ink); font-weight:700; }
+    .chart-pie,.chart-radar { width:64%; margin-left:auto; margin-right:auto; }
     .uncertainty { border:1px solid #fcd34d; background:#fffbeb; border-radius:8px; padding:10px 14px; margin:14px 0; break-inside:avoid; page-break-inside:avoid; }
     .uncertainty strong { color:#92400e; }
     .risk-list li, .boundary-list li { margin:6px 0; }
@@ -50,11 +52,50 @@
     .quality-table th { background:var(--soft); }
     .source-index { page-break-before:always; }
     .source-index tbody tr { scroll-margin-top:20px; }
-    .source-table { table-layout:fixed; font-size:11px; }
-    .source-table th,.source-table td { overflow-wrap:anywhere; }
-    .source-table th:first-child,.source-table td:first-child { width:6%; text-align:center; }
-    .source-table th:nth-child(2),.source-table td:nth-child(2) { width:21%; }
-    .source-table th:nth-child(3),.source-table td:nth-child(3) { width:17%; }
+    .source-table { table-layout:fixed; font-size:11px; font-variant-numeric:tabular-nums; }
+    .source-table th,.source-table td { overflow-wrap:anywhere; line-height:1.45; padding:7px 8px; }
+    .source-table th:first-child,.source-table td:first-child { width:5%; text-align:center; }
+    .source-table th:nth-child(2),.source-table td:nth-child(2) { width:20%; }
+    .source-table th:nth-child(3),.source-table td:nth-child(3) { width:15%; }
+    .source-table th:nth-child(4),.source-table td:nth-child(4) { width:12%; white-space:nowrap; }
+    .source-table th:nth-child(5),.source-table td:nth-child(5) { width:13%; white-space:nowrap; }
+    .source-table th:nth-child(6),.source-table td:nth-child(6) { width:15%; }
+    .source-table th:nth-child(7),.source-table td:nth-child(7) { width:20%; }
+    table caption { caption-side:top; text-align:left; color:var(--ink); font-weight:700; margin:0 0 8px; }
+    thead { display:table-header-group; }
+    .visual-note { border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin:18px 0 0; color:var(--muted); font-size:12px; background:var(--soft); }
+    .visual-note strong { color:var(--ink); }
+
+    /* 数据手册型：高密度、数值优先、表格与证据索引更突出。 */
+    .visual-data-manual { --blue:#17365d; --accent-soft:#f2f6fa; }
+    .visual-data-manual main { max-width:1120px; }
+    .visual-data-manual .cover { border-top-width:12px; }
+    .visual-data-manual h2 { color:#17365d; border-bottom-color:#17365d; }
+    .visual-data-manual .chapter-summary { border-left:4px solid #17365d; border-radius:0; }
+    .visual-data-manual .chart { border-radius:4px; }
+    .visual-data-manual .quality-table { font-size:12px; }
+
+    /* 分析笔记型：图、表、正文均衡，是系统默认外壳。 */
+    .visual-analysis-note { --blue:#1d4ed8; --accent-soft:#eff6ff; }
+    .visual-analysis-note .conclusion { border-radius:0 8px 8px 0; }
+
+    /* 深度研究型：收窄版心、提升行距，强调连续论证。 */
+    .visual-deep-research { --blue:#7c2d12; --accent-soft:#fff7ed; }
+    .visual-deep-research body,.visual-deep-research { font-family:"Songti SC","STSong","Noto Serif CJK SC",serif; }
+    .visual-deep-research main { max-width:920px; padding-left:76px; padding-right:76px; }
+    .visual-deep-research h1 { font-weight:600; letter-spacing:.01em; }
+    .visual-deep-research h2 { color:#451a03; border-bottom:1px solid #9a3412; }
+    .visual-deep-research h3 { color:#7c2d12; }
+    .visual-deep-research .chapter-summary { background:transparent; border-left:3px solid #9a3412; border-radius:0; padding-left:18px; }
+    .visual-deep-research .chart { border-width:1px 0; border-radius:0; padding:18px 0; }
+
+    .density-compact { font-size:14px; line-height:1.62; }
+    .density-compact main { padding-top:42px; padding-bottom:60px; }
+    .density-compact h2 { margin-top:38px; }
+    .density-compact .chart { margin:16px 0 20px; }
+    .density-detailed { font-size:15.5px; line-height:1.85; }
+    .density-detailed main { padding-top:64px; padding-bottom:96px; }
+    .density-detailed .chapter-summary { padding-top:16px; padding-bottom:16px; }
     @page { size:A4; margin:14mm 12mm 16mm; @bottom-center { content:"A17 行业研究报告  ·  " counter(page); color:#64748b; font-size:9pt; } }
     @media print {
       html,body { background:#fff; }
@@ -75,7 +116,7 @@
     }
   </style>
 </head>
-<body>
+<body class="visual-{{ report.visual_decision.effective_style|replace('_', '-') }} density-{{ report.visual_decision.density }}">
 <main>
   {% if report.release_mode == 'draft_with_warnings' %}
   <div class="draft-watermark">内部审核草稿</div>
@@ -90,6 +131,12 @@
       <div class="meta"><span>生成时间</span><strong>{{ report.generated_at.strftime('%Y-%m-%d %H:%M') }}（协调世界时）</strong></div>
       <div class="meta"><span>报告深度</span><strong>{{ report_depth_labels[report.report_depth] }}</strong></div>
       <div class="meta"><span>交付状态</span><strong>{{ delivery_status_labels[report.delivery_status] }}</strong></div>
+      <div class="meta"><span>视觉风格</span><strong>{{ visual_style_labels[report.visual_decision.effective_style] }}</strong></div>
+    </div>
+    <div class="visual-note">
+      <strong>视觉编排：</strong>{{ visual_style_labels[report.visual_decision.effective_style] }}
+      · {% if report.visual_decision.selection_source == 'user' %}用户指定{% else %}Agent 5根据Agent 4内容推荐{% endif %}
+      {% if report.visual_decision.override_warnings %}<br>{{ report.visual_decision.override_warnings|join('；') }}{% endif %}
     </div>
   </section>
 
@@ -135,7 +182,7 @@
         {% if paragraph.evidence_ids %}<p class="reference">资料依据：{% for source in evidence_entries(paragraph.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">来源{{ source.citation_number }}</a>{% else %}来源信息待补充{% endfor %}</p>{% endif %}
       {% endfor %}
       {% for chart in charts_by_section.get(section.section_id, []) %}
-      <figure class="chart">{{ chart.svg }}<figcaption>{{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}{% if chart.insight_goal %}<br>分析目的：{{ display_text(chart.insight_goal) }}{% endif %}{% for note in chart.footnotes %}<br>数据说明：{{ display_text(note) }}{% endfor %}</figcaption></figure>
+      <figure class="chart chart-{{ chart.chart_type }}">{{ chart.svg }}<figcaption><span class="chart-number">{{ chart.display_number }}</span> · {{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}{% if chart.insight_goal %}<br>分析目的：{{ display_text(chart.insight_goal) }}{% endif %}{% for note in chart.footnotes %}<br>数据说明：{{ display_text(note) }}{% endfor %}</figcaption></figure>
       {% endfor %}
       {% if section.uncertainties %}<div class="uncertainty"><strong>待验证事项</strong><ul>{% for item in section.uncertainties %}<li>{{ display_text(item) }}</li>{% endfor %}</ul></div>{% endif %}
     {% endfor %}
@@ -144,24 +191,28 @@
   {% endfor %}
 
   {% if unplaced_charts %}
-  <section class="chapter"><h2>附录 · 图表</h2>{% for chart in unplaced_charts %}<figure class="chart">{{ chart.svg }}<figcaption>{{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}</figcaption></figure>{% endfor %}</section>
+  <section class="chapter"><h2>附录 · 图表</h2>{% for chart in unplaced_charts %}<figure class="chart chart-{{ chart.chart_type }}">{{ chart.svg }}<figcaption><span class="chart-number">{{ chart.display_number }}</span> · {{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}</figcaption></figure>{% endfor %}</section>
   {% endif %}
 
   {% set appendix = report.quality_appendix %}
+  {% set appendix_table = namespace(number=0) %}
   {% if appendix.data_quality_issues or appendix.financial_consistency_checks or appendix.dimension_coverage or appendix.skipped_chart_notes %}
   <section class="quality-appendix chapter">
     <h2>数据质量与研究边界附录</h2>
     {% if appendix.dimension_coverage %}
+    {% set appendix_table.number = appendix_table.number + 1 %}
     <h3>研究维度覆盖</h3>
-    <table class="quality-table"><thead><tr><th>维度</th><th>状态</th><th>说明</th></tr></thead><tbody>{% for item in appendix.dimension_coverage %}<tr><td>{{ dimension_labels[item.dimension] }}</td><td>{{ coverage_status_labels[item.status] }}</td><td>{{ display_text(item.reason) }}</td></tr>{% endfor %}</tbody></table>
+    <table class="quality-table"><caption>表附-{{ appendix_table.number }} · 研究维度覆盖</caption><thead><tr><th>维度</th><th>状态</th><th>说明</th></tr></thead><tbody>{% for item in appendix.dimension_coverage %}<tr><td>{{ dimension_labels[item.dimension] }}</td><td>{{ coverage_status_labels[item.status] }}</td><td>{{ display_text(item.reason) }}</td></tr>{% endfor %}</tbody></table>
     {% endif %}
     {% if appendix.data_quality_issues %}
+    {% set appendix_table.number = appendix_table.number + 1 %}
     <h3>数据质量问题</h3>
-    <table class="quality-table"><thead><tr><th>序号</th><th>指标</th><th>影响</th><th>说明与处理</th></tr></thead><tbody>{% for item in appendix.data_quality_issues %}<tr><td>问题{{ loop.index }}</td><td>{{ display_text(item.metric) }}</td><td>{{ impact_labels[item.impact_level] }}</td><td>{{ display_text(item.description) }}<br>处理：{{ display_text(item.suggested_handling) }}</td></tr>{% endfor %}</tbody></table>
+    <table class="quality-table"><caption>表附-{{ appendix_table.number }} · 数据质量问题</caption><thead><tr><th>序号</th><th>指标</th><th>影响</th><th>说明与处理</th></tr></thead><tbody>{% for item in appendix.data_quality_issues %}<tr><td>问题{{ loop.index }}</td><td>{{ display_text(item.metric) }}</td><td>{{ impact_labels[item.impact_level] }}</td><td>{{ display_text(item.description) }}<br>处理：{{ display_text(item.suggested_handling) }}</td></tr>{% endfor %}</tbody></table>
     {% endif %}
     {% if appendix.financial_consistency_checks %}
+    {% set appendix_table.number = appendix_table.number + 1 %}
     <h3>财务一致性检查</h3>
-    <table class="quality-table"><thead><tr><th>序号</th><th>状态</th><th>结论</th><th>影响</th></tr></thead><tbody>{% for item in appendix.financial_consistency_checks %}<tr><td>检查{{ loop.index }}</td><td>{{ check_status_labels[item.status] }}</td><td>{{ display_text(item.conclusion) }}</td><td>{{ display_text(item.impact) }}</td></tr>{% endfor %}</tbody></table>
+    <table class="quality-table"><caption>表附-{{ appendix_table.number }} · 财务一致性检查</caption><thead><tr><th>序号</th><th>状态</th><th>结论</th><th>影响</th></tr></thead><tbody>{% for item in appendix.financial_consistency_checks %}<tr><td>检查{{ loop.index }}</td><td>{{ check_status_labels[item.status] }}</td><td>{{ display_text(item.conclusion) }}</td><td>{{ display_text(item.impact) }}</td></tr>{% endfor %}</tbody></table>
     {% endif %}
     {% if appendix.skipped_chart_notes %}<h3>未生成图表</h3><ul>{% for item in appendix.skipped_chart_notes %}<li>{{ display_text(item) }}</li>{% endfor %}</ul>{% endif %}
   </section>
@@ -169,13 +220,15 @@
 
   <section class="source-index chapter" id="source-index">
     <h2>来源与证据索引</h2>
+    {% set appendix_table.number = appendix_table.number + 1 %}
     <table class="quality-table source-table">
-      <thead><tr><th>序号</th><th>材料或来源</th><th>支持指标</th><th>数据日期与报告期</th><th>页码、章节或定位</th><th>获取层级与审计状态</th></tr></thead>
+      <caption>表附-{{ appendix_table.number }} · 来源与证据索引</caption>
+      <thead><tr><th>序号</th><th>材料</th><th>发布主体</th><th>日期</th><th>报告期</th><th>页码/章节</th><th>获取方式/层级</th></tr></thead>
       <tbody>
-      {% for source in report.evidence_catalog %}
-        <tr id="source-{{ source.citation_number }}"><td>{{ source.citation_number }}</td><td>{{ display_text(source.material_title) }}</td><td>{{ source.metric_names|map('string')|join('、') }}</td><td>可得：{{ source.available_dates|join('、') or '未提供' }}<br>报告期：{{ source.reporting_periods|join('、') or '未提供' }}</td><td>{{ source.locators|join('；') or '未提供' }}</td><td>{{ source.source_levels|join('、') or '未提供' }}<br>{{ source.audit_labels|join('、') or '未提供' }}</td></tr>
+      {% for source in source_rows %}
+        <tr id="source-{{ source.citation_number }}"><td>{{ source.citation_number }}</td><td>{{ source.material }}</td><td>{{ source.publisher }}</td><td>{{ source.available_date }}</td><td>{{ source.reporting_period }}</td><td>{{ source.locator }}</td><td>{{ source.method_level }}</td></tr>
       {% else %}
-        <tr><td colspan="6">当前报告未提供可展示的来源元数据。</td></tr>
+        <tr><td colspan="7">当前报告未提供可展示的来源元数据。</td></tr>
       {% endfor %}
       </tbody>
     </table>

@@ -1,0 +1,60 @@
+{
+  "case_id": "E-03",
+  "run_id": "run-e-03-1787398781",
+  "recorded_at": "2026-08-22T11:39:41.945205+00:00",
+  "mode": "record",
+  "llm_mode": "mock",
+  "input": {
+    "text": "储能未来三年市场空间大概有多大",
+    "industry_topic": "储能",
+    "focus_questions": [
+      "储能未来三年市场空间大概有多大"
+    ]
+  },
+  "verdict": {
+    "verdict": "intercept",
+    "reason": "合法拦截（intent_clarification_required）",
+    "elapsed_s": 0.0
+  },
+  "stages": [
+    {
+      "stage": "data_fetch",
+      "status": "cancelled",
+      "error": "intent_clarification_required"
+    }
+  ],
+  "intent_routing": {
+    "enabled": false,
+    "strategy": "deterministic_only",
+    "clarification_required": [
+      "储能未来三年市场空间大概有多大"
+    ],
+    "warnings": [
+      "unresolved_sub_requirement:SUB-01"
+    ],
+    "plans": [
+      {
+        "question": "储能未来三年市场空间大概有多大",
+        "parser_mode": "deterministic",
+        "complexity": "simple",
+        "locked_skills": [],
+        "accepted_skills": [],
+        "rejected_skills": [],
+        "requires_clarification": true,
+        "sub_requirements": [
+          {
+            "text": "储能未来三年市场空间大概有多大",
+            "skills": [],
+            "source": "deterministic",
+            "clarify": true
+          }
+        ]
+      }
+    ]
+  },
+  "skill_calls": [],
+  "skill_call_count": 0,
+  "evidence_count": 0,
+  "task_count": 0,
+  "report_artifacts": []
+}

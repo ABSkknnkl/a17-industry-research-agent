@@ -40,6 +40,94 @@ class ParagraphDraft(ChapterContract):
         return self
 
 
+class SectionVisualSemantics(ChapterContract):
+    """Content semantics emitted by Agent 4 for deterministic visual planning.
+
+    These fields describe what the section contains.  They deliberately do not
+    contain CSS, colours or a report-shell choice; presentation remains owned by
+    Agent 5 and the user's explicit visual preference.
+    """
+
+    content_type: Literal[
+        "auto",
+        "narrative",
+        "time_series",
+        "comparison",
+        "financial_detail",
+        "industry_chain",
+        "risk",
+        "scenario",
+        "summary",
+    ] = "auto"
+    quantitative_density: float | None = Field(default=None, ge=0, le=1)
+    qualitative_density: float | None = Field(default=None, ge=0, le=1)
+    preferred_table: bool | None = None
+    key_metric_count: int = Field(default=0, ge=0, le=100)
+
+
+def _infer_visual_semantics(
+    *,
+    title: str,
+    purpose: str,
+    paragraphs: list[ParagraphDraft],
+    current: SectionVisualSemantics,
+) -> SectionVisualSemantics:
+    text = f"{title} {purpose}".lower()
+    content_type = current.content_type
+    if content_type == "auto":
+        if any(token in text for token in ("产业链", "上游", "中游", "下游")):
+            content_type = "industry_chain"
+        elif any(
+            token in text
+            for token in ("财务", "盈利", "毛利", "净利", "费用率", "现金流", "周转")
+        ):
+            content_type = "financial_detail"
+        elif any(token in text for token in ("竞争", "格局", "对比", "份额", "排名")):
+            content_type = "comparison"
+        elif any(token in text for token in ("情景", "预测", "展望", "推演")):
+            content_type = "scenario"
+        elif any(token in text for token in ("风险", "政策", "监管", "不确定")):
+            content_type = "risk"
+        elif any(token in text for token in ("趋势", "增速", "规模", "周期")):
+            content_type = "time_series"
+        elif any(token in text for token in ("总结", "结论", "边界")):
+            content_type = "summary"
+        else:
+            content_type = "narrative"
+
+    density_defaults = {
+        "narrative": (0.20, 0.80),
+        "time_series": (0.75, 0.25),
+        "comparison": (0.65, 0.35),
+        "financial_detail": (0.85, 0.15),
+        "industry_chain": (0.35, 0.65),
+        "risk": (0.15, 0.85),
+        "scenario": (0.45, 0.55),
+        "summary": (0.25, 0.75),
+    }
+    quantitative, qualitative = density_defaults[content_type]
+    numeric_count = sum(len(paragraph.numeric_refs) for paragraph in paragraphs)
+    return SectionVisualSemantics(
+        content_type=content_type,
+        quantitative_density=(
+            current.quantitative_density
+            if current.quantitative_density is not None
+            else quantitative
+        ),
+        qualitative_density=(
+            current.qualitative_density
+            if current.qualitative_density is not None
+            else qualitative
+        ),
+        preferred_table=(
+            current.preferred_table
+            if current.preferred_table is not None
+            else content_type in {"financial_detail", "comparison"}
+        ),
+        key_metric_count=min(100, max(current.key_metric_count, numeric_count)),
+    )
+
+
 class SectionDraft(ChapterContract):
     section_id: str = Field(pattern=r"^SEC-\d{2}-\d{2}$")
     title: str = Field(min_length=1)
@@ -48,6 +136,17 @@ class SectionDraft(ChapterContract):
     paragraphs: list[ParagraphDraft] = Field(min_length=1)
     chart_ids: list[str] = Field(default_factory=list)
     uncertainties: list[str] = Field(default_factory=list)
+    visual_semantics: SectionVisualSemantics = Field(default_factory=SectionVisualSemantics)
+
+    @model_validator(mode="after")
+    def complete_visual_semantics(self) -> "SectionDraft":
+        self.visual_semantics = _infer_visual_semantics(
+            title=self.title,
+            purpose=self.purpose,
+            paragraphs=self.paragraphs,
+            current=self.visual_semantics,
+        )
+        return self
 
 
 class ChapterDraft(ChapterContract):

@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "7d5fafdde0389acaeef790991e402e2876842df69e46b75aa534a6960ec3d1c9",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "中国内地 锂电池 2024-01-01至2026-08-11 代表公司 营业收入 营业成本 净利润 ROE 经营活动现金流量净额 投资活动现金流量净额 筹资活动现金流量净额 期末现金及现金等价物余额 货币资金 总资产 负债合计 股东权益 存货 应收账款 （基准）CR5集中度",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":6,\"columns\":[],\"datas\":[],\"row_count\":0,\"code_count\":0,\"status_code\":-1225}",
+  "raw_sha256": "8c3da41dc3997e789b74a31ee12649c21d3065ea58665d2f1e0c98fcc78fce2b",
+  "recorded_at": "2026-08-22T07:28:36.846023+00:00"
+}

@@ -18,6 +18,7 @@ from app.reporting.presentation import (
     citation_lookup,
     humanize_internal_ids,
     section_label,
+    source_table_rows,
 )
 from app.schemas.report import ReportViewModel
 
@@ -49,18 +50,26 @@ def render_html(report: ReportViewModel) -> str:
 
     charts_by_section: dict[str, list[dict[str, object]]] = {}
     unplaced: list[dict[str, object]] = []
+    chart_numbers: dict[str, int] = {}
     for chart in report.charts:
         item = chart.model_dump(exclude={"svg"})
         item["svg"] = Markup(chart.svg)
         if chart.placement_section_id:
+            chapter_number = chart.placement_section_id.split("-")[1]
+            chart_numbers[chapter_number] = chart_numbers.get(chapter_number, 0) + 1
+            item["display_number"] = (
+                f"图{int(chapter_number)}-{chart_numbers[chapter_number]}"
+            )
             charts_by_section.setdefault(chart.placement_section_id, []).append(item)
         else:
+            item["display_number"] = f"附图-{len(unplaced) + 1}"
             unplaced.append(item)
     return template.render(
         report=report,
         charts_by_section=charts_by_section,
         unplaced_charts=unplaced,
         evidence_entries=evidence_entries,
+        source_rows=source_table_rows(report.evidence_catalog),
         chapter_label=chapter_label,
         section_label=section_label,
         display_text=humanize_internal_ids,
@@ -72,4 +81,9 @@ def render_html(report: ReportViewModel) -> str:
         impact_labels=IMPACT_LABELS,
         check_status_labels=CHECK_STATUS_LABELS,
         chart_type_labels=CHART_TYPE_LABELS,
+        visual_style_labels={
+            "data_manual": "数据手册型",
+            "analysis_note": "分析笔记型",
+            "deep_research": "深度研究型",
+        },
     )

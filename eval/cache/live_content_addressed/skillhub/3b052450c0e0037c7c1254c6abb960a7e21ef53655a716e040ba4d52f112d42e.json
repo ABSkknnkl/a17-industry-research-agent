@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "3b052450c0e0037c7c1254c6abb960a7e21ef53655a716e040ba4d52f112d42e",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "通用 经营活动现金流量净额 总资产 负债合计",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":2484,\"query\":\"通用 经营活动现金流量净额 总资产 负债合计\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"经营活动产生的现金流量净额\",\"key\":\"经营活动产生的现金流量净额[20260331]\",\"feKey\":\"经营活动产生的现金流量净额[20260331]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"财务报表\",\"timestamp\":\"20260331\",\"source\":\"index\"},{\"index_name\":\"资产总计\",\"key\":\"总资产[20260331]\",\"feKey\":\"总资产[20260331]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"timestamp\":\"20260331\",\"source\":\"index\"},{\"index_name\":\"负债合计\",\"key\":\"负债[20260331]\",\"feKey\":\"负债[20260331]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"timestamp\":\"20260331\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"601500.SH\",\"股票简称\":\"通用股份\",\"最新价\":\"3.96\",\"最新涨跌幅\":-2.222222,\"经营活动产生的现金流量净额[20260331]\":3.3876071256E8,\"总资产[20260331]\":1.466140830561E10,\"负债[20260331]\":8.4685760093E9}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"通用,经营活动现金流量净额 (1)\\\",\\\"通用,总资产 (1)\\\",\\\"通用,负债合计 (1)\\\"]\",\"status_code\":0,\"token\":\"0ac9eb8f17873822904731666\"}",
+  "raw_sha256": "c322f8736f28e6b0c7b9aefe4a888907913a606c468c85278c2a748bd58ef847",
+  "recorded_at": "2026-08-22T07:04:49.897759+00:00"
+}

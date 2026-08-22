@@ -1,0 +1,156 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-2AA230A860D0",
+  "chart_type": "bar",
+  "data_fingerprint": "a1128fce963d56339c33b38e9b0067af2075dc9cbeeaddfa31df1891cff0d740",
+  "dedupe_key": "comparison:comparison:以bar图呈现经营活动产生的现金流量净额的证据分布，支撑ch-02的论述。:a1128fce963d56339c33b38e9b0067af2075dc9cbeeaddfa31df1891cff0d740",
+  "evidence_ids": [
+    "E-c2b6a43a85103ec9",
+    "E-3bdea6eba0f3f621",
+    "E-74eaf1d7d5d2a398",
+    "E-20700ea65b48c01c"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现经营活动产生的现金流量净额的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-3bdea6eba0f3f621",
+            "value": 23369400186.84
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "交通运输仓储和邮政业指数",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-74eaf1d7d5d2a398",
+            "value": -23753923.3
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "住宿和餐饮业指数",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-20700ea65b48c01c",
+            "value": 89568416631.15
+          }
+        ],
+        "name": "电力热力燃气及水生产和供应业指数",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "evidence_id": "E-c2b6a43a85103ec9",
+            "value": 10036176942.58
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "科学研究和技术服务业指数",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "经营活动产生的现金流量净额（科学研究和技术服务业指数）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "科学研究和技术服务业指数",
+        "交通运输仓储和邮政业指数",
+        "住宿和餐饮业指数",
+        "电力热力燃气及水生产和供应业指数"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "经营活动产生的现金流量净额（科学研究和技术服务业指数）",
+  "variant": "grouped"
+}

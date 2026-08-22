@@ -1,0 +1,119 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-54C3066367A9",
+  "chart_type": "line",
+  "data_fingerprint": "8ba733ba0dae82f3627dce15997cac8068240aebf5282954e393492de7f90ccf",
+  "dedupe_key": "trend:trend:以bar图呈现期末现金及现金等价物余额的证据分布，支撑ch-02的论述。:8ba733ba0dae82f3627dce15997cac8068240aebf5282954e393492de7f90ccf",
+  "evidence_ids": [
+    "E-e60e4906b7b6eac1",
+    "E-4fd3d0006cc3ee2c",
+    "E-c31cdc1df1bb9b0d",
+    "E-63382c45c90d1906",
+    "E-d89b4328f781da12",
+    "E-664631613e9d6cb3",
+    "E-eed15f75ca2b2283",
+    "E-7ceecadc52e38af8",
+    "E-cd68bd99b410604a",
+    "E-652d56666e4c24c7"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现期末现金及现金等价物余额的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德时代": {
+        "2024-03-31": "E-652d56666e4c24c7",
+        "2024-06-30": "E-cd68bd99b410604a",
+        "2024-09-30": "E-7ceecadc52e38af8",
+        "2024-12-31": "E-eed15f75ca2b2283",
+        "2025-03-31": "E-664631613e9d6cb3",
+        "2025-06-30": "E-d89b4328f781da12",
+        "2025-09-30": "E-63382c45c90d1906",
+        "2025-12-31": "E-c31cdc1df1bb9b0d",
+        "2026-03-31": "E-4fd3d0006cc3ee2c",
+        "2026-06-30": "E-e60e4906b7b6eac1"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          263108193000.0,
+          227065850000.0,
+          234953904000.0,
+          270159734000.0,
+          286300836000.0,
+          323785232000.0,
+          297183959000.0,
+          299929741000.0,
+          324354359000.0,
+          340586216000.0
+        ],
+        "name": "宁德时代",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "期末现金及现金等价物余额（宁德时代）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2024-03-31",
+        "2024-06-30",
+        "2024-09-30",
+        "2024-12-31",
+        "2025-03-31",
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "期末现金及现金等价物余额（宁德时代）",
+  "variant": "line"
+}

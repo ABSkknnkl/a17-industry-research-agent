@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "7a3f52e4c1c1341e5a93d78852c54bdf02ed7dd6f11b0f6f9f43bb07b9398877",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-event-query",
+  "request": {
+    "query": "A股指数概念股业绩预告",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1641,\"query\":\"A股指数概念股业绩预告\",\"columns\":[{\"index_name\":\"全量指数@指数代码\",\"key\":\"指数代码\",\"feKey\":\"指数代码\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"全量指数@指数简称\",\"key\":\"指数简称\",\"feKey\":\"指数简称\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"全量指数@成分代码(虚拟表)\",\"key\":\"成分代码\",\"feKey\":\"成分代码\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"cz_新增指数指标\",\"source\":\"index\"},{\"index_name\":\"全量指数@成分简称(虚拟表)\",\"key\":\"成分简称\",\"feKey\":\"成分简称\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"cz_新增指数指标\",\"source\":\"index\"},{\"index_name\":\"交易日期\",\"key\":\"纳入日期\",\"feKey\":\"纳入日期\",\"type\":\"DATE\",\"unit\":\"\",\"label\":\"标准SQL取数用\",\"source\":\"index\"},{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"code\",\"source\":\"index\"}],\"datas\":[],\"row_count\":0,\"code_count\":0,\"chunks_info\":\"[\\\"a股指数概念股业绩预告 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9c0ed17874152143071573\"}",
+  "raw_sha256": "0fdf0c94f6bb71297f98ee650a92fe778015932c99b384670c28637c3af82a25",
+  "recorded_at": "2026-08-22T16:13:34.245407+00:00"
+}

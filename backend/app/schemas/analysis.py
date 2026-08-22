@@ -369,6 +369,8 @@ class EvidenceCatalogItem(BaseModel):
     evidence_id: str = Field(pattern=r"^E-[A-Za-z0-9_-]+$")
     metric_name: str = Field(min_length=1, max_length=200)
     source_name: str = Field(min_length=1, max_length=500)
+    publisher: str | None = Field(default=None, max_length=500)
+    retrieval_method: str | None = Field(default=None, max_length=100)
     source_locator: str | None = Field(default=None, max_length=1_000)
     period_end: date | None = None
     available_at: date | None = None

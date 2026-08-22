@@ -1,0 +1,131 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-106D0B4EA953",
+  "chart_type": "line",
+  "data_fingerprint": "244d3bcc05370a2165662e57cd24be13217dcc47b3d755ea3cc66b464feb59f8",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:244d3bcc05370a2165662e57cd24be13217dcc47b3d755ea3cc66b464feb59f8",
+  "evidence_ids": [
+    "E-52bb553f91f605fb",
+    "E-5390c4f4d8608874",
+    "E-fffc385664c26112",
+    "E-35099880adeaf4aa",
+    "E-ff048bb1131b9611",
+    "E-6830b504873085b0",
+    "E-9a6bc5db98b9c36d",
+    "E-9c47a48bb46e2a6c",
+    "E-b51546429060f6b3",
+    "E-de88f4361dec6d3a",
+    "E-deca83edc6423a77",
+    "E-268e5cff67f80d5c"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "美国:国债收益率:10年": {
+        "2026-08-06": "E-268e5cff67f80d5c",
+        "2026-08-07": "E-deca83edc6423a77",
+        "2026-08-10": "E-de88f4361dec6d3a",
+        "2026-08-11": "E-b51546429060f6b3",
+        "2026-08-12": "E-9c47a48bb46e2a6c",
+        "2026-08-13": "E-9a6bc5db98b9c36d",
+        "2026-08-14": "E-6830b504873085b0",
+        "2026-08-17": "E-ff048bb1131b9611",
+        "2026-08-18": "E-35099880adeaf4aa",
+        "2026-08-19": "E-fffc385664c26112",
+        "2026-08-20": "E-5390c4f4d8608874",
+        "2026-08-21": "E-52bb553f91f605fb"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          4.69,
+          4.65,
+          4.72,
+          4.7,
+          4.68,
+          4.63,
+          4.68,
+          4.72,
+          4.71,
+          4.65,
+          4.69,
+          4.74
+        ],
+        "name": "美国:国债收益率:10年",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（美国:国债收益率:10年）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2026-08-06",
+        "2026-08-07",
+        "2026-08-10",
+        "2026-08-11",
+        "2026-08-12",
+        "2026-08-13",
+        "2026-08-14",
+        "2026-08-17",
+        "2026-08-18",
+        "2026-08-19",
+        "2026-08-20",
+        "2026-08-21"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（美国:国债收益率:10年）",
+  "variant": "line"
+}

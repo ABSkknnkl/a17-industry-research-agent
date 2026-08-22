@@ -203,6 +203,63 @@ async def test_requested_calculation_with_missing_inputs_pauses_before_llm() -> 
 
 
 @pytest.mark.asyncio
+async def test_directly_disclosed_gross_margin_prevents_false_calculation_block() -> None:
+    model = CapturingModel()
+    agent = DataInterpreterAgent(model=model)
+    common = {
+        "period_end": "2025-12-31",
+        "available_at": "2026-03-31",
+        "audit_status": "audited",
+        "restatement_status": "not_restated",
+        "scope": "测试公司",
+        "market": "中国内地",
+        "exchange": "不适用",
+        "security_type": "普通股",
+        "currency": "CNY",
+        "accounting_standard": "中国企业会计准则",
+        "corporate_action_adjustment": "not_applicable",
+        "source_name": "年度报告",
+        "source_locator": "年度报告利润表",
+        "grade": "A",
+    }
+    context = StageContext(
+        project_id="project-disclosed-margin",
+        run_id="run-disclosed-margin",
+        revision=1,
+        input_data={
+            "industry_topic": "动力电池",
+            "market_scope": ["中国内地"],
+            "security_types": ["普通股"],
+            "reporting_currency": "CNY",
+            "research_as_of": "2026-06-30",
+            "focus_questions": ["测试公司2025年毛利率是多少？"],
+            "evidence_items": [
+                {
+                    **common,
+                    "evidence_id": "E-REVENUE",
+                    "metric_name": "营业收入",
+                    "value": 100,
+                    "unit": "亿元",
+                },
+                {
+                    **common,
+                    "evidence_id": "E-DISCLOSED-GM",
+                    "metric_name": "销售毛利率",
+                    "value": 22.8,
+                    "unit": "%",
+                },
+            ],
+        },
+    )
+
+    result = await agent.run(context)
+
+    assert result.error != "requested_calculation_data_unavailable"
+    assert result.status == StageStatus.COMPLETED
+    assert model.system_prompt
+
+
+@pytest.mark.asyncio
 async def test_data_interpreter_returns_traceable_structured_analysis() -> None:
     model = CapturingModel()
     agent = DataInterpreterAgent(model=model)
@@ -239,6 +296,8 @@ async def test_data_interpreter_returns_traceable_structured_analysis() -> None:
                     "accounting_standard": "不适用",
                     "corporate_action_adjustment": "not_applicable",
                     "source_name": "行业协会月报",
+                    "publisher": "中国光伏行业协会",
+                    "retrieval_method": "同花顺问财 SkillHub",
                     "source_locator": "2026年5月月报表2",
                     "grade": "C",
                 }
@@ -278,6 +337,8 @@ async def test_data_interpreter_returns_traceable_structured_analysis() -> None:
     assert len(analysis.evidence_catalog) == 1
     assert analysis.evidence_catalog[0].evidence_id == "E-001"
     assert analysis.evidence_catalog[0].source_name == "行业协会月报"
+    assert analysis.evidence_catalog[0].publisher == "中国光伏行业协会"
+    assert analysis.evidence_catalog[0].retrieval_method == "同花顺问财 SkillHub"
     assert analysis.evidence_catalog[0].metric_name == "组件产量同比增速"
     assert {dimension.name for dimension in analysis.dimensions} == {
         "competition",

@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "3a03ae9bcedd54667dd338b7405114ad03b2e643c4e099ef62b9a79bf4b45372",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 锂电池 2024-01-01至2026-08-11 行业规模",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":691,\"query\":\"中国内地 锂电池 2024-01-01至2026-08-11 行业规模\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"所属同花顺行业是锂电池\\\",\\\"chunkedResult\\\":\\\"中国内地 锂电池 2024-01-01至2026-08-11 行业规模\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@所属同花顺行业\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"锂电池\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_所属同花顺行业(债券)\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含锂电池\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"code\",\"feKey\":\"债券代码\",\"type\":\"STR\",\"index_name\":\"债券@债券代码\",\"key\":\"债券@债券代码\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"name\",\"feKey\":\"债券简称\",\"type\":\"STR\",\"index_name\":\"债券@债券简称\",\"key\":\"债券@债券简称\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"indexId\":\"\",\"source\":\"new_parser\",\"feKey\":\"所属同花顺行业\",\"type\":\"STR\",\"index_name\":\"债券@所属同花顺行业\",\"key\":\"债券@所属同花顺行业\",\"timestamp\":\"\"}],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac9e01717873806330927021\",\"chunks_info\":\"[\\\"所属同花顺行业是锂电池 (0)\\\"]\"}",
+  "raw_sha256": "9a73c4a9935ab90ea13de3a630bdd72dbc34bd7c44cbc3b5ae231d88701c53c6",
+  "recorded_at": "2026-08-22T06:37:12.563635+00:00"
+}

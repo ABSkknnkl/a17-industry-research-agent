@@ -18,6 +18,16 @@ def test_runtime_prompt_only_exposes_claims_relevant_to_current_chapter(
             status="ready",
             evidence_ids=["E-001"],
             artifact_id="artifact-relevant",
+            recommended_chapter_id="CH-04",
+        ),
+        ChartReference(
+            chart_id="CHART-wrong-chapter",
+            title="证据相关但属于其他章节的图表",
+            chart_type="bar",
+            status="ready",
+            evidence_ids=["E-001"],
+            artifact_id="artifact-wrong-chapter",
+            recommended_chapter_id="CH-02",
         ),
         ChartReference(
             chart_id="CHART-unrelated",
@@ -55,3 +65,12 @@ def test_runtime_prompt_only_exposes_claims_relevant_to_current_chapter(
     assert payload["dimension_coverage"][0]["status"] == "partial"
     assert payload["allowed_data_quality_issues"][0]["issue_id"] == "DQ-SCOPE"
     assert payload["research_context"]["research_brief"]["report_depth"] == "deep"
+    constraints = payload["technical_output_contract"]["field_constraints"]
+    assert constraints["paragraphs.kind"] == [
+        "analysis",
+        "methodology",
+        "risk",
+        "transition",
+    ]
+    assert "financial_detail" in constraints["visual_semantics.content_type"]
+    assert constraints["visual_semantics.preferred_table"].startswith("true")

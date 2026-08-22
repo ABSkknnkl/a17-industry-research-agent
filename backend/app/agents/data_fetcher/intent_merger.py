@@ -1,8 +1,8 @@
-"""Merge deterministic locks with LLM decomposition and validate the result.
+"""Calibrate LLM-first intent decomposition with deterministic safety locks.
 
 RUNLOG sections 9/阶段六: ``locked_skills`` from the rule layer can never be
 removed by the LLM; LLM candidates must come from the SkillName enum and pass
-the capability registry; low-confidence output is not executed.  Any LLM
+the capability registry; low-confidence output is not executed. Any LLM
 failure falls back to the deterministic plan instead of crashing Agent 1.
 """
 
@@ -190,10 +190,18 @@ def _deterministic_plan(
     warnings: list[str],
 ) -> ResearchIntentPlan:
     subs = [_sub_from_segment(index, segment) for index, segment in enumerate(parse.segments, 1)]
-    clarification_questions = [
+    unresolved_questions = [
         sub.clarification_question
         for sub in subs
         if sub.requires_clarification and sub.clarification_question
+    ]
+    has_actionable_requirement = any(sub.candidate_skills for sub in subs)
+    requires_clarification = complexity == "ambiguous" or not has_actionable_requirement
+    clarification_questions = unresolved_questions if requires_clarification else []
+    unresolved_warnings = [
+        f"unresolved_sub_requirement:{sub.requirement_id}"
+        for sub in subs
+        if not sub.candidate_skills
     ]
     return ResearchIntentPlan(
         original_input=user_text,
@@ -203,10 +211,10 @@ def _deterministic_plan(
         locked_skills=[skill.value for skill in parse.locked_skills],
         accepted_skills=[],
         rejected_skills=[],
-        requires_clarification=bool(clarification_questions) or complexity == "ambiguous",
+        requires_clarification=requires_clarification,
         clarification_questions=clarification_questions,
         parser_mode=parser_mode,  # type: ignore[arg-type]
-        warnings=warnings,
+        warnings=[*warnings, *unresolved_warnings],
     )
 
 
@@ -215,6 +223,82 @@ def _resolve_skill(raw: str) -> SkillName | None:
         return SkillName(raw)
     except ValueError:
         return None
+
+
+def _entity_key(entity: IntentEntity) -> str:
+    return "".join((entity.normalized_name or entity.name).split()).casefold()
+
+
+def _metric_key(metric: IntentMetric) -> str:
+    return "".join((metric.normalized_name or metric.original_name).split()).casefold()
+
+
+def _merge_entities(
+    deterministic: list[IntentEntity], llm: list[IntentEntity]
+) -> list[IntentEntity]:
+    merged = [item.model_copy(deep=True) for item in deterministic]
+    present = {_entity_key(item) for item in merged}
+    for item in llm:
+        key = _entity_key(item)
+        if key and key not in present:
+            merged.append(item.model_copy(deep=True))
+            present.add(key)
+    return merged[:20]
+
+
+def _merge_metrics(
+    deterministic: list[IntentMetric], llm: list[IntentMetric]
+) -> list[IntentMetric]:
+    merged = [item.model_copy(deep=True) for item in deterministic]
+    present = {_metric_key(item) for item in merged}
+    for item in llm:
+        key = _metric_key(item)
+        if key and key not in present:
+            merged.append(item.model_copy(deep=True))
+            present.add(key)
+    return merged[:20]
+
+
+def _compact_text(value: str) -> str:
+    return "".join(value.split()).casefold()
+
+
+def _find_merge_target(
+    subs: list[IntentSubRequirement],
+    llm_sub: IntentSubRequirement,
+    *,
+    used_indices: set[int],
+) -> int | None:
+    """Match by request meaning, never merely by sharing the same Skill."""
+
+    llm_texts = {
+        _compact_text(llm_sub.original_text),
+        _compact_text(llm_sub.normalized_text),
+    } - {""}
+    for index, sub in enumerate(subs):
+        if index in used_indices:
+            continue
+        sub_texts = {
+            _compact_text(sub.original_text),
+            _compact_text(sub.normalized_text),
+        } - {""}
+        if llm_texts & sub_texts:
+            return index
+
+    llm_entities = {_entity_key(item) for item in llm_sub.entities}
+    llm_metrics = {_metric_key(item) for item in llm_sub.metrics}
+    for index, sub in enumerate(subs):
+        if index in used_indices:
+            continue
+        entity_overlap = llm_entities & {_entity_key(item) for item in sub.entities}
+        metric_overlap = llm_metrics & {_metric_key(item) for item in sub.metrics}
+        if entity_overlap and metric_overlap:
+            return index
+
+    available = [index for index in range(len(subs)) if index not in used_indices]
+    if len(available) == 1 and len(subs) == 1:
+        return available[0]
+    return None
 
 
 def _merge_llm_plan(
@@ -231,6 +315,8 @@ def _merge_llm_plan(
     rejected: list[str] = list(base.rejected_skills)
     warnings: list[str] = list(base.warnings)
     subs = [sub.model_copy(deep=True) for sub in base.sub_requirements]
+    used_indices: set[int] = set()
+    pending_questions: list[str] = []
 
     for llm_sub in llm_plan.sub_requirements[:max_sub_requirements]:
         metric_types = {metric.metric_type for metric in llm_sub.metrics} - {"unknown"}
@@ -257,12 +343,11 @@ def _merge_llm_plan(
                 if skill.value not in rejected:
                     rejected.append(skill.value)
             warnings.append(f"llm_low_confidence_not_executed:{llm_sub.requirement_id}"[:200])
-            base.requires_clarification = True
             question = llm_sub.clarification_question or (
                 f"LLM对子需求“{llm_sub.normalized_text}”的路由置信度过低，请人工确认。"
             )
-            if question not in base.clarification_questions:
-                base.clarification_questions.append(question)
+            if question not in pending_questions:
+                pending_questions.append(question)
             continue
 
         review_only = llm_sub.confidence < confidence_accept
@@ -272,26 +357,38 @@ def _merge_llm_plan(
                 "llm_skill_pending_review:" + ",".join(skill.value for skill in additions)
             )
 
-        # Merge into an existing deterministic sub when they share a skill or
-        # the same normalised text; otherwise append a new LLM sub-requirement.
-        target = next(
-            (
-                sub
-                for sub in subs
-                if set(sub.candidate_skills) & {skill.value for skill in valid_skills}
-                or sub.normalized_text == llm_sub.normalized_text
-            ),
-            None,
+        # The LLM supplies semantic decomposition first; deterministic results
+        # remain immutable locks and are merged by request meaning. Sharing a
+        # broad Skill (for example two financial questions) is not sufficient.
+        target_index = _find_merge_target(
+            subs,
+            llm_sub,
+            used_indices=used_indices,
         )
-        if target is not None:
+        if target_index is not None:
+            used_indices.add(target_index)
+            target = subs[target_index]
             for skill in valid_skills:
                 if skill.value not in target.candidate_skills:
                     target.candidate_skills.append(skill.value)
                     if skill.value not in locked_skills and skill.value not in accepted:
                         accepted.append(skill.value)
             target.candidate_skills = target.candidate_skills[:max_skills_per_requirement]
-            if target.source == "deterministic" and additions:
-                target.source = "hybrid"
+            target.entities = _merge_entities(target.entities, llm_sub.entities)
+            target.metrics = _merge_metrics(target.metrics, llm_sub.metrics)
+            if target.time_range is None:
+                target.time_range = llm_sub.time_range
+            target.intent_type = llm_sub.intent_type
+            target.confidence = llm_sub.confidence
+            target.reason = "LLM语义识别结果已通过确定性枚举与能力校准。"
+            target.requires_clarification = review_only
+            target.clarification_question = (
+                llm_sub.clarification_question
+                or f"请确认对子需求“{llm_sub.normalized_text}”的数据技能路由。"
+                if review_only
+                else None
+            )
+            target.source = "hybrid"
         else:
             if len(subs) >= max_sub_requirements:
                 warnings.append(f"llm_sub_requirement_truncated:{llm_sub.requirement_id}"[:200])
@@ -310,12 +407,42 @@ def _merge_llm_plan(
                     confidence=llm_sub.confidence,
                     reason=llm_sub.reason,
                     requires_clarification=review_only,
+                    clarification_question=(
+                        llm_sub.clarification_question
+                        or f"请确认对子需求“{llm_sub.normalized_text}”的数据技能路由。"
+                        if review_only
+                        else None
+                    ),
                     source="llm",
                 )
             )
             for value in new_skills:
                 if value not in locked_skills and value not in accepted:
                     accepted.append(value)
+
+    # A deterministic split can fragment an entity enumeration
+    # (对比宁德时代与比亚迪… → 对比宁德时代 + 比亚迪的…) when
+    # research_brief carries no known entities.  When an LLM
+    # sub-requirement re-assembles such a fragment into a routable whole,
+    # the orphaned base fragment must not survive the merge, otherwise it
+    # resurfaces as an unresolved sub-requirement and blocks the whole
+    # question as data-unavailable even though the LLM route is complete.
+    llm_texts = [
+        _compact_text(sub.normalized_text)
+        for sub in llm_plan.sub_requirements
+        if sub.candidate_skills
+    ]
+    if llm_texts:
+        subs = [
+            sub
+            for sub in subs
+            if sub.source != "deterministic"
+            or sub.candidate_skills
+            or not any(
+                _compact_text(sub.normalized_text) in text and text != _compact_text(sub.normalized_text)
+                for text in llm_texts
+            )
+        ]
 
     # Locked skills are immutable: verify they still appear after merging.
     present = {value for sub in subs for value in sub.candidate_skills}
@@ -327,15 +454,36 @@ def _merge_llm_plan(
                     :max_skills_per_requirement
                 ]
 
+    actionable_sub_requirement_exists = any(sub.candidate_skills for sub in subs)
+    clarification_questions = list(pending_questions)
+    for sub in subs:
+        if sub.requires_clarification and sub.clarification_question:
+            # An unrouteable fragment must not block valid sibling fragments.
+            # It is surfaced later as an unavailable partial result. Ambiguous
+            # routed work still needs review, as does a wholly unrouteable request.
+            should_block = (
+                bool(sub.candidate_skills) or not actionable_sub_requirement_exists
+            )
+            if should_block and sub.clarification_question not in clarification_questions:
+                clarification_questions.append(sub.clarification_question)
+    # Plan-level LLM questions become advisory once any sub-requirement
+    # already routes to a real skill; they must never block acquisition.
+    for question in llm_plan.clarification_questions:
+        if actionable_sub_requirement_exists:
+            warnings.append(f"advisory_clarification:{question}"[:200])
+        elif question not in clarification_questions:
+            clarification_questions.append(question)
+
     return base.model_copy(
         update={
+            "complexity": llm_plan.complexity,
             "sub_requirements": subs,
             "accepted_skills": accepted,
             "rejected_skills": rejected,
             "warnings": warnings,
             "parser_mode": "hybrid",
-            "requires_clarification": base.requires_clarification,
-            "clarification_questions": base.clarification_questions,
+            "requires_clarification": bool(clarification_questions),
+            "clarification_questions": clarification_questions,
         }
     )
 
@@ -351,7 +499,7 @@ async def build_intent_plan(
     max_sub_requirements: int = 12,
     max_skills_per_requirement: int = 3,
 ) -> ResearchIntentPlan:
-    """Deterministic-first intent plan; the LLM may only supplement locked rules."""
+    """LLM-first semantic plan calibrated by deterministic locks and fallback."""
 
     parse = parse_intent(
         user_text, industry_topic=industry_topic, known_entities=known_entities
@@ -367,7 +515,7 @@ async def build_intent_plan(
         warnings=[],
     )
 
-    if not decision.use_llm or decomposer is None:
+    if decomposer is None:
         return base
 
     try:
@@ -383,6 +531,14 @@ async def build_intent_plan(
             update={
                 "parser_mode": "fallback",
                 "warnings": [f"intent_decomposer_failed:{type(exc).__name__}"],
+            }
+        )
+
+    if not llm_plan.sub_requirements:
+        return base.model_copy(
+            update={
+                "parser_mode": "fallback",
+                "warnings": ["intent_decomposer_empty"],
             }
         )
 

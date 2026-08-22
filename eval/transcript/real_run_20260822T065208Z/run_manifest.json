@@ -1,0 +1,50 @@
+{
+  "mode": "live",
+  "started_at": "2026-08-22T06:52:08.126031+00:00",
+  "model": "deepseek-v4-pro",
+  "llm_base_url_configured": true,
+  "skillhub_base_url": "https://openapi.iwencai.com",
+  "cache_dir": "/Users/Zhuanz1/PycharmProjects/同花顺/eval/cache/live_content_addressed",
+  "image_generation": "disabled_by_evaluation_scope",
+  "cases_planned": [
+    "E-17",
+    "E-18",
+    "E-19",
+    "E-20",
+    "E-29",
+    "E-30",
+    "E-32",
+    "E-33",
+    "E-34",
+    "E-35",
+    "E-36",
+    "E-37",
+    "E-38",
+    "E-40"
+  ],
+  "finished_at": "2026-08-22T07:07:23.022488+00:00",
+  "cases_completed": [
+    "E-17",
+    "E-18",
+    "E-19",
+    "E-20",
+    "E-29",
+    "E-30",
+    "E-32",
+    "E-33",
+    "E-34",
+    "E-35",
+    "E-36",
+    "E-37",
+    "E-38",
+    "E-40"
+  ],
+  "passed": 5,
+  "failed_or_blocked": 9,
+  "external_requests": 95,
+  "cache_hits": 82,
+  "stop": {
+    "code": null,
+    "detail": ""
+  }
+}

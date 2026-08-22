@@ -311,6 +311,8 @@ def build_data_interpreter_graph(
                     evidence_id=item.evidence_id,
                     metric_name=item.metric_name,
                     source_name=item.source_name,
+                    publisher=item.publisher,
+                    retrieval_method=item.retrieval_method,
                     source_locator=item.source_locator,
                     period_end=item.period_end,
                     available_at=item.available_at,

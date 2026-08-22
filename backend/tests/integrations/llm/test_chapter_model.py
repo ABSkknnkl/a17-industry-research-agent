@@ -178,6 +178,46 @@ async def test_deepseek_chapter_normalizes_paragraph_id_alias(alias: str) -> Non
 
 
 @pytest.mark.asyncio
+async def test_deepseek_chapter_normalizes_known_enum_density_and_visual_aliases() -> None:
+    payload = _chapter().model_dump(mode="json")
+    section = payload["sections"][0]
+    section["provider_layout_hint"] = "dense"
+    section["paragraphs"][0]["kind"] = "方法说明"
+    section["paragraphs"][0]["provider_comment"] = "explain"
+    section["visual_semantics"] = {
+        "content_type": "财务明细",
+        "quantitative_density": "较高",
+        "qualitative_density": "较低",
+        "suitable_for_precise_table": True,
+        "provider_visual_hint": "table",
+        "key_metric_count": 3,
+    }
+    response = {
+        "raw": RawMessage(json.dumps(payload, ensure_ascii=False)),
+        "parsed": None,
+        "parsing_error": None,
+    }
+    structured = SequentialStructuredModel([response])
+    model = OpenAICompatibleChapterModel(
+        model_name="deepseek-v4-pro",
+        chat_model=FakeChatModel(structured),  # type: ignore[arg-type]
+    )
+
+    result = await model.generate_chapter(
+        system_prompt="chapter writer prompt",
+        runtime_prompt='{"chapter_config":{}}',
+    )
+
+    normalized = result.sections[0]
+    assert normalized.paragraphs[0].kind == "methodology"
+    assert normalized.visual_semantics.content_type == "financial_detail"
+    assert normalized.visual_semantics.quantitative_density == 0.75
+    assert normalized.visual_semantics.qualitative_density == 0.25
+    assert normalized.visual_semantics.preferred_table is True
+    assert len(structured.messages) == 1
+
+
+@pytest.mark.asyncio
 async def test_deepseek_chapter_retries_one_invalid_structured_response() -> None:
     invalid_payload = _chapter().model_dump(mode="json")
     invalid_payload["sections"][0]["paragraphs"][0]["paragraph_id"] = "invalid-id"

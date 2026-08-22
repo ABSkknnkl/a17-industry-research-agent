@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "1c41d9b432849d3a297134e998dc9b2ff0b01386e96132e6997cd0c0d3ec7d76",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-sector-selector",
+  "request": {
+    "query": "消费成长 成长板块的配置逻辑",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":3943,\"query\":\"消费成长 成长板块的配置逻辑\",\"columns\":[{\"index_name\":\"基金代码\",\"key\":\"基金代码\",\"feKey\":\"基金代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"基金简称\",\"key\":\"基金简称\",\"feKey\":\"基金简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"基金@最新日收益率\",\"key\":\"最新单位净值增长率\",\"feKey\":\"最新单位净值增长率\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"基金@最新单位净值\",\"key\":\"最新单位净值\",\"feKey\":\"最新单位净值\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price||NoIndent\",\"source\":\"index\"},{\"index_name\":\"基金@最新净值日期\",\"key\":\"最新净值日期\",\"feKey\":\"最新净值日期\",\"type\":\"DATE\",\"source\":\"index\"},{\"index_name\":\"基金@最新行业概念名称(虚拟表)\",\"key\":\"行业概念名称\",\"feKey\":\"行业概念名称\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"cz_基金sql指标新增\",\"source\":\"index\"},{\"index_name\":\"基金@最新行业概念持仓数量(虚拟表)\",\"key\":\"持仓数量\",\"feKey\":\"持仓数量\",\"type\":\"DOUBLE\",\"unit\":\"\",\"label\":\"cz_基金sql指标新增\",\"source\":\"index\"},{\"index_name\":\"基金@最新行业概念持仓市值(虚拟表)\",\"key\":\"持仓市值\",\"feKey\":\"持仓市值\",\"type\":\"DOUBLE\",\"unit\":\"\",\"label\":\"cz_基金sql指标新增\",\"source\":\"index\"},{\"index_name\":\"基金@最新行业概念持仓市值占基金资产净值比(虚拟表)\",\"key\":\"持仓市值占基金资产净值比\",\"feKey\":\"持仓市值占基金资产净值比\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"cz_基金sql指标新增\",\"source\":\"index\"}],\"datas\":[],\"row_count\":0,\"code_count\":0,\"chunks_info\":\"[\\\"行业概念名称等于消费成长 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9a91d17874161946527392\"}",
+  "raw_sha256": "9a8a62f655fbe493f159504b326a1353c3c0644451fe6b315228d03b24184f42",
+  "recorded_at": "2026-08-22T16:29:54.645992+00:00"
+}

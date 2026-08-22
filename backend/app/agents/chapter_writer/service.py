@@ -25,6 +25,7 @@ def _planned_charts(analysis: AnalysisResult) -> tuple[ChartReference, ...]:
             chart_type=candidate.chart_type,
             status="planned",
             evidence_ids=candidate.evidence_ids,
+            recommended_chapter_id=candidate.chapter_hint,
         )
         for index, candidate in enumerate(analysis.chart_candidates, start=1)
     )

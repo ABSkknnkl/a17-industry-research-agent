@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "2bca8bdbbf9d1bcf3fcc6265c3ec28f09a23b4b6b6c7b555d904f1d52f2d0140",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "announcement-search",
+  "request": {
+    "query": "动力电池 梳理比亚迪近半年业绩预告事件",
+    "channels": [
+      "announcement"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[],\"abtest_info\":\"\",\"took\":147,\"total\":0,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"动力电池 梳理比亚迪近半年业绩预告事件\"],\"query\":\"动力电池 梳理比亚迪近半年业绩预告事件\",\"integrity_result\":true,\"intents\":[],\"intent\":\"资讯消息-公告\"},\"content_data\":[]}",
+  "raw_sha256": "7557a59189e5d5df50891e4f4c4b6489b98dcc0c950f9f6b6a2ee258c5687709",
+  "recorded_at": "2026-08-22T06:35:42.292192+00:00"
+}

@@ -13,7 +13,7 @@ from app.core.readiness import assert_runtime_configuration, verify_writable_dir
 from app.infrastructure.checkpoint import open_sqlite_checkpointer
 from app.integrations.llm.factory import create_analysis_model, create_chapter_writing_model
 from app.schemas.common import HealthResponse, ReadinessResponse
-from app.runtime.models import RuntimePolicy
+from app.runtime.models import runtime_policy_from_settings
 from app.security.middleware import RequestBodyLimitMiddleware
 from app.workflow.factory import create_stage_registry
 from app.workflow.graph import build_pipeline_graph
@@ -35,17 +35,7 @@ def create_app(*, checkpoint_database_path: Path | None = None) -> FastAPI:
             settings.ARTIFACT_ROOT,
             issue_code="artifact_directory_not_writable",
         )
-        runtime_policy = RuntimePolicy(
-            workflow_timeout_seconds=settings.WORKFLOW_TIMEOUT_SECONDS,
-            stage_timeout_seconds=settings.STAGE_TIMEOUT_SECONDS,
-            tool_timeout_seconds=settings.TOOL_TIMEOUT_SECONDS,
-            max_total_stage_runs=settings.MAX_TOTAL_STAGE_RUNS,
-            max_stage_attempts=settings.MAX_STAGE_ATTEMPTS,
-            max_model_calls=settings.MAX_MODEL_CALLS_PER_RUN,
-            max_tool_calls=settings.MAX_TOOL_CALLS_PER_RUN,
-            max_tool_result_chars=settings.MAX_TOOL_RESULT_CHARS,
-            max_events=settings.MAX_RUNTIME_EVENTS,
-        )
+        runtime_policy = runtime_policy_from_settings()
         async with open_sqlite_checkpointer(checkpoint_path) as checkpointer:
             application.state.workflow_runner = WorkflowRunner(
                 build_pipeline_graph(

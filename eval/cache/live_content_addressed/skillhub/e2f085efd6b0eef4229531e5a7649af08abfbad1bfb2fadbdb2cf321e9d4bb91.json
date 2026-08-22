@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "e2f085efd6b0eef4229531e5a7649af08abfbad1bfb2fadbdb2cf321e9d4bb91",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-event-query",
+  "request": {
+    "query": "查询宁德时代最近一年股权激励公告",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1802,\"query\":\"查询宁德时代最近一年股权激励公告\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"交易日期\",\"key\":\"首次公告日\",\"feKey\":\"首次公告日\",\"type\":\"DATE\",\"unit\":\"\",\"label\":\"标准SQL取数用\",\"source\":\"index\"},{\"index_name\":\"激励授权日\",\"key\":\"激励授权日\",\"feKey\":\"激励授权日\",\"type\":\"DATE\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"方案进度\",\"key\":\"方案进度\",\"feKey\":\"方案进度\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"激励标的物\",\"key\":\"激励标的物\",\"feKey\":\"激励标的物\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"激励总数\",\"key\":\"激励总数\",\"feKey\":\"激励总数\",\"type\":\"DOUBLE\",\"unit\":\"份\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"激励总数占总股本比例\",\"key\":\"激励总数占总股本比例\",\"feKey\":\"激励总数占总股本比例\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"行权价\",\"key\":\"行权价\",\"feKey\":\"行权价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"有效期年数\",\"key\":\"有效期年数\",\"feKey\":\"有效期年数\",\"type\":\"DOUBLE\",\"unit\":\"年\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"股东大会公告日\",\"key\":\"股东大会公告日\",\"feKey\":\"股东大会公告日\",\"type\":\"DATE\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"首次实施公告日\",\"key\":\"首次实施公告日\",\"feKey\":\"首次实施公告日\",\"type\":\"DATE\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"方案说明\",\"key\":\"方案说明\",\"feKey\":\"方案说明\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"授予条件\",\"key\":\"授予条件\",\"feKey\":\"授予条件\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"行权安排说明\",\"key\":\"行权安排说明\",\"feKey\":\"行权安排说明\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"行权特别条件\",\"key\":\"行权特别条件\",\"feKey\":\"行权特别条件\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"每股转让价说明\",\"key\":\"每股转让价说明\",\"feKey\":\"每股转让价说明\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"股票出售说明\",\"key\":\"股票出售说明\",\"feKey\":\"股票出售说明\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"终止原因说明\",\"key\":\"终止原因说明\",\"feKey\":\"终止原因说明\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"}],\"datas\":[{\"股票代码\":\"300750.SZ\",\"股票简称\":\"宁德时代\",\"最新价\":\"391.15\",\"最新涨跌幅\":1.597403}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"宁德时代 (1)\\\",\\\"首次公告日等于近1年且宁德时代 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac984b017874225040782830\"}",
+  "raw_sha256": "093114dc77a28b88f990dddbf50d7ef8356749336964766d67e47bc63ffe8b59",
+  "recorded_at": "2026-08-22T18:15:03.897699+00:00"
+}

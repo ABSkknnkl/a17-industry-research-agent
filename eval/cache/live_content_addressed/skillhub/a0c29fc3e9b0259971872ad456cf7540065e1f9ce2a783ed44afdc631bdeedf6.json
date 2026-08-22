@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "a0c29fc3e9b0259971872ad456cf7540065e1f9ce2a783ed44afdc631bdeedf6",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "report-search",
+  "request": {
+    "query": "动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 宁德时代2023-2025财报做三步杜邦ROE拆解",
+    "channels": [
+      "report"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[],\"abtest_info\":\"\",\"took\":226,\"total\":0,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 宁德时代2023-2025财报做三步杜邦ROE拆解\"],\"query\":\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 宁德时代2023-2025财报做三步杜邦ROE拆解\",\"integrity_result\":true,\"intents\":[],\"intent\":\"资讯消息-研报\"},\"content_data\":[]}",
+  "raw_sha256": "fb75db07d3ccda676da938a4982cc450dee05d2dae83ae4e8b9cf56fab58072d",
+  "recorded_at": "2026-08-22T12:51:37.381167+00:00"
+}

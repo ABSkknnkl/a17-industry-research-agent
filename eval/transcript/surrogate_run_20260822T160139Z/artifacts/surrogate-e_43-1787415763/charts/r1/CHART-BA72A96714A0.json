@@ -1,0 +1,123 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-BA72A96714A0",
+  "chart_type": "line",
+  "data_fingerprint": "795ce22c64949fb2c5009c5cb54a524b03d88ee6e874662b401a3e0764e7fbf9",
+  "dedupe_key": "trend:trend:以bar图呈现营业收入的证据分布，支撑ch-02的论述。:795ce22c64949fb2c5009c5cb54a524b03d88ee6e874662b401a3e0764e7fbf9",
+  "evidence_ids": [
+    "E-4e3cb22c83f1f5e7",
+    "E-9f3fe4a74ca0f360",
+    "E-3da4794fd80861b8",
+    "E-a7a5bfc226228736",
+    "E-a8a7a067f9539bbe",
+    "E-ad9e327cb883effd",
+    "E-3d8b7cd2d2c039cd",
+    "E-f48099443f303213",
+    "E-f1538f8a5af03fc2",
+    "E-009b3593aafadf45"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现营业收入的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德时代": {
+        "2024-03-31": "E-009b3593aafadf45",
+        "2024-06-30": "E-f1538f8a5af03fc2",
+        "2024-09-30": "E-f48099443f303213",
+        "2024-12-31": "E-3d8b7cd2d2c039cd",
+        "2025-03-31": "E-ad9e327cb883effd",
+        "2025-06-30": "E-a8a7a067f9539bbe",
+        "2025-09-30": "E-a7a5bfc226228736",
+        "2025-12-31": "E-3da4794fd80861b8",
+        "2026-03-31": "E-9f3fe4a74ca0f360",
+        "2026-06-30": "E-4e3cb22c83f1f5e7"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          79770779000.0,
+          166766834000.0,
+          259044749000.0,
+          362012554000.0,
+          84704589000.0,
+          178886253000.0,
+          283071987000.0,
+          423701834000.0,
+          129131041000.0,
+          276916580000.0
+        ],
+        "name": "宁德时代",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业收入（宁德时代）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2024-03-31",
+        "2024-06-30",
+        "2024-09-30",
+        "2024-12-31",
+        "2025-03-31",
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "营业收入（宁德时代）",
+  "variant": "line"
+}

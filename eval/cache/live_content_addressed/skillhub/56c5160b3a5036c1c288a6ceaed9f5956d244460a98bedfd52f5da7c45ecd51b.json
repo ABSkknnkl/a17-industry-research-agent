@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "56c5160b3a5036c1c288a6ceaed9f5956d244460a98bedfd52f5da7c45ecd51b",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-stock-selector",
+  "request": {
+    "query": "光伏逆变器 光伏逆变器行业竞争格局",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":915,\"query\":\"光伏逆变器 光伏逆变器行业竞争格局\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"竞争对手\",\"key\":\"竞争对手\",\"feKey\":\"竞争对手\",\"type\":\"ARRAY\",\"unit\":\"\",\"label\":\"问财付费指标选股策略\",\"source\":\"index\"}],\"datas\":[],\"row_count\":0,\"code_count\":0,\"chunks_info\":\"[\\\"竞争对手包含光伏逆变器 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9822717874191700196975\"}",
+  "raw_sha256": "22e369da806ddf029f7b439fc8bbae60d40e8c54deedaaf09d79ec5c3ff86d19",
+  "recorded_at": "2026-08-22T17:19:29.919294+00:00"
+}

@@ -1,0 +1,103 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-0CE3A210EC90",
+  "chart_type": "line",
+  "data_fingerprint": "2d58c9017a78ab0cb7624b28ff734d36a1e63678d74c0941c3717dcda3fc7925",
+  "dedupe_key": "trend:trend:展示开发投资变化:2d58c9017a78ab0cb7624b28ff734d36a1e63678d74c0941c3717dcda3fc7925",
+  "evidence_ids": [
+    "E-INV-2021",
+    "E-INV-2022",
+    "E-INV-2023",
+    "E-INV-2024",
+    "E-INV-2025"
+  ],
+  "footnotes": [
+    "financial_quality：测试未提供上市公司财务报表。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "展示开发投资变化",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "默认": {
+        "2021": "E-INV-2021",
+        "2022": "E-INV-2022",
+        "2023": "E-INV-2023",
+        "2024": "E-INV-2024",
+        "2025": "E-INV-2025"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          100.0,
+          90.0,
+          81.0,
+          72.0,
+          67.0
+        ],
+        "name": "默认",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "房地产开发投资指数"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2021",
+        "2022",
+        "2023",
+        "2024",
+        "2025"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "指数",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": null,
+  "title": "房地产开发投资指数",
+  "variant": "line"
+}

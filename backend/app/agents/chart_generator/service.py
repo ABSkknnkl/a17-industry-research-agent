@@ -21,6 +21,7 @@ from app.agents.chart_generator.builders import (
     build_treemap_option,
 )
 from app.agents.chart_generator.datasets import (
+    build_evidence_backed_chain_dataset,
     match_datasets,
     validate_dataset_consistency,
 )
@@ -579,7 +580,30 @@ class ChartGeneratorAgent:
         family_counts: dict[str, int] = {}
 
         for candidate in candidates:
-            match = match_datasets(candidate.title, candidate.evidence_ids, datasets)
+            candidate_datasets = datasets
+            if candidate.chart_type == "industry_chain" and not any(
+                set(candidate.evidence_ids).issubset(set(dataset.evidence_ids))
+                for dataset in datasets
+                if dataset.kind == "industry_chain"
+            ):
+                derived_chain = build_evidence_backed_chain_dataset(
+                    candidate.title,
+                    candidate.insight_goal,
+                    candidate.evidence_ids,
+                    [
+                        item
+                        for item in source.get("evidence_items", [])
+                        if isinstance(item, dict)
+                    ],
+                )
+                if derived_chain is not None:
+                    candidate_datasets = [*datasets, derived_chain]
+            match = match_datasets(
+                candidate.title,
+                candidate.evidence_ids,
+                candidate_datasets,
+                candidate_chart_type=candidate.chart_type,
+            )
             suppressed.extend(match.suppressed)
             if match.review_required:
                 ambiguous_reasons.append(match.review_reason)
@@ -877,6 +901,7 @@ class ChartGeneratorAgent:
                     footnotes.append("产业链生图不可用，本次使用确定性结构图降级。")
             spec = ChartSpec(
                 chart_id=chart_id,
+                user_requested=candidate.user_requested,
                 title=title,
                 chart_type=route.chart_type,
                 requested_chart_type=requested_type,
@@ -914,6 +939,7 @@ class ChartGeneratorAgent:
             references.append(
                 ChartReference(
                     chart_id=chart_id,
+                    user_requested=candidate.user_requested,
                     title=title,
                     chart_type=route.chart_type,
                     requested_chart_type=requested_type,
@@ -924,6 +950,7 @@ class ChartGeneratorAgent:
                     quality_issue_ids=[issue.issue_id for issue in linked_issues],
                     footnotes=footnotes,
                     artifact_id=artifact_id,
+                    recommended_chapter_id=candidate.chapter_hint,
                 )
             )
             if image_artifact is not None:
@@ -1051,7 +1078,13 @@ class ChartGeneratorAgent:
         # Agent 3 never converts a professional chart issue into a pipeline stop.
         existing_risk_codes = {notice.risk_code for notice in all_risk_notices}
         for item in hard_suppressed:
-            risk_code = f"CHART-{item.reason_code.replace('_', '-').upper()}"
+            # Keep the public aggregate risk code stable while the suppressed
+            # candidate carries the more precise C1 diagnostic.
+            risk_code = (
+                "CHART-NO-MATCHING-DATASET"
+                if item.reason_code == "incomplete_dataset_union"
+                else f"CHART-{item.reason_code.replace('_', '-').upper()}"
+            )
             if risk_code in existing_risk_codes:
                 continue
             all_risk_notices.append(
