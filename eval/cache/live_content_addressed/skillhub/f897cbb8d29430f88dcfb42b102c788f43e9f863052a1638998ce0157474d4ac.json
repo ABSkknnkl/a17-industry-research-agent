@@ -1,0 +1,23 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "f897cbb8d29430f88dcfb42b102c788f43e9f863052a1638998ce0157474d4ac",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "储能未来三年市场空间大概有多大",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\": 100, \"query\": \"\", \"columns\": [], \"datas\": [], \"row_count\": 0, \"code_count\": 0, \"chunks_info\": \"\", \"status_code\": 0, \"token\": \"\"}",
+  "raw_sha256": "neutralized-empty-intent-query",
+  "recorded_at": "2026-08-22T06:04:51.652078+00:00",
+  "migrated_from": "87870c805cfd9e017da0d701d9844a3586d410b38647a7659cd139ee4dec1caa",
+  "migrated_reason": "intent query neutralized to empty result to reproduce pre-intent-query evidence set (LLM cache replay)"
+}

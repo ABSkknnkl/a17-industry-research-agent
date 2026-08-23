@@ -1,0 +1,96 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-88871FCAB39B",
+  "chart_type": "line",
+  "data_fingerprint": "91bdfec37d4d04daa308abff3e907153cbda772c17377a5c323f66b352e9ba07",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:91bdfec37d4d04daa308abff3e907153cbda772c17377a5c323f66b352e9ba07",
+  "evidence_ids": [
+    "E-25452ebba21e0cca",
+    "E-7ae755d65aaeff27",
+    "E-9f523e33b444d9e2",
+    "E-ac2e0b1ed98011ef"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "平均汇率:一美元折合人民币元": {
+        "2026-04-30": "E-ac2e0b1ed98011ef",
+        "2026-05-31": "E-9f523e33b444d9e2",
+        "2026-06-30": "E-7ae755d65aaeff27",
+        "2026-07-31": "E-25452ebba21e0cca"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          6.8683,
+          6.8385,
+          6.8154,
+          6.797
+        ],
+        "name": "平均汇率:一美元折合人民币元",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（平均汇率:一美元折合人民币元）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2026-04-30",
+        "2026-05-31",
+        "2026-06-30",
+        "2026-07-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（平均汇率:一美元折合人民币元）",
+  "user_requested": false,
+  "variant": "line"
+}

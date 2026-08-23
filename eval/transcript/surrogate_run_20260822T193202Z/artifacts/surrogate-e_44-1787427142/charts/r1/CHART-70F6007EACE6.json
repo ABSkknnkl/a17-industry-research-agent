@@ -1,0 +1,116 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-70F6007EACE6",
+  "chart_type": "line",
+  "data_fingerprint": "0d385d1a40884ec5504d1ba18288634eeb93469a530f1edfa318a2509a42ef33",
+  "dedupe_key": "trend:trend:以line图呈现宏观@值的证据分布，支撑ch-02的论述。:0d385d1a40884ec5504d1ba18288634eeb93469a530f1edfa318a2509a42ef33",
+  "evidence_ids": [
+    "E-393768609c127352",
+    "E-f2383d8023af7453",
+    "E-2f85bd021c61a7db",
+    "E-ab988e905a8334f9",
+    "E-203f2026ca8fa094",
+    "E-491fcd5a01fee757",
+    "E-280324691695bb81",
+    "E-3415d56a199e99e6"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以line图呈现宏观@值的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "动力和其他电池产量:当月值": {
+        "2025-12-31": "E-3415d56a199e99e6",
+        "2026-01-31": "E-280324691695bb81",
+        "2026-02-28": "E-491fcd5a01fee757",
+        "2026-03-31": "E-203f2026ca8fa094",
+        "2026-04-30": "E-ab988e905a8334f9",
+        "2026-05-31": "E-2f85bd021c61a7db",
+        "2026-06-30": "E-f2383d8023af7453",
+        "2026-07-31": "E-393768609c127352"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          201700.0,
+          168000.0,
+          141600.0,
+          177700.0,
+          183900.0,
+          191700.0,
+          206000.0,
+          218000.0
+        ],
+        "name": "动力和其他电池产量:当月值",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（动力和其他电池产量:当月值）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-12-31",
+        "2026-01-31",
+        "2026-02-28",
+        "2026-03-31",
+        "2026-04-30",
+        "2026-05-31",
+        "2026-06-30",
+        "2026-07-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": null,
+  "title": "宏观@值（动力和其他电池产量:当月值）",
+  "user_requested": false,
+  "variant": "line"
+}

@@ -1,0 +1,132 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-0D25491DED71",
+  "chart_type": "line",
+  "data_fingerprint": "89a47e2313ad08f1a22570c85669c3c8caab28d14b48b941074c850b738b3f92",
+  "dedupe_key": "trend:trend:以line图呈现宏观@值的证据分布，支撑ch-06的论述。:89a47e2313ad08f1a22570c85669c3c8caab28d14b48b941074c850b738b3f92",
+  "evidence_ids": [
+    "E-76bced98c1b047f3",
+    "E-7a5e5af0cefc2cc3",
+    "E-f1f0873814d29b58",
+    "E-04996e0ca600b4cd",
+    "E-bb318264f1e60e2b",
+    "E-f74b17b39dd8815b",
+    "E-b13f07deeebafc78",
+    "E-04d1c5e06366d57c",
+    "E-2131d59c127891a2",
+    "E-08452e0d7e7c417a",
+    "E-ae6f6947c484ef2f",
+    "E-d59b925ca1f3b00e"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以line图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "CPI:当月同比": {
+        "2025-08-31": "E-d59b925ca1f3b00e",
+        "2025-09-30": "E-ae6f6947c484ef2f",
+        "2025-10-31": "E-08452e0d7e7c417a",
+        "2025-11-30": "E-2131d59c127891a2",
+        "2025-12-31": "E-04d1c5e06366d57c",
+        "2026-01-31": "E-b13f07deeebafc78",
+        "2026-02-28": "E-f74b17b39dd8815b",
+        "2026-03-31": "E-bb318264f1e60e2b",
+        "2026-04-30": "E-04996e0ca600b4cd",
+        "2026-05-31": "E-f1f0873814d29b58",
+        "2026-06-30": "E-7a5e5af0cefc2cc3",
+        "2026-07-31": "E-76bced98c1b047f3"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          -0.4,
+          -0.3,
+          0.2,
+          0.7,
+          0.8,
+          0.2,
+          1.3,
+          1.0,
+          1.2,
+          1.2,
+          1.0,
+          0.5
+        ],
+        "name": "CPI:当月同比",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（CPI:当月同比）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-08-31",
+        "2025-09-30",
+        "2025-10-31",
+        "2025-11-30",
+        "2025-12-31",
+        "2026-01-31",
+        "2026-02-28",
+        "2026-03-31",
+        "2026-04-30",
+        "2026-05-31",
+        "2026-06-30",
+        "2026-07-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": null,
+  "title": "宏观@值（CPI:当月同比）",
+  "user_requested": false,
+  "variant": "line"
+}

@@ -1,0 +1,128 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-A2805EFE1A5A",
+  "chart_type": "line",
+  "data_fingerprint": "e3bc30af32193af65848b7d247a4bb1fb7549135809b331dddeeaed8aee0eb6e",
+  "dedupe_key": "trend:trend:以bar图呈现成交额的证据分布，支撑ch-02的论述。:e3bc30af32193af65848b7d247a4bb1fb7549135809b331dddeeaed8aee0eb6e",
+  "evidence_ids": [
+    "E-16b443c1464f5ea7",
+    "E-44fe37deb6099c1a",
+    "E-1b25ce062a7c0a34",
+    "E-0ecf19dd1e765401",
+    "E-6c8c84f989b7711c",
+    "E-fd8beaa7190a2bb5",
+    "E-58ae4429e95c157c",
+    "E-30380b965f0ffe6a",
+    "E-0a6b0952c0f82035",
+    "E-c6ce397cf4b40ea2",
+    "E-1799e44d871cced2",
+    "E-69d1bcf806ce9737"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现成交额的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "储能": {
+        "2026-07-27": "E-69d1bcf806ce9737",
+        "2026-07-28": "E-1799e44d871cced2",
+        "2026-07-29": "E-c6ce397cf4b40ea2",
+        "2026-07-30": "E-0a6b0952c0f82035",
+        "2026-07-31": "E-30380b965f0ffe6a",
+        "2026-08-03": "E-58ae4429e95c157c",
+        "2026-08-04": "E-fd8beaa7190a2bb5",
+        "2026-08-05": "E-6c8c84f989b7711c",
+        "2026-08-06": "E-0ecf19dd1e765401",
+        "2026-08-07": "E-1b25ce062a7c0a34",
+        "2026-08-10": "E-44fe37deb6099c1a",
+        "2026-08-11": "E-16b443c1464f5ea7"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          387312750000.0,
+          381456930000.0,
+          436439800000.0,
+          420538260000.0,
+          450089030000.0,
+          361801880000.0,
+          406340460000.0,
+          494385250000.0,
+          465668280000.0,
+          490596790000.0,
+          456008620000.0,
+          425726570000.0
+        ],
+        "name": "储能",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "成交额（储能）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2026-07-27",
+        "2026-07-28",
+        "2026-07-29",
+        "2026-07-30",
+        "2026-07-31",
+        "2026-08-03",
+        "2026-08-04",
+        "2026-08-05",
+        "2026-08-06",
+        "2026-08-07",
+        "2026-08-10",
+        "2026-08-11"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "成交额（储能）",
+  "user_requested": false,
+  "variant": "line"
+}

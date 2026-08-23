@@ -1,0 +1,23 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "1079811822b0006a5b31c2e2b631dd551071fe515eeceb10b27b4be0094e765a",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "储能未来三年市场空间大概有多大行业估值和盈利",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\": 100, \"query\": \"\", \"columns\": [], \"datas\": [], \"row_count\": 0, \"code_count\": 0, \"chunks_info\": \"\", \"status_code\": 0, \"token\": \"\"}",
+  "raw_sha256": "neutralized-empty-intent-query",
+  "recorded_at": "2026-08-22T06:05:07.738736+00:00",
+  "migrated_from": "1e264dbc73c1f927d5a61b36c86c453e0ac912bb1a97ea6a38feb5d8dd38593e",
+  "migrated_reason": "intent query neutralized to empty result to reproduce pre-intent-query evidence set (LLM cache replay)"
+}

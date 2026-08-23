@@ -1,0 +1,189 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-85EF429DB467",
+  "chart_type": "bar",
+  "data_fingerprint": "4e5b9f0a54d8adeb7cd1b322509b1e283d84b711e1594a123346aff611c9349a",
+  "dedupe_key": "comparison:comparison:以bar图呈现营业收入的证据分布，支撑ch-02的论述。:4e5b9f0a54d8adeb7cd1b322509b1e283d84b711e1594a123346aff611c9349a",
+  "evidence_ids": [
+    "E-e98faf88bd1b9903",
+    "E-b0daceb20468e79e",
+    "E-1294de4d1beeebd5",
+    "E-fe033388800620f5",
+    "E-cebcb83d9c2aef60"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现营业收入的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-b0daceb20468e79e",
+            "value": 233432768960.43
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "万科A",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-fe033388800620f5",
+            "value": 395737287.76
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "全新好",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "evidence_id": "E-e98faf88bd1b9903",
+            "value": 131442000000.0
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "平安银行",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-1294de4d1beeebd5",
+            "value": 2618016381.31
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "深振业A",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-cebcb83d9c2aef60",
+            "value": 2120399134.77
+          }
+        ],
+        "name": "神州高铁",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业收入（平安银行）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "平安银行",
+        "万科A",
+        "深振业A",
+        "全新好",
+        "神州高铁"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "营业收入（平安银行）",
+  "user_requested": false,
+  "variant": "grouped"
+}

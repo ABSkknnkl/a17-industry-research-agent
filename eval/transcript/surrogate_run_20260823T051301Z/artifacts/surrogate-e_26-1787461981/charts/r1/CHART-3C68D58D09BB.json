@@ -1,0 +1,102 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-3C68D58D09BB",
+  "chart_type": "line",
+  "data_fingerprint": "8e7b7ebf06e8a936a2db2d7585df57185667648ada8a0d040066dd36f426c8c9",
+  "dedupe_key": "trend:trend:以bar图呈现营业成本的证据分布，支撑ch-02的论述。:8e7b7ebf06e8a936a2db2d7585df57185667648ada8a0d040066dd36f426c8c9",
+  "evidence_ids": [
+    "E-79ad498fcd9de9e1",
+    "E-7c66d4bc9ada591e",
+    "E-9ce836d312d1da46"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现营业成本的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "东方材料": {
+        "2025-12-31": "E-7c66d4bc9ada591e"
+      },
+      "威尔药业": {
+        "2025-12-31": "E-9ce836d312d1da46",
+        "2026-06-30": "E-79ad498fcd9de9e1"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          269582771.99,
+          null
+        ],
+        "name": "东方材料",
+        "showSymbol": true,
+        "type": "line"
+      },
+      {
+        "connectNulls": false,
+        "data": [
+          955039689.35,
+          535364295.56
+        ],
+        "name": "威尔药业",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业成本（威尔药业）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-12-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "营业成本（威尔药业）",
+  "user_requested": false,
+  "variant": "line"
+}

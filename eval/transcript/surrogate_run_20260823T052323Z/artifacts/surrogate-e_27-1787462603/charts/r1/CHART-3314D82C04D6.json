@@ -1,0 +1,88 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-3314D82C04D6",
+  "chart_type": "line",
+  "data_fingerprint": "af8c2c11b5b6a79e436b93b8950d1732953734edcd34e5e958617ab58c791369",
+  "dedupe_key": "trend:trend:以bar图呈现营业成本的证据分布，支撑ch-02的论述。:af8c2c11b5b6a79e436b93b8950d1732953734edcd34e5e958617ab58c791369",
+  "evidence_ids": [
+    "E-85d9ca9374512188",
+    "E-2b7f777abeb7cda0"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现营业成本的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德时代": {
+        "2025-12-31": "E-2b7f777abeb7cda0",
+        "2026-06-30": "E-85d9ca9374512188"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          312383297000.0,
+          210654890000.0
+        ],
+        "name": "宁德时代",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业成本（宁德时代）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-12-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "营业成本（宁德时代）",
+  "user_requested": false,
+  "variant": "line"
+}

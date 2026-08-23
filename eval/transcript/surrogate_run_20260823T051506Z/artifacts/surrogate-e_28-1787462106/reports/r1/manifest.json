@@ -1,0 +1,113 @@
+{
+  "artifacts": [
+    {
+      "artifact_id": "ARTIFACT-REPORT-70F16EB4FA57-R1-REPORT_MARKDOWN",
+      "kind": "report_markdown",
+      "sha256": "14c9c593770fdc938dc522265e295e1a4e9bf60f797f264ef7f747f4bd8160c7",
+      "size_bytes": 56605,
+      "uri": "surrogate-e_28-1787462106/reports/r1/report.md"
+    },
+    {
+      "artifact_id": "ARTIFACT-REPORT-70F16EB4FA57-R1-REPORT_HTML",
+      "kind": "report_html",
+      "sha256": "2e975867358720c554cf7bd8268992df5293db3e543ee78ca2ae930105ecf638",
+      "size_bytes": 94861,
+      "uri": "surrogate-e_28-1787462106/reports/r1/report.html"
+    },
+    {
+      "artifact_id": "ARTIFACT-REPORT-70F16EB4FA57-R1-REPORT_PDF",
+      "kind": "report_pdf",
+      "sha256": "3c788cd76fda6265b2b95c2762a5be91fcc32a415f675a35e45d9c02335690e4",
+      "size_bytes": 1888563,
+      "uri": "surrogate-e_28-1787462106/reports/r1/report.pdf"
+    }
+  ],
+  "delivery_status": "ready_with_limits",
+  "generated_at": "2026-08-23T05:15:06.948727+00:00",
+  "included_chart_ids": [
+    "CHART-3D858FF98C92",
+    "CHART-52CD77E89FED",
+    "CHART-A810D86C0F69",
+    "CHART-E165E4AC32AF",
+    "CHART-CA9A9139CBBE",
+    "CHART-EDA8B9252A92",
+    "CHART-F2D959FC95C1",
+    "CHART-90B2FC590B75"
+  ],
+  "quality": {
+    "chapter_count": 7,
+    "evidence_coverage": 1.0,
+    "included_chart_count": 8,
+    "issues": [],
+    "passed": true,
+    "section_count": 21
+  },
+  "report_depth": "standard",
+  "report_id": "REPORT-70F16EB4FA57-R1",
+  "schema_version": "1.0",
+  "source_revisions": [
+    {
+      "revision": 1,
+      "stage": "data_interpret"
+    },
+    {
+      "revision": 1,
+      "stage": "chart_generate"
+    },
+    {
+      "revision": 1,
+      "stage": "chapter_write"
+    }
+  ],
+  "visual_decision": {
+    "chart_density": "medium",
+    "density": "balanced",
+    "effective_style": "analysis_note",
+    "override_warnings": [],
+    "per_chapter_strategy": {
+      "CH-01": {
+        "chart_count": 0,
+        "dominant_content": "summary",
+        "table_candidate_count": 0
+      },
+      "CH-02": {
+        "chart_count": 8,
+        "dominant_content": "time_series",
+        "table_candidate_count": 0
+      },
+      "CH-03": {
+        "chart_count": 0,
+        "dominant_content": "industry_chain",
+        "table_candidate_count": 0
+      },
+      "CH-04": {
+        "chart_count": 0,
+        "dominant_content": "comparison",
+        "table_candidate_count": 3
+      },
+      "CH-05": {
+        "chart_count": 0,
+        "dominant_content": "financial_detail",
+        "table_candidate_count": 2
+      },
+      "CH-06": {
+        "chart_count": 0,
+        "dominant_content": "narrative",
+        "table_candidate_count": 0
+      },
+      "CH-07": {
+        "chart_count": 0,
+        "dominant_content": "risk",
+        "table_candidate_count": 0
+      }
+    },
+    "recommendation_reasons": [
+      "图表、精确数据与解释性文字相对均衡",
+      "采用默认分析笔记型以保持阅读节奏"
+    ],
+    "recommended_style": "analysis_note",
+    "requested_style": "auto",
+    "selection_source": "agent_recommendation",
+    "table_priority": "high"
+  }
+}

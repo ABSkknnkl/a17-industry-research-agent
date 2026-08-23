@@ -1,0 +1,104 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-6BB4DE51E035",
+  "chart_type": "line",
+  "data_fingerprint": "dfca4dcbee51643bc79d1ca7fc0e0d82390309c23e9d90c6af210bba36357c26",
+  "dedupe_key": "trend:trend:以bar图呈现营业收入的证据分布，支撑ch-02的论述。:dfca4dcbee51643bc79d1ca7fc0e0d82390309c23e9d90c6af210bba36357c26",
+  "evidence_ids": [
+    "E-571bdd54afb5c812",
+    "E-0b6126f3cbc4bee7",
+    "E-60d1c16602f1602c",
+    "E-b9ffb5a4e431f1c3",
+    "E-226011e75d497fc6"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现营业收入的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德时代": {
+        "2025-06-30": "E-226011e75d497fc6",
+        "2025-09-30": "E-b9ffb5a4e431f1c3",
+        "2025-12-31": "E-60d1c16602f1602c",
+        "2026-03-31": "E-0b6126f3cbc4bee7",
+        "2026-06-30": "E-571bdd54afb5c812"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          178886253000.0,
+          283071987000.0,
+          423701834000.0,
+          129131041000.0,
+          276916580000.0
+        ],
+        "name": "宁德时代",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业收入（宁德时代）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "营业收入（宁德时代）",
+  "user_requested": false,
+  "variant": "line"
+}

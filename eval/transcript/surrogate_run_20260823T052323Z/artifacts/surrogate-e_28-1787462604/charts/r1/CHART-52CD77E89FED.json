@@ -1,0 +1,99 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-52CD77E89FED",
+  "chart_type": "bar",
+  "data_fingerprint": "b81932b543e9676c4a5321c3d443ef47db7c7a951cd94ecccb7509b83f8f7b58",
+  "dedupe_key": "comparison:comparison:以bar图呈现营业收入的证据分布，支撑ch-02的论述。:b81932b543e9676c4a5321c3d443ef47db7c7a951cd94ecccb7509b83f8f7b58",
+  "evidence_ids": [
+    "E-9ff6536f5f37bd46",
+    "E-367c4d0d71532ad1"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现营业收入的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-9ff6536f5f37bd46",
+            "value": 423701834000.0
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "宁德时代",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-367c4d0d71532ad1",
+            "value": 803964958000.0
+          }
+        ],
+        "name": "比亚迪",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业收入（宁德时代）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "宁德时代",
+        "比亚迪"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "营业收入（宁德时代）",
+  "user_requested": true,
+  "variant": "grouped"
+}

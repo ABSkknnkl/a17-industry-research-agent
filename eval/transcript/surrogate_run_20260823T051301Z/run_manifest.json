@@ -1,0 +1,30 @@
+{
+  "mode": "surrogate",
+  "llm_mode": "surrogate",
+  "skillhub_mode": "live",
+  "model": "surrogate-ai-v8",
+  "llm_base_url_configured": true,
+  "skillhub_base_url": "https://openapi.iwencai.com",
+  "cache_dir": "/Users/Zhuanz1/PycharmProjects/同花顺/eval/cache/live_content_addressed",
+  "image_generation": "disabled_by_evaluation_scope",
+  "started_at": "2026-08-23T05:13:01.556718+00:00",
+  "cases_planned": [
+    "E-26",
+    "E-27",
+    "E-28"
+  ],
+  "finished_at": "2026-08-23T05:13:04.280915+00:00",
+  "cases_completed": [
+    "E-26",
+    "E-27",
+    "E-28"
+  ],
+  "passed": 2,
+  "failed_or_blocked": 1,
+  "external_requests": 0,
+  "cache_hits": 74,
+  "stop": {
+    "code": null,
+    "detail": ""
+  }
+}

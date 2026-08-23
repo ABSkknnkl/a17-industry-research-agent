@@ -1,0 +1,192 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-D02A6006F890",
+  "chart_type": "bar",
+  "data_fingerprint": "248fb322289385c8ff86d78a4ddcd6a35105ac7c064a58c1a471ed307b28243e",
+  "dedupe_key": "comparison:comparison:以bar图呈现最新价的证据分布，支撑ch-02的论述。:248fb322289385c8ff86d78a4ddcd6a35105ac7c064a58c1a471ed307b28243e",
+  "evidence_ids": [
+    "E-e5a83454ee311b2f",
+    "E-571165ed72c963f1",
+    "E-656dc11e3210c456",
+    "E-10286ef512a1980d",
+    "E-72adf965c3398d79",
+    "E-ec006308e316df5d",
+    "E-5fee7e35aafb8d58",
+    "E-0c039f74cb0bcbb1"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现最新价的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-ec006308e316df5d",
+            "value": 5.03
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "TCL科技",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "evidence_id": "E-72adf965c3398d79",
+            "value": 3.72
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "南玻A",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-0c039f74cb0bcbb1",
+            "value": 3.55
+          }
+        ],
+        "name": "方大集团",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-10286ef512a1980d",
+            "value": 6.7
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "深赛格",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-5fee7e35aafb8d58",
+            "value": 15.06
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "特发信息",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "最新价（南玻A）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "南玻A",
+        "深赛格",
+        "TCL科技",
+        "特发信息",
+        "方大集团"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "最新价（南玻A）",
+  "user_requested": false,
+  "variant": "grouped"
+}

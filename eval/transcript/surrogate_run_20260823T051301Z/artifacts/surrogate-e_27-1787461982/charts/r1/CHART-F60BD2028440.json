@@ -1,0 +1,88 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-F60BD2028440",
+  "chart_type": "line",
+  "data_fingerprint": "fe61b22d040adec1665999d4e5a352ce1061fd0b9a0dbe9ba3f537b4c152839c",
+  "dedupe_key": "trend:trend:以bar图呈现研发费用 / 营业收入的证据分布，支撑ch-02的论述。:fe61b22d040adec1665999d4e5a352ce1061fd0b9a0dbe9ba3f537b4c152839c",
+  "evidence_ids": [
+    "E-bdb0015eb986148c",
+    "E-6440b7b23a68a3e6"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现研发费用 / 营业收入的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德时代": {
+        "2025-12-31": "E-6440b7b23a68a3e6",
+        "2026-06-30": "E-bdb0015eb986148c"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          0.052269259235729434,
+          0.04108293190678579
+        ],
+        "name": "宁德时代",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "研发费用 / 营业收入（宁德时代）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-12-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "研发费用 / 营业收入（宁德时代）",
+  "user_requested": false,
+  "variant": "line"
+}

@@ -1,0 +1,153 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-384EED7E6F36",
+  "chart_type": "bar",
+  "data_fingerprint": "d99ce5f9c9bc2b41bb707c82efd165a4c4cf43043af570fee437e45b4bf003da",
+  "dedupe_key": "comparison:comparison:以line图呈现归母净利润同比增长率的证据分布，支撑ch-02的论述。:d99ce5f9c9bc2b41bb707c82efd165a4c4cf43043af570fee437e45b4bf003da",
+  "evidence_ids": [
+    "E-59f971342dca81b5",
+    "E-7fb93cd6dc6b6f38",
+    "E-1b6fab0ecc0369e2",
+    "E-278b482b71b8f07c"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以line图呈现归母净利润同比增长率的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-7fb93cd6dc6b6f38",
+            "value": -78.97999999999999
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "万科A",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-278b482b71b8f07c",
+            "value": -96.5842
+          }
+        ],
+        "name": "全新好",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "evidence_id": "E-59f971342dca81b5",
+            "value": -4.2127
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "平安银行",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-1b6fab0ecc0369e2",
+            "value": 97.3056
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "深振业A",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "归母净利润同比增长率（平安银行）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "平安银行",
+        "万科A",
+        "深振业A",
+        "全新好"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY %",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": "请求图表 line 与数据集 categorical 不匹配，已确定性调整为 bar：图表类型 line 需要 time_series 数据，当前数据集为 categorical",
+  "title": "归母净利润同比增长率（平安银行）",
+  "user_requested": false,
+  "variant": "grouped"
+}

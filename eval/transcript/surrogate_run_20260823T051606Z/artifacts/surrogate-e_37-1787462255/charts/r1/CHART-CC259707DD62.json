@@ -1,0 +1,189 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-CC259707DD62",
+  "chart_type": "bar",
+  "data_fingerprint": "d5039bee7221058e44fb6a4cdafc0d251e7f47c63f6c272c960af5b022ca2088",
+  "dedupe_key": "comparison:comparison:以line图呈现营业收入同比增长率的证据分布，支撑ch-02的论述。:d5039bee7221058e44fb6a4cdafc0d251e7f47c63f6c272c960af5b022ca2088",
+  "evidence_ids": [
+    "E-ed59208cf12e4951",
+    "E-50afecd6f277fd68",
+    "E-e269aafeec073a14",
+    "E-1e6cc48f6772b9a4",
+    "E-91085abfc4e2d7bd"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以line图呈现营业收入同比增长率的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-50afecd6f277fd68",
+            "value": -31.978800000000003
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "万科A",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-1e6cc48f6772b9a4",
+            "value": 28.7889
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "全新好",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "evidence_id": "E-ed59208cf12e4951",
+            "value": -10.3978
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "平安银行",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-e269aafeec073a14",
+            "value": -56.8337
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "深振业A",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-91085abfc4e2d7bd",
+            "value": 1.8437
+          }
+        ],
+        "name": "神州高铁",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业收入同比增长率（平安银行）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "平安银行",
+        "万科A",
+        "深振业A",
+        "全新好",
+        "神州高铁"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY %",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": "请求图表 line 与数据集 categorical 不匹配，已确定性调整为 bar：图表类型 line 需要 time_series 数据，当前数据集为 categorical",
+  "title": "营业收入同比增长率（平安银行）",
+  "user_requested": false,
+  "variant": "grouped"
+}

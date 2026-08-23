@@ -188,6 +188,15 @@ def normalize_tasks(
     # downstream model context, but provenance must never disappear merely
     # because an earlier high-volume skill consumed that evidence budget.
     for result in executed:
+        # Intent tasks carry their own retrieval semantics (entity +
+        # intent keywords); their rows are judged against the task
+        # query tokens as well as the industry baseline topic.
+        intent_relevance_tokens = (
+            _query_relevance_tokens(result.task.query)
+            | frozenset(result.task.target_entities)
+            if getattr(result.task, "task_origin", "baseline") != "baseline"
+            else frozenset()
+        )
         for payload in result.payloads:
             raw_row_count += len(payload.rows)
             source_digest = hashlib.sha256(
@@ -257,10 +266,16 @@ def normalize_tasks(
                         )
                     )
                     continue
-                if _is_low_relevance(
+                # hithink_sector_selector is a screening skill:
+                # membership is the provider core filter and constituent
+                # rows declare their own industries which never contain
+                # the basket name, so topic matching can only false-
+                # quarantine them (E-48 root cause).
+                if payload.skill_name != SkillName.SECTOR and _is_low_relevance(
                     cleaned,
                     industry_topic,
                     require_text_match=payload.skill_name in _TEXT_SEARCH_SKILLS,
+                    extra_tokens=intent_relevance_tokens,
                 ):
                     quarantined.append(
                         QuarantinedRecord(
@@ -474,6 +489,41 @@ def _topic_tokens(topic: str) -> set[str]:
     return tokens
 
 
+_QUERY_TOKEN_STOPWORDS = frozenset(
+    {
+        "公告",
+        "事件",
+        "最新",
+        "研究",
+        "新闻",
+        "财报",
+        "业绩预告",
+        "机构覆盖",
+        "盈利预测",
+        "评级",
+        "目标价",
+        "价格走势",
+        "价格",
+        "对比",
+        "分析",
+        "归因",
+        "配置逻辑",
+        "板块",
+        "概念股",
+    }
+)
+
+
+def _query_relevance_tokens(query: str) -> frozenset[str]:
+    """Entity/subject tokens of an intent query; generic words drop."""
+    tokens: set[str] = set()
+    for raw in query.split():
+        token = re.sub(r"(?:行业|产业链|产业|板块|概念|市场)$", "", raw.strip())
+        if len(token) >= 2 and token not in _QUERY_TOKEN_STOPWORDS:
+            tokens.add(token)
+    return frozenset(tokens)
+
+
 def _normalized_identity(value: str) -> str:
     return re.sub(r"[\s（）()\-_/]+", "", value).casefold()
 
@@ -515,7 +565,19 @@ def _is_low_relevance(
     industry_topic: str,
     *,
     require_text_match: bool = False,
+    extra_tokens: frozenset[str] = frozenset(),
 ) -> bool:
+    if extra_tokens:
+        # Intent sub-requirements carry their own retrieval semantics
+        # (entity + intent keywords); a row matching any query token is
+        # on-topic for that task even when it is off-topic for the
+        # industry baseline (E-41: a company announcement row is not a
+        # sector row but is exactly what the sub-requirement asked for).
+        searchable = " ".join(
+            str(value) for value in row.values() if isinstance(value, str)
+        )
+        if any(token in searchable for token in extra_tokens):
+            return False
     declared = [str(row[field]).strip() for field in _RELEVANCE_FIELDS if row.get(field)]
     if not declared:
         if not require_text_match:

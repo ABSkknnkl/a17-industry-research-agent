@@ -437,9 +437,19 @@ def _chart_count_from_text(text: str) -> int | None:
     if match is None:
         return None
     token = match.group(1)
-    if token.isdigit():
-        return int(token)
-    return _CN_NUM.get(token)
+    base = int(token) if token.isdigit() else _CN_NUM.get(token)
+    if base is None:
+        return None
+    # Distributive phrasing (各出一张图 / 分别出两张图) asks for N
+    # charts per mentioned subject, so the total is N times the
+    # number of distinct companies in the request (E-28: 宁德时代 and
+    # 比亚迪 each get one chart = 2 total).
+    window = text[max(0, match.start() - 6) : match.start()]
+    if any(marker in window for marker in ("各", "分别", "各自", "每个")):
+        subjects = _extract_company_entities(text, industry_topic="")
+        if len(subjects) >= 2:
+            return base * min(len(subjects), 4)
+    return base
 
 class SurrogateAnalysisModel:
     """Agent 2 分析代打：仅基于 runtime_prompt 中的真实证据构造 AnalysisDraft。"""
@@ -570,7 +580,21 @@ class SurrogateAnalysisModel:
         self, usable: list[dict[str, Any]], *, request_text: str = ""
     ) -> list[ChartCandidate]:
         candidates: list[ChartCandidate] = []
+        # Dataset diversity: candidates built in evidence arrival order
+        # starve every dataset after the first (E-28: twelve same-metric
+        # rows consumed all 8 candidate slots and the finance comparison
+        # datasets never reached the chart stage). Round-robin across
+        # metric groups so every dataset family keeps representation.
+        groups: dict[str, list[dict[str, Any]]] = {}
         for item in usable:
+            groups.setdefault(str(item.get("metric_name") or "指标"), []).append(item)
+        diversified: list[dict[str, Any]] = []
+        while groups:
+            for metric_name in list(groups):
+                diversified.append(groups[metric_name].pop(0))
+                if not groups[metric_name]:
+                    del groups[metric_name]
+        for item in diversified:
             metric = str(item.get("metric_name") or "指标")
             scope = str(item.get("scope") or "")
             dimension = _dimension_for_text(metric=metric, scope=scope)

@@ -1,0 +1,132 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-9FE8728D8DC2",
+  "chart_type": "line",
+  "data_fingerprint": "f96c3919a1197d04f35769fd01bc845483db086c8aece576354e9fba2f92615a",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:f96c3919a1197d04f35769fd01bc845483db086c8aece576354e9fba2f92615a",
+  "evidence_ids": [
+    "E-795b96bc7c33dce1",
+    "E-b3bd1e1accdce3e2",
+    "E-c690772751b301c6",
+    "E-5b97122891b00c3d",
+    "E-7501be76313de6b9",
+    "E-3a7e15a913db9359",
+    "E-28f08fdb5b1db6b1",
+    "E-4c151069b98eecb9",
+    "E-cd68f1846811a3b2",
+    "E-3912e31542faddf7",
+    "E-b451a3babecaf260",
+    "E-b75c613f555b792e"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德市:市国资委企业:所有者权益:期末值": {
+        "2025-08-31": "E-b75c613f555b792e",
+        "2025-09-30": "E-b451a3babecaf260",
+        "2025-10-31": "E-3912e31542faddf7",
+        "2025-11-30": "E-cd68f1846811a3b2",
+        "2025-12-31": "E-4c151069b98eecb9",
+        "2026-01-31": "E-28f08fdb5b1db6b1",
+        "2026-02-28": "E-3a7e15a913db9359",
+        "2026-03-31": "E-7501be76313de6b9",
+        "2026-04-30": "E-5b97122891b00c3d",
+        "2026-05-31": "E-c690772751b301c6",
+        "2026-06-30": "E-b3bd1e1accdce3e2",
+        "2026-07-31": "E-795b96bc7c33dce1"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          35906000000.0,
+          35961000000.0,
+          35824000000.0,
+          36005000000.0,
+          36648000000.0,
+          36826000000.0,
+          37673000000.0,
+          38137000000.0,
+          38114000000.0,
+          38134000000.0,
+          38136000000.0,
+          39522000000.0
+        ],
+        "name": "宁德市:市国资委企业:所有者权益:期末值",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（宁德市:市国资委企业:所有者权益:期末值）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-08-31",
+        "2025-09-30",
+        "2025-10-31",
+        "2025-11-30",
+        "2025-12-31",
+        "2026-01-31",
+        "2026-02-28",
+        "2026-03-31",
+        "2026-04-30",
+        "2026-05-31",
+        "2026-06-30",
+        "2026-07-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（宁德市:市国资委企业:所有者权益:期末值）",
+  "user_requested": false,
+  "variant": "line"
+}

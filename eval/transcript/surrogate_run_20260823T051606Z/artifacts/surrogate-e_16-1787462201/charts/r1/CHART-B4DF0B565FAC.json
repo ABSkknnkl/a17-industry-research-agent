@@ -1,0 +1,88 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-B4DF0B565FAC",
+  "chart_type": "line",
+  "data_fingerprint": "d4a8a379668f89b8c212100fb8dbd33210be2734047106ed9f4a89364056b029",
+  "dedupe_key": "trend:trend:以line图呈现营业收入同比增长率的证据分布，支撑ch-02的论述。:d4a8a379668f89b8c212100fb8dbd33210be2734047106ed9f4a89364056b029",
+  "evidence_ids": [
+    "E-90b56b329479331c",
+    "E-a69d7bd5afda60fb"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以line图呈现营业收入同比增长率的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "药明康德": {
+        "2025-12-31": "E-a69d7bd5afda60fb",
+        "2026-06-30": "E-90b56b329479331c"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          15.837200000000001,
+          38.934999999999995
+        ],
+        "name": "药明康德",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业收入同比增长率（药明康德）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-12-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY %",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": null,
+  "title": "营业收入同比增长率（药明康德）",
+  "user_requested": false,
+  "variant": "line"
+}

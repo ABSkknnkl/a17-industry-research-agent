@@ -1,0 +1,104 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-B145768684F0",
+  "chart_type": "line",
+  "data_fingerprint": "27c1b85fedc640e9923f9c7f062975a7f0c49c9b026466021c4b6abddff8ad3f",
+  "dedupe_key": "trend:trend:以bar图呈现归母净利润的证据分布，支撑ch-02的论述。:27c1b85fedc640e9923f9c7f062975a7f0c49c9b026466021c4b6abddff8ad3f",
+  "evidence_ids": [
+    "E-fe361b6dfe3f2504",
+    "E-471c872e868afd17",
+    "E-f6d3d6b157917852",
+    "E-0d2117bb8c68af74",
+    "E-427d1b6e9e83336f",
+    "E-2ed6d0724f9184ad"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现归母净利润的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "药明康德": {
+        "2025-03-31": "E-2ed6d0724f9184ad",
+        "2025-06-30": "E-427d1b6e9e83336f",
+        "2025-09-30": "E-0d2117bb8c68af74",
+        "2025-12-31": "E-f6d3d6b157917852",
+        "2026-03-31": "E-471c872e868afd17",
+        "2026-06-30": "E-fe361b6dfe3f2504"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          3671960950.47,
+          8560882627.56,
+          12075512956.92,
+          19150582400.69,
+          4651517987.76,
+          11080173661.42
+        ],
+        "name": "药明康德",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "归母净利润（药明康德）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-03-31",
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "归母净利润（药明康德）",
+  "user_requested": false,
+  "variant": "line"
+}

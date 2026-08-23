@@ -1,0 +1,333 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-AA95BAF1EECA",
+  "chart_type": "bar",
+  "data_fingerprint": "85270c82e6540a6e6038c11607eeaa7031bbe2c4b53e30cc63f579afda0d5418",
+  "dedupe_key": "comparison:comparison:以bar图呈现最新价的证据分布，支撑ch-02的论述。:85270c82e6540a6e6038c11607eeaa7031bbe2c4b53e30cc63f579afda0d5418",
+  "evidence_ids": [
+    "E-d394cc32bef7268b",
+    "E-5fa856c991b3437b",
+    "E-0f8825fdecbf7a9c",
+    "E-c9fe803b50519c9e",
+    "E-d5ed0a043acff4d6",
+    "E-8a3c6df24e9976f1",
+    "E-ef6fdfe587d5d381",
+    "E-c6d7ff8943152924"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现最新价的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-8a3c6df24e9976f1",
+            "value": 9.74
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "上海银行",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "evidence_id": "E-d394cc32bef7268b",
+            "value": 11.41
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "平安银行",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-c6d7ff8943152924",
+            "value": 15.53
+          }
+        ],
+        "name": "汉得信息",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-5fa856c991b3437b",
+            "value": 11.74
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "深华发A",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-0f8825fdecbf7a9c",
+            "value": 15.34
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "特力A",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-d5ed0a043acff4d6",
+            "value": 10.75
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "用友网络",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-ef6fdfe587d5d381",
+            "value": 26.84
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "赛意信息",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-c9fe803b50519c9e",
+            "value": 21.16
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "飞亚达",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "最新价（平安银行）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "平安银行",
+        "深华发A",
+        "特力A",
+        "飞亚达",
+        "用友网络",
+        "上海银行",
+        "赛意信息",
+        "汉得信息"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "最新价（平安银行）",
+  "user_requested": false,
+  "variant": "grouped"
+}

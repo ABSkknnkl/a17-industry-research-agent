@@ -1,0 +1,102 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-AE18B4AD41DF",
+  "chart_type": "line",
+  "data_fingerprint": "1277b915afa8f8421c9b88336d1716598794a5272bd3df4b864c97933dc98d84",
+  "dedupe_key": "trend:trend:以bar图呈现毛利率的证据分布，支撑ch-02的论述。:1277b915afa8f8421c9b88336d1716598794a5272bd3df4b864c97933dc98d84",
+  "evidence_ids": [
+    "E-6bdd600ef16af5f3",
+    "E-b537e5338f90930c",
+    "E-576a86ed4f7965d6"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现毛利率的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "东方材料": {
+        "2025-12-31": "E-b537e5338f90930c"
+      },
+      "威尔药业": {
+        "2025-12-31": "E-576a86ed4f7965d6",
+        "2026-06-30": "E-6bdd600ef16af5f3"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          29.140300000000003,
+          null
+        ],
+        "name": "东方材料",
+        "showSymbol": true,
+        "type": "line"
+      },
+      {
+        "connectNulls": false,
+        "data": [
+          28.4634,
+          27.6139
+        ],
+        "name": "威尔药业",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "毛利率（威尔药业）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-12-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY %",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "毛利率（威尔药业）",
+  "user_requested": false,
+  "variant": "line"
+}

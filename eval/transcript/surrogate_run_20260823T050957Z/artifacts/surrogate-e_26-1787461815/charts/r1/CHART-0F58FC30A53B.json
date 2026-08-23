@@ -1,0 +1,123 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-0F58FC30A53B",
+  "chart_type": "bar",
+  "data_fingerprint": "ddc075dbb5f71bf0a6398331d0e3ef94ddcebe7b1593c2124e270c02c1b5b8bf",
+  "dedupe_key": "comparison:comparison:以bar图呈现负债的证据分布，支撑ch-02的论述。:ddc075dbb5f71bf0a6398331d0e3ef94ddcebe7b1593c2124e270c02c1b5b8bf",
+  "evidence_ids": [
+    "E-10e9f152e15fd8c3",
+    "E-ca86c2c5e255f3a9",
+    "E-be0552e0cb3909f0"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现负债的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-10e9f152e15fd8c3",
+            "value": 5480571000000.0
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "平安银行",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-ca86c2c5e255f3a9",
+            "value": 262175739.45
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "深华发A",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-be0552e0cb3909f0",
+            "value": 456487516.24
+          }
+        ],
+        "name": "特力A",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "负债（平安银行）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "平安银行",
+        "深华发A",
+        "特力A"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "负债（平安银行）",
+  "user_requested": true,
+  "variant": "grouped"
+}

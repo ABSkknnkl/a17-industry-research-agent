@@ -814,6 +814,33 @@ def _intent_qualifiers(text: str) -> str:
     return " ".join(dict.fromkeys(found))
 
 
+_FUTURES_INTENT_SUFFIXES = (
+    "价格对比",
+    "价格走势",
+    "价格",
+    "期价",
+    "期货",
+    "走势",
+    "对比",
+    "分析",
+    "归因",
+    "供需",
+)
+
+
+def _commodity_subject(text: str) -> str:
+    """Strip intent words so the commodity subject survives (镍价格对比 -> 镍)."""
+    compact = " ".join(text.split())
+    changed = True
+    while changed:
+        changed = False
+        for suffix in _FUTURES_INTENT_SUFFIXES:
+            if compact.endswith(suffix) and len(compact) > len(suffix):
+                compact = compact[: -len(suffix)].strip()
+                changed = True
+    return compact
+
+
 def _registered_metric_fields(text: str) -> list[str]:
     from app.agents.data_fetcher.metric_registry import iter_metric_aliases
 
@@ -861,6 +888,14 @@ def _intent_skill_query(
             parts.append(time_text)
         parts.append(base)
         return " ".join(dict.fromkeys(parts))[:500]
+    if skill == SkillName.FUTURES:
+        # Commodity-price sub-requirements resolve on natural-language
+        # price-trend forms: the verbatim sub-text makes the provider
+        # return a single empty placeholder row (E-25 root cause),
+        # while {topic} {commodity} price-trend returns the daily series.
+        subject = _commodity_subject(base) or industry_topic
+        time_part = time_text or "近一年"
+        return f"{industry_topic} {subject}{time_part}价格走势"[:500]
     # Qualitative/industry skills preserve the full sub-text verbatim so that
     # qualifiers such as 海外/回收/政策 survive into the provider query.
     # Entity-named sub-text already carries its subject (宁德时代 ...公告);

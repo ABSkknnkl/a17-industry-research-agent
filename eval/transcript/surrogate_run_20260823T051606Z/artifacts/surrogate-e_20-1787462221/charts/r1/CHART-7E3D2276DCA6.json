@@ -1,0 +1,120 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-7E3D2276DCA6",
+  "chart_type": "line",
+  "data_fingerprint": "4523c85a87c9ee93cd0dc6356a23c7fa4bc61eb3b7bbdd3883f90227818ccff3",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:4523c85a87c9ee93cd0dc6356a23c7fa4bc61eb3b7bbdd3883f90227818ccff3",
+  "evidence_ids": [
+    "E-0c6d69813372e877",
+    "E-e57ecec5c2546e14",
+    "E-67c6a2c69acc1e07",
+    "E-1e2bf618cd7a0955",
+    "E-058abe1051bfff3d",
+    "E-2b749eff07de1098",
+    "E-cd7fca0b9010a594",
+    "E-ad335ede54200439",
+    "E-a75326c899618d86",
+    "E-17482e5768f89724"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "GDP:不变价:生产法:中国:当季值": {
+        "2024-03-31": "E-17482e5768f89724",
+        "2024-06-30": "E-a75326c899618d86",
+        "2024-09-30": "E-ad335ede54200439",
+        "2024-12-31": "E-cd7fca0b9010a594",
+        "2025-03-31": "E-2b749eff07de1098",
+        "2025-06-30": "E-058abe1051bfff3d",
+        "2025-09-30": "E-1e2bf618cd7a0955",
+        "2025-12-31": "E-67c6a2c69acc1e07",
+        "2026-03-31": "E-e57ecec5c2546e14",
+        "2026-06-30": "E-0c6d69813372e877"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          29079200000000.0,
+          30736900000000.0,
+          32547920000000.0,
+          35846540000000.0,
+          30657100000000.0,
+          32345820000000.0,
+          34121650000000.0,
+          37444450000000.0,
+          33574870000000.0,
+          35122270000000.0
+        ],
+        "name": "GDP:不变价:生产法:中国:当季值",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（GDP:不变价:生产法:中国:当季值）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2024-03-31",
+        "2024-06-30",
+        "2024-09-30",
+        "2024-12-31",
+        "2025-03-31",
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（GDP:不变价:生产法:中国:当季值）",
+  "user_requested": false,
+  "variant": "line"
+}

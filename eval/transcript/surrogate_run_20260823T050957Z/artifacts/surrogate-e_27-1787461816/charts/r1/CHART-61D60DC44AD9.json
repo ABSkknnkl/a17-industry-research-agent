@@ -1,0 +1,88 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-61D60DC44AD9",
+  "chart_type": "line",
+  "data_fingerprint": "f6943f0218b2cc0a6cc6ec14792713d4244a536edd89309b43574ed3c12f5b19",
+  "dedupe_key": "trend:trend:以bar图呈现毛利率的证据分布，支撑ch-02的论述。:f6943f0218b2cc0a6cc6ec14792713d4244a536edd89309b43574ed3c12f5b19",
+  "evidence_ids": [
+    "E-11756186ee195e0b",
+    "E-3a09eff9bd7aa54d"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现毛利率的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德时代": {
+        "2025-12-31": "E-3a09eff9bd7aa54d",
+        "2026-06-30": "E-11756186ee195e0b"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          26.2728,
+          23.9284
+        ],
+        "name": "宁德时代",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "毛利率（宁德时代）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-12-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY %",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "毛利率（宁德时代）",
+  "user_requested": false,
+  "variant": "line"
+}

@@ -1,0 +1,112 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-EA56A2A11CEA",
+  "chart_type": "line",
+  "data_fingerprint": "8410adf69a6dec175c8b800e759f3ec78e18396ce41e42813d34c17a8cd3075d",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:8410adf69a6dec175c8b800e759f3ec78e18396ce41e42813d34c17a8cd3075d",
+  "evidence_ids": [
+    "E-43309616b18b6f7d",
+    "E-daa4977692239c79",
+    "E-d7a876f529f7eb41",
+    "E-5bb0dfca30907228",
+    "E-07d4148172129ac6",
+    "E-69cfdb77b9b5f820",
+    "E-01b9deeb9a950ed2"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "美国:国债收益率:2年": {
+        "2026-08-13": "E-01b9deeb9a950ed2",
+        "2026-08-14": "E-69cfdb77b9b5f820",
+        "2026-08-17": "E-07d4148172129ac6",
+        "2026-08-18": "E-5bb0dfca30907228",
+        "2026-08-19": "E-d7a876f529f7eb41",
+        "2026-08-20": "E-daa4977692239c79",
+        "2026-08-21": "E-43309616b18b6f7d"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          4.15,
+          4.17,
+          4.19,
+          4.19,
+          4.19,
+          4.19,
+          4.24
+        ],
+        "name": "美国:国债收益率:2年",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（美国:国债收益率:2年）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2026-08-13",
+        "2026-08-14",
+        "2026-08-17",
+        "2026-08-18",
+        "2026-08-19",
+        "2026-08-20",
+        "2026-08-21"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（美国:国债收益率:2年）",
+  "user_requested": false,
+  "variant": "line"
+}

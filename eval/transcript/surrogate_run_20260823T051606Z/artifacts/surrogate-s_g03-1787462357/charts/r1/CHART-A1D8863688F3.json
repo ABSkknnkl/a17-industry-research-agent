@@ -1,0 +1,81 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-A1D8863688F3",
+  "chart_type": "bar",
+  "data_fingerprint": "f01a6420537cbb2454d81db2c7666592a98c83a766999e2837c58f52e818cf98",
+  "dedupe_key": "comparison:comparison:以bar图呈现最新动态市盈率的证据分布，支撑ch-02的论述。:f01a6420537cbb2454d81db2c7666592a98c83a766999e2837c58f52e818cf98",
+  "evidence_ids": [
+    "E-1343acb7fe1aee58"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现最新动态市盈率的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-1343acb7fe1aee58",
+            "value": 83.46522
+          }
+        ],
+        "name": "深赛格",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "最新动态市盈率（深赛格）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "深赛格"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "最新动态市盈率（深赛格）",
+  "user_requested": false,
+  "variant": "vertical"
+}

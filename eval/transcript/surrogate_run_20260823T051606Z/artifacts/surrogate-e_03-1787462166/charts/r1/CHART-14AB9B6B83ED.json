@@ -1,0 +1,192 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-14AB9B6B83ED",
+  "chart_type": "bar",
+  "data_fingerprint": "0c1c8f750bd96fcd9fd5a4637c3df39996c6870083bc4e019b945f75ec66bff8",
+  "dedupe_key": "comparison:comparison:以bar图呈现最新价的证据分布，支撑ch-02的论述。:0c1c8f750bd96fcd9fd5a4637c3df39996c6870083bc4e019b945f75ec66bff8",
+  "evidence_ids": [
+    "E-f40e163893bf4735",
+    "E-93f6e5debf1205d0",
+    "E-b6e9af94c72b6dc9",
+    "E-988c77253870baa7",
+    "E-8f9bb65d50900eb6",
+    "E-bd33c40097790e6a",
+    "E-82c82a8fa13282e8",
+    "E-41282b81f05e782d"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现最新价的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-bd33c40097790e6a",
+            "value": 7.33
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "中国宝安",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-82c82a8fa13282e8",
+            "value": 9.34
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "中集集团",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-8f9bb65d50900eb6",
+            "value": 4.26
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "富奥股份",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "evidence_id": "E-988c77253870baa7",
+            "value": 23.73
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "德赛电池",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-41282b81f05e782d",
+            "value": 6.15
+          }
+        ],
+        "name": "深圳能源",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "最新价（德赛电池）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "德赛电池",
+        "富奥股份",
+        "中国宝安",
+        "中集集团",
+        "深圳能源"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "最新价（德赛电池）",
+  "user_requested": false,
+  "variant": "grouped"
+}

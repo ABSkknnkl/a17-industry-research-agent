@@ -1,0 +1,116 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-6687FD81F809",
+  "chart_type": "line",
+  "data_fingerprint": "464ca9a2fafe062d44fbe18437617df1ccc0ef2e652a33b8638f8d31632e07fa",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:464ca9a2fafe062d44fbe18437617df1ccc0ef2e652a33b8638f8d31632e07fa",
+  "evidence_ids": [
+    "E-4dbd3696d5999892",
+    "E-54722062b2d17f02",
+    "E-e2cbe1254e7eb6aa",
+    "E-28515fab319956e0",
+    "E-e601d4fb693d31c1",
+    "E-18aed9bf13824f76",
+    "E-af5dedff4cf3204e",
+    "E-cbae2abc6aadfb2f",
+    "E-f01aeefe331b2122"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德时代:销售量:动力电池系统": {
+        "2017-12-31": "E-f01aeefe331b2122",
+        "2018-12-31": "E-cbae2abc6aadfb2f",
+        "2019-12-31": "E-af5dedff4cf3204e",
+        "2020-12-31": "E-18aed9bf13824f76",
+        "2021-12-31": "E-e601d4fb693d31c1",
+        "2022-12-31": "E-28515fab319956e0",
+        "2023-12-31": "E-e2cbe1254e7eb6aa",
+        "2024-12-31": "E-54722062b2d17f02",
+        "2025-12-31": "E-4dbd3696d5999892"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          11.85,
+          21.31,
+          40.96,
+          46.84,
+          133.41,
+          289.0,
+          390.0,
+          475.0,
+          661.0
+        ],
+        "name": "宁德时代:销售量:动力电池系统",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（宁德时代:销售量:动力电池系统）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2017-12-31",
+        "2018-12-31",
+        "2019-12-31",
+        "2020-12-31",
+        "2021-12-31",
+        "2022-12-31",
+        "2023-12-31",
+        "2024-12-31",
+        "2025-12-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（宁德时代:销售量:动力电池系统）",
+  "user_requested": false,
+  "variant": "line"
+}

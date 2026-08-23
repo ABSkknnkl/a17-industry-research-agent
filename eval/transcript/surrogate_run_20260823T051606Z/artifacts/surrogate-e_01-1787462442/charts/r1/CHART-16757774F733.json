@@ -1,0 +1,156 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-16757774F733",
+  "chart_type": "bar",
+  "data_fingerprint": "dca8bc7d1cbab579f5438d102a750af65d906f762fd6b0ed57ede97071937a63",
+  "dedupe_key": "comparison:comparison:以bar图呈现最新价的证据分布，支撑ch-02的论述。:dca8bc7d1cbab579f5438d102a750af65d906f762fd6b0ed57ede97071937a63",
+  "evidence_ids": [
+    "E-73ebf8dfbd74fda2",
+    "E-dfd2ca7d4de81c27",
+    "E-9c2a62d65171c1eb",
+    "E-e09002c270675cdd",
+    "E-06eef07b386fbf34",
+    "E-99b7d6ffc489eef4",
+    "E-8b3815e987926f98"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现最新价的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-06eef07b386fbf34",
+            "value": 7.33
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "中国宝安",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-8b3815e987926f98",
+            "value": 5.64
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "南京公用",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-99b7d6ffc489eef4",
+            "value": 8.43
+          }
+        ],
+        "name": "南华生物",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "evidence_id": "E-e09002c270675cdd",
+            "value": 4.26
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "富奥股份",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "最新价（富奥股份）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "富奥股份",
+        "中国宝安",
+        "南京公用",
+        "南华生物"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "最新价（富奥股份）",
+  "user_requested": false,
+  "variant": "grouped"
+}

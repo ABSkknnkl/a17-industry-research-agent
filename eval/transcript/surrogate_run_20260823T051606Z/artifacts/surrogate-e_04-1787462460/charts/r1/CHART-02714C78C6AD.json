@@ -1,0 +1,81 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-02714C78C6AD",
+  "chart_type": "bar",
+  "data_fingerprint": "8250b1bd1fc544b08385827333b96bb56c86635d0a0e915b029cabb5fec08d78",
+  "dedupe_key": "comparison:comparison:以bar图呈现业务利润的证据分布，支撑ch-02的论述。:8250b1bd1fc544b08385827333b96bb56c86635d0a0e915b029cabb5fec08d78",
+  "evidence_ids": [
+    "E-78c43b58cae6160c"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现业务利润的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-78c43b58cae6160c",
+            "value": 1410901429.24
+          }
+        ],
+        "name": "ST海王",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "业务利润（ST海王）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "ST海王"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "业务利润（ST海王）",
+  "user_requested": false,
+  "variant": "vertical"
+}
