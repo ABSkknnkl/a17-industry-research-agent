@@ -225,6 +225,117 @@ async def test_waiting_review_with_error_is_never_auto_completed() -> None:
     assert fetch["data"]["collaboration_requests"]
 
 
+class ReportFusionFallbackAgent(RecordingStageAgent):
+    """模拟真实 LLM 不可用→上游 fallback 产物无效→report_fusion 拦截。"""
+
+    async def run(self, context: StageContext) -> StageResult:
+        self._calls.append(self.stage)
+        return StageResult(
+            stage=self.stage,
+            status=StageStatus.WAITING_REVIEW,
+            revision=context.revision,
+            data={
+                "collaboration_requests": [
+                    {
+                        "request_id": "REPORT-INPUT-INVALID",
+                        "question": "请确认或修正正式报告的输入与导出设置。",
+                        "reason": "AnalysisResult validation failed",
+                        "affected_dimensions": ["report_fusion"],
+                    }
+                ]
+            },
+            error="report_input_invalid",
+        )
+
+
+@pytest.mark.asyncio
+async def test_error_bearing_report_fusion_never_reaches_completed() -> None:
+    """fallback 终态非法回归（18.md 遗留问题 2）：report_fusion 以
+    WAITING_REVIEW + report_input_invalid 拦截时，审核放行决策不得把 run
+    推到「终态 completed + 阶段携带 error」的非法状态。"""
+    calls: list[StageName] = []
+    agents: list[StageAgent] = [
+        ReportFusionFallbackAgent(stage, calls)
+        if stage == StageName.REPORT_FUSION
+        else RecordingStageAgent(stage, calls)
+        for stage in StageName
+    ]
+    graph = build_pipeline_graph(StageRegistry(agents), checkpointer=InMemorySaver())
+    config = {"configurable": {"thread_id": "run-fusion-error"}}
+
+    result = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-1",
+            run_id="run-fusion-error",
+            input_data={"industry": "动力电池"},
+        ),
+        config,
+    )
+
+    assert result["status"] == StageStatus.WAITING_REVIEW
+    fusion = result["stage_results"][StageName.REPORT_FUSION.value]
+    assert fusion["error"] == "report_input_invalid"
+
+    # 与 test_real_full_chain._drive 相同的放行决策：无决策包 → approve。
+    # 修复后必须被审核门拒绝（error 未解决不得放行），run 停留在 WAITING_REVIEW。
+    with pytest.raises(ValueError, match="不能直接放行"):
+        await graph.ainvoke(
+            Command(resume={"action": "approve", "expected_revision": 1}),
+            config,
+        )
+
+
+class CompletedWithErrorAgent(RecordingStageAgent):
+    """防御性场景：智能体直接返回 COMPLETED 却携带 error（契约违规）。"""
+
+    async def run(self, context: StageContext) -> StageResult:
+        self._calls.append(self.stage)
+        return StageResult(
+            stage=self.stage,
+            status=StageStatus.COMPLETED,
+            revision=context.revision,
+            data={"stage": self.stage.value},
+            error="stage_completed_with_error",
+        )
+
+
+@pytest.mark.asyncio
+async def test_completed_with_error_requires_review_instead_of_finish() -> None:
+    """graph 层防御：COMPLETED + error 的阶段结果必须转入审核，
+    不得直接 finish 产出「终态 completed + 阶段携带 error」。"""
+    calls: list[StageName] = []
+    agents: list[StageAgent] = [
+        CompletedWithErrorAgent(stage, calls)
+        if stage == StageName.DATA_FETCH
+        else RecordingStageAgent(stage, calls)
+        for stage in StageName
+    ]
+    graph = build_pipeline_graph(StageRegistry(agents), checkpointer=InMemorySaver())
+    config = {"configurable": {"thread_id": "run-completed-with-error"}}
+
+    result = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-1",
+            run_id="run-completed-with-error",
+            input_data={"industry": "动力电池"},
+        ),
+        config,
+    )
+
+    # 防御性拦截：停在 WAITING_REVIEW，下游阶段不得执行
+    assert result["status"] == StageStatus.WAITING_REVIEW
+    assert calls == [StageName.DATA_FETCH]
+    fetch = result["stage_results"][StageName.DATA_FETCH.value]
+    assert fetch["error"] == "stage_completed_with_error"
+
+    # 审核门同样拒绝放行
+    with pytest.raises(ValueError, match="不能直接放行"):
+        await graph.ainvoke(
+            Command(resume={"action": "approve", "expected_revision": 1}),
+            config,
+        )
+
+
 @pytest.mark.asyncio
 async def test_stage_attempt_budget_prevents_unbounded_regeneration() -> None:
     calls: list[StageName] = []

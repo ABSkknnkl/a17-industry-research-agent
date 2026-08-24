@@ -169,6 +169,153 @@ class ChapterDraft(ChapterContract):
         return self
 
 
+def _loose_text(value: object) -> object:
+    """Coerce common LLM shapes (None, numbers, sentence lists) into text."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (list, tuple)):
+        return "".join(str(item) for item in value)
+    return str(value)
+
+
+def _loose_list(value: object) -> list[object]:
+    """Coerce scalars and wrapped values into a list without dropping items."""
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple)):
+        return list(value)
+    return [value]
+
+
+def _loose_dict_list(value: object) -> list[object]:
+    """Keep dict entries and model instances; drop malformed siblings."""
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, (dict, BaseModel))]
+
+
+def _loose_paragraph_dicts(value: object) -> list[object]:
+    """Accept dict, bare-string and model-instance paragraphs alike."""
+    if not isinstance(value, list):
+        return []
+    return [
+        {"text": item} if isinstance(item, str) else item
+        for item in value
+        if isinstance(item, (str, dict, BaseModel))
+    ]
+
+
+class LooseParagraph(BaseModel):
+    """Lenient paragraph layer of the two-tier chapter contract.
+
+    The LLM only promises content; ids, enums and references are anchored
+    later by the chapter normalizer, so every field is optional and extra
+    provider fields are ignored.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    paragraph_id: str | None = None
+    kind: str | None = None
+    text: str = ""
+    claim_ids: list[object] = Field(default_factory=list)
+    evidence_ids: list[object] = Field(default_factory=list)
+    numeric_refs: list[object] = Field(default_factory=list)
+
+    @field_validator("text", mode="before")
+    @classmethod
+    def _coerce_text(cls, value: object) -> object:
+        return _loose_text(value)
+
+    @field_validator("claim_ids", "evidence_ids", "numeric_refs", mode="before")
+    @classmethod
+    def _coerce_lists(cls, value: object) -> list[object]:
+        return _loose_list(value)
+
+
+class LooseSection(BaseModel):
+    """Lenient section layer of the two-tier chapter contract."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    section_id: str | None = None
+    title: str = ""
+    purpose: str = ""
+    key_points: list[object] = Field(default_factory=list)
+    paragraphs: list[LooseParagraph] = Field(default_factory=list)
+    chart_ids: list[object] = Field(default_factory=list)
+    uncertainties: list[object] = Field(default_factory=list)
+    visual_semantics: dict[str, object] = Field(default_factory=dict)
+
+    @field_validator("title", "purpose", mode="before")
+    @classmethod
+    def _coerce_text(cls, value: object) -> object:
+        return _loose_text(value)
+
+    @field_validator("key_points", "chart_ids", "uncertainties", mode="before")
+    @classmethod
+    def _coerce_lists(cls, value: object) -> list[object]:
+        return _loose_list(value)
+
+    @field_validator("paragraphs", mode="before")
+    @classmethod
+    def _coerce_paragraph_dicts(cls, value: object) -> list[dict[str, object]]:
+        return _loose_paragraph_dicts(value)
+
+    @field_validator("visual_semantics", mode="before")
+    @classmethod
+    def _coerce_visual(cls, value: object) -> dict[str, object]:
+        return value if isinstance(value, dict) else {}
+
+class ChapterDraftLoose(BaseModel):
+    """Lenient chapter layer: LLM output before deterministic tightening."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    chapter_id: str | None = None
+    title: str = ""
+    summary: str = ""
+    sections: list[LooseSection] = Field(default_factory=list)
+    claim_ids: list[object] = Field(default_factory=list)
+    evidence_ids: list[object] = Field(default_factory=list)
+    chart_ids: list[object] = Field(default_factory=list)
+    missing_inputs: list[object] = Field(default_factory=list)
+    revision: int | None = None
+
+    @field_validator("title", "summary", mode="before")
+    @classmethod
+    def _coerce_text(cls, value: object) -> object:
+        return _loose_text(value)
+
+    @field_validator("claim_ids", "evidence_ids", "chart_ids", "missing_inputs", mode="before")
+    @classmethod
+    def _coerce_lists(cls, value: object) -> list[object]:
+        return _loose_list(value)
+
+    @field_validator("sections", mode="before")
+    @classmethod
+    def _coerce_section_dicts(cls, value: object) -> list[dict[str, object]]:
+        return _loose_dict_list(value)
+
+    @field_validator("revision", mode="before")
+    @classmethod
+    def _coerce_revision(cls, value: object) -> object:
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            return int(value)
+        if isinstance(value, str):
+            try:
+                return int(value.strip())
+            except ValueError:
+                return None
+        return None
+
+
 class ChapterQualityReport(ChapterContract):
     passed: bool
     evidence_coverage: float = Field(default=0, ge=0, le=1)

@@ -3,7 +3,7 @@
 from typing import Protocol
 
 from app.schemas.analysis import AnalysisDraft
-from app.schemas.chapter import ChapterDraft
+from app.schemas.chapter import ChapterDraftLoose
 
 
 class AnalysisModel(Protocol):
@@ -26,5 +26,5 @@ class ChapterWritingModel(Protocol):
         *,
         system_prompt: str,
         runtime_prompt: str,
-    ) -> ChapterDraft:
-        """Return one schema-validated chapter without provider-specific objects."""
+    ) -> ChapterDraftLoose:
+        """Return one loose chapter draft; strict tightening happens in Agent 4."""

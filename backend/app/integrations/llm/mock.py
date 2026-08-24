@@ -10,7 +10,7 @@ from app.schemas.analysis import (
     ScenarioAnalysis,
     ValidationCard,
 )
-from app.schemas.chapter import ChapterDraft, ParagraphDraft, SectionDraft
+from app.schemas.chapter import ChapterDraftLoose, LooseParagraph, LooseSection
 
 
 class MockAnalysisModel:
@@ -108,7 +108,7 @@ class MockChapterWritingModel:
         *,
         system_prompt: str,
         runtime_prompt: str,
-    ) -> ChapterDraft:
+    ) -> ChapterDraftLoose:
         del system_prompt
         payload = json.loads(runtime_prompt)
         chapter_config = payload["chapter_config"]
@@ -121,12 +121,12 @@ class MockChapterWritingModel:
             )
         )
         chart_ids = list(dict.fromkeys(chart["chart_id"] for chart in ready_charts))
-        sections: list[SectionDraft] = []
+        sections: list[LooseSection] = []
 
         for section_index, section in enumerate(chapter_config["sections"], start=1):
             if claims:
                 claim = claims[(section_index - 1) % len(claims)]
-                paragraph = ParagraphDraft(
+                paragraph = LooseParagraph(
                     paragraph_id=(
                         f"P-{chapter_config['chapter_id'].removeprefix('CH-')}-"
                         f"{section_index:02d}-01"
@@ -139,7 +139,7 @@ class MockChapterWritingModel:
                 key_points = [claim["text"]]
                 uncertainties = [claim["uncertainty"]]
             else:
-                paragraph = ParagraphDraft(
+                paragraph = LooseParagraph(
                     paragraph_id=(
                         f"P-{chapter_config['chapter_id'].removeprefix('CH-')}-"
                         f"{section_index:02d}-01"
@@ -151,7 +151,7 @@ class MockChapterWritingModel:
                 uncertainties = ["缺少当前章节可用的结论"]
 
             sections.append(
-                SectionDraft(
+                LooseSection(
                     section_id=section["section_id"],
                     title=section["title"],
                     purpose=section["purpose"],
@@ -162,7 +162,7 @@ class MockChapterWritingModel:
                 )
             )
 
-        return ChapterDraft(
+        return ChapterDraftLoose(
             chapter_id=chapter_config["chapter_id"],
             title=chapter_config["title"],
             summary=(

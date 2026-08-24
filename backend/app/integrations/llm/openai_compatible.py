@@ -21,12 +21,7 @@ from app.schemas.analysis import (
     ScenarioAnalysis,
     ValidationCard,
 )
-from app.schemas.chapter import (
-    ChapterDraft,
-    ParagraphDraft,
-    SectionDraft,
-    SectionVisualSemantics,
-)
+from app.schemas.chapter import ChapterDraftLoose
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 logger = logging.getLogger(__name__)
@@ -432,97 +427,6 @@ def _normalize_known_schema_aliases(payload: Any, schema: type[Any]) -> Any:
     if schema in {AnalysisDraft, AnalysisCoreDraft, AnalysisSupplementDraft}:
         _normalize_analysis_aliases(payload)
         return payload
-    if schema is not ChapterDraft:
-        return payload
-    for key in tuple(payload):
-        if key not in ChapterDraft.model_fields:
-            payload.pop(key, None)
-    sections = payload.get("sections")
-    if not isinstance(sections, list):
-        return payload
-    for section in sections:
-        if not isinstance(section, dict):
-            continue
-        for key in tuple(section):
-            if key not in SectionDraft.model_fields:
-                section.pop(key, None)
-        visual = section.get("visual_semantics")
-        if isinstance(visual, dict):
-            content_aliases = {
-                "叙述": "narrative",
-                "叙事": "narrative",
-                "趋势": "time_series",
-                "时间序列": "time_series",
-                "对比": "comparison",
-                "比较": "comparison",
-                "财务": "financial_detail",
-                "财务明细": "financial_detail",
-                "产业链": "industry_chain",
-                "风险": "risk",
-                "情景": "scenario",
-                "预测": "scenario",
-                "总结": "summary",
-                "摘要": "summary",
-            }
-            content_type = visual.get("content_type")
-            if isinstance(content_type, str):
-                visual["content_type"] = content_aliases.get(
-                    content_type.strip(), content_type.strip()
-                )
-            density_aliases = {
-                "高": 0.85,
-                "较高": 0.75,
-                "中": 0.5,
-                "一般": 0.5,
-                "较低": 0.25,
-                "低": 0.15,
-            }
-            for field_name in ("quantitative_density", "qualitative_density"):
-                density = visual.get(field_name)
-                if isinstance(density, str):
-                    compact = density.strip()
-                    if compact in density_aliases:
-                        visual[field_name] = density_aliases[compact]
-                    else:
-                        try:
-                            number = float(compact.removesuffix("%"))
-                            visual[field_name] = number / 100 if "%" in compact else number
-                        except ValueError:
-                            visual[field_name] = None
-            if "preferred_table" not in visual and "suitable_for_precise_table" in visual:
-                visual["preferred_table"] = bool(visual["suitable_for_precise_table"])
-            visual.pop("suitable_for_precise_table", None)
-            for key in tuple(visual):
-                if key not in SectionVisualSemantics.model_fields:
-                    visual.pop(key, None)
-        paragraphs = section.get("paragraphs")
-        if not isinstance(paragraphs, list):
-            continue
-        for paragraph in paragraphs:
-            if not isinstance(paragraph, dict):
-                continue
-            for key in tuple(paragraph):
-                if key not in ParagraphDraft.model_fields:
-                    paragraph.pop(key, None)
-            paragraph_id = paragraph.get("paragraph_id")
-            if isinstance(paragraph_id, str):
-                for alias in ("PARA-", "PAR-"):
-                    if paragraph_id.startswith(alias):
-                        paragraph["paragraph_id"] = "P-" + paragraph_id.removeprefix(alias)
-                        break
-            kind_aliases = {
-                "分析": "analysis",
-                "观点": "analysis",
-                "方法": "methodology",
-                "方法说明": "methodology",
-                "风险": "risk",
-                "风险提示": "risk",
-                "过渡": "transition",
-                "衔接": "transition",
-            }
-            kind = paragraph.get("kind")
-            if isinstance(kind, str):
-                paragraph["kind"] = kind_aliases.get(kind.strip(), kind.strip())
     return payload
 
 
@@ -853,19 +757,18 @@ class OpenAICompatibleChapterModel:
                     {"thinking": {"type": "disabled"}} if _is_deepseek(model_name) else None
                 ),
             )
-        self._structured_model = _structured_output(chat_model, ChapterDraft, model_name)
+        self._structured_model = _structured_output(chat_model, ChapterDraftLoose, model_name)
 
     async def generate_chapter(
         self,
         *,
         system_prompt: str,
         runtime_prompt: str,
-    ) -> ChapterDraft:
+    ) -> ChapterDraftLoose:
         if self._requires_json_instruction:
             system_prompt = (
                 system_prompt
                 + "\n必须仅返回符合给定结构的 JSON 对象，不要输出 Markdown 代码围栏或额外说明。"
-                + " paragraph_id 必须严格使用 P-两位章节-两位小节-两位序号，例如 P-04-01-01。"
             )
         messages = [
             SystemMessage(content=system_prompt),
@@ -873,7 +776,7 @@ class OpenAICompatibleChapterModel:
         ]
         try:
             response = await _invoke_structured(self._structured_model, messages)
-            return _coerce_structured_response(response, ChapterDraft)
+            return _coerce_structured_response(response, ChapterDraftLoose)
         except StructuredOutputError as exc:
             if exc.code is StructuredOutputFailureCode.OUTPUT_TRUNCATED:
                 raise
@@ -883,7 +786,7 @@ class OpenAICompatibleChapterModel:
         _log_structured_output_event(
             "repair_started",
             model_name=self.model_name,
-            schema=ChapterDraft,
+            schema=ChapterDraftLoose,
             error=validation_error,
         )
         # One bounded repair turn keeps a provider's formatting drift from
@@ -907,18 +810,18 @@ class OpenAICompatibleChapterModel:
             ],
         )
         try:
-            repaired = _coerce_structured_response(response, ChapterDraft)
+            repaired = _coerce_structured_response(response, ChapterDraftLoose)
         except ValueError as repair_error:
             _log_structured_output_event(
                 "repair_failed",
                 model_name=self.model_name,
-                schema=ChapterDraft,
+                schema=ChapterDraftLoose,
                 error=repair_error,
             )
             raise
         _log_structured_output_event(
             "repair_succeeded",
             model_name=self.model_name,
-            schema=ChapterDraft,
+            schema=ChapterDraftLoose,
         )
         return repaired

@@ -151,6 +151,37 @@ def test_missing_required_data_cannot_be_approved_without_reinput(monkeypatch) -
         graph_module._review_gate(state)
 
 
+def test_error_bearing_result_cannot_be_approved(monkeypatch) -> None:
+    """带 error 的 WAITING_REVIEW 结果（如 fallback 链路的 report_input_invalid）
+    不能被 approve 放行：否则阶段以 APPROVED 携带 error 流到 finish，
+    产出「终态 completed + 阶段携带 error」的非法状态
+    （18.md 遗留问题 2：fallback 终态非法）。"""
+    run_id = "run-error-approve"
+    state = _state(
+        StageName.REPORT_FUSION,
+        {
+            "collaboration_requests": [
+                {
+                    "request_id": "REPORT-INPUT-INVALID",
+                    "question": "请确认或修正正式报告的输入与导出设置。",
+                    "reason": "AnalysisResult validation failed",
+                    "affected_dimensions": ["report_fusion"],
+                }
+            ]
+        },
+        run_id=run_id,
+    )
+    state["stage_results"][StageName.REPORT_FUSION.value]["error"] = "report_input_invalid"
+    monkeypatch.setattr(
+        graph_module,
+        "interrupt",
+        lambda _: {"action": "approve", "expected_revision": 1},
+    )
+
+    with pytest.raises(ValueError, match="不能直接放行"):
+        graph_module._review_gate(state)
+
+
 def test_partial_requested_data_can_continue_after_explicit_acknowledgement(monkeypatch) -> None:
     run_id = "run-partial-requested-data"
     package = _package(
@@ -172,6 +203,14 @@ def test_partial_requested_data_can_continue_after_explicit_acknowledgement(monk
             "blocking_issues": [],
             "advisory_issues": ["requested_data_partial"],
             "missing_requirements": [{"requirement_id": "REQ-02"}],
+            # 与真实 Agent 1 契约一致（service.py requested_data_partial 分支）：
+            # 声明允许 accept_with_risks 显式确认后继续。
+            "allowed_review_actions": [
+                "revise",
+                "regenerate",
+                "accept_with_risks",
+                "cancel",
+            ],
             "decision_package": package,
         },
         run_id=run_id,

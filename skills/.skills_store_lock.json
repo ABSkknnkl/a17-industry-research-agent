@@ -3,9 +3,9 @@
   "skills": {
     "announcement-search": {
       "name": "announcement-search",
-      "zip_url": "https://www.iwencai.com/gateway/market/api/v1/skills/square/download?name=announcement-search",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=announcement-search",
       "source": "skillhub",
-      "version": "1.0.0"
+      "version": ""
     },
     "commodity-analysis": {
       "name": "大宗商品分析",

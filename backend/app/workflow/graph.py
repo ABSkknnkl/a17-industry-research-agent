@@ -202,6 +202,7 @@ def _stage_node(
                 stage_results[stage.value] = result.model_dump(mode="json")
                 requires_review = (
                     result.status in {StageStatus.WAITING_REVIEW, StageStatus.FAILED}
+                    or (result.status == StageStatus.COMPLETED and result.error is not None)
                     or in_review_stages
                 )
                 return {
@@ -266,8 +267,15 @@ def _stage_node(
                 "updated_at": datetime.now(UTC).isoformat(),
             }
 
+        # A COMPLETED stage that still carries an error violates the
+        # "completed stages never carry errors" contract (e.g. a fallback
+        # path that finished with invalid inputs).  Route it to review so a
+        # human decides between regenerate/revise/cancel instead of letting
+        # the error ride along to the terminal COMPLETED state.
         requires_review = (
-            result.status in {StageStatus.WAITING_REVIEW, StageStatus.FAILED} or in_review_stages
+            result.status in {StageStatus.WAITING_REVIEW, StageStatus.FAILED}
+            or (result.status == StageStatus.COMPLETED and result.error is not None)
+            or in_review_stages
         )
         return {
             "current_stage": stage,
@@ -356,6 +364,25 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
         )
     if current_result.status == StageStatus.FAILED and action in decision_actions:
         raise ValueError("failed stage cannot be approved; regenerate, revise, or cancel")
+    # 带未解决 error 的结果（如 fallback 链路的 report_input_invalid，或契约
+    # 违规的 COMPLETED+error）同样不得放行：否则阶段以 APPROVED 携带 error
+    # 流到 finish，产出「终态 completed + 阶段携带 error」的非法状态。
+    # 唯一例外：阶段显式声明允许 accept_with_risks 且决策包挂接了确认类
+    # 风险码（如 requested_data_partial ↔ REQUESTED-DATA-PARTIAL），用户
+    # 明确接受全部要求确认的风险码后方可继续（见下方 accept_with_risks 分支）。
+    if current_result.error is not None and action in decision_actions:
+        allowed_actions = set(current_result.data.get("allowed_review_actions") or [])
+        error_acknowledgeable = (
+            action == "accept_with_risks"
+            and "accept_with_risks" in allowed_actions
+            and bool(dp)
+            and bool(dp.get("acknowledgement_required_codes"))
+        )
+        if not error_acknowledgeable:
+            raise ValueError(
+                f"阶段结果携带未解决的错误（{current_result.error}），不能直接放行；"
+                "请使用 revise/regenerate 修正后重跑，或取消任务。"
+            )
     decision_decision_id = decision.get("decision_id", "")
     if dp and action in decision_actions:
         if not decision_decision_id:
@@ -453,6 +480,10 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
                 for item in current_result.data.get("missing_requirements", [])
                 if isinstance(item, dict) and item.get("requirement_id")
             ]
+        # 显式风险确认覆盖了阶段错误（如 requested_data_partial）：错误视为
+        # 已解决并清除，维持「completed/approved 阶段不携带未解决 error」契约。
+        if current_result.error is not None:
+            current_result.error = None
 
     if action == "customize":
         input_data["selected_chart_ids"] = selected_chart_ids
@@ -502,9 +533,16 @@ def _route_after_review(state: PipelineGraphState) -> str:
 
 
 def _finish(state: PipelineGraphState) -> dict[str, object]:
-    status = (
-        StageStatus.CANCELLED if state["status"] == StageStatus.CANCELLED else StageStatus.COMPLETED
-    )
+    if state["status"] == StageStatus.CANCELLED:
+        status = StageStatus.CANCELLED
+    else:
+        # Fail-closed 兜底（P0：fallback 链路终态非法）：终态 COMPLETED 绝不
+        # 与未解决的阶段 error 共存。上游防线（_stage_node 路由 + _review_gate
+        # 拦截）被绕过时，宁可停在合法的 WAITING_REVIEW 终态，也不伪装成完成。
+        error_bearing = any(
+            result.get("error") is not None for result in state["stage_results"].values()
+        )
+        status = StageStatus.WAITING_REVIEW if error_bearing else StageStatus.COMPLETED
     return {"status": status, "updated_at": datetime.now(UTC).isoformat()}
 
 

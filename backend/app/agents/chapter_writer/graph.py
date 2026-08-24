@@ -7,12 +7,18 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from typing_extensions import TypedDict
 
+from app.agents.chapter_writer.fallback import build_single_chapter_fallback
+from app.agents.chapter_writer.normalizer import (
+    ChapterNormalizationError,
+    normalize_loose_chapter,
+)
 from app.agents.chapter_writer.outline import OUTLINE_VERSION, REPORT_OUTLINE
 from app.agents.chapter_writer.prompt_adapter import (
     build_chapter_runtime_prompt,
     select_chapter_claims,
 )
 from app.agents.chapter_writer.prompt_loader import ChapterPromptAsset
+from app.integrations.llm.openai_compatible import StructuredOutputError
 from app.integrations.llm.protocol import ChapterWritingModel
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import (
@@ -42,6 +48,12 @@ _FORBIDDEN_PHRASES = (
 _UNAVAILABLE_CHART_PHRASES = ("如下图所示", "图中可以看出")
 _NUMBER_PATTERN = re.compile(r"\d+(?:\.\d+)?%?")
 _OUTLINE_BY_ID = {chapter.chapter_id: chapter for chapter in REPORT_OUTLINE}
+
+
+def _single_fallback_reason(exc: Exception) -> str:
+    if isinstance(exc, StructuredOutputError):
+        return f"StructuredOutputError:{exc.code.value}"
+    return type(exc).__name__
 
 
 class ChapterWriterGraphState(TypedDict):
@@ -258,19 +270,42 @@ def build_chapter_writer_graph(
         options = ChapterWritingOptions.model_validate(state["options"])
         chapter_id = state["chapter_ids"][state["current_index"]]
         chapter = _OUTLINE_BY_ID[chapter_id]
-        draft = await model.generate_chapter(
-            system_prompt=prompt.content,
-            runtime_prompt=build_chapter_runtime_prompt(
-                analysis,
-                chapter,
-                charts=charts,
-                options=options,
-                review_feedback=state["review_feedback"],
-                rejected_claim_ids=state["rejected_claim_ids"],
-                audit_feedback=state["current_issues"],
-                revision=state["workflow_revision"],
-            ),
+        allowed_claims = select_chapter_claims(
+            analysis, chapter_id, set(state["rejected_claim_ids"])
         )
+        try:
+            loose = await model.generate_chapter(
+                system_prompt=prompt.content,
+                runtime_prompt=build_chapter_runtime_prompt(
+                    analysis,
+                    chapter,
+                    charts=charts,
+                    options=options,
+                    review_feedback=state["review_feedback"],
+                    rejected_claim_ids=state["rejected_claim_ids"],
+                    audit_feedback=state["current_issues"],
+                    revision=state["workflow_revision"],
+                ),
+            )
+            draft = normalize_loose_chapter(
+                loose,
+                outline=chapter,
+                allowed_claims=allowed_claims,
+                revision=state["workflow_revision"],
+            )
+        except (StructuredOutputError, ChapterNormalizationError) as exc:
+            # Per-chapter degradation: only this chapter falls back to the
+            # deterministic draft so one failure cannot void the whole report.
+            draft = build_single_chapter_fallback(
+                outline=chapter,
+                claims=allowed_claims,
+                revision=state["workflow_revision"],
+            )
+            quality_issues = list(state["quality_issues"])
+            quality_issues.append(
+                f"{chapter_id}:chapter_single_fallback:{_single_fallback_reason(exc)}"
+            )
+            return {"draft": draft.model_dump(mode="json"), "quality_issues": quality_issues}
         return {"draft": draft.model_dump(mode="json")}
 
     def audit(state: ChapterWriterGraphState) -> dict[str, object]:
