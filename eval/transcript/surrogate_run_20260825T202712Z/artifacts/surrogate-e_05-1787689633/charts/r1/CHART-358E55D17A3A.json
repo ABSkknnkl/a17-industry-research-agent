@@ -1,0 +1,100 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-358E55D17A3A",
+  "chart_type": "line",
+  "data_fingerprint": "0bcaae2e099ad0247f4f6ff8277412432d555dfdfee8d72fd698d1f226b8cb18",
+  "dedupe_key": "trend:trend:以bar图呈现营业收入的证据分布，支撑ch-02的论述。:0bcaae2e099ad0247f4f6ff8277412432d555dfdfee8d72fd698d1f226b8cb18",
+  "evidence_ids": [
+    "E-a13d4da45182edde",
+    "E-6a383267ae659a58",
+    "E-8c16f75658a54684",
+    "E-763b90b57d47a6c6",
+    "E-bedb49d125dba34f"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现营业收入的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "宁德时代": {
+        "2025-06-30": "E-bedb49d125dba34f",
+        "2025-09-30": "E-763b90b57d47a6c6",
+        "2025-12-31": "E-8c16f75658a54684",
+        "2026-03-31": "E-6a383267ae659a58",
+        "2026-06-30": "E-a13d4da45182edde"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          178886253000.0,
+          283071987000.0,
+          423701834000.0,
+          129131041000.0,
+          276916580000.0
+        ],
+        "name": "宁德时代",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业收入（宁德时代）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2025-06-30",
+        "2025-09-30",
+        "2025-12-31",
+        "2026-03-31",
+        "2026-06-30"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "营业收入（宁德时代）",
+  "user_requested": false,
+  "variant": "line"
+}

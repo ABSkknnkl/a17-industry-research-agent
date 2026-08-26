@@ -362,6 +362,9 @@ class ChapterWritingResult(ChapterContract):
     prompt_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     model_name: str = Field(min_length=1)
     quality: ChapterQualityReport
+    # Agent 4 透传通道审计：记录本次运行消费的 review_feedback 原文与来源。
+    # Agent 4 不做结构化解释，只做注入检测与长度归一后原文透传（passthrough_mode）。
+    feedback_passthrough: dict[str, object] | None = None
 
     @model_validator(mode="after")
     def validate_complete_outline(self) -> "ChapterWritingResult":

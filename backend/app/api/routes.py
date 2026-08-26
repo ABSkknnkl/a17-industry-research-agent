@@ -2,13 +2,19 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import FileResponse
 
 from app.core.config import settings
 from app.schemas.common import PingResponse
 from app.schemas.run import RunCreateRequest
-from app.schemas.workflow import ReviewAction, ReviewRequest, WorkflowState
+from app.schemas.workflow import (
+    ReviewAction,
+    ReviewRequest,
+    RevisionListResponse,
+    RunListResponse,
+    WorkflowState,
+)
 from app.security.audit import SecurityEventType, security_audit_log
 from app.security.auth import SecurityPrincipal, require_principal
 from app.security.policy import detect_prompt_injection
@@ -102,6 +108,22 @@ async def create_run(
     return await workflow_runner.start(request, owner_id=principal.owner_id)
 
 
+@router.get("/runs", response_model=RunListResponse)
+async def list_runs(
+    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
+    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+) -> RunListResponse:
+    """List runs owned by the authenticated principal, newest first."""
+
+    return await workflow_runner.list_runs(
+        owner_id=principal.owner_id,
+        offset=offset,
+        limit=limit,
+    )
+
+
 @router.get("/runs/{run_id}", response_model=WorkflowState)
 async def get_run(
     run_id: str,
@@ -112,6 +134,61 @@ async def get_run(
 
     try:
         return await workflow_runner.get(run_id, owner_id=principal.owner_id)
+    except PermissionError as exc:
+        security_audit_log.record(
+            SecurityEventType.RUN_ACCESS_DENIED,
+            owner_id=principal.owner_id,
+            run_id=run_id,
+            risk_level="high",
+            reason_code="owner_mismatch",
+            outcome="request_blocked",
+        )
+        raise HTTPException(status_code=404, detail="Workflow run not found") from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/runs/{run_id}/revisions", response_model=RevisionListResponse)
+async def list_run_revisions(
+    run_id: str,
+    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
+    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
+) -> RevisionListResponse:
+    """List persisted revisions of one run, newest revision first."""
+
+    try:
+        return await workflow_runner.list_revisions(run_id, owner_id=principal.owner_id)
+    except PermissionError as exc:
+        security_audit_log.record(
+            SecurityEventType.RUN_ACCESS_DENIED,
+            owner_id=principal.owner_id,
+            run_id=run_id,
+            risk_level="high",
+            reason_code="owner_mismatch",
+            outcome="request_blocked",
+        )
+        raise HTTPException(status_code=404, detail="Workflow run not found") from exc
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/runs/{run_id}/revisions/{revision}", response_model=WorkflowState)
+async def get_run_revision(
+    run_id: str,
+    revision: int,
+    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
+    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
+) -> WorkflowState:
+    """Return the read-only snapshot of one historical revision."""
+
+    if revision < 1:
+        raise HTTPException(status_code=404, detail="Workflow revision not found")
+    try:
+        return await workflow_runner.get_revision(
+            run_id,
+            revision,
+            owner_id=principal.owner_id,
+        )
     except PermissionError as exc:
         security_audit_log.record(
             SecurityEventType.RUN_ACCESS_DENIED,

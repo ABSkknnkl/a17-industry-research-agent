@@ -24,6 +24,7 @@ from app.agents.data_fetcher.intent_models import (
     ResearchIntentPlan,
 )
 from app.agents.data_fetcher.metric_registry import get_metric_spec
+from app.agents.data_fetcher.plan_validator import validate_intent_plan
 from app.agents.data_fetcher.skill_capabilities import capability_supports
 from app.schemas.acquisition import SkillName
 
@@ -488,7 +489,7 @@ def _merge_llm_plan(
     )
 
 
-async def build_intent_plan(
+async def _build_intent_plan_uncalibrated(
     user_text: str,
     *,
     industry_topic: str,
@@ -551,3 +552,99 @@ async def build_intent_plan(
         max_sub_requirements=max_sub_requirements,
         max_skills_per_requirement=max_skills_per_requirement,
     )
+
+
+def _clarification_fallback(
+    fallback: ResearchIntentPlan,
+    verdict_blockers: list[str],
+) -> ResearchIntentPlan:
+    """Last-resort fail-closed outcome: stop for human review."""
+
+    questions = [
+        *(
+            question
+            for question in fallback.clarification_questions
+            if isinstance(question, str)
+        ),
+        "意图计划未通过确定性校验，需人工确认研究范围与技能路由。",
+    ][:12]
+    return fallback.model_copy(
+        update={
+            "parser_mode": "fallback",
+            "requires_clarification": True,
+            "clarification_questions": questions,
+            "warnings": [
+                *fallback.warnings,
+                *(f"plan_validator_blocked:{blocker}" for blocker in verdict_blockers),
+            ][:30],
+        }
+    )
+
+
+async def build_intent_plan(
+    user_text: str,
+    *,
+    industry_topic: str,
+    known_entities: list[str] | None = None,
+    decomposer: IntentDecomposer | None = None,
+    confidence_accept: float = 0.90,
+    confidence_review: float = 0.75,
+    max_sub_requirements: int = 12,
+    max_skills_per_requirement: int = 3,
+) -> ResearchIntentPlan:
+    """Build the intent plan, then gate it through the deterministic validator.
+
+    借鉴 industry-panorama-research 的 check_scope.py 模式：任何计划（含
+    LLM 融合产物）进入取数规划前必须通过跨字段确定性校验。BLOCK 时先
+    回退确定性重建；确定性重建仍不合法时转入人工审核（fail-closed）。
+    """
+
+    plan = await _build_intent_plan_uncalibrated(
+        user_text,
+        industry_topic=industry_topic,
+        known_entities=known_entities,
+        decomposer=decomposer,
+        confidence_accept=confidence_accept,
+        confidence_review=confidence_review,
+        max_sub_requirements=max_sub_requirements,
+        max_skills_per_requirement=max_skills_per_requirement,
+    )
+    verdict = validate_intent_plan(plan)
+
+    if verdict.status == "block":
+        fallback = await _build_intent_plan_uncalibrated(
+            user_text,
+            industry_topic=industry_topic,
+            known_entities=known_entities,
+            decomposer=None,
+            confidence_accept=confidence_accept,
+            confidence_review=confidence_review,
+            max_sub_requirements=max_sub_requirements,
+            max_skills_per_requirement=max_skills_per_requirement,
+        )
+        fallback_verdict = validate_intent_plan(fallback)
+        if fallback_verdict.status == "block":
+            return _clarification_fallback(fallback, verdict.blockers)
+        return fallback.model_copy(
+            update={
+                "parser_mode": "fallback",
+                "warnings": [
+                    *fallback.warnings,
+                    *(
+                        f"plan_validator_blocked:{blocker}"
+                        for blocker in verdict.blockers
+                    ),
+                ][:30],
+            }
+        )
+
+    if verdict.warnings:
+        return plan.model_copy(
+            update={
+                "warnings": [
+                    *plan.warnings,
+                    *(f"plan_validator:{warning}" for warning in verdict.warnings),
+                ][:30],
+            }
+        )
+    return plan

@@ -4,12 +4,17 @@ from typing import Any, Literal
 
 from pydantic import ValidationError
 
+from app.agents.data_interpreter.anomaly import (
+    detect_value_anomalies,
+    to_quality_issue,
+)
 from app.agents.data_interpreter.calculations import calculate_p0_metrics
 from app.agents.data_interpreter.graph import (
     AnalysisGraphState,
     build_data_interpreter_graph,
 )
 from app.agents.data_interpreter.prompt_loader import load_global_equity_analysis_prompt
+from app.agents.data_interpreter.reconciliation import reconcile_comparables
 from app.agents.data_interpreter.skill_loader import load_supporting_skills
 from app.agents.data_interpreter.skill_router import SupportingSkillRouter
 from app.integrations.llm.openai_compatible import StructuredOutputError
@@ -23,6 +28,45 @@ from app.schemas.analysis import (
 from app.schemas.evidence import EvidenceItem
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
+
+
+def _detect_series_anomalies(items: list[EvidenceItem]) -> list[DataQualityIssue]:
+    """功能2：按指标+范围聚合数值序列做确定性异常质检。
+
+    只标记偏离（CRITICAL/WARN/INFO），不阻断分析；序列样本不足 3 个
+    时跳过（无法建立稳定基线）。INFO 级复用 medium 并以 [INFO] 前缀
+    标记，不改 DataQualityIssue 结构体。
+    """
+
+    series: dict[tuple[str, str], list[tuple[str, float]]] = {}
+    for item in items:
+        value = item.value
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            continue
+        key = (item.metric_name, item.scope)
+        period = item.period_end.isoformat() if item.period_end else ""
+        series.setdefault(key, []).append((period, float(value)))
+
+    issues: list[DataQualityIssue] = []
+    seen_ids: set[str] = set()
+    for (metric, _scope), points in sorted(series.items()):
+        if len(points) < 3:
+            continue
+        points.sort(key=lambda point: point[0])
+        findings = detect_value_anomalies(
+            [value for _, value in points],
+            metric_name=metric,
+            periods=[period for period, _ in points],
+        )
+        for finding in findings:
+            suffix = str(len(seen_ids) + 1).zfill(2)
+            issue_id = f"DQ-ANOM-{suffix}"
+            while issue_id in seen_ids:
+                suffix = str(int(suffix) + 1).zfill(2)
+                issue_id = f"DQ-ANOM-{suffix}"
+            seen_ids.add(issue_id)
+            issues.append(to_quality_issue(finding, issue_id=issue_id))
+    return issues
 
 
 def _partition_evidence(
@@ -280,6 +324,37 @@ class DataInterpreterAgent:
             )
         request = request.model_copy(update={"evidence_items": eligible_evidence})
 
+        # 功能3：口径统一——不可统一的输入隔离并记录，同值冲突择优；
+        # 完全隔离时沿用元数据不全的人工审核路径，部分隔离继续执行。
+        reconciled_entries, reconciliation_issues = reconcile_comparables(eligible_evidence)
+        admissible_evidence = [entry.evidence for entry in reconciled_entries]
+        if not admissible_evidence:
+            return StageResult(
+                stage=self.stage,
+                status=StageStatus.WAITING_REVIEW,
+                revision=context.revision,
+                data={
+                    "collaboration_requests": [
+                        {
+                            "request_id": "EVIDENCE-RECONCILIATION",
+                            "question": "请补充同口径证据或确认换算关系。",
+                            "reason": "；".join(
+                                issue.description for issue in reconciliation_issues
+                            )[:2_000],
+                            "affected_dimensions": ["all"],
+                        }
+                    ]
+                },
+                evidence_sources=[item.evidence_id for item in request.evidence_items],
+                error="evidence_reconciliation_incomplete",
+            )
+        if len(admissible_evidence) < len(eligible_evidence):
+            eligible_evidence = admissible_evidence
+            request = request.model_copy(update={"evidence_items": admissible_evidence})
+
+        # 功能2：确定性数值异常质检（≥3 样本才建立基线，只标记不阻断）。
+        anomaly_issues = _detect_series_anomalies(eligible_evidence)
+
         calculated_metrics, calculation_issues = calculate_p0_metrics(
             request.evidence_items
         )
@@ -339,12 +414,17 @@ class DataInterpreterAgent:
         try:
             final_state = await graph.ainvoke(graph_state)
             analysis = AnalysisResult.model_validate(final_state["result"])
-            if preflight_issues:
+            precheck_issues = [
+                *preflight_issues,
+                *reconciliation_issues,
+                *anomaly_issues,
+            ]
+            if precheck_issues:
                 analysis = analysis.model_copy(
                     update={
                         "data_quality_issues": [
                             *analysis.data_quality_issues,
-                            *preflight_issues,
+                            *precheck_issues,
                         ][:100]
                     }
                 )

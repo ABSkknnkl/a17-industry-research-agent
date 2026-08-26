@@ -1,5 +1,9 @@
 """Composition root for the real or explicitly mocked Agent 1."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from app.agents.data_fetcher.executor import RetrievalExecutor
 from app.agents.data_fetcher.planner import QueryPlanner
 from app.agents.data_fetcher.semantic_router import (
@@ -16,8 +20,37 @@ from app.integrations.skillhub import (
 from app.integrations.skillhub.protocol import SkillHubClient
 from app.runtime.models import RuntimePolicy
 
+if TYPE_CHECKING:
+    from app.agents.common.feedback_interpreter import FeedbackInterpreter
 
-def create_data_fetcher_agent(settings: Settings) -> DataFetcherAgent:
+
+def create_feedback_interpreter(settings: Settings) -> "FeedbackInterpreter | None":
+    # Deferred import breaks the factory -> feedback_interpreter ->
+    # deterministic_intent_parser -> data_fetcher.__init__ -> factory cycle.
+    from app.agents.common.feedback_interpreter import FeedbackInterpreter
+
+    """Build the shared review-feedback interpreter when enabled."""
+    if not settings.FEEDBACK_INTERPRETER_ENABLED:
+        return None
+    if settings.LLM_API_KEY is None or not settings.LLM_BASE_URL:
+        raise RuntimeError("feedback_interpreter_configuration_missing")
+    return FeedbackInterpreter(
+        model_name=settings.LLM_MODEL,
+        api_key=settings.LLM_API_KEY.get_secret_value(),
+        base_url=settings.LLM_BASE_URL,
+        timeout_seconds=settings.LLM_TIMEOUT_SECONDS,
+        confidence_accept=settings.FEEDBACK_CONFIDENCE_ACCEPT,
+        confidence_review=settings.FEEDBACK_CONFIDENCE_REVIEW,
+    )
+
+
+def create_data_fetcher_agent(
+    settings: Settings,
+    *,
+    feedback_interpreter: "FeedbackInterpreter | None" = None,
+) -> DataFetcherAgent:
+    if feedback_interpreter is None:
+        feedback_interpreter = create_feedback_interpreter(settings)
     semantic_router = None
     if settings.AGENT1_SEMANTIC_ROUTER_ENABLED:
         if settings.LLM_API_KEY is None or not settings.LLM_BASE_URL:
@@ -74,4 +107,5 @@ def create_data_fetcher_agent(settings: Settings) -> DataFetcherAgent:
         intent_decomposer=intent_decomposer,
         intent_confidence_accept=settings.AGENT1_INTENT_CONFIDENCE_ACCEPT,
         intent_confidence_review=settings.AGENT1_INTENT_CONFIDENCE_REVIEW,
+        feedback_interpreter=feedback_interpreter,
     )

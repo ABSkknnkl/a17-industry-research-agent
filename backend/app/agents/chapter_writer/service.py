@@ -14,6 +14,7 @@ from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingOptions, ChapterWritingResult
 from app.schemas.chart import ChartReference
 from app.schemas.workflow import StageName, StageResult, StageStatus
+from app.security.policy import detect_prompt_injection
 from app.workflow.stages import StageContext
 
 
@@ -94,6 +95,27 @@ class ChapterWriterAgent:
         self._prompt = load_chapter_writer_prompt()
 
     async def run(self, context: StageContext) -> StageResult:
+        # 透传通道纵深防御：SecuredStageAgent 已做第一层注入检测，此处
+        # 再拦一次，保证 agent 被直接构造（不经 guard）时同样不会把
+        # 注入文本送进写作 prompt。
+        if detect_prompt_injection({"review_feedback": context.review_feedback}):
+            return StageResult(
+                stage=self.stage,
+                status=StageStatus.WAITING_REVIEW,
+                revision=context.revision,
+                data={
+                    "blocking_issues": ["prompt_injection_suspected"],
+                    "collaboration_requests": [
+                        {
+                            "request_id": "CHAPTER-FEEDBACK-GUARD",
+                            "question": "反馈内容包含可疑指令，请换一种表述后重试。",
+                            "reason": "审核反馈触发注入检测，已阻止透传给写作模型。",
+                            "affected_chapter_ids": [],
+                        }
+                    ],
+                },
+                error="prompt_injection_suspected",
+            )
         interpretation = context.previous_results.get(StageName.DATA_INTERPRET)
         if interpretation is None:
             return _waiting_review(
@@ -205,13 +227,33 @@ class ChapterWriterAgent:
             if (not selected_chapter_ids or chapter.chapter_id in selected_chapter_ids)
             and chapter.chapter_id not in completed  # 跳过已完成的章节
         ]
+        # 透传通道：Agent 4 不做结构化解释，feedback 归一化（压缩空白、
+        # 截断到契约上限）后原文透传给写作模型，并记录审计产物。
+        raw_feedback = context.review_feedback or options.instruction
+        compact_feedback = " ".join(str(raw_feedback).split())[:2_000] if raw_feedback else ""
+        feedback_source = (
+            "review_feedback"
+            if context.review_feedback
+            else ("options.instruction" if options.instruction else None)
+        )
+        feedback_passthrough: dict[str, Any] | None = (
+            {
+                "stage": "chapter_write",
+                "source": feedback_source,
+                "feedback": compact_feedback,
+                "passthrough_mode": "verbatim",
+                "note": "原文透传给写作模型，仅做注入检测与长度归一，不做结构化解释。",
+            }
+            if compact_feedback
+            else None
+        )
         graph = build_chapter_writer_graph(model=self._model, prompt=self._prompt)
         graph_state: ChapterWriterGraphState = {
             "run_id": context.run_id,
             "analysis": analysis.model_dump(mode="json"),
             "charts": [chart.model_dump(mode="json") for chart in charts],
             "options": options.model_dump(mode="json"),
-            "review_feedback": context.review_feedback or options.instruction,
+            "review_feedback": compact_feedback or None,
             "rejected_claim_ids": context.rejected_claim_ids,
             "chapter_ids": chapter_ids,
             "current_index": 0,
@@ -223,6 +265,7 @@ class ChapterWriterAgent:
             "revision_count": 0,
             "workflow_revision": context.revision,
             "result": None,
+            "feedback_passthrough": feedback_passthrough,
         }
         try:
             final_state = await graph.ainvoke(graph_state)

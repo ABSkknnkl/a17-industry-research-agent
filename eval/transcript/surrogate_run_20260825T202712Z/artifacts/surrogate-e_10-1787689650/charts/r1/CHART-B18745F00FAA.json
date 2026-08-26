@@ -1,0 +1,96 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-B18745F00FAA",
+  "chart_type": "line",
+  "data_fingerprint": "0c9a682d73422ad14eea33fba7ad343e08a03c272c51023a444927be976109b5",
+  "dedupe_key": "trend:trend:以line图呈现营业收入同比增长率的证据分布，支撑ch-02的论述。:0c9a682d73422ad14eea33fba7ad343e08a03c272c51023a444927be976109b5",
+  "evidence_ids": [
+    "E-5aa754ea665958d4",
+    "E-e0b0ce3484d8338e",
+    "E-2306057750074f2a",
+    "E-386c64661f115f98"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以line图呈现营业收入同比增长率的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "贵州茅台": {
+        "2022-12-31": "E-386c64661f115f98",
+        "2023-12-31": "E-2306057750074f2a",
+        "2024-12-31": "E-e0b0ce3484d8338e",
+        "2025-12-31": "E-5aa754ea665958d4"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          16.8657,
+          19.0119,
+          15.712000000000002,
+          -1.206
+        ],
+        "name": "贵州茅台",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "营业收入同比增长率（贵州茅台）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2022-12-31",
+        "2023-12-31",
+        "2024-12-31",
+        "2025-12-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY %",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": null,
+  "title": "营业收入同比增长率（贵州茅台）",
+  "user_requested": false,
+  "variant": "line"
+}

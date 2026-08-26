@@ -73,6 +73,43 @@ class WorkflowState(ContractModel):
     updated_at: datetime
 
 
+class RunSummary(ContractModel):
+    """Read-only listing entry for one run, derived from the latest snapshot."""
+
+    run_id: str = Field(min_length=1)
+    project_id: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=100)
+    current_stage: StageName
+    status: StageStatus
+    revision: int = Field(ge=1)
+    created_at: datetime
+    updated_at: datetime
+    artifact_count: int = Field(default=0, ge=0)
+    report_available: bool = False
+
+
+class RunListResponse(ContractModel):
+    total: int = Field(default=0, ge=0)
+    offset: int = Field(default=0, ge=0)
+    limit: int = Field(default=20, ge=1)
+    items: list[RunSummary] = Field(default_factory=list)
+
+
+class RevisionSummary(ContractModel):
+    """One persisted revision of a run, newest snapshot within that revision."""
+
+    revision: int = Field(ge=1)
+    status: StageStatus
+    current_stage: StageName
+    updated_at: datetime
+
+
+class RevisionListResponse(ContractModel):
+    run_id: str = Field(min_length=1)
+    current_revision: int = Field(ge=1)
+    revisions: list[RevisionSummary] = Field(default_factory=list)
+
+
 ShortReviewText = Annotated[str, Field(min_length=1, max_length=200)]
 LabelText = Annotated[str, Field(min_length=1, max_length=100)]
 RejectedClaimId = Annotated[str, Field(pattern=r"^C-[A-Za-z0-9_-]+$")]

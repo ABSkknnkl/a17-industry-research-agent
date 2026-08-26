@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>白酒行业研究报告</title>
+  <style>
+    :root { --ink:#0f172a; --muted:#64748b; --line:#dbe4ef; --blue:#1d4ed8; --paper:#fff; --soft:#f4f7fb; --accent-soft:#eff6ff; }
+    * { box-sizing:border-box; }
+    html { background:#e9eef5; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif; line-height:1.75; font-size:15px; }
+    main { max-width:1040px; margin:0 auto; padding:56px 64px 80px; }
+    .cover { min-height:760px; display:flex; flex-direction:column; justify-content:center; border-top:8px solid var(--blue); position:relative; page-break-after:always; }
+    .eyebrow { color:var(--blue); font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { font-size:44px; line-height:1.22; margin:18px 0; letter-spacing:-.02em; }
+    .subtitle { font-size:19px; color:var(--muted); max-width:720px; }
+    .meta-grid { margin-top:56px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .meta { border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+    .meta span { display:block; color:var(--muted); font-size:12px; }
+    .meta strong { display:block; margin-top:4px; overflow-wrap:anywhere; }
+    h2 { margin:48px 0 20px; padding-bottom:10px; border-bottom:2px solid var(--ink); font-size:28px; page-break-after:avoid; }
+    h3 { margin:30px 0 12px; font-size:20px; color:#162b4d; page-break-after:avoid; }
+    p { margin:10px 0; text-align:justify; }
+    .summary { background:var(--accent-soft); border:1px solid #bfdbfe; border-radius:14px; padding:26px 30px; }
+    .headline { font-size:21px; font-weight:700; line-height:1.55; }
+    .conclusion { border-left:4px solid var(--blue); padding:8px 14px; margin:14px 0; background:#fff; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+    .chip { color:#334155; background:#e2e8f0; border-radius:999px; padding:2px 9px; font-size:11px; }
+    .toc { columns:2; column-gap:36px; padding:0; list-style:none; }
+    .toc li { break-inside:avoid; padding:5px 0; border-bottom:1px dotted var(--line); }
+    .chapter { page-break-before:always; }
+    .chapter-summary { color:#334155; font-size:16px; background:var(--soft); padding:12px 16px; border-radius:8px; }
+    .reference { color:var(--muted); font-size:12px; margin-top:5px; }
+    .citation { color:var(--blue); text-decoration:none; border-bottom:1px dotted #93c5fd; margin-right:6px; }
+    .citation:hover { color:#1e40af; border-bottom-style:solid; }
+    .chart { margin:22px 0 28px; border:1px solid var(--line); border-radius:14px; padding:14px; break-inside:avoid; background:#fff; }
+    .chart svg { width:100%; height:auto; display:block; }
+    .chart figcaption { margin:8px 8px 2px; color:var(--muted); font-size:12px; }
+    .chart-number { color:var(--ink); font-weight:700; }
+    .chart-pie,.chart-radar { width:64%; margin-left:auto; margin-right:auto; }
+    .uncertainty { border:1px solid #fcd34d; background:#fffbeb; border-radius:8px; padding:10px 14px; margin:14px 0; break-inside:avoid; page-break-inside:avoid; }
+    .uncertainty strong { color:#92400e; }
+    .risk-list li, .boundary-list li { margin:6px 0; }
+    .footer-note { margin-top:48px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:12px; }
+    .draft-watermark { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0.08; font-size:72px; font-weight:900; color:#dc2626; transform:rotate(-20deg); letter-spacing:0.3em; }
+    .draft-banner { background:#fef2f2; border:2px solid #dc2626; border-radius:10px; padding:14px 20px; margin-bottom:24px; color:#991b1b; }
+    .draft-banner strong { color:#dc2626; }
+    .risk-appendix { page-break-before:always; }
+    .quality-appendix { page-break-before:always; }
+    .quality-table { width:100%; border-collapse:collapse; margin:12px 0 22px; font-size:13px; }
+    .quality-table th,.quality-table td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+    .quality-table th { background:var(--soft); }
+    .source-index { page-break-before:always; }
+    .source-index tbody tr { scroll-margin-top:20px; }
+    .source-table { table-layout:fixed; font-size:11px; font-variant-numeric:tabular-nums; }
+    .source-table th,.source-table td { overflow-wrap:anywhere; line-height:1.45; padding:7px 8px; }
+    .source-table th:first-child,.source-table td:first-child { width:5%; text-align:center; }
+    .source-table th:nth-child(2),.source-table td:nth-child(2) { width:20%; }
+    .source-table th:nth-child(3),.source-table td:nth-child(3) { width:15%; }
+    .source-table th:nth-child(4),.source-table td:nth-child(4) { width:12%; white-space:nowrap; }
+    .source-table th:nth-child(5),.source-table td:nth-child(5) { width:13%; white-space:nowrap; }
+    .source-table th:nth-child(6),.source-table td:nth-child(6) { width:15%; }
+    .source-table th:nth-child(7),.source-table td:nth-child(7) { width:20%; }
+    table caption { caption-side:top; text-align:left; color:var(--ink); font-weight:700; margin:0 0 8px; }
+    thead { display:table-header-group; }
+    .visual-note { border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin:18px 0 0; color:var(--muted); font-size:12px; background:var(--soft); }
+    .visual-note strong { color:var(--ink); }
+
+    /* 数据手册型：高密度、数值优先、表格与证据索引更突出。 */
+    .visual-data-manual { --blue:#17365d; --accent-soft:#f2f6fa; }
+    .visual-data-manual main { max-width:1120px; }
+    .visual-data-manual .cover { border-top-width:12px; }
+    .visual-data-manual h2 { color:#17365d; border-bottom-color:#17365d; }
+    .visual-data-manual .chapter-summary { border-left:4px solid #17365d; border-radius:0; }
+    .visual-data-manual .chart { border-radius:4px; }
+    .visual-data-manual .quality-table { font-size:12px; }
+
+    /* 分析笔记型：图、表、正文均衡，是系统默认外壳。 */
+    .visual-analysis-note { --blue:#1d4ed8; --accent-soft:#eff6ff; }
+    .visual-analysis-note .conclusion { border-radius:0 8px 8px 0; }
+
+    /* 深度研究型：收窄版心、提升行距，强调连续论证。 */
+    .visual-deep-research { --blue:#7c2d12; --accent-soft:#fff7ed; }
+    .visual-deep-research body,.visual-deep-research { font-family:"Songti SC","STSong","Noto Serif CJK SC",serif; }
+    .visual-deep-research main { max-width:920px; padding-left:76px; padding-right:76px; }
+    .visual-deep-research h1 { font-weight:600; letter-spacing:.01em; }
+    .visual-deep-research h2 { color:#451a03; border-bottom:1px solid #9a3412; }
+    .visual-deep-research h3 { color:#7c2d12; }
+    .visual-deep-research .chapter-summary { background:transparent; border-left:3px solid #9a3412; border-radius:0; padding-left:18px; }
+    .visual-deep-research .chart { border-width:1px 0; border-radius:0; padding:18px 0; }
+
+    .density-compact { font-size:14px; line-height:1.62; }
+    .density-compact main { padding-top:42px; padding-bottom:60px; }
+    .density-compact h2 { margin-top:38px; }
+    .density-compact .chart { margin:16px 0 20px; }
+    .density-detailed { font-size:15.5px; line-height:1.85; }
+    .density-detailed main { padding-top:64px; padding-bottom:96px; }
+    .density-detailed .chapter-summary { padding-top:16px; padding-bottom:16px; }
+    @page { size:A4; margin:14mm 12mm 16mm; @bottom-center { content:"A17 行业研究报告  ·  " counter(page); color:#64748b; font-size:9pt; } }
+    @media print {
+      html,body { background:#fff; }
+      body { font-size:13.5px; line-height:1.62; }
+      main { max-width:none; padding:0; }
+      .cover { min-height:245mm; }
+      h1 { font-size:32pt; }
+      h2 { margin:32px 0 14px; }
+      h3 { margin:20px 0 8px; }
+      p { margin:7px 0; }
+      .summary { padding:18px 22px; }
+      .conclusion { margin:9px 0; padding:6px 12px; }
+      .chapter-summary { padding:9px 14px; }
+      .chart { margin:16px 0 18px; padding:10px; box-shadow:none; }
+      .chart svg { max-height:78mm; }
+      .uncertainty { margin:10px 0; padding:7px 12px; }
+      .footer-note { margin-top:18px; padding-top:12px; font-size:10.5px; line-height:1.45; }
+    }
+  </style>
+</head>
+<body class="visual-analysis-note density-balanced">
+<main>
+
+  <section class="cover">
+    <div class="eyebrow">A17 · 行业研究系统</div>
+    <h1>白酒行业研究报告</h1>
+    <p class="subtitle">白酒：样本证据覆盖110项指标，结构性结论以证据链为准。</p>
+    <div class="meta-grid">
+      <div class="meta"><span>研究时点</span><strong>2026-08-11</strong></div>
+      <div class="meta"><span>生成时间</span><strong>2026-08-25 20:33（协调世界时）</strong></div>
+      <div class="meta"><span>报告深度</span><strong>标准版</strong></div>
+      <div class="meta"><span>交付状态</span><strong>附限制条件可交付</strong></div>
+      <div class="meta"><span>视觉风格</span><strong>分析笔记型</strong></div>
+    </div>
+    <div class="visual-note">
+      <strong>视觉编排：</strong>分析笔记型
+      · Agent 5根据Agent 4内容推荐    </div>
+  </section>
+
+
+  <h2>目录</h2>
+  <ol class="toc">
+<li>第一章 · 行业定义与研究基础</li><li>第二章 · 市场规模与成长性</li><li>第三章 · 产业链与利润分配</li><li>第四章 · 竞争格局</li><li>第五章 · 财务质量与估值参照</li><li>第六章 · 宏观、政策与技术催化</li><li>第七章 · 情景、风险与研究结论</li>  </ol>
+
+  <h2>执行摘要</h2>
+  <section class="summary">
+    <p class="headline">白酒：样本证据覆盖110项指标，结构性结论以证据链为准。</p>
+    <div class="conclusion">
+      <strong>核心结论1</strong> · CPI:当月同比的宏观@值为0.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论2</strong> · 贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-07-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论3</strong> · 贵州茅台的经营活动产生的现金流量净额为70,690,750,119.06元，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论4</strong> · 贵州茅台的总资产为309,050,784,569.31元，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论5</strong> · 贵州茅台的负债为46,954,432,394.95未提供，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论6</strong> · 贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-06-22（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论7</strong> · 贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-05-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论8</strong> · 贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-04-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+  </section>
+  <h3>三种情景</h3><ul><li>基准情景：基准情景沿用现有证据链推导，不引入额外假设。；触发条件：核心指标维持当前披露水平。</li><li>乐观情景：需求改善传导至出货与收入，随后影响盈利水平。；触发条件：下游订单与出货数据同步回升。</li><li>悲观情景：成本上行压缩利润空间，政策收紧影响需求节奏。；触发条件：原材料价格上行或监管收紧。</li></ul>
+  <h3>核心风险</h3><ul class="risk-list"><li>样本证据以单一来源为主，结论需结合多源交叉核验。</li><li>宏观与政策变量存在研究时点外变动风险。</li></ul>
+  <h3>研究边界</h3><ul class="boundary-list"><li>整体置信度：中</li><li>财务质量校验：差异待核验</li><li>财务指标以披露值为准，勾稽核验以确定性计算结果为准。</li><li>估值参考维度缺少独立估值证据，仅保留研究边界说明。</li><li>financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。</li><li>valuation_expectation：估值参考维度缺少独立估值证据，仅保留研究边界说明。</li><li>归母净利润：iqr异常检测（WARN）：超出四分位区间[6.336e+10, 9.37e+10]（Q1=7.473e+10, Q3=8.232e+10, IQR判定1.5倍）。基线区间[63355078224.35501, 93699060428.07498]，仅标记偏离，不构成结论。</li><li>归母净利润同比增长率：shift异常检测（CRITICAL）：环比变化-129.5%，超出突变阈值±20%。基线区间[15.379999999999999, 15.379999999999999]，仅标记偏离，不构成结论。</li><li>营业收入同比增长率：shift异常检测（CRITICAL）：环比变化-107.7%，超出突变阈值±20%。基线区间[15.712000000000002, 15.712000000000002]，仅标记偏离，不构成结论。</li><li>竞争格局维度：当前维度缺少可引用结论，仅保留研究边界。</li><li>产业链维度：当前维度缺少可引用结论，仅保留研究边界。</li><li>风险维度：当前维度缺少可引用结论，仅保留研究边界。</li></ul>
+  <div class="footer-note"><p>报告由数据解读智能体的结构化结论、图表智能体的已校验图表与章节撰写智能体的七章二十一节正文确定性组装；报告融合智能体不新增事实、不改写数据结论。</p><p><strong>免责声明：</strong>本报告仅用于行业研究与信息交流，不构成证券投资建议、收益保证或交易邀约。</p></div>
+
+  <section class="chapter">
+    <h2>第一章 · 行业定义与研究基础</h2>
+    <p class="chapter-summary">本章围绕“行业定义与研究基础”，基于9项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第1章第1节 · 行业定义、研究边界与证券范围</h3>
+        <p>CPI:当月同比的宏观@值为0.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贵州茅台的总资产为309,050,784,569.31元，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-05-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第1章第2节 · 数据口径、研究时点与分析方法</h3>
+        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-07-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贵州茅台的负债为46,954,432,394.95未提供，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-04-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第1章第3节 · 行业发展阶段与当前核心矛盾</h3>
+        <p>贵州茅台的经营活动产生的现金流量净额为70,690,750,119.06元，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-06-22（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-03-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第二章 · 市场规模与成长性</h2>
+    <p class="chapter-summary">本章围绕“市场规模与成长性”，基于94项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第2章第1节 · 市场规模与历史增长趋势</h3>
+        <p>贵州茅台的经营活动产生的现金流量净额为70,690,750,119.06元，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的归母净利润为82,320,067,101.68元，期末2025-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的归母净利润为86,228,146,421.62元，期末2024-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的归母净利润为74,734,071,550.75元，期末2023-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的归母净利润为62,717,467,870.12元，期末2022-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的归母净利润同比增长率为-4.5323%，期末2025-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的归母净利润同比增长率为15.38%，期末2024-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的归母净利润同比增长率为19.1599%，期末2023-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的归母净利润同比增长率为19.5507%，期末2022-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的最新价为1,272.83未提供（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的纳入概念原因为[&#39;【白酒概念】全国两大高端白酒龙头之一(行业第一)，酱香型白酒代表，拥有八百年历史，被尊称国酒”，曾于1915年获“巴拿马万国博览会”金奖。公司主要业务是茅台酒及系列酒的生产与销售。主导产品“贵州茅台酒”是世界三大蒸馏名酒之一，也是集国家地理标志产品、有机食品和国家非物质文化遗产于一身的白酒品牌。&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的上市板块为主板文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>武商集团的所属概念为[&#39;免税店&#39;, &#39;预制菜&#39;, &#39;白酒概念&#39;, &#39;冰雪产业&#39;, &#39;网红经济&#39;, &#39;IP经济(谷子经济)&#39;, &#39;物业管理&#39;, &#39;参股银行&#39;, &#39;露营经济&#39;, &#39;跨境电商&#39;, &#39;文化传媒概念&#39;, &#39;国企改革&#39;, &#39;电子竞技&#39;, &#39;创投&#39;, &#39;一带一路&#39;, &#39;数字经济&#39;, &#39;人工智能&#39;, &#39;黄金概念&#39;, &#39;低空经济&#39;, &#39;深股通&#39;, &#39;融资融券&#39;, &#39;商贸零售&#39;, &#39;零售&#39;, &#39;百货零售&#39;, &#39;湖北三资改革&#39;, &#39;谷子店&#39;, &#39;低空物流&#39;, &#39;免税零售&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>武商集团的所属同花顺行业为[&#39;商贸零售&#39;, &#39;零售&#39;, &#39;百货零售&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>泸州老窖的最新涨跌幅为-1.0568未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>泸州老窖的上市地点为深圳文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>古井贡酒的最新价为90.65未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>古井贡酒的纳入概念原因为[&#39;【白酒概念】中国老八大名酒，中国制造业500强企业，中国第一家同时发行A、B两支股票的白酒类上市公司。拥有古井贡、黄鹤楼、老明光三大品牌，浓香、清香、明绿香、古香（烤麦香）四种香型，战略产品为古井贡酒•年份原浆。古井贡酒源于公元196年曹操将家乡亳州产的“九酝春酒”和酿造方法进献给汉献帝，自此该酒一直作为皇室贡品。古井贡酒四次蝉联全国白酒评比金奖，在巴黎第十三届国际食品博览会上荣获金夏尔奖。公司先后获得中华老字号、中国地理标志产品、全国质量标杆、国家级工业设计中心、国家级绿色工厂等荣誉。&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>贵州茅台的营业收入为168,838,102,514.79未提供，期末2025-12-31（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>贵州茅台的归母净利润同比增长率为-4.5323未提供，期末2025-12-31（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>武商集团的分类标准为产品文本（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>武商集团的毛利率为97.6362未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>武商集团的利润占比为20.5859未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>古井贡酒的上市板块为主板文本（来源：同花顺问财 hithink-sector-selector，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>贵州茅台的最新涨跌幅为-1.4456未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>古井贡酒的预测净利润中值为3,611,000,000未提供，期末2026-12-31（来源：同花顺问财 hithink-insresearch-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>古井贡酒的涨跌幅为-56.4617未提供，期末2026-08-11（来源：同花顺问财 hithink-insresearch-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的title为贵州茅台（600519）：2026年一季报点评：茅台酒稳健，系列酒重拾增长文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的title为贵州茅台“失速”，洋河利润腰斩……白酒神话不灵了？文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>        <p>admin的title为贵州茅台，首次下滑文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>        <p>admin的summary为投资要点: 前言：本文是《周期寻金》系列的第一篇报告，写于贵州茅台2025年报披露之后，2026一季报之际。在贵州茅台年报首次下滑后，市场观点分歧加剧，我们细致解读报表，并结合贵州茅台市场化改革举措，认为贵州茅台的投资范式将再度切换，成长性思维或成下一阶段估值主线。我们希望能够为市场提供新的增量视角，解读焕然一新的贵州茅台。本文核心聚焦以下问题：1）为何市场化改革能重塑贵州茅台估值框架？2）精品茅台为何能够驱动公司二次成长？3）如何展望公司业绩、估值演绎？ 贵州茅台估值之辩：从确定走向二次成长。本轮估值定价中，以普茅为核心的经营确定性是贵州茅台估值体系的基石，伴随持续推进市场化改革、取消搭售模式，茅台酒价与股价之间关联亦逐步脱敏，且伴随业绩下滑，原有思维范式进一步陷入迷茫。我们再审2025年报，挖掘蕴藏公司定价逻辑的切换与全新成长脉络。两大关键信息打破了原有思维格局约束：一是公司可以接受报表下滑，二是茅台酒的供给持续受限，不因短期经营压力盲目放量。基于此，我们认为市场化改革化解“业绩-供给-批价”三端矛盾，精品产品有望打开估值天花板，而3月末普茅提价亦印证我们对于量价逻辑的...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的summary为中端白酒竞争激烈，高端白酒茅台地位稳固：。2025年上半年茅台酒收入达755.89亿元/+10.24%，毛利率93.85%/-0.28pct，营收占比84.6%， 其中2025Q1/Q2茅台酒收入增速分别为+9.7%/+10.99%，茅台 IP 在高端白酒市场地位稳固； 2025 年上半年系列酒收入 137.63 亿元/+4.68%，毛利率77.59%/-2.51pct，营收占比15.4%； 其中2025Q1/Q2系列酒收入增速分别为+18.30%/-6.53%，系列酒二季度增速下滑较多，中端白酒市场品牌林立，竞争激烈。渠道结构持续优化，终端批发价格回落压力犹在：。 渠道结构持续优化，直销与数字化营销成效显著，公司通过“社会+自营”双渠道体系强化市场运营，2025H1直销/批发收入分别实现400.09/493.43亿元，增速分别为+18.62%/2.83%，渠道改革效果持续显现。 行业承压中国酒业协会联合各名酒企业及酒类大商，共同发布《中国酒业防内卷式竞争倡议书》，白酒龙头企业主动控量保价，维护行业健康运行。茅台在2024年年底举行的经销商联谊会上，对2025年的市场攻坚提出明确方...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的summary为就第三季度来看，白酒行业实现营收779亿元，同比下滑18.4%，行业内部出清广度与深度大幅提升。剔除贵州茅台后，白酒行业第三季度实现营收391亿元，同比下滑36.8%，连续五个季度下滑，且下滑幅度进一步扩大。 利润方面，第三季度，白酒行业合计实现归母净利润281亿元，同比下滑22%，表现明显弱于营收端表现。剔除贵州茅台后，白酒行业第三季度归母净利润同比下滑幅度来到53.3%，下滑幅度高于同口径营收端，且连续第五个季度下滑。 有分析指出，白酒行业收入在缺乏支撑的同时，固定成本开支也拖累了利润端表现。同时，随着白酒价格的回落、行业缩量竞争加剧、酒企产品结构弱化、渠道补贴提升等因素，也进一步削弱了利润端表现。 2025年5月，《党政机关厉行节约反对浪费条例》明确规定：“公务接待工作餐不得上酒”，政务消费规模大幅缩减，不少白酒消费大省高端酒动销大幅减少。高端白酒市场首当其冲，部分团购渠道需求骤降，致使经销商库存增加。 随着市场需求的放缓，渠道库存居高不下，“压货”模式难以产生更大价值；而新生代消费者对传统白酒的文化认同与消费习惯发生变化，也使得行业面临结构性压力。 这场重构无疑是残酷的，它意味...文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>        <p>admin的summary为茅台正站在历史的转折点。 4月16日晚间，贵州茅台（600519）披露2025年财报，在“禁酒令”以及白酒行业周期调整的双重影响下，公司首次出现营收、净利双下滑，结束了上市二十多年来的增长神话。 2025年，贵州茅台营业总收入为1720.54亿元，同比下降1.2%；归母净利润823.2亿元，同比下降4.53%，业绩表现远低于市场预期。 券商机构此前普遍预测，贵州茅台2025年仍会维持增长。 结合公司业绩来看，贵州茅台去年前三季度整体仍维持6%以上的增长，但第四季度出现断崖式下滑，营收同比下滑19.43%至403.84亿元；净利润176.93亿元，同比暴跌30.34%，直接拖累全年表现。 需要注意的是，2025年，茅台在直销渠道取得的营收首次超越批发代理。 过往白酒行业高度依赖经销商和线下烟酒店，产品“一店一价”，价格盘很大程度上被经销商影响。 大举改革 业绩由增转降、直销超越代理，茅台正站在历史性的转折点，变革还在继续。 2025年下半年，贵州茅台新董事长陈华上任，2026年已在产品、价格、渠道等维度进行一系列调整。 业内普遍认为，今年白酒行业的处境仍不乐观，甚至可能比去年更艰难，而多...文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-266378029"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-266378029">经营活动产生的现金流量净额（贵州茅台）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">经营活动产生的现金流量净额（贵州茅台）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">贵州茅台</text><rect x="205.0" y="108.2" width="45.0" height="277.6" rx="3" fill="#2563EB"/><text x="227.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">7.06908e+10</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">贵州茅台</text></svg><figcaption><span class="chart-number">图2-1</span> · 经营活动产生的现金流量净额（贵州茅台） · 柱状图<br>数据来源：<a class="citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a><br>分析目的：以bar图呈现经营活动产生的现金流量净额的证据分布，支撑相关章节的论述。</figcaption></figure>
+      <figure class="chart chart-line"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-965521157"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-965521157">归母净利润（贵州茅台）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">归母净利润（贵州茅台）</text><line x1="88" y1="86" x2="88" y2="408" stroke="#94a3b8"/><line x1="88" y1="408" x2="924" y2="408" stroke="#94a3b8"/><line x1="88" y1="86.0" x2="924" y2="86.0" stroke="#e2e8f0"/><text x="78.0" y="90.0" text-anchor="end" font-size="11" fill="#475569">9.31264e+10</text><line x1="88" y1="166.5" x2="924" y2="166.5" stroke="#e2e8f0"/><text x="78.0" y="170.5" text-anchor="end" font-size="11" fill="#475569">6.81202e+10</text><line x1="88" y1="247.0" x2="924" y2="247.0" stroke="#e2e8f0"/><text x="78.0" y="251.0" text-anchor="end" font-size="11" fill="#475569">4.31141e+10</text><line x1="88" y1="327.5" x2="924" y2="327.5" stroke="#e2e8f0"/><text x="78.0" y="331.5" text-anchor="end" font-size="11" fill="#475569">1.81079e+10</text><line x1="88" y1="408.0" x2="924" y2="408.0" stroke="#e2e8f0"/><text x="78.0" y="412.0" text-anchor="end" font-size="11" fill="#475569">-6.89825e+09</text><text x="88.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2022-12-31</text><text x="366.7" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2023-12-31</text><text x="645.3" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2024-12-31</text><text x="924.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2025-12-31</text><polyline points="88.0,183.9 366.7,145.2 645.3,108.2 924.0,120.8" fill="none" stroke="#2563EB" stroke-width="3"/><circle cx="88.0" cy="183.9" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="366.7" cy="145.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="645.3" cy="108.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="924.0" cy="120.8" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><line x1="120" y1="62" x2="148" y2="62" stroke="#2563EB" stroke-width="3"/><text x="156.0" y="67.0" text-anchor="start" font-size="12" fill="#475569">贵州茅台</text></svg><figcaption><span class="chart-number">图2-4</span> · 归母净利润（贵州茅台） · 折线图<br>数据来源：<a class="citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a><br>分析目的：以bar图呈现归母净利润的证据分布，支撑相关章节的论述。</figcaption></figure>
+      <figure class="chart chart-line"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-877327729"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-877327729">归母净利润同比增长率（贵州茅台）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">归母净利润同比增长率（贵州茅台）</text><line x1="88" y1="86" x2="88" y2="408" stroke="#94a3b8"/><line x1="88" y1="408" x2="924" y2="408" stroke="#94a3b8"/><line x1="88" y1="86.0" x2="924" y2="86.0" stroke="#e2e8f0"/><text x="78.0" y="90.0" text-anchor="end" font-size="11" fill="#475569">21.4773</text><line x1="88" y1="166.5" x2="924" y2="166.5" stroke="#e2e8f0"/><text x="78.0" y="170.5" text-anchor="end" font-size="11" fill="#475569">14.4933</text><line x1="88" y1="247.0" x2="924" y2="247.0" stroke="#e2e8f0"/><text x="78.0" y="251.0" text-anchor="end" font-size="11" fill="#475569">7.5092</text><line x1="88" y1="327.5" x2="924" y2="327.5" stroke="#e2e8f0"/><text x="78.0" y="331.5" text-anchor="end" font-size="11" fill="#475569">0.52513</text><line x1="88" y1="408.0" x2="924" y2="408.0" stroke="#e2e8f0"/><text x="78.0" y="412.0" text-anchor="end" font-size="11" fill="#475569">-6.45894</text><text x="88.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2022-12-31</text><text x="366.7" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2023-12-31</text><text x="645.3" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2024-12-31</text><text x="924.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2025-12-31</text><polyline points="88.0,108.2 366.7,112.7 645.3,156.3 924.0,385.8" fill="none" stroke="#2563EB" stroke-width="3"/><circle cx="88.0" cy="108.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="366.7" cy="112.7" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="645.3" cy="156.3" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="924.0" cy="385.8" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><line x1="120" y1="62" x2="148" y2="62" stroke="#2563EB" stroke-width="3"/><text x="156.0" y="67.0" text-anchor="start" font-size="12" fill="#475569">贵州茅台</text></svg><figcaption><span class="chart-number">图2-7</span> · 归母净利润同比增长率（贵州茅台） · 折线图<br>数据来源：<a class="citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a><br>分析目的：以line图呈现归母净利润同比增长率的证据分布，支撑相关章节的论述。</figcaption></figure>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第2章第2节 · 需求驱动因素与细分市场变化</h3>
+        <p>贵州茅台的总资产为309,050,784,569.31元，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的营业收入为168,838,102,514.79元，期末2025-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的营业收入为170,899,152,276.34元，期末2024-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的营业收入为147,693,604,994.14元，期末2023-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的营业收入为124,099,843,771.99元，期末2022-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的最新涨跌幅为-1.4456%（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的上市地点为上海文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>武商集团的最新价为7.02未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>武商集团的纳入概念原因为[&#39;【白酒概念】公司与古赖品牌联袂推出中高端酱香型酒—武商1959，产自贵州茅台镇3.5平方公里中国酱酒核心产区，使用云贵高原所产小麦、赤水河沿岸种植的优质半坡红缨字高梁以及赤水河水，由紫砂石老窖发酵，采用传统大曲坤沙工艺，以12987古法纯粮酿造。&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>武商集团的上市板块为主板文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>泸州老窖的所属概念为[&#39;白酒概念&#39;, &#39;超级品牌&#39;, &#39;啤酒概念&#39;, &#39;高股息精选&#39;, &#39;证金持股&#39;, &#39;同花顺漂亮100&#39;, &#39;参股券商&#39;, &#39;国企改革&#39;, &#39;西部大开发&#39;, &#39;融资融券&#39;, &#39;深股通&#39;, &#39;食品饮料&#39;, &#39;白酒&#39;, &#39;白酒Ⅲ&#39;, &#39;一线酒企&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>泸州老窖的所属同花顺行业为[&#39;食品饮料&#39;, &#39;白酒&#39;, &#39;白酒Ⅲ&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>古井贡酒的最新涨跌幅为-1.9152未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>白酒的市盈率为19.2734未提供，期末2026-08-21（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>贵州茅台的归母净利润为82,320,067,101.68未提供，期末2025-12-31（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>武商集团的项目名称为其他业务收入文本（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>武商集团的业务收入为350,655,852.48未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>武商集团的收入占比为9.4752未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>古井贡酒的上市地点为深圳文本（来源：同花顺问财 hithink-sector-selector，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>酒鬼酒的最新价为38.52未提供（来源：同花顺问财 hithink-sector-selector，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>武商集团的预测净利润中值为243,000,000未提供，期末2026-12-31（来源：同花顺问财 hithink-insresearch-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>武商集团的涨跌幅为-9.2848未提供，期末2026-08-11（来源：同花顺问财 hithink-insresearch-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的title为贵州茅台（600519）：公司深度研究：白酒周期寻金系列一-再论贵州茅台成长空间文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的title为贵州茅台（600519）：白酒龙头增长放缓，稳中求进文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的title为A股白酒板块集体走低 贵州茅台跌超4%文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>        <p>admin的title为12只白酒股下跌 贵州茅台1340.06元/股收盘文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>        <p>admin的summary为公司2025年中报营收增速9.16%，为完成全年工作任务奠定基础： 公司公布2025年中报，实现营收910.94亿元/+9.16%；归母净利润454.03亿元/+8.89%，为完成全年工作任务奠定基础。公司2025H1毛利率91.30%/-0.46pct。两费方面，销售费用率3.58%/+0.44pct；管理费用率4.14%，/-0.57pct。净利率52.56%/-0.13pct，营销控费持续。 2025Q2实现营收396.50亿元/+7.26%；归母净利润185.55亿元/+5.25%。毛利率90.42%/-0.26pct。两费方面，销售费用率4.45%/0.45pct；管理费用率4.48%/-0.32pct。净利率49.53%/-1.07pct。二季度营收表现较弱，销售费用持续加码。白酒市场已由增量发展转向存量竞争，尤其酱酒市场收入增速放缓是大趋势，行业竞争加剧，创新品扩新客难度加大，公司加大营销和内部管控，销售费用增长，管理费用收窄。 中端白酒竞争激烈，高端白酒茅台地位稳固： 2025年上半年茅台酒收入达755.89亿元/+10.24%，毛利率93.85%/...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的summary为白酒市场已由增量发展转向存量竞争，尤其酱酒市场收入增速放缓是大趋势，行业竞争加剧，创新品扩新客难度加大，公司加大营销和内部管控，销售费用增长，管理费用收窄。 中端白酒竞争激烈，高端白酒茅台地位稳固：。2025年上半年茅台酒收入达755.89亿元/+10.24%，毛利率93.85%/-0.28pct，营收占比84.6%， 其中2025Q1/Q2茅台酒收入增速分别为+9.7%/+10.99%，茅台 IP 在高端白酒市场地位稳固； 2025 年上半年系列酒收入 137.63 亿元/+4.68%，毛利率77.59%/-2.51pct，营收占比15.4%； 其中2025Q1/Q2系列酒收入增速分别为+18.30%/-6.53%，系列酒二季度增速下滑较多，中端白酒市场品牌林立，竞争激烈。渠道结构持续优化，终端批发价格回落压力犹在：。 渠道结构持续优化，直销与数字化营销成效显著，公司通过“社会+自营”双渠道体系强化市场运营，2025H1直销/批发收入分别实现400.09/493.43亿元，增速分别为+18.62%/2.83%，渠道改革效果持续显现。 行业承压中国酒业协会联合各名酒企业及酒类大商，...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的summary为上证报中国证券网讯(记者高志刚)4月17日早盘，A股白酒板块集体走低。截至午间收盘，贵州茅台下跌4.16%，领跌白酒板块；迎驾贡酒、舍得酒业、今世缘、酒鬼酒等多只个股跌幅超过2%。 消息面上，贵州茅台昨日晚间发布2025年年报。2025年，公司实现营业收入1688.38亿元，同比下降1.21%；归母净利润823.20亿元，同比下降4.53%。 2026年第一季度，公司实现营业收入10.92亿元，同比下降1.46%；归属于上市公司股东的净利润为2.05亿元，同比下降12.51%。 东吴证券在最新研报中表示，预计2026年白酒行业营收增长将呈现“前低后高”走势，板块良性预期有望年中形成，建议优先布局“出清可信度较高+管理运营能力居前+未来有成长空间逻辑”的白酒企业。文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>        <p>admin的summary为北京商报讯(记者刘一博冯若男)1月22日尾盘，沪指4122.58点上涨0.14%。白酒板块2222.40点收盘上涨0.84%，其中12只白酒股下跌，贵州茅台1340.06元/股收盘。 从个股来看，贵州茅台收盘价达1340.06元/股，下跌0.81%；五粮液收盘价达102.76元/股，下跌0.28%；山西汾酒收盘价166.63元/股，下跌0.22%；泸州老窖收盘价达112.35元/股，下跌0.73%； 洋河股份收盘价达63.52元/股，上涨0.54%。 招商证券在其研报中指出，2025年第三季度白酒行业营收、归母净利润、现金回款分别为787亿元、280亿元、839亿元，同比-18.4%、-22.2%、-26.7%。 招商证券认为，上市公司报表层面加速出清，环比2025年二季度下滑加速，现金回款下滑幅度大于收入。当下白酒行业已经进入到“企业煎熬期”的中程，报表承压已体现了4个季度，产业层面也在加速出清。文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-1654824246"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-1654824246">总资产（贵州茅台）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">总资产（贵州茅台）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">贵州茅台</text><rect x="205.0" y="108.2" width="45.0" height="277.6" rx="3" fill="#2563EB"/><text x="227.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">3.09051e+11</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">贵州茅台</text></svg><figcaption><span class="chart-number">图2-2</span> · 总资产（贵州茅台） · 柱状图<br>数据来源：<a class="citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a><br>分析目的：以bar图呈现总资产的证据分布，支撑相关章节的论述。</figcaption></figure>
+      <figure class="chart chart-line"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-704635113"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-704635113">营业收入（贵州茅台）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">营业收入（贵州茅台）</text><line x1="88" y1="86" x2="88" y2="408" stroke="#94a3b8"/><line x1="88" y1="408" x2="924" y2="408" stroke="#94a3b8"/><line x1="88" y1="86.0" x2="924" y2="86.0" stroke="#e2e8f0"/><text x="78.0" y="90.0" text-anchor="end" font-size="11" fill="#475569">1.84571e+11</text><line x1="88" y1="166.5" x2="924" y2="166.5" stroke="#e2e8f0"/><text x="78.0" y="170.5" text-anchor="end" font-size="11" fill="#475569">1.3501e+11</text><line x1="88" y1="247.0" x2="924" y2="247.0" stroke="#e2e8f0"/><text x="78.0" y="251.0" text-anchor="end" font-size="11" fill="#475569">8.54496e+10</text><line x1="88" y1="327.5" x2="924" y2="327.5" stroke="#e2e8f0"/><text x="78.0" y="331.5" text-anchor="end" font-size="11" fill="#475569">3.58888e+10</text><line x1="88" y1="408.0" x2="924" y2="408.0" stroke="#e2e8f0"/><text x="78.0" y="412.0" text-anchor="end" font-size="11" fill="#475569">-1.36719e+10</text><text x="88.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2022-12-31</text><text x="366.7" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2023-12-31</text><text x="645.3" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2024-12-31</text><text x="924.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2025-12-31</text><polyline points="88.0,184.2 366.7,145.9 645.3,108.2 924.0,111.6" fill="none" stroke="#2563EB" stroke-width="3"/><circle cx="88.0" cy="184.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="366.7" cy="145.9" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="645.3" cy="108.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="924.0" cy="111.6" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><line x1="120" y1="62" x2="148" y2="62" stroke="#2563EB" stroke-width="3"/><text x="156.0" y="67.0" text-anchor="start" font-size="12" fill="#475569">贵州茅台</text></svg><figcaption><span class="chart-number">图2-5</span> · 营业收入（贵州茅台） · 折线图<br>数据来源：<a class="citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a><br>分析目的：以bar图呈现营业收入的证据分布，支撑相关章节的论述。</figcaption></figure>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第2章第3节 · 供需关系、产能与行业周期</h3>
+        <p>贵州茅台的负债为46,954,432,394.95未提供，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的营业收入同比增长率为-1.206%，期末2025-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的营业收入同比增长率为15.712%，期末2024-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的营业收入同比增长率为19.0119%，期末2023-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的营业收入同比增长率为16.8657%，期末2022-12-31（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的所属概念为[&#39;超级品牌&#39;, &#39;白酒概念&#39;, &#39;同花顺漂亮100&#39;, &#39;国企改革&#39;, &#39;西部大开发&#39;, &#39;融资融券&#39;, &#39;沪股通&#39;, &#39;乡村振兴&#39;, &#39;食品饮料&#39;, &#39;白酒&#39;, &#39;白酒Ⅲ&#39;, &#39;一线酒企&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贵州茅台的所属同花顺行业为[&#39;食品饮料&#39;, &#39;白酒&#39;, &#39;白酒Ⅲ&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>武商集团的最新涨跌幅为-1.5428未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>武商集团的上市地点为深圳文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>泸州老窖的最新价为85.2未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>泸州老窖的纳入概念原因为[&#39;【白酒概念】公司以专业化白酒产品设计、生产、销售为主要经营模式，主营“国窖1573”“泸州老窖”等系列白酒的研发、生产和销售，主要综合指标位于白酒行业前列。“国窖1573”是中国白酒鉴赏标准级酒品，也是享誉中外的高档中国白酒之一；“泸州老窖特曲”于1952年在中国首届评酒会上获得“四大名酒”称号，是浓香型白酒的典型代表，是唯一蝉联历届“中国名酒”称号的浓香型白酒，是中国白酒“特曲”品类的开创者。&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>泸州老窖的上市板块为主板文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>古井贡酒的所属概念为[&#39;白酒概念&#39;, &#39;国企改革&#39;, &#39;融资融券&#39;, &#39;深股通&#39;, &#39;食品饮料&#39;, &#39;白酒&#39;, &#39;白酒Ⅲ&#39;, &#39;二线酒企&#39;, &#39;安徽三资改革&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>白酒的净利润为48,507,344,723.15未提供，期末2026-06-30（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>贵州茅台的营业收入同比增长率为-1.206未提供，期末2025-12-31（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>武商集团的业务利润为342,366,896.97未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>武商集团的业务成本为8,288,955.51未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>武商集团的成本占比为0.4068未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>古井贡酒的所属同花顺行业为[&#39;食品饮料&#39;, &#39;白酒&#39;, &#39;白酒Ⅲ&#39;]文本（来源：同花顺问财 hithink-sector-selector，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>贵州茅台的最新价为1,272.83未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>泸州老窖的预测净利润中值为9,753,000,000未提供，期末2026-12-31（来源：同花顺问财 hithink-insresearch-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>泸州老窖的涨跌幅为-45.9067未提供，期末2026-08-11（来源：同花顺问财 hithink-insresearch-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的title为贵州茅台（600519）：2025年中报点评：茅台高端地位稳固，中端白酒竞争激烈文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的title为贵州茅台（600519）：革故鼎新，与时偕行，再论茅台的护城河与增长潜力文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的title为18只白酒股下跌 贵州茅台1328.36元/股收盘文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>        <p>admin的title为18只白酒股下跌 贵州茅台1375元/股收盘文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>        <p>admin的summary为事件：公司发布2026年一季报，实现营业收入539亿元，同比+6.5%，实现归母净利润272亿元，同比+1.5%；业绩略低于市场预期。 茅台酒稳健，系列酒重拾增长。1、25Q2以来，外部饮酒政策趋严，茅台酒需求端有所承压；此外，在金融和投机属性有所弱化的背景下，茅台酒开瓶率得到实质提升，终端库存得到有效去化。2、分产品，26Q1茅台酒实现收入460亿元，同比+5.6%；系列酒实现收入78.8亿元，同比+12.2%；春节错峰和渠道调整带动产品恢复性增长，但白酒行业依然处在深度调整期。3、分渠道，26Q1直销渠道收入295亿元，同比+27%，直销占比显著增加至55%，主要与公司直销加大政策申购力度有关；其中“i茅台”数字营销平台实现收入216亿元，同比+267%。 26Q1盈利能力下移，净利率有所下降；打款节奏和政策调整影响现金流。1、26Q1毛利率同比下降2.1个百分点至89.8%，营业税金及附加率上升1.0个百分点至15.26%；费用率方面，销售费用率基本持平，管理费用率略微下降，财务费用率同比上升0.4个百分点至-0.22%，整体费用率上升0.2个百分点至6.3%。单季度...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的summary为核心观点 估值承压：多因素压制需求，飞天消费属性增强。正确客观认识茅台酒属性特点是理解其估值的前提，2022-2025年贵州茅台股价自高点下跌33%、PE（TTM）下降63%，我们认为需求减少、场景受限是主因，飞天茅台酒消费属性增强，市场价格自高点最大下跌60%，导致估值回调。 以史为鉴：紧扣时代脉搏，市场化改革破局供需难题。复盘历史，公司尊重市场规律，多次市场化改革化解危机：1）1998年国内产业结构调整，酒类需求减少，公司通过市场化引进特约经销商、专卖店等，培育核心意见领袖，奠定价格的龙头地位。2）2013-15年受“限三公消费”等政策冲击，飞天价格最大下跌56%，公司市场化招商，开发生肖茅台酒等非标类产品，拓展商务消费场景，顺利成为行业龙头。 对标爱马仕：匠心品质为核，品牌与时俱进。长期看，茅台酒仍具有不可替代性，考虑到生产工艺特点，十五五期间茅台酒理论可供销售量预计约5.2万吨，增量有限，高档奢侈属性有增强的基础。我们认为爱马仕对茅台酒的发展具有借鉴意义：1）极致的皮革品质和纯手工的匠心工艺打造品牌稀缺性；茅台酒以产区位置+酿造工艺+勾调技术塑造高端白酒品质表达...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a></p>        <p>admin的summary为北京商报讯（记者 刘一博 冯若男）8月4日尾盘，三大指数集体上涨，沪指3822.28点上涨0.33%，白酒板块以1876.52点收盘下跌0.5%，其中18只白酒股下跌。 从个股来看，贵州茅台收盘价达1328.36元/股，下跌2.25%；五粮液收盘价达76.88元/股，下跌1.51%；山西汾酒收盘价121.85元/股，下跌1.54%；泸州老窖收盘价达89.3元/股，下跌1.21%； 洋河股份收盘价达41.92元/股，下跌1.67%。 中信建投证券研报指出，白酒板块已进入业绩出清向上阶段，2026年一季度行业营收与归母净利润同比降幅显著收窄，龙头酒企如贵州茅台、五粮液已率先实现收入利润转正，预计二季度将是部分酒企的业绩拐点。文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>        <p>admin的data_version为v1文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-9">来源9</a></p>      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-1294932026"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-1294932026">负债（贵州茅台）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">负债（贵州茅台）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">贵州茅台</text><rect x="205.0" y="108.2" width="45.0" height="277.6" rx="3" fill="#2563EB"/><text x="227.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">4.69544e+10</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">贵州茅台</text></svg><figcaption><span class="chart-number">图2-3</span> · 负债（贵州茅台） · 柱状图<br>数据来源：<a class="citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a><br>分析目的：以bar图呈现负债的证据分布，支撑相关章节的论述。</figcaption></figure>
+      <figure class="chart chart-line"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-1628264316"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-1628264316">营业收入同比增长率（贵州茅台）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">营业收入同比增长率（贵州茅台）</text><line x1="88" y1="86" x2="88" y2="408" stroke="#94a3b8"/><line x1="88" y1="408" x2="924" y2="408" stroke="#94a3b8"/><line x1="88" y1="86.0" x2="924" y2="86.0" stroke="#e2e8f0"/><text x="78.0" y="90.0" text-anchor="end" font-size="11" fill="#475569">20.6293</text><line x1="88" y1="166.5" x2="924" y2="166.5" stroke="#e2e8f0"/><text x="78.0" y="170.5" text-anchor="end" font-size="11" fill="#475569">14.7661</text><line x1="88" y1="247.0" x2="924" y2="247.0" stroke="#e2e8f0"/><text x="78.0" y="251.0" text-anchor="end" font-size="11" fill="#475569">8.90295</text><line x1="88" y1="327.5" x2="924" y2="327.5" stroke="#e2e8f0"/><text x="78.0" y="331.5" text-anchor="end" font-size="11" fill="#475569">3.03976</text><line x1="88" y1="408.0" x2="924" y2="408.0" stroke="#e2e8f0"/><text x="78.0" y="412.0" text-anchor="end" font-size="11" fill="#475569">-2.82343</text><text x="88.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2022-12-31</text><text x="366.7" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2023-12-31</text><text x="645.3" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2024-12-31</text><text x="924.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2025-12-31</text><polyline points="88.0,137.7 366.7,108.2 645.3,153.5 924.0,385.8" fill="none" stroke="#2563EB" stroke-width="3"/><circle cx="88.0" cy="137.7" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="366.7" cy="108.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="645.3" cy="153.5" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="924.0" cy="385.8" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><line x1="120" y1="62" x2="148" y2="62" stroke="#2563EB" stroke-width="3"/><text x="156.0" y="67.0" text-anchor="start" font-size="12" fill="#475569">贵州茅台</text></svg><figcaption><span class="chart-number">图2-6</span> · 营业收入同比增长率（贵州茅台） · 折线图<br>数据来源：<a class="citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a><br>分析目的：以line图呈现营业收入同比增长率的证据分布，支撑相关章节的论述。</figcaption></figure>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第三章 · 产业链与利润分配</h2>
+    <p class="chapter-summary">本章围绕“产业链与利润分配”，基于0项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第3章第1节 · 上游资源、原材料与关键供应环节</h3>
+        <p>本节围绕上游资源、原材料与关键供应环节展开，按“说明上游供应与约束。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第3章第2节 · 中游核心产品、制造与服务环节</h3>
+        <p>本节围绕中游核心产品、制造与服务环节展开，按“说明中游价值创造与竞争因素。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第3章第3节 · 下游需求、议价关系与利润迁移</h3>
+        <p>本节围绕下游需求、议价关系与利润迁移展开，按“说明下游需求及利润传导方向。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第四章 · 竞争格局</h2>
+    <p class="chapter-summary">本章围绕“竞争格局”，基于0项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第4章第1节 · 市场结构、集中度与竞争阶段</h3>
+        <p>本节围绕市场结构、集中度与竞争阶段展开，按“概括可验证的竞争结构。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第4章第2节 · 主要参与者及其竞争位置</h3>
+        <p>本节围绕主要参与者及其竞争位置展开，按“在可比口径下说明参与者位置。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第4章第3节 · 竞争壁垒、差异化因素与潜在进入者</h3>
+        <p>本节围绕竞争壁垒、差异化因素与潜在进入者展开，按“分析壁垒及其可持续性。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第五章 · 财务质量与估值参照</h2>
+    <p class="chapter-summary">本章围绕“财务质量与估值参照”，基于9项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第5章第1节 · 收入、利润与盈利能力</h3>
+        <p>CPI:当月同比的宏观@值为0.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贵州茅台的总资产为309,050,784,569.31元，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-05-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第5章第2节 · 现金流、资产负债与财务质量</h3>
+        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-07-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贵州茅台的负债为46,954,432,394.95未提供，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-04-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第5章第3节 · 估值水平、历史区间与跨市场可比性</h3>
+        <p>贵州茅台的经营活动产生的现金流量净额为70,690,750,119.06元，期末2026-06-30（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-06-22（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-03-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第六章 · 宏观、政策与技术催化</h2>
+    <p class="chapter-summary">本章围绕“宏观、政策与技术催化”，基于12项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第6章第1节 · 宏观经济变量与行业传导路径</h3>
+        <p>CPI:当月同比的宏观@值为0.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-07-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-04-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-01-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2025-10-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@id为L004609507文本（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-2728821924"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-2728821924">宏观@值（CPI:当月同比）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">宏观@值（CPI:当月同比）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">CPI:当月同比</text><rect x="205.0" y="108.2" width="45.0" height="277.6" rx="3" fill="#2563EB"/><text x="227.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">0.5</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">CPI:当月同比</text></svg><figcaption><span class="chart-number">图6-1</span> · 宏观@值（CPI:当月同比） · 柱状图<br>数据来源：<a class="citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a><br>分析目的：以line图呈现宏观@值的证据分布，支撑相关章节的论述。<br>数据说明：financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。</figcaption></figure>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第6章第2节 · 政策、监管与合规环境</h3>
+        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-06-22（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-03-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2025-12-22（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第6章第3节 · 技术趋势、事件催化与监测指标</h3>
+        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-05-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2026-02-24（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>贷款市场报价利率(LPR):5年的宏观@值为3.5未提供，期末2025-11-20（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第七章 · 情景、风险与研究结论</h2>
+    <p class="chapter-summary">本章围绕“情景、风险与研究结论”，基于0项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第7章第1节 · 基准、乐观和悲观三种情景</h3>
+        <p>本节围绕基准、乐观和悲观三种情景展开，按“呈现共享事实底座下的三种情景。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第7章第2节 · 核心风险、反证条件与跟踪指标</h3>
+        <p>本节围绕核心风险、反证条件与跟踪指标展开，按“说明风险传导及可证伪条件。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第7章第3节 · 核心结论、适用边界与待验证事项</h3>
+        <p>本节围绕核心结论、适用边界与待验证事项展开，按“汇总结论且保留不确定性。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+
+
+  <section class="quality-appendix chapter">
+    <h2>数据质量与研究边界附录</h2>
+    <h3>研究维度覆盖</h3>
+    <table class="quality-table"><caption>表附-1 · 研究维度覆盖</caption><thead><tr><th>维度</th><th>状态</th><th>说明</th></tr></thead><tbody><tr><td>竞争格局</td><td>证据不足</td><td>当前维度缺少可引用结论，仅保留研究边界。</td></tr><tr><td>行业增长</td><td>证据充分</td><td>根据当前可追溯结论评估该维度的证据覆盖状态。</td></tr><tr><td>宏观与政策</td><td>证据充分</td><td>根据当前可追溯结论评估该维度的证据覆盖状态。</td></tr><tr><td>产业链</td><td>证据不足</td><td>当前维度缺少可引用结论，仅保留研究边界。</td></tr><tr><td>风险</td><td>证据不足</td><td>当前维度缺少可引用结论，仅保留研究边界。</td></tr></tbody></table>
+    <h3>数据质量问题</h3>
+    <table class="quality-table"><caption>表附-2 · 数据质量问题</caption><thead><tr><th>序号</th><th>指标</th><th>影响</th><th>说明与处理</th></tr></thead><tbody><tr><td>问题1</td><td>financial_quality</td><td>中</td><td>财务指标以披露值为准，勾稽核验以确定性计算结果为准。<br>处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。</td></tr><tr><td>问题2</td><td>valuation_expectation</td><td>中</td><td>估值参考维度缺少独立估值证据，仅保留研究边界说明。<br>处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。</td></tr><tr><td>问题3</td><td>归母净利润</td><td>中</td><td>iqr异常检测（WARN）：超出四分位区间[6.336e+10, 9.37e+10]（Q1=7.473e+10, Q3=8.232e+10, IQR判定1.5倍）。基线区间[63355078224.35501, 93699060428.07498]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr><tr><td>问题4</td><td>归母净利润同比增长率</td><td>高</td><td>shift异常检测（CRITICAL）：环比变化-129.5%，超出突变阈值±20%。基线区间[15.379999999999999, 15.379999999999999]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr><tr><td>问题5</td><td>营业收入同比增长率</td><td>高</td><td>shift异常检测（CRITICAL）：环比变化-107.7%，超出突变阈值±20%。基线区间[15.712000000000002, 15.712000000000002]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr></tbody></table>
+    <h3>财务一致性检查</h3>
+    <table class="quality-table"><caption>表附-3 · 财务一致性检查</caption><thead><tr><th>序号</th><th>状态</th><th>结论</th><th>影响</th></tr></thead><tbody><tr><td>检查1</td><td>需要复核</td><td>财务指标以披露值为准，勾稽核验以确定性计算结果为准。</td><td>涉及盈利质量和现金流的结论应采用条件性表达并提示人工复核。</td></tr></tbody></table>
+<h3>未生成图表</h3><ul><li>宏观@值（CPI:当月同比）：line 条件不满足，已确定性降级为 bar：图表类型 line 需要 time_series 数据，当前数据集为 categorical</li><li>归母净利润（贵州茅台）：bar 条件不满足，已确定性降级为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series</li><li>营业收入（贵州茅台）：bar 条件不满足，已确定性降级为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series</li></ul>  </section>
+
+  <section class="source-index chapter" id="source-index">
+    <h2>来源与证据索引</h2>
+    <table class="quality-table source-table">
+      <caption>表附-4 · 来源与证据索引</caption>
+      <thead><tr><th>序号</th><th>材料</th><th>发布主体</th><th>日期</th><th>报告期</th><th>页码/章节</th><th>获取方式/层级</th></tr></thead>
+      <tbody>
+        <tr id="source-1"><td>1</td><td>同花顺问财 hithink-macro-query</td><td>未提供</td><td>2026-08-11</td><td>2025—2026年（13期）</td><td>SkillHub:hithink-ma…</td><td>同花顺问财 SkillHub / 二级证据</td></tr>
+        <tr id="source-2"><td>2</td><td>同花顺问财 hithink-finance-query</td><td>未提供</td><td>2026-08-11</td><td>2022—2026年（5期）</td><td>SkillHub:hithink-fi…</td><td>同花顺问财 SkillHub / 二级证据 · 未经审计</td></tr>
+        <tr id="source-3"><td>3</td><td>同花顺问财 hithink-event-query</td><td>未提供</td><td>2026-08-11</td><td>未提供</td><td>SkillHub:hithink-ev…</td><td>同花顺问财 SkillHub / 二级证据</td></tr>
+        <tr id="source-4"><td>4</td><td>同花顺问财产业链解读（行业数据＋经营数据）</td><td>未提供</td><td>2026-08-11</td><td>2026年（2期）</td><td>SkillHub:产业链解读:12a2…</td><td>同花顺问财 SkillHub / 三级证据</td></tr>
+        <tr id="source-5"><td>5</td><td>同花顺问财 hithink-business-query</td><td>未提供</td><td>2026-08-11</td><td>2025-12-31</td><td>SkillHub:hithink-bu…</td><td>同花顺问财 SkillHub / 三级证据</td></tr>
+        <tr id="source-6"><td>6</td><td>同花顺问财 hithink-sector-selector</td><td>未提供</td><td>2026-08-11</td><td>未提供</td><td>SkillHub:hithink-se…</td><td>同花顺问财 SkillHub / 三级证据</td></tr>
+        <tr id="source-7"><td>7</td><td>同花顺问财 hithink-insresearch-que…</td><td>未提供</td><td>2026-08-11</td><td>2026年（2期）</td><td>SkillHub:hithink-in…</td><td>同花顺问财 SkillHub / 四级证据</td></tr>
+        <tr id="source-8"><td>8</td><td>同花顺问财 report-search</td><td>未提供</td><td>2025—2026年（5期）</td><td>未提供</td><td>网页原文</td><td>同花顺问财 SkillHub / 四级证据</td></tr>
+        <tr id="source-9"><td>9</td><td>同花顺问财 news-search</td><td>未提供</td><td>2024—2026年（6期）</td><td>未提供</td><td>网页原文</td><td>同花顺问财 SkillHub / 四级证据</td></tr>
+      </tbody>
+    </table>
+    <p class="reference">注：来源层级表示材料性质和核验状态，不构成对信息质量的机械排序；模型估算、情景假设与已披露事实应分别理解。</p>
+  </section>
+
+</main>
+</body>
+</html>

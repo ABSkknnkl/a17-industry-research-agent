@@ -1,10 +1,9 @@
 """Deterministic Router + Skill decisions for audited P0/P1 chart families."""
 
 from dataclasses import dataclass
-import hashlib
-import json
 from typing import cast
 
+from app.agents.common.content_dedup import content_fingerprint
 from app.schemas.chart import BarVariant, ChartDataset, ChartType, ChartVariant
 
 CHART_FAMILY: dict[ChartType, str] = {
@@ -275,15 +274,10 @@ def build_data_fingerprint(chart_type: ChartType, dataset: ChartDataset) -> str:
     # Storage identifiers must not make equivalent financial data look different.
     dataset_payload.pop("dataset_id", None)
     dataset_payload["evidence_ids"] = sorted(dataset_payload["evidence_ids"])
-    payload = {"dataset": dataset_payload}
-    canonical = json.dumps(
-        payload,
-        ensure_ascii=False,
-        allow_nan=False,
-        sort_keys=True,
-        separators=(",", ":"),
+    return content_fingerprint(
+        {"dataset": dataset_payload},
+        kind="chart_data",
     )
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def build_dedupe_key(

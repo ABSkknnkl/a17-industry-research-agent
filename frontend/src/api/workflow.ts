@@ -1,5 +1,11 @@
 import api from '@/api'
-import type { ReviewRequest, RunCreateRequest, WorkflowState } from '@/types/workflow'
+import type {
+  ReviewRequest,
+  RevisionListResponse,
+  RunCreateRequest,
+  RunListResponse,
+  WorkflowState,
+} from '@/types/workflow'
 
 export function createRun(request: RunCreateRequest): Promise<WorkflowState> {
   return api.post<WorkflowState, WorkflowState, RunCreateRequest>('/runs', request)
@@ -7,6 +13,18 @@ export function createRun(request: RunCreateRequest): Promise<WorkflowState> {
 
 export function getRun(runId: string): Promise<WorkflowState> {
   return api.get<WorkflowState, WorkflowState>(`/runs/${runId}`)
+}
+
+export function listRuns(params: { offset: number; limit: number }): Promise<RunListResponse> {
+  return api.get<RunListResponse, RunListResponse>('/runs', { params })
+}
+
+export function listRunRevisions(runId: string): Promise<RevisionListResponse> {
+  return api.get<RevisionListResponse, RevisionListResponse>(`/runs/${runId}/revisions`)
+}
+
+export function getRunRevision(runId: string, revision: number): Promise<WorkflowState> {
+  return api.get<WorkflowState, WorkflowState>(`/runs/${runId}/revisions/${revision}`)
 }
 
 export function reviewRun(runId: string, request: ReviewRequest): Promise<WorkflowState> {

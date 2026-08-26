@@ -13,6 +13,10 @@
       <div class="header-content">
         <h1 class="app-title">📊 同花顺问财SkillHub</h1>
         <span class="app-subtitle">行业研究报告智能生成系统</span>
+        <nav class="app-nav">
+          <router-link to="/" class="nav-link">首页</router-link>
+          <router-link to="/runs" class="nav-link">运行历史</router-link>
+        </nav>
       </div>
     </el-header>
 
@@ -67,6 +71,25 @@ body {
 .app-subtitle {
   font-size: 14px;
   opacity: 0.85;
+}
+
+.app-nav {
+  margin-left: auto;
+  display: flex;
+  gap: 16px;
+  align-self: center;
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.nav-link:hover,
+.nav-link.router-link-active {
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .app-main {

@@ -1,0 +1,96 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-B3AB68D56F62",
+  "chart_type": "line",
+  "data_fingerprint": "a53035d695e893bf80bddbf503369da7bb28e75f1ce7593fe0718d4b027f7386",
+  "dedupe_key": "trend:trend:以bar图呈现宏观@值的证据分布，支撑ch-06的论述。:a53035d695e893bf80bddbf503369da7bb28e75f1ce7593fe0718d4b027f7386",
+  "evidence_ids": [
+    "E-64361d0c251242eb",
+    "E-6b73a8b695a37893",
+    "E-cd29fe1c18b4ae07"
+  ],
+  "footnotes": [
+    "financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。"
+  ],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现宏观@值的证据分布，支撑CH-06的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "板块指数:锂电池": {
+        "2026-08-09": "E-cd29fe1c18b4ae07",
+        "2026-08-10": "E-6b73a8b695a37893",
+        "2026-08-11": "E-64361d0c251242eb"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          2073.0,
+          2072.0,
+          2118.0
+        ],
+        "name": "板块指数:锂电池",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "宏观@值（板块指数:锂电池）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2026-08-09",
+        "2026-08-10",
+        "2026-08-11"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [
+    "DQ-FINANCIAL_QUALITY"
+  ],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "宏观@值（板块指数:锂电池）",
+  "user_requested": false,
+  "variant": "line"
+}

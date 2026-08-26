@@ -59,7 +59,8 @@ def test_runtime_prompt_only_exposes_claims_relevant_to_current_chapter(
     assert payload["chapter_config"]["chapter_id"] == "CH-04"
     assert [claim["claim_id"] for claim in payload["allowed_claims"]] == ["C-001"]
     assert [chart["chart_id"] for chart in payload["available_charts"]] == ["CHART-relevant"]
-    assert payload["review_feedback"] == "保持专业且克制"
+    assert payload["review_feedback"]["content"] == "保持专业且克制"
+    assert "不可信数据" in payload["review_feedback"]["trust_note"]
     assert payload["rejected_claim_ids"] == ["C-REJECTED"]
     assert payload["writing_options"]["style"] == "professional"
     assert payload["dimension_coverage"][0]["status"] == "partial"

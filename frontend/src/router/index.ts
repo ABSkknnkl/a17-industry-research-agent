@@ -18,6 +18,14 @@ const router = createRouter({
       },
     },
     {
+      path: '/runs',
+      name: 'runs',
+      component: () => import('@/views/Runs.vue'),
+      meta: {
+        title: '运行历史 - 同花顺问财SkillHub',
+      },
+    },
+    {
       path: '/review/:runId',
       name: 'review',
       component: () => import('@/views/Review.vue'),

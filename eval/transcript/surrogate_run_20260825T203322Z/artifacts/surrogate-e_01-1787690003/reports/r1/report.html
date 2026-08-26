@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>动力电池行业研究报告</title>
+  <style>
+    :root { --ink:#0f172a; --muted:#64748b; --line:#dbe4ef; --blue:#1d4ed8; --paper:#fff; --soft:#f4f7fb; --accent-soft:#eff6ff; }
+    * { box-sizing:border-box; }
+    html { background:#e9eef5; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif; line-height:1.75; font-size:15px; }
+    main { max-width:1040px; margin:0 auto; padding:56px 64px 80px; }
+    .cover { min-height:760px; display:flex; flex-direction:column; justify-content:center; border-top:8px solid var(--blue); position:relative; page-break-after:always; }
+    .eyebrow { color:var(--blue); font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { font-size:44px; line-height:1.22; margin:18px 0; letter-spacing:-.02em; }
+    .subtitle { font-size:19px; color:var(--muted); max-width:720px; }
+    .meta-grid { margin-top:56px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .meta { border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+    .meta span { display:block; color:var(--muted); font-size:12px; }
+    .meta strong { display:block; margin-top:4px; overflow-wrap:anywhere; }
+    h2 { margin:48px 0 20px; padding-bottom:10px; border-bottom:2px solid var(--ink); font-size:28px; page-break-after:avoid; }
+    h3 { margin:30px 0 12px; font-size:20px; color:#162b4d; page-break-after:avoid; }
+    p { margin:10px 0; text-align:justify; }
+    .summary { background:var(--accent-soft); border:1px solid #bfdbfe; border-radius:14px; padding:26px 30px; }
+    .headline { font-size:21px; font-weight:700; line-height:1.55; }
+    .conclusion { border-left:4px solid var(--blue); padding:8px 14px; margin:14px 0; background:#fff; }
+    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+    .chip { color:#334155; background:#e2e8f0; border-radius:999px; padding:2px 9px; font-size:11px; }
+    .toc { columns:2; column-gap:36px; padding:0; list-style:none; }
+    .toc li { break-inside:avoid; padding:5px 0; border-bottom:1px dotted var(--line); }
+    .chapter { page-break-before:always; }
+    .chapter-summary { color:#334155; font-size:16px; background:var(--soft); padding:12px 16px; border-radius:8px; }
+    .reference { color:var(--muted); font-size:12px; margin-top:5px; }
+    .citation { color:var(--blue); text-decoration:none; border-bottom:1px dotted #93c5fd; margin-right:6px; }
+    .citation:hover { color:#1e40af; border-bottom-style:solid; }
+    .chart { margin:22px 0 28px; border:1px solid var(--line); border-radius:14px; padding:14px; break-inside:avoid; background:#fff; }
+    .chart svg { width:100%; height:auto; display:block; }
+    .chart figcaption { margin:8px 8px 2px; color:var(--muted); font-size:12px; }
+    .chart-number { color:var(--ink); font-weight:700; }
+    .chart-pie,.chart-radar { width:64%; margin-left:auto; margin-right:auto; }
+    .uncertainty { border:1px solid #fcd34d; background:#fffbeb; border-radius:8px; padding:10px 14px; margin:14px 0; break-inside:avoid; page-break-inside:avoid; }
+    .uncertainty strong { color:#92400e; }
+    .risk-list li, .boundary-list li { margin:6px 0; }
+    .footer-note { margin-top:48px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:12px; }
+    .draft-watermark { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0.08; font-size:72px; font-weight:900; color:#dc2626; transform:rotate(-20deg); letter-spacing:0.3em; }
+    .draft-banner { background:#fef2f2; border:2px solid #dc2626; border-radius:10px; padding:14px 20px; margin-bottom:24px; color:#991b1b; }
+    .draft-banner strong { color:#dc2626; }
+    .risk-appendix { page-break-before:always; }
+    .quality-appendix { page-break-before:always; }
+    .quality-table { width:100%; border-collapse:collapse; margin:12px 0 22px; font-size:13px; }
+    .quality-table th,.quality-table td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+    .quality-table th { background:var(--soft); }
+    .source-index { page-break-before:always; }
+    .source-index tbody tr { scroll-margin-top:20px; }
+    .source-table { table-layout:fixed; font-size:11px; font-variant-numeric:tabular-nums; }
+    .source-table th,.source-table td { overflow-wrap:anywhere; line-height:1.45; padding:7px 8px; }
+    .source-table th:first-child,.source-table td:first-child { width:5%; text-align:center; }
+    .source-table th:nth-child(2),.source-table td:nth-child(2) { width:20%; }
+    .source-table th:nth-child(3),.source-table td:nth-child(3) { width:15%; }
+    .source-table th:nth-child(4),.source-table td:nth-child(4) { width:12%; white-space:nowrap; }
+    .source-table th:nth-child(5),.source-table td:nth-child(5) { width:13%; white-space:nowrap; }
+    .source-table th:nth-child(6),.source-table td:nth-child(6) { width:15%; }
+    .source-table th:nth-child(7),.source-table td:nth-child(7) { width:20%; }
+    table caption { caption-side:top; text-align:left; color:var(--ink); font-weight:700; margin:0 0 8px; }
+    thead { display:table-header-group; }
+    .visual-note { border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin:18px 0 0; color:var(--muted); font-size:12px; background:var(--soft); }
+    .visual-note strong { color:var(--ink); }
+
+    /* 数据手册型：高密度、数值优先、表格与证据索引更突出。 */
+    .visual-data-manual { --blue:#17365d; --accent-soft:#f2f6fa; }
+    .visual-data-manual main { max-width:1120px; }
+    .visual-data-manual .cover { border-top-width:12px; }
+    .visual-data-manual h2 { color:#17365d; border-bottom-color:#17365d; }
+    .visual-data-manual .chapter-summary { border-left:4px solid #17365d; border-radius:0; }
+    .visual-data-manual .chart { border-radius:4px; }
+    .visual-data-manual .quality-table { font-size:12px; }
+
+    /* 分析笔记型：图、表、正文均衡，是系统默认外壳。 */
+    .visual-analysis-note { --blue:#1d4ed8; --accent-soft:#eff6ff; }
+    .visual-analysis-note .conclusion { border-radius:0 8px 8px 0; }
+
+    /* 深度研究型：收窄版心、提升行距，强调连续论证。 */
+    .visual-deep-research { --blue:#7c2d12; --accent-soft:#fff7ed; }
+    .visual-deep-research body,.visual-deep-research { font-family:"Songti SC","STSong","Noto Serif CJK SC",serif; }
+    .visual-deep-research main { max-width:920px; padding-left:76px; padding-right:76px; }
+    .visual-deep-research h1 { font-weight:600; letter-spacing:.01em; }
+    .visual-deep-research h2 { color:#451a03; border-bottom:1px solid #9a3412; }
+    .visual-deep-research h3 { color:#7c2d12; }
+    .visual-deep-research .chapter-summary { background:transparent; border-left:3px solid #9a3412; border-radius:0; padding-left:18px; }
+    .visual-deep-research .chart { border-width:1px 0; border-radius:0; padding:18px 0; }
+
+    .density-compact { font-size:14px; line-height:1.62; }
+    .density-compact main { padding-top:42px; padding-bottom:60px; }
+    .density-compact h2 { margin-top:38px; }
+    .density-compact .chart { margin:16px 0 20px; }
+    .density-detailed { font-size:15.5px; line-height:1.85; }
+    .density-detailed main { padding-top:64px; padding-bottom:96px; }
+    .density-detailed .chapter-summary { padding-top:16px; padding-bottom:16px; }
+    @page { size:A4; margin:14mm 12mm 16mm; @bottom-center { content:"A17 行业研究报告  ·  " counter(page); color:#64748b; font-size:9pt; } }
+    @media print {
+      html,body { background:#fff; }
+      body { font-size:13.5px; line-height:1.62; }
+      main { max-width:none; padding:0; }
+      .cover { min-height:245mm; }
+      h1 { font-size:32pt; }
+      h2 { margin:32px 0 14px; }
+      h3 { margin:20px 0 8px; }
+      p { margin:7px 0; }
+      .summary { padding:18px 22px; }
+      .conclusion { margin:9px 0; padding:6px 12px; }
+      .chapter-summary { padding:9px 14px; }
+      .chart { margin:16px 0 18px; padding:10px; box-shadow:none; }
+      .chart svg { max-height:78mm; }
+      .uncertainty { margin:10px 0; padding:7px 12px; }
+      .footer-note { margin-top:18px; padding-top:12px; font-size:10.5px; line-height:1.45; }
+    }
+  </style>
+</head>
+<body class="visual-analysis-note density-balanced">
+<main>
+
+  <section class="cover">
+    <div class="eyebrow">A17 · 行业研究系统</div>
+    <h1>动力电池行业研究报告</h1>
+    <p class="subtitle">动力电池：样本证据覆盖101项指标，结构性结论以证据链为准。</p>
+    <div class="meta-grid">
+      <div class="meta"><span>研究时点</span><strong>2026-08-11</strong></div>
+      <div class="meta"><span>生成时间</span><strong>2026-08-25 20:33（协调世界时）</strong></div>
+      <div class="meta"><span>报告深度</span><strong>标准版</strong></div>
+      <div class="meta"><span>交付状态</span><strong>附限制条件可交付</strong></div>
+      <div class="meta"><span>视觉风格</span><strong>分析笔记型</strong></div>
+    </div>
+    <div class="visual-note">
+      <strong>视觉编排：</strong>分析笔记型
+      · Agent 5根据Agent 4内容推荐    </div>
+  </section>
+
+
+  <h2>目录</h2>
+  <ol class="toc">
+<li>第一章 · 行业定义与研究基础</li><li>第二章 · 市场规模与成长性</li><li>第三章 · 产业链与利润分配</li><li>第四章 · 竞争格局</li><li>第五章 · 财务质量与估值参照</li><li>第六章 · 宏观、政策与技术催化</li><li>第七章 · 情景、风险与研究结论</li>  </ol>
+
+  <h2>执行摘要</h2>
+  <section class="summary">
+    <p class="headline">动力电池：样本证据覆盖101项指标，结构性结论以证据链为准。</p>
+    <div class="conclusion">
+      <strong>核心结论1</strong> · CPI:当月同比的宏观@值为0.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论2</strong> · PPI:当月同比的宏观@值为3.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论3</strong> · CPI:当月同比的宏观@值为1未提供，期末2026-06-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论4</strong> · PPI:当月同比的宏观@值为4.1未提供，期末2026-06-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论5</strong> · CPI:当月同比的宏观@值为1.2未提供，期末2026-05-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论6</strong> · PPI:当月同比的宏观@值为3.9未提供，期末2026-05-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论7</strong> · CPI:当月同比的宏观@值为1.2未提供，期末2026-04-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+    <div class="conclusion">
+      <strong>核心结论8</strong> · PPI:当月同比的宏观@值为2.8未提供，期末2026-04-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。
+      <div class="chips">
+        <span class="chip">置信度 中</span>
+<a class="chip citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a>      </div>
+      <p class="reference">不确定性：单一来源披露，尚未完成跨源交叉核验。</p>
+    </div>
+  </section>
+  <h3>三种情景</h3><ul><li>基准情景：基准情景沿用现有证据链推导，不引入额外假设。；触发条件：核心指标维持当前披露水平。</li><li>乐观情景：需求改善传导至出货与收入，随后影响盈利水平。；触发条件：下游订单与出货数据同步回升。</li><li>悲观情景：成本上行压缩利润空间，政策收紧影响需求节奏。；触发条件：原材料价格上行或监管收紧。</li></ul>
+  <h3>核心风险</h3><ul class="risk-list"><li>样本证据以单一来源为主，结论需结合多源交叉核验。</li><li>宏观与政策变量存在研究时点外变动风险。</li></ul>
+  <h3>研究边界</h3><ul class="boundary-list"><li>整体置信度：中</li><li>财务质量校验：差异待核验</li><li>财务指标以披露值为准，勾稽核验以确定性计算结果为准。</li><li>估值参考维度缺少独立估值证据，仅保留研究边界说明。</li><li>financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。</li><li>valuation_expectation：估值参考维度缺少独立估值证据，仅保留研究边界说明。</li><li>宏观@值：shift异常检测（CRITICAL）：环比变化+166.7%，超出突变阈值±20%。基线区间[-0.3, -0.3]，仅标记偏离，不构成结论。</li><li>宏观@值：shift异常检测（CRITICAL）：环比变化+250.0%，超出突变阈值±20%。基线区间[0.2, 0.2]，仅标记偏离，不构成结论。</li><li>宏观@值：shift异常检测（CRITICAL）：环比变化-75.0%，超出突变阈值±20%。基线区间[0.8, 0.8]，仅标记偏离，不构成结论。</li><li>宏观@值：shift异常检测（CRITICAL）：环比变化+550.0%，超出突变阈值±20%。基线区间[0.2, 0.2]，仅标记偏离，不构成结论。</li><li>宏观@值：shift异常检测（WARN）：环比变化-50.0%，超出突变阈值±20%。基线区间[1.0, 1.0]，仅标记偏离，不构成结论。</li><li>宏观@值：[INFO] shift异常检测（INFO）：环比变化+25.0%，超出突变阈值±20%。基线区间[-0.4, -0.4]，仅标记偏离，不构成结论。</li><li>宏观@值：[INFO] shift异常检测（INFO）：环比变化-23.1%，超出突变阈值±20%。基线区间[1.3, 1.3]，仅标记偏离，不构成结论。</li><li>宏观@值：shift异常检测（WARN）：环比变化+39.3%，超出突变阈值±20%。基线区间[2.8, 2.8]，仅标记偏离，不构成结论。</li><li>竞争格局维度：当前维度缺少可引用结论，仅保留研究边界。</li><li>产业链维度：当前维度缺少可引用结论，仅保留研究边界。</li><li>风险维度：当前维度缺少可引用结论，仅保留研究边界。</li></ul>
+  <div class="footer-note"><p>报告由数据解读智能体的结构化结论、图表智能体的已校验图表与章节撰写智能体的七章二十一节正文确定性组装；报告融合智能体不新增事实、不改写数据结论。</p><p><strong>免责声明：</strong>本报告仅用于行业研究与信息交流，不构成证券投资建议、收益保证或交易邀约。</p></div>
+
+  <section class="chapter">
+    <h2>第一章 · 行业定义与研究基础</h2>
+    <p class="chapter-summary">本章围绕“行业定义与研究基础”，基于9项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第1章第1节 · 行业定义、研究边界与证券范围</h3>
+        <p>CPI:当月同比的宏观@值为0.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>PPI:当月同比的宏观@值为4.1未提供，期末2026-06-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1.2未提供，期末2026-04-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第1章第2节 · 数据口径、研究时点与分析方法</h3>
+        <p>PPI:当月同比的宏观@值为3.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1.2未提供，期末2026-05-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>PPI:当月同比的宏观@值为2.8未提供，期末2026-04-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第1章第3节 · 行业发展阶段与当前核心矛盾</h3>
+        <p>CPI:当月同比的宏观@值为1未提供，期末2026-06-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>PPI:当月同比的宏观@值为3.9未提供，期末2026-05-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1未提供，期末2026-03-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第二章 · 市场规模与成长性</h2>
+    <p class="chapter-summary">本章围绕“市场规模与成长性”，基于84项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第2章第1节 · 市场规模与历史增长趋势</h3>
+        <p>富奥股份的最新价为4.26未提供（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>中国宝安的最新价为7.33未提供（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>南京公用的最新价为5.64未提供（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>富奥股份的最新价为4.26未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>中国宝安的最新价为7.33未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>南华生物的最新价为8.43未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>南京公用的最新价为5.64未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>富奥股份的业务利润为2,214,644,560.98未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的毛利率为12.024未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的所属概念为[&#39;飞行汽车(eVTOL)&#39;, &#39;长安汽车概念&#39;, &#39;华为汽车&#39;, &#39;汽车热管理&#39;, &#39;低空经济&#39;, &#39;参股保险&#39;, &#39;小米汽车&#39;, &#39;车联网(车路协同)&#39;, &#39;换电概念&#39;, &#39;动力电池回收&#39;, &#39;无人驾驶&#39;, &#39;新能源汽车&#39;, &#39;国企改革&#39;, &#39;比亚迪概念&#39;, &#39;宁德时代概念&#39;, &#39;小米概念&#39;, &#39;储能&#39;, &#39;证金持股&#39;, &#39;智能座舱&#39;, &#39;锂电池概念&#39;, &#39;汽车电子&#39;, &#39;融资融券&#39;, &#39;深股通&#39;, &#39;汽车&#39;, &#39;汽车零部件&#39;, &#39;底盘与发动机系统&#39;, &#39;车载摄像头&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>富奥股份的所属同花顺行业为[&#39;汽车&#39;, &#39;汽车零部件&#39;, &#39;底盘与发动机系统&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>中国宝安的纳入概念原因为[&#39;【动力电池回收】子公司贝特瑞主要通过投资参股三元正极材料前驱体供应商、布局锂电池回收拆解业务等方式获取镍钴等关键资源。&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>中国宝安的上市板块为主板文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>CPI:当月同比的指标单位为%文本（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>富奥股份的纳入概念原因为[&#39;【动力电池回收】2022年1月25日互动易回复：\\t公司已在2021年自主投资设立智慧能源科技公司，实现了新能源车用电池回收梯次利用领域的生态业务布局，主要承接一汽集团退役电池业务。&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>富奥股份的上市板块为主板文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>中国宝安的纳入概念原因为[&#39;【动力电池回收】子公司贝特瑞主要通过投资参股三元正极材料前驱体供应商、布局锂电池回收拆解业务等方式获取镍钴等关键资源。&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>中国宝安的上市板块为主板文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>南华生物的纳入概念原因为[&#39;【动力电池回收】根据2025年9月6日公告：为进一步延伸主业赛道、培育差异化竞争优势，公司拟通过收购娄底金弘新材料有限公司，将公司原有“节能环保”主业延伸至新能源汽车动力电池（碳酸锂）回收等循环经济领域，培育公司新的创收创利增长点。经审议，董事会同意：公司以4,862.49万元自有资金收购湖南金弘再生资源集团有限公司持有的娄底金弘新材料有限公司43.05%股权；同时以现金方式对标的公司增资3,000万元，其中2,615.75万元计入标的公司注册资本，其余金额计入标的公司资本公积。本次交易完成后，公司将取得娄底金弘新材料有限公司55.00%股权，其将纳入公司合并报表范围。&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>南华生物的上市板块为主板文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>富奥股份的分类标准为行业文本（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的利润占比为102.2628未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的主营业务成本-零部件为16,203,824,406.1未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>富奥股份的主营业务成本占比-零部件为106.2911未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>admin的title为电新行业周报：国内一硅料企业首次全面停产，11月动力电池装机环比增长文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的title为AI算力产业催生全新增长点，储能电池ETF易方达（159566）景气度上行文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的title为锂电池行业报告：细分赛道格局、数据现状与发展趋势全景科普文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的summary为电池环节现在基本上全规格都是处于生产即亏损的状态，厂家悲观氛围笼罩，多数厂家针对自身产线减产幅度扩大。 尽管近期供需情势处于PERC退坡与TOPCon爬坡放量的相交时节点，观察厂家除了针对PERC电池片减产幅度加大外，甚至也开始看到针对G12尺寸产线的减产规划以及TOPCon 的爬坡放缓现象，行业处于相对低潮， 面对供应的过剩、供应链价格的持续下行，如何撑过周期并甩开老旧产能的包袱持续是企业的思考方向。 组件：组件价格当前暂时跌势收敛，厂家考量接单状况，部分已下修1-2月排产计划，目前仍不排除变动因素影响，部分厂家有规划欧洲区提前发货，但此番拉动并非需求带动引起，一季度目前需求能见度仍较不明朗，整体价格走跌仍未止歇， 目前市场表现方面，储能电池比动力电池稍好，明年规模还是看动力和储能的表现。 电解钴方面，供给端方面原料到港量持续增量，但市场上可流通的货源较为集中，持货方挺价情绪偏强，进口钴中间产品加工成电解钴利润率继续上升； 需求端方面，下游磁材与高温合金企业需求未见明显回暖，但市场整体询盘和成交情况小有改善，逢低补库备货采购订单增多。 因华为、奇瑞等部分新车预售情况较好，对相应供应链...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的summary为| 博力威 | 688345.SH | 31.46 | 31.46 | -23.61% | 27.30% | 28.60 | 22.47 | 28.55 |。 | 晶科能源 | 688223.SH | 8.86 | 886.46 | 114.29% | 160.60% | 29.53 | 11.33 | 0.30| | | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 | 泽宇智能 | 301179.SZ | 25.95 | 62.07 | -8.51% | -27.08% | 15.09 | 20.69 | 11.45 |。 | 尚太科技 | 001301.SZ | 36.62 | 95.49 | 137.28% | -52.47% | 5.53 | 11.64 | 2.84| | | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 | 东方...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的summary为| 隆基绿能 | 601012.SH | 22.90 | 1, 735.37 | 15.38% | 6.04% | 11.74 | 11.07 | 0.15| | | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 | 阳光电源 | 300274.SZ | 87.59 | 1, 300.84 | 124.07% | 161.27% | 36.19 | 13.85 | 2.44| | | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 | 亿纬锂能 | 300014.SZ | 42.20 | 863.29 | 19.48% | 24.01% | 22.93 | 18.49 | 1.20 |。文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的summary为中商情报网讯：在政策推动下，中国动力电池市场正从高速扩张转向高质量发展，在技术、出海与淘汰赛的多重变局中加速迈向以创新和价值竞争为核心的新阶段。一、产业链动力电池产业链上游主要为矿产材料、电池材料。 矿产材料主要包括锂矿、钴矿、镍矿、磷矿、铁矿、石墨矿等。电池材料主要包括正极材料、负极材料、电解液、隔膜。中游为动力电池生产制造。动力电池产品主要包括动力锂电池、铅酸电池、镍镉蓄电池、燃料电池。 下游为动力电池应用及后市场。动力电池应用领域包括电动汽车、电动自行车、电动摩托车、电动船舶、eVTOL等。动力电池后市场为动力电池回收利用。 同比增速49.8%，占全球总增量的30.3%，国内四川硬岩锂矿、青海盐湖提锂项目集中投产是核心支撑。中商产业研究院分析师预测，2026年中国锂矿产量有望超过7万吨。 数据来源：USGS、中商产业研究院整理(4)重点企业分析动力电池上游矿产材料已形成“资源全球化布局、矿冶一体化、下游延伸”三大特征。锂、钴、镍高度依赖海外，磷、铁、石墨由国内主导。 产业竞争核心已从“资源占有”升级为“资源自给率+一体化链条+海外合规布局”的三重比拼。 随着磷酸铁锂路线占动力电池...文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的summary为本篇报告重点解决五大核心问题：一是锂电需求高景气能否延续及材料价格拐点是否确立；二是AI算力扩张背景下，AIDC供电架构如何从传统UPS向HVDC、SST、SOFC等新技术重构； 三是储能需求逻辑如何从“强制配储”政策驱动转向市场化盈利模式，以及供需格局是否已从产能过剩逆转为全面紧缺；四是风电板块在“531”抢装高基数后，Q3能否迎来出货高峰，以及“十五五”海风政策与机制电价能否提振装机预期； 五是电力设备海外需求景气度及国内电网主网、配网、电表的投资节奏与盈利修复路径。锂电需求高景气验证，材料涨价拐点已至。据中国汽车动力电池产业创新联盟，2026H1我国动储电池销量同增48.6%，预计全年达3TWh。 消费税政策落地,2026年9月1日起锂电池起征消费税，储能短期影响约1%、动力几乎无影响，龙头抗冲击能力强，电池竞争格局有望进一步集中。 锂电材料整体呈现供不应求趋势，2026H2预计进入上行通道，电解液、隔膜、铜箔价格已率先回升。新技术方面，钠电、磷酸锰铁锂加速放量，固态电池行业标准加速落地。 传统自建电源方案陷入供给瓶颈，SOFC以交付速度精准卡位，Bloom Energy与甲骨文...文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-725659123"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-725659123">最新价（富奥股份）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">最新价（富奥股份）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="192.5" y="442.0" text-anchor="middle" font-size="11" fill="#475569">富奥股份</text><rect x="230.1" y="245.5" width="34.6" height="140.3" rx="3" fill="#7C3AED"/><text x="247.4" y="238.5" text-anchor="middle" font-size="10" fill="#475569">4.26</text><text x="401.5" y="442.0" text-anchor="middle" font-size="11" fill="#475569">中国宝安</text><rect x="326.3" y="144.4" width="34.6" height="241.4" rx="3" fill="#2563EB"/><text x="343.6" y="137.4" text-anchor="middle" font-size="10" fill="#475569">7.33</text><text x="610.5" y="442.0" text-anchor="middle" font-size="11" fill="#475569">南京公用</text><rect x="572.9" y="200.1" width="34.6" height="185.7" rx="3" fill="#0F766E"/><text x="590.2" y="193.1" text-anchor="middle" font-size="10" fill="#475569">5.64</text><text x="819.5" y="442.0" text-anchor="middle" font-size="11" fill="#475569">南华生物</text><rect x="819.5" y="108.2" width="34.6" height="277.6" rx="3" fill="#D97706"/><text x="836.8" y="101.2" text-anchor="middle" font-size="10" fill="#475569">8.43</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">中国宝安</text><rect x="300" y="55" width="12" height="12" rx="2" fill="#0F766E"/><text x="319.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">南京公用</text><rect x="480" y="55" width="12" height="12" rx="2" fill="#D97706"/><text x="499.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">南华生物</text><rect x="660" y="55" width="12" height="12" rx="2" fill="#7C3AED"/><text x="679.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">富奥股份</text></svg><figcaption><span class="chart-number">图2-1</span> · 最新价（富奥股份） · 柱状图<br>数据来源：<a class="citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a><a class="citation" href="#source-3">来源3：同花顺问财 hithink-event-query</a><br>分析目的：以bar图呈现最新价的证据分布，支撑相关章节的论述。</figcaption></figure>
+      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-3269432361"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-3269432361">业务利润（富奥股份）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">业务利润（富奥股份）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">富奥股份</text><rect x="205.0" y="108.2" width="45.0" height="277.6" rx="3" fill="#2563EB"/><text x="227.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">2.21464e+09</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">富奥股份</text></svg><figcaption><span class="chart-number">图2-4</span> · 业务利润（富奥股份） · 柱状图<br>数据来源：<a class="citation" href="#source-4">来源4：同花顺问财产业链解读（行业数据＋经营数据）</a><br>分析目的：以bar图呈现业务利润的证据分布，支撑相关章节的论述。</figcaption></figure>
+      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-2441763645"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-2441763645">毛利率（富奥股份）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">毛利率（富奥股份）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">富奥股份</text><rect x="205.0" y="108.2" width="45.0" height="277.6" rx="3" fill="#2563EB"/><text x="227.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">12.024</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">富奥股份</text></svg><figcaption><span class="chart-number">图2-7</span> · 毛利率（富奥股份） · 柱状图<br>数据来源：<a class="citation" href="#source-4">来源4：同花顺问财产业链解读（行业数据＋经营数据）</a><br>分析目的：以bar图呈现毛利率的证据分布，支撑相关章节的论述。</figcaption></figure>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第2章第2节 · 需求驱动因素与细分市场变化</h3>
+        <p>富奥股份的最新涨跌幅为-1.6166%（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>中国宝安的最新涨跌幅为-2.2667%（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>南京公用的最新涨跌幅为-4.0816%（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>富奥股份的业务收入为18,418,468,967.08未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的纳入概念原因为[&#39;【动力电池回收】2022年1月25日互动易回复：\\t公司已在2021年自主投资设立智慧能源科技公司，实现了新能源车用电池回收梯次利用领域的生态业务布局，主要承接一汽集团退役电池业务。&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>富奥股份的上市板块为主板文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>中国宝安的上市地点为深圳文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>南京公用的所属概念为[&#39;天然气&#39;, &#39;旅游概念&#39;, &#39;物业管理&#39;, &#39;国企改革&#39;, &#39;文化传媒概念&#39;, &#39;网约车&#39;, &#39;创投&#39;, &#39;互联网金融&#39;, &#39;虚拟电厂&#39;, &#39;换电概念&#39;, &#39;动力电池回收&#39;, &#39;充电桩&#39;, &#39;2026中报预增&#39;, &#39;综合&#39;, &#39;综合Ⅲ&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>富奥股份的最新涨跌幅为-1.6166未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>富奥股份的上市地点为深圳文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>中国宝安的最新涨跌幅为-2.2667未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>中国宝安的上市地点为深圳文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>南华生物的最新涨跌幅为-2.6559未提供（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>南华生物的上市地点为深圳文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>富奥股份的项目名称为零部件文本（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的收入占比为105.7901未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的主营业务利润-零部件为2,214,644,560.98未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>富奥股份的主营业务毛利率-零部件为12.024未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>富奥股份的主营业务利润占比-零部件为102.2628未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>admin的title为电池产业链密集调价与新技术突破共振，电池ETF易方达（159175）景气度上行文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的title为硅宝科技：2026年将建成并投入使用7000吨/年锂电池用硅碳负极生产线、5000吨/年聚氨酯密封胶生产线、5000吨/年动力电池用有机硅粘合剂生产线，余下产能将按计划逐步投产文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的title为光伏反内卷倡议托底硅料价格，锂电排产高增，新能源ETF易方达（516090）景气度上行文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的summary为对核算年度生产量2000辆以下并且生产、研发和运营保持独立的境内乘用车生产企业，进口量2000辆以下的获境外乘用车生产企业授权的进口乘用车供应企业，企业平均燃料消耗量较上一年度下降达到4%以上的， 其达标值在GB 27999《乘用车燃料消耗量评价方法及指标》规定的企业平均燃料消耗量要求基础上放宽60%；下降2%以上不满4%的，其达标值放宽30%。 也是引领第二个百年汽车发展进程的跨时代创新之作。小米SU7在车型设计、新能源技术、智能科技等方面全面突破，充分展现小米造车的硬核实力，更展示出小米SU7所拥有的超强性能以及前瞻的智能空间与生态科技体验。 采用宁德时代101kWh麒麟电池，CLTC续航里程800km。800V超级快充支持5分钟充电220km续航、15分钟充电510km续航。消息来源：新浪财经。挪威百亿补贴到位，首次招标开启。 推动项目开发由补贴向平价平稳过渡。其中：补贴范围为2018年底前已完成核准、在2022年至2024年全容量并网的省管海域项目，对2025年起并网的项目不再补贴； 补贴标准为2022年、2023年、2024年全容量并网项目每千瓦分别补贴1500元、1000元...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的summary为| 宁德时代 | 300750.SZ | 163.26 | 7, 181.87 | 87.87% | -22.84% | 12.64 | 16.38 | 0.53| | | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 | 三峡能源 | 600905.SH | 4.37 | 1, 250.82 | 9.74% | 10.28% | 17.47 | 15.84 | 0.06|文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的summary为| | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 | 隆基绿能 | 601012.SH | 22.90 | 1,735.37 | 15.38% | 6.04% | 11.74 | 11.07 | 0.15 |。 | 华宝新能 | 301327.SZ | 76.40 | 95.35 | -5.63% | -78.08% | 20.70 | 94.47 | 26.65 |。 | 隆基绿能 | 601012.SH | 22.90 | 1, 735.37 | 15.38% | 6.04% | 11.74 | 11.07 | 0.15| | | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 | 阳光电源 | 300274.SZ | 87.59 | 1, 300.84 | 124.07% | 161.27% | 36.19 | 13.85 | 2.4...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的summary为8月11日，截至10:13，新能源电池上涨1.14%。个股方面，德业股份、阳光电源等涨超4%，科达利涨超3%，鹏辉能源涨超2%，亿纬锂能涨超1%。 热门ETF方面，储能电池ETF易方达（159566）当前成交额1.08亿元，换手率2.06%。 消息面上，8月11日，广东一加一新能源取得可适配不同尺寸新能源电池的固定电池架专利，苏州德龙激光申请可显著提升工作效率的新能源电池包巴片拆解设备专利，北京卡文新能源取得电池热管理系统控制方法专利， 长安汽车新注册新能源汽车电池管理系统模型在环测试软件等软件著作权，广西汇元锰业18万吨电解二氧化锰产能可作为新能源电池关键材料，长期稳定供货国内外头部电池企业，人力资源社会保障部推出电力新能源行业线上招聘专场， 提供电池研发工程师、锂电池品质工程师等相关岗位需求1.5万余人次； 8月10日，宁德时代旗下独立后市场品牌宁家服务全球十大站点同步开业，其中杭州直营体验中心定位区域服务枢纽，可提供动力电池从维保、延保到回收再生的全生命周期闭环服务； 8月9日，楚能新能源宜昌二期80GWh锂电池产业园项目正式投产，项目总投资220亿元，全面达产后预计年产值超22...文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的summary为最近几年，全球锂电池市场整体保持稳步扩容，行业彻底走出2023至2024年产能过剩、企业利润承压的调整低谷，实现规模和盈利的同步回升。 聚焦2026年1-4月数据，新能源车锂电需求同比增长41%，低于行业整体增速，足以看出动力电池赛道增速逐步放缓的行业现状。 市场格局方面，行业集中度持续提高，宁德时代、比亚迪稳居全球前两位，二线厂商主打细分车型和海外市场差异化突围，中小产能逐步被市场淘汰，整体呈现“低端产能过剩、高端产能紧缺”的分化局面。 市场分布上，国内大型储能项目稳步落地，欧洲户储、中东、澳洲等海外市场依托政策红利需求爆发，形成国内外同步增长的良好格局。 锂电池上游核心材料主要包括正极、负极、电解液、隔膜四大品类，材料行业的景气度完全跟随下游电芯市场变化，随着动力电池、储能电池需求爆发同步扩容，同时呈现明显的结构性分化特征。 第一，市场需求结构彻底重构，新能源车与储能双轮驱动的格局彻底成型，储能成为第一增长引擎，海外出口持续放量；第二，技术迭代节奏加快，钠离子电池、固态电池、新型正极材料逐步落地商用，持续优化电池安全性、能量密度与成本体系； 第三，行业产能持续出清洗牌，低端低效产能...文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-1933919487"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-1933919487">最新涨跌幅（富奥股份）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">最新涨跌幅（富奥股份）</text><line x1="88" y1="108.2" x2="924" y2="108.2" stroke="#94a3b8"/><text x="227.3" y="442.0" text-anchor="middle" font-size="11" fill="#475569">富奥股份</text><rect x="223.0" y="108.2" width="45.0" height="109.9" rx="3" fill="#D97706"/><text x="245.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">-1.61663</text><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">中国宝安</text><rect x="405.7" y="108.2" width="45.0" height="154.2" rx="3" fill="#2563EB"/><text x="428.2" y="101.2" text-anchor="middle" font-size="10" fill="#475569">-2.26667</text><text x="784.7" y="442.0" text-anchor="middle" font-size="11" fill="#475569">南京公用</text><rect x="732.3" y="108.2" width="45.0" height="277.6" rx="3" fill="#0F766E"/><text x="754.8" y="101.2" text-anchor="middle" font-size="10" fill="#475569">-4.08163</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">中国宝安</text><rect x="300" y="55" width="12" height="12" rx="2" fill="#0F766E"/><text x="319.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">南京公用</text><rect x="480" y="55" width="12" height="12" rx="2" fill="#D97706"/><text x="499.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">富奥股份</text></svg><figcaption><span class="chart-number">图2-2</span> · 最新涨跌幅（富奥股份） · 柱状图<br>数据来源：<a class="citation" href="#source-2">来源2：同花顺问财 hithink-finance-query</a><br>分析目的：以bar图呈现最新涨跌幅的证据分布，支撑相关章节的论述。</figcaption></figure>
+      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-1675671895"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-1675671895">业务收入（富奥股份）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">业务收入（富奥股份）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">富奥股份</text><rect x="205.0" y="108.2" width="45.0" height="277.6" rx="3" fill="#2563EB"/><text x="227.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">1.84185e+10</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">富奥股份</text></svg><figcaption><span class="chart-number">图2-5</span> · 业务收入（富奥股份） · 柱状图<br>数据来源：<a class="citation" href="#source-4">来源4：同花顺问财产业链解读（行业数据＋经营数据）</a><br>分析目的：以bar图呈现业务收入的证据分布，支撑相关章节的论述。</figcaption></figure>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第2章第3节 · 供需关系、产能与行业周期</h3>
+        <p>动力电池的市盈率为24.5265未提供，期末2026-08-21（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的业务成本为16,203,824,406.1未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的上市地点为深圳文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>中国宝安的所属概念为[&#39;石墨电极&#39;, &#39;动力电池回收&#39;, &#39;钠离子电池&#39;, &#39;土地流转&#39;, &#39;农机&#39;, &#39;物业管理&#39;, &#39;金属回收&#39;, &#39;石墨烯&#39;, &#39;金属钴&#39;, &#39;固态电池&#39;, &#39;一带一路&#39;, &#39;锂电池概念&#39;, &#39;创投&#39;, &#39;氢能源&#39;, &#39;小金属概念&#39;, &#39;金属镍&#39;, &#39;宁德时代概念&#39;, &#39;燃料电池&#39;, &#39;黄金概念&#39;, &#39;硅能源&#39;, &#39;储能&#39;, &#39;粤港澳大湾区&#39;, &#39;减速器&#39;, &#39;机器人概念&#39;, &#39;新能源汽车&#39;, &#39;军工&#39;, &#39;比亚迪概念&#39;, &#39;充电桩&#39;, &#39;人形机器人&#39;, &#39;3D打印&#39;, &#39;高压快充&#39;, &#39;液冷服务器&#39;, &#39;无线充电&#39;, &#39;深股通&#39;, &#39;融资融券&#39;, &#39;电力设备&#39;, &#39;电池&#39;, &#39;电池化学品&#39;, &#39;富锂锰基&#39;, &#39;中马经济一体化&#39;, &#39;负极材料&#39;, &#39;正极材料&#39;, &#39;中欧经济一体化&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>中国宝安的所属同花顺行业为[&#39;电力设备&#39;, &#39;电池&#39;, &#39;电池化学品&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>南京公用的纳入概念原因为[&#39;【动力电池回收】2024年7月6日公告：南京公用发展股份有限公司(以下简称“公司”或“甲方”)与江西赣锋锂业集团股份有限公司（以下简称“赣锋锂业”或“乙方”）、南京环境集团有限公司（以下简称“环境集团”或“丙方”）基于“优势互补、互惠互利、成果共享、共谋发展”的原则，在废旧电池回收与锂电池应用等领域开展全面合作，并于近日签订了《战略合作协议》。三方拟组建合资公司，注册资本10,000万元，其中甲方或其控股主体占股35%，乙方或其控股主体占股35%，丙方或其控股主体占股30%。合资公司拟在江苏省投资建设30万吨废旧电池回收基地，初步计划项目一期规模3万吨，项目二期规模7万吨，项目三期规模20万吨，并可根据市场情况调整产能规划。项目总投资预计10亿元，其中一期投资1亿元，二期投资2.5亿元，三期投资6.5亿元。&#39;]文本（来源：同花顺问财 hithink-finance-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a></p>        <p>富奥股份的所属概念为[&#39;飞行汽车(eVTOL)&#39;, &#39;长安汽车概念&#39;, &#39;华为汽车&#39;, &#39;汽车热管理&#39;, &#39;低空经济&#39;, &#39;参股保险&#39;, &#39;小米汽车&#39;, &#39;车联网(车路协同)&#39;, &#39;换电概念&#39;, &#39;动力电池回收&#39;, &#39;无人驾驶&#39;, &#39;新能源汽车&#39;, &#39;国企改革&#39;, &#39;比亚迪概念&#39;, &#39;宁德时代概念&#39;, &#39;小米概念&#39;, &#39;储能&#39;, &#39;证金持股&#39;, &#39;智能座舱&#39;, &#39;锂电池概念&#39;, &#39;汽车电子&#39;, &#39;融资融券&#39;, &#39;深股通&#39;, &#39;汽车&#39;, &#39;汽车零部件&#39;, &#39;底盘与发动机系统&#39;, &#39;车载摄像头&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>富奥股份的所属同花顺行业为[&#39;汽车&#39;, &#39;汽车零部件&#39;, &#39;底盘与发动机系统&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>中国宝安的所属概念为[&#39;石墨电极&#39;, &#39;动力电池回收&#39;, &#39;钠离子电池&#39;, &#39;土地流转&#39;, &#39;农机&#39;, &#39;物业管理&#39;, &#39;金属回收&#39;, &#39;石墨烯&#39;, &#39;金属钴&#39;, &#39;固态电池&#39;, &#39;一带一路&#39;, &#39;锂电池概念&#39;, &#39;创投&#39;, &#39;氢能源&#39;, &#39;小金属概念&#39;, &#39;金属镍&#39;, &#39;宁德时代概念&#39;, &#39;燃料电池&#39;, &#39;黄金概念&#39;, &#39;硅能源&#39;, &#39;储能&#39;, &#39;粤港澳大湾区&#39;, &#39;减速器&#39;, &#39;机器人概念&#39;, &#39;新能源汽车&#39;, &#39;军工&#39;, &#39;比亚迪概念&#39;, &#39;充电桩&#39;, &#39;人形机器人&#39;, &#39;3D打印&#39;, &#39;高压快充&#39;, &#39;液冷服务器&#39;, &#39;无线充电&#39;, &#39;深股通&#39;, &#39;融资融券&#39;, &#39;电力设备&#39;, &#39;电池&#39;, &#39;电池化学品&#39;, &#39;富锂锰基&#39;, &#39;中马经济一体化&#39;, &#39;负极材料&#39;, &#39;正极材料&#39;, &#39;中欧经济一体化&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>中国宝安的所属同花顺行业为[&#39;电力设备&#39;, &#39;电池&#39;, &#39;电池化学品&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>南华生物的所属概念为[&#39;细胞免疫治疗&#39;, &#39;CRO概念&#39;, &#39;污水处理&#39;, &#39;国企改革&#39;, &#39;动力电池回收&#39;, &#39;锂电池概念&#39;, &#39;智慧灯杆&#39;, &#39;股权转让(并购重组)&#39;, &#39;摘帽&#39;, &#39;医药生物&#39;, &#39;医疗服务&#39;, &#39;其他医疗服务&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>南华生物的所属同花顺行业为[&#39;医药生物&#39;, &#39;医疗服务&#39;, &#39;其他医疗服务&#39;]文本（来源：同花顺问财 hithink-event-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a></p>        <p>富奥股份的项目名称为内部抵销文本（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>富奥股份的成本占比为106.2911未提供（来源：同花顺问财产业链解读（行业数据＋经营数据），证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a></p>        <p>富奥股份的主营业务收入-零部件为18,418,468,967.08未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>富奥股份的主营业务收入占比-零部件为105.7901未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>富奥股份的主营业务利润-内部抵销为-49,004,834.69未提供（来源：同花顺问财 hithink-business-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a></p>        <p>admin的title为2026年中国动力电池产业链图谱及投资布局分析（附产业链全景图）文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的title为电力设备与新能源行业2026年中期策略报告：AI算力浪潮驱动电力重构 锂电储能风电景气共振文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的summary为国内首次出现有硅料企业开始全面停产。12月19日，内蒙古某多晶硅企业发布通知，公司在20日全面停产，停车具体复工时期待定。这是国内首次有硅料企业开始全面停产，此举主要是因近期硅料价格持续走低。对于三线小厂或部分老旧产线而言，目前价格已经低于其成本线，且在短期内看不到盈利空间，只能选择减产甚至停产。从长期来看，硅料巨头依然在大幅提高产能，用先发和产能优势巩固自身地位，清退落后产能。推荐新技术驱动下具备α的标的天宜上佳（688033.SH）、宇邦新材（301266.SZ）。建议关注异质结领域，三五互联（300051.SZ），美国相关弹性标的意华股份（002897.SZ），BC电池技术方向爱旭股份（600731.SH）、复合材料边框博菲电气（300751.SZ）。 国家电网23年第六次变电设备采购中标候选人公示，涉及86.95亿元。国家电网公示23年第六次变电设备（含电缆）招标采购推荐的中标候选人，本批次公示总金额86.95亿元，环比第四批-7.47%；23年6个批次变电设备项目招标累计公示金额达到676.92亿元。电力设备板块推荐思源电气（002028.SZ）、万马股份（00227...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的summary为| 阳光电源 | 300274.SZ | 87.59 | 1,300.84 | 124.07% | 161.27% | 36.19 | 13.85 | 2.44 |。 | 明阳智能 | 601615.SH | 12.54 | 284.88 | -0.62% | 10.13% | 7.89 | 7.16 | 0.36| | | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 | 亿纬锂能 | 300014.SZ | 42.20 | 863.29 | 19.48% | 24.01% | 22.93 | 18.49 | 1.20 |。 | 国电南瑞 | 600406.SH | 22.32 | 1, 792.97 | -4.90% | -4.66% | 23.01 | 24.13 | 0.35| | | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 |...文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的summary为| 中国电建 | 601669.SH | 4.89 | 842.36 | 37.14% | 11.97% | 7.16 | 6.40 | 0.04 |。 | 芯能科技 | 603105.SH | 11.58 | 57.90 | 72.73% | 26.50% | 30.47 | 24.09 | 6.05| | | 2023-12-29 | 收盘价 | 市值(亿元) | 每股收益增长率2022 | 每股收益增长率2023E | 2022PE | 2023PE | 2022PB |。 | 昱能科技 | 688348.SH | 122.38 | 137.07 | 199.42% | -44.28% | 23.76 | 42.65 | 33.94 |。 | 三一重能 | 688349.SH | 28.62 | 345.02 | -5.70% | 6.37% | 18.85 | 17.73 | 1.74| | 华宝新能 | 301327.SZ | 76.40 | 95.35 | -5.63% | -78.08% | 20.70 | 94.47 | 26.65 |。 | 博力威 | 688345....文本（来源：同花顺问财 report-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a></p>        <p>admin的summary为8月11日，截至10:37，CS电池指数上涨1.25%。个股方面，德业股份、阳光电源等涨超6%，亿纬锂能涨超2%，三花智控涨超1%，先导智能、天赐材料等上涨。 热门ETF方面，电池ETF易方达（159175）当前成交额1295.64万元，换手率2.69%。 消息面上，8月11日，中科院大连化物所陈忠伟团队研制出25安时级软包金属锂一次电池，倍率性能达国际领先水平，已建成年产10吨级中试线，打通全链条并通过第三方检测； 亿纬锂能确认自9月1日起部分国内销售电池加价2%传导消费税成本，当前订单超产能，预计对客户影响较小；丰田扩大混动车型锂电池搭载规模，逐步替代镍氢电池； 固态电池材料企业瑞智新能源完成数千万元Pre-A+轮融资，获上海、宜兴国资联合基金独家投资，资金用于产业基地建设与产能扩充，核心产品已进入头部电池厂商供应链并实现规模化交付。 8月10日，欧盟数字电池护照制度将于2027年2月落地，相关合规要求已传导至国内锂电池产业链上游，国内厂商正推进合规升级；四川先进电池创新中心计划8月底交付，将补齐宜宾固态电池中试平台配套短板，服务9月世界动力电池大会。 8月6日，电池产业链迎来密集...文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的summary为同花顺金融研究中心08月11日讯，有投资者向硅宝科技提问， 请问你们硅碳负极最新进度如何 公司回答表示，尊敬的投资者，您好！ 公司“5万吨/年锂电池用硅碳负极材料及专用粘合剂项目”目前按计划稳定建设中，已投产3000吨/年锂电池用硅碳负极生产线、10000吨/年动力电池用有机硅粘合剂生产线、5000吨/年聚氨酯密封胶生产线， 2026年将建成并投入使用7000吨/年锂电池用硅碳负极生产线、5000吨/年聚氨酯密封胶生产线、5000吨/年动力电池用有机硅粘合剂生产线，余下产能将按计划逐步投产。感谢您对硅宝科技的关注！点击进入交易所官方互动平台查看更多。文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>        <p>admin的data_version为v1文本（来源：同花顺问财 news-search，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a></p>      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-3131731982"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-3131731982">市盈率（动力电池）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">市盈率（动力电池）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">动力电池</text><rect x="205.0" y="108.2" width="45.0" height="277.6" rx="3" fill="#2563EB"/><text x="227.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">24.5265</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">动力电池</text></svg><figcaption><span class="chart-number">图2-3</span> · 市盈率（动力电池） · 柱状图<br>数据来源：<a class="citation" href="#source-4">来源4：同花顺问财产业链解读（行业数据＋经营数据）</a><br>分析目的：以bar图呈现市盈率的证据分布，支撑相关章节的论述。</figcaption></figure>
+      <figure class="chart chart-bar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-624839682"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-624839682">业务成本（富奥股份）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">业务成本（富奥股份）</text><line x1="88" y1="385.8" x2="924" y2="385.8" stroke="#94a3b8"/><text x="506.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">富奥股份</text><rect x="205.0" y="108.2" width="45.0" height="277.6" rx="3" fill="#2563EB"/><text x="227.5" y="101.2" text-anchor="middle" font-size="10" fill="#475569">1.62038e+10</text><rect x="120" y="55" width="12" height="12" rx="2" fill="#2563EB"/><text x="139.0" y="66.0" text-anchor="start" font-size="12" fill="#475569">富奥股份</text></svg><figcaption><span class="chart-number">图2-6</span> · 业务成本（富奥股份） · 柱状图<br>数据来源：<a class="citation" href="#source-4">来源4：同花顺问财产业链解读（行业数据＋经营数据）</a><br>分析目的：以bar图呈现业务成本的证据分布，支撑相关章节的论述。</figcaption></figure>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第三章 · 产业链与利润分配</h2>
+    <p class="chapter-summary">本章围绕“产业链与利润分配”，基于0项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第3章第1节 · 上游资源、原材料与关键供应环节</h3>
+        <p>本节围绕上游资源、原材料与关键供应环节展开，按“说明上游供应与约束。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第3章第2节 · 中游核心产品、制造与服务环节</h3>
+        <p>本节围绕中游核心产品、制造与服务环节展开，按“说明中游价值创造与竞争因素。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第3章第3节 · 下游需求、议价关系与利润迁移</h3>
+        <p>本节围绕下游需求、议价关系与利润迁移展开，按“说明下游需求及利润传导方向。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第四章 · 竞争格局</h2>
+    <p class="chapter-summary">本章围绕“竞争格局”，基于0项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第4章第1节 · 市场结构、集中度与竞争阶段</h3>
+        <p>本节围绕市场结构、集中度与竞争阶段展开，按“概括可验证的竞争结构。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第4章第2节 · 主要参与者及其竞争位置</h3>
+        <p>本节围绕主要参与者及其竞争位置展开，按“在可比口径下说明参与者位置。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第4章第3节 · 竞争壁垒、差异化因素与潜在进入者</h3>
+        <p>本节围绕竞争壁垒、差异化因素与潜在进入者展开，按“分析壁垒及其可持续性。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第五章 · 财务质量与估值参照</h2>
+    <p class="chapter-summary">本章围绕“财务质量与估值参照”，基于9项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第5章第1节 · 收入、利润与盈利能力</h3>
+        <p>CPI:当月同比的宏观@值为0.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>PPI:当月同比的宏观@值为4.1未提供，期末2026-06-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1.2未提供，期末2026-04-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第5章第2节 · 现金流、资产负债与财务质量</h3>
+        <p>PPI:当月同比的宏观@值为3.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1.2未提供，期末2026-05-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>PPI:当月同比的宏观@值为2.8未提供，期末2026-04-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第5章第3节 · 估值水平、历史区间与跨市场可比性</h3>
+        <p>CPI:当月同比的宏观@值为1未提供，期末2026-06-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>PPI:当月同比的宏观@值为3.9未提供，期末2026-05-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1未提供，期末2026-03-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第六章 · 宏观、政策与技术催化</h2>
+    <p class="chapter-summary">本章围绕“宏观、政策与技术催化”，基于17项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第6章第1节 · 宏观经济变量与行业传导路径</h3>
+        <p>CPI:当月同比的宏观@值为0.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1未提供，期末2026-06-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1.2未提供，期末2026-05-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1.2未提供，期末2026-04-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1未提供，期末2026-03-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为1.3未提供，期末2026-02-28（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为0.2未提供，期末2026-01-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为0.8未提供，期末2025-12-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为0.7未提供，期末2025-11-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为0.2未提供，期末2025-10-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为-0.3未提供，期末2025-09-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@值为-0.4未提供，期末2025-08-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>PPI:当月同比的宏观@值为3.5未提供，期末2026-07-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>PPI:当月同比的宏观@值为2.8未提供，期末2026-04-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>      <figure class="chart chart-line"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="图表标题-2728821924"><rect width="100%" height="100%" rx="14" fill="#ffffff"/><title id="图表标题-2728821924">宏观@值（CPI:当月同比）</title><text x="480.0" y="36" text-anchor="middle" font-size="20" font-weight="700" fill="#0f172a">宏观@值（CPI:当月同比）</text><line x1="88" y1="86" x2="88" y2="408" stroke="#94a3b8"/><line x1="88" y1="408" x2="924" y2="408" stroke="#94a3b8"/><line x1="88" y1="86.0" x2="924" y2="86.0" stroke="#e2e8f0"/><text x="78.0" y="90.0" text-anchor="end" font-size="11" fill="#475569">1.436</text><line x1="88" y1="166.5" x2="924" y2="166.5" stroke="#e2e8f0"/><text x="78.0" y="170.5" text-anchor="end" font-size="11" fill="#475569">0.943</text><line x1="88" y1="247.0" x2="924" y2="247.0" stroke="#e2e8f0"/><text x="78.0" y="251.0" text-anchor="end" font-size="11" fill="#475569">0.45</text><line x1="88" y1="327.5" x2="924" y2="327.5" stroke="#e2e8f0"/><text x="78.0" y="331.5" text-anchor="end" font-size="11" fill="#475569">-0.043</text><line x1="88" y1="408.0" x2="924" y2="408.0" stroke="#e2e8f0"/><text x="78.0" y="412.0" text-anchor="end" font-size="11" fill="#475569">-0.536</text><text x="88.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2025-08-31</text><text x="164.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2025-09-30</text><text x="240.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2025-10-31</text><text x="316.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2025-11-30</text><text x="392.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2025-12-31</text><text x="468.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2026-01-31</text><text x="544.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2026-02-28</text><text x="620.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2026-03-31</text><text x="696.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2026-04-30</text><text x="772.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2026-05-31</text><text x="848.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2026-06-30</text><text x="924.0" y="442.0" text-anchor="middle" font-size="11" fill="#475569">2026-07-31</text><polyline points="88.0,385.8 164.0,369.5 240.0,287.8 316.0,206.2 392.0,189.8 468.0,287.8 544.0,108.2 620.0,157.2 696.0,124.5 772.0,124.5 848.0,157.2 924.0,238.8" fill="none" stroke="#2563EB" stroke-width="3"/><circle cx="88.0" cy="385.8" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="164.0" cy="369.5" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="240.0" cy="287.8" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="316.0" cy="206.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="392.0" cy="189.8" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="468.0" cy="287.8" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="544.0" cy="108.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="620.0" cy="157.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="696.0" cy="124.5" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="772.0" cy="124.5" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="848.0" cy="157.2" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><circle cx="924.0" cy="238.8" r="4" fill="#fff" stroke="#2563EB" stroke-width="2"/><line x1="120" y1="62" x2="148" y2="62" stroke="#2563EB" stroke-width="3"/><text x="156.0" y="67.0" text-anchor="start" font-size="12" fill="#475569">CPI:当月同比</text></svg><figcaption><span class="chart-number">图6-1</span> · 宏观@值（CPI:当月同比） · 折线图<br>数据来源：<a class="citation" href="#source-1">来源1：同花顺问财 hithink-macro-query</a><br>分析目的：以line图呈现宏观@值的证据分布，支撑相关章节的论述。<br>数据说明：financial_quality：财务指标以披露值为准，勾稽核验以确定性计算结果为准。；处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。</figcaption></figure>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第6章第2节 · 政策、监管与合规环境</h3>
+        <p>PPI:当月同比的宏观@值为4.1未提供，期末2026-06-30（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p>        <p>CPI:当月同比的宏观@id为M002826730文本（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第6章第3节 · 技术趋势、事件催化与监测指标</h3>
+        <p>PPI:当月同比的宏观@值为3.9未提供，期末2026-05-31（来源：同花顺问财 hithink-macro-query，证据编号相关证据）。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a></p><div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+  <section class="chapter">
+    <h2>第七章 · 情景、风险与研究结论</h2>
+    <p class="chapter-summary">本章围绕“情景、风险与研究结论”，基于0项可追溯结论展开，全部结论均可回溯至证据编号。</p>
+      <h3>第7章第1节 · 基准、乐观和悲观三种情景</h3>
+        <p>本节围绕基准、乐观和悲观三种情景展开，按“呈现共享事实底座下的三种情景。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第7章第2节 · 核心风险、反证条件与跟踪指标</h3>
+        <p>本节围绕核心风险、反证条件与跟踪指标展开，按“说明风险传导及可证伪条件。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>      <h3>第7章第3节 · 核心结论、适用边界与待验证事项</h3>
+        <p>本节围绕核心结论、适用边界与待验证事项展开，按“汇总结论且保留不确定性。”组织论述；当前小节缺少可引用结论，相关数据边界已在研究边界中披露。</p>
+<div class="uncertainty"><strong>待验证事项</strong><ul><li>部分结论依赖单一来源证据，口径差异风险待核验。</li></ul></div>  </section>
+
+
+  <section class="quality-appendix chapter">
+    <h2>数据质量与研究边界附录</h2>
+    <h3>研究维度覆盖</h3>
+    <table class="quality-table"><caption>表附-1 · 研究维度覆盖</caption><thead><tr><th>维度</th><th>状态</th><th>说明</th></tr></thead><tbody><tr><td>竞争格局</td><td>证据不足</td><td>当前维度缺少可引用结论，仅保留研究边界。</td></tr><tr><td>行业增长</td><td>证据充分</td><td>根据当前可追溯结论评估该维度的证据覆盖状态。</td></tr><tr><td>宏观与政策</td><td>证据充分</td><td>根据当前可追溯结论评估该维度的证据覆盖状态。</td></tr><tr><td>产业链</td><td>证据不足</td><td>当前维度缺少可引用结论，仅保留研究边界。</td></tr><tr><td>风险</td><td>证据不足</td><td>当前维度缺少可引用结论，仅保留研究边界。</td></tr></tbody></table>
+    <h3>数据质量问题</h3>
+    <table class="quality-table"><caption>表附-2 · 数据质量问题</caption><thead><tr><th>序号</th><th>指标</th><th>影响</th><th>说明与处理</th></tr></thead><tbody><tr><td>问题1</td><td>financial_quality</td><td>中</td><td>财务指标以披露值为准，勾稽核验以确定性计算结果为准。<br>处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。</td></tr><tr><td>问题2</td><td>valuation_expectation</td><td>中</td><td>估值参考维度缺少独立估值证据，仅保留研究边界说明。<br>处理：保留现有事实并明确口径限制，不形成无证据的确定性排名或预测。</td></tr><tr><td>问题3</td><td>宏观@值</td><td>高</td><td>shift异常检测（CRITICAL）：环比变化+166.7%，超出突变阈值±20%。基线区间[-0.3, -0.3]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr><tr><td>问题4</td><td>宏观@值</td><td>高</td><td>shift异常检测（CRITICAL）：环比变化+250.0%，超出突变阈值±20%。基线区间[0.2, 0.2]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr><tr><td>问题5</td><td>宏观@值</td><td>高</td><td>shift异常检测（CRITICAL）：环比变化-75.0%，超出突变阈值±20%。基线区间[0.8, 0.8]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr><tr><td>问题6</td><td>宏观@值</td><td>高</td><td>shift异常检测（CRITICAL）：环比变化+550.0%，超出突变阈值±20%。基线区间[0.2, 0.2]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr><tr><td>问题7</td><td>宏观@值</td><td>中</td><td>shift异常检测（WARN）：环比变化-50.0%，超出突变阈值±20%。基线区间[1.0, 1.0]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr><tr><td>问题8</td><td>宏观@值</td><td>中</td><td>[INFO] shift异常检测（INFO）：环比变化+25.0%，超出突变阈值±20%。基线区间[-0.4, -0.4]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr><tr><td>问题9</td><td>宏观@值</td><td>中</td><td>[INFO] shift异常检测（INFO）：环比变化-23.1%，超出突变阈值±20%。基线区间[1.3, 1.3]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr><tr><td>问题10</td><td>宏观@值</td><td>中</td><td>shift异常检测（WARN）：环比变化+39.3%，超出突变阈值±20%。基线区间[2.8, 2.8]，仅标记偏离，不构成结论。<br>处理：核实该数据点口径与录入；若为真实业务变化，保留并在分析中单独归因，不与其他期间直接平均。</td></tr></tbody></table>
+    <h3>财务一致性检查</h3>
+    <table class="quality-table"><caption>表附-3 · 财务一致性检查</caption><thead><tr><th>序号</th><th>状态</th><th>结论</th><th>影响</th></tr></thead><tbody><tr><td>检查1</td><td>需要复核</td><td>财务指标以披露值为准，勾稽核验以确定性计算结果为准。</td><td>涉及盈利质量和现金流的结论应采用条件性表达并提示人工复核。</td></tr></tbody></table>
+  </section>
+
+  <section class="source-index chapter" id="source-index">
+    <h2>来源与证据索引</h2>
+    <table class="quality-table source-table">
+      <caption>表附-4 · 来源与证据索引</caption>
+      <thead><tr><th>序号</th><th>材料</th><th>发布主体</th><th>日期</th><th>报告期</th><th>页码/章节</th><th>获取方式/层级</th></tr></thead>
+      <tbody>
+        <tr id="source-1"><td>1</td><td>同花顺问财 hithink-macro-query</td><td>未提供</td><td>2026-08-11</td><td>2025—2026年（12期）</td><td>SkillHub:hithink-ma…</td><td>同花顺问财 SkillHub / 二级证据</td></tr>
+        <tr id="source-2"><td>2</td><td>同花顺问财 hithink-finance-query</td><td>未提供</td><td>2026-08-11</td><td>未提供</td><td>SkillHub:hithink-fi…</td><td>同花顺问财 SkillHub / 二级证据 · 未经审计</td></tr>
+        <tr id="source-3"><td>3</td><td>同花顺问财 hithink-event-query</td><td>未提供</td><td>2026-08-11</td><td>未提供</td><td>SkillHub:hithink-ev…</td><td>同花顺问财 SkillHub / 二级证据</td></tr>
+        <tr id="source-4"><td>4</td><td>同花顺问财产业链解读（行业数据＋经营数据）</td><td>未提供</td><td>2026-08-11</td><td>2026-08-21</td><td>SkillHub:产业链解读:bc63…</td><td>同花顺问财 SkillHub / 三级证据</td></tr>
+        <tr id="source-5"><td>5</td><td>同花顺问财 hithink-business-query</td><td>未提供</td><td>2026-08-11</td><td>未提供</td><td>SkillHub:hithink-bu…</td><td>同花顺问财 SkillHub / 三级证据</td></tr>
+        <tr id="source-6"><td>6</td><td>同花顺问财 report-search</td><td>未提供</td><td>2024-01-01</td><td>未提供</td><td>网页原文</td><td>同花顺问财 SkillHub / 四级证据</td></tr>
+        <tr id="source-7"><td>7</td><td>同花顺问财 news-search</td><td>未提供</td><td>2026-08-11</td><td>未提供</td><td>网页原文</td><td>同花顺问财 SkillHub / 四级证据</td></tr>
+      </tbody>
+    </table>
+    <p class="reference">注：来源层级表示材料性质和核验状态，不构成对信息质量的机械排序；模型估算、情景假设与已披露事实应分别理解。</p>
+  </section>
+
+</main>
+</body>
+</html>

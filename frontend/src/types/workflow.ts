@@ -262,6 +262,41 @@ export interface WorkflowState {
   updated_at: string
 }
 
+/** Run history listing entry, derived from the latest snapshot. */
+export interface RunSummary {
+  run_id: string
+  project_id: string
+  title: string
+  current_stage: StageName
+  status: StageStatus
+  revision: number
+  created_at: string
+  updated_at: string
+  artifact_count: number
+  report_available: boolean
+}
+
+export interface RunListResponse {
+  total: number
+  offset: number
+  limit: number
+  items: RunSummary[]
+}
+
+/** One persisted revision of a run, newest snapshot within that revision. */
+export interface RevisionSummary {
+  revision: number
+  status: StageStatus
+  current_stage: StageName
+  updated_at: string
+}
+
+export interface RevisionListResponse {
+  run_id: string
+  current_revision: number
+  revisions: RevisionSummary[]
+}
+
 export interface RunCreateRequest {
   project_id: string
   run_id?: string | null

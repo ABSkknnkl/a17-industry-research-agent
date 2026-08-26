@@ -48,7 +48,11 @@ from app.schemas.analysis import (
     ScenarioAnalysis,
     ValidationCard,
 )
-from app.schemas.chapter import ChapterDraft, ParagraphDraft, SectionDraft
+from app.schemas.chapter import (
+    ChapterDraftLoose,
+    LooseParagraph,
+    LooseSection,
+)
 
 SURROGATE_MODEL_NAME = "surrogate-ai-v8"
 
@@ -684,7 +688,7 @@ class SurrogateChapterModel:
         *,
         system_prompt: str,
         runtime_prompt: str,
-    ) -> ChapterDraft:
+    ) -> ChapterDraftLoose:
         try:
             payload = json.loads(runtime_prompt)
         except json.JSONDecodeError as exc:
@@ -755,7 +759,7 @@ class SurrogateChapterModel:
                 section_claim_map[section_index].append(claim)
 
 
-        sections: list[SectionDraft] = []
+        sections: list[LooseSection] = []
         chapter_claim_ids: list[str] = []
         chapter_evidence_ids: list[str] = []
         chapter_chart_ids: list[str] = []
@@ -766,14 +770,14 @@ class SurrogateChapterModel:
                 if section_chart_ids[section_index]
                 else section_claims[:3]
             )
-            paragraphs: list[ParagraphDraft] = []
+            paragraphs: list[LooseParagraph] = []
             section_claim_ids: list[str] = []
             section_evidence_ids: list[str] = []
             for paragraph_index, claim in enumerate(rendered_claims, 1):
                 claim_id = str(claim["claim_id"])
                 evidence_ids = [str(item) for item in claim["evidence_ids"]]
                 paragraphs.append(
-                    ParagraphDraft(
+                    LooseParagraph(
                         paragraph_id=f"P-{number}-{section_index:02d}-{paragraph_index:02d}",
                         kind="analysis",
                         text=str(claim.get("text") or ""),
@@ -787,7 +791,7 @@ class SurrogateChapterModel:
                         section_evidence_ids.append(evidence_id)
             if not paragraphs:
                 paragraphs.append(
-                    ParagraphDraft(
+                    LooseParagraph(
                         paragraph_id=f"P-{number}-{section_index:02d}-01",
                         kind="methodology",
                         text=(
@@ -802,7 +806,7 @@ class SurrogateChapterModel:
             ] or [f"{section_config.get('title', '本小节')}：证据不足，仅保留研究框架。"]
             section_charts = list(section_chart_ids[section_index])
             sections.append(
-                SectionDraft(
+                LooseSection(
                     section_id=str(section_config["section_id"]),
                     title=str(section_config["title"]),
                     purpose=str(section_config["purpose"]),
@@ -823,7 +827,7 @@ class SurrogateChapterModel:
             f"本章围绕“{title}”，基于{len(set(chapter_claim_ids))}项可追溯结论展开，"
             "全部结论均可回溯至证据编号。"
         )
-        draft = ChapterDraft(
+        draft = ChapterDraftLoose(
             chapter_id=chapter_id,
             title=title,
             summary=summary,

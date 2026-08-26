@@ -1,0 +1,81 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-B25B85C6CDFA",
+  "chart_type": "bar",
+  "data_fingerprint": "e12ce7b8b5988d95006cd8b87c0a2e2d1b93b5b0d5f22da9ce33a45d9e93fd40",
+  "dedupe_key": "comparison:comparison:以line图呈现归母净利润同比增长率的证据分布，支撑ch-02的论述。:e12ce7b8b5988d95006cd8b87c0a2e2d1b93b5b0d5f22da9ce33a45d9e93fd40",
+  "evidence_ids": [
+    "E-bcd6683f9d767c51"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以line图呈现归母净利润同比增长率的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-bcd6683f9d767c51",
+            "value": 41.9839
+          }
+        ],
+        "name": "宁德时代",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "归母净利润同比增长率（宁德时代）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "宁德时代"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY %",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "line",
+  "resolution_reason": "请求图表 line 与数据集 categorical 不匹配，已确定性调整为 bar：图表类型 line 需要 time_series 数据，当前数据集为 categorical",
+  "title": "归母净利润同比增长率（宁德时代）",
+  "user_requested": false,
+  "variant": "vertical"
+}

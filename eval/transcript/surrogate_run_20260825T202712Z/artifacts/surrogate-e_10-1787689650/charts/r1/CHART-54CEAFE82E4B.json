@@ -1,0 +1,96 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-54CEAFE82E4B",
+  "chart_type": "line",
+  "data_fingerprint": "fc84a74afeeb1fb9b929a84d1a5229b00407ac21402fb29bb4af4f4c6ca88864",
+  "dedupe_key": "trend:trend:以bar图呈现归母净利润的证据分布，支撑ch-02的论述。:fc84a74afeeb1fb9b929a84d1a5229b00407ac21402fb29bb4af4f4c6ca88864",
+  "evidence_ids": [
+    "E-a6175b8faf620f9c",
+    "E-cca814652770afc0",
+    "E-3100ec4adaaa7818",
+    "E-644bc12df77001cb"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现归母净利润的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "evidenceMap": {
+      "贵州茅台": {
+        "2022-12-31": "E-644bc12df77001cb",
+        "2023-12-31": "E-3100ec4adaaa7818",
+        "2024-12-31": "E-cca814652770afc0",
+        "2025-12-31": "E-a6175b8faf620f9c"
+      }
+    },
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "connectNulls": false,
+        "data": [
+          62717467870.12,
+          74734071550.75,
+          86228146421.62,
+          82320067101.68
+        ],
+        "name": "贵州茅台",
+        "showSymbol": true,
+        "type": "line"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "归母净利润（贵州茅台）"
+    },
+    "tooltip": {
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "boundaryGap": false,
+      "data": [
+        "2022-12-31",
+        "2023-12-31",
+        "2024-12-31",
+        "2025-12-31"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 元",
+      "scale": true,
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": "请求图表 bar 与数据集 time_series 不匹配，已确定性调整为 line：图表类型 bar 需要 categorical 数据，当前数据集为 time_series",
+  "title": "归母净利润（贵州茅台）",
+  "user_requested": false,
+  "variant": "line"
+}

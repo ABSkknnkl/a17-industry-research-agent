@@ -73,6 +73,8 @@ class ChapterWriterGraphState(TypedDict):
     revision_count: int
     workflow_revision: int
     result: dict[str, Any] | None
+    # 透传通道审计产物：service 层构造，finalize 原样写入结果。
+    feedback_passthrough: dict[str, Any] | None
 
 
 def _text_values(chapter: ChapterDraft) -> list[str]:
@@ -429,6 +431,7 @@ def build_chapter_writer_graph(
             prompt_sha256=prompt.sha256,
             model_name=model.model_name,
             quality=quality,
+            feedback_passthrough=state.get("feedback_passthrough"),
         )
         return {"result": result.model_dump(mode="json")}
 

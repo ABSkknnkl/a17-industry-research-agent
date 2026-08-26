@@ -44,6 +44,10 @@ from app.agents.chart_generator.router import (
     build_dedupe_key,
     route_chart,
 )
+from app.agents.common.feedback_interpreter import (
+    FeedbackInterpreter,
+    apply_chart_edits,
+)
 from app.infrastructure.storage.local import save_chart_image, save_chart_json
 from app.integrations.visuals.protocol import ImageGenerator, PromptCompiler
 from app.schemas.analysis import CalculatedMetric, ChartCandidate, DataQualityIssue
@@ -485,6 +489,7 @@ class ChartGeneratorAgent:
         prompt_compiler: PromptCompiler | None = None,
         image_generator: ImageGenerator | None = None,
         generate_industry_chain_images: bool = False,
+        feedback_interpreter: FeedbackInterpreter | None = None,
     ) -> None:
         if generate_industry_chain_images and (
             prompt_compiler is None or image_generator is None
@@ -493,6 +498,7 @@ class ChartGeneratorAgent:
         self._prompt_compiler = prompt_compiler
         self._image_generator = image_generator
         self._generate_industry_chain_images = generate_industry_chain_images
+        self._feedback_interpreter = feedback_interpreter
 
     async def run(self, context: StageContext) -> StageResult:
         interpretation = context.previous_results.get(StageName.DATA_INTERPRET)
@@ -544,6 +550,27 @@ class ChartGeneratorAgent:
                 interpretation.data.get("calculated_metrics", [])
             )
         )
+
+        # Shared feedback interpreter (阶段一): review feedback becomes
+        # structured chart-option edits.  Metric edits must match existing
+        # datasets; anything unverifiable is rejected, never fabricated.
+        feedback_interpretation: dict[str, Any] | None = None
+        if context.review_feedback and self._feedback_interpreter is not None:
+            available_metrics = [
+                *{dataset.metric_name for dataset in datasets},
+                *(dataset.dataset_id for dataset in datasets),
+            ]
+            chart_interpretation = await self._feedback_interpreter.interpret(
+                stage="chart_generate",
+                feedback=context.review_feedback,
+                current_options=options.model_dump(mode="json"),
+                context_hints={"available_metrics": available_metrics},
+            )
+            feedback_interpretation = chart_interpretation.model_dump(mode="json")
+            if chart_interpretation.parser_mode == "llm" and any(
+                item.status == "applied" for item in chart_interpretation.outcomes
+            ):
+                options = apply_chart_edits(options, chart_interpretation)
 
         if options.title is not None and len(candidates) != 1:
             return _waiting_review(
@@ -1178,6 +1205,21 @@ class ChartGeneratorAgent:
 
         payload = generation.model_dump(mode="json")
         payload["decision_package"] = decision_package.model_dump(mode="json")
+        if feedback_interpretation is not None:
+            payload["feedback_interpretation"] = feedback_interpretation
+            if any(
+                item.get("status") == "applied"
+                for item in feedback_interpretation.get("outcomes", [])
+            ):
+                payload["applied_feedback_edits"] = [
+                    {
+                        "op": item["op"],
+                        "value": item["value"],
+                        "resolved_value": item.get("resolved_value"),
+                    }
+                    for item in feedback_interpretation.get("outcomes", [])
+                    if item.get("status") == "applied"
+                ]
         evidence_sources = sorted(
             {
                 evidence_id

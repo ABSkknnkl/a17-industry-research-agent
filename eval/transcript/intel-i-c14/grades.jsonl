@@ -1,0 +1,1 @@
+{"case_id": "I-C14", "passed": false, "checks": {"I1": true, "I2": true, "I3_required": true, "I3_forbidden": true, "I4_entity": true, "I4_time": true, "I5": true, "I6": false, "I7_mode": true, "I8_stable_signature_available": true}, "parser_mode": "", "_run_id": "intel-i-c14", "_at": "2026-08-25T19:59:05.002153+00:00"}

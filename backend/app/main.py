@@ -47,6 +47,7 @@ def create_app(*, checkpoint_database_path: Path | None = None) -> FastAPI:
                     runtime_policy=runtime_policy,
                 ),
                 runtime_policy=runtime_policy,
+                checkpointer=checkpointer,
             )
             application.state.readiness = ReadinessResponse(
                 ready=True,

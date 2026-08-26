@@ -1,7 +1,7 @@
 """Public StageAgent implementation for SkillHub-backed data acquisition."""
 
 from datetime import date
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import ValidationError
 
@@ -29,6 +29,9 @@ from app.schemas.workflow import DataFetchOptions, StageName, StageResult, Stage
 from app.security.policy import detect_prompt_injection
 from app.workflow.stages import StageContext
 
+if TYPE_CHECKING:
+    from app.agents.common.feedback_interpreter import FeedbackInterpreter
+
 
 class DataFetcherAgent:
     stage: StageName = StageName.DATA_FETCH
@@ -44,6 +47,7 @@ class DataFetcherAgent:
         intent_decomposer: IntentDecomposer | None = None,
         intent_confidence_accept: float = 0.90,
         intent_confidence_review: float = 0.75,
+        feedback_interpreter: "FeedbackInterpreter | None" = None,
     ) -> None:
         self._planner = planner
         self._executor = executor
@@ -59,6 +63,7 @@ class DataFetcherAgent:
         self._intent_confidence_review = max(
             0.0, min(float(intent_confidence_review), 1.0)
         )
+        self._feedback_interpreter = feedback_interpreter
 
     async def run(self, context: StageContext) -> StageResult:
         request = _parse_request(context.input_data)
@@ -93,6 +98,47 @@ class DataFetcherAgent:
                 data={"blocking_issues": ["prompt_injection_suspected"]},
                 error="prompt_injection_suspected",
             )
+
+        # Shared feedback interpreter (阶段一): review feedback becomes
+        # structured option edits instead of raw keyword concatenation.
+        # The block runs BEFORE metric collection so newly added metrics
+        # flow through the same deterministic routing chain as initial
+        # input (semantic router, metric registry, capability checks).
+        feedback_interpretation: dict[str, Any] | None = None
+        feedback_structured = False
+        if context.review_feedback and self._feedback_interpreter is not None:
+            hint_entities = [
+                str(item).strip()
+                for item in request["research_brief"].get("focus_companies", [])
+                if str(item).strip()
+            ][:20]
+            interpretation = await self._feedback_interpreter.interpret(
+                stage="data_fetch",
+                feedback=context.review_feedback,
+                current_options=request["data_fetch_options"],
+                research_as_of=request["research_as_of"],
+                context_hints={
+                    "known_entities": hint_entities,
+                    "industry_topic": request["industry_topic"],
+                },
+            )
+            feedback_interpretation = interpretation.model_dump(mode="json")
+            if interpretation.parser_mode == "llm" and any(
+                item.status == "applied" for item in interpretation.outcomes
+            ):
+                options_model = DataFetchOptions.model_validate(
+                    request["data_fetch_options"]
+                )
+                from app.agents.common.feedback_interpreter import apply_data_fetch_edits
+
+                options_model, updated_brief = apply_data_fetch_edits(
+                    options_model,
+                    request["research_brief"],
+                    interpretation,
+                )
+                request["data_fetch_options"] = options_model.model_dump(mode="json")
+                request["research_brief"] = updated_brief
+                feedback_structured = True
 
         semantic_routes: dict[str, Any] = {}
         semantic_routing: dict[str, Any] = {
@@ -222,6 +268,7 @@ class DataFetcherAgent:
             review_feedback=context.review_feedback,
             semantic_routes=semantic_routes,
             intent_plans=intent_plans,
+            feedback_structured=feedback_structured,
         )
         user_items = request["evidence_items"]
         executed = []
@@ -305,6 +352,20 @@ class DataFetcherAgent:
             "intent_routing": intent_routing,
             "blocking_issues": [],
         }
+        if feedback_interpretation is not None:
+            data["feedback_interpretation"] = feedback_interpretation
+            if feedback_structured:
+                data.setdefault("advisory_issues", []).append("feedback_structured_edits_applied")
+                unparsed = feedback_interpretation.get("unparsed_text")
+                if unparsed:
+                    data["advisory_issues"].append("feedback_partially_interpreted")
+                pending = [
+                    item
+                    for item in feedback_interpretation.get("outcomes", [])
+                    if item.get("status") == "pending_review"
+                ]
+                if pending:
+                    data["advisory_issues"].append("feedback_edits_pending_review")
         if self._provider_mode == "mock" and not user_only:
             data["blocking_issues"] = ["mock_data_not_for_formal_release"]
             data["collaboration_requests"] = [

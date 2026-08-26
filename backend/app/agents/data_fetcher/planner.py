@@ -46,6 +46,7 @@ class QueryPlanner:
         review_feedback: str | None,
         semantic_routes: dict[str, SkillName] | None = None,
         intent_plans: list[ResearchIntentPlan] | None = None,
+        feedback_structured: bool = False,
     ) -> RetrievalPlan:
         semantic_routes = semantic_routes or {}
         intent_plans = intent_plans or []
@@ -82,7 +83,14 @@ class QueryPlanner:
         focus_companies = list(dict.fromkeys([*brief_companies, *intent_companies]))[:20]
         company_text = "、".join(focus_companies)
         focus = " ".join(focus_questions)
-        review_instruction = " ".join((review_feedback or "").split())[:500]
+        # Structured feedback edits were already merged into data_fetch_options
+        # by the shared feedback interpreter; the raw text must not also be
+        # concatenated into every provider query (粗暴拼接 root cause).
+        review_instruction = (
+            ""
+            if feedback_structured
+            else " ".join((review_feedback or "").split())[:500]
+        )
         suffix = " ".join(
             part
             for part in (
