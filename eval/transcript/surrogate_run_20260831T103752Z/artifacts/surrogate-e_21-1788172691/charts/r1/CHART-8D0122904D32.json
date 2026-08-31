@@ -1,0 +1,81 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-8D0122904D32",
+  "chart_type": "bar",
+  "data_fingerprint": "427cde66c455ae9c42b2b5438284810be99a346ac0e6a31d0b2eb884728da62c",
+  "dedupe_key": "comparison:comparison:以bar图呈现归属于母公司所有者的净利润的证据分布，支撑ch-02的论述。:427cde66c455ae9c42b2b5438284810be99a346ac0e6a31d0b2eb884728da62c",
+  "evidence_ids": [
+    "E-996e3f21e3e0d40f"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现归属于母公司所有者的净利润的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "evidence_id": "E-996e3f21e3e0d40f",
+            "value": 72201282000.0
+          }
+        ],
+        "name": "宁德时代",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "归属于母公司所有者的净利润（宁德时代）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "宁德时代"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY 未提供",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "归属于母公司所有者的净利润（宁德时代）",
+  "user_requested": false,
+  "variant": "vertical"
+}

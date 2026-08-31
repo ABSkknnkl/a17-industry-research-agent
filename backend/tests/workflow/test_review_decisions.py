@@ -236,6 +236,69 @@ def test_partial_requested_data_can_continue_after_explicit_acknowledgement(monk
     assert result["input_data"]["accepted_missing_requirement_ids"] == ["REQ-02"]
 
 
+def test_missing_required_data_can_continue_after_explicit_acknowledgement(monkeypatch) -> None:
+    """数据缺口（required_data_unavailable）不再是强制重输：Agent 1 以用户
+    裁决门呈现决策包，用户确认风险后可继续生成（error 清除 + 台账记录）。"""
+    run_id = "run-missing-data-ack"
+    package = _package(
+        run_id=run_id,
+        stage=StageName.DATA_FETCH,
+        acknowledgement_required=True,
+    )
+    package["risk_notices"][0]["risk_code"] = "REQUESTED-DATA-UNAVAILABLE"
+    package["acknowledgement_required_codes"] = ["REQUESTED-DATA-UNAVAILABLE"]
+    package["risk_snapshot_sha256"] = compute_risk_snapshot_sha256(
+        risk_notices=package["risk_notices"],
+        blocking_risk_codes=[],
+        acknowledgement_required_codes=["REQUESTED-DATA-UNAVAILABLE"],
+    )
+    state = _state(
+        StageName.DATA_FETCH,
+        {
+            "blocking_issues": [],
+            "advisory_issues": ["required_data_unavailable"],
+            "missing_requirements": [{"requirement_id": "REQ-01"}],
+            "allowed_review_actions": [
+                "revise",
+                "regenerate",
+                "accept_with_risks",
+                "cancel",
+            ],
+            "decision_package": package,
+        },
+        run_id=run_id,
+    )
+    state["stage_results"][StageName.DATA_FETCH.value]["error"] = (
+        "required_data_unavailable"
+    )
+    monkeypatch.setattr(
+        graph_module,
+        "interrupt",
+        lambda _: {
+            "action": "accept_with_risks",
+            "expected_revision": 1,
+            "decision_id": package["decision_id"],
+            "risk_snapshot_sha256": package["risk_snapshot_sha256"],
+            "accepted_risk_codes": ["REQUESTED-DATA-UNAVAILABLE"],
+            "release_mode": "draft_with_warnings",
+        },
+    )
+
+    result = graph_module._review_gate(state)
+
+    assert result["status"] == StageStatus.APPROVED
+    assert result["input_data"]["accepted_risk_codes"] == [
+        "REQUESTED-DATA-UNAVAILABLE"
+    ]
+    acknowledgement = result["input_data"]["stage_risk_acknowledgements"][
+        "data_fetch"
+    ]
+    assert acknowledgement["risk_codes"] == ["REQUESTED-DATA-UNAVAILABLE"]
+    assert acknowledgement["risk_notices"]
+    # 显式确认后 error 视为已解决：终态不携带未解决错误。
+    assert result["stage_results"][StageName.DATA_FETCH.value]["error"] is None
+
+
 def test_tampered_review_snapshot_is_rejected(monkeypatch) -> None:
     run_id = "run-tampered-snapshot"
     package = _package(

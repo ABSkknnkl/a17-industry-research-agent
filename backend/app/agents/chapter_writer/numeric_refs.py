@@ -76,6 +76,55 @@ def classify_number(
     )
 
 
+_NUMERIC_TYPES: tuple[NumericType, ...] = ("fact", "calculation", "scenario_parameter")
+
+
+def parse_llm_numeric_refs(
+    items: list[dict[str, object]],
+    *,
+    allowed_evidence_ids: set[str] | None = None,
+) -> dict[str, NumericReference]:
+    """Parse LLM-declared paragraph.numeric_refs keyed by raw_text.
+
+    The writer model can declare how each number is sourced (formula for
+    calculations, assumption_note for scenario parameters, evidence for
+    facts). The audit prefers these declarations and only falls back to the
+    conservative classifier for numbers the model did not declare. Malformed
+    entries are dropped; fact evidence is clamped to the paragraph's own
+    evidence list so a declaration cannot borrow foreign provenance.
+    """
+    refs: dict[str, NumericReference] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        raw_text = item.get("raw_text")
+        numeric_type = item.get("numeric_type")
+        if not isinstance(raw_text, str) or numeric_type not in _NUMERIC_TYPES:
+            continue
+        declared_evidence = item.get("evidence_ids")
+        evidence_ids = (
+            [value for value in declared_evidence if isinstance(value, str)]
+            if isinstance(declared_evidence, list)
+            else []
+        )
+        if allowed_evidence_ids is not None:
+            evidence_ids = [value for value in evidence_ids if value in allowed_evidence_ids]
+        formula = item.get("formula")
+        assumption_note = item.get("assumption_note")
+        refs[raw_text] = NumericReference(
+            raw_text=raw_text,
+            numeric_type=numeric_type,
+            evidence_ids=evidence_ids,
+            formula=formula if isinstance(formula, str) and formula.strip() else None,
+            assumption_note=(
+                assumption_note
+                if isinstance(assumption_note, str) and assumption_note.strip()
+                else None
+            ),
+        )
+    return refs
+
+
 def validate_numeric_references(
     references: list[NumericReference],
 ) -> list[str]:

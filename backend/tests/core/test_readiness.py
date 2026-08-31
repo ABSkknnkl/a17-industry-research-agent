@@ -18,7 +18,11 @@ def _production_settings(**overrides: object) -> Settings:
         "API_BEARER_TOKENS": {"tester": SecretStr("application-token")},
     }
     values.update(overrides)
-    return Settings(**values)
+    # _env_file=None：隔离 dotenv。pydantic-settings 会把 init kwargs 传入的
+    # 空容器/None 当作“未设置”而回退读取 .env，导致本地 backend/.env 里的
+    # API_BEARER_TOKENS 等值覆盖测试的覆盖意图（空 token 无法触发
+    # backend_bearer_token_missing）。本组测试全部显式传参，禁用 .env 无损。
+    return Settings(_env_file=None, **values)
 
 
 def test_complete_production_configuration_is_ready() -> None:

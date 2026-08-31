@@ -11,6 +11,7 @@ from app.schemas.analysis import (
     ValidationCard,
 )
 from app.schemas.chapter import ChapterDraftLoose, LooseParagraph, LooseSection
+from app.schemas.readability import ReadabilityFinding, ReadabilityReport
 
 
 class MockAnalysisModel:
@@ -174,4 +175,36 @@ class MockChapterWritingModel:
             chart_ids=chart_ids,
             missing_inputs=[] if claims else ["需补充当前章节的结论与证据"],
             revision=int(payload.get("revision", 1)),
+        )
+
+
+class MockReadabilityModel:
+    """Deterministic readability reviewer for tests and local demos.
+
+    Returns a fixed score so routing stays predictable without a live judge;
+    inject findings to exercise the rewrite / human-review paths.
+    """
+
+    model_name = "mock-readability-reviewer"
+
+    def __init__(
+        self,
+        *,
+        score: float = 1.0,
+        findings: list[ReadabilityFinding] | None = None,
+    ) -> None:
+        self._score = score
+        self._findings = findings or []
+
+    async def review_paragraph(
+        self,
+        *,
+        paragraph_text: str,
+        kind: str,
+    ) -> ReadabilityReport:
+        del paragraph_text, kind
+        return ReadabilityReport(
+            score=self._score,
+            findings=[finding.model_copy() for finding in self._findings],
+            needs_human_review=self._score < 0.6,
         )

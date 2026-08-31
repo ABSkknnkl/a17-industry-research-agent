@@ -22,6 +22,7 @@ from app.schemas.analysis import (
     ValidationCard,
 )
 from app.schemas.chapter import ChapterDraftLoose
+from app.schemas.readability import ReadabilityReport
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 logger = logging.getLogger(__name__)
@@ -522,6 +523,7 @@ class OpenAICompatibleAnalysisModel:
         max_output_tokens: int = 8_192,
         chat_model: Any | None = None,
         segmented_threshold_chars: int = 10_000,
+        max_repair_attempts: int = 1,
     ) -> None:
         self.model_name = model_name
         self._requires_json_instruction = _is_deepseek(model_name)
@@ -542,6 +544,9 @@ class OpenAICompatibleAnalysisModel:
             )
         self._chat_model = chat_model
         self._segmented_threshold_chars = max(1, segmented_threshold_chars)
+        # flash 级模型对严格 Pydantic 契约存在概率性漂移：默认 1 轮修复
+        # 保持既定 fail-closed 语义（单测契约），生产装配可提高到多轮。
+        self._max_repair_attempts = max(0, max_repair_attempts)
         self._structured_model = _structured_output(chat_model, AnalysisDraft, model_name)
 
     async def _generate_segment(
@@ -565,62 +570,61 @@ class OpenAICompatibleAnalysisModel:
             schema=schema,
             label=label,
         )
-        response = await _invoke_structured(
-            structured_model,
-            [system_message, HumanMessage(content=segment_runtime_prompt)],
-        )
-        try:
-            return _coerce_structured_response(response, schema)
-        except StructuredOutputError as exc:
-            if exc.code is StructuredOutputFailureCode.OUTPUT_TRUNCATED:
-                raise
-            validation_error: ValueError = exc
-        except ValueError as exc:
-            validation_error = exc
-
+        validation_error: ValueError | None = None
+        previous_response: str | None = None
+        for attempt in range(self._max_repair_attempts + 1):
+            prompt = segment_runtime_prompt
+            if validation_error is not None:
+                _log_structured_output_event(
+                    "repair_started",
+                    model_name=self.model_name,
+                    schema=schema,
+                    error=validation_error,
+                )
+                previous_context = (
+                    "\n上一份当前分段输出如下，仅用于保持已有金融事实和 evidence_id：\n"
+                    + previous_response[:20_000]
+                    if previous_response
+                    else ""
+                )
+                prompt = (
+                    segment_runtime_prompt
+                    + "\n\n上一份当前分段未通过结构校验。请只修复当前分段的 JSON 结构、字段名、必填字段和枚举，"
+                    + "不得改变金融事实、数字、结论或 evidence_id。"
+                    + previous_context
+                    + "\n错误分类："
+                    + _failure_code(validation_error)
+                    + "\n校验错误："
+                    + str(validation_error)[:2_000]
+                )
+            response = await _invoke_structured(
+                structured_model,
+                [system_message, HumanMessage(content=prompt)],
+            )
+            try:
+                segment = _coerce_structured_response(response, schema)
+            except StructuredOutputError as exc:
+                if exc.code is StructuredOutputFailureCode.OUTPUT_TRUNCATED:
+                    raise
+                validation_error = exc
+            except ValueError as exc:
+                validation_error = exc
+            else:
+                if attempt > 0:
+                    _log_structured_output_event(
+                        "repair_succeeded",
+                        model_name=self.model_name,
+                        schema=schema,
+                    )
+                return segment
+            previous_response = _response_text_for_repair(response) or previous_response
         _log_structured_output_event(
-            "repair_started",
+            "repair_failed",
             model_name=self.model_name,
             schema=schema,
             error=validation_error,
         )
-        previous_response = _response_text_for_repair(response)
-        previous_context = (
-            "\n上一份当前分段输出如下，仅用于保持已有金融事实和 evidence_id：\n"
-            + previous_response[:20_000]
-            if previous_response
-            else ""
-        )
-        repair_prompt = (
-            segment_runtime_prompt
-            + "\n\n上一份当前分段未通过结构校验。请只修复当前分段的 JSON 结构、字段名、必填字段和枚举，"
-            + "不得改变金融事实、数字、结论或 evidence_id。"
-            + previous_context
-            + "\n错误分类："
-            + _failure_code(validation_error)
-            + "\n校验错误："
-            + str(validation_error)[:2_000]
-        )
-        response = await _invoke_structured(
-            structured_model,
-            [system_message, HumanMessage(content=repair_prompt)],
-        )
-        try:
-            repaired = _coerce_structured_response(response, schema)
-        except ValueError as repair_error:
-            _log_structured_output_event(
-                "repair_failed",
-                model_name=self.model_name,
-                schema=schema,
-                error=repair_error,
-            )
-            raise
-        _log_structured_output_event(
-            "repair_succeeded",
-            model_name=self.model_name,
-            schema=schema,
-        )
-        return repaired
+        raise validation_error
 
     async def _generate_segmented_analysis(
         self,
@@ -670,68 +674,171 @@ class OpenAICompatibleAnalysisModel:
             SystemMessage(content=system_prompt),
             HumanMessage(content=runtime_prompt),
         ]
-        response = await _invoke_structured(self._structured_model, messages)
-        try:
-            return _coerce_structured_response(response, AnalysisDraft)
-        except StructuredOutputError as exc:
-            if exc.code is StructuredOutputFailureCode.OUTPUT_TRUNCATED:
-                raise
-            validation_error: ValueError = exc
-        except ValueError as exc:
-            validation_error = exc
+        # Bounded repair turns address provider formatting drift. Each repair
+        # prompt explicitly freezes financial facts and evidence so this
+        # remains structural recovery rather than a hidden re-analysis.
+        validation_error: ValueError | None = None
+        previous_response: str | None = None
+        for attempt in range(self._max_repair_attempts + 1):
+            prompt = runtime_prompt
+            if validation_error is not None:
+                _log_structured_output_event(
+                    "repair_started",
+                    model_name=self.model_name,
+                    schema=AnalysisDraft,
+                    error=validation_error,
+                )
+                repair_context = (
+                    "\n上一份模型输出如下，请保留其中的金融事实、数字、结论和 evidence_id，仅修复结构：\n"
+                    + previous_response[:30_000]
+                    if previous_response
+                    else "\n上一份模型输出为空或无法读取，请依据原始 analysis_request 重新生成相同任务的完整 JSON。"
+                )
+                prompt = (
+                    runtime_prompt
+                    + "\n\n上一份 JSON 未通过 AnalysisDraft 结构校验。请只修正 JSON 结构、字段名称、必填字段和枚举格式，"
+                    + "不得新增、删改或替换金融事实、数字、结论和 evidence_id。"
+                    + repair_context
+                    + "\n错误分类："
+                    + _failure_code(validation_error)
+                    + "\n校验错误："
+                    + str(validation_error)[:2_000]
+                    + "\n请重新返回完整且有效的 JSON 对象，不要输出其他文字。"
+                )
+            response = await _invoke_structured(
+                self._structured_model,
+                [
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=prompt),
+                ],
+            )
+            try:
+                draft = _coerce_structured_response(response, AnalysisDraft)
+            except StructuredOutputError as exc:
+                if exc.code is StructuredOutputFailureCode.OUTPUT_TRUNCATED:
+                    raise
+                validation_error = exc
+            except ValueError as exc:
+                validation_error = exc
+            else:
+                if attempt > 0:
+                    _log_structured_output_event(
+                        "repair_succeeded",
+                        model_name=self.model_name,
+                        schema=AnalysisDraft,
+                    )
+                return draft
+            previous_response = _response_text_for_repair(response) or previous_response
         _log_structured_output_event(
-            "repair_started",
+            "repair_failed",
             model_name=self.model_name,
             schema=AnalysisDraft,
             error=validation_error,
         )
-        # One bounded repair turn addresses provider formatting drift. The
-        # repair prompt explicitly freezes financial facts and evidence so
-        # this remains structural recovery rather than a hidden re-analysis.
-        previous_response = _response_text_for_repair(response)
-        repair_context = (
-            "\n上一份模型输出如下，请保留其中的金融事实、数字、结论和 evidence_id，仅修复结构：\n"
-            + previous_response[:30_000]
-            if previous_response
-            else "\n上一份模型输出为空或无法读取，请依据原始 analysis_request 重新生成相同任务的完整 JSON。"
-        )
-        repair_prompt = (
-            runtime_prompt
-            + "\n\n上一份 JSON 未通过 AnalysisDraft 结构校验。请只修正 JSON 结构、字段名称、必填字段和枚举格式，"
-            + "不得新增、删改或替换金融事实、数字、结论和 evidence_id。"
-            + repair_context
-            + "\n错误分类："
-            + _failure_code(validation_error)
-            + "\n校验错误："
-            + str(validation_error)[:2_000]
-            + "\n请重新返回完整且有效的 JSON 对象，不要输出其他文字。"
-        )
-        response = await _invoke_structured(
-            self._structured_model,
-            [
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=repair_prompt),
-            ],
-        )
-        try:
-            repaired = _coerce_structured_response(response, AnalysisDraft)
-        except ValueError as repair_error:
-            _log_structured_output_event(
-                "repair_failed",
-                model_name=self.model_name,
-                schema=AnalysisDraft,
-                error=repair_error,
-            )
-            raise
-        _log_structured_output_event(
-            "repair_succeeded",
-            model_name=self.model_name,
-            schema=AnalysisDraft,
-        )
-        return repaired
+        raise validation_error
 
 
 class OpenAICompatibleChapterModel:
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        timeout_seconds: float = 60,
+        chat_model: Any | None = None,
+        max_repair_attempts: int = 1,
+    ) -> None:
+        self.model_name = model_name
+        self._requires_json_instruction = _is_deepseek(model_name)
+        if chat_model is None:
+            if not api_key:
+                raise ValueError("LLM_API_KEY is required when mock mode is disabled")
+            chat_model = ChatOpenAI(
+                model=model_name,
+                api_key=api_key,
+                base_url=base_url,
+                temperature=0.1,
+                timeout=timeout_seconds,
+                max_retries=2,
+                extra_body=(
+                    {"thinking": {"type": "disabled"}} if _is_deepseek(model_name) else None
+                ),
+            )
+        self._max_repair_attempts = max(0, max_repair_attempts)
+        self._structured_model = _structured_output(chat_model, ChapterDraftLoose, model_name)
+
+    async def generate_chapter(
+        self,
+        *,
+        system_prompt: str,
+        runtime_prompt: str,
+    ) -> ChapterDraftLoose:
+        if self._requires_json_instruction:
+            system_prompt = (
+                system_prompt
+                + "\n必须仅返回符合给定结构的 JSON 对象，不要输出 Markdown 代码围栏或额外说明。"
+            )
+        # Bounded repair turns keep a provider's formatting drift from
+        # discarding all previously generated chapters. The model sees the
+        # validation failure, while evidence and financial content remain
+        # unchanged. Exhausted attempts still fail closed.
+        validation_error: ValueError | None = None
+        for attempt in range(self._max_repair_attempts + 1):
+            prompt = runtime_prompt
+            if validation_error is not None:
+                _log_structured_output_event(
+                    "repair_started",
+                    model_name=self.model_name,
+                    schema=ChapterDraftLoose,
+                    error=validation_error,
+                )
+                prompt = (
+                    runtime_prompt
+                    + "\n\n上一份 JSON 未通过结构校验。请只修正结构和字段格式，不得新增、删改或替换金融事实、数字、证据引用和结论。"
+                    + "\n错误分类："
+                    + _failure_code(validation_error)
+                    + "\n校验错误："
+                    + str(validation_error)[:2_000]
+                    + "\n请重新返回完整且有效的 JSON 对象。"
+                )
+            messages = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt),
+            ]
+            try:
+                response = await _invoke_structured(self._structured_model, messages)
+                loose = _coerce_structured_response(response, ChapterDraftLoose)
+            except StructuredOutputError as exc:
+                if exc.code is StructuredOutputFailureCode.OUTPUT_TRUNCATED:
+                    raise
+                validation_error = exc
+            except ValueError as exc:
+                validation_error = exc
+            else:
+                if attempt > 0:
+                    _log_structured_output_event(
+                        "repair_succeeded",
+                        model_name=self.model_name,
+                        schema=ChapterDraftLoose,
+                    )
+                return loose
+        _log_structured_output_event(
+            "repair_failed",
+            model_name=self.model_name,
+            schema=ChapterDraftLoose,
+            error=validation_error,
+        )
+        raise validation_error
+
+
+class OpenAICompatibleReadabilityModel:
+    """Input-isolated LLM judge for paragraph readability (soft gate).
+
+    只接收 paragraph_text 与 kind，不喂 summary、标题、自我评价或人工
+    comment，防止自夸文本带偏打分（评审器输入隔离原则）。
+    """
+
     def __init__(
         self,
         *,
@@ -757,71 +864,34 @@ class OpenAICompatibleChapterModel:
                     {"thinking": {"type": "disabled"}} if _is_deepseek(model_name) else None
                 ),
             )
-        self._structured_model = _structured_output(chat_model, ChapterDraftLoose, model_name)
+        self._structured_model = _structured_output(chat_model, ReadabilityReport, model_name)
 
-    async def generate_chapter(
+    async def review_paragraph(
         self,
         *,
-        system_prompt: str,
-        runtime_prompt: str,
-    ) -> ChapterDraftLoose:
+        paragraph_text: str,
+        kind: str,
+    ) -> ReadabilityReport:
+        system_prompt = (
+            "你是行业研究报告的可读性评审器。只依据给定段落文本判断其是否通顺、俗通、连贯、客观。"
+            "返回ReadabilityReport JSON：score为0到1的可读性软分（1为完全可读）；"
+            "findings列出具体问题，dimension取值通顺度/俗通度/连贯性/客观性，"
+            "severity取值must_fix/suggest，每条包含reason（哪里读不懂）与rewrite_hint（修改方向）；"
+            "paragraph_id固定为空字符串；findings为空表示可读。"
+            "不得评价段落之外的内容，不得引入新事实、数值或结论。"
+        )
         if self._requires_json_instruction:
             system_prompt = (
                 system_prompt
                 + "\n必须仅返回符合给定结构的 JSON 对象，不要输出 Markdown 代码围栏或额外说明。"
             )
+        runtime_prompt = json.dumps(
+            {"paragraph_text": paragraph_text, "kind": kind},
+            ensure_ascii=False,
+        )
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=runtime_prompt),
         ]
-        try:
-            response = await _invoke_structured(self._structured_model, messages)
-            return _coerce_structured_response(response, ChapterDraftLoose)
-        except StructuredOutputError as exc:
-            if exc.code is StructuredOutputFailureCode.OUTPUT_TRUNCATED:
-                raise
-            validation_error: ValueError = exc
-        except ValueError as exc:
-            validation_error = exc
-        _log_structured_output_event(
-            "repair_started",
-            model_name=self.model_name,
-            schema=ChapterDraftLoose,
-            error=validation_error,
-        )
-        # One bounded repair turn keeps a provider's formatting drift from
-        # discarding all previously generated chapters. The model sees the
-        # validation failure, while evidence and financial content remain
-        # unchanged. A second invalid response still fails closed.
-        repair_prompt = (
-            runtime_prompt
-            + "\n\n上一份 JSON 未通过结构校验。请只修正结构和字段格式，不得新增、删改或替换金融事实、数字、证据引用和结论。"
-            + "\n错误分类："
-            + _failure_code(validation_error)
-            + "\n校验错误："
-            + str(validation_error)[:2_000]
-            + "\n请重新返回完整且有效的 JSON 对象。"
-        )
-        response = await _invoke_structured(
-            self._structured_model,
-            [
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=repair_prompt),
-            ],
-        )
-        try:
-            repaired = _coerce_structured_response(response, ChapterDraftLoose)
-        except ValueError as repair_error:
-            _log_structured_output_event(
-                "repair_failed",
-                model_name=self.model_name,
-                schema=ChapterDraftLoose,
-                error=repair_error,
-            )
-            raise
-        _log_structured_output_event(
-            "repair_succeeded",
-            model_name=self.model_name,
-            schema=ChapterDraftLoose,
-        )
-        return repaired
+        response = await _invoke_structured(self._structured_model, messages)
+        return _coerce_structured_response(response, ReadabilityReport)

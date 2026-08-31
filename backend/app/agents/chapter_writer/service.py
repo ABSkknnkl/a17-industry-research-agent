@@ -9,7 +9,7 @@ from app.agents.chapter_writer.fallback import build_fallback_writing
 from app.agents.chapter_writer.outline import REPORT_OUTLINE
 from app.agents.chapter_writer.prompt_loader import load_chapter_writer_prompt
 from app.integrations.llm.openai_compatible import StructuredOutputError
-from app.integrations.llm.protocol import ChapterWritingModel
+from app.integrations.llm.protocol import ChapterWritingModel, ReadabilityReviewModel
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingOptions, ChapterWritingResult
 from app.schemas.chart import ChartReference
@@ -90,9 +90,20 @@ def _waiting_review(
 class ChapterWriterAgent:
     stage: StageName = StageName.CHAPTER_WRITE
 
-    def __init__(self, *, model: ChapterWritingModel) -> None:
+    def __init__(
+        self,
+        *,
+        model: ChapterWritingModel,
+        readability_model: ReadabilityReviewModel | None = None,
+        readability_threshold: float = 0.6,
+        readability_max_rewrites: int = 2,
+    ) -> None:
         self._model = model
         self._prompt = load_chapter_writer_prompt()
+        # 评审器默认不启用（readability_model=None）；启用后走逐段可读性软门。
+        self._readability_model = readability_model
+        self._readability_threshold = readability_threshold
+        self._readability_max_rewrites = readability_max_rewrites
 
     async def run(self, context: StageContext) -> StageResult:
         # 透传通道纵深防御：SecuredStageAgent 已做第一层注入检测，此处
@@ -131,12 +142,9 @@ class ChapterWriterAgent:
                 request_id="ANALYSIS-INVALID",
                 reason=str(exc),
             )
-        if not analysis.quality.passed:
-            return _waiting_review(
-                revision=context.revision,
-                request_id="ANALYSIS-QUALITY",
-                reason="Agent 2质量门未通过，不得生成正式章节。",
-            )
+        # 上游质量门未过不再硬拦：Agent 2 已以用户裁决门（ANALYSIS-QUALITY
+        # 决策包）呈现代价，用户确认后此处按条件性写作继续；质量风险由
+        # Agent 5 汇总披露（ready_with_limits / 草稿模式）。
 
         raw_options: Any = context.input_data.get("chapter_write_options", {})
         if isinstance(raw_options, dict) and "target_length" not in raw_options:
@@ -247,7 +255,13 @@ class ChapterWriterAgent:
             if compact_feedback
             else None
         )
-        graph = build_chapter_writer_graph(model=self._model, prompt=self._prompt)
+        graph = build_chapter_writer_graph(
+            model=self._model,
+            prompt=self._prompt,
+            readability_model=self._readability_model,
+            readability_threshold=self._readability_threshold,
+            readability_max_rewrites=self._readability_max_rewrites,
+        )
         graph_state: ChapterWriterGraphState = {
             "run_id": context.run_id,
             "analysis": analysis.model_dump(mode="json"),
@@ -266,6 +280,11 @@ class ChapterWriterAgent:
             "workflow_revision": context.revision,
             "result": None,
             "feedback_passthrough": feedback_passthrough,
+            "readability_feedback": [],
+            "readability_rewrite_pids": [],
+            "readability_reports": [],
+            "readability_rewrites": {},
+            "readability_collaborations": [],
         }
         try:
             final_state = await graph.ainvoke(graph_state)

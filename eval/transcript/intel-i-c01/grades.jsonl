@@ -1,1 +1,0 @@
-{"case_id": "I-C01", "passed": false, "checks": {"I1": true, "I2": false, "I3_required": true, "I3_forbidden": true, "I4_entity": true, "I4_time": true, "I5": true, "I6": true, "I7_mode": true, "I8_stable_signature_available": true}, "parser_mode": "", "_run_id": "intel-i-c01", "_at": "2026-08-20T19:55:43.426124+00:00"}

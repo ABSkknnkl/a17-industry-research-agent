@@ -4,6 +4,7 @@ from typing import Protocol
 
 from app.schemas.analysis import AnalysisDraft
 from app.schemas.chapter import ChapterDraftLoose
+from app.schemas.readability import ReadabilityReport
 
 
 class AnalysisModel(Protocol):
@@ -28,3 +29,15 @@ class ChapterWritingModel(Protocol):
         runtime_prompt: str,
     ) -> ChapterDraftLoose:
         """Return one loose chapter draft; strict tightening happens in Agent 4."""
+
+
+class ReadabilityReviewModel(Protocol):
+    model_name: str
+
+    async def review_paragraph(
+        self,
+        *,
+        paragraph_text: str,
+        kind: str,
+    ) -> ReadabilityReport:
+        """Review one paragraph's readability; input-isolated (text + kind only)."""

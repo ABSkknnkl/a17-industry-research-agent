@@ -40,9 +40,9 @@ Mock，Agent 2/4 禁止使用 LLM Mock，并要求配置模型密钥、SkillHub 
 推荐的职责划分如下：
 
 - Agent 1：真实问财 SkillHub 数据获取；
-- Agent 2：`deepseek-v4-pro` 数据解读；
+- Agent 2：`deepseek-v4-flash` 数据解读；
 - Agent 3：确定性图表路由与 ECharts 配置生成，不调用 LLM；
-- Agent 4：`deepseek-v4-pro` 章节撰写；
+- Agent 4：`deepseek-v4-flash` 章节撰写；
 - Agent 5：确定性 Markdown/单文件 HTML/Playwright PDF 融合，不调用 LLM。
 
 模型供应商密钥只能保存在服务器环境变量或密钥管理器中。团队测试者不接触模型密钥，

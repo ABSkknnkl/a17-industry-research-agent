@@ -125,6 +125,15 @@ def pick_richest(items: list[EvidenceItem]) -> EvidenceItem:
     return max(items, key=lambda item: (_richness(item), item.evidence_id))
 
 
+def rank_by_richness(items: Iterable[EvidenceItem]) -> list[EvidenceItem]:
+    """Sort evidence richest-first, using the same priority as pick_richest.
+
+    Shared by dedup and by context budgeting (Agent 2 prompt adapter) so a
+    bounded prompt always keeps the most auditable evidence in full form.
+    """
+    return sorted(items, key=lambda item: (_richness(item), item.evidence_id), reverse=True)
+
+
 def group_conflicting_evidence(
     items: Iterable[EvidenceItem],
     *,

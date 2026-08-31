@@ -8,6 +8,7 @@ failure falls back to the deterministic plan instead of crashing Agent 1.
 
 from __future__ import annotations
 
+import re
 from typing import Protocol
 
 from app.agents.data_fetcher.complexity_detector import detect_complexity
@@ -264,6 +265,20 @@ def _compact_text(value: str) -> str:
     return "".join(value.split()).casefold()
 
 
+# 坑坎後满：连接词/标点被 LLM 拆成独立子需求（如顿号「、」）
+# ，Schema min_length=1 不会拦住，但它不是可执行的查询语句。
+# 确定性层必须在合并前将其筛除，否则会作为真实查询执行而返回空。
+_PUNCT_OR_SPACE = re.compile(r"[\W_]+", re.UNICODE)
+
+
+def _is_noise_text(text: str) -> bool:
+    """Pure punctuation / whitespace sub-requirements carry no queryable intent."""
+    compact = str(text).strip()
+    if not compact:
+        return True
+    return _PUNCT_OR_SPACE.sub("", compact) == ""
+
+
 def _find_merge_target(
     subs: list[IntentSubRequirement],
     llm_sub: IntentSubRequirement,
@@ -320,6 +335,13 @@ def _merge_llm_plan(
     pending_questions: list[str] = []
 
     for llm_sub in llm_plan.sub_requirements[:max_sub_requirements]:
+        # 纯标点/空白子需求（如顿号「、」）：复合问句被拆解时 LLM 偶尔会把连接符单独报出。
+        # 这类段落不应进入计划：不进行（免得执行空），也不作为“无法处理”段落报告（免得乱了用户）。
+        if _is_noise_text(llm_sub.normalized_text) or _is_noise_text(llm_sub.original_text):
+            warnings.append(
+                f"llm_noise_sub_requirement_dropped:{llm_sub.requirement_id}"[:200]
+            )
+            continue
         metric_types = {metric.metric_type for metric in llm_sub.metrics} - {"unknown"}
         valid_skills: list[SkillName] = []
         for raw in llm_sub.candidate_skills:

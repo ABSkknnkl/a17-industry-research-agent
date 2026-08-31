@@ -67,6 +67,76 @@ def _llm_plan(
 
 
 @pytest.mark.asyncio
+async def test_llm_pure_punctuation_sub_requirement_is_dropped() -> None:
+    """复合问题被拆解时，LLM 偶尔把顿号「、」拆成独立子需求并配了技能：
+    它不能进入计划、不能被当作真实查询执行（否则会出现"未查询到足以完成『、』
+    的数据"这类噪音报告）。确定性合并层必须将其丢弃。"""
+    punct = ResearchIntentPlan(
+        original_input='比亚迪、特斯拉、理想、蔚来销量及国内市场份额对比？',
+        normalized_input='比亚迪、特斯拉、理想、蔚来销量及国内市场份额对比？',
+        complexity='compound',
+        sub_requirements=[
+            IntentSubRequirement(
+                requirement_id='SUB-LLM-01',
+                original_text='比亚迪、特斯拉、理想、蔚来销量及国内市场份额对比',
+                normalized_text='比亚迪、特斯拉、理想、蔚来销量及国内市场份额对比',
+                metrics=[
+                    IntentMetric(
+                        original_name='销量',
+                        normalized_name='销量',
+                        metric_type='business',
+                        confidence=0.96,
+                    )
+                ],
+                intent_type='comparison',
+                candidate_skills=[SkillName.BUSINESS.value],
+                confidence=0.96,
+                reason='企业销量对比。',
+                source='llm',
+            ),
+            IntentSubRequirement(
+                requirement_id='SUB-LLM-02',
+                original_text='、',
+                normalized_text='、',
+                metrics=[],
+                intent_type='comparison',
+                candidate_skills=[SkillName.INSTITUTIONAL_RESEARCH.value],
+                confidence=0.96,
+                reason='顿号被误拆为子需求。',
+                source='llm',
+            ),
+        ],
+        parser_mode='hybrid',
+    )
+    decomposer = RecordingDecomposer(punct)
+
+    plan = await build_intent_plan(
+        '比亚迪、特斯拉、理想、蔚来销量及国内市场份额对比？',
+        industry_topic='新能源汽车行业',
+        known_entities=['比亚迪', '特斯拉', '理想', '蔚来'],
+        decomposer=decomposer,
+    )
+
+    routed = [
+        sub.normalized_text.strip()
+        for sub in plan.sub_requirements
+        if sub.candidate_skills
+    ]
+    assert '、' not in routed
+    assert not any(
+        sub.candidate_skills and sub.normalized_text.strip() == '、'
+        for sub in plan.sub_requirements
+    )
+    assert any(
+        SkillName.BUSINESS.value in sub.candidate_skills
+        for sub in plan.sub_requirements
+    )
+    assert any(
+        item.startswith('llm_noise_sub_requirement_dropped:') for item in plan.warnings
+    )
+
+
+@pytest.mark.asyncio
 async def test_llm_is_primary_for_simple_request_when_decomposer_is_configured() -> None:
     text = "查询宁德时代近四年营业收入"
     decomposer = RecordingDecomposer(

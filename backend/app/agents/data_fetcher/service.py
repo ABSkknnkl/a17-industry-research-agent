@@ -429,6 +429,88 @@ class DataFetcherAgent:
         unavailable_requirements = [
             item for item in requirement_coverage if item.status in {"partial", "missing"}
         ]
+        # 用户裁决门（unsupported metrics）：问题中存在无法路由到任何数据
+        # 技能的意图片段时，不再静默降级为 advisory 提示，而是显式列出
+        # "查不到数据"的关键词，由用户决定删除后重问（revise）还是继续
+        # 生成不含上述指标的报告（accept_with_risks）。以用户为准。
+        unsupported_by_question = _unsupported_fragments_by_question(intent_plans)
+        unsupported_attributed = all(
+            item.question in unsupported_by_question for item in unavailable_requirements
+        )
+        if unsupported_by_question and any_actionable_sub_requirement and unsupported_attributed:
+            fragments = [
+                fragment
+                for names in unsupported_by_question.values()
+                for fragment in names
+            ]
+            names_text = "、".join(fragments)[:400]
+            risk_code = "UNSUPPORTED-METRICS"
+            risk_notices = [
+                RiskNotice(
+                    risk_code=risk_code,
+                    stage=self.stage.value,
+                    severity=RiskSeverity.HIGH,
+                    disposition=RiskDisposition.ACKNOWLEDGEMENT_REQUIRED,
+                    title="用户问题包含暂无数据能力的指标",
+                    detail=(
+                        f"以下意图片段无法路由到任何数据技能：{names_text}。"
+                        "系统不会调用不匹配的技能，也不会补造数值。"
+                    ),
+                    affected_ids=[item.requirement_id for item in unavailable_requirements],
+                    recommendation="删除这些关键词后重新提问，或确认继续生成不含上述指标的报告。",
+                    consequence="若继续，相关结论与图表将省略上述指标或明确标注数据缺口。",
+                    can_override=True,
+                )
+            ]
+            snapshot = compute_risk_snapshot_sha256(
+                risk_notices=risk_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[risk_code],
+            )
+            decision_package = DecisionPackage(
+                decision_id=f"DEC-{context.run_id}-DATA-{context.revision}",
+                run_id=context.run_id,
+                stage=self.stage.value,
+                revision=context.revision,
+                risk_notices=risk_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[risk_code],
+                decision_status=DecisionStatus.AWAITING_USER,
+                risk_snapshot_sha256=snapshot,
+            )
+            data["blocking_issues"] = []
+            data.setdefault("advisory_issues", []).append("unsupported_metrics_detected")
+            data["unsupported_metrics"] = fragments
+            data["unsupported_metrics_by_question"] = dict(unsupported_by_question)
+            data["missing_requirements"] = [
+                item.model_dump(mode="json") for item in unavailable_requirements
+            ]
+            data["collaboration_requests"] = [
+                {
+                    "request_id": "UNSUPPORTED-METRICS-01",
+                    "question": (
+                        f"以下指标无法查询到数据：{names_text}。"
+                        "请删除这些关键词后重新提问，或继续生成不含上述指标的报告。"
+                    ),
+                    "reason": "意图路由未能为上述关键词匹配任何数据技能，已停止执行不匹配调用。",
+                    "affected_dimensions": ["data_fetch"],
+                }
+            ]
+            data["allowed_review_actions"] = [
+                "revise",
+                "regenerate",
+                "accept_with_risks",
+                "cancel",
+            ]
+            data["decision_package"] = decision_package.model_dump(mode="json")
+            return StageResult(
+                stage=self.stage,
+                status=StageStatus.WAITING_REVIEW,
+                revision=context.revision,
+                data=data,
+                evidence_sources=[item.evidence_id for item in evidence],
+                error="unsupported_metrics_detected",
+            )
         if unavailable_requirements:
             requirements_by_id = {
                 item.requirement_id: item for item in plan.requirements
@@ -508,7 +590,50 @@ class DataFetcherAgent:
                     evidence_sources=[item.evidence_id for item in evidence],
                     error="requested_data_partial",
                 )
-            data["blocking_issues"] = ["required_data_unavailable"]
+            # 用户裁决门（数据缺口）：不再强制返工——已取到的部分数据保留
+            # 在结果中，由用户决定「继续生成（报告标注缺口）」还是「修改后
+            # 重查」。以用户为准，缺口必须披露、绝不补造。
+            risk_code = "REQUESTED-DATA-UNAVAILABLE"
+            risk_notices = [
+                RiskNotice(
+                    risk_code=risk_code,
+                    stage=self.stage.value,
+                    severity=RiskSeverity.HIGH,
+                    disposition=RiskDisposition.ACKNOWLEDGEMENT_REQUIRED,
+                    title="用户要求的数据未查询到",
+                    detail=(
+                        "以下研究需求未返回可用数据；系统不会补造数值，"
+                        "继续生成时报告必须保留数据缺口说明。"
+                    ),
+                    affected_ids=[
+                        item.requirement_id for item in unavailable_requirements
+                    ],
+                    recommendation=(
+                        "调整企业、指标、时间范围或数据源后重新获取，"
+                        "或确认接受缺口并继续生成。"
+                    ),
+                    consequence="若继续，相关结论与图表将省略对应需求或明确标注数据缺口。",
+                    can_override=True,
+                )
+            ]
+            snapshot = compute_risk_snapshot_sha256(
+                risk_notices=risk_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[risk_code],
+            )
+            decision_package = DecisionPackage(
+                decision_id=f"DEC-{context.run_id}-DATA-{context.revision}",
+                run_id=context.run_id,
+                stage=self.stage.value,
+                revision=context.revision,
+                risk_notices=risk_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[risk_code],
+                decision_status=DecisionStatus.AWAITING_USER,
+                risk_snapshot_sha256=snapshot,
+            )
+            data["blocking_issues"] = []
+            data.setdefault("advisory_issues", []).append("required_data_unavailable")
             data["missing_requirements"] = [
                 item.model_dump(mode="json") for item in unavailable_requirements
             ]
@@ -517,7 +642,7 @@ class DataFetcherAgent:
                     "request_id": f"MISSING-{item.requirement_id}",
                     "question": (
                         f"未查询到足以完成“{item.question}”的数据。"
-                        "请调整企业、指标、时间范围或数据来源后重新提交。"
+                        "可继续生成（报告将标注数据缺口），或调整条件后重新查询。"
                     ),
                     "reason": item.note,
                     "affected_dimensions": ["data_fetch"],
@@ -539,7 +664,13 @@ class DataFetcherAgent:
                         "affected_dimensions": ["data_fetch"],
                     },
                 )
-            data["allowed_review_actions"] = ["revise", "regenerate", "cancel"]
+            data["allowed_review_actions"] = [
+                "revise",
+                "regenerate",
+                "accept_with_risks",
+                "cancel",
+            ]
+            data["decision_package"] = decision_package.model_dump(mode="json")
             return StageResult(
                 stage=self.stage,
                 status=StageStatus.WAITING_REVIEW,
@@ -637,25 +768,54 @@ def _build_requirement_coverage(
     return coverage
 
 
+_PRESENTATION_TERMS = ("一张图", "两张图", "三张图", "出图", "画图", "绘图", "可视化")
+
+
+def _is_presentation_directive(text: str) -> bool:
+    """Rendering wishes (各出一张图) are not data requirements (E-28)."""
+
+    compact = "".join(str(text).split())
+    return any(term in compact for term in _PRESENTATION_TERMS) and len(compact) <= 12
+
+
+def _unsupported_fragments_by_question(
+    intent_plans: list[ResearchIntentPlan],
+) -> dict[str, list[str]]:
+    """Map each focus question to intent fragments no skill can serve.
+
+    这些片段既未被确定性注册表路由，也未被LLM语义路由救回。上层必须
+    向用户显式披露"哪些关键词查不到数据"，由用户决定删除后重问还是
+    继续生成报告，而不是静默降级为 advisory 提示。
+    """
+
+    mapping: dict[str, list[str]] = {}
+    for plan in intent_plans:
+        fragments: list[str] = []
+        for sub in plan.sub_requirements:
+            text = str(sub.original_text).strip()
+            if sub.candidate_skills or not text or _is_presentation_directive(text):
+                continue
+            if text not in fragments:
+                fragments.append(text)
+        if fragments:
+            existing = mapping.setdefault(plan.original_input, [])
+            for fragment in fragments:
+                if fragment not in existing:
+                    existing.append(fragment)
+    return mapping
+
+
 def _apply_unresolved_intent_gaps(
     coverage: list[RequirementCoverage],
     intent_plans: list[ResearchIntentPlan],
 ) -> list[RequirementCoverage]:
     """Mark a partly routable question as partial after known tasks execute."""
 
-    # Presentation directives (各出一张图 / 画三张图) are rendering
-    # wishes, not data requirements: an unroutable directive fragment must
-    # not turn a partly routable question into a data gap (E-28 root cause).
-    _PRESENTATION_TERMS = ("一张图", "两张图", "三张图", "出图", "画图", "绘图", "可视化")
-    def _is_directive(text: str) -> bool:
-        compact = "".join(str(text).split())
-        return any(term in compact for term in _PRESENTATION_TERMS) and len(compact) <= 12
-
     unresolved_by_question = {
         plan.original_input: [
             sub.original_text
             for sub in plan.sub_requirements
-            if not sub.candidate_skills and not _is_directive(sub.original_text)
+            if not sub.candidate_skills and not _is_presentation_directive(sub.original_text)
         ]
         for plan in intent_plans
         if any(sub.candidate_skills for sub in plan.sub_requirements)

@@ -284,3 +284,41 @@ async def test_agent_preserves_untargeted_sections_during_section_revision(
     assert after.sections[0] == before.sections[0]
     assert after.sections[1] != before.sections[1]
     assert after.sections[2] == before.sections[2]
+
+
+@pytest.mark.asyncio
+async def test_upstream_quality_failure_no_longer_blocks_writing(
+    chapter_analysis_result: AnalysisResult,
+) -> None:
+    """Agent 2 质量门未过不再硬拦 Agent 4：决策已前移到 Agent 2 的用户裁决门，
+    用户确认后此处按条件性写作继续，质量风险由 Agent 5 汇总披露。"""
+    degraded = chapter_analysis_result.model_copy(deep=True)
+    degraded.quality.passed = False
+    context = StageContext(
+        project_id="project-quality-ack",
+        run_id="run-chapter-quality-ack",
+        revision=1,
+        input_data={
+            "accepted_risk_codes": ["ANALYSIS-QUALITY"],
+        },
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.APPROVED,
+                data=degraded.model_dump(mode="json"),
+                evidence_sources=["E-001"],
+            ),
+            StageName.CHART_GENERATE: StageResult(
+                stage=StageName.CHART_GENERATE,
+                status=StageStatus.COMPLETED,
+                data={"mock": True},
+            ),
+        },
+    )
+
+    result = await ChapterWriterAgent(model=MockChapterWritingModel()).run(context)
+    writing = ChapterWritingResult.model_validate(result.data)
+
+    assert result.status == StageStatus.COMPLETED
+    assert len(writing.chapters) == 7
+    assert sum(len(chapter.sections) for chapter in writing.chapters) == 21

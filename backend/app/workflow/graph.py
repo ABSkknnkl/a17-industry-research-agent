@@ -9,6 +9,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer, interrupt
 
+from app.schemas.analysis import AnalysisResult
 from app.schemas.decision import compute_risk_snapshot_sha256
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.runtime.guard import (
@@ -34,6 +35,10 @@ STAGE_ORDER = (
 )
 REVIEW_NODE = "review_gate"
 FINISH_NODE = "finish"
+# 「数据缺口」类错误：Agent 1/2 以用户裁决门（decision_package +
+# accept_with_risks）呈现代价，确认后可继续生成。该集合仅作为评测/真实
+# 链路驱动的合法拦截分类保留；审核门不再据此强制重输——能否放行由
+# 决策包的确认类风险码决定（见下方 error_acknowledgeable 检查）。
 REINPUT_REQUIRED_ERRORS = frozenset(
     {"required_data_unavailable", "requested_calculation_data_unavailable"}
 )
@@ -255,6 +260,15 @@ def _stage_node(
                     "updated_at": datetime.now(UTC).isoformat(),
                 }
 
+            if stage == StageName.DATA_INTERPRET:
+                # Agent 2 的信封字段（决策包/协作请求）只服务审核决策；
+                # 自动放行路径同样必须剥离，维持纯 AnalysisResult 契约
+                # （下游 Agent 3/4/5 直接 model_validate，extra=forbid）。
+                result_data = {
+                    key: value
+                    for key, value in result_data.items()
+                    if key in AnalysisResult.model_fields
+                }
             stage_results[stage.value] = result.model_copy(
                 update={"status": StageStatus.COMPLETED, "data": result_data}
             ).model_dump(mode="json")
@@ -357,11 +371,6 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
         "accept_with_risks",
         "customize",
     }
-    if current_result.error in REINPUT_REQUIRED_ERRORS and action in decision_actions:
-        raise ValueError(
-            "当前查询缺少用户要求的数据，不能直接放行；"
-            "请使用 revise/regenerate 调整查询条件后重新获取，或取消任务。"
-        )
     if current_result.status == StageStatus.FAILED and action in decision_actions:
         raise ValueError("failed stage cannot be approved; regenerate, revise, or cancel")
     # 带未解决 error 的结果（如 fallback 链路的 report_input_invalid，或契约
@@ -471,9 +480,24 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
             raise ValueError(f"Unknown risk codes in accepted_risk_codes: {sorted(unknown_codes)}")
         release_mode = decision.get("release_mode", "draft_with_warnings")
         input_data["release_mode"] = release_mode
-        input_data["accepted_risk_codes"] = sorted(accepted_codes)
+        # 风险码跨阶段累积：不同阶段的确认（数据缺口/计算缺数/质量降级）
+        # 都要留到 Agent 5 披露，不能被后一次确认覆盖。
+        input_data["accepted_risk_codes"] = sorted(
+            set(input_data.get("accepted_risk_codes", [])) | accepted_codes
+        )
         input_data["risk_acknowledged_at"] = datetime.now(UTC).isoformat()
         input_data["risk_acknowledged_by"] = state.get("owner_id", "")
+        # 阶段级风险台账：Agent 4（解除上游质量硬拦）与 Agent 5（研究边界
+        # 披露）按阶段读取，不依赖各阶段自报。
+        acknowledgements = dict(input_data.get("stage_risk_acknowledgements", {}))
+        acknowledgements[current_stage.value] = {
+            "risk_codes": sorted(accepted_codes),
+            "risk_notices": dp.get("risk_notices", []),
+            "acknowledged_at": input_data["risk_acknowledged_at"],
+            "acknowledged_by": state.get("owner_id", ""),
+            "review_action": "accept_with_risks",
+        }
+        input_data["stage_risk_acknowledgements"] = acknowledgements
         if current_stage == StageName.DATA_FETCH:
             input_data["accepted_missing_requirement_ids"] = [
                 str(item["requirement_id"])
@@ -484,6 +508,17 @@ def _review_gate(state: PipelineGraphState) -> dict[str, object]:
         # 已解决并清除，维持「completed/approved 阶段不携带未解决 error」契约。
         if current_result.error is not None:
             current_result.error = None
+        if current_stage == StageName.DATA_INTERPRET:
+            # Agent 2 的 StageResult.data 必须保持纯 AnalysisResult 契约
+            # （extra=forbid，Agent 3/4/5 直接 model_validate）。决策期间附加
+            # 的 decision_package/collaboration_requests 等信封字段在确认后
+            # 剥离，只保留分析本体；已接受风险经 stage_risk_acknowledgements
+            # 透传给下游。
+            current_result.data = {
+                key: value
+                for key, value in current_result.data.items()
+                if key in AnalysisResult.model_fields
+            }
 
     if action == "customize":
         input_data["selected_chart_ids"] = selected_chart_ids

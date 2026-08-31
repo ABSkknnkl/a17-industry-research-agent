@@ -8,6 +8,7 @@ from app.agents.data_fetcher.factory import (
 from app.agents.chapter_writer.service import ChapterWriterAgent
 from app.agents.chart_generator.service import ChartGeneratorAgent
 from app.agents.report_fusion.service import ReportFusionAgent
+from app.integrations.llm.factory import create_readability_model
 from app.integrations.llm.protocol import AnalysisModel, ChapterWritingModel
 from app.integrations.visuals.factory import create_image_generator, create_prompt_compiler
 from app.core.config import settings
@@ -50,7 +51,18 @@ def create_stage_registry(
                 generate_industry_chain_images=settings.INDUSTRY_CHAIN_IMAGE_ENABLED,
                 feedback_interpreter=feedback_interpreter,
             ),
-            SecuredStageAgent(ChapterWriterAgent(model=writer_model)),
+            SecuredStageAgent(
+                ChapterWriterAgent(
+                    model=writer_model,
+                    readability_model=(
+                        create_readability_model(settings)
+                        if settings.READABILITY_REVIEW_ENABLED
+                        else None
+                    ),
+                    readability_threshold=settings.READABILITY_THRESHOLD,
+                    readability_max_rewrites=settings.READABILITY_MAX_REWRITES,
+                )
+            ),
             ReportFusionAgent(),
         ]
     )

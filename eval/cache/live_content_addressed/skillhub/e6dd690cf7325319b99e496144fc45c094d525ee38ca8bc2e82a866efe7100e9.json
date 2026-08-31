@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "e6dd690cf7325319b99e496144fc45c094d525ee38ca8bc2e82a866efe7100e9",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-business-query",
+  "request": {
+    "query": "对比宁德时代与比亚迪电池业务成本概念股主营业务构成",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":2422,\"query\":\"对比宁德时代与比亚迪电池业务成本概念股主营业务构成\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"所属概念\",\"key\":\"所属概念\",\"feKey\":\"所属概念\",\"type\":\"ARRAY\",\"unit\":\"\",\"label\":\"cz_新增股票指标sql使用\",\"source\":\"index\"},{\"index_name\":\"纳入概念原因\",\"key\":\"纳入概念原因\",\"feKey\":\"纳入概念原因\",\"type\":\"ARRAY\",\"unit\":\"\",\"label\":\"\",\"source\":\"field\"},{\"index_name\":\"主营产品名称\",\"key\":\"主营产品\",\"feKey\":\"主营产品\",\"type\":\"ARRAY\",\"unit\":\"\",\"label\":\"风险等级D\",\"source\":\"index\"},{\"index_name\":\"最新主营构成项目名称\",\"key\":\"项目名称\",\"feKey\":\"项目名称\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成业务利润\",\"key\":\"业务利润\",\"feKey\":\"业务利润\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成分类标准\",\"key\":\"分类标准\",\"feKey\":\"分类标准\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成业务收入\",\"key\":\"业务收入\",\"feKey\":\"业务收入\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成业务成本\",\"key\":\"业务成本\",\"feKey\":\"业务成本\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成毛利率\",\"key\":\"毛利率\",\"feKey\":\"毛利率\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成收入占比\",\"key\":\"收入占比\",\"feKey\":\"收入占比\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成成本占比\",\"key\":\"成本占比\",\"feKey\":\"成本占比\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新主营构成利润占比\",\"key\":\"利润占比\",\"feKey\":\"利润占比\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"上市地点\",\"key\":\"上市地点\",\"feKey\":\"上市地点\",\"type\":\"STR\",\"source\":\"index\"},{\"index_name\":\"所属同花顺行业(虚拟表)\",\"key\":\"所属同花顺行业\",\"feKey\":\"所属同花顺行业\",\"type\":\"ARRAY\",\"source\":\"index\"},{\"index_name\":\"上市板块\",\"key\":\"上市板块\",\"feKey\":\"上市板块\",\"type\":\"STR\",\"source\":\"index\"},{\"index_name\":\"经营范围\",\"key\":\"经营范围\",\"feKey\":\"经营范围\",\"type\":\"STR\",\"label\":\"风险等级B\",\"source\":\"index\"}],\"datas\":[],\"row_count\":0,\"code_count\":0,\"chunks_info\":\"[\\\"所属概念包含电池的主营产品 (107)\\\",\\\"项目名称等于比亚迪或项目名称等于宁德时代的项目名称 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9a4ce17881726999376661\"}",
+  "raw_sha256": "f75f4efd4815ce7f62db1e16157542ef092f622c8bb820028174a6c8ffe3b67b",
+  "recorded_at": "2026-08-31T10:38:19.998169+00:00"
+}

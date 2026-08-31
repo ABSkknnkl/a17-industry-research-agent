@@ -82,17 +82,22 @@ async def _drive(graph, state, config, max_rounds: int = 8) -> dict:
         error = stage_result.get("error")
         dp = (stage_result.get("data", {}) or {}).get("decision_package", {}) or {}
         expected_revision = info.get("revision", 1)
-        if error in REINPUT_REQUIRED_ERRORS:
-            # 真实数据不可得属合法拦截：取消任务，不作为测试失败
-            decision = {"action": "cancel", "expected_revision": expected_revision}
-        elif dp:
+        # 用户裁决优先（全链路用户裁决门语义）：有决策包即接受全部风险
+        # 继续生成——数据缺口/计算缺数/质量降级都不阻断报告产出。
+        if dp:
             decision = {
                 "action": "accept_with_risks",
                 "expected_revision": expected_revision,
                 "decision_id": dp.get("decision_id", ""),
                 "risk_snapshot_sha256": dp.get("risk_snapshot_sha256", ""),
                 "accepted_risk_codes": dp.get("acknowledgement_required_codes", []),
+                "comment": "测试驱动：模拟用户无视风险继续生成。",
             }
+        elif stage_result.get("status") == "failed":
+            decision = {"action": "regenerate", "expected_revision": expected_revision}
+        elif error in REINPUT_REQUIRED_ERRORS:
+            # 无决策包的数据不可得（遗留路径）：取消任务，不作为测试失败
+            decision = {"action": "cancel", "expected_revision": expected_revision}
         else:
             decision = {"action": "approve", "expected_revision": expected_revision}
         try:

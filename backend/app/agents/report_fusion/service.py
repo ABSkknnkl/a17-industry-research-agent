@@ -156,6 +156,21 @@ class ReportFusionAgent:
             accepted_risk_codes=accepted_risk_codes,
         )
         advisory_issues.extend(option_advisory_issues)
+        # 用户已确认的阶段风险（数据缺口/计算缺数/质量降级）必须进入报告
+        # 研究边界：以用户为准继续生成 ≠ 静默放行。风险台账由审核门在
+        # accept_with_risks 时写入 input_data.stage_risk_acknowledgements。
+        stage_acknowledgements = context.input_data.get("stage_risk_acknowledgements", {})
+        if isinstance(stage_acknowledgements, dict):
+            for stage_value, entry in sorted(stage_acknowledgements.items()):
+                if not isinstance(entry, dict):
+                    continue
+                for notice in entry.get("risk_notices", []):
+                    if not isinstance(notice, dict):
+                        continue
+                    advisory_issues.append(
+                        f"已确认风险 · {stage_value} · "
+                        f"{notice.get("risk_code", "")}：{notice.get("title", "")}"
+                    )
         if REPORT_QUALITY_ADVISORY_CODE not in set(accepted_risk_codes):
             advisory_issues.extend(
                 f"数据质量问题 · {issue.metric}：{issue.description}"

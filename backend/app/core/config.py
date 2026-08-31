@@ -36,11 +36,18 @@ class Settings(BaseSettings):
 
     LLM_API_KEY: SecretStr | None = None
     LLM_BASE_URL: str | None = None
-    LLM_MODEL: str = "deepseek-v4-pro"
+    LLM_MODEL: str = "deepseek-v4-flash"
     LLM_USE_MOCK: bool = False
     LLM_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=300)
     LLM_MAX_OUTPUT_TOKENS: int = Field(default=8_192, ge=1_024, le=32_768)
     LLM_SEGMENTED_THRESHOLD_CHARS: int = Field(default=10_000, ge=5_000, le=500_000)
+    # 可读性评审器（独立配置位；为将来换供应商留口）
+    LLM_JUDGE_MODEL: str = ""  # 为空时回落到 LLM_MODEL
+    LLM_JUDGE_BASE_URL: str | None = None
+    LLM_JUDGE_API_KEY: SecretStr | None = None
+    READABILITY_REVIEW_ENABLED: bool = False  # 评审器默认不启用，需要时再开
+    READABILITY_THRESHOLD: float = Field(default=0.6, ge=0, le=1)
+    READABILITY_MAX_REWRITES: int = Field(default=2, ge=0, le=5)
     AGENT1_SEMANTIC_ROUTER_ENABLED: bool = False
     AGENT1_SEMANTIC_ROUTER_CONFIDENCE: float = Field(default=0.9, ge=0.5, le=1)
     AGENT1_INTENT_DECOMPOSER_ENABLED: bool = False

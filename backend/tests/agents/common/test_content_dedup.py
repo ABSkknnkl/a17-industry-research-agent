@@ -11,6 +11,7 @@ from app.agents.common.content_dedup import (
     evidence_point_key,
     group_conflicting_evidence,
     pick_richest,
+    rank_by_richness,
 )
 from app.schemas.evidence import AuditStatus, EvidenceGrade, EvidenceItem
 
@@ -155,3 +156,22 @@ def test_group_record_is_immutable() -> None:
         dropped_ids=("E-01",),
     )
     assert group.evidence_ids == ("E-01", "E-02")
+
+
+def test_rank_by_richness_orders_richest_first() -> None:
+    poor = _evidence("E-poor", locator=None, available=None, notes=None, grade="E")
+    rich = _evidence("E-rich", locator="doc://1", notes="附注", grade="A")
+    middle = _evidence("E-mid", locator="doc://2")
+
+    ranked = rank_by_richness([poor, rich, middle])
+
+    assert [item.evidence_id for item in ranked] == ["E-rich", "E-mid", "E-poor"]
+
+
+def test_rank_by_richness_matches_pick_richest_winner() -> None:
+    items = [
+        _evidence("E-01", locator=None, available=None, grade="D"),
+        _evidence("E-02", locator="doc://1", grade="A"),
+        _evidence("E-03", locator="doc://2", grade="B"),
+    ]
+    assert rank_by_richness(items)[0] == pick_richest(items)

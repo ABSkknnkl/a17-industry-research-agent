@@ -25,6 +25,14 @@ from app.schemas.analysis import (
     CalculationIssue,
     DataQualityIssue,
 )
+from app.schemas.decision import (
+    DecisionPackage,
+    DecisionStatus,
+    RiskDisposition,
+    RiskNotice,
+    RiskSeverity,
+    compute_risk_snapshot_sha256,
+)
 from app.schemas.evidence import EvidenceItem
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
@@ -365,34 +373,13 @@ class DataInterpreterAgent:
                 item.calculation_type for item in calculated_metrics
             ),
         )
-        if requested_calculation_gaps:
-            return StageResult(
-                stage=self.stage,
-                status=StageStatus.WAITING_REVIEW,
-                revision=context.revision,
-                data={
-                    "blocking_issues": ["requested_calculation_data_unavailable"],
-                    "calculation_issues": [
-                        item.model_dump(mode="json") for item in requested_calculation_gaps
-                    ],
-                    "collaboration_requests": [
-                        {
-                            "request_id": "CALCULATION-DATA-MISSING",
-                            "question": (
-                                "用户指定的计算缺少必要数据或可比口径。"
-                                "请调整指标、企业或时间范围后重新提交。"
-                            ),
-                            "reason": "；".join(
-                                item.reason for item in requested_calculation_gaps[:10]
-                            ),
-                            "affected_dimensions": ["finance"],
-                        }
-                    ],
-                    "allowed_review_actions": ["revise", "regenerate", "cancel"],
-                },
-                evidence_sources=[item.evidence_id for item in request.evidence_items],
-                error="requested_calculation_data_unavailable",
-            )
+        # 用户裁决门（计算缺数）：不再早退拦 LLM——先完成结构化分析，由
+        # 用户决定「继续生成（缺口披露）」还是「修改条件重跑」。确认码经
+        # 审核门写入 input_data.accepted_risk_codes 后重跑时跳过本门。
+        accepted_risk_codes = set(context.input_data.get("accepted_risk_codes", []))
+        calc_gap_pending = bool(requested_calculation_gaps) and (
+            "CALCULATION-DATA-MISSING" not in accepted_risk_codes
+        )
 
         selected_skills = self._skill_router.route(request)
         graph = build_data_interpreter_graph(
@@ -453,9 +440,155 @@ class DataInterpreterAgent:
         has_blocking_request = any(
             item.blocking or item.severity == "blocking" for item in analysis.collaboration_requests
         )
+        quality_acknowledged = "ANALYSIS-QUALITY" in accepted_risk_codes
+        if calc_gap_pending:
+            # 计算缺数决策门：分析本体已生成（data 前缀即 AnalysisResult 字段），
+            # 信封字段（决策包/协作请求）经审核门 accept_with_risks 确认后剥离，
+            # 下游仍拿到纯 AnalysisResult 契约。
+            risk_code = "CALCULATION-DATA-MISSING"
+            risk_notices = [
+                RiskNotice(
+                    risk_code=risk_code,
+                    stage=self.stage.value,
+                    severity=RiskSeverity.HIGH,
+                    disposition=RiskDisposition.ACKNOWLEDGEMENT_REQUIRED,
+                    title="用户指定的计算缺少原始数据",
+                    detail=(
+                        "以下计算缺少必要数据或可比口径；系统不会补造数值，"
+                        "继续生成时报告将保留指标缺口说明。"
+                    ),
+                    affected_ids=[
+                        issue.issue_id for issue in requested_calculation_gaps
+                    ],
+                    recommendation=(
+                        "调整指标、企业或时间范围后重跑，"
+                        "或确认接受缺口并继续生成。"
+                    ),
+                    consequence="若继续，相关派生指标将缺席或降级为待核验说明。",
+                    can_override=True,
+                )
+            ]
+            snapshot = compute_risk_snapshot_sha256(
+                risk_notices=risk_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[risk_code],
+            )
+            decision_package = DecisionPackage(
+                decision_id=f"DEC-{context.run_id}-INTERP-{context.revision}",
+                run_id=context.run_id,
+                stage=self.stage.value,
+                revision=context.revision,
+                risk_notices=risk_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[risk_code],
+                decision_status=DecisionStatus.AWAITING_USER,
+                risk_snapshot_sha256=snapshot,
+            )
+            data = analysis.model_dump(mode="json")
+            data["blocking_issues"] = []
+            data["advisory_issues"] = ["requested_calculation_data_unavailable"]
+            data["calculation_issues"] = [
+                item.model_dump(mode="json") for item in requested_calculation_gaps
+            ]
+            data["collaboration_requests"] = [
+                {
+                    "request_id": "CALCULATION-DATA-MISSING",
+                    "question": (
+                        "用户指定的计算缺少必要数据或可比口径。"
+                        "可继续生成（该指标将标注为缺口），或调整条件后重跑。"
+                    ),
+                    "reason": "；".join(
+                        item.reason for item in requested_calculation_gaps[:10]
+                    ),
+                    "affected_dimensions": ["finance"],
+                }
+            ]
+            data["allowed_review_actions"] = [
+                "revise",
+                "regenerate",
+                "accept_with_risks",
+                "cancel",
+            ]
+            data["decision_package"] = decision_package.model_dump(mode="json")
+            return StageResult(
+                stage=self.stage,
+                status=StageStatus.WAITING_REVIEW,
+                revision=context.revision,
+                data=data,
+                evidence_sources=[item.evidence_id for item in request.evidence_items],
+                error="requested_calculation_data_unavailable",
+            )
+        if not analysis.quality.passed and not quality_acknowledged:
+            # 质量降级决策门：分析质量门未过不再强制返工——用户确认后
+            # Agent 4 以条件性写作继续，风险由 Agent 5 汇总披露。
+            risk_code = "ANALYSIS-QUALITY"
+            quality_reason = "；".join(analysis.quality.issues[:10]) or "质量门未通过"
+            risk_notices = [
+                RiskNotice(
+                    risk_code=risk_code,
+                    stage=self.stage.value,
+                    severity=RiskSeverity.HIGH,
+                    disposition=RiskDisposition.ACKNOWLEDGEMENT_REQUIRED,
+                    title="Agent 2分析质量门未通过",
+                    detail=(
+                        f"结构化分析未通过确定性质量门（{quality_reason[:300]}）。"
+                        "继续生成时章节将采用条件性表达并披露该限制。"
+                    ),
+                    affected_ids=[],
+                    recommendation=(
+                        "确认接受质量降级后继续生成，或修改条件后重跑分析。"
+                    ),
+                    consequence="若继续，报告将以受限模式交付并保留质量风险披露。",
+                    can_override=True,
+                )
+            ]
+            snapshot = compute_risk_snapshot_sha256(
+                risk_notices=risk_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[risk_code],
+            )
+            decision_package = DecisionPackage(
+                decision_id=f"DEC-{context.run_id}-INTERP-{context.revision}",
+                run_id=context.run_id,
+                stage=self.stage.value,
+                revision=context.revision,
+                risk_notices=risk_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[risk_code],
+                decision_status=DecisionStatus.AWAITING_USER,
+                risk_snapshot_sha256=snapshot,
+            )
+            data = analysis.model_dump(mode="json")
+            data["blocking_issues"] = []
+            data["advisory_issues"] = ["analysis_quality_degraded"]
+            data["collaboration_requests"] = [
+                {
+                    "request_id": "ANALYSIS-QUALITY",
+                    "question": (
+                        "Agent 2质量门未通过。可确认风险后继续生成"
+                        "（章节将条件性表达并披露限制），或修改条件重跑分析。"
+                    ),
+                    "reason": quality_reason,
+                    "affected_dimensions": ["all"],
+                }
+            ]
+            data["allowed_review_actions"] = [
+                "revise",
+                "regenerate",
+                "accept_with_risks",
+                "cancel",
+            ]
+            data["decision_package"] = decision_package.model_dump(mode="json")
+            return StageResult(
+                stage=self.stage,
+                status=StageStatus.WAITING_REVIEW,
+                revision=context.revision,
+                data=data,
+                evidence_sources=[item.evidence_id for item in request.evidence_items],
+            )
         status = (
             StageStatus.COMPLETED
-            if analysis.quality.passed and not has_blocking_request
+            if (analysis.quality.passed or quality_acknowledged) and not has_blocking_request
             else StageStatus.WAITING_REVIEW
         )
         return StageResult(

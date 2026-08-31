@@ -7,6 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from app.schemas.chart import ChartReference
+from app.schemas.readability import ReadabilityReport
 
 
 class ChapterContract(BaseModel):
@@ -365,6 +366,9 @@ class ChapterWritingResult(ChapterContract):
     # Agent 4 透传通道审计：记录本次运行消费的 review_feedback 原文与来源。
     # Agent 4 不做结构化解释，只做注入检测与长度归一后原文透传（passthrough_mode）。
     feedback_passthrough: dict[str, object] | None = None
+    # 可读性评审产物（软门）：仅在评审器启用时非空；绝不影响 quality.passed，
+    # 绝不写入 StageResult 状态（软硬门分离原则）。
+    readability_reports: list[ReadabilityReport] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_complete_outline(self) -> "ChapterWritingResult":

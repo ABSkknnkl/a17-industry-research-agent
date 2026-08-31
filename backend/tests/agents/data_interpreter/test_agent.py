@@ -33,6 +33,20 @@ class RepairingModel(MockAnalysisModel):
         return draft
 
 
+class AlwaysForbiddenModel(MockAnalysisModel):
+    """每次都输出红线语句：质量门重试耗尽后 passed=False。"""
+
+    async def generate_analysis(
+        self, *, system_prompt: str, runtime_prompt: str
+    ):
+        draft = await super().generate_analysis(
+            system_prompt=system_prompt,
+            runtime_prompt=runtime_prompt,
+        )
+        draft.claims[0].text = "建议买入该行业，随后再研究风险。"
+        return draft
+
+
 class CapturingModel(MockAnalysisModel):
     def __init__(self) -> None:
         self.system_prompt = ""
@@ -144,8 +158,8 @@ async def test_blocking_collaboration_request_still_pauses_agent2() -> None:
 
 
 @pytest.mark.asyncio
-async def test_requested_calculation_with_missing_inputs_pauses_before_llm() -> None:
-    agent = DataInterpreterAgent(model=FailingIfCalledModel())
+async def test_requested_calculation_gap_pauses_with_user_decision() -> None:
+    agent = DataInterpreterAgent(model=CapturingModel())
     period = "2025-12-31"
     common = {
         "period_end": period,
@@ -198,8 +212,128 @@ async def test_requested_calculation_with_missing_inputs_pauses_before_llm() -> 
 
     assert result.status == StageStatus.WAITING_REVIEW
     assert result.error == "requested_calculation_data_unavailable"
-    assert result.data["blocking_issues"] == ["requested_calculation_data_unavailable"]
-    assert "重新提交" in result.data["collaboration_requests"][0]["question"]
+    # 用户裁决门：分析本体已生成（用户可基于可用证据继续），缺口以决策包呈现。
+    assert result.data["claims"]
+    assert result.data["blocking_issues"] == []
+    assert result.data["allowed_review_actions"] == [
+        "revise",
+        "regenerate",
+        "accept_with_risks",
+        "cancel",
+    ]
+    assert "继续生成" in result.data["collaboration_requests"][0]["question"]
+    decision_package = result.data["decision_package"]
+    assert decision_package["acknowledgement_required_codes"] == [
+        "CALCULATION-DATA-MISSING"
+    ]
+    assert decision_package["risk_snapshot_sha256"]
+    assert decision_package["risk_notices"][0]["can_override"] is True
+
+
+@pytest.mark.asyncio
+async def test_acknowledged_calculation_gap_continues_generation() -> None:
+    """用户确认 CALCULATION-DATA-MISSING 后重跑：跳过决策门直接完成分析。"""
+    agent = DataInterpreterAgent(model=CapturingModel())
+    context = StageContext(
+        project_id="project-missing-calc-ack",
+        run_id="run-missing-calc-ack",
+        revision=2,
+        input_data={
+            "industry_topic": "动力电池",
+            "market_scope": ["中国内地"],
+            "security_types": ["普通股"],
+            "reporting_currency": "CNY",
+            "research_as_of": "2026-06-30",
+            "focus_questions": ["计算测试公司的存货周转天数"],
+            "accepted_risk_codes": ["CALCULATION-DATA-MISSING"],
+            "evidence_items": [
+                {
+                    "evidence_id": "E-COST-ACK",
+                    "metric_name": "营业成本",
+                    "value": 60,
+                    "unit": "亿元",
+                    "period_end": "2025-12-31",
+                    "available_at": "2026-03-31",
+                    "audit_status": "audited",
+                    "restatement_status": "not_restated",
+                    "scope": "测试公司",
+                    "market": "中国内地",
+                    "exchange": "不适用",
+                    "security_type": "普通股",
+                    "currency": "CNY",
+                    "accounting_standard": "中国企业会计准则",
+                    "corporate_action_adjustment": "not_applicable",
+                    "source_name": "年度报告",
+                    "source_locator": "利润表",
+                    "grade": "A",
+                },
+                {
+                    "evidence_id": "E-INVENTORY-ACK",
+                    "metric_name": "存货",
+                    "value": 10,
+                    "unit": "亿元",
+                    "period_end": "2025-12-31",
+                    "available_at": "2026-03-31",
+                    "audit_status": "audited",
+                    "restatement_status": "not_restated",
+                    "scope": "测试公司",
+                    "market": "中国内地",
+                    "exchange": "不适用",
+                    "security_type": "普通股",
+                    "currency": "CNY",
+                    "accounting_standard": "中国企业会计准则",
+                    "corporate_action_adjustment": "not_applicable",
+                    "source_name": "年度报告",
+                    "source_locator": "资产负债表",
+                    "grade": "A",
+                },
+            ],
+        },
+    )
+
+    result = await agent.run(context)
+
+    assert result.status == StageStatus.COMPLETED
+    assert result.error is None
+    assert "decision_package" not in result.data
+
+
+
+@pytest.mark.asyncio
+async def test_analysis_quality_gate_offers_continue_instead_of_reinput() -> None:
+    """质量门未过：不再强制返工，改为用户裁决门（ANALYSIS-QUALITY 决策包）。"""
+    agent = DataInterpreterAgent(model=AlwaysForbiddenModel())
+
+    result = await agent.run(_single_evidence_context("run-quality-gate"))
+
+    assert result.status == StageStatus.WAITING_REVIEW
+    assert result.error is None
+    assert result.data["claims"]
+    assert result.data["blocking_issues"] == []
+    assert "analysis_quality_degraded" in result.data["advisory_issues"]
+    assert result.data["allowed_review_actions"] == [
+        "revise",
+        "regenerate",
+        "accept_with_risks",
+        "cancel",
+    ]
+    assert "继续生成" in result.data["collaboration_requests"][0]["question"]
+    decision_package = result.data["decision_package"]
+    assert decision_package["acknowledgement_required_codes"] == ["ANALYSIS-QUALITY"]
+    assert decision_package["risk_snapshot_sha256"]
+
+
+@pytest.mark.asyncio
+async def test_acknowledged_quality_degradation_completes_analysis() -> None:
+    """用户确认 ANALYSIS-QUALITY 后重跑：跳过质量决策门直接完成。"""
+    context = _single_evidence_context("run-quality-ack")
+    context.input_data["accepted_risk_codes"] = ["ANALYSIS-QUALITY"]
+
+    result = await DataInterpreterAgent(model=AlwaysForbiddenModel()).run(context)
+
+    assert result.status == StageStatus.COMPLETED
+    assert "decision_package" not in result.data
+
 
 
 @pytest.mark.asyncio

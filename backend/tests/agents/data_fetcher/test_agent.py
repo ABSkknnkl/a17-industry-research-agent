@@ -259,14 +259,57 @@ async def test_partial_intent_fetches_known_data_before_disclosing_unknown_gap()
     assert client.calls, "已识别的市场规模子需求必须先执行真实取数链路"
     assert result.data["evidence_items"]
     assert result.status == StageStatus.WAITING_REVIEW
-    assert result.error == "required_data_unavailable"
+    assert result.error == "unsupported_metrics_detected"
     assert result.data["requirement_coverage"][0]["status"] == "partial"
+    assert result.data["unsupported_metrics"] == ["尚未注册的自定义口径"]
+    assert "以下指标无法查询到数据" in result.data["collaboration_requests"][0]["question"]
+    assert "尚未注册的自定义口径" in result.data["collaboration_requests"][0]["question"]
+    assert "重新提问" in result.data["collaboration_requests"][0]["question"]
+    assert result.data["allowed_review_actions"] == [
+        "revise",
+        "regenerate",
+        "accept_with_risks",
+        "cancel",
+    ]
+    decision_package = result.data["decision_package"]
+    assert decision_package["acknowledgement_required_codes"] == ["UNSUPPORTED-METRICS"]
+    assert decision_package["risk_snapshot_sha256"]
     assert "【已完成】" in result.data["intent_routing"]["partial_results"][0]["message"]
     assert "【无法处理】" in result.data["intent_routing"]["partial_results"][0]["message"]
     assert any(
         "unresolved_sub_requirement" in warning
         for warning in result.data["intent_routing"]["warnings"]
     )
+
+
+@pytest.mark.asyncio
+async def test_unsupported_metrics_pause_lets_user_choose_reinput_or_continue() -> None:
+    client = MockSkillHubClient()
+    client.provider_mode = "live"
+    agent = DataFetcherAgent(
+        planner=QueryPlanner(),
+        executor=RetrievalExecutor(create_skillhub_gateway(client)),
+        provider_mode=client.provider_mode,
+    )
+    context = _context()
+    context.input_data["focus_questions"] = [
+        "整理储能行业市场规模及渗透率变化趋势"
+    ]
+
+    result = await agent.run(context)
+
+    assert result.status == StageStatus.WAITING_REVIEW
+    assert result.error == "unsupported_metrics_detected"
+    assert result.data["unsupported_metrics"] == ["渗透率变化趋势"]
+    assert result.data["unsupported_metrics_by_question"] == {
+        "整理储能行业市场规模及渗透率变化趋势": ["渗透率变化趋势"]
+    }
+    question = result.data["collaboration_requests"][0]["question"]
+    assert question.startswith("以下指标无法查询到数据：渗透率变化趋势")
+    assert "请删除这些关键词后重新提问" in question
+    assert "继续生成" in question
+    assert result.data["blocking_issues"] == []
+    assert "unsupported_metrics_detected" in result.data["advisory_issues"]
 
 
 @pytest.mark.asyncio
@@ -318,12 +361,25 @@ async def test_missing_requested_requirement_pauses_for_reinput() -> None:
 
     assert result.status == StageStatus.WAITING_REVIEW
     assert result.error == "required_data_unavailable"
-    assert result.data["blocking_issues"] == ["required_data_unavailable"]
+    # 用户裁决门：不再强制返工——缺口以决策包呈现，确认后可继续生成。
+    assert result.data["blocking_issues"] == []
+    assert "required_data_unavailable" in result.data["advisory_issues"]
     assert result.data["missing_requirements"][0]["question"] == "行业供需格局如何？"
     assert result.data["missing_requirements"][0]["origin"] == "focus_question"
     assert result.data["missing_requirements"][0]["criticality"] == "blocking"
-    assert result.data["allowed_review_actions"] == ["revise", "regenerate", "cancel"]
-    assert "重新提交" in result.data["collaboration_requests"][0]["question"]
+    assert result.data["allowed_review_actions"] == [
+        "revise",
+        "regenerate",
+        "accept_with_risks",
+        "cancel",
+    ]
+    assert "继续生成" in result.data["collaboration_requests"][0]["question"]
+    decision_package = result.data["decision_package"]
+    assert decision_package["acknowledgement_required_codes"] == [
+        "REQUESTED-DATA-UNAVAILABLE"
+    ]
+    assert decision_package["risk_snapshot_sha256"]
+    assert decision_package["risk_notices"][0]["can_override"] is True
 
 
 @pytest.mark.asyncio
@@ -341,9 +397,19 @@ async def test_missing_explicit_metric_requires_reinput() -> None:
 
     assert result.status == StageStatus.WAITING_REVIEW
     assert result.error == "required_data_unavailable"
-    assert result.data["blocking_issues"] == ["required_data_unavailable"]
-    assert result.data["allowed_review_actions"] == ["revise", "regenerate", "cancel"]
-    assert "重新提交" in result.data["collaboration_requests"][0]["question"]
+    assert result.data["blocking_issues"] == []
+    assert result.data["allowed_review_actions"] == [
+        "revise",
+        "regenerate",
+        "accept_with_risks",
+        "cancel",
+    ]
+    assert "继续生成" in result.data["collaboration_requests"][0]["question"]
+    decision_package = result.data["decision_package"]
+    assert decision_package["acknowledgement_required_codes"] == [
+        "REQUESTED-DATA-UNAVAILABLE"
+    ]
+    assert decision_package["risk_snapshot_sha256"]
     assert result.data["missing_requirements"][0]["question"] == "指定指标：海外收入占比"
     assert result.data["missing_requirements"][0]["origin"] == "user_metric"
     assert result.data["missing_requirements"][0]["criticality"] == "acknowledgement_required"

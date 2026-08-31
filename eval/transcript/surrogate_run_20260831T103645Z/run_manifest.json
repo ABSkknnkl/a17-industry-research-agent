@@ -1,0 +1,12 @@
+{
+  "mode": "surrogate",
+  "llm_mode": "surrogate",
+  "skillhub_mode": "live",
+  "started_at": "2026-08-31T10:36:45.056938+00:00",
+  "finished_at": "2026-08-31T10:36:45.056941+00:00",
+  "stop": {
+    "code": "configuration_invalid",
+    "detail": "live_skillhub_configuration_missing"
+  },
+  "cases_completed": []
+}
