@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
+from dataclasses import field as dataclass_field
 from datetime import UTC, date, datetime
 from collections.abc import Iterator
 from typing import Any, Literal
@@ -11,6 +12,7 @@ from typing import Any, Literal
 from app.agents.data_fetcher.executor import ExecutedTask
 from app.schemas.acquisition import (
     NormalizationSummary,
+    DataGap,
     QuarantinedRecord,
     SkillName,
     SourceRecord,
@@ -140,6 +142,39 @@ _FINANCE_BASE_CURRENCY_METRICS = {
     "主营业务收入",
 }
 
+# P0-6（2026-09-01 方案）：行情字段词表。问财在查不到业务字段时会
+# 静默回退行情数据（行数>0、不报错），必须靠字段相关性校验识别。
+_MARKET_QUOTE_FIELD_TOKENS = (
+    "最新价", "涨跌幅", "涨跌额", "开盘价", "收盘价", "最高价", "最低价",
+    "昨收", "成交量", "成交额", "成交数量", "换手率", "换手", "量比",
+    "振幅", "委比", "委差", "内盘", "外盘", "市值", "大单", "小单",
+    "买入量", "卖出量", "买入额", "卖出额", "涨速", "股息率",
+)
+# 只在“按公司取业务字段”的技能上启用校验；INDUSTRY/MACRO 走宏观
+# 指标路径，INDEX/SECTOR 本就返回行情类数据，均不适用。STOCK_SELECTOR
+# 与 BUSINESS 同类（按公司取市场份额等业务字段），2026-09-01 真实
+# 接口实测其同样静默回退行情列（成交量/成交额/换手率冒充市场份额）。
+# 请求指标本身是行情类（如按换手率选股）时由 requested_metrics 判定放行。
+_MARKET_QUOTE_FALLBACK_SKILLS = {
+    SkillName.BUSINESS,
+    SkillName.BASIC_INFO,
+    SkillName.STOCK_SELECTOR,
+}
+# 证据口径标签（P0-6 配套）：行业口径技能 vs 公司口径技能。
+_INDUSTRY_LEVEL_SKILLS = {
+    SkillName.INDUSTRY,
+    SkillName.MACRO,
+    SkillName.SECTOR,
+    SkillName.INDEX,
+    SkillName.INDUSTRY_CHAIN,
+}
+_COMPANY_LEVEL_SKILLS = {
+    SkillName.FINANCE,
+    SkillName.BUSINESS,
+    SkillName.BASIC_INFO,
+    SkillName.STOCK_SELECTOR,
+}
+
 
 @dataclass(frozen=True)
 class NormalizationResult:
@@ -148,6 +183,8 @@ class NormalizationResult:
     chain_rows: list[dict[str, Any]]
     quarantined: list[QuarantinedRecord]
     summary: NormalizationSummary
+    # P0-6：清洗阶段识别出的字段相关性缺口（market_quote_fallback）。
+    gaps: list[DataGap] = dataclass_field(default_factory=list)
 
     def __iter__(
         self,
@@ -177,6 +214,7 @@ def normalize_tasks(
     sources: list[SourceRecord] = []
     chain_rows: list[dict[str, Any]] = []
     quarantined: list[QuarantinedRecord] = []
+    fallback_gaps: list[DataGap] = []
     raw_row_count = 0
     duplicate_raw_row_count = 0
     seen_rows: set[str] = set()
@@ -219,6 +257,54 @@ def normalize_tasks(
                     storage_scope="metadata_only",
                 )
             )
+            # P0-6（2026-09-01 方案）：字段相关性校验（治成因 D）。
+            # 返回列全部为行情字段且请求指标非行情类 → 判定
+            # market_quote_fallback：整批行不进清洗、全部隔离并写
+            # data_gap 如实披露，绝不计为成功证据。
+            relevant, fallback_reason = _field_relevance_check(
+                rows=payload.rows,
+                requested_metrics=result.task.expected_fields,
+                skill=payload.skill_name,
+            )
+            if fallback_reason == "market_quote_fallback":
+                fallback_gaps.append(
+                    DataGap(
+                        gap_id=(
+                            f"GAP-{result.task.task_id.removeprefix('Q-')}-P{payload.page}"
+                        ),
+                        skill_name=payload.skill_name,
+                        task_id=result.task.task_id,
+                        reason_code=fallback_reason,
+                        description=(
+                            f"{payload.skill_name.value}返回的列全部为行情字段"
+                            "（最新价/涨跌幅/成交量等），与请求的业务指标无关："
+                            "问财在查不到业务字段时会静默回退行情数据，"
+                            "本次调用不计为成功证据，相关需求按数据缺口披露。"
+                        ),
+                        blocking=False,
+                    )
+                )
+                for row in payload.rows:
+                    cleaned_fallback = _clean_row(row)
+                    row_hash_fallback = _row_hash(cleaned_fallback, payload.skill_name)
+                    quarantined.append(
+                        QuarantinedRecord(
+                            quarantine_id=f"QUAR-{row_hash_fallback[:16]}",
+                            skill_name=payload.skill_name,
+                            row_sha256=row_hash_fallback,
+                            entity=(
+                                _first_text(cleaned_fallback, _ENTITY_FIELDS)
+                                or industry_topic
+                            )[:500],
+                            reason_code="market_quote_fallback",
+                            reason=(
+                                "返回行仅含行情字段（最新价/涨跌幅等），"
+                                "与请求的业务指标不相关，已隔离防止伪证据进入报告。"
+                            ),
+                        )
+                    )
+                clean_payload_rows[(result.task.task_id, payload.page)] = []
+                continue
             cleaned_rows: list[dict[str, Any]] = []
             for row in payload.rows:
                 cleaned = _clean_row(row)
@@ -329,6 +415,13 @@ def normalize_tasks(
                 for field_name, raw_value in ordered_fields:
                     if field_name in _METADATA_FIELDS or _is_missing(raw_value):
                         continue
+                    if (
+                        payload.skill_name in _MARKET_QUOTE_FALLBACK_SKILLS
+                        and _is_market_quote_field(field_name)
+                    ):
+                        # P0-6：部分命中场景——业务字段保留为证据，
+                        # 行情列不产证据（防行情值混进业务指标序列）。
+                        continue
                     item_period_end = period_end or _field_period(str(field_name))
                     metric_name = _metric_name_from_row(
                         str(field_name),
@@ -392,6 +485,7 @@ def normalize_tasks(
                             retrieval_method="同花顺问财 SkillHub",
                             source_locator=locator[:1_000],
                             grade=_grade(payload.skill_name),
+                            caliber=_evidence_caliber(payload.skill_name),
                             notes=(
                                 f"通过{payload.skill_name.value}获取；"
                                 f"原始字段：{str(field_name)[:200]}；"
@@ -422,6 +516,7 @@ def normalize_tasks(
         sources=_unique_sources(sources),
         chain_rows=chain_rows,
         quarantined=quarantined,
+        gaps=fallback_gaps,
         summary=NormalizationSummary(
             raw_row_count=raw_row_count,
             unique_row_count=len(seen_rows),
@@ -458,6 +553,63 @@ def _clean_row(row: dict[str, Any]) -> dict[str, Any]:
                 continue
         cleaned[key] = value
     return cleaned
+
+
+def _is_market_quote_field(field_name: str) -> bool:
+    """识别行情/交易类字段名（含 [日期]、(%) 等修饰后缀）。"""
+
+    compact = re.sub(r"\[.*?\]|\(.*?\)|（.*?）|\s+", "", str(field_name))
+    return any(token in compact for token in _MARKET_QUOTE_FIELD_TOKENS)
+
+
+def _field_relevance_check(
+    *,
+    rows: list[dict[str, Any]],
+    requested_metrics: list[str],
+    skill: SkillName,
+) -> tuple[bool, str | None]:
+    """P0-6（2026-09-01 方案）：字段相关性校验（治成因 D）。
+
+    问财在查不到业务字段时不返回空，而是静默回退行情数据（最新价/
+    涨跌幅/大单卖出量…）：行数>0、能过既有质量门，Agent 2 会把
+    “当日行情”当成“查到了出货量”。本校验只作用于按公司取业务
+    字段的技能（BUSINESS/BASIC_INFO）：返回数据列全部落在行情字段
+    集合内、且请求指标并非行情类 → 判定 market_quote_fallback，
+    返回 (False, "market_quote_fallback")，调用方不得计为成功证据。
+    """
+
+    if skill not in _MARKET_QUOTE_FALLBACK_SKILLS or not rows:
+        return True, None
+    # 请求指标本身是行情类（如查“最新价”）→ 合法返回，不算回退。
+    metric_fields = [
+        name for name in requested_metrics if name not in _METADATA_FIELDS
+    ]
+    if metric_fields and all(_is_market_quote_field(name) for name in metric_fields):
+        return True, None
+    data_fields: set[str] = set()
+    for row in rows:
+        for field_name in row:
+            if field_name in _METADATA_FIELDS:
+                continue
+            data_fields.add(str(field_name))
+    if data_fields and all(_is_market_quote_field(name) for name in data_fields):
+        return False, "market_quote_fallback"
+    return True, None
+
+
+def _evidence_caliber(skill_name: SkillName) -> str | None:
+    """P0-6 配套：证据口径标签（行业级/公司级）。
+
+    产业运营指标（出货量/产能/产量/产能利用率）经 industry_query 取
+    得的是行业口径；财务/业务字段是公司口径。下游必须凭标签区分，
+    防止“用行业产量冒充公司出货量”。定性检索类证据无明确口径，标 None。
+    """
+
+    if skill_name in _INDUSTRY_LEVEL_SKILLS:
+        return "industry_level"
+    if skill_name in _COMPANY_LEVEL_SKILLS:
+        return "company_level"
+    return None
 
 
 def _is_missing(value: Any) -> bool:

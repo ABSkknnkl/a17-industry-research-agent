@@ -78,6 +78,7 @@ class IntentSubRequirement(BaseModel):
         "basic_info_query",
         "comparison",
         "ambiguous",
+        "analysis_only",
     ]
 
     candidate_skills: list[str] = Field(default_factory=list, max_length=8)
@@ -109,3 +110,8 @@ class ResearchIntentPlan(BaseModel):
     parser_mode: Literal["deterministic", "hybrid", "fallback"]
 
     warnings: list[str] = Field(default_factory=list, max_length=30)
+
+    # P0-2（2026-08-31 方案）：分析型诉求（“X对Y的影响/传导/贡献”）不是取数
+    # 需求，不进数据路由、不报“暂无对应查询技能”，原文摘要记入此字段，
+    # 透传给 Agent 2 作为分析提示；Agent 2 无视该字段不影响现有契约。
+    analysis_notes: list[str] = Field(default_factory=list, max_length=12)

@@ -162,22 +162,41 @@ _SPECS: tuple[MetricSpec, ...] = (
     MetricSpec(
         "shipment_volume",
         "出货量",
-        ("出货量", "出货规模", "交付量"),
-        SkillName.BUSINESS,
-        ("出货量",),
+        # P0-4（2026-08-31 方案）：补“发货量”别名；“销量/销售量”已由
+        # sales_volume 独立注册，不重复挂靠以免词表漂移。
+        # P0-6（2026-09-01 方案）：primary_skill 改 INDUSTRY——真实接口
+        # 实测出货量是行业口径指标（business_query 查不到且静默回退
+        # 行情数据）；公司级需求降级为行业口径查询并带口径标签。
+        ("出货量", "出货规模", "交付量", "发货量"),
+        SkillName.INDUSTRY,
+        ("出货量", "销量"),
     ),
     MetricSpec(
         "capacity",
         "产能",
-        ("产能", "产能规模", "设计产能"),
-        SkillName.BUSINESS,
+        # P0-4（2026-08-31 方案）：扩充“规划产能/有效产能/名义产能”别名。
+        # P0-6（2026-09-01 方案）：同出货量——行业口径（industry_query
+        # 实测“光伏组件行业产量 产能”可查得 725900 兆瓦）。
+        ("产能", "产能规模", "设计产能", "规划产能", "有效产能", "名义产能"),
+        SkillName.INDUSTRY,
         ("产能",),
+    ),
+    MetricSpec(
+        # P0-4（2026-08-31 方案）：新增产能利用率（开工率/稼动率归一）。
+        # primary_skill 取 INDUSTRY 与方案表格一致：该指标是行业景气口径，
+        # 非 company 实体绑定口径。
+        "capacity_utilization",
+        "产能利用率",
+        ("产能利用率", "开工率", "稼动率"),
+        SkillName.INDUSTRY,
+        ("产能利用率", "产能", "产量"),
     ),
     MetricSpec(
         "production_volume",
         "产量",
+        # P0-6（2026-09-01 方案）：产量同属产业运营指标，行业口径。
         ("产量", "生产量"),
-        SkillName.BUSINESS,
+        SkillName.INDUSTRY,
         ("产量",),
     ),
     MetricSpec(
@@ -218,9 +237,11 @@ _SPECS: tuple[MetricSpec, ...] = (
     MetricSpec(
         "market_share",
         "市场份额",
-        ("市场份额", "市占率", "市场占有率", "厂商份额"),
+        # P0-4（2026-08-31 方案）：+占有率/份额，与 intent_merger 的
+        # _METRIC_TYPE_KEYWORDS 保持同一词面，避免两处词表漂移。
+        ("市场份额", "市占率", "市场占有率", "厂商份额", "占有率", "份额"),
         SkillName.STOCK_SELECTOR,
-        ("市场份额", "出货量", "销量"),
+        ("市场份额", "市占率", "出货量", "销量"),
     ),
     MetricSpec(
         "cr3",

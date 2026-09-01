@@ -1,14 +1,16 @@
 """Bounded query planning for the Agent 1 Router + Skill pipeline."""
 
 import hashlib
+import re
 from datetime import date
-from typing import Any, Literal
+from typing import Any, Literal, NamedTuple
 
 from app.agents.data_fetcher.metric_registry import get_metric_spec, metric_expected_fields
 from app.agents.data_fetcher.intent_models import ResearchIntentPlan
 from app.integrations.skillhub.catalog import get_skill_spec
 from app.schemas.acquisition import (
     CONDITIONAL_P1_SKILLS,
+    ResolvedEntityGroup,
     ResearchRequirement,
     RetrievalPlan,
     SkillName,
@@ -47,6 +49,7 @@ class QueryPlanner:
         semantic_routes: dict[str, SkillName] | None = None,
         intent_plans: list[ResearchIntentPlan] | None = None,
         feedback_structured: bool = False,
+        sector_constituents: list[str] | None = None,
     ) -> RetrievalPlan:
         semantic_routes = semantic_routes or {}
         intent_plans = intent_plans or []
@@ -382,6 +385,9 @@ class QueryPlanner:
         intent_task_meta: dict[tuple[SkillName, str], tuple[str, str | None]] = {}
         requirement_by_question = {item.question: item for item in requirements}
         conditional_skill_values = {skill.value for skill in CONDITIONAL_P1_SKILLS}
+        resolved_entity_groups: list[ResolvedEntityGroup] = []
+        resolved_entity_index: set[tuple[str, str]] = set()
+        entity_resolution_failed_ids: set[str] = set()
         for plan in intent_plans:
             if plan.complexity == "simple":
                 # Simple questions reuse the mandatory baseline queries via
@@ -426,7 +432,46 @@ class QueryPlanner:
                         ]
                         if not sub_skills:
                             continue
-                sub_entities = [entity.name for entity in sub.entities] or focus_companies
+                # P0-3（2026-08-31 方案）：泛称实体（主要企业/龙头/头部公司/
+                # …）必须在查询构造前展开为具体公司名单（成因 C）。解析失
+                # 败则跳过该子需求的取数——service 层已标记
+                # entity_resolution_failed 走澄清门——绝不静默降级为泛称
+                # 查询。
+                sub_entity_names = [entity.name for entity in sub.entities]
+                # P0-3：只允许公司类实体参与泛称解析（行业/板块等类型由
+                # industry_topic 承载，不是“主要企业”的展开结果）。
+                company_entity_names = [
+                    entity.name
+                    for entity in sub.entities
+                    if entity.entity_type not in _NON_COMPANY_ENTITY_TYPES
+                ]
+                entity_resolution = resolve_generic_entities(
+                    company_entity_names,
+                    sub.normalized_text,
+                    known_companies=focus_companies,
+                    sector_constituents=sector_constituents or [],
+                )
+                if entity_resolution.failed:
+                    entity_resolution_failed_ids.add(sub.requirement_id)
+                    continue
+                if entity_resolution.generic_terms:
+                    sub_entities = entity_resolution.resolved
+                    intent_entity_names = entity_resolution.resolved
+                    if entity_resolution.source is not None:
+                        for term in entity_resolution.generic_terms:
+                            key = (term, entity_resolution.source)
+                            if key not in resolved_entity_index:
+                                resolved_entity_index.add(key)
+                                resolved_entity_groups.append(
+                                    ResolvedEntityGroup(
+                                        generic_term=term[:50],
+                                        entities=entity_resolution.resolved[:20],
+                                        source=entity_resolution.source,
+                                    )
+                                )
+                else:
+                    sub_entities = sub_entity_names or focus_companies
+                    intent_entity_names = sub_entity_names
                 qualifiers = _intent_qualifiers(sub.normalized_text)
                 for raw_skill in sub_skills:
                     try:
@@ -475,7 +520,11 @@ class QueryPlanner:
                     _intent_entities = (
                         []
                         if skill in _TEXT_SEARCH
-                        else [e.name for e in sub.entities if e.name != industry_topic]
+                        else [
+                            name
+                            for name in intent_entity_names
+                            if name != industry_topic
+                        ]
                     )
                     intent_task_meta[(skill, " ".join(query.split())[:500])] = (
                         _task_origin(sub.source),
@@ -610,7 +659,110 @@ class QueryPlanner:
             planner_mode="hybrid" if (semantic_routes or intent_plans) else "deterministic",
             applied_review_feedback=review_feedback,
             requirements=requirements,
+            resolved_entities=resolved_entity_groups[:12],
         )
+
+
+# P0-3（2026-08-31 方案）：泛称实体词表。只打高置信泛称词——拿不准的
+# 宁可保留原文交由路由（解析错行业的代价高于不解析），这与 P0-2 分析
+# 型碎片识别的保守取向一致。
+_GENERIC_ENTITY_PATTERN = re.compile(
+    r"主要企业|龙头|头部公司|同行|可比公司|代表企业|行业前列"
+)
+
+# P0-3（2026-08-31 方案）：这些实体类型不是“具体公司”，不得充当泛称
+# （主要企业/龙头/…）的解析结果，也不得据此判定“子需求自带具体实体”
+# 而绕过澄清门——行业主题由 industry_topic 单独承载，混入解析名单既
+# 污染 resolved_entities 留痕，又会把解析失败伪装成成功。
+_NON_COMPANY_ENTITY_TYPES = frozenset(
+    {"industry", "sector", "commodity", "index", "region"}
+)
+
+
+class GenericEntityResolution(NamedTuple):
+    """P0-3 resolution outcome for one sub-requirement."""
+
+    resolved: list[str]
+    source: str | None
+    failed: bool
+    generic_terms: list[str]
+
+
+def resolve_generic_entities(
+    entity_names: list[str],
+    sub_text: str,
+    *,
+    known_companies: list[str],
+    sector_constituents: list[str] | None = None,
+    top_n: int = 5,
+) -> GenericEntityResolution:
+    """Expand generic entity mentions into concrete companies (成因 C).
+
+    解析优先级：本轮已知具体公司（brief/意图抽取）> 板块成分
+    （hithink_sector_selector）。两者皆空且子需求没有任何具体实体时
+    failed=True——调用方必须走澄清门（请指定具体公司），绝不静默降级
+    为泛称查询；子需求自带具体实体时仅保留具体实体（泛称部分被显式
+    实体取代，不视为失败）。
+    """
+
+    generic_terms: list[str] = []
+    for haystack in [*entity_names, sub_text]:
+        for match in _GENERIC_ENTITY_PATTERN.finditer(str(haystack or "")):
+            term = match.group(0)
+            if term not in generic_terms:
+                generic_terms.append(term)
+    if not generic_terms:
+        return GenericEntityResolution(
+            resolved=list(entity_names), source=None, failed=False, generic_terms=[]
+        )
+    concrete = [
+        name.strip()
+        for name in entity_names
+        if name.strip() and not _GENERIC_ENTITY_PATTERN.search(name)
+    ]
+    candidates = [
+        company.strip()
+        for company in (known_companies or [])
+        if company.strip() and not _GENERIC_ENTITY_PATTERN.search(company)
+    ]
+    source: str | None = "known_entities"
+    if not candidates:
+        candidates = [
+            company.strip()
+            for company in (sector_constituents or [])
+            if company.strip() and not _GENERIC_ENTITY_PATTERN.search(company)
+        ]
+        source = "sector_constituents" if candidates else None
+    if candidates:
+        resolved = list(
+            dict.fromkeys([*concrete, *candidates])
+        )[: max(top_n, len(concrete))]
+        return GenericEntityResolution(
+            resolved=resolved, source=source, failed=False, generic_terms=generic_terms
+        )
+    if concrete:
+        return GenericEntityResolution(
+            resolved=concrete, source=None, failed=False, generic_terms=generic_terms
+        )
+    return GenericEntityResolution(
+        resolved=[], source=None, failed=True, generic_terms=generic_terms
+    )
+
+
+def detect_generic_entities(intent_plans: list[ResearchIntentPlan]) -> list[str]:
+    """P0-3: distinct generic terms across plans (drives the sector fetch)."""
+
+    terms: list[str] = []
+    for plan in intent_plans:
+        for sub in plan.sub_requirements:
+            haystacks = [entity.name for entity in sub.entities]
+            haystacks.append(sub.normalized_text)
+            for haystack in haystacks:
+                for match in _GENERIC_ENTITY_PATTERN.finditer(str(haystack or "")):
+                    term = match.group(0)
+                    if term not in terms:
+                        terms.append(term)
+    return terms
 
 
 _QUANTITATIVE_TERMS = (
@@ -904,6 +1056,18 @@ def _intent_skill_query(
         subject = _commodity_subject(base) or industry_topic
         time_part = time_text or "近一年"
         return f"{industry_topic} {subject}{time_part}价格走势"[:500]
+    if skill == SkillName.INDUSTRY and _registered_metric_fields(sub_text):
+        # P0-6（2026-09-01 方案）：产业运营指标（出货量/产能/产量/
+        # 产能利用率）是行业口径。公司级子需求降级为行业口径查询：
+        # 查询用行业主题 + 注册指标字段，绝不携带公司名（行业接口不
+        # 认识公司名，带名只会空返回或触发行情回退）；证据由
+        # normalizer 打行业级口径标签。无注册指标的定性行业诉求仍走
+        # 下方原文分支，保留竞争格局等自然语言语义。
+        time_part = time_text or f"{research_as_of.year - 1}年 {research_as_of.year}年"
+        parts = [industry_topic, time_part, *_registered_metric_fields(sub_text)]
+        if qualifiers:
+            parts.append(qualifiers)
+        return " ".join(dict.fromkeys(part for part in parts if part))[:500]
     # Qualitative/industry skills preserve the full sub-text verbatim so that
     # qualifiers such as 海外/回收/政策 survive into the provider query.
     # Entity-named sub-text already carries its subject (宁德时代 ...公告);

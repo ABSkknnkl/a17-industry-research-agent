@@ -222,7 +222,9 @@ def test_concentration_metrics_request_company_market_share_cross_section() -> N
         ("毛利率", "hithink_finance_query", ["毛利率", "营业收入", "营业成本"]),
         ("研发费用率", "hithink_finance_query", ["研发费用率", "研发费用", "营业收入"]),
         ("海外收入占比", "hithink_business_query", ["海外收入占比", "境外营业收入", "营业收入"]),
-        ("出货量", "hithink_business_query", ["出货量"]),
+        # P0-6（2026-09-01 方案）：出货量是行业口径产业运营指标
+        # （business_query 静默回退行情数据），指定指标路由到 INDUSTRY。
+        ("出货量", "hithink_industry_query", ["出货量"]),
         ("商品房销售面积", "hithink_macro_query", ["商品房销售面积"]),
         ("房地产开发投资额", "hithink_macro_query", ["房地产开发投资额"]),
     ],

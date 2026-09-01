@@ -130,6 +130,19 @@ class RequirementCoverage(AcquisitionModel):
     criticality: Literal["blocking", "acknowledgement_required", "advisory"] = "blocking"
 
 
+class ResolvedEntityGroup(AcquisitionModel):
+    """P0-3（2026-08-31 方案）：泛称实体解析留痕。
+
+    泛称词（主要企业/龙头/头部公司/…）必须在查询构造前展开为具体公司
+    名单；解析来源（本轮已知实体 / 板块成分）随计划留痕，供审计与 P1
+    观测复盘使用。
+    """
+
+    generic_term: str = Field(min_length=1, max_length=50)
+    entities: list[str] = Field(min_length=1, max_length=20)
+    source: Literal["known_entities", "sector_constituents"] = "sector_constituents"
+
+
 class RetrievalPlan(AcquisitionModel):
     plan_id: str = Field(pattern=r"^PLAN-[A-Za-z0-9_-]+$")
     industry_topic: str = Field(min_length=2, max_length=100)
@@ -138,6 +151,7 @@ class RetrievalPlan(AcquisitionModel):
     planner_mode: Literal["deterministic", "hybrid"] = "deterministic"
     applied_review_feedback: str | None = Field(default=None, max_length=2_000)
     requirements: list[ResearchRequirement] = Field(default_factory=list, max_length=12)
+    resolved_entities: list[ResolvedEntityGroup] = Field(default_factory=list, max_length=12)
 
     @model_validator(mode="after")
     def require_p0_coverage(self) -> "RetrievalPlan":
@@ -219,6 +233,9 @@ class QuarantinedRecord(AcquisitionModel):
         "topic_mismatch",
         "target_entity_mismatch",
         "future_availability",
+        # P0-6（2026-09-01 方案）：业务技能静默回退行情数据，行数>0
+        # 但字段与请求指标无关，必须隔离并写 data_gap 披露。
+        "market_quote_fallback",
     ] = "topic_mismatch"
     reason: str = Field(min_length=1, max_length=1_000)
 

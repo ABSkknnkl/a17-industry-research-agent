@@ -62,6 +62,11 @@ class EvidenceItem(BaseModel):
     retrieval_method: str | None = Field(default=None, max_length=100)
     source_locator: str | None = Field(default=None, max_length=1_000)
     grade: EvidenceGrade
+    # P0-6（2026-09-01 方案）：口径标签。产业运营指标（出货量/产能/
+    # 产量/产能利用率）走行业口径，财务/业务指标走公司口径——防止
+    # “用行业产量冒充公司出货量”。None 表示该证据无明确口径级别
+    # （如定性检索类证据），下游 Agent 2 不得据此拼接不同口径数值。
+    caliber: Literal["industry_level", "company_level"] | None = None
     notes: str | None = Field(default=None, max_length=5_000)
 
 

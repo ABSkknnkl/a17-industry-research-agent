@@ -10,6 +10,7 @@ from app.schemas.acquisition import (
     RetrievalPlan,
     SkillCallRecord,
     SkillPayload,
+    SkillName,
     SkillQueryTask,
 )
 
@@ -36,6 +37,52 @@ class RetrievalExecutor:
                 return await self._execute_task(task)
 
         return list(await asyncio.gather(*(run(task) for task in plan.tasks)))
+
+    async def fetch_sector_constituents(
+        self,
+        industry_topic: str,
+        *,
+        top_n: int = 5,
+    ) -> list[str]:
+        """P0-3（2026-08-31 方案）：经 hithink_sector_selector 解析板块成分。
+
+        用于把“主要企业/龙头/头部公司”等泛称展开为具体公司名单。板块成
+        分为空或调用失败时返回空列表——调用方必须走澄清门，绝不静默降级
+        为泛称查询。解析源限定本 plan 的行业主题（方案风险控制：解析错
+        行业的代价高于不解析）。
+        """
+
+        try:
+            result = await self._gateway.execute(
+                ToolCall(
+                    call_id="SECTOR-RESOLVE-1",
+                    name=SkillName.SECTOR.value,
+                    arguments={
+                        "query": f"{industry_topic}板块成分股 市值排名 龙头",
+                        "page": 1,
+                        "limit": max(10, top_n * 2),
+                        "call_type": "normal",
+                    },
+                )
+            )
+        except Exception:
+            return []
+        if result.is_error:
+            return []
+        try:
+            payload = SkillPayload.model_validate(result.content)
+        except Exception:
+            return []
+        names: list[str] = []
+        for row in payload.rows:
+            for key in ("股票简称", "股票名称", "公司名称", "名称"):
+                value = row.get(key) if isinstance(row, dict) else None
+                if isinstance(value, str) and value.strip():
+                    name = value.strip()
+                    if name not in names:
+                        names.append(name)
+                    break
+        return names[:top_n]
 
     async def _execute_task(self, task: SkillQueryTask) -> ExecutedTask:
         started = monotonic()

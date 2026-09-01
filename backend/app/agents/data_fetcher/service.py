@@ -11,11 +11,28 @@ from app.agents.data_fetcher.intent_merger import IntentDecomposer, build_intent
 from app.agents.data_fetcher.intent_models import ResearchIntentPlan
 from app.agents.data_fetcher.metric_registry import get_metric_spec
 from app.agents.data_fetcher.normalizer import normalize_tasks
-from app.agents.data_fetcher.planner import QueryPlanner, deterministic_metric_skill
+from app.agents.data_fetcher.planner import (
+    _NON_COMPANY_ENTITY_TYPES,
+    QueryPlanner,
+    detect_generic_entities,
+    deterministic_metric_skill,
+    resolve_generic_entities,
+)
+from app.agents.data_fetcher.routing_telemetry import (
+    bind_run,
+    record_clarification,
+    record_route_decision,
+    record_skill_call,
+)
 from app.agents.data_fetcher.semantic_router import SemanticRouter
 from app.agents.data_fetcher.quality import evaluate_quality
 from app.schemas.analysis import ResearchBrief
-from app.schemas.acquisition import NormalizationSummary, RequirementCoverage, SourceRecord
+from app.schemas.acquisition import (
+    DataGap,
+    NormalizationSummary,
+    RequirementCoverage,
+    SourceRecord,
+)
 from app.schemas.decision import (
     DecisionPackage,
     DecisionStatus,
@@ -99,6 +116,10 @@ class DataFetcherAgent:
                 error="prompt_injection_suspected",
             )
 
+        # P0-5（2026-08-31 方案）：绑定 run 身份，使四类观测记录可关联到
+        # run_id/revision；遥测自身静默失败，绝不影响主链路。
+        bind_run(context.run_id, context.revision)
+
         # Shared feedback interpreter (阶段一): review feedback becomes
         # structured option edits instead of raw keyword concatenation.
         # The block runs BEFORE metric collection so newly added metrics
@@ -155,11 +176,36 @@ class DataFetcherAgent:
         unknown_metrics = [
             item for item in requested_metrics if deterministic_metric_skill(item) is None
         ]
+        # P0-5 点位 2：确定性路由决策观测（metric_registry 命中，不经
+        # LLM）。P0-4 之后主链路指标大多确定性路由，若只观测语义层，
+        # miss 分析将看不到“哪个指标被路由到了哪个技能”。
+        for metric in dict.fromkeys(requested_metrics):
+            deterministic_skill = deterministic_metric_skill(metric)
+            if deterministic_skill is not None:
+                record_route_decision(
+                    metric,
+                    skill=deterministic_skill.value,
+                    confidence=None,
+                    below_threshold=False,
+                    layer="deterministic",
+                )
         if self._semantic_router is not None and unknown_metrics:
             try:
                 decisions = await self._semantic_router.route(unknown_metrics)
                 for metric in unknown_metrics:
                     decision = decisions.get(metric)
+                    # P0-5 点位 2：语义路由决策观测（含低于阈值回退）。
+                    record_route_decision(
+                        metric,
+                        skill=decision.skill.value if decision is not None else None,
+                        confidence=(
+                            decision.confidence if decision is not None else None
+                        ),
+                        below_threshold=(
+                            decision is None
+                            or decision.confidence < self._semantic_confidence_threshold
+                        ),
+                    )
                     if decision is None or decision.confidence < self._semantic_confidence_threshold:
                         semantic_routing["rejected"].append(metric)
                         continue
@@ -205,11 +251,50 @@ class DataFetcherAgent:
                 intent_routing["clarification_required"].append(question)
             intent_routing["warnings"].extend(intent_plan.warnings)
 
+        # P0-3（2026-08-31 方案）：泛称实体解析（成因 C）——“主要企业/龙头/
+        # 头部公司”必须在查询构造前展开为具体公司名单：优先用本轮已知具
+        # 体公司（brief/意图抽取），其次经 hithink_sector_selector 取板块成
+        # 分；两者皆空时标记 entity_resolution_failed 走澄清门（请指定具体
+        # 公司），绝不静默降级为泛称查询。
+        user_only_mode = self._provider_mode == "mock" and bool(request["evidence_items"])
+        sector_constituents: list[str] = []
+        if detect_generic_entities(intent_plans) and not user_only_mode:
+            sector_constituents = await self._executor.fetch_sector_constituents(
+                request["industry_topic"]
+            )
+        intent_plans, entity_resolution_failed_ids = _mark_entity_resolution_failures(
+            intent_plans,
+            industry_topic=request["industry_topic"],
+            brief_companies=[
+                str(item).strip()
+                for item in request["research_brief"].get("focus_companies", [])
+                if str(item).strip()
+            ],
+            sector_constituents=sector_constituents,
+        )
+        for marked_plan in intent_plans:
+            # 重新 dump 被标记的计划，保证澄清问题与警告对上层可见。
+            # （P0-5 点位 1 的 decomposition 遥测在 build_intent_plan 出口
+            # （intent_merger._postprocess_plan）统一落盘，此处不重复记录。）
+            intent_routing["plans"][
+                marked_plan.original_input
+            ] = marked_plan.model_dump(mode="json")
+            if marked_plan.requires_clarification and (
+                marked_plan.original_input not in intent_routing["clarification_required"]
+            ):
+                intent_routing["clarification_required"].append(marked_plan.original_input)
+            intent_routing["warnings"].extend(
+                warning
+                for warning in marked_plan.warnings
+                if warning.startswith("entity_resolution_failed:")
+            )
+
         # BUG-001 fix: a clarification only blocks the whole request when no
         # sub-requirement of any question could be routed.  Executable plans
         # proceed to data acquisition with the questions kept as advisory.
         any_actionable_sub_requirement = any(
-            sub.candidate_skills
+            # P0-3：泛称实体解析失败的子需求不产生任何查询，不得计为可执行。
+            sub.candidate_skills and sub.requirement_id not in entity_resolution_failed_ids
             for plan in intent_plans
             for sub in plan.sub_requirements
         )
@@ -229,6 +314,12 @@ class DataFetcherAgent:
                         "affected_dimensions": ["data_fetch"],
                     }
                 )
+            # P0-5 点位 4：澄清门观测（整体拦截，无可执行子需求）。
+            record_clarification(
+                collaboration_requests[0]["question"] if collaboration_requests else "",
+                unresolved_fragments=list(intent_routing["clarification_required"]),
+                action="block",
+            )
             return StageResult(
                 stage=self.stage,
                 status=StageStatus.WAITING_REVIEW,
@@ -256,6 +347,13 @@ class DataFetcherAgent:
                 for intent_plan in intent_plans
                 if intent_plan.requires_clarification
             ]
+            # P0-5 点位 4：部分澄清观测（可执行子需求继续，其余随 advisory）。
+            for advisory in intent_routing["advisory_clarifications"]:
+                record_clarification(
+                    advisory["question"],
+                    unresolved_fragments=list(advisory["clarification_questions"]),
+                    action="advisory",
+                )
 
         plan = self._planner.build(
             industry_topic=request["industry_topic"],
@@ -269,6 +367,7 @@ class DataFetcherAgent:
             semantic_routes=semantic_routes,
             intent_plans=intent_plans,
             feedback_structured=feedback_structured,
+            sector_constituents=sector_constituents,
         )
         user_items = request["evidence_items"]
         executed = []
@@ -277,6 +376,9 @@ class DataFetcherAgent:
         chain_rows: list[dict[str, Any]] = []
         quarantined = []
         normalization = NormalizationSummary()
+        # P0-6：清洗阶段识别的字段相关性缺口（market_quote_fallback）
+        # 随 executor 缺口一并进 data_gaps 披露。
+        normalized_gaps: list[DataGap] = []
         user_only = self._provider_mode == "mock" and bool(user_items)
         if not user_only:
             executed = await self._executor.execute(plan)
@@ -293,6 +395,20 @@ class DataFetcherAgent:
             chain_rows = normalized.chain_rows
             quarantined = normalized.quarantined
             normalization = normalized.summary
+            normalized_gaps = normalized.gaps
+        # P0-5（2026-08-31 方案）点位 3：技能调用收口观测（返回行数/清洗后
+        # 行数），遥测失败静默。
+        for executed_task in executed:
+            record_skill_call(
+                skill=executed_task.task.skill_name.value,
+                query=executed_task.record.query,
+                status=executed_task.record.status,
+                returned_rows=executed_task.record.row_count,
+                cleaned_rows=normalization.task_clean_row_counts.get(
+                    executed_task.task.task_id, 0
+                ),
+                task_id=executed_task.task.task_id,
+            )
         records = [item.record for item in executed]
         requirement_coverage = _build_requirement_coverage(
             plan.requirements,
@@ -304,12 +420,19 @@ class DataFetcherAgent:
         requirement_coverage = _apply_unresolved_intent_gaps(
             requirement_coverage,
             intent_plans,
+            entity_resolution_failed_ids=entity_resolution_failed_ids,
+        )
+        requirement_coverage = _mark_market_quote_fallback_gaps(
+            requirement_coverage,
+            plan.requirements,
+            normalized_gaps,
         )
         intent_routing["partial_results"] = _build_partial_intent_results(
             requirement_coverage,
             intent_plans,
+            entity_resolution_failed_ids=entity_resolution_failed_ids,
         )
-        gaps = [item.gap for item in executed if item.gap is not None]
+        gaps = [item.gap for item in executed if item.gap is not None] + normalized_gaps
         evidence, conflicts, duplicate_groups, uniqueness = fuse_evidence(
             user_items,
             acquired_items,
@@ -503,6 +626,12 @@ class DataFetcherAgent:
                 "cancel",
             ]
             data["decision_package"] = decision_package.model_dump(mode="json")
+            # P0-5 点位 4：不可路由指标回流观测（miss 回流路径）。
+            record_clarification(
+                data["collaboration_requests"][0]["question"],
+                unresolved_fragments=fragments,
+                action="unsupported_metrics",
+            )
             return StageResult(
                 stage=self.stage,
                 status=StageStatus.WAITING_REVIEW,
@@ -664,6 +793,15 @@ class DataFetcherAgent:
                         "affected_dimensions": ["data_fetch"],
                     },
                 )
+            # P0-5 点位 4：数据缺口决策门观测（required_data_unavailable 收口）。
+            for request in data["collaboration_requests"]:
+                record_clarification(
+                    request["question"],
+                    unresolved_fragments=[
+                        item.question for item in unavailable_requirements
+                    ],
+                    action="data_unavailable",
+                )
             data["allowed_review_actions"] = [
                 "revise",
                 "regenerate",
@@ -768,6 +906,53 @@ def _build_requirement_coverage(
     return coverage
 
 
+def _mark_market_quote_fallback_gaps(
+    coverage: list[RequirementCoverage],
+    requirements: list[Any],
+    gaps: list[DataGap],
+) -> list[RequirementCoverage]:
+    """P0-6（2026-09-01 方案）：行情回退缺口必须落到需求级披露。
+
+    coverage 的成功判定按技能聚合：同一技能下另一任务被
+    market_quote_fallback 拦截时，REQ 仍会被判 supported——用户问的
+    指标实际没拿到。此函数把受回退任务影响的需求降为 partial，
+    使其进入决策门如实披露，而不是静默计为成功。
+    """
+
+    fallback_task_ids = {
+        gap.task_id for gap in gaps if gap.reason_code == "market_quote_fallback"
+    }
+    if not fallback_task_ids:
+        return coverage
+    tasks_by_requirement = {
+        requirement.requirement_id: list(requirement.task_ids)
+        for requirement in requirements
+    }
+    adjusted: list[RequirementCoverage] = []
+    for item in coverage:
+        affected = [
+            task_id
+            for task_id in tasks_by_requirement.get(item.requirement_id, [])
+            if task_id in fallback_task_ids
+        ]
+        if affected and item.status == "supported":
+            adjusted.append(
+                item.model_copy(
+                    update={
+                        "status": "partial",
+                        "note": (
+                            "该需求部分查询返回行情字段而非所请求的业务指标"
+                            "（market_quote_fallback），相关数据按缺口披露，"
+                            "不得补造。"
+                        ),
+                    }
+                )
+            )
+        else:
+            adjusted.append(item)
+    return adjusted
+
+
 _PRESENTATION_TERMS = ("一张图", "两张图", "三张图", "出图", "画图", "绘图", "可视化")
 
 
@@ -776,6 +961,87 @@ def _is_presentation_directive(text: str) -> bool:
 
     compact = "".join(str(text).split())
     return any(term in compact for term in _PRESENTATION_TERMS) and len(compact) <= 12
+
+
+def _mark_entity_resolution_failures(
+    intent_plans: list[ResearchIntentPlan],
+    *,
+    industry_topic: str,
+    brief_companies: list[str],
+    sector_constituents: list[str],
+) -> tuple[list[ResearchIntentPlan], set[str]]:
+    """P0-3（2026-08-31 方案）：解析泛称实体并标记失败子需求（成因 C）。
+
+    对每个子需求执行与 planner 相同的泛称解析（已知公司池同样取
+    brief 公司 + 意图抽取公司，保证两层判定一致）：失败（无已知具体
+    公司、无板块成分、且子需求自身没有具体实体）的子需求记入
+    failed_ids，对应 plan 追加 ``entity_resolution_failed`` 警告与
+    澄清问题。部分失败不阻断整体（由上层 any_actionable_sub_requirement
+    决定），全部失败时随既有澄清门整体拦截。planner 侧对同一批子需求
+    做查询构造层面的跳过，本函数只负责把失败显式告知用户。
+    """
+
+    intent_companies = [
+        entity.name.strip()
+        for plan in intent_plans
+        for sub in plan.sub_requirements
+        for entity in sub.entities
+        if entity.entity_type == "company"
+        and entity.name.strip()
+        and entity.name.strip() != industry_topic
+    ]
+    known_companies = list(dict.fromkeys([*brief_companies, *intent_companies]))[:20]
+    failed_ids: set[str] = set()
+    adjusted: list[ResearchIntentPlan] = []
+    for plan in intent_plans:
+        plan_failures: list[tuple[str, str]] = []
+        for sub in plan.sub_requirements:
+            # P0-3：与 planner 层判定保持一致——非公司类型实体（行业/
+            # 板块等）不参与泛称解析，否则行业实体会把解析失败伪装成
+            # 成功，澄清门被绕过。
+            entity_names = [
+                entity.name
+                for entity in sub.entities
+                if entity.entity_type not in _NON_COMPANY_ENTITY_TYPES
+            ]
+            resolution = resolve_generic_entities(
+                entity_names,
+                sub.normalized_text,
+                known_companies=known_companies,
+                sector_constituents=sector_constituents,
+            )
+            if resolution.failed:
+                failed_ids.add(sub.requirement_id)
+                plan_failures.append(
+                    (sub.requirement_id, "、".join(resolution.generic_terms))
+                )
+        if not plan_failures:
+            adjusted.append(plan)
+            continue
+        warnings = [
+            *plan.warnings,
+            *(
+                f"entity_resolution_failed:{requirement_id}:{terms}"
+                for requirement_id, terms in plan_failures
+            ),
+        ]
+        clarification_questions = [
+            *plan.clarification_questions,
+            *(
+                f"“{terms}”未能解析为具体公司，请补充关注企业或行业龙头名单。"
+                for _, terms in plan_failures
+            ),
+        ]
+        adjusted.append(
+            plan.model_copy(
+                update={
+                    "warnings": warnings[:30],
+                    "clarification_questions": clarification_questions[:12],
+                    "requires_clarification": True,
+                }
+            )
+        )
+    return adjusted, failed_ids
 
 
 def _unsupported_fragments_by_question(
@@ -808,18 +1074,37 @@ def _unsupported_fragments_by_question(
 def _apply_unresolved_intent_gaps(
     coverage: list[RequirementCoverage],
     intent_plans: list[ResearchIntentPlan],
+    *,
+    entity_resolution_failed_ids: set[str] | None = None,
 ) -> list[RequirementCoverage]:
     """Mark a partly routable question as partial after known tasks execute."""
 
+    failed_ids = entity_resolution_failed_ids or set()
     unresolved_by_question = {
         plan.original_input: [
             sub.original_text
             for sub in plan.sub_requirements
-            if not sub.candidate_skills and not _is_presentation_directive(sub.original_text)
+            if (
+                sub.requirement_id in failed_ids
+                or (
+                    not sub.candidate_skills
+                    and not _is_presentation_directive(sub.original_text)
+                )
+            )
         ]
         for plan in intent_plans
-        if any(sub.candidate_skills for sub in plan.sub_requirements)
-        and any(not sub.candidate_skills for sub in plan.sub_requirements)
+        if any(
+            sub.candidate_skills and sub.requirement_id not in failed_ids
+            for sub in plan.sub_requirements
+        )
+        and any(
+            sub.requirement_id in failed_ids
+            or (
+                not sub.candidate_skills
+                and not _is_presentation_directive(sub.original_text)
+            )
+            for sub in plan.sub_requirements
+        )
     }
     if not unresolved_by_question:
         return coverage
@@ -848,14 +1133,25 @@ def _apply_unresolved_intent_gaps(
 def _build_partial_intent_results(
     coverage: list[RequirementCoverage],
     intent_plans: list[ResearchIntentPlan],
+    *,
+    entity_resolution_failed_ids: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     """Build a UI-ready completed/unavailable summary without inventing values."""
 
+    failed_ids = entity_resolution_failed_ids or set()
     coverage_by_question = {item.question: item for item in coverage}
     results: list[dict[str, Any]] = []
     for plan in intent_plans:
-        completed = [sub for sub in plan.sub_requirements if sub.candidate_skills]
-        unavailable = [sub for sub in plan.sub_requirements if not sub.candidate_skills]
+        completed = [
+            sub
+            for sub in plan.sub_requirements
+            if sub.candidate_skills and sub.requirement_id not in failed_ids
+        ]
+        unavailable = [
+            sub
+            for sub in plan.sub_requirements
+            if not sub.candidate_skills or sub.requirement_id in failed_ids
+        ]
         item = coverage_by_question.get(plan.original_input)
         if not completed or not unavailable or item is None or not item.successful_task_ids:
             continue
@@ -874,7 +1170,11 @@ def _build_partial_intent_results(
                 "unavailable": [
                     {
                         "text": sub.original_text,
-                        "reason": "暂无对应查询技能",
+                        "reason": (
+                            "泛称实体未能解析为具体公司"
+                            if sub.requirement_id in failed_ids
+                            else "暂无对应查询技能"
+                        ),
                     }
                     for sub in unavailable
                 ],

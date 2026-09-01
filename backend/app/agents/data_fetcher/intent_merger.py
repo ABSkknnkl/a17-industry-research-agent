@@ -26,7 +26,11 @@ from app.agents.data_fetcher.intent_models import (
 )
 from app.agents.data_fetcher.metric_registry import get_metric_spec
 from app.agents.data_fetcher.plan_validator import validate_intent_plan
-from app.agents.data_fetcher.skill_capabilities import capability_supports
+from app.agents.data_fetcher.routing_telemetry import record_decomposition
+from app.agents.data_fetcher.skill_capabilities import (
+    SKILL_CAPABILITIES,
+    capability_supports,
+)
 from app.schemas.acquisition import SkillName
 
 _QUANTITATIVE_SKILLS = frozenset(
@@ -61,7 +65,10 @@ _METRIC_TYPE_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("macro", ("社融", "gdp", "cpi", "ppi", "pmi", "宏观", "汇率")),
     ("event", ("业绩预告", "业绩快报", "增发", "定增", "重组", "回购", "减持", "增持")),
     ("price", ("价格", "期货", "结算价", "现货")),
-    ("market_share", ("市占率", "市场份额", "占有率", "cr3", "cr5", "集中度")),
+    # P0-4（2026-08-31 方案）：market_share 词面与 metric_registry 的
+    # market_share/cr3/cr5 别名保持同一集合，避免两处词表漂移（这正是
+    # P1 要外置词表的理由）。
+    ("market_share", ("市占率", "市场份额", "市场占有率", "厂商份额", "占有率", "份额", "cr3", "cr5", "集中度")),
     ("qualitative", ("评级", "盈利预测", "一致预期", "分歧", "观点", "政策", "新闻", "研报")),
 )
 
@@ -511,6 +518,232 @@ def _merge_llm_plan(
     )
 
 
+def _inherited_skill_allowed(
+    skill_value: str,
+    *,
+    metric_types: set[str],
+    entity_types: set[str],
+) -> bool:
+    """继承技能必须同时服务继承指标的 metric_type 与裸实体的 entity_type。"""
+
+    skill = _resolve_skill(skill_value)
+    if skill is None:
+        return False
+    if not capability_supports(skill, metric_types=metric_types):
+        return False
+    capability = SKILL_CAPABILITIES.get(skill)
+    if entity_types and capability is not None:
+        if not entity_types & set(capability.entity_types):
+            return False
+    return True
+
+
+def _inherit_metrics_from_siblings(plan: ResearchIntentPlan) -> ResearchIntentPlan:
+    """同一 plan 内：candidate_skills 为空、有实体、无指标的子需求，
+    继承兄弟子需求的指标与技能；无兄弟可继承时保持原样（走澄清门）。
+
+    治成因 A（2026-08-31 方案 P0-1）：确定性解析器按顿号切分会把并列
+    实体拆成无指标的裸实体段，LLM 拆解也可能残留同类碎片。继承只发生在
+    同一 plan 的兄弟碎片之间；继承的技能必须通过 capability_supports
+    与实体类型双重校验；全部继承失败时保持空并继续走澄清门（不静默
+    吞掉）。继承动作写 warnings 可审计。
+    """
+
+    subs = [sub.model_copy(deep=True) for sub in plan.sub_requirements]
+    if len(subs) < 2:
+        return plan
+
+    # 继承源：同 plan 内 candidate_skills 非空且 metrics 非空的子需求。
+    sources = [sub for sub in subs if sub.candidate_skills and sub.metrics]
+    if not sources:
+        return plan
+
+    warnings = list(plan.warnings)
+    resolved_questions: list[str] = []
+    changed = False
+
+    for target in subs:
+        # 触发条件：candidate_skills 为空、有实体、无指标。
+        if target.candidate_skills or not target.entities or target.metrics:
+            continue
+
+        metric_pool: list[IntentMetric] = []
+        metric_keys: set[str] = set()
+        skill_pool: list[str] = []
+        for source in sources:
+            for metric in source.metrics:
+                key = _metric_key(metric)
+                if key and key not in metric_keys:
+                    metric_pool.append(metric.model_copy(deep=True))
+                    metric_keys.add(key)
+            for skill_value in source.candidate_skills:
+                if skill_value not in skill_pool:
+                    skill_pool.append(skill_value)
+
+        metric_types = {metric.metric_type for metric in metric_pool} - {"unknown"}
+        entity_types = {
+            entity.entity_type
+            for entity in target.entities
+            if entity.entity_type != "unknown"
+        }
+        valid_skills = [
+            skill_value
+            for skill_value in skill_pool
+            if _inherited_skill_allowed(
+                skill_value,
+                metric_types=metric_types,
+                entity_types=entity_types,
+            )
+        ]
+
+        if not metric_pool or not valid_skills:
+            # 全部继承失败 → 保持空，仍走澄清门（不静默吞掉）。
+            continue
+
+        entity_names = "、".join(entity.name for entity in target.entities[:3])
+        for metric in metric_pool:
+            warnings.append(
+                f"metric_inherited_from_sibling:{entity_names}←{metric.original_name}"[:200]
+            )
+        warnings = [
+            warning
+            for warning in warnings
+            if warning != f"unresolved_sub_requirement:{target.requirement_id}"
+        ]
+
+        target.metrics = metric_pool[:20]
+        target.candidate_skills = valid_skills[:8]
+        inherited_skills = [
+            skill
+            for skill in (_resolve_skill(value) for value in valid_skills)
+            if skill is not None
+        ]
+        target.intent_type = _intent_type(inherited_skills, target.normalized_text)
+        target.confidence = 1.0
+        target.reason = "裸实体碎片继承兄弟子需求的指标与技能（确定性后处理）。"
+        if target.clarification_question:
+            resolved_questions.append(target.clarification_question)
+        target.requires_clarification = False
+        target.clarification_question = None
+        changed = True
+
+    if not changed:
+        return plan
+
+    clarification_questions = [
+        question
+        for question in plan.clarification_questions
+        if question not in resolved_questions
+    ]
+    return plan.model_copy(
+        update={
+            "sub_requirements": subs,
+            "warnings": warnings[:30],
+            "clarification_questions": clarification_questions[:12],
+            "requires_clarification": bool(clarification_questions),
+        }
+    )
+
+
+_ANALYSIS_PATTERNS = re.compile(
+    r"(对.{1,12}的(影响|传导|贡献)|带动|拉动|拖累|联动|弹性|敏感性|归因)"
+)
+
+
+def _is_analysis_directive(text: str) -> bool:
+    """高置信分析诉求判定（P0-2）。
+
+    只打强模式（X对Y的影响/传导/贡献、带动、拉动等）；拿不准的文本
+    宁可交回数据路由（错配为取数需求的代价 < 误吞真实取数需求）。
+    """
+
+    if not text:
+        return False
+    return bool(_ANALYSIS_PATTERNS.search(text))
+
+
+def _extract_analysis_directives(plan: ResearchIntentPlan) -> ResearchIntentPlan:
+    """不可路由且命中高置信分析模式的碎片：移出取数子需求，记入 analysis_notes。
+
+    治成因 B（2026-08-31 方案 P0-2）：“X对Y的影响/传导/贡献”是分析诉求，
+    不是数据查询。这类碎片若留在 sub_requirements 中会被报
+    “暂无对应查询技能”并阻塞为 required_data_unavailable。正确行为：
+    不进数据路由、不报数据缺口，原文摘要记入 plan.analysis_notes 透传
+    给 Agent 2 作为分析提示；相关数据缺口由 Agent 2 的质量决策门处理。
+    触发条件要求 candidate_skills 为空（已被路由的碎片拿到的数据对
+    分析有用，保守放行继续取数）。
+    """
+
+    subs = plan.sub_requirements
+    if not subs:
+        return plan
+
+    analysis_notes = list(plan.analysis_notes)
+    resolved_questions: list[str] = []
+    kept: list[IntentSubRequirement] = []
+    extracted: list[IntentSubRequirement] = []
+
+    for sub in subs:
+        if not sub.candidate_skills and _is_analysis_directive(sub.normalized_text):
+            extracted.append(sub)
+            note = sub.normalized_text[:200]
+            if note not in analysis_notes and len(analysis_notes) < 12:
+                analysis_notes.append(note)
+            if sub.clarification_question:
+                resolved_questions.append(sub.clarification_question)
+            continue
+        kept.append(sub)
+
+    if not extracted:
+        return plan
+
+    extracted_ids = {sub.requirement_id for sub in extracted}
+    warnings = [
+        warning
+        for warning in plan.warnings
+        if warning.split(":", 1)[-1] not in extracted_ids
+        or not warning.startswith("unresolved_sub_requirement:")
+    ]
+    warnings.extend(f"analysis_directive_extracted:{sub.requirement_id}" for sub in extracted)
+
+    clarification_questions = [
+        question
+        for question in plan.clarification_questions
+        if question not in resolved_questions
+    ]
+    if not kept and not clarification_questions:
+        # 全部子需求都是分析型：fail-closed 停下说明，避免空计划触发
+        # R1（empty_plan_without_clarification）。
+        clarification_questions = [
+            "该请求的数据诉求均为分析型（影响/传导/贡献），无独立取数子需求；"
+            "请补充需要采集的具体数据指标，或确认由分析阶段基于已采集数据完成。"
+        ]
+
+    return plan.model_copy(
+        update={
+            "sub_requirements": kept,
+            "analysis_notes": analysis_notes[:12],
+            "warnings": warnings[:30],
+            "clarification_questions": clarification_questions[:12],
+            "requires_clarification": bool(clarification_questions),
+        }
+    )
+
+
+def _postprocess_plan(plan: ResearchIntentPlan) -> ResearchIntentPlan:
+    """P0 确定性后处理链（2026-08-31 方案）。
+
+    顺序：先提取分析型碎片（P0-2），再做裸实体继承（P0-1）——
+    分析正则是更强的信号，命中分析模式的碎片不应被继承成取数任务。
+    出口统一写 routing telemetry（P0-5 点位 1：拆解完成），观测层
+    静默失败，绝不影响主链路。
+    """
+
+    processed = _inherit_metrics_from_siblings(_extract_analysis_directives(plan))
+    record_decomposition(processed)
+    return processed
+
+
 async def _build_intent_plan_uncalibrated(
     user_text: str,
     *,
@@ -539,7 +772,7 @@ async def _build_intent_plan_uncalibrated(
     )
 
     if decomposer is None:
-        return base
+        return _postprocess_plan(base)
 
     try:
         llm_plan = await decomposer.decompose(
@@ -550,22 +783,22 @@ async def _build_intent_plan_uncalibrated(
             locked_skills=[skill.value for skill in parse.locked_skills],
         )
     except Exception as exc:  # noqa: BLE001 - fallback must never crash Agent 1
-        return base.model_copy(
+        return _postprocess_plan(base.model_copy(
             update={
                 "parser_mode": "fallback",
                 "warnings": [f"intent_decomposer_failed:{type(exc).__name__}"],
             }
-        )
+        ))
 
     if not llm_plan.sub_requirements:
-        return base.model_copy(
+        return _postprocess_plan(base.model_copy(
             update={
                 "parser_mode": "fallback",
                 "warnings": ["intent_decomposer_empty"],
             }
-        )
+        ))
 
-    return _merge_llm_plan(
+    return _postprocess_plan(_merge_llm_plan(
         base,
         llm_plan,
         locked_skills=locked_values,
@@ -573,7 +806,7 @@ async def _build_intent_plan_uncalibrated(
         confidence_review=confidence_review,
         max_sub_requirements=max_sub_requirements,
         max_skills_per_requirement=max_skills_per_requirement,
-    )
+    ))
 
 
 def _clarification_fallback(

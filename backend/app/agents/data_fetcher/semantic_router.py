@@ -149,6 +149,10 @@ class LLMSubRequirement(BaseModel):
         "basic_info_query",
         "comparison",
         "ambiguous",
+        # P0-2（2026-08-31 方案）：分析型诉求（X对Y的影响/传导/贡献）不
+        # 是取数需求。与 intent_models.IntentSubRequirement 枚举保持同
+        # 步，避免 LLM 输出被 schema 校验拒绝后整单降级确定性重建。
+        "analysis_only",
     ]
     candidate_skills: list[str] = Field(default_factory=list, max_length=8)
     confidence: float = Field(ge=0, le=1)
@@ -249,7 +253,9 @@ _DECOMPOSER_SYSTEM_PROMPT = (
     "1. 把用户请求拆成独立研究子需求；\n"
     "2. 提取主体、指标、时间范围；\n"
     "3. 从给定Skill枚举中选择一个或多个候选Skill；\n"
-    "4. 标记歧义和需要澄清的内容。\n"
+    "4. 标记歧义和需要澄清的内容；\n"
+    "5. 多实体对比/并列问题（A、B、C的X指标对比）必须将所有实体保留在同一个子需求内（entities 数组放全），禁止把单个实体拆成无指标的独立子需求；\n"
+    "6. X对Y的影响/传导/关系/贡献属于分析诉求，不是数据查询，不得生成取数子需求；若用户问题中只有分析诉求，将其写入 clarification_questions 说明该诉求将由分析阶段基于已采集数据完成。\n"
     "澄清规则：\n"
     "1. 相对时间表述（近N年/最近/近期/近半年）无需澄清，直接把原文写入time_range.raw_text透传，由确定性层基于research_as_of默认前推处理，不得因此设置requires_clarification；\n"
     "2. 只有主体歧义（无法确定指哪家公司、哪个行业）才输出clarification_questions。\n"

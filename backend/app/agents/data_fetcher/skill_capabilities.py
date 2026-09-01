@@ -23,7 +23,11 @@ class SkillCapability:
 
 SKILL_CAPABILITIES: dict[SkillName, SkillCapability] = {
     SkillName.INDUSTRY: SkillCapability(
-        entity_types=("industry", "sector"),
+        # P0-6（2026-09-01 方案）：company 加入实体边界——产业运营指标
+        # （出货量/产能/产量/产能利用率）是行业口径，公司级需求按方案
+        # 降级路径走 industry_query（查询用行业主题、证据带行业级口径
+        # 标签），防止 business_query 静默回退行情数据。
+        entity_types=("industry", "sector", "company"),
         metric_types=("industry",),
         supports_time_series=True,
     ),
