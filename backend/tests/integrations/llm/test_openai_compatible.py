@@ -233,6 +233,94 @@ async def test_deepseek_analysis_normalizes_known_dimension_labels() -> None:
 
 
 @pytest.mark.asyncio
+async def test_analysis_normalizes_financial_quality_enum_copied_into_card_status() -> None:
+    """BUG-1(b): the model copies financial_quality's enum into a card's status.
+
+    RUN 5e73b49f showed ark-code-latest writing ``consistent`` into
+    validation_cards[financial_quality].status four times in a row. The
+    normalization fallback must map financial_quality-style aliases back onto
+    the card-status enum before strict validation.
+    """
+
+    payload = _draft().model_dump(mode="json")
+    payload["validation_cards"][0]["status"] = "differences_pending_verification"
+    payload["validation_cards"][1]["status"] = "consistent"
+    structured = SequentialStructuredModel([_raw_response(payload)])
+    model = OpenAICompatibleAnalysisModel(
+        model_name="deepseek-v4-flash",
+        chat_model=FakeChatModel(structured),
+    )
+
+    result = await model.generate_analysis(
+        system_prompt="financial analysis prompt",
+        runtime_prompt='{"analysis_request":{}}',
+    )
+
+    status_by_name = {card.name: card.status for card in result.validation_cards}
+    assert status_by_name["scope_comparability"] == "pending_verification"
+    assert status_by_name["financial_quality"] == "passed"
+    # A value that is already legal must pass through unchanged.
+    assert status_by_name["valuation_expectation"] == "pending_verification"
+
+
+@pytest.mark.asyncio
+async def test_analysis_normalizes_card_status_enum_copied_into_financial_quality() -> None:
+    """BUG-1(b) reverse: a card-status value written into financial_quality."""
+
+    payload = _draft().model_dump(mode="json")
+    payload["financial_quality"] = "passed"
+    structured = SequentialStructuredModel([_raw_response(payload)])
+    model = OpenAICompatibleAnalysisModel(
+        model_name="deepseek-v4-flash",
+        chat_model=FakeChatModel(structured),
+    )
+
+    result = await model.generate_analysis(
+        system_prompt="financial analysis prompt",
+        runtime_prompt='{"analysis_request":{}}',
+    )
+
+    assert result.financial_quality == "consistent"
+
+
+@pytest.mark.asyncio
+async def test_analysis_literal_error_diagnostics_carry_invalid_value_and_expected(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """BUG-2: the failure must expose the field path, the illegal value and the
+    allowed enum, and those details must be visible in the log MESSAGE itself
+    (the default formatter drops ``logging`` extra fields)."""
+
+    caplog.set_level("WARNING")
+    invalid = _draft().model_dump(mode="json")
+    invalid["validation_cards"][0]["status"] = "完全非法的枚举值"
+    structured = FakeStructuredModel(_raw_response(invalid))
+    model = OpenAICompatibleAnalysisModel(
+        model_name="deepseek-v4-flash",
+        chat_model=FakeChatModel(structured),
+        max_repair_attempts=0,
+    )
+
+    with pytest.raises(StructuredOutputError) as captured:
+        await model.generate_analysis(
+            system_prompt="financial analysis prompt",
+            runtime_prompt='{"analysis_request":{}}',
+        )
+
+    diagnostics = captured.value.diagnostics
+    assert "validation_cards.0.status" in diagnostics["validation_paths"]
+    assert "literal_error" in diagnostics["validation_types"]
+    assert any("完全非法的枚举值" in value for value in diagnostics["validation_inputs"])
+    assert any("passed" in expected for expected in diagnostics["validation_expected"])
+
+    messages = [record.getMessage() for record in caplog.records]
+    assert any(
+        "validation_cards.0.status" in message and "完全非法的枚举值" in message
+        for message in messages
+    ), "log message must carry the field path and illegal value, not just extra"
+
+
+@pytest.mark.asyncio
 async def test_deepseek_analysis_repairs_one_invalid_structured_response(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
@@ -262,15 +350,15 @@ async def test_deepseek_analysis_repairs_one_invalid_structured_response(
     assert "上一份模型输出如下" in structured.messages[1][1].content
     assert '"E-001"' in structured.messages[1][1].content
     events = [getattr(record, "structured_output", None) for record in caplog.records]
-    assert {
-        "event": "repair_started",
-        "model_name": "deepseek-v4-pro",
-        "schema": "AnalysisDraft",
-        "error_code": "schema_validation_failed",
-        "validation_error_count": 1,
-        "validation_paths": ["dimensions"],
-        "validation_types": ["too_short"],
-    } in events
+    started = [event for event in events if isinstance(event, dict) and event.get("event") == "repair_started"]
+    assert started, "expected at least one repair_started structured output event"
+    repair_event = started[0]
+    assert repair_event["model_name"] == "deepseek-v4-pro"
+    assert repair_event["schema"] == "AnalysisDraft"
+    assert repair_event["error_code"] == "schema_validation_failed"
+    assert repair_event["validation_error_count"] == 1
+    assert repair_event["validation_paths"] == ["dimensions"]
+    assert repair_event["validation_types"] == ["too_short"]
     assert {
         "event": "repair_succeeded",
         "model_name": "deepseek-v4-pro",

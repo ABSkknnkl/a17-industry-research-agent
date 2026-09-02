@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     AGENT1_INTENT_DECOMPOSER_ENABLED: bool = False
     AGENT1_INTENT_CONFIDENCE_ACCEPT: float = Field(default=0.90, ge=0.5, le=1)
     AGENT1_INTENT_CONFIDENCE_REVIEW: float = Field(default=0.75, ge=0.3, le=1)
+    # 层间仲裁（2026-09-01 方案第一刀）：LLM 显式否决通道与澄清门
+    # advisory 放行默认开启；出问题时按方案 §6 风险表独立关闭回滚。
+    AGENT1_LLM_VETO_ENABLED: bool = True
+    AGENT1_ADVISORY_PASS_ENABLED: bool = True
+    # 语义优先并行仲裁（2026-09-01 最终方案）：严格合并能力护栏、公司口径
+    # 护栏、关键词锁披露型降级与 R4 豁免的总开关；关闭即回退四刀后状态。
+    AGENT1_SEMANTIC_FIRST_ENABLED: bool = True
     FEEDBACK_INTERPRETER_ENABLED: bool = False
     FEEDBACK_CONFIDENCE_ACCEPT: float = Field(default=0.90, ge=0.5, le=1)
     FEEDBACK_CONFIDENCE_REVIEW: float = Field(default=0.75, ge=0.3, le=1)

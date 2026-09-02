@@ -65,7 +65,12 @@ async function run(payload: {
     emit('submitted', state)
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {
-      ElMessage.warning('任务已被其他操作更新（版本冲突），已刷新最新状态，请重新操作')
+      // 透出后端冲突详情（Revision conflict / Stage conflict）。
+      ElMessage.warning(
+        e.message
+          ? `${e.message}，已刷新最新状态，请重新操作`
+          : '任务已被其他操作更新（版本冲突），已刷新最新状态，请重新操作'
+      )
       emit('conflict')
     } else if (e instanceof ApiError) {
       ElMessage.error(`${e.message}${e.code ? `（${e.code}）` : ''}`)

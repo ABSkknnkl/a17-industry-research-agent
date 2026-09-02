@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.core.readiness import assert_runtime_configuration, verify_writable_directory
 from app.infrastructure.checkpoint import open_sqlite_checkpointer
 from app.integrations.llm.factory import create_analysis_model, create_chapter_writing_model
+from app.reporting.pdf import shutdown_pdf_renderer
 from app.schemas.common import HealthResponse, ReadinessResponse
 from app.runtime.models import runtime_policy_from_settings
 from app.security.middleware import RequestBodyLimitMiddleware
@@ -64,6 +65,7 @@ def create_app(*, checkpoint_database_path: Path | None = None) -> FastAPI:
                 issues=[],
             )
             yield
+            await shutdown_pdf_renderer()
             del application.state.workflow_runner
             del application.state.readiness
 

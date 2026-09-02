@@ -109,7 +109,8 @@ async def test_agent_exports_self_contained_markdown_html_pdf_and_manifest(
 
     assert result.status == StageStatus.COMPLETED
     assert fusion.title == "中国光伏制造行业研究报告"
-    assert fusion.formats == ["markdown", "html", "pdf"]
+    # markdown 恒渲染（前端预览源）但不作为默认交付格式；默认交付 HTML+PDF。
+    assert fusion.formats == ["html", "pdf"]
     assert fusion.quality.chapter_count == 7
     assert fusion.quality.section_count == 21
     assert fusion.source_revisions[0].revision == 2
@@ -460,7 +461,8 @@ async def test_agent_keeps_markdown_and_html_when_pdf_export_fails(
     fusion = ReportFusionResult.model_validate(result.data)
 
     assert result.status == StageStatus.COMPLETED
-    assert fusion.formats == ["markdown", "html"]
+    # 交付格式只剩 HTML；markdown 仍作为预览源落盘（artifacts 断言覆盖）。
+    assert fusion.formats == ["html"]
     # 导出失败是交付层限制，内容合格的报告保持正式版（与章节顺序等交付提示同语义）。
     assert fusion.release_mode == "formal"
     assert fusion.formal_eligible is True

@@ -236,6 +236,9 @@ class QuarantinedRecord(AcquisitionModel):
         # P0-6（2026-09-01 方案）：业务技能静默回退行情数据，行数>0
         # 但字段与请求指标无关，必须隔离并写 data_gap 披露。
         "market_quote_fallback",
+        # BUG-3（2026-09-02）：宏观技能的指标与研究主题/任务意图无关联，
+        # 隔离以免 PMI/CPI 等无关宏观序列整批进入证据库。
+        "macro_off_topic",
     ] = "topic_mismatch"
     reason: str = Field(min_length=1, max_length=1_000)
 

@@ -1,0 +1,495 @@
+version: '1.0'
+frozen_at: '2026-09-01'
+source: AGENT1_61_CASES_BUG_REPORT.md + 语义优先并行仲裁方案 §6
+note: L1 金标准：kind=route/compare 断言锁定技能；derivative/judgment 断言禁锁+拦截；gap 断言披露/澄清、永不硬路由；ambiguous 断言不强行硬选。L2
+  探针见 eval/harness_l2.py。
+cases:
+- id: '1.1'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 宁德时代电池出货量是多少
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '1.2'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 宁德时代国内、海外出货量分别是多少
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '1.3'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 宁德时代工厂产能利用率现在多少
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '1.4'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 公司各基地产能利用率变化情况
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '1.5'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 宁德时代全球市场份额近几年变化
+  expect:
+    kind: route
+    skill: hithink_stock_selector
+- id: '1.6'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 这家企业有效产能、在建产能、规划产能分别多少
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '1.7'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 公司产能释放节奏如何
+  expect:
+    kind: derivative
+    forbidden: hithink_industry_query
+- id: '1.8'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 该公司产销率大概什么水平
+  expect:
+    kind: gap
+- id: '1.9'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 企业单位产能投资是多少
+  expect:
+    kind: derivative
+    forbidden: hithink_industry_query
+- id: '1.10'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 这家公司库存周转天数
+  expect:
+    kind: route
+    skill: hithink_finance_query
+- id: '1.11'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 公司产能扩张进度怎么样
+  expect:
+    kind: derivative
+    forbidden: hithink_industry_query
+- id: '1.12'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 它的外采比例、自给率大概多少
+  expect:
+    kind: gap
+- id: '1.13'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 该企业良率水平如何
+  expect:
+    kind: gap
+- id: '1.14'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 公司单瓦/单GWh成本变化趋势
+  expect:
+    kind: gap
+- id: '1.15'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 它在国内的市占率、全球市占率分别多少
+  expect:
+    kind: route
+    skill: hithink_stock_selector
+- id: '1.16'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 公司产能爬坡周期大概多久
+  expect:
+    kind: derivative
+    forbidden: hithink_industry_query
+- id: '1.17'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 这家企业开工率处于什么水平
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '1.18'
+  group: 公司
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 公司外销占比有多少
+  expect:
+    kind: route
+    skill: hithink_business_query
+- id: '2.1'
+  group: 行业
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 动力电池行业整体出货量
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '2.2'
+  group: 行业
+  industry_topic: 储能行业
+  known_entities: []
+  input: 国内储能行业年度出货量
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '2.3'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 光伏组件行业产能利用率
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '2.4'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业整体开工率水平
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '2.5'
+  group: 行业
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 全球动力电池市场份额格局
+  expect:
+    kind: route
+    skill: hithink_stock_selector
+- id: '2.6'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业有效总产能、在建产能、规划产能规模
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '2.7'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业产能过剩程度怎么样
+  expect:
+    kind: judgment
+    forbidden: hithink_industry_query
+- id: '2.8'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业产销率大概多少
+  expect:
+    kind: gap
+- id: '2.9'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 国内行业自给率水平
+  expect:
+    kind: gap
+- id: '2.10'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 产业链各环节良率分别是多少
+  expect:
+    kind: gap
+- id: '2.11'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业库存周转处于什么位置
+  expect:
+    kind: gap
+- id: '2.12'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 各环节产能释放节奏
+  expect:
+    kind: derivative
+    forbidden: hithink_industry_query
+- id: '2.13'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业集中度CR3/CR5/CR10变化
+  expect:
+    kind: route
+    skill: hithink_stock_selector
+- id: '2.14'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 海外市场行业渗透率
+  expect:
+    kind: gap
+- id: '2.15'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 国内行业渗透率提升速度
+  expect:
+    kind: gap
+- id: '2.16'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业单位扩产成本大概是多少
+  expect:
+    kind: gap
+- id: '2.17'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业进口依赖度怎么样
+  expect:
+    kind: gap
+- id: '2.18'
+  group: 行业
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业出口占比数据
+  expect:
+    kind: gap
+    caliber_risk: true
+- id: '3.1'
+  group: 对比
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  - 比亚迪
+  input: 宁德时代和比亚迪的电池出货量对比
+  expect:
+    kind: compare
+    skill: hithink_industry_query
+- id: '3.2'
+  group: 对比
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 几家头部厂商产能利用率对比情况
+  expect:
+    kind: compare
+    skill: hithink_industry_query
+- id: '3.3'
+  group: 对比
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 国内外企业市场份额对比
+  expect:
+    kind: compare
+    skill: hithink_stock_selector
+- id: '3.4'
+  group: 对比
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 各企业产能扩张节奏有什么差异
+  expect:
+    kind: derivative
+    forbidden: hithink_industry_query
+- id: '3.5'
+  group: 对比
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 头部几家公司开工率差异多大
+  expect:
+    kind: compare
+    skill: hithink_industry_query
+- id: '3.6'
+  group: 对比
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 国内与海外行业出货量对比
+  expect:
+    kind: compare
+    skill: hithink_industry_query
+- id: '3.7'
+  group: 对比
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 不同技术路线之间市占率变化对比（比如TOPCon vs HJT渗透率）
+  expect:
+    kind: compare
+    skill: hithink_stock_selector
+- id: '3.8'
+  group: 对比
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 各家企业产销率差异
+  expect:
+    kind: gap
+- id: '4.1'
+  group: 趋势
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 近三年动力电池行业出货量变化
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '4.2'
+  group: 趋势
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 2024-2025年各季度产能利用率走势
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '4.3'
+  group: 趋势
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 近五年头部企业市场份额变化趋势
+  expect:
+    kind: route
+    skill: hithink_stock_selector
+- id: '4.4'
+  group: 趋势
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 今年上半年行业开工率同比去年变化
+  expect:
+    kind: route
+    skill: hithink_industry_query
+- id: '4.5'
+  group: 趋势
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 过去几个季度产能释放情况
+  expect:
+    kind: derivative
+    forbidden: hithink_industry_query
+- id: '4.6'
+  group: 趋势
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 未来两年行业规划产能增量预计多少
+  expect:
+    kind: derivative
+    forbidden: hithink_industry_query
+- id: '4.7'
+  group: 趋势
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 近三年行业CR5集中度变化
+  expect:
+    kind: route
+    skill: hithink_stock_selector
+- id: '5.1'
+  group: 口语
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 电池厂现在开工到底怎么样？
+  expect:
+    kind: gap
+- id: '5.2'
+  group: 口语
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 这个行业产能有没有过剩？
+  expect:
+    kind: judgment
+    forbidden: hithink_industry_query
+- id: '5.3'
+  group: 口语
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 各家厂子扩产落地进度如何？
+  expect:
+    kind: gap
+- id: '5.4'
+  group: 口语
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 海外那边国内厂商卖出去多少？
+  expect:
+    kind: gap
+- id: '5.5'
+  group: 口语
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 行业大厂现在生产饱和吗？
+  expect:
+    kind: gap
+- id: '5.6'
+  group: 口语
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 现在行业谁家抢份额抢得最猛？
+  expect:
+    kind: route
+    skill: hithink_stock_selector
+- id: '5.7'
+  group: 口语
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 新产能多久能跑满？
+  expect:
+    kind: judgment
+    forbidden: hithink_industry_query
+- id: '6.1'
+  group: 歧义
+  industry_topic: 光伏组件行业
+  known_entities: []
+  input: 光伏行业供给情况如何？
+  expect:
+    kind: ambiguous
+- id: '6.2'
+  group: 歧义
+  industry_topic: 动力电池行业
+  known_entities: []
+  input: 动力电池竞争格局怎么样？
+  expect:
+    kind: ambiguous
+- id: '6.3'
+  group: 歧义
+  industry_topic: 动力电池行业
+  known_entities:
+  - 宁德时代
+  input: 这家企业生产端情况怎么样？
+  expect:
+    kind: ambiguous

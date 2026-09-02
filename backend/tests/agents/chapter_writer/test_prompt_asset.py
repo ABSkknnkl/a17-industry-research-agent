@@ -7,7 +7,7 @@ from app.schemas.chapter import ParagraphDraft, SectionVisualSemantics
 def test_chapter_writer_prompt_is_versioned_and_enforces_financial_boundaries() -> None:
     prompt = load_chapter_writer_prompt()
 
-    assert prompt.version == "1.2.0"
+    assert prompt.version == "1.3.0"
     assert len(prompt.sha256) == 64
     assert "你每次只生成一个章节" in prompt.content
     assert "只能使用输入中存在的claim_id" in prompt.content

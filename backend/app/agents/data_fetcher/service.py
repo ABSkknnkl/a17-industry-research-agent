@@ -20,12 +20,14 @@ from app.agents.data_fetcher.planner import (
 )
 from app.agents.data_fetcher.routing_telemetry import (
     bind_run,
+    record_advisory_passed,
     record_clarification,
     record_route_decision,
     record_skill_call,
 )
 from app.agents.data_fetcher.semantic_router import SemanticRouter
 from app.agents.data_fetcher.quality import evaluate_quality
+from app.core.config import settings
 from app.schemas.analysis import ResearchBrief
 from app.schemas.acquisition import (
     DataGap,
@@ -298,40 +300,65 @@ class DataFetcherAgent:
             for plan in intent_plans
             for sub in plan.sub_requirements
         )
+        # 2026-09-01 方案（第一刀·改动点 3）：澄清门两级化。
+        # hard   = 无技能可接 / 无实体 / 显式否决后无可执行碎片 → 阻塞；
+        # advisory = 有技能可接但置信度不足、参数欠完整、合并存疑 →
+        #            放行执行，证据标 low_confidence、不进完整性判定，
+        #            取数后仍不可用则升级 hard（见 _escalate_advisory_failures）。
+        advisory_pass_enabled = settings.AGENT1_ADVISORY_PASS_ENABLED
+        advisory_passed_questions: set[str] = set()
         if intent_routing["clarification_required"] and not any_actionable_sub_requirement:
-            collaboration_requests = []
-            for intent_plan in intent_plans:
-                if not intent_plan.requires_clarification:
-                    continue
-                questions = intent_plan.clarification_questions or [
-                    f"“{intent_plan.original_input}”的研究主体或数据能力无法确定，请人工确认。"
-                ]
-                collaboration_requests.append(
-                    {
-                        "request_id": f"INTENT-CLARIFY-{len(collaboration_requests) + 1:02d}",
-                        "question": " ".join(questions)[:500],
-                        "reason": "意图识别置信度不足或主体存在歧义，已转人工审核，暂不执行数据获取。",
-                        "affected_dimensions": ["data_fetch"],
-                    }
+            all_advisory = advisory_pass_enabled and bool(intent_plans) and all(
+                _plan_is_advisory(
+                    intent_plan,
+                    entity_resolution_failed_ids=entity_resolution_failed_ids,
                 )
-            # P0-5 点位 4：澄清门观测（整体拦截，无可执行子需求）。
-            record_clarification(
-                collaboration_requests[0]["question"] if collaboration_requests else "",
-                unresolved_fragments=list(intent_routing["clarification_required"]),
-                action="block",
+                for intent_plan in intent_plans
+                if intent_plan.requires_clarification
             )
-            return StageResult(
-                stage=self.stage,
-                status=StageStatus.WAITING_REVIEW,
-                revision=context.revision,
-                data={
-                    "blocking_issues": [],
-                    "advisory_issues": ["intent_clarification_required"],
-                    "intent_routing": intent_routing,
-                    "collaboration_requests": collaboration_requests,
-                },
-                error="intent_clarification_required",
-            )
+            if not all_advisory:
+                collaboration_requests = []
+                for intent_plan in intent_plans:
+                    if not intent_plan.requires_clarification:
+                        continue
+                    questions = intent_plan.clarification_questions or [
+                        f"“{intent_plan.original_input}”的研究主体或数据能力无法确定，请人工确认。"
+                    ]
+                    collaboration_requests.append(
+                        {
+                            "request_id": f"INTENT-CLARIFY-{len(collaboration_requests) + 1:02d}",
+                            "question": " ".join(questions)[:500],
+                            "reason": "意图识别置信度不足或主体存在歧义，已转人工审核，暂不执行数据获取。",
+                            "affected_dimensions": ["data_fetch"],
+                        }
+                    )
+                # P0-5 点位 4：澄清门观测（整体拦截，无可执行子需求）。
+                record_clarification(
+                    collaboration_requests[0]["question"] if collaboration_requests else "",
+                    unresolved_fragments=list(intent_routing["clarification_required"]),
+                    action="block",
+                )
+                return StageResult(
+                    stage=self.stage,
+                    status=StageStatus.WAITING_REVIEW,
+                    revision=context.revision,
+                    data={
+                        "blocking_issues": [],
+                        "advisory_issues": ["intent_clarification_required"],
+                        "intent_routing": intent_routing,
+                        "collaboration_requests": collaboration_requests,
+                    },
+                    error="intent_clarification_required",
+                )
+            # advisory 放行：不阻塞，问题随执行披露；遥测留痕供周审。
+            for intent_plan in intent_plans:
+                if intent_plan.requires_clarification:
+                    advisory_passed_questions.add(intent_plan.original_input)
+                    record_advisory_passed(
+                        intent_plan.original_input,
+                        unresolved_fragments=list(intent_plan.clarification_questions or []),
+                    )
+            intent_routing["advisory_passed_questions"] = sorted(advisory_passed_questions)
 
         if intent_routing["clarification_required"]:
             # Partial clarification: executable plans proceed to data
@@ -354,6 +381,28 @@ class DataFetcherAgent:
                     unresolved_fragments=list(advisory["clarification_questions"]),
                     action="advisory",
                 )
+            # advisory 放行留痕（第一刀·改动点 3）：有技能可接的澄清问题。
+            if advisory_pass_enabled:
+                for intent_plan in intent_plans:
+                    if (
+                        intent_plan.requires_clarification
+                        and _plan_is_advisory(
+                            intent_plan,
+                            entity_resolution_failed_ids=entity_resolution_failed_ids,
+                        )
+                        and intent_plan.original_input not in advisory_passed_questions
+                    ):
+                        advisory_passed_questions.add(intent_plan.original_input)
+                        record_advisory_passed(
+                            intent_plan.original_input,
+                            unresolved_fragments=list(
+                                intent_plan.clarification_questions or []
+                            ),
+                        )
+                if advisory_passed_questions:
+                    intent_routing["advisory_passed_questions"] = sorted(
+                        advisory_passed_questions
+                    )
 
         plan = self._planner.build(
             industry_topic=request["industry_topic"],
@@ -427,6 +476,12 @@ class DataFetcherAgent:
             plan.requirements,
             normalized_gaps,
         )
+        # 2026-09-01 方案（第一刀·改动点 3）防滥用：advisory 放行的问题其
+        # coverage 降级为 criticality=advisory——保持可见，但不计入核心数据
+        # 组完整性的硬判定（与联网搜索旁路证据同规则）。
+        requirement_coverage = _exclude_advisory_from_completeness(
+            requirement_coverage, advisory_questions=advisory_passed_questions
+        )
         intent_routing["partial_results"] = _build_partial_intent_results(
             requirement_coverage,
             intent_plans,
@@ -473,6 +528,9 @@ class DataFetcherAgent:
             "provider_mode": self._provider_mode,
             "semantic_routing": semantic_routing,
             "intent_routing": intent_routing,
+            # P0-2/2026-09-01 仲裁接线：否决与分析型碎片的提示聚合透传
+            # Agent 2（白名单消费，见 AnalysisRequest.analysis_notes）。
+            "analysis_notes": _collect_analysis_notes(intent_plans),
             "blocking_issues": [],
         }
         if feedback_interpretation is not None:
@@ -549,9 +607,120 @@ class DataFetcherAgent:
                 evidence_sources=[item.evidence_id for item in evidence],
                 error=error_code,
             )
+        # 全碎片被显式否决的问题不是数据缺口（刻意不取数）：排除在
+        # unavailable 集合之外，披露由 analysis_notes 承担；否则会被
+        # required_data_unavailable 裁决门误拦（仲裁联动的根因修复）。
+        vetoed_questions = _vetoed_question_texts(intent_plans)
         unavailable_requirements = [
-            item for item in requirement_coverage if item.status in {"partial", "missing"}
+            item
+            for item in requirement_coverage
+            if item.status in {"partial", "missing"}
+            and item.question not in vetoed_questions
         ]
+        if vetoed_questions:
+            data.setdefault("advisory_issues", []).append("vetoed_fragments_disclosed")
+            data["vetoed_questions"] = sorted(vetoed_questions)
+        # 2026-09-01 方案（第一刀·改动点 3）防滥用：advisory 碎片取数后仍
+        # 不可用（P0-6 字段校验失败、静默降级行情数据等）必须升级 hard，
+        # 转人工审核，不得带着低置信数据继续往下游走。
+        escalated_questions = _escalate_advisory_failures(
+            unavailable_requirements, advisory_questions=advisory_passed_questions
+        )
+        if escalated_questions:
+            record_clarification(
+                "advisory 碎片取数后仍不可用，升级人工审核",
+                unresolved_fragments=escalated_questions,
+                action="advisory_escalated",
+            )
+            # 2026-09-01 修复：升级门必须挂决策包。此前无 decision_package
+            # 且无 allowed_review_actions，前端不显示任何“继续”按钮，
+            # 用户只能 revise/regenerate——而修订研究问题的契约通道缺失
+            # （已同步修复 DataFetchReviewEdits），形成死循环，反复提交
+            # 还会撞 revision 乐观锁（409）。补齐决策包后用户可选择
+            # 「确认风险并继续生成」（缺口披露）或 revise 删除问题。
+            escalated_risk_code = "ADVISORY-FRAGMENT-UNAVAILABLE"
+            escalated_requirements = [
+                item
+                for item in unavailable_requirements
+                if item.question in escalated_questions
+            ]
+            escalated_notices = [
+                RiskNotice(
+                    risk_code=escalated_risk_code,
+                    stage=self.stage.value,
+                    severity=RiskSeverity.HIGH,
+                    disposition=RiskDisposition.ACKNOWLEDGEMENT_REQUIRED,
+                    title="低置信放行的碎片取数后仍不可用",
+                    detail=(
+                        "以下问题经低置信放行执行，但取数后字段校验未通过"
+                        "或发生静默降级（行情数据冒充业务指标）："
+                        + "、".join(f"“{q}”" for q in escalated_questions)[:400]
+                        + "。系统不会补造数值。"
+                    ),
+                    affected_ids=[
+                        item.requirement_id for item in escalated_requirements
+                    ],
+                    recommendation=(
+                        "删除或改写这些问题后重新获取，或确认接受缺口并继续"
+                        "生成（报告将标注数据缺口）。"
+                    ),
+                    consequence="若继续，相关结论与图表将省略对应碎片或明确标注数据缺口。",
+                    can_override=True,
+                )
+            ]
+            escalated_snapshot = compute_risk_snapshot_sha256(
+                risk_notices=escalated_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[escalated_risk_code],
+            )
+            escalated_package = DecisionPackage(
+                decision_id=f"DEC-{context.run_id}-ADVISORY-{context.revision}",
+                run_id=context.run_id,
+                stage=self.stage.value,
+                revision=context.revision,
+                risk_notices=escalated_notices,
+                blocking_risk_codes=[],
+                acknowledgement_required_codes=[escalated_risk_code],
+                decision_status=DecisionStatus.AWAITING_USER,
+                risk_snapshot_sha256=escalated_snapshot,
+            )
+            escalated_missing = [
+                item.model_dump(mode="json") for item in escalated_requirements
+            ]
+            return StageResult(
+                stage=self.stage,
+                status=StageStatus.WAITING_REVIEW,
+                revision=context.revision,
+                data={
+                    **data,
+                    "blocking_issues": [],
+                    "advisory_issues": ["advisory_fragment_unavailable"],
+                    "intent_routing": intent_routing,
+                    "advisory_escalated_questions": escalated_questions,
+                    "missing_requirements": escalated_missing,
+                    "allowed_review_actions": [
+                        "revise",
+                        "regenerate",
+                        "accept_with_risks",
+                        "cancel",
+                    ],
+                    "decision_package": escalated_package.model_dump(mode="json"),
+                    "collaboration_requests": [
+                        {
+                            "request_id": f"ADVISORY-ESCALATED-{index:02d}",
+                            "question": (
+                                f"低置信放行的碎片“{question}”取数后仍不可用"
+                                "（字段校验未通过或发生静默降级），请人工复核。"
+                            ),
+                            "reason": "advisory 碎片不计入完整性判定；取数失败按方案升级 hard。",
+                            "affected_dimensions": ["data_fetch"],
+                        }
+                        for index, question in enumerate(escalated_questions, 1)
+                    ][:12],
+                },
+                evidence_sources=[item.evidence_id for item in evidence],
+                error="advisory_fragment_unavailable",
+            )
         # 用户裁决门（unsupported metrics）：问题中存在无法路由到任何数据
         # 技能的意图片段时，不再静默降级为 advisory 提示，而是显式列出
         # "查不到数据"的关键词，由用户决定删除后重问（revise）还是继续
@@ -1044,6 +1213,111 @@ def _mark_entity_resolution_failures(
     return adjusted, failed_ids
 
 
+def _collect_analysis_notes(intent_plans: list[ResearchIntentPlan]) -> list[str]:
+    """聚合各意图计划的 analysis_notes 为出口顶层键（2026-09-01 仲裁接线）。
+
+    被显式否决/分析型判定的碎片以原文摘要记录在 plan.analysis_notes；
+    成功出口统一聚合（去重、保序、上限 12），供 Agent 2 经
+    ``AnalysisRequest.analysis_notes`` 白名单消费。
+    """
+
+    collected: list[str] = []
+    for plan in intent_plans:
+        for note in plan.analysis_notes:
+            if note and note not in collected and len(collected) < 12:
+                collected.append(note)
+    return collected
+
+
+def _vetoed_question_texts(intent_plans: list[ResearchIntentPlan]) -> set[str]:
+    """全部碎片被显式否决的问题集合（无可路由子需求且有 analysis_notes）。
+
+    这类问题的 coverage 必然 missing，但那是刻意的「不取数」而非数据
+    缺口：不得进入 required_data_unavailable 裁决门的 unavailable 集合，
+    披露由 analysis_notes 承担。存在任何可路由子需求的问题不得混入，
+    防止真缺口被静默放行。
+    """
+
+    return {
+        plan.original_input
+        for plan in intent_plans
+        if plan.analysis_notes
+        and not any(sub.candidate_skills for sub in plan.sub_requirements)
+    }
+
+
+def _plan_is_advisory(
+    plan: ResearchIntentPlan,
+    *,
+    entity_resolution_failed_ids: set[str] | None = None,
+) -> bool:
+    """澄清是否可按 advisory 放行（2026-09-01 方案第一刀·改动点 3）。
+
+    判据：至少有一个**可执行**子需求（有技能可接但置信度不足/参数欠完整），
+    或 plan_validator 已打出 clarification_should_be_advisory 警告。
+    「无技能可接 / 无实体（泛称解析失败）/ 显式否决后无可执行碎片」不满足，
+    维持 hard——实体解析失败的子需求不得计为可路由（回归保护：
+    test_p05_service_records_clarification_on_entity_failure）。
+    """
+
+    failed_ids = entity_resolution_failed_ids or set()
+    routable = [
+        sub
+        for sub in plan.sub_requirements
+        if sub.candidate_skills and sub.requirement_id not in failed_ids
+    ]
+    if routable:
+        return True
+    return any(
+        warning.split(":", 1)[-1] == "clarification_should_be_advisory"
+        or warning == "clarification_should_be_advisory"
+        for warning in plan.warnings
+    )
+
+
+def _exclude_advisory_from_completeness(
+    coverage: list[RequirementCoverage],
+    *,
+    advisory_questions: set[str],
+) -> list[RequirementCoverage]:
+    """advisory 放行的碎片不计入核心数据组完整性判定。
+
+    与联网搜索旁路证据同规则：coverage 保持可见（报告披露低置信），
+    但 criticality 降为 advisory，不再参与 blocking 级硬判定。
+    """
+
+    if not advisory_questions:
+        return coverage
+    adjusted: list[RequirementCoverage] = []
+    for item in coverage:
+        if item.question in advisory_questions and item.criticality == "blocking":
+            adjusted.append(item.model_copy(update={"criticality": "advisory"}))
+        else:
+            adjusted.append(item)
+    return adjusted
+
+
+def _escalate_advisory_failures(
+    unavailable: list[RequirementCoverage],
+    *,
+    advisory_questions: set[str],
+) -> list[str]:
+    """advisory 碎片取数后仍不可用 → 升级 hard（返回需人工复核的问题）。
+
+    advisory 放行的碎片若取数后 coverage 为 partial/missing（P0-6 字段
+    校验失败、静默降级行情数据等），说明低置信数据不可用，必须停下
+    转人工审核，不得继续往下游传递。
+    """
+
+    if not advisory_questions:
+        return []
+    escalated: list[str] = []
+    for item in unavailable:
+        if item.question in advisory_questions and item.question not in escalated:
+            escalated.append(item.question)
+    return escalated
+
+
 def _unsupported_fragments_by_question(
     intent_plans: list[ResearchIntentPlan],
 ) -> dict[str, list[str]]:
@@ -1063,6 +1337,12 @@ def _unsupported_fragments_by_question(
                 continue
             if text not in fragments:
                 fragments.append(text)
+        # 语义优先并行仲裁（2026-09-01 最终方案，BUG-2）：边界词/口径护栏
+        # 标记的「查不到数据的诉求」即使同碎片存在关键词锁，也必须进缺口
+        # 披露通道（披露型查询：证据照拿、缺口照披露，不声称满足诉求）。
+        for name in plan.unresolved_metrics or []:
+            if name and name not in fragments:
+                fragments.append(name)
         if fragments:
             existing = mapping.setdefault(plan.original_input, [])
             for fragment in fragments:

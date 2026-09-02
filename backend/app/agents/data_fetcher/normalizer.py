@@ -352,6 +352,34 @@ def normalize_tasks(
                         )
                     )
                     continue
+                # BUG-3（2026-09-02）：宏观行先过“任务查询 ∪ 任务意图 ∪ 研究主题”
+                # 相关性门。问财会按宏观任务过宽返回（问出货量却回 PMI/CPI），
+                # 这些行既不匹配任务查询也不匹配主题 → 隔离；而任务明确查询的
+                # 指标（如查商品房销售面积）仍保留。仅作用于本次清洗，不回溯。
+                if payload.skill_name == SkillName.MACRO and _macro_row_off_topic(
+                    cleaned,
+                    industry_topic,
+                    relevance_tokens=(
+                        intent_relevance_tokens
+                        | _query_relevance_tokens(result.task.query)
+                    ),
+                ):
+                    indicator = _first_text(cleaned, _MACRO_INDICATOR_FIELDS) or entity
+                    quarantined.append(
+                        QuarantinedRecord(
+                            quarantine_id=f"QUAR-{row_hash[:16]}",
+                            skill_name=payload.skill_name,
+                            row_sha256=row_hash,
+                            entity=entity[:500],
+                            reason_code="macro_off_topic",
+                            reason=(
+                                f"宏观指标“{indicator}”与本次任务意图及研究主题"
+                                f"“{industry_topic}”无可验证关联，已隔离防止无关宏观"
+                                "序列进入证据库。"
+                            ),
+                        )
+                    )
+                    continue
                 # hithink_sector_selector is a screening skill:
                 # membership is the provider core filter and constituent
                 # rows declare their own industries which never contain
@@ -751,6 +779,31 @@ def _is_low_relevance(
     return not any(
         term and (term in compact_topic or compact_topic in term) for term in declared_terms
     )
+
+
+# BUG-3（2026-09-02）：宏观行不含 _RELEVANCE_FIELDS（行业/概念/主营业务），
+# 也不属于 _TEXT_SEARCH_SKILLS，_is_low_relevance 对其恒为放行，导致
+# PMI/CPI 等与研究主题无关的宏观序列整批进入证据库。这里单独对宏观行做
+# 相关性判定：指标名/行文本须与“任务意图 tokens ∪ 研究主题 tokens”有交集。
+_MACRO_INDICATOR_FIELDS = ("指标", "指标名称", "macro_name")
+
+
+def _macro_row_off_topic(
+    row: dict[str, Any],
+    industry_topic: str,
+    *,
+    relevance_tokens: frozenset[str],
+) -> bool:
+    """True when a MACRO row cannot be tied to the task intent or topic."""
+    tokens = set(relevance_tokens) | _topic_tokens(industry_topic)
+    if not tokens:
+        # 无任何可判定 token 时不做拦截（保持既有行为，避免误杀）。
+        return False
+    indicator = _first_text(row, _MACRO_INDICATOR_FIELDS) or ""
+    haystack_parts = [indicator]
+    haystack_parts.extend(str(value) for value in row.values() if isinstance(value, str))
+    haystack = " ".join(haystack_parts)
+    return not any(token and token in haystack for token in tokens)
 
 
 def _normalize_metric_name(field_name: str) -> str:

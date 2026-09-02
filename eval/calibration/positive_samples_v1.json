@@ -1,0 +1,902 @@
+[
+ {
+  "sample_id": "CAL-PDF-001",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "27",
+  "text": "大储需求旺盛，行业进入业绩兑现期。随着风电光伏装机比例提升、电力系统灵活性要求提高、数据中心需求驱动、储能技术进步及系统成本下降，大储需求有望持续快速增长。根据宁德时代公告，2025H1全球电池储能系统装机总量达86.7GWh，同比增长54%，考虑大储占装机比例高，预计25年全年全球大储需求旺盛。分区域看，1）美国：2025年受益区域多元化+抢装+降本导致需求旺盛，预计2026年美国数据中心+IRA 补贴拉动，需求持续高增。2）欧洲：新能源装机放量驱动储能需求，大储市场正加速崛起。3）新兴市场：储能发展起步晚，但在光伏配储需求、电力短缺压力以及补贴政策支持等因素驱动下迅速增长。4）从业绩端看，以行业龙头阳光电源为例，公司海外毛利率远超国内，海外利润弹性较大，随着海外大储持续增长，公司利润进入了新一轮增长期。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 358,
+   "max_sent_len": 70,
+   "avg_sent_len": 50.1
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-002",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "18",
+  "text": "我们预计这将促使中国储能企业抓住对美出口的“窗口期”，在今年年底前加速推进存量项目落地，短期内对美发货量有望增加。但长期看，后续的新增投资可能会出现明显收紧的情况。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 82,
+   "max_sent_len": 56,
+   "avg_sent_len": 40.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-003",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "13",
+  "text": "在流动性充裕+国家安全优先背景下，我们认为同时满足“新能源基本业务向上+国家战略/安全资产赋能”的资产有望成为2026年的最强主线。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 66,
+   "max_sent_len": 65,
+   "avg_sent_len": 65.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-004",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "40",
+  "text": "制造设备：竞争格局清晰，国内厂商具备全球竞争力。国产锂电设备低价有助于电池企业降本，锂电设备逐步实现国产替代，多环节设备国产化率在90%以上。锂电池制造分为前段、中段和后段三个环节，其中前段设备价值量最高达44%，全环节中涂布机、卷绕机和分容化成柜价值量最大。中国锂电池设备市场规模呈增长趋势，涂布设备、卷绕设备和分模切设备等由于国产化成本优势实现90%以上国产化程度，但目前我国锂电设备在技术创新以及自动化水平方面较国际先进水平仍有差距，国内企业加大研发升级技术将促使国产替代效应更加明显。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 246,
+   "max_sent_len": 115,
+   "avg_sent_len": 60.5
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-005",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "10",
+  "text": "公司主营锂电+电子铜箔，2025年7月拟收购卢森堡铜箔100%股权。卢森堡铜箔公司是除日本厂商外全球唯一掌握高端IT 铜箔（HVLP、DTH）核心技术并实现量产的龙头企业，其HVLP3/4及载体铜箔已批量供应全球顶尖AI芯片厂和云厂商的供应链。此次收购预计将为公司带来技术、客户和市场地位公司主营风电轴承。2025年公司业绩超预期，核心驱动力为受益于风机大型化，技术路线正从SRB（调心滚子轴承）向TRB（单列圆锥滚子）切换，公司凭借TRB 的技术和成本优势，高附加值的TRB 主轴承产品持续放量。公司正切入技术壁垒更高、国产化率更低的齿轮箱轴承领域，打造第二增长曲线。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 285,
+   "max_sent_len": 95,
+   "avg_sent_len": 56.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-006",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "18",
+  "text": "我们预计，美国项目开发商为获取储能税收抵免，将被迫剔除中国供应链；对于已经在当地有产能布局的企业，或迫使其出让控股权。5）在户储方面，取消了屋顶光伏的30%税收抵免，也终止了对独立储能设备的支持，将直接导致典型家庭光储系统成本上升。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 116,
+   "max_sent_len": 56,
+   "avg_sent_len": 37.7
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-007",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "21",
+  "text": "结构上看，欧洲工商业储能及大储需求增速较户储更显著。根据Solarpower Europe预测，2024年欧洲工商业储能、电站储能新增装机量将超过户用储能市场，合计占比从2023年的30%快速提高至2024年的61%。预计2028年工商业储能、电站储能合计新增装机量将从2024年的14GWh 上升至55GWh，复合增速达到42%，具有广阔的市场空间。同期户储从9GWh 增长至23GWh，复合增速为27%。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 204,
+   "max_sent_len": 82,
+   "avg_sent_len": 50.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-008",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "25",
+  "text": "我们预计2024年四季度起，行业库存逐步消化完毕，2025年户储需求明显提升。根据InfoLink，2025H1，全球小储电芯出货21.64GWh，同比增长72.38%。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 85,
+   "max_sent_len": 45,
+   "avg_sent_len": 41.5
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-009",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "38",
+  "text": "为提升隔膜性能，也开发出通过涂覆等方式改性的隔膜。2024年湿法和干法隔膜出货量分别为172和61亿平方米，其中湿法隔膜占比70%以上。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 68,
+   "max_sent_len": 42,
+   "avg_sent_len": 33.0
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-010",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "57",
+  "text": "根据条件分为冷/温/热等静压，温等静压适配固态电池。冷等静压致密化程度较低；温等静压可以实现性能与效率之间的平衡，适合中等规模生产；热等静压制品接近理论最高密度，在99%以上。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 88,
+   "max_sent_len": 27,
+   "avg_sent_len": 21.0
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-011",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "23",
+  "text": "交流侧：受益先发优势及对电网的理解，PCS 企业出货暂时处于领先地位。经过近几年的快速发展，储能集成商基本分成三大类，纯集成厂、PCS 厂、电芯厂。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 74,
+   "max_sent_len": 38,
+   "avg_sent_len": 36.0
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-012",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "57",
+  "text": "前段：干混是基础，纤维化设备是干涂主流，辊压机是核心。干法电极制造是固态电池产业化的关键工艺，其前段工序依次为干混、干涂与辊压。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 64,
+   "max_sent_len": 36,
+   "avg_sent_len": 31.0
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-013",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "57",
+  "text": "叠片机是将电池极片与隔膜/电解质膜按顺序堆叠起来形成电芯层叠结构的设备。固态电解质脆性高，采用叠片工艺可避免机械损伤，确保电芯结构稳定，提高电池安全性。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 76,
+   "max_sent_len": 39,
+   "avg_sent_len": 37.0
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-014",
+  "source": "真实研报",
+  "genre": "宏观/年度策略",
+  "source_file": "H3_AP202512301811201512_1.pdf",
+  "page": "60",
+  "text": "新增设备打开增量空间，整线设备提供商率先受益。固态电池重构锂电工序，新增纤维化设备和等静压设备，干混、辊压、叠片和化成分容设备需要升级。关注干法电极、叠片、等静压和高压化成分容设备。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 91,
+   "max_sent_len": 44,
+   "avg_sent_len": 29.3
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-015",
+  "source": "真实研报",
+  "genre": "月度策略",
+  "source_file": "H3_AP202608141827990611_1.pdf",
+  "page": "6",
+  "text": "二季度业绩预告：结构性亮点仍存从目前已经披露的业绩预告情况来看，线下零售的商超百货企业，部分通过自身调改转型以及资产出售瘦身的区域龙头，业绩拐点相对较为明显；同时跨境电商企业在外部需求持续改善以及自身调整下同样实现了较为积极业绩变化；此外部分处于成长型赛道的美护企业延续了高速增长表现。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 143,
+   "max_sent_len": 78,
+   "avg_sent_len": 46.7
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-016",
+  "source": "真实研报",
+  "genre": "月度策略",
+  "source_file": "H3_AP202608141827990611_1.pdf",
+  "page": "7",
+  "text": "分渠道看，1-6月份全国网上商品和服务零售额100715亿元，同比增长5.2%。其中，网上商品零售额为64296亿元，增长4.8%，占社会消费品零售总额的比重约为25.9%；在网上商品零售额中，吃类、穿类、用类商品同比分别增长16.8%、6.2%和1.3%，食品及服饰线上消费表现相对突出；网上服务零售额为36419亿元，同比增长6.0%。线下1-6月份限额以上零售业态中：便利店、超市同比分别增长6.6%和3.8%，贴近社区、以刚需消费为主的零售渠道延续稳健增长；专业店与百货店分别同比下降1.5%和2.1%，经营仍然承压；品牌专卖店同比下降8.7%，降幅进一步扩大，传统线下业态的分化与弱势格局仍在延续。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 304,
+   "max_sent_len": 62,
+   "avg_sent_len": 42.4
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-017",
+  "source": "真实研报",
+  "genre": "月度策略",
+  "source_file": "H3_AP202608141827990611_1.pdf",
+  "page": "8",
+  "text": "分品类看，基本生活类商品保持较快增长，6月份粮油食品类同比增长7.9%，服装鞋帽针纺织品类增长3.9%，烟酒类增长12.1%。升级类消费明显回暖，其中金银珠宝类同比下降3.4%，降幅较4月显著收窄；化妆品类同比大幅增长12.6%，表现亮眼。耐用及科技消费方面，通讯器材类同比增长16.5%，延续较高景气；文化办公用品类增长12.7%。地产后周期品类仍然承压，家用电器和音像器材类同比下降8.7%，家具类下降6.6%；汽车类同比下降16.1%，仍是社零增长的主要拖累项。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 234,
+   "max_sent_len": 62,
+   "avg_sent_len": 32.4
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-018",
+  "source": "真实研报",
+  "genre": "行业深度",
+  "source_file": "H3_AP202602091819837765_1.pdf",
+  "page": "9",
+  "text": "AI 应用端层面，应用层发展直接影响数据中心资本开支周期的强度与延续性，是判断资本开支周期能否延长的核心依据，也为供配电设备长期需求趋势提供支撑。核心观测指标包括AI 大模型迭代频率、API 调用量增长及价格表现。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 107,
+   "max_sent_len": 72,
+   "avg_sent_len": 52.5
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-019",
+  "source": "真实研报",
+  "genre": "行业深度",
+  "source_file": "H3_AP202602091819837765_1.pdf",
+  "page": "6",
+  "text": "公司重申三年人民币3,800亿元的投资框架，并提示“仍存上调空间”。截至2025年9月季度末，过去四个季度已落地约1,200亿元，剩余可动用额度约2,600亿元。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 81,
+   "max_sent_len": 46,
+   "avg_sent_len": 39.5
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-020",
+  "source": "真实研报",
+  "genre": "行业深度",
+  "source_file": "H3_AP202602091819837765_1.pdf",
+  "page": "6",
+  "text": "管理层强调以“Token 质量、Token 性价比”作为核心指标，认为在三年维度AI 算力将维持供不应求，投资回报率具备高度确定性。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 66,
+   "max_sent_len": 65,
+   "avg_sent_len": 65.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-021",
+  "source": "真实研报",
+  "genre": "行业深度",
+  "source_file": "H3_AP202602091819837765_1.pdf",
+  "page": "10",
+  "text": "采用多维复合指标体系，聚焦推理、知识、数学、编程等核心能力，以加权平均计算得分，分数越高代表模型综合性能越强。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 55,
+   "max_sent_len": 54,
+   "avg_sent_len": 54.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-022",
+  "source": "真实研报",
+  "genre": "行业深度",
+  "source_file": "H3_AP202602091819837765_1.pdf",
+  "page": "5",
+  "text": "亚马逊计划在全球范围内投入约2000亿美元资本开支，其中绝大部分将用于亚马逊云科技业务。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 44,
+   "max_sent_len": 43,
+   "avg_sent_len": 43.0
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-023",
+  "source": "真实研报",
+  "genre": "行业周报",
+  "source_file": "H3_AP202512191803847754_1.pdf",
+  "page": "7",
+  "text": "项目建成后，预计年均发电量20亿千瓦时，年节约标准煤68万吨，减排二氧化碳177万吨，运行周期内可满足23万人口的年度用电需求，对推进能源结构转型升级、助力实现“双碳”目标、发展海洋经济具有重要的示范意义。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 103,
+   "max_sent_len": 102,
+   "avg_sent_len": 102.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-024",
+  "source": "真实研报",
+  "genre": "行业周报",
+  "source_file": "H3_AP202512191803847754_1.pdf",
+  "page": "7",
+  "text": "报告显示，截至2024年底，全球能源行业就业规模已达7600万人，较2019年净增超500万人。其中，太阳能成为电力领域新增就业的绝对主力，贡献了全球电力行业40%的新增岗位，仅逆变器、太阳能电池板、发电机、电池等系统设备制造领域，就吸纳约350万从业人员。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 129,
+   "max_sent_len": 80,
+   "avg_sent_len": 63.5
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-025",
+  "source": "真实研报",
+  "genre": "行业周报",
+  "source_file": "H3_AP202512191803847754_1.pdf",
+  "page": "7",
+  "text": "该项目是目前全国最大的单体海上光伏项目，也是全球首个“核热光储”多能互补示范工程。项目位于江苏省连云港市连云区，总装机容量2000兆瓦，配套建设200兆瓦/400兆瓦时储能电站，与田湾核电站耦合形成超1000万千瓦清洁能源基地。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 114,
+   "max_sent_len": 72,
+   "avg_sent_len": 56.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-026",
+  "source": "真实研报",
+  "genre": "行业周报",
+  "source_file": "H3_AP202512191803847754_1.pdf",
+  "page": "7",
+  "text": "从区域分布来看，中国仍是太阳能行业的核心就业市场，占据全球该领域劳动力的60%；欧洲、印度及其他亚太国家则各占就业总额的10%左右。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 66,
+   "max_sent_len": 39,
+   "avg_sent_len": 32.0
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-027",
+  "source": "真实研报",
+  "genre": "行业周报",
+  "source_file": "H3_AP202512191803847754_1.pdf",
+  "page": "7",
+  "text": "岗位结构方面，太阳能行业劳动力高度聚焦“开发与安装”环节，约三分之二的从业者投身新项目的开发与安装相关工作。其中，从事个人住宅和公用事业太阳能电场项目安装占到46%；多晶硅、晶圆、电池、组件等核心设备制造领域的就业占比达21%。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 114,
+   "max_sent_len": 53,
+   "avg_sent_len": 37.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-028",
+  "source": "真实研报",
+  "genre": "行业跟踪",
+  "source_file": "H3_AP202608111827866990_1.pdf",
+  "page": "11",
+  "text": "红利类资产相关观点：今年上半年市场风险偏好提高，科技成长类风格占优，红利资产表现相对较弱，进入下半年以来市场风格有望再平衡，红利类资产有望受益。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 72,
+   "max_sent_len": 71,
+   "avg_sent_len": 71.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-029",
+  "source": "真实研报",
+  "genre": "行业跟踪",
+  "source_file": "H3_AP202608111827866990_1.pdf",
+  "page": "12",
+  "text": "风险因素：宏观经济增长不及预期、汇率大幅波动、地缘政治冲突升级、油价大幅波动、竞争恶化、其他不可抗因素等。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 53,
+   "max_sent_len": 52,
+   "avg_sent_len": 52.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-030",
+  "source": "真实研报",
+  "genre": "行业跟踪",
+  "source_file": "H3_AP202608111827866990_1.pdf",
+  "page": "9",
+  "text": "股息率以2025年分红率及2026年wind一致预期归母净利润及当前市值进行估算，2026年归母净利润取自wind一致预期。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 62,
+   "max_sent_len": 61,
+   "avg_sent_len": 61.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-031",
+  "source": "真实研报",
+  "genre": "行业跟踪",
+  "source_file": "H3_AP202608111827866990_1.pdf",
+  "page": "10",
+  "text": "预期股息率以2025年分红率及2026年wind一致预期归母净利润及当前市值进行估算，2026年归母净利润取自wind一致预期，其中部分A+H个股盈利预期引用A股的预期归母净利润。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 90,
+   "max_sent_len": 89,
+   "avg_sent_len": 89.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-032",
+  "source": "真实研报",
+  "genre": "行业跟踪",
+  "source_file": "H3_AP202608111827866990_1.pdf",
+  "page": "11",
+  "text": "快递行业相关观点：实物商品网上购物零售额进入平稳增长期，电商行业进一步规范化，推动快递行业理性竞争，逐步走向高质量发展。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 60,
+   "max_sent_len": 59,
+   "avg_sent_len": 59.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-033",
+  "source": "真实研报",
+  "genre": "行业周报",
+  "source_file": "H3_AP202608131827943479_1.pdf",
+  "page": "6",
+  "text": "清州M17首个无尘室预计2028年12月启用，龙仁Y2首个无尘室将于2029年6月投产，将分阶段扩充DRAM 与NANDFlash 产能，匹配下游AI 产业带来的存储增量需求。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 88,
+   "max_sent_len": 87,
+   "avg_sent_len": 87.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-034",
+  "source": "真实研报",
+  "genre": "行业周报",
+  "source_file": "H3_AP202608131827943479_1.pdf",
+  "page": "6",
+  "text": "爱建观点：本次大额资本开支为前瞻性战略布局，旨在抓住AI 存储增长机遇，夯实制造能力，保障全球AI 半导体供应链稳定。SK hynix 同步扩产DRAM 与NAND Flash，印证AI 算力拉动HBM 及大容量存储芯片需求快速上行，远期或将重塑全球存储芯片供给格局。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 134,
+   "max_sent_len": 74,
+   "avg_sent_len": 66.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-035",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "5",
+  "text": "上汽通用五菱以28.5k 销量稳居榜首，比亚迪、吉利紧随其后，三家自主品牌头部企业牢牢占据市场前排，但五菱、比亚迪同比降幅分别达到34.09%、40.42%，份额同步明显收缩，传统自主龙头在当地市场遇冷。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 102,
+   "max_sent_len": 101,
+   "avg_sent_len": 101.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-036",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "7",
+  "text": "日系凭借29.8k 销量位列第二，占比16.34%，跌幅12.06%，抗跌性显著优于自主、德系；德系、美系同步下滑，韩系是唯一小幅正增长的传统海外车系，但体量仅有0.9k，影响力微弱。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 92,
+   "max_sent_len": 47,
+   "avg_sent_len": 45.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-037",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "7",
+  "text": "桂林、北海跌幅相对温和，其余地市普遍同比下滑两成左右，防城港、河池、贺州跌幅超过24%，县域与三四线城市需求疲软。整体来看，广西车市全国位次小幅向好，但省内所有城市销量全部同比下行，首府南宁抗压能力最强，工业城市柳州以及偏远地级市销量下滑更为严重，省内市场增长动力不足。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 135,
+   "max_sent_len": 77,
+   "avg_sent_len": 66.5
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-038",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "12",
+  "text": "轿车中纯电动体量最大，但同比下滑21.61%，汽油车降幅17.92%，插混大跌47.68%，仅油电混动小幅微增，轿车市场新能源存量增长放缓。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 70,
+   "max_sent_len": 69,
+   "avg_sent_len": 69.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-039",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "16",
+  "text": "交叉型乘用车1-6月月度销量起伏明显，3月冲高至0.4k，其余月份大多稳定在0.2k-0.3k 区间，整体走势偏弱。燃料结构上汽油占比58.52% 依旧是主流，纯电动占比41.48%，暂无混动、增程等品类，燃油车型仍牢牢占据主导，但新能源渗透率已接近四成。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 128,
+   "max_sent_len": 69,
+   "avg_sent_len": 63.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-040",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "21",
+  "text": "德系、日系牢牢垄断广西进口车市场，二者合计占比超九成，德系份额48.48%、日系44.31%，其余车系体量微弱。德、日、英、美、瑞典主流车系销量全部同比下滑，瑞典、英国跌幅最深，韩系凭借极小基数大幅增长，但难以改变整体下行格局。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 114,
+   "max_sent_len": 57,
+   "avg_sent_len": 56.0
+  },
+  "is_boundary_case": true
+ },
+ {
+  "sample_id": "CAL-PDF-041",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "7",
+  "text": "合资阵营中日系韧性最强，丰田、日产份额小幅提升；德系大众、奔驰、奥迪普遍下滑，美系、欧系表现平淡。整体来看，广西车市自主品牌根基稳固，但传统燃油自主萎缩明显，新能源自主快速崛起；日系合资稳定兜底，欧美合资持续走弱，车系格局朝着自主新能源 + 日系稳健车型的方向演变。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 133,
+   "max_sent_len": 43,
+   "avg_sent_len": 32.2
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-042",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "12",
+  "text": "整体来看，自主依旧是广西市场核心，但传统自主轿车承压最重；SUV 韩系迎来阶段性回暖；MPV 海外小众车系小幅回暖，日系在全品类中稳定性表现突出。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 73,
+   "max_sent_len": 29,
+   "avg_sent_len": 23.3
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-043",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "9",
+  "text": "轿车市场上，南宁以31.2k 销量遥遥领先，柳州紧随其后；玉林、柳州轿车同比跌幅接近30%，北海、钦州跌幅不足12%，是轿车市场韧性较强的城市。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 72,
+   "max_sent_len": 42,
+   "avg_sent_len": 35.0
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-044",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "12",
+  "text": "MPV 市场分化明显，自主小幅下滑6.76%，德系近乎崩盘，日系、韩系、美系实现小幅上涨。从份额变化来看，轿车自主份额明显收缩，日系小幅提升；SUV 自主份额微降，韩系份额快速扩张；MPV 自主份额小幅回落，日系、美系、韩系小幅扩容。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 117,
+   "max_sent_len": 44,
+   "avg_sent_len": 28.2
+  },
+  "is_boundary_case": false
+ },
+ {
+  "sample_id": "CAL-PDF-045",
+  "source": "真实研报",
+  "genre": "市场分析(数据密集)",
+  "source_file": "广西.pdf",
+  "page": "19",
+  "text": "主流动力搭配里2.0L CVT 份额30.24% 排名首位，小幅下滑；其余主流组合普遍大幅下跌，仅2.0T 9AT 小幅增长。",
+  "gold_label": null,
+  "dimensions": [],
+  "issues": [],
+  "audience": "professional",
+  "annotators": [],
+  "resolved": false,
+  "metrics": {
+   "char_len": 63,
+   "max_sent_len": 34,
+   "avg_sent_len": 30.5
+  },
+  "is_boundary_case": false
+ }
+]

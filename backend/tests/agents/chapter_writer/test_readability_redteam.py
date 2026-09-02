@@ -70,3 +70,38 @@ async def test_llm_reviewer_redteam_gate() -> None:
 
     assert bad_report.score < settings.READABILITY_THRESHOLD
     assert good_report.score >= settings.READABILITY_THRESHOLD
+
+
+# ---------------------------------------------------------------------------
+# 对抗样本门禁（红蓝对抗 2026-09-02 首轮固化，方案 §2.1 / §4.1 R3）
+# ---------------------------------------------------------------------------
+from tests.agents.chapter_writer.redteam_readability_samples import (  # noqa: E402
+    ADVERSARIAL_SAMPLES,
+)
+
+
+@pytest.mark.parametrize(
+    "sample",
+    [sample for sample in ADVERSARIAL_SAMPLES if sample["linter_expected"]],
+    ids=lambda sample: sample["id"],
+)
+def test_linter_catches_fixed_adversarial_attacks(sample) -> None:
+    """对抗门禁（确定性部分）：R2 蓝防后已收编的攻击面必须稳定命中。"""
+
+    findings = lint_paragraph(sample["text"])
+    assert any(finding.rule_id == sample["linter_expected"] for finding in findings)
+
+
+@pytest.mark.parametrize(
+    "sample",
+    [sample for sample in ADVERSARIAL_SAMPLES if not sample["linter_expected"]],
+    ids=lambda sample: sample["id"],
+)
+def test_judge_only_adversarial_territory_stays_soft(sample) -> None:
+    """软判领地边界保护：当前由 judge 负责的对抗形态，确定性层不得越界乱报。
+
+    若未来新增确定性规则开始命中其中某条——那是防线增强：请把该样本的
+    linter_expected 更新为命中的规则并移入上方确定性门禁，然后调整本断言。
+    """
+
+    assert lint_paragraph(sample["text"]) == []

@@ -327,7 +327,7 @@ class FeedbackInterpreter:
                 max_tokens=2_000,
                 extra_body=(
                     {"thinking": {"type": "disabled"}}
-                    if model_name.lower().startswith("deepseek-")
+                    if model_name.lower().startswith(("deepseek-", "ark-code-"))
                     else None
                 ),
             )

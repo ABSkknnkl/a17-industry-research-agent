@@ -88,6 +88,12 @@ class IntentSubRequirement(BaseModel):
     requires_clarification: bool = False
     clarification_question: str | None = Field(default=None, max_length=500)
 
+    # 层间仲裁（2026-09-01 方案第一刀·改动点 1）：LLM 显式否决理由。
+    # 否决必须显式：candidate_skills 为空且（intent_type="analysis_only"
+    # 或给出 reject_reason）才构成否决；单纯没选出技能不算否决，防止
+    # LLM 偷懒导致 recall 下降。
+    reject_reason: str | None = Field(default=None, max_length=500)
+
     source: Literal["deterministic", "llm", "hybrid"]
 
 
@@ -115,3 +121,11 @@ class ResearchIntentPlan(BaseModel):
     # 需求，不进数据路由、不报“暂无对应查询技能”，原文摘要记入此字段，
     # 透传给 Agent 2 作为分析提示；Agent 2 无视该字段不影响现有契约。
     analysis_notes: list[str] = Field(default_factory=list, max_length=12)
+
+    # 语义优先并行仲裁（2026-09-01 最终方案）：
+    # unresolved_metrics —— 研究边界词/未注册指标诉求留痕，进缺口披露通道，
+    # 永不硬路由；关键词锁碎片借此声明「未满足的诉求」。
+    # locked_skill_types —— 锁类型标记（metric=已注册指标命中，可信；
+    # keyword=技能关键词表话题词，披露型）；validator R4 对关键词锁豁免。
+    unresolved_metrics: list[str] = Field(default_factory=list, max_length=20)
+    locked_skill_types: dict[str, str] = Field(default_factory=dict)

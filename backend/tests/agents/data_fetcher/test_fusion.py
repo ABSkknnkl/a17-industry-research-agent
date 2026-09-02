@@ -81,6 +81,66 @@ def test_fusion_preserves_large_real_world_conflict_group() -> None:
     assert uniqueness == 1.0
 
 
+def _text_evidence(evidence_id: str, metric_name: str, value: str, source: str) -> EvidenceItem:
+    return EvidenceItem(
+        evidence_id=evidence_id,
+        metric_name=metric_name,
+        value=value,
+        unit=None,
+        period_end=None,
+        available_at=date(2026, 3, 31),
+        audit_status=AuditStatus.UNAUDITED,
+        restatement_status=RestatementStatus.NOT_RESTATED,
+        scope="新闻资讯",
+        market="中国内地",
+        exchange="不适用",
+        security_type="普通股",
+        currency="CNY",
+        accounting_standard="中国企业会计准则",
+        corporate_action_adjustment=CorporateActionAdjustment.NOT_APPLICABLE,
+        source_name=source,
+        source_locator=f"https://example.com/{evidence_id}",
+        grade=EvidenceGrade.C,
+    )
+
+
+def test_fusion_does_not_flag_text_title_or_summary_as_conflict() -> None:
+    """BUG-4: distinct news titles/summaries sharing a comparison key must not
+    surface as data conflicts. Only numeric metrics participate."""
+
+    items = [
+        _text_evidence("E-101", "标题", "宁德时代发布新一代电池产品", "来源A"),
+        _text_evidence("E-102", "标题", "行业出货量创历史新高", "来源B"),
+        _text_evidence("E-103", "summary", "动力电池需求持续增长", "来源A"),
+        _text_evidence("E-104", "summary", "上游碳酸锂价格出现波动", "来源C"),
+    ]
+
+    fused, conflicts, duplicate_groups, uniqueness = fuse_evidence([], items)
+
+    assert len(fused) == 4
+    assert conflicts == []
+    assert duplicate_groups == []
+    assert uniqueness == 1.0
+
+
+def test_fusion_text_noise_does_not_mask_a_real_numeric_conflict() -> None:
+    """A genuine numeric conflict must still be reported even when text rows
+    share the surrounding pipeline."""
+
+    items = [
+        _evidence("E-001", "公司A", 100, "来源A"),
+        _evidence("E-002", "公司A", 120, "来源B"),
+        _text_evidence("E-101", "标题", "宁德时代发布新一代电池产品", "来源A"),
+        _text_evidence("E-102", "标题", "行业出货量创历史新高", "来源B"),
+    ]
+
+    fused, conflicts, duplicate_groups, uniqueness = fuse_evidence([], items)
+
+    assert len(conflicts) == 1
+    assert set(conflicts[0].evidence_ids) == {"E-001", "E-002"}
+    assert conflicts[0].metric_name == "营业收入"
+
+
 def test_chart_dataset_groups_comparable_entities_in_one_dataset() -> None:
     evidence = [
         _evidence("E-001", "公司A", 100, "来源A"),

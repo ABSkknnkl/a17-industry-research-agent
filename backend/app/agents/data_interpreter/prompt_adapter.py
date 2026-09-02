@@ -73,6 +73,14 @@ def build_runtime_prompt(
             "不得描述其数值、单位或来源细节，也不得作为结论依据；"
             "确需其内容时写入collaboration_requests"
         )
+    # analysis_notes 透传护栏（2026-09-01 仲裁接线）：仅在存在否决/分析型
+    # 碎片时注入；空列表不得污染常规运行的提示词。
+    if request.analysis_notes:
+        requirements.append(
+            "analysis_notes列出的诉求已被判定为分析型/派生诉求（判断题、"
+            "影响传导类或语义层显式否决），未单独取数；仅作为分析线索参考，"
+            "不得当作已采集数据，不得为其虚构数值或evidence_id"
+        )
     payload = {
         "task": "依据全球主要股票市场金融分析框架生成可供后续智能体消费的结构化分析。",
         "analysis_request": analysis_request_payload,

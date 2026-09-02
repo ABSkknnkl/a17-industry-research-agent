@@ -35,6 +35,9 @@ _SAFE_DIAGNOSTIC_KEYS = frozenset(
         "validation_error_count",
         "validation_paths",
         "validation_types",
+        "validation_inputs",
+        "validation_expected",
+        "raw_content_summary",
         "provider_error_type",
         "input_tokens",
         "output_tokens",
@@ -140,6 +143,30 @@ class AnalysisSupplementDraft(BaseModel):
         return self
 
 
+def _format_structured_event_message(details: dict[str, Any]) -> str:
+    ordered_keys = (
+        "event",
+        "model_name",
+        "schema",
+        "error_code",
+        "error_type",
+        "validation_error_count",
+        "validation_paths",
+        "validation_types",
+        "validation_inputs",
+        "validation_expected",
+        "finish_reason",
+        "response_chars",
+        "raw_content_summary",
+    )
+    parts = [
+        f"{key}={details[key]}"
+        for key in ordered_keys
+        if key in details and details[key] not in (None, "", [], {})
+    ]
+    return "LLM structured output event | " + " | ".join(parts)
+
+
 def _log_structured_output_event(
     event: str,
     *,
@@ -162,8 +189,12 @@ def _log_structured_output_event(
                 "error_type": type(error).__name__,
             }
         )
+    # BUG-2（2026-09-02）：默认 logging formatter 不渲染 extra，曾导致日志只剩
+    # 一句 "LLM structured output event"、排障只能回读 checkpoint。现把关键诊断
+    # 直接拼进消息体；extra 仍保留，供结构化采集与既有断言使用。
+    message = _format_structured_event_message(details)
     log = logger.info if event == "repair_succeeded" else logger.warning
-    log("LLM structured output event", extra={"structured_output": details})
+    log(message, extra={"structured_output": details})
 
 
 def _failure_code(error: ValueError) -> str:
@@ -185,6 +216,7 @@ def _segmented_system_prompt(
     )
     return (
         base_system_prompt
+        + _VALIDATION_ENUM_DISAMBIGUATION
         + "\n\n# 长上下文分段结构化输出契约\n"
         + f"本轮只输出{label}，不得输出完整报告或其他分段字段。"
         + "所有金融事实、数字和 evidence_id 必须来自 analysis_request；不得补写未知事实。"
@@ -228,13 +260,31 @@ _ANALYSIS_DRAFT_SCHEMA_JSON = json.dumps(
     separators=(",", ":"),
 )
 
+# BUG-1(a)（2026-09-02）：两组高度相似的枚举易被模型互相抄错
+# （validation_cards[].status vs 顶层 financial_quality）。在系统提示中显式
+# 列出各自合法取值并声明互不通用，降低枚举混淆概率；后端别名归一兜底见
+# _VALIDATION_STATUS_ALIASES / _FINANCIAL_QUALITY_ALIASES。
+_VALIDATION_ENUM_DISAMBIGUATION = (
+    "\n# 枚举防混淆约定（最高优先级）\n"
+    "三张校验卡 validation_cards[].status 只允许三个取值：passed / "
+    "differences_explained / pending_verification。\n"
+    "顶层字段 financial_quality 只允许三个取值：consistent / "
+    "differences_explained / differences_pending_verification。\n"
+    "两组枚举互不通用：不得把 consistent 或 differences_pending_verification "
+    "写进 validation_cards[].status；也不得把 passed 或 pending_verification "
+    "写进 financial_quality。\n"
+)
 
-def _is_deepseek(model_name: str) -> bool:
-    return model_name.lower().startswith("deepseek-")
+
+def _is_deepseek_style(model_name: str) -> bool:
+    """DeepSeek 直连，或经火山方舟网关路由到 DeepSeek 系推理模型的代号
+    （Auto 模式下 ark-code-latest 会路由到 deepseek-v4-flash-ga-260731）。
+    此类端点统一按 DeepSeek 兼容模式处理：关思考 + json_mode 结构化输出。"""
+    return model_name.lower().startswith(("deepseek-", "ark-code-"))
 
 
 def _structured_output(chat_model: Any, schema: type[Any], model_name: str) -> Any:
-    if _is_deepseek(model_name):
+    if _is_deepseek_style(model_name):
         # DeepSeek-compatible endpoints can acknowledge a forced function call
         # without returning usable arguments. JSON mode removes that extra
         # envelope for both analysis and chapter generation while ``include_raw``
@@ -391,6 +441,22 @@ _DIMENSION_ALIASES = {
     "风险分析": "risk",
 }
 
+# BUG-1（2026-09-02）：``ValidationCard.status`` 与 ``AnalysisDraft.financial_quality``
+# 两组枚举高度相似，flash 级模型会把 financial_quality 的取值抄进校验卡
+# status（RUN 5e73b49f 实证：financial_quality 卡的 status 连写 4 次
+# ``consistent``）。这里做确定性单向归一兜底：
+#   - 校验卡 status 收到 financial_quality 风格值 → 映射回 status 合法枚举
+#   - financial_quality 收到 status 风格值 → 映射回 financial_quality 合法枚举
+# 两组枚举共享 ``differences_explained``，故它无需映射。
+_VALIDATION_STATUS_ALIASES = {
+    "consistent": "passed",
+    "differences_pending_verification": "pending_verification",
+}
+_FINANCIAL_QUALITY_ALIASES = {
+    "passed": "consistent",
+    "pending_verification": "differences_pending_verification",
+}
+
 
 def _normalize_dimension(value: Any) -> Any:
     if not isinstance(value, str):
@@ -420,6 +486,23 @@ def _normalize_analysis_aliases(payload: dict[str, Any]) -> None:
             if isinstance(item, dict):
                 item["dimension"] = _normalize_dimension(item.get("dimension"))
 
+    # BUG-1(b)（2026-09-02）：接线枚举混淆兜底。模型把 financial_quality 的
+    # 取值抄进校验卡 status（或反向）时，确定性映射回各自合法枚举；已合法
+    # 的取值（含两组共享的 differences_explained）经 .get 原样保留。
+    validation_cards = payload.get("validation_cards")
+    if isinstance(validation_cards, list):
+        for card in validation_cards:
+            if not isinstance(card, dict):
+                continue
+            status = card.get("status")
+            if isinstance(status, str):
+                card["status"] = _VALIDATION_STATUS_ALIASES.get(status.strip(), status)
+    financial_quality = payload.get("financial_quality")
+    if isinstance(financial_quality, str):
+        payload["financial_quality"] = _FINANCIAL_QUALITY_ALIASES.get(
+            financial_quality.strip(), financial_quality
+        )
+
 
 def _normalize_known_schema_aliases(payload: Any, schema: type[Any]) -> Any:
     """Normalize narrowly defined provider aliases before strict validation."""
@@ -431,11 +514,35 @@ def _normalize_known_schema_aliases(payload: Any, schema: type[Any]) -> Any:
     return payload
 
 
+def _summarize_value(value: Any, limit: int = 200) -> str:
+    """Render a model-provided (possibly illegal) value for diagnostics."""
+    if value is None:
+        return "<missing>"
+    if isinstance(value, str):
+        return value if len(value) <= limit else value[:limit] + "…"
+    try:
+        text = str(value)
+    except (TypeError, ValueError):
+        return "<unprintable>"
+    return text if len(text) <= limit else text[:limit] + "…"
+
+
+def _summarize_payload(payload: Any, limit: int = 600) -> str:
+    """Truncated JSON excerpt of the model output, for failure triage."""
+    if not isinstance(payload, (dict, list)):
+        return ""
+    try:
+        text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    except (TypeError, ValueError):
+        return ""
+    return text if len(text) <= limit else text[:limit] + "…"
+
+
 def _validate_payload(payload: Any, schema: type[SchemaT]) -> SchemaT:
     try:
         return schema.model_validate(_normalize_known_schema_aliases(payload, schema))
     except ValidationError as exc:
-        errors = exc.errors(include_url=False, include_input=False)
+        errors = exc.errors(include_url=False)
         error_types = [str(item.get("type", "unknown")) for item in errors]
         semantic_only = bool(error_types) and all(
             error_type == "assertion_error" or error_type.startswith("value_error")
@@ -449,15 +556,29 @@ def _validate_payload(payload: Any, schema: type[SchemaT]) -> SchemaT:
         paths = [
             ".".join(str(part) for part in item.get("loc", ())) or "<root>" for item in errors[:20]
         ]
+        # BUG-2（2026-09-02）：把非法值、允许枚举与原始内容摘要一并带入诊断，
+        # 之后排障只看后端日志即可，无需回读 checkpoint 快照。
+        inputs = [_summarize_value(item.get("input")) for item in errors[:20]]
+        expected = [
+            str((item.get("ctx") or {}).get("expected"))
+            for item in errors[:20]
+            if (item.get("ctx") or {}).get("expected") is not None
+        ]
+        diagnostics: dict[str, Any] = {
+            "validation_error_count": len(errors),
+            "validation_paths": paths,
+            "validation_types": error_types[:20],
+            "validation_inputs": inputs,
+            "validation_expected": expected,
+        }
+        content_summary = _summarize_payload(payload)
+        if content_summary:
+            diagnostics["raw_content_summary"] = content_summary
         raise StructuredOutputError(
             code,
             f"structured output failed {schema.__name__} validation",
             retryable=True,
-            diagnostics={
-                "validation_error_count": len(errors),
-                "validation_paths": paths,
-                "validation_types": error_types[:20],
-            },
+            diagnostics=diagnostics,
         ) from exc
 
 
@@ -526,7 +647,7 @@ class OpenAICompatibleAnalysisModel:
         max_repair_attempts: int = 1,
     ) -> None:
         self.model_name = model_name
-        self._requires_json_instruction = _is_deepseek(model_name)
+        self._requires_json_instruction = _is_deepseek_style(model_name)
         if chat_model is None:
             if not api_key:
                 raise ValueError("LLM_API_KEY is required when mock mode is disabled")
@@ -537,9 +658,11 @@ class OpenAICompatibleAnalysisModel:
                 temperature=0.1,
                 timeout=timeout_seconds,
                 max_retries=2,
-                model_kwargs={"max_tokens": max_output_tokens},
+                # BUG-5（2026-09-01）：max_tokens 走 ChatOpenAI 显式参数，
+                # model_kwargs 透传会触发 langchain-openai 弃用 UserWarning。
+                max_tokens=max_output_tokens,
                 extra_body=(
-                    {"thinking": {"type": "disabled"}} if _is_deepseek(model_name) else None
+                    {"thinking": {"type": "disabled"}} if _is_deepseek_style(model_name) else None
                 ),
             )
         self._chat_model = chat_model
@@ -666,8 +789,9 @@ class OpenAICompatibleAnalysisModel:
                 + "你当前不是输出面向用户的Markdown报告，而是为下游程序输出AnalysisDraft。"
                 + "必须严格使用Schema中的英文属性名和英文枚举值；不得翻译字段名或枚举值；"
                 + "不得增加Schema未声明的属性；数组与对象类型不得互换。"
-                + "只返回一个符合Schema的JSON对象，不要输出Markdown代码围栏、工具调用外壳或额外说明。\n"
-                + "AnalysisDraft JSON Schema：\n"
+                + "只返回一个符合Schema的JSON对象，不要输出Markdown代码围栏、工具调用外壳或额外说明。"
+                + _VALIDATION_ENUM_DISAMBIGUATION
+                + "\nAnalysisDraft JSON Schema：\n"
                 + _ANALYSIS_DRAFT_SCHEMA_JSON
             )
         messages = [
@@ -750,7 +874,7 @@ class OpenAICompatibleChapterModel:
         max_repair_attempts: int = 1,
     ) -> None:
         self.model_name = model_name
-        self._requires_json_instruction = _is_deepseek(model_name)
+        self._requires_json_instruction = _is_deepseek_style(model_name)
         if chat_model is None:
             if not api_key:
                 raise ValueError("LLM_API_KEY is required when mock mode is disabled")
@@ -762,7 +886,7 @@ class OpenAICompatibleChapterModel:
                 timeout=timeout_seconds,
                 max_retries=2,
                 extra_body=(
-                    {"thinking": {"type": "disabled"}} if _is_deepseek(model_name) else None
+                    {"thinking": {"type": "disabled"}} if _is_deepseek_style(model_name) else None
                 ),
             )
         self._max_repair_attempts = max(0, max_repair_attempts)
@@ -849,7 +973,7 @@ class OpenAICompatibleReadabilityModel:
         chat_model: Any | None = None,
     ) -> None:
         self.model_name = model_name
-        self._requires_json_instruction = _is_deepseek(model_name)
+        self._requires_json_instruction = _is_deepseek_style(model_name)
         if chat_model is None:
             if not api_key:
                 raise ValueError("LLM_API_KEY is required when mock mode is disabled")
@@ -861,7 +985,7 @@ class OpenAICompatibleReadabilityModel:
                 timeout=timeout_seconds,
                 max_retries=2,
                 extra_body=(
-                    {"thinking": {"type": "disabled"}} if _is_deepseek(model_name) else None
+                    {"thinking": {"type": "disabled"}} if _is_deepseek_style(model_name) else None
                 ),
             )
         self._structured_model = _structured_output(chat_model, ReadabilityReport, model_name)
@@ -873,12 +997,35 @@ class OpenAICompatibleReadabilityModel:
         kind: str,
     ) -> ReadabilityReport:
         system_prompt = (
-            "你是行业研究报告的可读性评审器。只依据给定段落文本判断其是否通顺、俗通、连贯、客观。"
-            "返回ReadabilityReport JSON：score为0到1的可读性软分（1为完全可读）；"
-            "findings列出具体问题，dimension取值通顺度/俗通度/连贯性/客观性，"
-            "severity取值must_fix/suggest，每条包含reason（哪里读不懂）与rewrite_hint（修改方向）；"
+            "你是行业研究报告的可读性评审器，只依据给定段落文本评审，不评价段落之外的内容，"
+            "不引入新事实、数值或结论。\n"
+            "评审四个维度：通顺度（语法与句子结构）、通俗度（术语是否有解释、普通读者能否读懂）、"
+            "连贯性（句间逻辑衔接）、客观性（有无自夸、空泛强调、内部话术泄漏）。\n"
+            "打分锚点：0.9=可读（专业且清晰）；0.6=勉强可读（能懂但读感重）；0.3=读不通"
+            "（病句/语义断裂/非人类语言）。score 为 0~1 软分，1 为完全可读。\n"
+            "9:1 裁判原则：凡客观可判定的缺陷（双主语病句、裸标签拼接、数据字段或占位符泄漏、"
+            "自夸语句、空泛模板话术）一经出现即显著拉低总分（通常不高于 0.5），不要再用软维度"
+            "为其补分；软维度只评规则判不了的通顺、通俗、连贯。\n"
+            "few-shot 参照（合成示例，仅示意尺度）：\n"
+            "通顺度【正】“营业收入同比增长12%，统计口径与上年同期一致。”→0.9；"
+            "【负】“由于需求回暖使其价格出现上涨。”→0.3（双主语病句）。\n"
+            "通俗度【正】“利润池，即产业链中利润集中的环节，正向中游迁移。”→0.9（术语有白话解释）；"
+            "【负】“估值锚、景气度与护城河共同决定投资逻辑。”→0.4（术语堆砌未解释）。\n"
+            "连贯性【正】“样本企业数量为10家；鉴于样本仍需扩充，该结论的适用范围有限。”→0.85；"
+            "【负】“样本企业数量为10家。限制条件：样本仍需扩充。”→0.5（裸标签机械拼接）。\n"
+            "客观性【正】“行业集中度较高，CR3在50%以上。”→0.9；"
+            "【负】“本报告深入剖析了行业底层逻辑，前景广阔值得期待。”→0.35（自夸+空泛结论）。\n"
+            "软判补充指引（规则判不了、由你把关的形态）：\n"
+            "1) 句子各自合法但主语缺失、指代链断裂、读不出段落主旨（分段逃逸）→不高于0.55；\n"
+            "2) 机翻腔（“被…所驱动”“正在被…着”）、公告腔（“根据…规定，现予以…”）、"
+            "营销口号（“抢占窗口期！”“不容错过”）→不高于0.5；\n"
+            "3) 术语用引号罗列成串且全段无一处解释 → 通俗度不高于0.55；\n"
+            "4) 数字密集但每个数字都得到解读的规范表述是正常研报文体，不得因此压分；\n"
+            "5) 重复填充（同一内容词在同句反复出现≥3次、信息零增量，如“改善…改善…改善”）→不高于0.4。\n"
+            "返回ReadabilityReport JSON：score为0到1的可读性软分；findings列出具体问题，"
+            "dimension取值通顺度/通俗度/连贯性/客观性，severity取值must_fix/suggest，"
+            "每条包含reason（哪里读不懂）与rewrite_hint（修改方向）；"
             "paragraph_id固定为空字符串；findings为空表示可读。"
-            "不得评价段落之外的内容，不得引入新事实、数值或结论。"
         )
         if self._requires_json_instruction:
             system_prompt = (

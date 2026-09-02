@@ -14,6 +14,11 @@
   3. skill_call     技能调用收口（executor 收口处）
   4. clarification  澄清门（_build_partial_intent_results / 用户改写回流）
 
+2026-09-01 方案（第一刀/第二刀）新增三类仲裁事件：
+  5. llm_veto               LLM 显式否决（周审否决率，健康区间 5%-20%）
+  6. advisory_passed        澄清门 advisory 放行
+  7. derivative_suspected   派生词否定表降级（L1 不 lock，交 L2）
+
 run_id/revision 通过 bind_run() 绑定（service 层每次 run 调用一次），
 保证每条记录可关联到 run。
 '''
@@ -213,5 +218,72 @@ def record_clarification(
             ],
             "action": action,
             "rewritten_text": _text_field(rewritten_text),
+        }
+    )
+
+
+def record_llm_veto(
+    text: str,
+    *,
+    requirement_id: str | None = None,
+    reason: str | None = None,
+) -> None:
+    """Point 5: LLM 显式否决（2026-09-01 方案第一刀·改动点 1）。
+
+    周度审查否决率：健康区间 5%-20%；>30% 说明 LLM 在滥用否决权，
+    触发拆解 prompt 审查。
+    """
+
+    _append(
+        {
+            "event": "llm_veto",
+            "requirement_id": requirement_id,
+            "text": _text_field(text),
+            "reason": (reason or "")[:200] or None,
+        }
+    )
+
+
+def record_advisory_passed(
+    question: str,
+    *,
+    unresolved_fragments: list[str] | None = None,
+) -> None:
+    """Point 6: 澄清门 advisory 放行（第一刀·改动点 3）。
+
+    有技能可接但置信度不足/参数欠完整的碎片放行执行；证据标
+    low_confidence，不计入核心数据组完整性判定。
+    """
+
+    _append(
+        {
+            "event": "advisory_passed",
+            "question": _text_field(question),
+            "unresolved_fragments": [
+                _text_field(fragment) for fragment in (unresolved_fragments or [])[:12]
+            ],
+        }
+    )
+
+
+def record_derivative_suspected(
+    text: str,
+    *,
+    metric: str,
+    alias: str,
+    derivative: str,
+) -> None:
+    """Point 7: 派生词否定表降级（第二刀）。
+
+    L1 命中 alias 但窗口内检出派生词 → 不 lock，交 L2 语义层判。
+    """
+
+    _append(
+        {
+            "event": "derivative_suspected",
+            "text": _text_field(text),
+            "metric": metric,
+            "alias": alias,
+            "derivative": derivative,
         }
     )

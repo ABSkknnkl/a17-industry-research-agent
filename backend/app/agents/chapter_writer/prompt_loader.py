@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from hashlib import sha256
 from pathlib import Path
 
-CHAPTER_WRITER_PROMPT_VERSION = "1.2.0"
-CHAPTER_WRITER_PROMPT_SHA256 = "ce98747e1e3eb48ceb443fda2c400f8e7209e00e1200cf249d8e3024b79cc790"
+CHAPTER_WRITER_PROMPT_VERSION = "1.3.0"
+CHAPTER_WRITER_PROMPT_SHA256 = "344c41653d621e6486d5543d89c70b3f2994cbb8118bc85c3039dc9efe1df994"
 _PROMPT_PATH = Path(__file__).parent / "prompt.md"
 
 

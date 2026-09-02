@@ -5,6 +5,8 @@
 - trajectory 类：D1–D4、P1–P4
 - tool 类：G1–G3、G5
 - planning 类（V3）：T1–T8
+- arbitration 类（2026-09-01 方案）：ARB1–ARB4 由 ``scorers.arbitration``
+  在计划层判分；ARB1 为一票否决项（静默误判）。
 
 每个判定项输出 ``CheckResult(passed, reason)``，对应 grades.jsonl 的一行。
 语义类（T2 释义匹配、M1–M3）在 L1 只做可规则化部分，其余交 L2 judge。
@@ -15,8 +17,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
-# 一票否决项（与 §4.6 末尾及 §4 各处同列）：对应 D2/P2/R2/C1 + T1/T2/T6
-VETO_CHECKS = frozenset({"D2", "P2", "R2", "C1", "T1", "T2", "T6"})
+# 一票否决项（与 §4.6 末尾及 §4 各处同列）：对应 D2/P2/R2/C1 + T1/T2/T6；
+# ARB1（无静默误判）为 2026-09-01 方案新增的 arbitration 组一票否决项。
+VETO_CHECKS = frozenset({"D2", "P2", "R2", "C1", "T1", "T2", "T6", "ARB1"})
 
 
 @dataclass
@@ -403,13 +406,14 @@ _CHECK_REGISTRY: dict[str, Callable[[dict, dict], CheckResult]] = {
 def registered_check_ids() -> frozenset[str]:
     """Return every check id owned by the complete evaluator stack.
 
-    I1-I8 are evaluated by ``scorers.intent`` and M1-M3 by the semantic
-    methodology scorer.  Keeping the global declaration here lets the case
-    schema fail closed before a run starts without pretending that these
-    checks are handled by the L1 rule registry.
+    I1-I8 are evaluated by ``scorers.intent``, M1-M3 by the semantic
+    methodology scorer, and ARB1-ARB4 by ``scorers.arbitration``
+    (2026-09-01 方案 §4.3).  Keeping the global declaration here lets the
+    case schema fail closed before a run starts without pretending that
+    these checks are handled by the L1 rule registry.
     """
     return frozenset(_CHECK_REGISTRY) | frozenset(
-        {*(f"I{i}" for i in range(1, 9)), "M1", "M2", "M3"}
+        {*(f"I{i}" for i in range(1, 9)), "M1", "M2", "M3", *(f"ARB{i}" for i in range(1, 5))}
     )
 
 

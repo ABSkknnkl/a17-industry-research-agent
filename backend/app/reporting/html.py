@@ -1,5 +1,6 @@
 """Self-contained, autoescaped HTML report renderer."""
 
+import re
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
@@ -24,18 +25,29 @@ from app.schemas.report import ReportViewModel
 
 _TEMPLATE_ROOT = Path(__file__).with_name("templates")
 
+# The template ends in .html.j2, so extension-based selection would
+# incorrectly disable escaping. Report text is always untrusted.
+_ENVIRONMENT = Environment(
+    loader=FileSystemLoader(_TEMPLATE_ROOT),
+    autoescape=True,
+    undefined=StrictUndefined,
+    trim_blocks=True,
+    lstrip_blocks=True,
+    cache_size=50,
+)
+
+_PLACEMENT_PATTERN = re.compile(r"^SEC-(\d{2})-\d{2}$")
+
+
+def _placement_chapter(placement_section_id: str) -> int | None:
+    """Return the chapter number of a placement, or None when malformed."""
+
+    match = _PLACEMENT_PATTERN.fullmatch(placement_section_id)
+    return int(match.group(1)) if match else None
+
 
 def render_html(report: ReportViewModel) -> str:
-    environment = Environment(
-        loader=FileSystemLoader(_TEMPLATE_ROOT),
-        # The template ends in .html.j2, so extension-based selection would
-        # incorrectly disable escaping. Report text is always untrusted.
-        autoescape=True,
-        undefined=StrictUndefined,
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
-    template = environment.get_template("report.html.j2")
+    template = _ENVIRONMENT.get_template("report.html.j2")
     citation_map = citation_lookup(report.evidence_catalog)
 
     def evidence_entries(evidence_ids: list[str]) -> list[object]:
@@ -50,18 +62,24 @@ def render_html(report: ReportViewModel) -> str:
 
     charts_by_section: dict[str, list[dict[str, object]]] = {}
     unplaced: list[dict[str, object]] = []
-    chart_numbers: dict[str, int] = {}
+    chart_numbers: dict[int, int] = {}
     for chart in report.charts:
         item = chart.model_dump(exclude={"svg"})
         item["svg"] = Markup(chart.svg)
-        if chart.placement_section_id:
-            chapter_number = chart.placement_section_id.split("-")[1]
+        chapter_number = (
+            _placement_chapter(chart.placement_section_id)
+            if chart.placement_section_id
+            else None
+        )
+        if chapter_number is not None:
             chart_numbers[chapter_number] = chart_numbers.get(chapter_number, 0) + 1
             item["display_number"] = (
-                f"图{int(chapter_number)}-{chart_numbers[chapter_number]}"
+                f"图{chapter_number}-{chart_numbers[chapter_number]}"
             )
             charts_by_section.setdefault(chart.placement_section_id, []).append(item)
         else:
+            # placement 为空或格式非法（防御：schema pattern 已拦截）都归入附录，
+            # 单个坏字段不允许让图表凭空消失或炸掉整份 HTML 导出。
             item["display_number"] = f"附图-{len(unplaced) + 1}"
             unplaced.append(item)
     return template.render(

@@ -103,6 +103,12 @@ for var in CORS_ORIGINS API_BEARER_TOKENS; do
   fi
 done
 
+# LLM_* 同样存在 shell 残留覆盖 .env 的问题：宿主/旧会话可能带着 DeepSeek 时代的
+# LLM_BASE_URL / LLM_MODEL / LLM_API_KEY，而 pydantic-settings 中环境变量的优先级
+# 高于 backend/.env。backend/.env 是 LLM 配置的唯一事实来源，这里无条件 unset；
+# 需要更换模型或密钥时直接修改 backend/.env 即可。
+unset LLM_BASE_URL LLM_MODEL LLM_API_KEY
+
 # ---------------------------- 2. 前置检查 ----------------------------
 [ -x "$BACKEND_DIR/.venv/bin/python" ] || die "未找到 backend/.venv。请先: cd backend && python3.12 -m venv .venv && pip install -r requirements.txt -r requirements-dev.txt"
 command -v node >/dev/null 2>&1 || die "未找到 node（前端需要 Node 22+）"
@@ -188,6 +194,6 @@ cat <<EOF
 提示:
   1) 打开前端后在 Token 对话框输入 backend/.env 中 API_BEARER_TOKENS 对应的 token；
      也可在 frontend/.env.local 写入 VITE_DEFAULT_TOKEN=<token> 免手工输入（该文件已被忽略）。
-  2) 当前为真实模式：创建研报会实际调用 DeepSeek 与问财 SkillHub，消耗外部配额。
+  2) 当前为真实模式：创建研报会实际调用火山方舟 ark-code-latest 与问财 SkillHub，消耗外部配额。
 ===========================================
 EOF

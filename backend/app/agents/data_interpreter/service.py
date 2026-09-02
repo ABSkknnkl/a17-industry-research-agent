@@ -275,8 +275,24 @@ class DataInterpreterAgent:
                     "research_brief",
                     "rejected_claim_ids",
                 ):
-                    if field_name in context.input_data:
-                        source_data[field_name] = context.input_data[field_name]
+                    if field_name not in context.input_data:
+                        continue
+                    value = context.input_data[field_name]
+                    # Bug 修复（2026-09-02）：ResearchInput.evidence_items 带
+                    # default_factory=list，model_dump 后恒以 [] 存在于
+                    # input_data，`in` 无法区分「创建时默认值」与「用户编辑」。
+                    # 空列表绝不允许覆盖 A1 证据包——否则 A2 任何重跑必然
+                    # analysis_input_invalid，重试耗尽后 run 永久锁死；
+                    # 只有非空证据才视为用户显式提供的替代证据。
+                    if field_name == "evidence_items" and not value:
+                        continue
+                    source_data[field_name] = value
+            # 兜底防线（数据不可丢失原则）：任何路径组装后证据为空、而 A1
+            # 已产出证据时，一律回退使用 A1 证据——用户动作不得清空已采集数据。
+            if not source_data.get("evidence_items") and fetch_result.data.get(
+                "evidence_items"
+            ):
+                source_data["evidence_items"] = fetch_result.data["evidence_items"]
 
         # Agent 1 also emits query plans, call traces, source records and chart
         # datasets. Agent 2 consumes only its declared public input contract so
@@ -294,6 +310,15 @@ class DataInterpreterAgent:
         try:
             request = AnalysisRequest.model_validate(request_data)
         except ValidationError as exc:
+            # B 兜底（2026-09-02）：校验失败必须点名具体字段，让用户知道
+            # 该改什么，而不是只看通用指引盲目重试（曾因此耗尽重试上限）。
+            failed_fields = sorted(
+                {
+                    ".".join(str(part) for part in error.get("loc", ()))
+                    for error in exc.errors(include_url=False)
+                }
+            )
+            summary = "、".join(field for field in failed_fields[:8] if field) or "未知字段"
             return StageResult(
                 stage=self.stage,
                 status=StageStatus.WAITING_REVIEW,
@@ -302,8 +327,8 @@ class DataInterpreterAgent:
                     "collaboration_requests": [
                         {
                             "request_id": "INPUT-VALIDATION",
-                            "question": "请补充或修正数据分析所需输入。",
-                            "reason": str(exc),
+                            "question": f"以下输入字段未通过校验，请核对后修正：{summary}",
+                            "reason": str(exc)[:1000],
                             "affected_dimensions": ["all"],
                         }
                     ]

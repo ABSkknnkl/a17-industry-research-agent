@@ -44,6 +44,15 @@ const ackRequiredCodes = computed<string[]>(
 
 const hasError = computed(() => Boolean(props.result.error))
 
+/** 运行时预算告警（阶段耗尽重试上限/超时时由后端写入 result.data） */
+const runtimeAlert = computed<{ code?: string; recoverable?: boolean } | null>(() => {
+  const raw = (props.result.data as Record<string, unknown>).runtime_alert
+  return raw && typeof raw === 'object' ? (raw as { code?: string; recoverable?: boolean }) : null
+})
+
+/** 不可恢复（如重试上限耗尽）：重跑类按钮全部禁用，只留取消 */
+const recoveryBlocked = computed(() => runtimeAlert.value?.recoverable === false)
+
 /**
  * 渲染单条风险提示。
  * 类型断言刻意放在 script 内：Prettier 的 HTML 解析器会把 `Record<string, unknown>`
@@ -59,16 +68,20 @@ const errorGuide = computed(() => {
   const guide: Record<string, string> = {
     intent_clarification_required:
       '智能体无法将研究问题路由到可执行的数据查询。请查看阶段数据中的「待澄清问题」，使用「修改条件重跑」补充更明确的问题（行业/公司 + 指标 + 时间范围）。',
-    analysis_input_invalid: '阶段输入未通过校验，请通过「修改条件重跑」补充必要条件。',
+    analysis_input_invalid:
+      '阶段输入未通过校验。请查看阶段数据中「INPUT-VALIDATION」协作请求指名的具体字段，修正后通过「修改条件重跑」提交；若反复出现相同错误，请取消任务并反馈，不要盲目重试。',
     required_data_unavailable:
       '部分研究需求未查询到数据。可勾选下方风险确认后继续生成（报告将明确标注数据缺口），或通过「修改条件重跑」调整指标/企业/时间范围。',
     requested_calculation_data_unavailable:
       '用户指定的计算指标缺少原始数据。可勾选下方风险确认后继续生成（该指标将在报告中标注为缺口），或改用可直接查询的原始指标后重跑。',
     analysis_quality_degraded:
       'Agent 2 质量门未通过。可勾选下方风险确认后继续生成（章节将条件性表达并披露限制），或修改条件重跑分析。',
-    workflow_deadline_exceeded: '阶段执行超出时间预算（等待审核不计入），可「重新生成」恢复。',
+    workflow_deadline_exceeded:
+      '任务超出整体时间预算（自创建起按墙钟计算，等待审核期间同样计入）。请取消任务后重新创建；需要更长预算请联系管理员调整。',
     stage_timeout: '单阶段执行超时，可「重新生成」重试。',
     stage_unhandled_exception: '阶段内部异常，可「重新生成」重试。',
+    stage_attempt_limit_exceeded:
+      '该阶段重试次数已耗尽，任务不可恢复。请取消任务后重新创建（修订内容不会丢失，可在新任务中重新提交）。',
   }
   return (
     guide[props.result.error ?? ''] ??
@@ -123,7 +136,13 @@ async function run(payload: ReviewPayload): Promise<void> {
     emit('submitted', state)
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {
-      ElMessage.warning('任务已被其他操作更新（版本冲突），已请求刷新最新状态，请重新操作')
+      // 透出后端冲突详情（Revision conflict / Stage conflict），帮助用户
+      // 判断是版本过期还是阶段已推进，而非笼统的“版本冲突”。
+      ElMessage.warning(
+        e.message
+          ? `${e.message}，已请求刷新最新状态，请重新操作`
+          : '任务已被其他操作更新（版本冲突），已请求刷新最新状态，请重新操作'
+      )
       emit('conflict')
     } else if (e instanceof ApiError) {
       ElMessage.error(`${e.message}${e.code ? `（${e.code}）` : ''}`)
@@ -183,9 +202,10 @@ async function submitRevise(): Promise<void> {
     return
   }
   const edited: Record<string, unknown> = {}
-  // 仅 data_interpret 的修订契约允许 focus_questions；
-  // data_fetch 白名单（DataFetchReviewEdits）只接受 data_fetch_options，传 focus_questions 会 422
-  if (props.stage === 'data_interpret' && questions.length > 0) {
+  // data_fetch 与 data_interpret 的修订契约均允许 focus_questions
+  // （2026-09-01 修复：此前 data_fetch 静默丢弃用户修订的研究问题，
+  // advisory 升级门下用户“删除某段问题”的诉求无法送达后端）
+  if ((props.stage === 'data_fetch' || props.stage === 'data_interpret') && questions.length > 0) {
     edited['focus_questions'] = questions
   }
   await run({
@@ -197,20 +217,31 @@ async function submitRevise(): Promise<void> {
 }
 
 async function regenerate(): Promise<void> {
-  await ElMessageBox.confirm('将按当前条件重新执行该阶段，确认继续？', '重新生成', {
-    confirmButtonText: '重新生成',
-    cancelButtonText: '取消',
-    type: 'warning',
-  })
+  try {
+    await ElMessageBox.confirm('将按当前条件重新执行该阶段，确认继续？', '重新生成', {
+      confirmButtonText: '重新生成',
+      cancelButtonText: '取消',
+      type: 'warning',
+    })
+  } catch {
+    // 用户点「取消」/ESC 时 ElMessageBox 以 reject 结束；静默吞掉，
+    // 避免 Uncaught (in promise) 'cancel' 污染控制台并误导用户以为按钮损坏。
+    return
+  }
   await run({ action: 'regenerate' })
 }
 
 async function cancelRun(): Promise<void> {
-  await ElMessageBox.confirm('取消后任务将终止且不可恢复，确认取消？', '取消任务', {
-    confirmButtonText: '确认取消',
-    cancelButtonText: '返回',
-    type: 'warning',
-  })
+  try {
+    await ElMessageBox.confirm('取消后任务将终止且不可恢复，确认取消？', '取消任务', {
+      confirmButtonText: '确认取消',
+      cancelButtonText: '返回',
+      type: 'warning',
+    })
+  } catch {
+    // 同 regenerate：确认框取消属正常路径，静默返回。
+    return
+  }
   await run({ action: 'cancel' })
 }
 
@@ -271,6 +302,17 @@ function openReviseDialog(): void {
       </el-radio-group>
     </template>
 
+    <!-- 不可恢复告警（重试上限耗尽等）：重跑类按钮全部禁用，只留取消 -->
+    <el-alert
+      v-if="recoveryBlocked"
+      type="error"
+      show-icon
+      :closable="false"
+      title="该任务已不可恢复（运行时预算耗尽）"
+      description="继续点击重跑类按钮只会被后端拒绝。请取消任务后重新创建；修订内容可在新任务中重新提交。"
+      style="margin-bottom: 16px"
+    />
+
     <!-- 操作按钮区 -->
     <div class="action-bar">
       <!-- 有决策包（用户裁决门）时即使携带 error 也展示「确认风险并继续」；
@@ -308,8 +350,12 @@ function openReviseDialog(): void {
         </template>
       </template>
 
-      <el-button :disabled="submitting" @click="openReviseDialog">修改条件重跑</el-button>
-      <el-button :disabled="submitting" @click="regenerate">原条件重新生成</el-button>
+      <el-button :disabled="submitting || recoveryBlocked" @click="openReviseDialog">
+        修改条件重跑
+      </el-button>
+      <el-button :disabled="submitting || recoveryBlocked" @click="regenerate">
+        原条件重新生成
+      </el-button>
       <el-button type="danger" plain :disabled="submitting" @click="cancelRun">取消任务</el-button>
     </div>
 
@@ -327,7 +373,7 @@ function openReviseDialog(): void {
           />
         </el-form-item>
         <el-form-item
-          v-if="stage === 'data_interpret'"
+          v-if="stage === 'data_fetch' || stage === 'data_interpret'"
           label="修订后的研究问题（每行一个，将替换原研究问题）"
         >
           <el-input

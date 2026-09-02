@@ -138,11 +138,14 @@ class ReportFusionAgent:
             option_advisory_issues.append(
                 "用户指定的章节顺序与7章21节标准顺序不一致，已保留标准顺序"
             )
-        formats: list[ReportFormat] = [
+        # markdown 是前端预览的渲染源，始终生成并落盘；output_formats 只决定
+        # 额外交付格式，缺省交付 HTML+PDF（用户无需单独下载 markdown）。
+        requested_formats: list[ReportFormat] = [
             item for item in CANONICAL_FORMAT_ORDER if item in options.output_formats
         ]
-        if not formats:
-            formats = list(CANONICAL_FORMAT_ORDER)
+        delivery_formats: list[ReportFormat] = (
+            requested_formats if requested_formats else ["html", "pdf"]
+        )
 
         release_mode = context.input_data.get("release_mode", "formal")
         accepted_risk_codes = context.input_data.get("accepted_risk_codes", [])
@@ -257,22 +260,22 @@ class ReportFusionAgent:
 
         generated: dict[ReportFormat, bytes] = {}
         export_issues: list[str] = []
-        if "markdown" in formats:
-            try:
-                generated["markdown"] = render_markdown(report).encode("utf-8")
-            except Exception as exc:
-                export_issues.append(f"Markdown导出失败：{type(exc).__name__}: {exc}")
+        # markdown 始终渲染：前端 ReportReader 以它为预览数据源。
+        try:
+            generated["markdown"] = render_markdown(report).encode("utf-8")
+        except Exception as exc:
+            export_issues.append(f"Markdown导出失败：{type(exc).__name__}: {exc}")
 
         html: str | None = None
-        if "html" in formats or "pdf" in formats:
+        if "html" in delivery_formats or "pdf" in delivery_formats:
             try:
                 html = render_html(report)
-                if "html" in formats:
+                if "html" in delivery_formats:
                     generated["html"] = html.encode("utf-8")
             except Exception as exc:
                 export_issues.append(f"HTML导出失败：{type(exc).__name__}: {exc}")
 
-        if "pdf" in formats:
+        if "pdf" in delivery_formats:
             if html is None:
                 export_issues.append("PDF导出失败：缺少可用HTML中间产物")
             else:
@@ -291,12 +294,34 @@ class ReportFusionAgent:
                 error="report_all_formats_failed",
             )
 
+        # 渲染视图模型落盘：真实夹具来源（T-5）与后续"事后重导出"的输入。
+        # 它是内部产物，不进入 manifest 与 StageResult.artifacts。
+        try:
+            view_model_bytes = json.dumps(
+                report.model_dump(mode="json"),
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            ).encode("utf-8")
+            save_report_bytes(
+                context.run_id,
+                context.revision,
+                "report_view.json",
+                view_model_bytes,
+            )
+        except Exception as exc:
+            export_issues.append(f"ReportView模型落盘失败：{type(exc).__name__}: {exc}")
+
         advisory_issues.extend(export_issues)
         if export_issues:
             # 导出失败属于交付层限制：保持风险可见，但不把内容合格的
             # 正式报告改标为草稿（与 DELIVERY_ONLY_ADVISORY_PREFIXES 同一哲学）。
             delivery_status = "ready_with_limits"
         generated_formats = [item for item in CANONICAL_FORMAT_ORDER if item in generated]
+        # formats 对外只报交付格式；唯一的交付格式全失败时回退报实际落盘
+        # 格式（契约要求 formats 至少一项，且落盘产物确实可供下载）。
+        delivery_ready = [item for item in delivery_formats if item in generated]
+        reported_formats = delivery_ready if delivery_ready else generated_formats
 
         entries: list[ReportArtifactManifestEntry] = []
         for report_format in generated_formats:
@@ -362,7 +387,7 @@ class ReportFusionAgent:
             tone=report.tone,
             report_depth=report.report_depth,
             delivery_status=delivery_status,
-            formats=generated_formats,
+            formats=reported_formats,
             source_revisions=sources,
             included_chart_ids=[chart.chart_id for chart in report.charts],
             artifacts=entries,

@@ -14,6 +14,7 @@ from typing import Literal
 
 from app.agents.data_fetcher.intent_models import ResearchIntentPlan
 from app.agents.data_fetcher.skill_capabilities import capability_supports
+from app.core.config import settings
 from app.schemas.acquisition import SkillName
 
 # 相对时间表述：按项目约定透传 raw_text，由确定性层前推处理，
@@ -31,6 +32,10 @@ class PlanVerdict:
     status: Literal["pass", "pass_with_warnings", "block"]
     warnings: list[str] = field(default_factory=list)
     blockers: list[str] = field(default_factory=list)
+    # 2026-09-01 方案（第一刀·改动点 3）：计划要求澄清但至少有一个子需求
+    # 可路由时，澄清应按 advisory 放行而不是 hard block；service 澄清门
+    # 据此做两级处理（治 23/61 的过度阻塞）。
+    advisory_eligible: bool = False
 
     @property
     def passed(self) -> bool:
@@ -119,10 +124,17 @@ def validate_intent_plan(plan: ResearchIntentPlan) -> PlanVerdict:
                 )
 
     # R4 — locked skills must be routed by some sub-requirement.
+    # 2026-09-01 最终方案（BUG-4）：锁分两类——指标锁（已注册指标命中）
+    # 维持「必须被路由」的守护；关键词锁（话题关键词，披露型查询）豁免：
+    # 被显式否决清空计划时不得借 R4 复活，否决成果（analysis_notes）保留。
     routed_skills = {skill for sub in subs for skill in sub.candidate_skills}
+    semantic_first = settings.AGENT1_SEMANTIC_FIRST_ENABLED
     for locked in plan.locked_skills:
-        if locked not in routed_skills:
-            blockers.append(f"locked_skill_not_routed:{locked}")
+        if locked in routed_skills:
+            continue
+        if semantic_first and plan.locked_skill_types.get(locked) == "keyword":
+            continue
+        blockers.append(f"locked_skill_not_routed:{locked}")
 
     # R5 — clarification flag and question list consistency.
     # "flag 无问题列表" 仅在完全不可推进时阻断；存在可路由子需求时
@@ -140,11 +152,23 @@ def validate_intent_plan(plan: ResearchIntentPlan) -> PlanVerdict:
     if _relative_time_without_clarification_reason(plan):
         warnings.append("clarification_should_be_advisory")
 
+    # 2026-09-01 方案（第一刀·改动点 3）：更宽的 advisory 识别——
+    # 只要存在可路由子需求，澄清就不得整体 hard block。
+    if plan.requires_clarification and routable_exists:
+        if "clarification_should_be_advisory" not in warnings:
+            warnings.append("clarification_should_be_advisory")
+
+    advisory_eligible = bool(plan.requires_clarification and routable_exists and not blockers)
+
     if blockers:
-        return PlanVerdict("block", warnings=warnings, blockers=blockers)
+        return PlanVerdict(
+            "block", warnings=warnings, blockers=blockers, advisory_eligible=False
+        )
     if warnings:
-        return PlanVerdict("pass_with_warnings", warnings=warnings)
-    return PlanVerdict("pass")
+        return PlanVerdict(
+            "pass_with_warnings", warnings=warnings, advisory_eligible=advisory_eligible
+        )
+    return PlanVerdict("pass", advisory_eligible=advisory_eligible)
 
 
 def has_relative_time_text(raw_text: str | None) -> bool:

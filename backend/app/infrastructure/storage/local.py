@@ -116,7 +116,13 @@ def save_report_bytes(
 ) -> tuple[str, str, int]:
     """Atomically persist one allow-listed report artifact."""
 
-    allowed = {"report.md", "report.html", "report.pdf", "manifest.json"}
+    allowed = {
+        "report.md",
+        "report.html",
+        "report.pdf",
+        "manifest.json",
+        "report_view.json",
+    }
     if filename not in allowed:
         raise ValueError("unsupported report artifact filename")
     if not content:

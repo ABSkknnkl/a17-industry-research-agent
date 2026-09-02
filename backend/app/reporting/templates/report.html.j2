@@ -14,7 +14,7 @@
     .eyebrow { color:var(--blue); font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
     h1 { font-size:44px; line-height:1.22; margin:18px 0; letter-spacing:-.02em; }
     .subtitle { font-size:19px; color:var(--muted); max-width:720px; }
-    .meta-grid { margin-top:56px; display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .meta-grid { margin-top:56px; display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
     .meta { border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
     .meta span { display:block; color:var(--muted); font-size:12px; }
     .meta strong { display:block; margin-top:4px; overflow-wrap:anywhere; }
@@ -28,6 +28,7 @@
     .chip { color:#334155; background:#e2e8f0; border-radius:999px; padding:2px 9px; font-size:11px; }
     .toc { columns:2; column-gap:36px; padding:0; list-style:none; }
     .toc li { break-inside:avoid; padding:5px 0; border-bottom:1px dotted var(--line); }
+    .toc a { color:inherit; text-decoration:none; }
     .chapter { page-break-before:always; }
     .chapter-summary { color:#334155; font-size:16px; background:var(--soft); padding:12px 16px; border-radius:8px; }
     .reference { color:var(--muted); font-size:12px; margin-top:5px; }
@@ -42,7 +43,7 @@
     .uncertainty strong { color:#92400e; }
     .risk-list li, .boundary-list li { margin:6px 0; }
     .footer-note { margin-top:48px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:12px; }
-    .draft-watermark { position:fixed; top:0; left:0; right:0; bottom:0; pointer-events:none; z-index:9999; display:flex; align-items:center; justify-content:center; opacity:0.08; font-size:72px; font-weight:900; color:#dc2626; transform:rotate(-20deg); letter-spacing:0.3em; }
+    .draft-watermark { position:absolute; inset:0; pointer-events:none; z-index:5; display:flex; align-items:center; justify-content:center; opacity:0.08; font-size:72px; font-weight:900; color:#dc2626; transform:rotate(-20deg); letter-spacing:0.3em; }
     .draft-banner { background:#fef2f2; border:2px solid #dc2626; border-radius:10px; padding:14px 20px; margin-bottom:24px; color:#991b1b; }
     .draft-banner strong { color:#dc2626; }
     .risk-appendix { page-break-before:always; }
@@ -96,11 +97,13 @@
     .density-detailed { font-size:15.5px; line-height:1.85; }
     .density-detailed main { padding-top:64px; padding-bottom:96px; }
     .density-detailed .chapter-summary { padding-top:16px; padding-bottom:16px; }
-    @page { size:A4; margin:14mm 12mm 16mm; @bottom-center { content:"A17 行业研究报告  ·  " counter(page); color:#64748b; font-size:9pt; } }
+    @page { size:A4; @bottom-center { content:"{{ report.industry_topic.removesuffix('行业') }}行业研究报告  ·  " counter(page); color:#64748b; font-size:9pt; } }
     @media print {
       html,body { background:#fff; }
       body { font-size:13.5px; line-height:1.62; }
-      main { max-width:none; padding:0; }
+      /* 与 .visual-*/.density-* 屏幕规则同权重且后置，确保打印版心归零 */
+      .visual-data-manual main, .visual-analysis-note main, .visual-deep-research main, main { max-width:none; padding:0; }
+      .density-compact main, .density-detailed main { padding-top:0; padding-bottom:0; }
       .cover { min-height:245mm; }
       h1 { font-size:32pt; }
       h2 { margin:32px 0 14px; }
@@ -118,12 +121,11 @@
 </head>
 <body class="visual-{{ report.visual_decision.effective_style|replace('_', '-') }} density-{{ report.visual_decision.density }}">
 <main>
-  {% if report.release_mode == 'draft_with_warnings' %}
-  <div class="draft-watermark">内部审核草稿</div>
-  {% endif %}
-
   <section class="cover">
-    <div class="eyebrow">A17 · 行业研究系统</div>
+    {% if report.release_mode == 'draft_with_warnings' %}
+    <div class="draft-watermark">内部审核草稿</div>
+    {% endif %}
+    <div class="eyebrow">{{ report.industry_topic }} · 行业研究系统</div>
     <h1>{{ report.title }}</h1>
     <p class="subtitle">{{ display_text(report.executive_summary.headline) }}</p>
     <div class="meta-grid">
@@ -148,7 +150,7 @@
 
   <h2>目录</h2>
   <ol class="toc">
-  {% for chapter in report.chapters %}<li>{{ chapter_label(chapter.chapter_id) }} · {{ display_text(chapter.title) }}</li>{% endfor %}
+  {% for chapter in report.chapters %}<li><a href="#chapter-{{ loop.index }}">{{ chapter_label(chapter.chapter_id) }} · {{ display_text(chapter.title) }}</a></li>{% endfor %}
   </ol>
 
   <h2>执行摘要</h2>
@@ -171,7 +173,7 @@
   <div class="footer-note"><p>{{ display_text(report.methodology_note) }}</p><p><strong>免责声明：</strong>{{ display_text(report.disclaimer) }}</p></div>
 
   {% for chapter in report.chapters %}
-  <section class="chapter">
+  <section class="chapter" id="chapter-{{ loop.index }}">
     <h2>{{ chapter_label(chapter.chapter_id) }} · {{ display_text(chapter.title) }}</h2>
     <p class="chapter-summary">{{ display_text(chapter.summary) }}</p>
     {% if report.report_depth != 'brief' %}

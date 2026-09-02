@@ -138,7 +138,15 @@ class DataFetchOptions(ContractModel):
 
 
 class DataFetchReviewEdits(ContractModel):
-    data_fetch_options: DataFetchOptions
+    # 2026-09-01 修复：advisory 升级门停在 data_fetch 阶段，用户“删除
+    # 某个研究问题”的修订诉求此前无合法通道（白名单只收
+    # data_fetch_options），revise 改不掉问题 → 升级门反复触发死循环。
+    # focus_questions 与 ResearchInput 同口径（1~12 条，每条 ≤200 字）。
+    focus_questions: list[ShortReviewText] | None = Field(
+        default=None, min_length=1, max_length=12
+    )
+    # 可选：仅修订研究问题时不必携带（exclude_none dump 不会覆盖原值）。
+    data_fetch_options: DataFetchOptions | None = None
 
 
 class DataInterpretReviewEdits(ContractModel):

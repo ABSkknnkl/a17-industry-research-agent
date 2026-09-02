@@ -10,7 +10,14 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from app.agents.data_fetcher.metric_registry import get_metric_spec
+from app.agents.data_fetcher.metric_registry import (
+    MetricSpec,
+    find_derivative_hit,
+    get_metric_spec,
+    research_boundary_terms,
+)
+from app.agents.data_fetcher.routing_telemetry import record_derivative_suspected
+from app.core.config import settings
 from app.schemas.acquisition import SkillName
 
 # Connectors ordered longest-first so "以及" wins over "并".
@@ -154,6 +161,10 @@ AMBIGUOUS_REFERENCE_PATTERNS: tuple[str, ...] = (
 _TIME_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"近\s*[一二三四五六七八九十两\d]+\s*年"), "year"),
     (re.compile(r"近\s*[一二三四五六七八九十两\d]+\s*个季度"), "quarter"),
+    # OBS 4.3（2026-09-01 最终方案）：时间词表补齐——「近/过去 N 个季度」、
+    # 「过去几个季度」与「上/下半年」。
+    (re.compile(r"(?:近|过去)\s*(?:[一二三四五六七八九十两\d]+\s*个?|几个)?季度"), "quarter"),
+    (re.compile(r"[上下]半年"), "month"),
     (re.compile(r"近\s*半年"), "month"),
     (re.compile(r"近\s*[一二三四五六七八九十两\d]+\s*个?月"), "month"),
     (re.compile(r"(20\d{2})\s*年"), "year"),
@@ -173,6 +184,11 @@ class ParsedSegment:
     time_raw: str | None = None
     time_granularity: str = "unknown"
     has_event_keyword: bool = False
+    # 语义优先并行仲裁（2026-09-01 最终方案）：
+    # metric_origin_skills —— 由已注册指标命中而来的技能（锁类型 metric）；
+    # unresolved_metric_names —— 边界词/被口径护栏拦下的诉求，进披露通道。
+    metric_origin_skills: list[str] = field(default_factory=list)
+    unresolved_metric_names: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -183,6 +199,9 @@ class DeterministicParse:
     metric_names: list[str]
     locked_skills: list[SkillName]
     ambiguous_reference: bool
+    # 锁类型标记（metric=指标命中，可信；keyword=话题关键词，披露型）。
+    locked_skill_types: dict[str, str] = field(default_factory=dict)
+    unresolved_metrics: list[str] = field(default_factory=list)
 
 
 def _compact(value: str) -> str:
@@ -250,9 +269,30 @@ def _split_segments(text: str, entities: list[str]) -> list[str]:
     ]
 
 
-def _segment_skills(text: str) -> tuple[list[SkillName], bool]:
+# 行业语境词（BUG-1 口径护栏）：在场且无公司实体时，公司口径别名不作指标锁。
+_INDUSTRY_CONTEXT_WORDS: tuple[str, ...] = ("行业", "产业", "各环节", "整体", "全行业")
+
+# 与 intent_merger._looks_like_industry 同源的本地实现（避免 parser→merger 环）。
+_INDUSTRY_ENTITY_TOKENS: tuple[str, ...] = ("行业", "板块", "产业", "概念")
+
+
+def _looks_like_industry_term(name: str) -> bool:
+    return any(token in name for token in _INDUSTRY_ENTITY_TOKENS)
+
+
+def _segment_skills(
+    text: str,
+    *,
+    industry_topic: str = "",
+    entity_names: list[str] | None = None,
+    semantic_first: bool = True,
+) -> tuple[list[SkillName], bool, list[str], list[str]]:
+    """返回 (skills, has_event, metric_origin_skills, unresolved_metric_names)。"""
+
     compact = _compact(text)
     skills: list[SkillName] = []
+    metric_origin_skills: list[str] = []
+    unresolved: list[str] = []
 
     def add(skill: SkillName) -> None:
         if skill not in skills:
@@ -278,21 +318,63 @@ def _segment_skills(text: str) -> tuple[list[SkillName], bool]:
 
     # Route from metrics extracted anywhere in the sentence.  Looking up the
     # whole sentence loses a metric surrounded by entity/time/question words.
-    metric_specs = [
-        spec
-        for metric in _segment_metrics(text)
-        if (spec := get_metric_spec(metric)) is not None
-    ]
+    # 2026-09-01 方案（第二刀/第三刀）：命中即锁之前加两道后校验——
+    # 1. unsupported 指标（数据源未验证）不硬路由，指标保留在
+    #    metric_names 走澄清门/用户裁决门，绝不编造；
+    # 2. 派生词否定表：命中 alias 且 ±8 字符窗口检出派生词（投资/爬坡/
+    #    过剩/跑满…，含裁决 1 的「*」预测词条目）→ 不 lock，写降级遥测，交 L2。
+    # 最终方案（BUG-1）：公司口径别名（requires_company_entity）仅在非行业
+    # 语境时锁定；行业问句命中转披露通道，不得静默取公司级数据。
+    entities_here = entity_names or []
+    has_company_entity = any(
+        entity for entity in entities_here if not _looks_like_industry_term(entity)
+    )
+    has_industry_context = bool(industry_topic and industry_topic in text) or any(
+        word in text for word in _INDUSTRY_CONTEXT_WORDS
+    )
+    metric_specs: list[MetricSpec] = []
+    for metric in _segment_metrics(text):
+        spec = get_metric_spec(metric)
+        if spec is None:
+            continue
+        if spec.unsupported:
+            continue
+        if (
+            spec.requires_company_entity
+            and semantic_first
+            and has_industry_context
+            and not has_company_entity
+        ):
+            if spec.display_name not in unresolved:
+                unresolved.append(spec.display_name)
+            continue
+        derivative = find_derivative_hit(text, spec)
+        if derivative is not None:
+            alias, word = derivative
+            record_derivative_suspected(
+                text,
+                metric=spec.display_name,
+                alias=alias,
+                derivative=word,
+            )
+            continue
+        metric_specs.append(spec)
     for metric_spec in metric_specs:
         add(metric_spec.primary_skill)
+        if metric_spec.primary_skill.value not in metric_origin_skills:
+            metric_origin_skills.append(metric_spec.primary_skill.value)
     business_metric = any(
         spec.primary_skill == SkillName.BUSINESS for spec in metric_specs
     )
     finance_metric = any(spec.primary_skill == SkillName.FINANCE for spec in metric_specs)
     if _contains_any(text, BUSINESS_KEYWORDS) or business_metric:
         add(SkillName.BUSINESS)
+        if business_metric and SkillName.BUSINESS.value not in metric_origin_skills:
+            metric_origin_skills.append(SkillName.BUSINESS.value)
     if _contains_any(text, FINANCE_EXTRA_KEYWORDS) or finance_metric:
         add(SkillName.FINANCE)
+        if finance_metric and SkillName.FINANCE.value not in metric_origin_skills:
+            metric_origin_skills.append(SkillName.FINANCE.value)
     if _contains_any(text, INSRESEARCH_KEYWORDS):
         add(SkillName.INSTITUTIONAL_RESEARCH)
     if _contains_any(text, NEWS_KEYWORDS):
@@ -303,7 +385,14 @@ def _segment_skills(text: str) -> tuple[list[SkillName], bool]:
         add(SkillName.INDUSTRY_CHAIN)
     if _contains_any(text, INDUSTRY_KEYWORDS):
         add(SkillName.INDUSTRY)
-    return skills[:3], has_event
+
+    # 研究边界词表（业务裁决 2）：命中即披露、永不硬路由。
+    if semantic_first:
+        for term in research_boundary_terms():
+            if term and _compact(term) in compact and term not in unresolved:
+                unresolved.append(term)
+
+    return skills[:3], has_event, metric_origin_skills, unresolved
 
 
 def _segment_metrics(text: str) -> list[str]:
@@ -348,14 +437,20 @@ def parse_intent(
 ) -> DeterministicParse:
     normalized = " ".join(str(text).split())[:4_000]
     entities = [entity for entity in dict.fromkeys(known_entities or []) if entity]
+    semantic_first = settings.AGENT1_SEMANTIC_FIRST_ENABLED
 
     segment_texts = _split_segments(normalized, entities) or [normalized]
     segments: list[ParsedSegment] = []
     for segment_text in segment_texts:
-        skills, has_event = _segment_skills(segment_text)
         entity_names = [entity for entity in entities if entity in segment_text]
         if industry_topic and industry_topic in segment_text and industry_topic not in entity_names:
             entity_names.append(industry_topic)
+        skills, has_event, metric_origin_skills, unresolved = _segment_skills(
+            segment_text,
+            industry_topic=industry_topic,
+            entity_names=entity_names,
+            semantic_first=semantic_first,
+        )
         time_raw, granularity = _segment_time(segment_text)
         segments.append(
             ParsedSegment(
@@ -366,6 +461,8 @@ def parse_intent(
                 time_raw=time_raw,
                 time_granularity=granularity,
                 has_event_keyword=has_event,
+                metric_origin_skills=metric_origin_skills,
+                unresolved_metric_names=unresolved,
             )
         )
 
@@ -388,14 +485,33 @@ def parse_intent(
             previous.time_raw = previous.time_raw or segment.time_raw
             if previous.time_granularity == "unknown":
                 previous.time_granularity = segment.time_granularity
+            previous.metric_origin_skills = list(
+                dict.fromkeys(previous.metric_origin_skills + segment.metric_origin_skills)
+            )
+            previous.unresolved_metric_names = list(
+                dict.fromkeys(
+                    previous.unresolved_metric_names + segment.unresolved_metric_names
+                )
+            )
         else:
             merged.append(segment)
 
     locked: list[SkillName] = []
+    locked_types: dict[str, str] = {}
     for segment in merged:
+        metric_origin = set(segment.metric_origin_skills)
         for skill in segment.skills:
             if skill not in locked:
                 locked.append(skill)
+            if skill.value in metric_origin:
+                locked_types[skill.value] = "metric"
+            else:
+                locked_types.setdefault(skill.value, "keyword")
+    unresolved_metrics = list(
+        dict.fromkeys(
+            name for segment in merged for name in segment.unresolved_metric_names
+        )
+    )[:20]
     ambiguous = any(pattern in normalized for pattern in AMBIGUOUS_REFERENCE_PATTERNS)
     return DeterministicParse(
         normalized_text=normalized,
@@ -404,4 +520,6 @@ def parse_intent(
         metric_names=list(dict.fromkeys(name for segment in merged for name in segment.metric_names)),
         locked_skills=locked,
         ambiguous_reference=ambiguous,
+        locked_skill_types=locked_types,
+        unresolved_metrics=unresolved_metrics,
     )

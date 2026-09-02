@@ -26,11 +26,12 @@ from app.agents.data_fetcher.intent_models import (
 )
 from app.agents.data_fetcher.metric_registry import get_metric_spec
 from app.agents.data_fetcher.plan_validator import validate_intent_plan
-from app.agents.data_fetcher.routing_telemetry import record_decomposition
+from app.agents.data_fetcher.routing_telemetry import record_decomposition, record_llm_veto
 from app.agents.data_fetcher.skill_capabilities import (
     SKILL_CAPABILITIES,
     capability_supports,
 )
+from app.core.config import settings
 from app.schemas.acquisition import SkillName
 
 _QUANTITATIVE_SKILLS = frozenset(
@@ -224,6 +225,10 @@ def _deterministic_plan(
         clarification_questions=clarification_questions,
         parser_mode=parser_mode,  # type: ignore[arg-type]
         warnings=[*warnings, *unresolved_warnings],
+        # 语义优先并行仲裁（2026-09-01 最终方案）：边界词/口径护栏披露留痕
+        # + 锁类型标记（metric/keyword）透传给 validator 与合并层。
+        unresolved_metrics=list(parse.unresolved_metrics),
+        locked_skill_types=dict(parse.locked_skill_types),
     )
 
 
@@ -286,13 +291,72 @@ def _is_noise_text(text: str) -> bool:
     return _PUNCT_OR_SPACE.sub("", compact) == ""
 
 
+def _skill_serves_all_metrics(skill: SkillName, metric_types: set[str]) -> bool:
+    """合并护栏专用：技能必须能服务合并后的**全部**指标类型。
+
+    与 ``capability_supports``（交集即可）不同：放宽合并把两组指标并进
+    同一子需求，任何一个技能服务不了其中一类指标都会产生半吊子查询。
+    """
+
+    capability = SKILL_CAPABILITIES.get(skill)
+    if capability is None:
+        return False
+    if not metric_types:
+        return True
+    return metric_types <= set(capability.metric_types)
+
+
+def _merge_compatible(
+    target: IntentSubRequirement,
+    llm_sub: IntentSubRequirement,
+    llm_skills: tuple[SkillName, ...],
+) -> bool:
+    """严格匹配路径的能力护栏（2026-09-01 最终方案，BUG-3）。
+
+    文本相同或 entity+metric 双重叠都不足以合入：目标碎片既有技能必须
+    能服务合并后的全部指标类型，否则 L2 碎片独立成子需求（锁定技能与
+    L2 补充并行存在，两不相害）。与放宽路径护栏 2 同一判据。
+    ``AGENT1_SEMANTIC_FIRST_ENABLED`` 关闭时回退四刀后行为（恒可合入）。
+    """
+
+    if not settings.AGENT1_SEMANTIC_FIRST_ENABLED:
+        return True
+    merged_metric_types = (
+        {metric.metric_type for metric in target.metrics}
+        | {metric.metric_type for metric in llm_sub.metrics}
+    ) - {"unknown"}
+    combined = [
+        skill
+        for skill in (
+            *(_resolve_skill(value) for value in target.candidate_skills),
+            *llm_skills,
+        )
+        if skill is not None
+    ]
+    if not combined:
+        return True
+    return all(
+        _skill_serves_all_metrics(skill, merged_metric_types) for skill in combined
+    )
+
+
 def _find_merge_target(
     subs: list[IntentSubRequirement],
     llm_sub: IntentSubRequirement,
     *,
     used_indices: set[int],
+    llm_skills: tuple[SkillName, ...] = (),
+    relaxed: bool = True,
 ) -> int | None:
-    """Match by request meaning, never merely by sharing the same Skill."""
+    """Match by request meaning, never merely by sharing the same Skill.
+
+    2026-09-01 方案（第三刀·改动点 2）：严格匹配（文本相同 → entity 且
+    metric 同时重叠）优先；都不命中且 ``relaxed`` 时，entity **或** metric
+    重叠也可合并，配两个护栏防误合——
+    1. 两碎片 intent_type 必须相同；
+    2. 合并后所有技能都能通过 ``capability_supports`` 对合并指标类型的校验。
+    治 A02/C06：顿号切分碎片因过严条件合并失败产生重复子查询。
+    """
 
     llm_texts = {
         _compact_text(llm_sub.original_text),
@@ -305,7 +369,8 @@ def _find_merge_target(
             _compact_text(sub.original_text),
             _compact_text(sub.normalized_text),
         } - {""}
-        if llm_texts & sub_texts:
+        # BUG-3 能力护栏：文本相同也不得合入能力不兼容的技能组合。
+        if llm_texts & sub_texts and _merge_compatible(sub, llm_sub, llm_skills):
             return index
 
     llm_entities = {_entity_key(item) for item in llm_sub.entities}
@@ -315,12 +380,50 @@ def _find_merge_target(
             continue
         entity_overlap = llm_entities & {_entity_key(item) for item in sub.entities}
         metric_overlap = llm_metrics & {_metric_key(item) for item in sub.metrics}
-        if entity_overlap and metric_overlap:
+        if (
+            entity_overlap
+            and metric_overlap
+            and _merge_compatible(sub, llm_sub, llm_skills)
+        ):
             return index
 
+    if relaxed:
+        llm_metric_types = {metric.metric_type for metric in llm_sub.metrics} - {"unknown"}
+        for index, sub in enumerate(subs):
+            if index in used_indices:
+                continue
+            # 护栏 1：诉求性质不同不得合并（财务诉求≠行业诉求）。
+            if sub.intent_type != llm_sub.intent_type:
+                continue
+            entity_overlap = llm_entities & {_entity_key(item) for item in sub.entities}
+            metric_overlap = llm_metrics & {_metric_key(item) for item in sub.metrics}
+            if not (entity_overlap or metric_overlap):
+                continue
+            # 护栏 2：合并后每个技能都必须能服务合并后的全部指标类型。
+            merged_metric_types = (
+                {metric.metric_type for metric in sub.metrics} | llm_metric_types
+            ) - {"unknown"}
+            combined_skills = [
+                skill
+                for skill in (
+                    *(_resolve_skill(value) for value in sub.candidate_skills),
+                    *llm_skills,
+                )
+                if skill is not None
+            ]
+            if combined_skills and all(
+                _skill_serves_all_metrics(skill, merged_metric_types)
+                for skill in combined_skills
+            ):
+                return index
+
     available = [index for index in range(len(subs)) if index not in used_indices]
+    # 单碎片遗留回退同样过能力护栏（BUG-3）：否则唯一确定性碎片会无条件
+    # 吞掉能力不兼容的 L2 碎片，触发 R3 整单回退。
     if len(available) == 1 and len(subs) == 1:
-        return available[0]
+        candidate = subs[available[0]]
+        if _merge_compatible(candidate, llm_sub, llm_skills):
+            return available[0]
     return None
 
 
@@ -333,6 +436,7 @@ def _merge_llm_plan(
     confidence_review: float,
     max_sub_requirements: int,
     max_skills_per_requirement: int,
+    veto_enabled: bool = True,
 ) -> ResearchIntentPlan:
     accepted: list[str] = []
     rejected: list[str] = list(base.rejected_skills)
@@ -340,6 +444,12 @@ def _merge_llm_plan(
     subs = [sub.model_copy(deep=True) for sub in base.sub_requirements]
     used_indices: set[int] = set()
     pending_questions: list[str] = []
+    # 层间仲裁（2026-09-01 方案第一刀）：否决通道收集器。
+    # vetoed_texts — 被 LLM 显式否决的碎片文本（紧凑形态）；
+    # vetoed_skills — 被否决碎片原本携带的确定性锁定技能。
+    analysis_notes: list[str] = list(base.analysis_notes)
+    vetoed_texts: set[str] = set()
+    vetoed_skills: set[str] = set()
 
     for llm_sub in llm_plan.sub_requirements[:max_sub_requirements]:
         # 纯标点/空白子需求（如顿号「、」）：复合问句被拆解时 LLM 偶尔会把连接符单独报出。
@@ -366,6 +476,23 @@ def _merge_llm_plan(
             valid_skills.append(skill)
 
         if not valid_skills:
+            # 层间仲裁（2026-09-01 方案第一刀·改动点 1）：LLM 显式否决。
+            # 否决必须显式：candidate_skills 为空且（intent_type=analysis_only
+            # 或给出 reject_reason）。单纯没选出技能不构成否决——防止 LLM
+            # 偷懒导致 recall 下降，此类碎片维持确定性层兜底。
+            if veto_enabled and (
+                llm_sub.intent_type == "analysis_only" or llm_sub.reject_reason
+            ):
+                note = llm_sub.normalized_text[:200]
+                if note not in analysis_notes and len(analysis_notes) < 12:
+                    analysis_notes.append(note)
+                vetoed_texts.add(_compact_text(llm_sub.normalized_text))
+                warnings.append(f"llm_veto:{llm_sub.requirement_id}"[:200])
+                record_llm_veto(
+                    llm_sub.normalized_text,
+                    requirement_id=llm_sub.requirement_id,
+                    reason=llm_sub.reject_reason or "analysis_only",
+                )
             continue
 
         if llm_sub.confidence < confidence_review:
@@ -394,6 +521,7 @@ def _merge_llm_plan(
             subs,
             llm_sub,
             used_indices=used_indices,
+            llm_skills=tuple(valid_skills),
         )
         if target_index is not None:
             used_indices.add(target_index)
@@ -474,15 +602,49 @@ def _merge_llm_plan(
             )
         ]
 
+    # 层间仲裁（第一刀·改动点 1 联动）：被显式否决的确定性碎片从计划中移除。
+    # 其携带的锁定技能记入 vetoed_skills，供下方条件补回判断。
+    if vetoed_texts:
+        kept_subs: list[IntentSubRequirement] = []
+        for sub in subs:
+            if (
+                sub.source == "deterministic"
+                and _compact_text(sub.normalized_text) in vetoed_texts
+            ):
+                vetoed_skills.update(sub.candidate_skills)
+                warnings.append(
+                    f"llm_veto_fragment_removed:{sub.requirement_id}"[:200]
+                )
+                continue
+            kept_subs.append(sub)
+        subs = kept_subs
+
     # Locked skills are immutable: verify they still appear after merging.
+    # 2026-09-01 方案（第一刀·改动点 2）：条件补回——仅当该锁定不是被
+    # 显式否决碎片的唯一支撑时才强制补回；被否决的锁定不再复活。
     present = {value for sub in subs for value in sub.candidate_skills}
     for locked in locked_skills:
-        if locked not in present:
-            warnings.append(f"locked_skill_missing_after_merge:{locked}"[:200])
-            if subs:
-                subs[0].candidate_skills = ([locked] + subs[0].candidate_skills)[
-                    :max_skills_per_requirement
-                ]
+        if locked in present:
+            continue
+        if locked in vetoed_skills:
+            warnings.append(f"locked_skill_vetoed_not_restored:{locked}"[:200])
+            continue
+        warnings.append(f"locked_skill_missing_after_merge:{locked}"[:200])
+        if subs:
+            subs[0].candidate_skills = ([locked] + subs[0].candidate_skills)[
+                :max_skills_per_requirement
+            ]
+
+    # fail-closed：否决清空了全部可执行碎片时，停下说明而不是产出空计划
+    # （与 _extract_analysis_directives 的全分析型处理同构）。
+    if vetoed_texts and not any(sub.candidate_skills for sub in subs):
+        question = (
+            "该请求的数据诉求已被语义层显式否决（判断题/派生诉求/分析型诉求），"
+            "无独立取数子需求；请补充需要采集的具体数据指标，"
+            "或确认由分析阶段基于已采集数据完成。"
+        )
+        if question not in pending_questions:
+            pending_questions.append(question)
 
     actionable_sub_requirement_exists = any(sub.candidate_skills for sub in subs)
     clarification_questions = list(pending_questions)
@@ -514,6 +676,8 @@ def _merge_llm_plan(
             "parser_mode": "hybrid",
             "requires_clarification": bool(clarification_questions),
             "clarification_questions": clarification_questions,
+            # 否决碎片的原文摘要透传 Agent 2（第一刀·改动点 1）。
+            "analysis_notes": analysis_notes[:12],
         }
     )
 
@@ -564,6 +728,9 @@ def _inherit_metrics_from_siblings(plan: ResearchIntentPlan) -> ResearchIntentPl
 
     for target in subs:
         # 触发条件：candidate_skills 为空、有实体、无指标。
+        # 注：OBS 4.2 曾尝试取消「必须有实体」限制以合并连词切出的空碎片
+        # （如「国内」），实测会把「尚未注册的自定义口径」这类本应保持
+        # 不可路由的碎片也并进兄弟碎片，破坏部分可路由语义——回滚。
         if target.candidate_skills or not target.entities or target.metrics:
             continue
 
@@ -754,8 +921,17 @@ async def _build_intent_plan_uncalibrated(
     confidence_review: float = 0.75,
     max_sub_requirements: int = 12,
     max_skills_per_requirement: int = 3,
+    veto_enabled: bool | None = None,
 ) -> ResearchIntentPlan:
-    """LLM-first semantic plan calibrated by deterministic locks and fallback."""
+    """LLM-first semantic plan calibrated by deterministic locks and fallback.
+
+    ``veto_enabled=None`` 时取 ``settings.AGENT1_LLM_VETO_ENABLED``
+    （2026-09-01 方案第一刀的风险开关，默认开）。
+    """
+
+    effective_veto_enabled = (
+        settings.AGENT1_LLM_VETO_ENABLED if veto_enabled is None else veto_enabled
+    )
 
     parse = parse_intent(
         user_text, industry_topic=industry_topic, known_entities=known_entities
@@ -806,6 +982,7 @@ async def _build_intent_plan_uncalibrated(
         confidence_review=confidence_review,
         max_sub_requirements=max_sub_requirements,
         max_skills_per_requirement=max_skills_per_requirement,
+        veto_enabled=effective_veto_enabled,
     ))
 
 
@@ -846,6 +1023,7 @@ async def build_intent_plan(
     confidence_review: float = 0.75,
     max_sub_requirements: int = 12,
     max_skills_per_requirement: int = 3,
+    veto_enabled: bool | None = None,
 ) -> ResearchIntentPlan:
     """Build the intent plan, then gate it through the deterministic validator.
 
@@ -863,6 +1041,7 @@ async def build_intent_plan(
         confidence_review=confidence_review,
         max_sub_requirements=max_sub_requirements,
         max_skills_per_requirement=max_skills_per_requirement,
+        veto_enabled=veto_enabled,
     )
     verdict = validate_intent_plan(plan)
 
@@ -876,6 +1055,7 @@ async def build_intent_plan(
             confidence_review=confidence_review,
             max_sub_requirements=max_sub_requirements,
             max_skills_per_requirement=max_skills_per_requirement,
+            veto_enabled=veto_enabled,
         )
         fallback_verdict = validate_intent_plan(fallback)
         if fallback_verdict.status == "block":

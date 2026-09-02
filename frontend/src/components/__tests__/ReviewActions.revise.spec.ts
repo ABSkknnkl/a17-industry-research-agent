@@ -61,19 +61,20 @@ afterEach(() => {
 })
 
 describe('ReviewActions revise payload 契约（后端 ReviewEdits 白名单）', () => {
-  it('data_fetch 阶段不展示「修订后的研究问题」输入框', async () => {
+  // 2026-09-01 契约变更：DataFetchReviewEdits 白名单已纳入 focus_questions
+  // （advisory 升级门下用户「删除某个研究问题」的修订诉求需要合法通道），
+  // 因此 data_fetch 与 data_interpret 两个阶段都展示研究问题输入框。
+  it('data_fetch 阶段展示「修订后的研究问题」输入框', async () => {
     const wrapper = mountComponent('data_fetch')
     await openReviseDialog(wrapper)
 
-    // 修复前：data_fetch 也渲染研究问题 textarea，诱导用户填出后端 422 的字段
     const textareas = wrapper.findAll('textarea')
-    expect(textareas.length).toBe(1)
-    // 唯一的 textarea 是修改备注；研究问题输入框不应出现
+    expect(textareas.length).toBe(2)
     expect(wrapper.text()).toContain('修改备注')
-    expect(wrapper.text()).not.toContain('修订后的研究问题')
+    expect(wrapper.text()).toContain('修订后的研究问题')
   })
 
-  it('data_fetch 修订仅提交 comment，edited_data 为 null（回归测试：修复前会带 focus_questions 触发 422）', async () => {
+  it('data_fetch 修订仅填备注时，edited_data 为 null', async () => {
     const wrapper = mountComponent('data_fetch')
     await openReviseDialog(wrapper)
 
@@ -87,9 +88,24 @@ describe('ReviewActions revise payload 契约（后端 ReviewEdits 白名单）'
     expect(payload.run_id).toBe('run-1')
     expect(payload.expected_revision).toBe(3)
     expect(payload.comment).toBe('请补充动力电池装机量数据，时间扩大到近5年')
-    // 后端 DataFetchReviewEdits 白名单只接受 data_fetch_options：
-    // 提交 focus_questions 会 422（"edited_data is not allowed for data_fetch"）
     expect(payload.edited_data).toBeNull()
+  })
+
+  it('data_fetch 修订提交研究问题时按白名单契约携带 focus_questions', async () => {
+    const wrapper = mountComponent('data_fetch')
+    await openReviseDialog(wrapper)
+
+    const textareas = wrapper.findAll('textarea')
+    await textareas[0].setValue('删除第三个问题')
+    await textareas[1].setValue('锂电池行业2024-2025年出货量如何？')
+    await clickSubmit(wrapper)
+
+    expect(submitReviewMock).toHaveBeenCalledTimes(1)
+    const payload = submitReviewMock.mock.calls[0][0] as unknown as Record<string, unknown>
+    expect(payload.stage).toBe('data_fetch')
+    expect(payload.edited_data).toEqual({
+      focus_questions: ['锂电池行业2024-2025年出货量如何？'],
+    })
   })
 
   it('data_interpret 修订仍按契约提交 focus_questions', async () => {

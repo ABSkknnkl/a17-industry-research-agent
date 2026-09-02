@@ -45,10 +45,11 @@ class OpenAICompatiblePromptCompiler:
             temperature=0.1,
             timeout=timeout_seconds,
             max_retries=2,
-            model_kwargs={"max_tokens": 6_000},
+            # BUG-5（2026-09-01）：同 analysis 模型，走显式参数避免弃用告警。
+            max_tokens=6_000,
             extra_body=(
                 {"thinking": {"type": "disabled"}}
-                if model_name.lower().startswith("deepseek-")
+                if model_name.lower().startswith(("deepseek-", "ark-code-"))
                 else None
             ),
         )

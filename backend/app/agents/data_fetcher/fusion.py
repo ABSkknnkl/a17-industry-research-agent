@@ -55,6 +55,11 @@ def fuse_evidence(
     fused = fused_candidates[:200]
     groups: dict[str, list[EvidenceItem]] = defaultdict(list)
     for item in fused:
+        # BUG-4（2026-09-02）：冲突检测只针对数值型指标。新闻资讯类证据的
+        # value 是标题/摘要文本（metric_name 常为“标题/summary”），把多条
+        # 不同文本判成“数据冲突”是误报；仅数值参与取值对比。
+        if not _is_numeric_value(item.value):
+            continue
         groups[_comparison_key(item)].append(item)
     conflicts: list[ConflictRecord] = []
     for items in groups.values():
@@ -226,6 +231,12 @@ def _normalized_value(value: object) -> object:
     if isinstance(value, str):
         return re.sub(r"\s+", " ", value).strip()
     return value
+
+
+def _is_numeric_value(value: object) -> bool:
+    """True only for numeric evidence values; text (title/summary) is excluded."""
+    normalized = _normalized_value(value)
+    return isinstance(normalized, (int, float)) and not isinstance(normalized, bool)
 
 
 def _distinct_values(items: list[EvidenceItem]) -> list[object]:

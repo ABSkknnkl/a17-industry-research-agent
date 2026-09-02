@@ -1,0 +1,99 @@
+[
+  {
+    "id": "ADV-01",
+    "attack": "词表逃逸（自夸换措辞）",
+    "dimension": "客观性",
+    "linter_expected": null,
+    "judge_should_fail": true,
+    "text": "本报告基于严谨的方法论，系统地重构了行业供需结构与竞争格局的完整图景。"
+  },
+  {
+    "id": "ADV-02",
+    "attack": "分段逃逸（双主语长句拆成合法短句，跨句指代断裂）",
+    "dimension": "连贯性",
+    "linter_expected": null,
+    "judge_should_fail": true,
+    "text": "产业链利润池正在向中游迁移。议价能力随之显著增强。景气周期已进入全新阶段。"
+  },
+  {
+    "id": "ADV-03",
+    "attack": "引号伪装（自夸句藏进引号）",
+    "dimension": "客观性",
+    "linter_expected": "R3_SELF_PRAISE",
+    "judge_should_fail": true,
+    "text": "所谓“本报告深入剖析了行业底层逻辑”是外界的误读，我们的数据基础依然扎实。"
+  },
+  {
+    "id": "ADV-04",
+    "attack": "术语稀释（单句塞多个词表外术语）",
+    "dimension": "通俗度",
+    "linter_expected": null,
+    "judge_should_fail": true,
+    "text": "正极、隔膜与电解质三大体系的重构正在固态路线迭代中加速，界面阻抗、离子电导率与干房露点成为制约量产爬坡的新变量。"
+  },
+  {
+    "id": "ADV-05",
+    "attack": "垃圾长句（重复填充制造伪信息）",
+    "dimension": "通顺度",
+    "linter_expected": null,
+    "judge_should_fail": true,
+    "text": "行业景气度的提升是景气度持续改善的结果，而这种改善将在未来的改善进程中不断得到改善与提升。"
+  },
+  {
+    "id": "ADV-06",
+    "attack": "数字洪水（一句塞5个数字零解读）",
+    "dimension": "通俗度",
+    "linter_expected": null,
+    "judge_should_fail": true,
+    "text": "公司实现营业收入123.4亿元，归母净利润8.9亿元，毛利率21.4%，净利率7.2%，研发费用率5.6%。"
+  },
+  {
+    "id": "ADV-07",
+    "attack": "跨段指代（公司名在上一段才出现，已知盲区）",
+    "dimension": "连贯性",
+    "linter_expected": null,
+    "judge_should_fail": false,
+    "known_blindspot": true,
+    "text": "该公司的产能扩张节奏明显超出市场预期，新基地的投产计划也在同步推进之中。"
+  },
+  {
+    "id": "ADV-08",
+    "attack": "引号枚举无解释（伪装规范的术语罗列）",
+    "dimension": "通俗度",
+    "linter_expected": null,
+    "judge_should_fail": true,
+    "text": "行业的“产能利用率”“开工率”与“景气度”均呈现改善态势，三者共振的格局已经确立。"
+  },
+  {
+    "id": "ADV-09",
+    "attack": "公告腔混写（非研报语体）",
+    "dimension": "通顺度",
+    "linter_expected": null,
+    "judge_should_fail": true,
+    "text": "根据《公司法》相关规定及公司章程的要求，本事项已经本次会议审议通过，现予以披露并提请投资者关注相关风险。"
+  },
+  {
+    "id": "ADV-10",
+    "attack": "机翻腔",
+    "dimension": "通顺度",
+    "linter_expected": null,
+    "judge_should_fail": true,
+    "text": "市场的增长已经被那正在增加的需求所驱动，并且这种驱动将继续被驱动下去。"
+  },
+  {
+    "id": "ADV-11",
+    "attack": "营销体（口号+情绪化）",
+    "dimension": "客观性",
+    "linter_expected": null,
+    "judge_should_fail": true,
+    "text": "抢占黄金窗口期，锁定未来！行业的爆发节点已经越来越近，巨大的机遇不容错过。"
+  },
+  {
+    "id": "ADV-12",
+    "attack": "自问自答+自夸变体（验证现有防线）",
+    "dimension": "客观性",
+    "linter_expected": "R10_AI_RHETORIC",
+    "judge_should_fail": true,
+    "text": "这意味着什么？这说明我们严谨的判断正在被不断验证，行业的逻辑依然坚固。"
+  }
+]

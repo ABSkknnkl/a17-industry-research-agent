@@ -76,11 +76,11 @@ class OpenAICompatibleSemanticRouter:
                 max_tokens=1_500,
                 extra_body=(
                     {"thinking": {"type": "disabled"}}
-                    if model_name.lower().startswith("deepseek-")
+                    if model_name.lower().startswith(("deepseek-", "ark-code-"))
                     else None
                 ),
             )
-        if model_name.lower().startswith("deepseek-"):
+        if model_name.lower().startswith(("deepseek-", "ark-code-")):
             self._model = chat_model.with_structured_output(
                 SemanticRouteBatch,
                 method="json_mode",
@@ -100,6 +100,7 @@ class OpenAICompatibleSemanticRouter:
                         "你是金融数据查询路由器，只负责分类，不回答问题。"
                         "每个输入只能选择一个已存在的 Skill，不得自创 Skill，"
                         "不得生成 HTTP/CLI/工具参数。"
+                        "只输出一个 JSON 对象，不要输出 Markdown 或解释文字。"
                     )
                 ),
                 HumanMessage(
@@ -159,6 +160,10 @@ class LLMSubRequirement(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
     requires_clarification: bool = False
     clarification_question: str | None = Field(default=None, max_length=500)
+    # 层间仲裁（2026-09-01 方案第一刀）：显式否决理由。与
+    # intent_models.IntentSubRequirement.reject_reason 同步；candidate_skills
+    # 为空且（intent_type="analysis_only" 或给出本字段）才构成否决。
+    reject_reason: str | None = Field(default=None, max_length=500)
     source: Literal["llm"] = "llm"
 
 
@@ -255,7 +260,8 @@ _DECOMPOSER_SYSTEM_PROMPT = (
     "3. 从给定Skill枚举中选择一个或多个候选Skill；\n"
     "4. 标记歧义和需要澄清的内容；\n"
     "5. 多实体对比/并列问题（A、B、C的X指标对比）必须将所有实体保留在同一个子需求内（entities 数组放全），禁止把单个实体拆成无指标的独立子需求；\n"
-    "6. X对Y的影响/传导/关系/贡献属于分析诉求，不是数据查询，不得生成取数子需求；若用户问题中只有分析诉求，将其写入 clarification_questions 说明该诉求将由分析阶段基于已采集数据完成。\n"
+    "6. X对Y的影响/传导/关系/贡献属于分析诉求，不是数据查询，不得生成取数子需求；若用户问题中只有分析诉求，将其写入 clarification_questions 说明该诉求将由分析阶段基于已采集数据完成；\n"
+    "7. 显式否决：若某碎片确定不是取数需求（判断题、派生诉求如“产能投资/产能爬坡”、纯分析），输出 candidate_skills=[] 且 intent_type=\"analysis_only\"，并填写 reject_reason 说明否决依据；禁止用空 candidate_skills 且无否决标记的方式表达“不知道”。\n"
     "澄清规则：\n"
     "1. 相对时间表述（近N年/最近/近期/近半年）无需澄清，直接把原文写入time_range.raw_text透传，由确定性层基于research_as_of默认前推处理，不得因此设置requires_clarification；\n"
     "2. 只有主体歧义（无法确定指哪家公司、哪个行业）才输出clarification_questions。\n"
@@ -388,7 +394,7 @@ class ResearchIntentDecomposer:
                 max_tokens=3_000,
                 extra_body=(
                     {"thinking": {"type": "disabled"}}
-                    if model_name.lower().startswith("deepseek-")
+                    if model_name.lower().startswith(("deepseek-", "ark-code-"))
                     else None
                 ),
             )

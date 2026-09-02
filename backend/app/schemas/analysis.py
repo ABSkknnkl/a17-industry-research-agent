@@ -72,6 +72,13 @@ class AnalysisRequest(BaseModel):
     review_feedback: str | None = None
     rejected_claim_ids: list[str] = Field(default_factory=list)
     research_brief: ResearchBrief = Field(default_factory=ResearchBrief)
+    # Agent 1 透传的分析提示（P0-2 通道，2026-09-01 仲裁接线）：被判定为
+    # 分析型/派生诉求（判断题、影响传导、显式否决等）的碎片不单独取数，
+    # Agent 2 仅作分析线索，不得当作已采集数据。由 Agent 1 成功出口的
+    # 顶层聚合键提供；旧运行缺失该键时默认空列表（向后兼容）。
+    analysis_notes: list[Annotated[str, Field(min_length=1, max_length=200)]] = Field(
+        default_factory=list, max_length=12
+    )
 
     @model_validator(mode="after")
     def align_report_depth(self) -> "AnalysisRequest":

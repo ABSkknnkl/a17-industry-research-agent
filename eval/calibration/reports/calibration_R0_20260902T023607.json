@@ -1,0 +1,61 @@
+{
+  "round": "R0",
+  "generated_at": "2026-09-01T18:36:07+00:00",
+  "judge_mode": "surrogate",
+  "threshold": 0.6,
+  "samples": {
+    "regression_positive": 19,
+    "regression_negative": 16,
+    "adversarial": 0,
+    "exam": 48
+  },
+  "gates": {
+    "G1_linter_确定性负样本抓取率": {
+      "value": 1.0,
+      "gate": "==1.0",
+      "passed": true,
+      "misses": []
+    },
+    "G2_judge_软判负样本低于阈值占比": {
+      "value": 1.0,
+      "gate": ">=0.90",
+      "passed": true,
+      "escapes": [],
+      "n": 1
+    },
+    "G3_judge_正样本达标率": {
+      "value": 1.0,
+      "gate": ">=0.95",
+      "passed": true,
+      "mean": 0.8589,
+      "mean_gate": ">=0.75",
+      "mean_passed": true
+    },
+    "G4_kappa_一致率": {
+      "value": 1.0,
+      "gate": ">=0.9优 / 0.8-0.9观察 / <0.8触发仲裁",
+      "passed": true,
+      "raw_agreement": 1.0
+    },
+    "G5_误杀率": {
+      "value": 0.0,
+      "gate": "<0.05",
+      "passed": true,
+      "false_kills": 0
+    }
+  },
+  "all_gates_passed": true,
+  "exam_threshold_curve_readable_vs_rest": {
+    "0.5": 0.3125,
+    "0.55": 0.3125,
+    "0.6": 0.3333,
+    "0.65": 0.5417,
+    "0.7": 0.7708
+  },
+  "exam_score_distribution": {
+    "min": 0.58,
+    "median": 0.72,
+    "max": 0.88,
+    "below_threshold": 1
+  }
+}

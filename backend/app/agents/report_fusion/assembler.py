@@ -112,6 +112,8 @@ def build_report_view(
     if selected_chart_ids:
         user_selected = set(selected_chart_ids) & ready_ids
 
+    effective_depth = report_depth or analysis.research_brief.report_depth or "standard"
+
     placements: dict[str, str] = {}
     for chapter in chapter_result.chapters:
         for section in chapter.sections:
@@ -124,6 +126,14 @@ def build_report_view(
             if chart_id in ready_ids:
                 placements[chart_id] = section_id
 
+    # 简报深度不渲染章节小节：若保留 placement，挂点图表会随小节一起消失且
+    # 不会进附录（placement 非空不算未挂载）。置空 placement 让全部图表
+    # 进入附录，由三个渲染器现有的未挂载路径统一接住。
+    def _placement_for(chart_id: str) -> str | None:
+        if effective_depth == "brief":
+            return None
+        return placements.get(chart_id)
+
     embedded = [
         EmbeddedChart(
             chart_id=spec.chart_id,
@@ -133,7 +143,7 @@ def build_report_view(
             insight_goal=spec.insight_goal,
             quality_issue_ids=spec.quality_issue_ids,
             footnotes=spec.footnotes,
-            placement_section_id=placements.get(spec.chart_id),
+            placement_section_id=_placement_for(spec.chart_id),
             svg=_render_chart(spec),
         )
         for spec in chart_result.chart_specs
@@ -157,7 +167,7 @@ def build_report_view(
         research_as_of=analysis.research_as_of,
         generated_at=datetime.now(UTC),
         tone=tone,
-        report_depth=report_depth or analysis.research_brief.report_depth or "standard",
+        report_depth=effective_depth,
         delivery_status=delivery_status,
         executive_summary=ExecutiveSummary(
             headline=analysis.headline,
