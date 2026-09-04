@@ -42,7 +42,6 @@ def test_review_actions_match_runtime_model() -> None:
         "focus_questions",
         "analysis_depth",
         "risk_preference",
-        "evidence_items",
         "rejected_claim_ids",
         "research_brief",
     ]

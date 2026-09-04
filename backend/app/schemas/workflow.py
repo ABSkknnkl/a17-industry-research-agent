@@ -8,7 +8,6 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_valida
 
 from app.schemas.analysis import ResearchBrief
 from app.schemas.chapter import ChapterWritingOptions
-from app.schemas.evidence import EvidenceItem
 
 
 class StageName(StrEnum):
@@ -150,10 +149,17 @@ class DataFetchReviewEdits(ContractModel):
 
 
 class DataInterpretReviewEdits(ContractModel):
+    # 证据所有权（2026-09-04 修复）：Agent 1 是证据唯一所有者（Single
+    # Writer），A2/A3 均为纯消费者。此前允许在 A2 审核时编辑 evidence_items，
+    # 而 A3 只认 A1 证据包，导致两类缺陷：①用户修正数值后 A3 图表仍渲染
+    # A1 旧值（静默不一致）；②用户新增证据后 A2 候选引用新 ID、A3 数据集
+    # 无此 ID 只能抑制图表（图表丢失）。数据修正一律回到 data_fetch 阶段
+    # （调整 data_fetch_options / focus_questions 后重采），越权提交由
+    # extra="forbid" 硬拒绝——这也是未来「审核门 LLM 意图判别」之前的
+    # 确定性第一道闸。
     focus_questions: list[ShortReviewText] | None = Field(default=None, max_length=3)
     analysis_depth: Literal["overview", "standard", "deep"] | None = None
     risk_preference: Literal["conservative", "balanced", "aggressive"] | None = None
-    evidence_items: list[EvidenceItem] | None = Field(default=None, max_length=200)
     rejected_claim_ids: list[RejectedClaimId] | None = Field(default=None, max_length=100)
     research_brief: ResearchBrief | None = None
 
@@ -232,6 +238,19 @@ class ReviewRequest(ContractModel):
         try:
             validated = edit_models[self.stage].model_validate(self.edited_data)
         except ValidationError as exc:
-            raise ValueError(f"edited_data is not allowed for {self.stage.value}") from exc
+            # 越权编辑必须在契约层硬拒绝并点名字段（例如在 data_interpret
+            # 阶段提交 evidence_items——数据修正属于 data_fetch）。字段名
+            # 让用户/前端知道被拒原因，也是未来「审核门 LLM 意图判别」
+            # 之前的确定性第一道闸：白名单拦字段，LLM 拦意图。
+            rejected = sorted(
+                {
+                    ".".join(str(part) for part in error["loc"])
+                    for error in exc.errors()
+                }
+            )
+            hint = f"; rejected fields: {', '.join(rejected)}" if rejected else ""
+            raise ValueError(
+                f"edited_data is not allowed for {self.stage.value}{hint}"
+            ) from exc
         self.edited_data = validated.model_dump(mode="json", exclude_none=True)
         return self
