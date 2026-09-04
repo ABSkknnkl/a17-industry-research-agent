@@ -70,11 +70,12 @@
     }
   ],
   "x-stage-edit-whitelist": {
-    "data_fetch": ["focus_questions", "data_fetch_options"],
+    "data_fetch": ["data_fetch_options"],
     "data_interpret": [
       "focus_questions",
       "analysis_depth",
       "risk_preference",
+      "evidence_items",
       "rejected_claim_ids",
       "research_brief"
     ],

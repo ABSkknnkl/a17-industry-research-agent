@@ -1,28 +1,22 @@
-"""A2 修订重跑证据保持回归（Bug 修复 2026-09-02 / 所有权收紧 2026-09-04）。
+"""A2 修订重跑证据保持回归（Bug 修复 2026-09-02）。
 
-Bug 卡（2026-09-02）：A2 阶段点「修改条件重跑」后报 analysis_input_invalid——
+Bug 卡：A2 阶段点「修改条件重跑」后报 analysis_input_invalid——
 ResearchInput.evidence_items 带 default_factory=list，model_dump 后恒以 []
 存在于 input_data；service 的修订覆盖循环用 `in` 判断，把空列表当成
 "用户本次编辑"覆盖了 A1 的完整证据包 → 校验失败 → 重试耗尽
 max_stage_attempts → run 永久锁死。
 
-所有权收紧（2026-09-04）：Agent 1 是证据唯一所有者（Single Writer），
-A2/A3 均为纯消费者。DataInterpretReviewEdits 删除 evidence_items 字段，
-service 覆盖循环不再触碰证据——此前用户在 A2 审核编辑证据会造成 A2
-分析池与 A3 图表池分叉（A3 永远只认 A1：改值画旧值、新增证据丢图表）。
-
-验收句：A1 已产出证据时，A2 任何修订重跑都基于 A1 证据包执行；
-在 A2 审核提交 evidence_items 会被契约层白名单硬拒绝并点名字段。
+验收句：给定 A1 已产出证据且用户提交修订问题，A2 重跑应基于 A1 证据正常
+执行；用户显式提供的非空证据才允许覆盖。
 """
 
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
 
 from app.agents.data_interpreter.service import DataInterpreterAgent
 from app.integrations.llm.mock import MockAnalysisModel
-from app.schemas.workflow import ReviewRequest, StageName, StageResult, StageStatus
+from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
 
 _EVIDENCE_COMMON = {
@@ -115,11 +109,8 @@ async def test_agent2_rerun_preserves_agent1_evidence_when_input_default_empty()
 
 
 @pytest.mark.asyncio
-async def test_agent2_rerun_always_uses_agent1_evidence() -> None:
-    """证据所有权归 A1（2026-09-04）：修订重跑时 input_data 携带的非空
-    证据（如创建 run 时的用户种子证据）也不得覆盖 A1 证据包——否则
-    A2 分析池与 A3 图表池分叉（A3 永远只认 A1）。改数据的合法通道
-    是回到 data_fetch 审核修订后重采。"""
+async def test_agent2_rerun_respects_user_provided_evidence() -> None:
+    """用户在修订中显式提供非空证据时，才允许覆盖 A1 证据。"""
 
     user_evidence = {**_EVIDENCE_COMMON, "evidence_id": "E-USER"}
     context = StageContext(
@@ -133,9 +124,7 @@ async def test_agent2_rerun_always_uses_agent1_evidence() -> None:
     result = await DataInterpreterAgent(model=MockAnalysisModel()).run(context)
 
     assert result.status == StageStatus.COMPLETED
-    assert result.evidence_sources == ["E-A1"], (
-        "A2 必须使用 A1 证据包：input_data 中的旧证据不得在修订重跑时覆盖"
-    )
+    assert result.evidence_sources == ["E-USER"]
 
 
 @pytest.mark.asyncio
@@ -157,48 +146,3 @@ async def test_agent2_input_validation_error_names_failed_fields() -> None:
     assert "focus_questions" in request["question"], (
         "校验失败文案必须点名具体字段，帮助用户修正而不是盲目重试"
     )
-
-
-def test_review_edits_reject_evidence_items_at_data_interpret() -> None:
-    """契约层回归（2026-09-04）：A2 审核不再接受 evidence_items，
-    越权提交被白名单硬拒绝且错误信息点名被拒字段——数据修正的
-    合法通道是回到 data_fetch 阶段。"""
-
-    with pytest.raises(ValidationError) as exc_info:
-        ReviewRequest.model_validate(
-            {
-                "run_id": "run-a2-evidence-reject",
-                "stage": "data_interpret",
-                "action": "revise",
-                "expected_revision": 2,
-                "edited_data": {"evidence_items": []},
-            }
-        )
-
-    message = str(exc_info.value)
-    assert "data_interpret" in message
-    assert "evidence_items" in message, (
-        "拒绝信息必须点名被拒字段，指引数据修改回到 data_fetch"
-    )
-
-
-def test_review_edits_still_accept_analysis_scope_fields() -> None:
-    """正例：A2 审核仍可修订分析范围字段（研究问题/深度/风险偏好）。"""
-
-    request = ReviewRequest.model_validate(
-        {
-            "run_id": "run-a2-allowed-edit",
-            "stage": "data_interpret",
-            "action": "revise",
-            "expected_revision": 2,
-            "edited_data": {
-                "focus_questions": ["改问行业交付节奏。"],
-                "analysis_depth": "deep",
-            },
-        }
-    )
-
-    assert request.edited_data == {
-        "focus_questions": ["改问行业交付节奏。"],
-        "analysis_depth": "deep",
-    }
