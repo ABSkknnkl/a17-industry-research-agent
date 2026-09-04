@@ -564,6 +564,9 @@ class QueryPlanner:
                         industry_topic,
                         compact_query,
                     ),
+                    # 文档通道降级链（2026-09-04）：仅结构化覆盖薄弱的技能配置
+                    # 降级；空列表=不降级（见 _fallback_skills 映射表）。
+                    fallback_skills=_fallback_skills(skill),
                     max_pages=(
                         self._max_pages if skill in {SkillName.FINANCE, SkillName.INDUSTRY} else 1
                     ),
@@ -1370,6 +1373,30 @@ def _time_range(
     if isinstance(brief_range, str) and brief_range.strip():
         return brief_range.strip()
     return f"{research_as_of.year - 2}-01-01至{research_as_of.isoformat()}"
+
+
+def _fallback_skills(skill: SkillName) -> list[SkillName]:
+    """文档通道降级映射表（2026-09-04 方案 §3，按能力边界推导）。
+
+    只对“问财结构化覆盖薄弱”的域开降级；降级链长度 ≤2；定性技能自身
+    （研报/公告/新闻/事件/机构研究）与问财域内完整的技能（指数/期货/
+    宏观/板块）均不降级——前者防环路，后者无文档增量。
+    """
+    mapping: dict[SkillName, list[SkillName]] = {
+        # 出货量/产能/扩产：问财静默回退行情的高发区，研报与扩产公告可补定性。
+        SkillName.BUSINESS: [SkillName.REPORT, SkillName.ANNOUNCEMENT],
+        # 财务数据问财覆盖良好，降级仅作兜底。
+        SkillName.FINANCE: [SkillName.REPORT, SkillName.ANNOUNCEMENT],
+        # 行业级数据基本齐全，降级主要补景气判断与政策。
+        SkillName.INDUSTRY: [SkillName.REPORT, SkillName.NEWS],
+        # 环节盈利分配常见于产业链深度研报。
+        SkillName.INDUSTRY_CHAIN: [SkillName.REPORT],
+        # 竞争格局与份额多由研报测算给出。
+        SkillName.STOCK_SELECTOR: [SkillName.REPORT],
+        # 主营业务介绍见年报/公告。
+        SkillName.BASIC_INFO: [SkillName.ANNOUNCEMENT, SkillName.REPORT],
+    }
+    return list(mapping.get(skill, ()))
 
 
 def _fallback_queries(

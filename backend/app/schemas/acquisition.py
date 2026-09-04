@@ -86,6 +86,9 @@ class SkillQueryTask(AcquisitionModel):
     priority: int = Field(default=50, ge=0, le=100)
     depends_on: list[str] = Field(default_factory=list, max_length=10)
     fallback_queries: list[str] = Field(default_factory=list, max_length=2)
+    # 文档通道降级链（2026-09-04）：仅当本技能全部 query 变体均无有效数据时，
+    # 才按序尝试这些技能。与主 query 是严格串行降级关系，不是并行；空列表=不降级。
+    fallback_skills: list[SkillName] = Field(default_factory=list, max_length=2)
     max_pages: int = Field(default=1, ge=1, le=5)
     requirement_ids: list[str] = Field(default_factory=list, max_length=12)
     target_entities: list[str] = Field(default_factory=list, max_length=20)
@@ -179,6 +182,10 @@ class SkillCallRecord(AcquisitionModel):
     trace_ids: list[str] = Field(default_factory=list, max_length=10)
     error_code: str | None = Field(default=None, max_length=100)
     retryable: bool = False
+    # 文档通道降级留痕（2026-09-04）：fallback_from 记录触发降级的主任务
+    # task_id，fallback_depth 记录降级层级（0=主调用，1/2=降级层级）。
+    fallback_from: str | None = Field(default=None, max_length=64)
+    fallback_depth: int = Field(default=0, ge=0, le=2)
 
 
 class SourceRecord(AcquisitionModel):

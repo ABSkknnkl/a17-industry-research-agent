@@ -183,8 +183,15 @@ def record_skill_call(
     cleaned_rows: int,
     quarantined_rows: int = 0,
     task_id: str | None = None,
+    fallback_from: str | None = None,
+    fallback_depth: int = 0,
 ) -> None:
-    """Point 3: skill call settled (技能空调用观测, executor 收口)."""
+    """Point 3: skill call settled (技能空调用观测, executor 收口).
+
+    文档通道降级链（2026-09-04）：``fallback_from``/``fallback_depth`` 记录
+    降级留痕，用于计算降级触发率/挽救率/证据采用率。主调用保持
+    ``fallback_from=None, fallback_depth=0``。
+    """
 
     _append(
         {
@@ -196,6 +203,8 @@ def record_skill_call(
             "returned_rows": returned_rows,
             "cleaned_rows": cleaned_rows,
             "quarantined_rows": quarantined_rows,
+            "fallback_from": fallback_from,
+            "fallback_depth": fallback_depth,
         }
     )
 

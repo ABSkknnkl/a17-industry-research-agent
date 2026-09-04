@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     # 语义优先并行仲裁（2026-09-01 最终方案）：严格合并能力护栏、公司口径
     # 护栏、关键词锁披露型降级与 R4 豁免的总开关；关闭即回退四刀后状态。
     AGENT1_SEMANTIC_FIRST_ENABLED: bool = True
+    # 文档通道降级链（2026-09-04）：结构化取数失败时按映射表串行回补
+    # 研报/公告/新闻。默认关闭（回滚安全），打开后行为受深度与全局预算护栏约束。
+    AGENT1_FALLBACK_CHAIN: bool = False
+    AGENT1_FALLBACK_MAX_DEPTH: int = Field(default=2, ge=0, le=2)
+    AGENT1_FALLBACK_CALL_BUDGET: int = Field(default=15, ge=0, le=50)
     FEEDBACK_INTERPRETER_ENABLED: bool = False
     FEEDBACK_CONFIDENCE_ACCEPT: float = Field(default=0.90, ge=0.5, le=1)
     FEEDBACK_CONFIDENCE_REVIEW: float = Field(default=0.75, ge=0.3, le=1)

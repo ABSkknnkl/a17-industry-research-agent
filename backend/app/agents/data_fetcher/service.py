@@ -429,8 +429,10 @@ class DataFetcherAgent:
         # 随 executor 缺口一并进 data_gaps 披露。
         normalized_gaps: list[DataGap] = []
         user_only = self._provider_mode == "mock" and bool(user_items)
+        fallback_task_ids: set[str] = set()
+        rescued_task_ids: set[str] = set()
         if not user_only:
-            executed = await self._executor.execute(plan)
+            executed, fallback_task_ids, rescued_task_ids = await self._executor.execute(plan)
             normalized = normalize_tasks(
                 executed,
                 industry_topic=request["industry_topic"],
@@ -438,6 +440,7 @@ class DataFetcherAgent:
                 security_types=request["security_types"],
                 reporting_currency=request["reporting_currency"],
                 research_as_of=request["research_as_of"],
+                fallback_task_ids=fallback_task_ids,
             )
             acquired_items = normalized.evidence
             source_records = normalized.sources
@@ -457,6 +460,8 @@ class DataFetcherAgent:
                     executed_task.task.task_id, 0
                 ),
                 task_id=executed_task.task.task_id,
+                fallback_from=executed_task.record.fallback_from,
+                fallback_depth=executed_task.record.fallback_depth,
             )
         records = [item.record for item in executed]
         requirement_coverage = _build_requirement_coverage(
@@ -475,6 +480,17 @@ class DataFetcherAgent:
             requirement_coverage,
             plan.requirements,
             normalized_gaps,
+        )
+        # 红线 3（2026-09-04）：被降级链挽救的需求只可判 partial，绝不 supported；
+        # 同时对“降级尝试但未命中”的需求补文案（澄清门三分流）。
+        fallback_attempted_main_ids = {
+            record.fallback_from for record in records if record.fallback_from
+        }
+        requirement_coverage = _mark_fallback_partial_coverage(
+            requirement_coverage,
+            plan.requirements,
+            rescued_task_ids,
+            missed_task_ids=fallback_attempted_main_ids - rescued_task_ids,
         )
         # 2026-09-01 方案（第一刀·改动点 3）防滥用：advisory 放行的问题其
         # coverage 降级为 criticality=advisory——保持可见，但不计入核心数据
@@ -1122,6 +1138,61 @@ def _mark_market_quote_fallback_gaps(
     return adjusted
 
 
+def _mark_fallback_partial_coverage(
+    coverage: list[RequirementCoverage],
+    requirements: list[Any],
+    rescued_task_ids: set[str],
+    missed_task_ids: set[str] | None = None,
+) -> list[RequirementCoverage]:
+    """红线 3 + 澄清文案三分流（2026-09-04 文档通道降级链）。
+
+    - 降级命中（rescued）：只可判 partial，绝不 supported——定性素材不是
+      权威结构化数据，若计为 supported 会造成“覆盖率很高、报告全是研报凑的”
+      假象。文案告知“已补定性材料、数值未参与计算”。
+    - 降级未命中（missed）：各通道均无数据，保持 missing 并如实披露“已列入
+      研究边界，未编造”。
+    让缺口继续暴露在报告里，比藏在数字后面安全。
+    """
+
+    missed = missed_task_ids or set()
+    if not rescued_task_ids and not missed:
+        return coverage
+    tasks_by_requirement = {
+        requirement.requirement_id: list(requirement.task_ids)
+        for requirement in requirements
+    }
+    adjusted: list[RequirementCoverage] = []
+    for item in coverage:
+        requirement_tasks = tasks_by_requirement.get(item.requirement_id, [])
+        rescued = [task_id for task_id in requirement_tasks if task_id in rescued_task_ids]
+        missed_here = [task_id for task_id in requirement_tasks if task_id in missed]
+        if rescued and item.status == "supported":
+            adjusted.append(
+                item.model_copy(
+                    update={
+                        "status": "partial",
+                        "note": (
+                            "该指标无权威结构化数据，已补充研报/公告/新闻定性材料"
+                            "（document 层级），数值未参与计算，覆盖率按 partial 披露。"
+                        ),
+                    }
+                )
+            )
+        elif missed_here and item.status == "missing":
+            adjusted.append(
+                item.model_copy(
+                    update={
+                        "note": (
+                            "该指标结构化与文档通道均无数据，已列入研究边界，未编造。"
+                        ),
+                    }
+                )
+            )
+        else:
+            adjusted.append(item)
+    return adjusted
+
+
 _PRESENTATION_TERMS = ("一张图", "两张图", "三张图", "出图", "画图", "绘图", "可视化")
 
 
@@ -1437,6 +1508,15 @@ def _build_partial_intent_results(
             continue
         completed_text = "、".join(f"“{sub.original_text}”" for sub in completed)
         unavailable_text = "、".join(f"“{sub.original_text}”" for sub in unavailable)
+        # 澄清文案三分流（2026-09-04）：实体未解析 → 请指定具体公司；
+        # 其余（无对应技能）→ 暂无对应查询技能。降级命中/未命中的披露走
+        # RequirementCoverage.note（见 _mark_fallback_partial_coverage）。
+        entity_unresolved = any(sub.requirement_id in failed_ids for sub in unavailable)
+        unavailable_hint = (
+            "泛称实体未能解析，请指定具体公司后重试。"
+            if entity_unresolved
+            else "暂无对应查询技能，请修改后重试。"
+        )
         results.append(
             {
                 "question": plan.original_input,
@@ -1461,7 +1541,7 @@ def _build_partial_intent_results(
                 "returned_row_count": item.returned_row_count,
                 "message": (
                     f"【已完成】{completed_text}已获取{item.returned_row_count}条数据；"
-                    f"【无法处理】{unavailable_text}暂无对应查询技能，请修改后重试。"
+                    f"【无法处理】{unavailable_text}{unavailable_hint}"
                 ),
             }
         )

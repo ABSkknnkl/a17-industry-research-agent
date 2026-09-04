@@ -45,10 +45,15 @@ def calculate_p0_metrics(
 ) -> tuple[list[CalculatedMetric], list[CalculationIssue]]:
     """Calculate all safe P0 metrics supported by the current evidence package."""
 
+    # 红线（2026-09-04 文档通道降级链 FB4）：document 层级/定性只读证据
+    # 绝不进入 C1 数值计算链——研报估算值只能作观点，不能当权威数值参与运算。
     numeric = [
         item
         for item in evidence_items
-        if isinstance(item.value, (int, float)) and not isinstance(item.value, bool)
+        if isinstance(item.value, (int, float))
+        and not isinstance(item.value, bool)
+        and item.evidence_tier == "structured"
+        and not item.qualitative_only
     ]
     grouped: dict[tuple[str, str, str, str], list[EvidenceItem]] = defaultdict(list)
     for item in numeric:

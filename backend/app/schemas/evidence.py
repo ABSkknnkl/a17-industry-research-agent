@@ -67,6 +67,11 @@ class EvidenceItem(BaseModel):
     # “用行业产量冒充公司出货量”。None 表示该证据无明确口径级别
     # （如定性检索类证据），下游 Agent 2 不得据此拼接不同口径数值。
     caliber: Literal["industry_level", "company_level"] | None = None
+    # 文档通道降级链（2026-09-04）红线 1/2：证据层级锁死、只补定性。
+    # evidence_tier 单向——可降（structured→document）不可升；降级命中的
+    # 证据强制 qualitative_only=True，禁止进入 C1 数值计算链。
+    evidence_tier: Literal["structured", "document", "web_unverified"] = "structured"
+    qualitative_only: bool = False
     notes: str | None = Field(default=None, max_length=5_000)
 
 

@@ -100,6 +100,9 @@ def create_data_fetcher_agent(
         executor=RetrievalExecutor(
             gateway,
             page_size=settings.SKILLHUB_PAGE_SIZE,
+            fallback_chain_enabled=settings.AGENT1_FALLBACK_CHAIN,
+            max_fallback_depth=settings.AGENT1_FALLBACK_MAX_DEPTH,
+            fallback_call_budget=settings.AGENT1_FALLBACK_CALL_BUDGET,
         ),
         provider_mode=client.provider_mode,
         semantic_router=semantic_router,

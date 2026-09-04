@@ -9,7 +9,17 @@ from datetime import UTC, date, datetime
 from collections.abc import Iterator
 from typing import Any, Literal
 
-from app.agents.data_fetcher.executor import ExecutedTask
+from app.agents.data_fetcher.executor import ExecutedTask, fallback_main_metric
+from app.agents.data_fetcher.field_relevance import (
+    _AVAILABLE_FIELDS,
+    _ENTITY_FIELDS,
+    _LOCATOR_FIELDS,
+    _MARKET_QUOTE_FALLBACK_SKILLS,
+    _METADATA_FIELDS,
+    _PERIOD_FIELDS,
+    _field_relevance_check,
+    _is_market_quote_field,
+)
 from app.schemas.acquisition import (
     NormalizationSummary,
     DataGap,
@@ -27,79 +37,6 @@ from app.schemas.evidence import (
 
 FiscalPeriod = Literal["FY", "H1", "Q1", "Q2", "Q3", "Q4", "TTM"]
 
-_ENTITY_FIELDS = (
-    "股票简称",
-    "证券简称",
-    "公司名称",
-    "企业名称",
-    "行业名称",
-    "板块名称",
-    "指数简称",
-    "合约简称",
-    "品种简称",
-    "指标名称",
-    "macro_name",
-    "name",
-)
-_PERIOD_FIELDS = (
-    "报告期",
-    "数据日期",
-    "日期",
-    "时间",
-    "交易日期",
-    "统计期",
-    "report_date",
-    "end_date",
-)
-_AVAILABLE_FIELDS = (
-    "发布日期",
-    "公告日期",
-    "可得日期",
-    "披露日期",
-    "更新日期",
-    "publish_date",
-    "publish_time",
-    "modify_time",
-)
-_LOCATOR_FIELDS = ("链接", "url", "URL", "来源链接", "公告链接", "研报链接")
-_METADATA_FIELDS = set(
-    _ENTITY_FIELDS
-    + _PERIOD_FIELDS
-    + _AVAILABLE_FIELDS
-    + _LOCATOR_FIELDS
-    + (
-        "来源",
-        "发布主体",
-        "机构",
-        "单位",
-        "产业链数据来源",
-        "data_source",
-        "source_original",
-        "channel",
-        "extra",
-        "id",
-        "index",
-        "operation_type",
-        "para_index",
-        "score",
-        "site_authority",
-        "status",
-        "stock_infos",
-        "trace_info",
-        "traceability_type",
-        "uid",
-        "股票代码",
-        "证券代码",
-        "指数代码",
-        "合约代码",
-        "品种代码",
-        "国家",
-        "指标",
-        "周期",
-        "macro_id",
-        "地区级别",
-    )
-)
 _MAX_EVIDENCE_ITEMS = 200
 _MAX_POINTS_PER_METRIC_PER_TASK = 12
 _MISSING_VALUES = {"", "--", "-", "n/a", "na", "none", "null", "暂无", "不适用"}
@@ -142,24 +79,6 @@ _FINANCE_BASE_CURRENCY_METRICS = {
     "主营业务收入",
 }
 
-# P0-6（2026-09-01 方案）：行情字段词表。问财在查不到业务字段时会
-# 静默回退行情数据（行数>0、不报错），必须靠字段相关性校验识别。
-_MARKET_QUOTE_FIELD_TOKENS = (
-    "最新价", "涨跌幅", "涨跌额", "开盘价", "收盘价", "最高价", "最低价",
-    "昨收", "成交量", "成交额", "成交数量", "换手率", "换手", "量比",
-    "振幅", "委比", "委差", "内盘", "外盘", "市值", "大单", "小单",
-    "买入量", "卖出量", "买入额", "卖出额", "涨速", "股息率",
-)
-# 只在“按公司取业务字段”的技能上启用校验；INDUSTRY/MACRO 走宏观
-# 指标路径，INDEX/SECTOR 本就返回行情类数据，均不适用。STOCK_SELECTOR
-# 与 BUSINESS 同类（按公司取市场份额等业务字段），2026-09-01 真实
-# 接口实测其同样静默回退行情列（成交量/成交额/换手率冒充市场份额）。
-# 请求指标本身是行情类（如按换手率选股）时由 requested_metrics 判定放行。
-_MARKET_QUOTE_FALLBACK_SKILLS = {
-    SkillName.BUSINESS,
-    SkillName.BASIC_INFO,
-    SkillName.STOCK_SELECTOR,
-}
 # 证据口径标签（P0-6 配套）：行业口径技能 vs 公司口径技能。
 _INDUSTRY_LEVEL_SKILLS = {
     SkillName.INDUSTRY,
@@ -209,6 +128,7 @@ def normalize_tasks(
     security_types: list[str],
     reporting_currency: str | None,
     research_as_of: date,
+    fallback_task_ids: frozenset[str] = frozenset(),
 ) -> NormalizationResult:
     evidence: list[EvidenceItem] = []
     sources: list[SourceRecord] = []
@@ -418,6 +338,9 @@ def normalize_tasks(
     for result in populated_results:
         if remaining_budget <= 0:
             break
+        # 文档通道降级链（2026-09-04）红线 1/2：降级任务产出的证据强制
+        # document 层级 + 定性只读，层级只可降不可升，禁止进入数值计算。
+        is_fallback_result = result.task.task_id in fallback_task_ids
         task_budget = max(1, remaining_budget // remaining_results)
         task_evidence_count = 0
         task_complete = False
@@ -514,10 +437,21 @@ def normalize_tasks(
                             source_locator=locator[:1_000],
                             grade=_grade(payload.skill_name),
                             caliber=_evidence_caliber(payload.skill_name),
+                            # 文档通道降级链（2026-09-04）红线 1/2：降级证据
+                            # 锁 document 层级 + 定性只读；层级不可上调，且下游
+                            # C1 数值计算链拒收该层级证据。
+                            evidence_tier="document" if is_fallback_result else "structured",
+                            qualitative_only=bool(is_fallback_result),
                             notes=(
                                 f"通过{payload.skill_name.value}获取；"
                                 f"原始字段：{str(field_name)[:200]}；"
-                                "原始字段口径以SkillHub返回为准，未返回的审计/追溯信息不作推断。"
+                                + (
+                                    f"文档通道降级证据（substitute_for={fallback_main_metric(result.task)}），"
+                                    "仅作定性参考，数值不参与计算；"
+                                    if is_fallback_result
+                                    else ""
+                                )
+                                + "原始字段口径以SkillHub返回为准，未返回的审计/追溯信息不作推断。"
                             ),
                         )
                     )
@@ -581,48 +515,6 @@ def _clean_row(row: dict[str, Any]) -> dict[str, Any]:
                 continue
         cleaned[key] = value
     return cleaned
-
-
-def _is_market_quote_field(field_name: str) -> bool:
-    """识别行情/交易类字段名（含 [日期]、(%) 等修饰后缀）。"""
-
-    compact = re.sub(r"\[.*?\]|\(.*?\)|（.*?）|\s+", "", str(field_name))
-    return any(token in compact for token in _MARKET_QUOTE_FIELD_TOKENS)
-
-
-def _field_relevance_check(
-    *,
-    rows: list[dict[str, Any]],
-    requested_metrics: list[str],
-    skill: SkillName,
-) -> tuple[bool, str | None]:
-    """P0-6（2026-09-01 方案）：字段相关性校验（治成因 D）。
-
-    问财在查不到业务字段时不返回空，而是静默回退行情数据（最新价/
-    涨跌幅/大单卖出量…）：行数>0、能过既有质量门，Agent 2 会把
-    “当日行情”当成“查到了出货量”。本校验只作用于按公司取业务
-    字段的技能（BUSINESS/BASIC_INFO）：返回数据列全部落在行情字段
-    集合内、且请求指标并非行情类 → 判定 market_quote_fallback，
-    返回 (False, "market_quote_fallback")，调用方不得计为成功证据。
-    """
-
-    if skill not in _MARKET_QUOTE_FALLBACK_SKILLS or not rows:
-        return True, None
-    # 请求指标本身是行情类（如查“最新价”）→ 合法返回，不算回退。
-    metric_fields = [
-        name for name in requested_metrics if name not in _METADATA_FIELDS
-    ]
-    if metric_fields and all(_is_market_quote_field(name) for name in metric_fields):
-        return True, None
-    data_fields: set[str] = set()
-    for row in rows:
-        for field_name in row:
-            if field_name in _METADATA_FIELDS:
-                continue
-            data_fields.add(str(field_name))
-    if data_fields and all(_is_market_quote_field(name) for name in data_fields):
-        return False, "market_quote_fallback"
-    return True, None
 
 
 def _evidence_caliber(skill_name: SkillName) -> str | None:
