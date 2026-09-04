@@ -5,13 +5,16 @@ from typing import Any
 from pydantic import ValidationError
 
 from app.agents.chapter_writer.graph import ChapterWriterGraphState, build_chapter_writer_graph
+from app.agents.chapter_writer.fallback import build_fallback_writing
 from app.agents.chapter_writer.outline import REPORT_OUTLINE
 from app.agents.chapter_writer.prompt_loader import load_chapter_writer_prompt
-from app.integrations.llm.protocol import ChapterWritingModel
+from app.integrations.llm.openai_compatible import StructuredOutputError
+from app.integrations.llm.protocol import ChapterWritingModel, ReadabilityReviewModel
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingOptions, ChapterWritingResult
 from app.schemas.chart import ChartReference
 from app.schemas.workflow import StageName, StageResult, StageStatus
+from app.security.policy import detect_prompt_injection
 from app.workflow.stages import StageContext
 
 
@@ -23,14 +26,25 @@ def _planned_charts(analysis: AnalysisResult) -> tuple[ChartReference, ...]:
             chart_type=candidate.chart_type,
             status="planned",
             evidence_ids=candidate.evidence_ids,
+            recommended_chapter_id=candidate.chapter_hint,
         )
         for index, candidate in enumerate(analysis.chart_candidates, start=1)
     )
 
 
+def _safe_failure_reason(exc: Exception) -> str:
+    if isinstance(exc, StructuredOutputError):
+        diagnostics = ",".join(f"{key}={value}" for key, value in sorted(exc.diagnostics.items()))
+        suffix = f";{diagnostics}" if diagnostics else ""
+        return f"StructuredOutputError:{exc.code.value}{suffix}"
+    return type(exc).__name__
+
+
 def _normalize_charts(
     analysis: AnalysisResult,
     chart_result: StageResult | None,
+    *,
+    selected_chart_ids: list[str] | None = None,
 ) -> tuple[ChartReference, ...]:
     if chart_result is None or chart_result.data.get("mock") is True:
         return _planned_charts(analysis)
@@ -38,7 +52,15 @@ def _normalize_charts(
     if not isinstance(raw_charts, list):
         raise ValueError("chart_generate.data.charts must be a list")
     charts = tuple(ChartReference.model_validate(chart) for chart in raw_charts)
-    return charts or _planned_charts(analysis)
+    if not charts:
+        return ()
+
+    # 用户自定义选择：只保留用户选中的图表
+    if selected_chart_ids:
+        selected_set = set(selected_chart_ids)
+        charts = tuple(c for c in charts if c.chart_id in selected_set)
+
+    return charts
 
 
 def _waiting_review(
@@ -68,11 +90,43 @@ def _waiting_review(
 class ChapterWriterAgent:
     stage: StageName = StageName.CHAPTER_WRITE
 
-    def __init__(self, *, model: ChapterWritingModel) -> None:
+    def __init__(
+        self,
+        *,
+        model: ChapterWritingModel,
+        readability_model: ReadabilityReviewModel | None = None,
+        readability_threshold: float = 0.6,
+        readability_max_rewrites: int = 2,
+    ) -> None:
         self._model = model
         self._prompt = load_chapter_writer_prompt()
+        # 评审器默认不启用（readability_model=None）；启用后走逐段可读性软门。
+        self._readability_model = readability_model
+        self._readability_threshold = readability_threshold
+        self._readability_max_rewrites = readability_max_rewrites
 
     async def run(self, context: StageContext) -> StageResult:
+        # 透传通道纵深防御：SecuredStageAgent 已做第一层注入检测，此处
+        # 再拦一次，保证 agent 被直接构造（不经 guard）时同样不会把
+        # 注入文本送进写作 prompt。
+        if detect_prompt_injection({"review_feedback": context.review_feedback}):
+            return StageResult(
+                stage=self.stage,
+                status=StageStatus.WAITING_REVIEW,
+                revision=context.revision,
+                data={
+                    "blocking_issues": ["prompt_injection_suspected"],
+                    "collaboration_requests": [
+                        {
+                            "request_id": "CHAPTER-FEEDBACK-GUARD",
+                            "question": "反馈内容包含可疑指令，请换一种表述后重试。",
+                            "reason": "审核反馈触发注入检测，已阻止透传给写作模型。",
+                            "affected_chapter_ids": [],
+                        }
+                    ],
+                },
+                error="prompt_injection_suspected",
+            )
         interpretation = context.previous_results.get(StageName.DATA_INTERPRET)
         if interpretation is None:
             return _waiting_review(
@@ -88,19 +142,26 @@ class ChapterWriterAgent:
                 request_id="ANALYSIS-INVALID",
                 reason=str(exc),
             )
-        if not analysis.quality.passed:
-            return _waiting_review(
-                revision=context.revision,
-                request_id="ANALYSIS-QUALITY",
-                reason="Agent 2质量门未通过，不得生成正式章节。",
-            )
+        # 上游质量门未过不再硬拦：Agent 2 已以用户裁决门（ANALYSIS-QUALITY
+        # 决策包）呈现代价，用户确认后此处按条件性写作继续；质量风险由
+        # Agent 5 汇总披露（ready_with_limits / 草稿模式）。
 
         raw_options: Any = context.input_data.get("chapter_write_options", {})
+        if isinstance(raw_options, dict) and "target_length" not in raw_options:
+            raw_options = dict(raw_options)
+            raw_options["target_length"] = {
+                "brief": "concise",
+                "standard": "standard",
+                "deep": "detailed",
+                None: "standard",
+            }[analysis.research_brief.report_depth]
+        selected_chart_ids = context.input_data.get("selected_chart_ids")
         try:
             options = ChapterWritingOptions.model_validate(raw_options)
             charts = _normalize_charts(
                 analysis,
                 context.previous_results.get(StageName.CHART_GENERATE),
+                selected_chart_ids=selected_chart_ids,
             )
         except (ValidationError, ValueError) as exc:
             return _waiting_review(
@@ -155,17 +216,58 @@ class ChapterWriterAgent:
                 chapter.chapter_id: chapter.model_dump(mode="json") for chapter in previous.chapters
             }
 
+        # 检查已完成的章节，只处理未完成的（断点恢复）
+        from app.infrastructure.repositories.chapter_repository import ChapterRepository
+
+        repo = ChapterRepository()
+        await repo.initialize()
+        completed = await repo.get_completed_chapters(context.run_id, context.revision)
+
+        # 恢复已完成的章节内容
+        for chapter_id in completed:
+            saved = await repo.get_chapter(context.run_id, chapter_id, context.revision)
+            if saved and saved["content"]:
+                base_chapters[chapter_id] = saved["content"]
+
         chapter_ids = [
             chapter.chapter_id
             for chapter in REPORT_OUTLINE
-            if not selected_chapter_ids or chapter.chapter_id in selected_chapter_ids
+            if (not selected_chapter_ids or chapter.chapter_id in selected_chapter_ids)
+            and chapter.chapter_id not in completed  # 跳过已完成的章节
         ]
-        graph = build_chapter_writer_graph(model=self._model, prompt=self._prompt)
+        # 透传通道：Agent 4 不做结构化解释，feedback 归一化（压缩空白、
+        # 截断到契约上限）后原文透传给写作模型，并记录审计产物。
+        raw_feedback = context.review_feedback or options.instruction
+        compact_feedback = " ".join(str(raw_feedback).split())[:2_000] if raw_feedback else ""
+        feedback_source = (
+            "review_feedback"
+            if context.review_feedback
+            else ("options.instruction" if options.instruction else None)
+        )
+        feedback_passthrough: dict[str, Any] | None = (
+            {
+                "stage": "chapter_write",
+                "source": feedback_source,
+                "feedback": compact_feedback,
+                "passthrough_mode": "verbatim",
+                "note": "原文透传给写作模型，仅做注入检测与长度归一，不做结构化解释。",
+            }
+            if compact_feedback
+            else None
+        )
+        graph = build_chapter_writer_graph(
+            model=self._model,
+            prompt=self._prompt,
+            readability_model=self._readability_model,
+            readability_threshold=self._readability_threshold,
+            readability_max_rewrites=self._readability_max_rewrites,
+        )
         graph_state: ChapterWriterGraphState = {
+            "run_id": context.run_id,
             "analysis": analysis.model_dump(mode="json"),
             "charts": [chart.model_dump(mode="json") for chart in charts],
             "options": options.model_dump(mode="json"),
-            "review_feedback": context.review_feedback or options.instruction,
+            "review_feedback": compact_feedback or None,
             "rejected_claim_ids": context.rejected_claim_ids,
             "chapter_ids": chapter_ids,
             "current_index": 0,
@@ -177,32 +279,30 @@ class ChapterWriterAgent:
             "revision_count": 0,
             "workflow_revision": context.revision,
             "result": None,
+            "feedback_passthrough": feedback_passthrough,
+            "readability_feedback": [],
+            "readability_rewrite_pids": [],
+            "readability_reports": [],
+            "readability_rewrites": {},
+            "readability_collaborations": [],
         }
         try:
             final_state = await graph.ainvoke(graph_state)
             writing = ChapterWritingResult.model_validate(final_state["result"])
         except Exception as exc:
-            return StageResult(
-                stage=self.stage,
-                status=StageStatus.FAILED,
+            writing = build_fallback_writing(
+                analysis=analysis,
+                charts=charts,
+                prompt=self._prompt,
+                model_name=self._model.model_name,
                 revision=context.revision,
-                data={
-                    "model_name": self._model.model_name,
-                    "prompt_version": self._prompt.version,
-                    "error_type": type(exc).__name__,
-                },
-                evidence_sources=list(interpretation.evidence_sources),
-                error="chapter_generation_failed",
+                rejected_claim_ids=set(context.rejected_claim_ids),
+                reason=_safe_failure_reason(exc),
             )
 
-        status = (
-            StageStatus.COMPLETED
-            if writing.quality.passed and not writing.collaboration_requests
-            else StageStatus.WAITING_REVIEW
-        )
         return StageResult(
             stage=self.stage,
-            status=status,
+            status=StageStatus.COMPLETED,
             revision=context.revision,
             data=writing.model_dump(mode="json"),
             evidence_sources=sorted(

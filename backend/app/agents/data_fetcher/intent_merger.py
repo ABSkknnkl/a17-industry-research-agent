@@ -1,0 +1,1085 @@
+"""Calibrate LLM-first intent decomposition with deterministic safety locks.
+
+RUNLOG sections 9/阶段六: ``locked_skills`` from the rule layer can never be
+removed by the LLM; LLM candidates must come from the SkillName enum and pass
+the capability registry; low-confidence output is not executed. Any LLM
+failure falls back to the deterministic plan instead of crashing Agent 1.
+"""
+
+from __future__ import annotations
+
+import re
+from typing import Protocol
+
+from app.agents.data_fetcher.complexity_detector import detect_complexity
+from app.agents.data_fetcher.deterministic_intent_parser import (
+    DeterministicParse,
+    ParsedSegment,
+    parse_intent,
+)
+from app.agents.data_fetcher.intent_models import (
+    IntentEntity,
+    IntentMetric,
+    IntentSubRequirement,
+    IntentTimeRange,
+    ResearchIntentPlan,
+)
+from app.agents.data_fetcher.metric_registry import get_metric_spec
+from app.agents.data_fetcher.plan_validator import validate_intent_plan
+from app.agents.data_fetcher.routing_telemetry import record_decomposition, record_llm_veto
+from app.agents.data_fetcher.skill_capabilities import (
+    SKILL_CAPABILITIES,
+    capability_supports,
+)
+from app.core.config import settings
+from app.schemas.acquisition import SkillName
+
+_QUANTITATIVE_SKILLS = frozenset(
+    {
+        SkillName.FINANCE,
+        SkillName.STOCK_SELECTOR,
+        SkillName.MACRO,
+        SkillName.FUTURES,
+        SkillName.INDEX,
+        SkillName.INDUSTRY,
+    }
+)
+
+_INTENT_TYPE_BY_SKILL: tuple[tuple[SkillName, str], ...] = (
+    (SkillName.FINANCE, "financial_query"),
+    (SkillName.BUSINESS, "business_query"),
+    (SkillName.EVENT, "event_query"),
+    (SkillName.ANNOUNCEMENT, "announcement_query"),
+    (SkillName.BASIC_INFO, "basic_info_query"),
+    (SkillName.MACRO, "macro_query"),
+    (SkillName.FUTURES, "commodity_query"),
+    (SkillName.STOCK_SELECTOR, "competition_query"),
+    (SkillName.SECTOR, "industry_query"),
+    (SkillName.INDUSTRY_CHAIN, "industry_query"),
+    (SkillName.INDUSTRY, "industry_query"),
+    (SkillName.INSTITUTIONAL_RESEARCH, "research_query"),
+    (SkillName.REPORT, "research_query"),
+    (SkillName.NEWS, "policy_query"),
+)
+
+_METRIC_TYPE_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("macro", ("社融", "gdp", "cpi", "ppi", "pmi", "宏观", "汇率")),
+    ("event", ("业绩预告", "业绩快报", "增发", "定增", "重组", "回购", "减持", "增持")),
+    ("price", ("价格", "期货", "结算价", "现货")),
+    # P0-4（2026-08-31 方案）：market_share 词面与 metric_registry 的
+    # market_share/cr3/cr5 别名保持同一集合，避免两处词表漂移（这正是
+    # P1 要外置词表的理由）。
+    ("market_share", ("市占率", "市场份额", "市场占有率", "厂商份额", "占有率", "份额", "cr3", "cr5", "集中度")),
+    ("qualitative", ("评级", "盈利预测", "一致预期", "分歧", "观点", "政策", "新闻", "研报")),
+)
+
+
+class IntentDecomposer(Protocol):
+    async def decompose(
+        self,
+        *,
+        user_text: str,
+        industry_topic: str,
+        locked_entities: list[str],
+        locked_metrics: list[str],
+        locked_skills: list[str],
+    ) -> ResearchIntentPlan: ...
+
+
+def _metric_type(name: str) -> str:
+    spec = get_metric_spec(name)
+    if spec is not None:
+        return {
+            SkillName.FINANCE: "financial",
+            SkillName.BUSINESS: "business",
+            SkillName.STOCK_SELECTOR: "market_share",
+            SkillName.INDUSTRY: "industry",
+        }.get(spec.primary_skill, "unknown")
+    compact = "".join(name.split()).casefold()
+    for metric_type, keywords in _METRIC_TYPE_KEYWORDS:
+        if any(keyword in compact for keyword in keywords):
+            return metric_type
+    return "unknown"
+
+
+def _intent_type(skills: list[SkillName], text: str) -> str:
+    if "对比" in text or "比较" in text:
+        return "comparison"
+    for skill, intent_type in _INTENT_TYPE_BY_SKILL:
+        if skill in skills:
+            return intent_type  # type: ignore[return-value]
+    return "ambiguous"
+
+
+def _requirement_class(skills: list[SkillName]) -> str:
+    has_quantitative = any(skill in _QUANTITATIVE_SKILLS for skill in skills)
+    has_qualitative = any(skill not in _QUANTITATIVE_SKILLS for skill in skills)
+    if has_quantitative and has_qualitative:
+        return "mixed"
+    return "quantitative" if has_quantitative else "qualitative"
+
+
+def _segment_metric_types(segment: ParsedSegment) -> set[str]:
+    return {_metric_type(name) for name in segment.metric_names} - {"unknown"}
+
+
+def _sub_from_segment(index: int, segment: ParsedSegment) -> IntentSubRequirement:
+    entities = [
+        IntentEntity(
+            name=name,
+            entity_type="company" if not _looks_like_industry(name) else "industry",
+            confidence=1.0,
+        )
+        for name in segment.entity_names
+    ]
+    metrics = [
+        IntentMetric(
+            original_name=name,
+            normalized_name=get_metric_spec(name).display_name
+            if get_metric_spec(name) is not None
+            else name,
+            metric_type=_metric_type(name),  # type: ignore[arg-type]
+            confidence=1.0,
+        )
+        for name in segment.metric_names
+    ]
+    time_range = (
+        IntentTimeRange(
+            raw_text=segment.time_raw,
+            granularity=segment.time_granularity,  # type: ignore[arg-type]
+            confidence=1.0,
+        )
+        if segment.time_raw is not None
+        else None
+    )
+    skills = segment.skills
+    if not skills:
+        return IntentSubRequirement(
+            requirement_id=f"SUB-{index:02d}",
+            original_text=segment.text,
+            normalized_text=segment.text,
+            entities=entities,
+            metrics=metrics,
+            time_range=time_range,
+            intent_type="ambiguous",
+            candidate_skills=[],
+            confidence=0.0,
+            reason="规则层未找到可匹配的数据技能。",
+            requires_clarification=True,
+            clarification_question=(
+                f"当前系统没有可查询“{segment.text}”的已注册数据技能，"
+                "请调整表述、更换指标，或确认转人工处理。"
+            ),
+            source="deterministic",
+        )
+    return IntentSubRequirement(
+        requirement_id=f"SUB-{index:02d}",
+        original_text=segment.text,
+        normalized_text=segment.text,
+        entities=entities,
+        metrics=metrics,
+        time_range=time_range,
+        intent_type=_intent_type(skills, segment.text),
+        candidate_skills=[skill.value for skill in skills],
+        confidence=1.0,
+        reason="确定性规则识别。",
+        source="deterministic",
+    )
+
+
+def _looks_like_industry(name: str) -> bool:
+    return any(token in name for token in ("行业", "板块", "产业", "概念", "逆变器", "电池", "储能"))
+
+
+def _deterministic_plan(
+    user_text: str,
+    parse: DeterministicParse,
+    *,
+    complexity: str,
+    parser_mode: str,
+    warnings: list[str],
+) -> ResearchIntentPlan:
+    subs = [_sub_from_segment(index, segment) for index, segment in enumerate(parse.segments, 1)]
+    unresolved_questions = [
+        sub.clarification_question
+        for sub in subs
+        if sub.requires_clarification and sub.clarification_question
+    ]
+    has_actionable_requirement = any(sub.candidate_skills for sub in subs)
+    requires_clarification = complexity == "ambiguous" or not has_actionable_requirement
+    clarification_questions = unresolved_questions if requires_clarification else []
+    unresolved_warnings = [
+        f"unresolved_sub_requirement:{sub.requirement_id}"
+        for sub in subs
+        if not sub.candidate_skills
+    ]
+    return ResearchIntentPlan(
+        original_input=user_text,
+        normalized_input=parse.normalized_text,
+        complexity=complexity,  # type: ignore[arg-type]
+        sub_requirements=subs,
+        locked_skills=[skill.value for skill in parse.locked_skills],
+        accepted_skills=[],
+        rejected_skills=[],
+        requires_clarification=requires_clarification,
+        clarification_questions=clarification_questions,
+        parser_mode=parser_mode,  # type: ignore[arg-type]
+        warnings=[*warnings, *unresolved_warnings],
+        # 语义优先并行仲裁（2026-09-01 最终方案）：边界词/口径护栏披露留痕
+        # + 锁类型标记（metric/keyword）透传给 validator 与合并层。
+        unresolved_metrics=list(parse.unresolved_metrics),
+        locked_skill_types=dict(parse.locked_skill_types),
+    )
+
+
+def _resolve_skill(raw: str) -> SkillName | None:
+    try:
+        return SkillName(raw)
+    except ValueError:
+        return None
+
+
+def _entity_key(entity: IntentEntity) -> str:
+    return "".join((entity.normalized_name or entity.name).split()).casefold()
+
+
+def _metric_key(metric: IntentMetric) -> str:
+    return "".join((metric.normalized_name or metric.original_name).split()).casefold()
+
+
+def _merge_entities(
+    deterministic: list[IntentEntity], llm: list[IntentEntity]
+) -> list[IntentEntity]:
+    merged = [item.model_copy(deep=True) for item in deterministic]
+    present = {_entity_key(item) for item in merged}
+    for item in llm:
+        key = _entity_key(item)
+        if key and key not in present:
+            merged.append(item.model_copy(deep=True))
+            present.add(key)
+    return merged[:20]
+
+
+def _merge_metrics(
+    deterministic: list[IntentMetric], llm: list[IntentMetric]
+) -> list[IntentMetric]:
+    merged = [item.model_copy(deep=True) for item in deterministic]
+    present = {_metric_key(item) for item in merged}
+    for item in llm:
+        key = _metric_key(item)
+        if key and key not in present:
+            merged.append(item.model_copy(deep=True))
+            present.add(key)
+    return merged[:20]
+
+
+def _compact_text(value: str) -> str:
+    return "".join(value.split()).casefold()
+
+
+# 坑坎後满：连接词/标点被 LLM 拆成独立子需求（如顿号「、」）
+# ，Schema min_length=1 不会拦住，但它不是可执行的查询语句。
+# 确定性层必须在合并前将其筛除，否则会作为真实查询执行而返回空。
+_PUNCT_OR_SPACE = re.compile(r"[\W_]+", re.UNICODE)
+
+
+def _is_noise_text(text: str) -> bool:
+    """Pure punctuation / whitespace sub-requirements carry no queryable intent."""
+    compact = str(text).strip()
+    if not compact:
+        return True
+    return _PUNCT_OR_SPACE.sub("", compact) == ""
+
+
+def _skill_serves_all_metrics(skill: SkillName, metric_types: set[str]) -> bool:
+    """合并护栏专用：技能必须能服务合并后的**全部**指标类型。
+
+    与 ``capability_supports``（交集即可）不同：放宽合并把两组指标并进
+    同一子需求，任何一个技能服务不了其中一类指标都会产生半吊子查询。
+    """
+
+    capability = SKILL_CAPABILITIES.get(skill)
+    if capability is None:
+        return False
+    if not metric_types:
+        return True
+    return metric_types <= set(capability.metric_types)
+
+
+def _merge_compatible(
+    target: IntentSubRequirement,
+    llm_sub: IntentSubRequirement,
+    llm_skills: tuple[SkillName, ...],
+) -> bool:
+    """严格匹配路径的能力护栏（2026-09-01 最终方案，BUG-3）。
+
+    文本相同或 entity+metric 双重叠都不足以合入：目标碎片既有技能必须
+    能服务合并后的全部指标类型，否则 L2 碎片独立成子需求（锁定技能与
+    L2 补充并行存在，两不相害）。与放宽路径护栏 2 同一判据。
+    ``AGENT1_SEMANTIC_FIRST_ENABLED`` 关闭时回退四刀后行为（恒可合入）。
+    """
+
+    if not settings.AGENT1_SEMANTIC_FIRST_ENABLED:
+        return True
+    merged_metric_types = (
+        {metric.metric_type for metric in target.metrics}
+        | {metric.metric_type for metric in llm_sub.metrics}
+    ) - {"unknown"}
+    combined = [
+        skill
+        for skill in (
+            *(_resolve_skill(value) for value in target.candidate_skills),
+            *llm_skills,
+        )
+        if skill is not None
+    ]
+    if not combined:
+        return True
+    return all(
+        _skill_serves_all_metrics(skill, merged_metric_types) for skill in combined
+    )
+
+
+def _find_merge_target(
+    subs: list[IntentSubRequirement],
+    llm_sub: IntentSubRequirement,
+    *,
+    used_indices: set[int],
+    llm_skills: tuple[SkillName, ...] = (),
+    relaxed: bool = True,
+) -> int | None:
+    """Match by request meaning, never merely by sharing the same Skill.
+
+    2026-09-01 方案（第三刀·改动点 2）：严格匹配（文本相同 → entity 且
+    metric 同时重叠）优先；都不命中且 ``relaxed`` 时，entity **或** metric
+    重叠也可合并，配两个护栏防误合——
+    1. 两碎片 intent_type 必须相同；
+    2. 合并后所有技能都能通过 ``capability_supports`` 对合并指标类型的校验。
+    治 A02/C06：顿号切分碎片因过严条件合并失败产生重复子查询。
+    """
+
+    llm_texts = {
+        _compact_text(llm_sub.original_text),
+        _compact_text(llm_sub.normalized_text),
+    } - {""}
+    for index, sub in enumerate(subs):
+        if index in used_indices:
+            continue
+        sub_texts = {
+            _compact_text(sub.original_text),
+            _compact_text(sub.normalized_text),
+        } - {""}
+        # BUG-3 能力护栏：文本相同也不得合入能力不兼容的技能组合。
+        if llm_texts & sub_texts and _merge_compatible(sub, llm_sub, llm_skills):
+            return index
+
+    llm_entities = {_entity_key(item) for item in llm_sub.entities}
+    llm_metrics = {_metric_key(item) for item in llm_sub.metrics}
+    for index, sub in enumerate(subs):
+        if index in used_indices:
+            continue
+        entity_overlap = llm_entities & {_entity_key(item) for item in sub.entities}
+        metric_overlap = llm_metrics & {_metric_key(item) for item in sub.metrics}
+        if (
+            entity_overlap
+            and metric_overlap
+            and _merge_compatible(sub, llm_sub, llm_skills)
+        ):
+            return index
+
+    if relaxed:
+        llm_metric_types = {metric.metric_type for metric in llm_sub.metrics} - {"unknown"}
+        for index, sub in enumerate(subs):
+            if index in used_indices:
+                continue
+            # 护栏 1：诉求性质不同不得合并（财务诉求≠行业诉求）。
+            if sub.intent_type != llm_sub.intent_type:
+                continue
+            entity_overlap = llm_entities & {_entity_key(item) for item in sub.entities}
+            metric_overlap = llm_metrics & {_metric_key(item) for item in sub.metrics}
+            if not (entity_overlap or metric_overlap):
+                continue
+            # 护栏 2：合并后每个技能都必须能服务合并后的全部指标类型。
+            merged_metric_types = (
+                {metric.metric_type for metric in sub.metrics} | llm_metric_types
+            ) - {"unknown"}
+            combined_skills = [
+                skill
+                for skill in (
+                    *(_resolve_skill(value) for value in sub.candidate_skills),
+                    *llm_skills,
+                )
+                if skill is not None
+            ]
+            if combined_skills and all(
+                _skill_serves_all_metrics(skill, merged_metric_types)
+                for skill in combined_skills
+            ):
+                return index
+
+    available = [index for index in range(len(subs)) if index not in used_indices]
+    # 单碎片遗留回退同样过能力护栏（BUG-3）：否则唯一确定性碎片会无条件
+    # 吞掉能力不兼容的 L2 碎片，触发 R3 整单回退。
+    if len(available) == 1 and len(subs) == 1:
+        candidate = subs[available[0]]
+        if _merge_compatible(candidate, llm_sub, llm_skills):
+            return available[0]
+    return None
+
+
+def _merge_llm_plan(
+    base: ResearchIntentPlan,
+    llm_plan: ResearchIntentPlan,
+    *,
+    locked_skills: set[str],
+    confidence_accept: float,
+    confidence_review: float,
+    max_sub_requirements: int,
+    max_skills_per_requirement: int,
+    veto_enabled: bool = True,
+) -> ResearchIntentPlan:
+    accepted: list[str] = []
+    rejected: list[str] = list(base.rejected_skills)
+    warnings: list[str] = list(base.warnings)
+    subs = [sub.model_copy(deep=True) for sub in base.sub_requirements]
+    used_indices: set[int] = set()
+    pending_questions: list[str] = []
+    # 层间仲裁（2026-09-01 方案第一刀）：否决通道收集器。
+    # vetoed_texts — 被 LLM 显式否决的碎片文本（紧凑形态）；
+    # vetoed_skills — 被否决碎片原本携带的确定性锁定技能。
+    analysis_notes: list[str] = list(base.analysis_notes)
+    vetoed_texts: set[str] = set()
+    vetoed_skills: set[str] = set()
+
+    for llm_sub in llm_plan.sub_requirements[:max_sub_requirements]:
+        # 纯标点/空白子需求（如顿号「、」）：复合问句被拆解时 LLM 偶尔会把连接符单独报出。
+        # 这类段落不应进入计划：不进行（免得执行空），也不作为“无法处理”段落报告（免得乱了用户）。
+        if _is_noise_text(llm_sub.normalized_text) or _is_noise_text(llm_sub.original_text):
+            warnings.append(
+                f"llm_noise_sub_requirement_dropped:{llm_sub.requirement_id}"[:200]
+            )
+            continue
+        metric_types = {metric.metric_type for metric in llm_sub.metrics} - {"unknown"}
+        valid_skills: list[SkillName] = []
+        for raw in llm_sub.candidate_skills:
+            skill = _resolve_skill(raw)
+            if skill is None:
+                if raw not in rejected:
+                    rejected.append(raw)
+                warnings.append(f"llm_skill_not_in_enum:{raw}"[:200])
+                continue
+            if not capability_supports(skill, metric_types=metric_types):
+                if skill.value not in rejected:
+                    rejected.append(skill.value)
+                warnings.append(f"llm_skill_capability_mismatch:{skill.value}"[:200])
+                continue
+            valid_skills.append(skill)
+
+        if not valid_skills:
+            # 层间仲裁（2026-09-01 方案第一刀·改动点 1）：LLM 显式否决。
+            # 否决必须显式：candidate_skills 为空且（intent_type=analysis_only
+            # 或给出 reject_reason）。单纯没选出技能不构成否决——防止 LLM
+            # 偷懒导致 recall 下降，此类碎片维持确定性层兜底。
+            if veto_enabled and (
+                llm_sub.intent_type == "analysis_only" or llm_sub.reject_reason
+            ):
+                note = llm_sub.normalized_text[:200]
+                if note not in analysis_notes and len(analysis_notes) < 12:
+                    analysis_notes.append(note)
+                vetoed_texts.add(_compact_text(llm_sub.normalized_text))
+                warnings.append(f"llm_veto:{llm_sub.requirement_id}"[:200])
+                record_llm_veto(
+                    llm_sub.normalized_text,
+                    requirement_id=llm_sub.requirement_id,
+                    reason=llm_sub.reject_reason or "analysis_only",
+                )
+            continue
+
+        if llm_sub.confidence < confidence_review:
+            for skill in valid_skills:
+                if skill.value not in rejected:
+                    rejected.append(skill.value)
+            warnings.append(f"llm_low_confidence_not_executed:{llm_sub.requirement_id}"[:200])
+            question = llm_sub.clarification_question or (
+                f"LLM对子需求“{llm_sub.normalized_text}”的路由置信度过低，请人工确认。"
+            )
+            if question not in pending_questions:
+                pending_questions.append(question)
+            continue
+
+        review_only = llm_sub.confidence < confidence_accept
+        additions = [skill for skill in valid_skills if skill.value not in locked_skills]
+        if review_only and additions:
+            warnings.append(
+                "llm_skill_pending_review:" + ",".join(skill.value for skill in additions)
+            )
+
+        # The LLM supplies semantic decomposition first; deterministic results
+        # remain immutable locks and are merged by request meaning. Sharing a
+        # broad Skill (for example two financial questions) is not sufficient.
+        target_index = _find_merge_target(
+            subs,
+            llm_sub,
+            used_indices=used_indices,
+            llm_skills=tuple(valid_skills),
+        )
+        if target_index is not None:
+            used_indices.add(target_index)
+            target = subs[target_index]
+            for skill in valid_skills:
+                if skill.value not in target.candidate_skills:
+                    target.candidate_skills.append(skill.value)
+                    if skill.value not in locked_skills and skill.value not in accepted:
+                        accepted.append(skill.value)
+            target.candidate_skills = target.candidate_skills[:max_skills_per_requirement]
+            target.entities = _merge_entities(target.entities, llm_sub.entities)
+            target.metrics = _merge_metrics(target.metrics, llm_sub.metrics)
+            if target.time_range is None:
+                target.time_range = llm_sub.time_range
+            target.intent_type = llm_sub.intent_type
+            target.confidence = llm_sub.confidence
+            target.reason = "LLM语义识别结果已通过确定性枚举与能力校准。"
+            target.requires_clarification = review_only
+            target.clarification_question = (
+                llm_sub.clarification_question
+                or f"请确认对子需求“{llm_sub.normalized_text}”的数据技能路由。"
+                if review_only
+                else None
+            )
+            target.source = "hybrid"
+        else:
+            if len(subs) >= max_sub_requirements:
+                warnings.append(f"llm_sub_requirement_truncated:{llm_sub.requirement_id}"[:200])
+                continue
+            new_skills = [skill.value for skill in valid_skills][:max_skills_per_requirement]
+            subs.append(
+                IntentSubRequirement(
+                    requirement_id=f"SUB-LLM-{len(subs) + 1:02d}",
+                    original_text=llm_sub.original_text[:1_000],
+                    normalized_text=llm_sub.normalized_text[:1_000],
+                    entities=llm_sub.entities,
+                    metrics=llm_sub.metrics,
+                    time_range=llm_sub.time_range,
+                    intent_type=llm_sub.intent_type,
+                    candidate_skills=new_skills,
+                    confidence=llm_sub.confidence,
+                    reason=llm_sub.reason,
+                    requires_clarification=review_only,
+                    clarification_question=(
+                        llm_sub.clarification_question
+                        or f"请确认对子需求“{llm_sub.normalized_text}”的数据技能路由。"
+                        if review_only
+                        else None
+                    ),
+                    source="llm",
+                )
+            )
+            for value in new_skills:
+                if value not in locked_skills and value not in accepted:
+                    accepted.append(value)
+
+    # A deterministic split can fragment an entity enumeration
+    # (对比宁德时代与比亚迪… → 对比宁德时代 + 比亚迪的…) when
+    # research_brief carries no known entities.  When an LLM
+    # sub-requirement re-assembles such a fragment into a routable whole,
+    # the orphaned base fragment must not survive the merge, otherwise it
+    # resurfaces as an unresolved sub-requirement and blocks the whole
+    # question as data-unavailable even though the LLM route is complete.
+    llm_texts = [
+        _compact_text(sub.normalized_text)
+        for sub in llm_plan.sub_requirements
+        if sub.candidate_skills
+    ]
+    if llm_texts:
+        subs = [
+            sub
+            for sub in subs
+            if sub.source != "deterministic"
+            or sub.candidate_skills
+            or not any(
+                _compact_text(sub.normalized_text) in text and text != _compact_text(sub.normalized_text)
+                for text in llm_texts
+            )
+        ]
+
+    # 层间仲裁（第一刀·改动点 1 联动）：被显式否决的确定性碎片从计划中移除。
+    # 其携带的锁定技能记入 vetoed_skills，供下方条件补回判断。
+    if vetoed_texts:
+        kept_subs: list[IntentSubRequirement] = []
+        for sub in subs:
+            if (
+                sub.source == "deterministic"
+                and _compact_text(sub.normalized_text) in vetoed_texts
+            ):
+                vetoed_skills.update(sub.candidate_skills)
+                warnings.append(
+                    f"llm_veto_fragment_removed:{sub.requirement_id}"[:200]
+                )
+                continue
+            kept_subs.append(sub)
+        subs = kept_subs
+
+    # Locked skills are immutable: verify they still appear after merging.
+    # 2026-09-01 方案（第一刀·改动点 2）：条件补回——仅当该锁定不是被
+    # 显式否决碎片的唯一支撑时才强制补回；被否决的锁定不再复活。
+    present = {value for sub in subs for value in sub.candidate_skills}
+    for locked in locked_skills:
+        if locked in present:
+            continue
+        if locked in vetoed_skills:
+            warnings.append(f"locked_skill_vetoed_not_restored:{locked}"[:200])
+            continue
+        warnings.append(f"locked_skill_missing_after_merge:{locked}"[:200])
+        if subs:
+            subs[0].candidate_skills = ([locked] + subs[0].candidate_skills)[
+                :max_skills_per_requirement
+            ]
+
+    # fail-closed：否决清空了全部可执行碎片时，停下说明而不是产出空计划
+    # （与 _extract_analysis_directives 的全分析型处理同构）。
+    if vetoed_texts and not any(sub.candidate_skills for sub in subs):
+        question = (
+            "该请求的数据诉求已被语义层显式否决（判断题/派生诉求/分析型诉求），"
+            "无独立取数子需求；请补充需要采集的具体数据指标，"
+            "或确认由分析阶段基于已采集数据完成。"
+        )
+        if question not in pending_questions:
+            pending_questions.append(question)
+
+    actionable_sub_requirement_exists = any(sub.candidate_skills for sub in subs)
+    clarification_questions = list(pending_questions)
+    for sub in subs:
+        if sub.requires_clarification and sub.clarification_question:
+            # An unrouteable fragment must not block valid sibling fragments.
+            # It is surfaced later as an unavailable partial result. Ambiguous
+            # routed work still needs review, as does a wholly unrouteable request.
+            should_block = (
+                bool(sub.candidate_skills) or not actionable_sub_requirement_exists
+            )
+            if should_block and sub.clarification_question not in clarification_questions:
+                clarification_questions.append(sub.clarification_question)
+    # Plan-level LLM questions become advisory once any sub-requirement
+    # already routes to a real skill; they must never block acquisition.
+    for question in llm_plan.clarification_questions:
+        if actionable_sub_requirement_exists:
+            warnings.append(f"advisory_clarification:{question}"[:200])
+        elif question not in clarification_questions:
+            clarification_questions.append(question)
+
+    return base.model_copy(
+        update={
+            "complexity": llm_plan.complexity,
+            "sub_requirements": subs,
+            "accepted_skills": accepted,
+            "rejected_skills": rejected,
+            "warnings": warnings,
+            "parser_mode": "hybrid",
+            "requires_clarification": bool(clarification_questions),
+            "clarification_questions": clarification_questions,
+            # 否决碎片的原文摘要透传 Agent 2（第一刀·改动点 1）。
+            "analysis_notes": analysis_notes[:12],
+        }
+    )
+
+
+def _inherited_skill_allowed(
+    skill_value: str,
+    *,
+    metric_types: set[str],
+    entity_types: set[str],
+) -> bool:
+    """继承技能必须同时服务继承指标的 metric_type 与裸实体的 entity_type。"""
+
+    skill = _resolve_skill(skill_value)
+    if skill is None:
+        return False
+    if not capability_supports(skill, metric_types=metric_types):
+        return False
+    capability = SKILL_CAPABILITIES.get(skill)
+    if entity_types and capability is not None:
+        if not entity_types & set(capability.entity_types):
+            return False
+    return True
+
+
+def _inherit_metrics_from_siblings(plan: ResearchIntentPlan) -> ResearchIntentPlan:
+    """同一 plan 内：candidate_skills 为空、有实体、无指标的子需求，
+    继承兄弟子需求的指标与技能；无兄弟可继承时保持原样（走澄清门）。
+
+    治成因 A（2026-08-31 方案 P0-1）：确定性解析器按顿号切分会把并列
+    实体拆成无指标的裸实体段，LLM 拆解也可能残留同类碎片。继承只发生在
+    同一 plan 的兄弟碎片之间；继承的技能必须通过 capability_supports
+    与实体类型双重校验；全部继承失败时保持空并继续走澄清门（不静默
+    吞掉）。继承动作写 warnings 可审计。
+    """
+
+    subs = [sub.model_copy(deep=True) for sub in plan.sub_requirements]
+    if len(subs) < 2:
+        return plan
+
+    # 继承源：同 plan 内 candidate_skills 非空且 metrics 非空的子需求。
+    sources = [sub for sub in subs if sub.candidate_skills and sub.metrics]
+    if not sources:
+        return plan
+
+    warnings = list(plan.warnings)
+    resolved_questions: list[str] = []
+    changed = False
+
+    for target in subs:
+        # 触发条件：candidate_skills 为空、有实体、无指标。
+        # 注：OBS 4.2 曾尝试取消「必须有实体」限制以合并连词切出的空碎片
+        # （如「国内」），实测会把「尚未注册的自定义口径」这类本应保持
+        # 不可路由的碎片也并进兄弟碎片，破坏部分可路由语义——回滚。
+        if target.candidate_skills or not target.entities or target.metrics:
+            continue
+
+        metric_pool: list[IntentMetric] = []
+        metric_keys: set[str] = set()
+        skill_pool: list[str] = []
+        for source in sources:
+            for metric in source.metrics:
+                key = _metric_key(metric)
+                if key and key not in metric_keys:
+                    metric_pool.append(metric.model_copy(deep=True))
+                    metric_keys.add(key)
+            for skill_value in source.candidate_skills:
+                if skill_value not in skill_pool:
+                    skill_pool.append(skill_value)
+
+        metric_types = {metric.metric_type for metric in metric_pool} - {"unknown"}
+        entity_types = {
+            entity.entity_type
+            for entity in target.entities
+            if entity.entity_type != "unknown"
+        }
+        valid_skills = [
+            skill_value
+            for skill_value in skill_pool
+            if _inherited_skill_allowed(
+                skill_value,
+                metric_types=metric_types,
+                entity_types=entity_types,
+            )
+        ]
+
+        if not metric_pool or not valid_skills:
+            # 全部继承失败 → 保持空，仍走澄清门（不静默吞掉）。
+            continue
+
+        entity_names = "、".join(entity.name for entity in target.entities[:3])
+        for metric in metric_pool:
+            warnings.append(
+                f"metric_inherited_from_sibling:{entity_names}←{metric.original_name}"[:200]
+            )
+        warnings = [
+            warning
+            for warning in warnings
+            if warning != f"unresolved_sub_requirement:{target.requirement_id}"
+        ]
+
+        target.metrics = metric_pool[:20]
+        target.candidate_skills = valid_skills[:8]
+        inherited_skills = [
+            skill
+            for skill in (_resolve_skill(value) for value in valid_skills)
+            if skill is not None
+        ]
+        target.intent_type = _intent_type(inherited_skills, target.normalized_text)
+        target.confidence = 1.0
+        target.reason = "裸实体碎片继承兄弟子需求的指标与技能（确定性后处理）。"
+        if target.clarification_question:
+            resolved_questions.append(target.clarification_question)
+        target.requires_clarification = False
+        target.clarification_question = None
+        changed = True
+
+    if not changed:
+        return plan
+
+    clarification_questions = [
+        question
+        for question in plan.clarification_questions
+        if question not in resolved_questions
+    ]
+    return plan.model_copy(
+        update={
+            "sub_requirements": subs,
+            "warnings": warnings[:30],
+            "clarification_questions": clarification_questions[:12],
+            "requires_clarification": bool(clarification_questions),
+        }
+    )
+
+
+_ANALYSIS_PATTERNS = re.compile(
+    r"(对.{1,12}的(影响|传导|贡献)|带动|拉动|拖累|联动|弹性|敏感性|归因)"
+)
+
+
+def _is_analysis_directive(text: str) -> bool:
+    """高置信分析诉求判定（P0-2）。
+
+    只打强模式（X对Y的影响/传导/贡献、带动、拉动等）；拿不准的文本
+    宁可交回数据路由（错配为取数需求的代价 < 误吞真实取数需求）。
+    """
+
+    if not text:
+        return False
+    return bool(_ANALYSIS_PATTERNS.search(text))
+
+
+def _extract_analysis_directives(plan: ResearchIntentPlan) -> ResearchIntentPlan:
+    """不可路由且命中高置信分析模式的碎片：移出取数子需求，记入 analysis_notes。
+
+    治成因 B（2026-08-31 方案 P0-2）：“X对Y的影响/传导/贡献”是分析诉求，
+    不是数据查询。这类碎片若留在 sub_requirements 中会被报
+    “暂无对应查询技能”并阻塞为 required_data_unavailable。正确行为：
+    不进数据路由、不报数据缺口，原文摘要记入 plan.analysis_notes 透传
+    给 Agent 2 作为分析提示；相关数据缺口由 Agent 2 的质量决策门处理。
+    触发条件要求 candidate_skills 为空（已被路由的碎片拿到的数据对
+    分析有用，保守放行继续取数）。
+    """
+
+    subs = plan.sub_requirements
+    if not subs:
+        return plan
+
+    analysis_notes = list(plan.analysis_notes)
+    resolved_questions: list[str] = []
+    kept: list[IntentSubRequirement] = []
+    extracted: list[IntentSubRequirement] = []
+
+    for sub in subs:
+        if not sub.candidate_skills and _is_analysis_directive(sub.normalized_text):
+            extracted.append(sub)
+            note = sub.normalized_text[:200]
+            if note not in analysis_notes and len(analysis_notes) < 12:
+                analysis_notes.append(note)
+            if sub.clarification_question:
+                resolved_questions.append(sub.clarification_question)
+            continue
+        kept.append(sub)
+
+    if not extracted:
+        return plan
+
+    extracted_ids = {sub.requirement_id for sub in extracted}
+    warnings = [
+        warning
+        for warning in plan.warnings
+        if warning.split(":", 1)[-1] not in extracted_ids
+        or not warning.startswith("unresolved_sub_requirement:")
+    ]
+    warnings.extend(f"analysis_directive_extracted:{sub.requirement_id}" for sub in extracted)
+
+    clarification_questions = [
+        question
+        for question in plan.clarification_questions
+        if question not in resolved_questions
+    ]
+    if not kept and not clarification_questions:
+        # 全部子需求都是分析型：fail-closed 停下说明，避免空计划触发
+        # R1（empty_plan_without_clarification）。
+        clarification_questions = [
+            "该请求的数据诉求均为分析型（影响/传导/贡献），无独立取数子需求；"
+            "请补充需要采集的具体数据指标，或确认由分析阶段基于已采集数据完成。"
+        ]
+
+    return plan.model_copy(
+        update={
+            "sub_requirements": kept,
+            "analysis_notes": analysis_notes[:12],
+            "warnings": warnings[:30],
+            "clarification_questions": clarification_questions[:12],
+            "requires_clarification": bool(clarification_questions),
+        }
+    )
+
+
+def _postprocess_plan(plan: ResearchIntentPlan) -> ResearchIntentPlan:
+    """P0 确定性后处理链（2026-08-31 方案）。
+
+    顺序：先提取分析型碎片（P0-2），再做裸实体继承（P0-1）——
+    分析正则是更强的信号，命中分析模式的碎片不应被继承成取数任务。
+    出口统一写 routing telemetry（P0-5 点位 1：拆解完成），观测层
+    静默失败，绝不影响主链路。
+    """
+
+    processed = _inherit_metrics_from_siblings(_extract_analysis_directives(plan))
+    record_decomposition(processed)
+    return processed
+
+
+async def _build_intent_plan_uncalibrated(
+    user_text: str,
+    *,
+    industry_topic: str,
+    known_entities: list[str] | None = None,
+    decomposer: IntentDecomposer | None = None,
+    confidence_accept: float = 0.90,
+    confidence_review: float = 0.75,
+    max_sub_requirements: int = 12,
+    max_skills_per_requirement: int = 3,
+    veto_enabled: bool | None = None,
+) -> ResearchIntentPlan:
+    """LLM-first semantic plan calibrated by deterministic locks and fallback.
+
+    ``veto_enabled=None`` 时取 ``settings.AGENT1_LLM_VETO_ENABLED``
+    （2026-09-01 方案第一刀的风险开关，默认开）。
+    """
+
+    effective_veto_enabled = (
+        settings.AGENT1_LLM_VETO_ENABLED if veto_enabled is None else veto_enabled
+    )
+
+    parse = parse_intent(
+        user_text, industry_topic=industry_topic, known_entities=known_entities
+    )
+    decision = detect_complexity(parse, known_entities=known_entities)
+    locked_values = {skill.value for skill in parse.locked_skills}
+
+    base = _deterministic_plan(
+        user_text,
+        parse,
+        complexity=decision.complexity,
+        parser_mode="deterministic",
+        warnings=[],
+    )
+
+    if decomposer is None:
+        return _postprocess_plan(base)
+
+    try:
+        llm_plan = await decomposer.decompose(
+            user_text=parse.normalized_text,
+            industry_topic=industry_topic,
+            locked_entities=list(parse.entities),
+            locked_metrics=list(parse.metric_names),
+            locked_skills=[skill.value for skill in parse.locked_skills],
+        )
+    except Exception as exc:  # noqa: BLE001 - fallback must never crash Agent 1
+        return _postprocess_plan(base.model_copy(
+            update={
+                "parser_mode": "fallback",
+                "warnings": [f"intent_decomposer_failed:{type(exc).__name__}"],
+            }
+        ))
+
+    if not llm_plan.sub_requirements:
+        return _postprocess_plan(base.model_copy(
+            update={
+                "parser_mode": "fallback",
+                "warnings": ["intent_decomposer_empty"],
+            }
+        ))
+
+    return _postprocess_plan(_merge_llm_plan(
+        base,
+        llm_plan,
+        locked_skills=locked_values,
+        confidence_accept=confidence_accept,
+        confidence_review=confidence_review,
+        max_sub_requirements=max_sub_requirements,
+        max_skills_per_requirement=max_skills_per_requirement,
+        veto_enabled=effective_veto_enabled,
+    ))
+
+
+def _clarification_fallback(
+    fallback: ResearchIntentPlan,
+    verdict_blockers: list[str],
+) -> ResearchIntentPlan:
+    """Last-resort fail-closed outcome: stop for human review."""
+
+    questions = [
+        *(
+            question
+            for question in fallback.clarification_questions
+            if isinstance(question, str)
+        ),
+        "意图计划未通过确定性校验，需人工确认研究范围与技能路由。",
+    ][:12]
+    return fallback.model_copy(
+        update={
+            "parser_mode": "fallback",
+            "requires_clarification": True,
+            "clarification_questions": questions,
+            "warnings": [
+                *fallback.warnings,
+                *(f"plan_validator_blocked:{blocker}" for blocker in verdict_blockers),
+            ][:30],
+        }
+    )
+
+
+async def build_intent_plan(
+    user_text: str,
+    *,
+    industry_topic: str,
+    known_entities: list[str] | None = None,
+    decomposer: IntentDecomposer | None = None,
+    confidence_accept: float = 0.90,
+    confidence_review: float = 0.75,
+    max_sub_requirements: int = 12,
+    max_skills_per_requirement: int = 3,
+    veto_enabled: bool | None = None,
+) -> ResearchIntentPlan:
+    """Build the intent plan, then gate it through the deterministic validator.
+
+    借鉴 industry-panorama-research 的 check_scope.py 模式：任何计划（含
+    LLM 融合产物）进入取数规划前必须通过跨字段确定性校验。BLOCK 时先
+    回退确定性重建；确定性重建仍不合法时转入人工审核（fail-closed）。
+    """
+
+    plan = await _build_intent_plan_uncalibrated(
+        user_text,
+        industry_topic=industry_topic,
+        known_entities=known_entities,
+        decomposer=decomposer,
+        confidence_accept=confidence_accept,
+        confidence_review=confidence_review,
+        max_sub_requirements=max_sub_requirements,
+        max_skills_per_requirement=max_skills_per_requirement,
+        veto_enabled=veto_enabled,
+    )
+    verdict = validate_intent_plan(plan)
+
+    if verdict.status == "block":
+        fallback = await _build_intent_plan_uncalibrated(
+            user_text,
+            industry_topic=industry_topic,
+            known_entities=known_entities,
+            decomposer=None,
+            confidence_accept=confidence_accept,
+            confidence_review=confidence_review,
+            max_sub_requirements=max_sub_requirements,
+            max_skills_per_requirement=max_skills_per_requirement,
+            veto_enabled=veto_enabled,
+        )
+        fallback_verdict = validate_intent_plan(fallback)
+        if fallback_verdict.status == "block":
+            return _clarification_fallback(fallback, verdict.blockers)
+        return fallback.model_copy(
+            update={
+                "parser_mode": "fallback",
+                "warnings": [
+                    *fallback.warnings,
+                    *(
+                        f"plan_validator_blocked:{blocker}"
+                        for blocker in verdict.blockers
+                    ),
+                ][:30],
+            }
+        )
+
+    if verdict.warnings:
+        return plan.model_copy(
+            update={
+                "warnings": [
+                    *plan.warnings,
+                    *(f"plan_validator:{warning}" for warning in verdict.warnings),
+                ][:30],
+            }
+        )
+    return plan

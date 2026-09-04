@@ -57,6 +57,49 @@ def chapter_analysis_result() -> AnalysisResult:
             "chart_candidates": [
                 {"title": "样本企业数量", "chart_type": "bar", "evidence_ids": ["E-001"]}
             ],
+            "data_quality_issues": [
+                {
+                    "issue_id": "DQ-SCOPE",
+                    "issue_type": "not_comparable",
+                    "metric": "样本企业数量",
+                    "description": "样本覆盖范围有限。",
+                    "impact_level": "medium",
+                    "evidence_ids": ["E-001"],
+                    "affected_dimensions": ["competition"],
+                    "suggested_handling": "保留事实并明确样本边界。",
+                }
+            ],
+            "financial_consistency_checks": [
+                {
+                    "check_id": "FC-QUALITY",
+                    "check_type": "financial_statement_consistency",
+                    "status": "warning",
+                    "conclusion": "财务口径仍需复核。",
+                    "impact": "相关结论采用条件性表达。",
+                    "evidence_ids": ["E-001"],
+                }
+            ],
+            "dimension_coverage": [
+                {
+                    "dimension": name,
+                    "status": "partial" if name == "competition" else "supported",
+                    "reason": "样本覆盖有限。" if name == "competition" else "已有证据支持。",
+                    "evidence_ids": ["E-001"],
+                }
+                for name in (
+                    "competition",
+                    "growth",
+                    "macro_policy",
+                    "industry_chain",
+                    "risk",
+                )
+            ],
+            "research_brief": {
+                "geography": "中国内地",
+                "included_topics": ["竞争格局"],
+                "excluded_topics": ["个股推荐"],
+                "report_depth": "deep",
+            },
             "industry_topic": "中国光伏制造行业",
             "market_scope": ["中国内地"],
             "security_types": ["普通股"],

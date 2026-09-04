@@ -2,7 +2,7 @@
 
 from app.integrations.llm.protocol import AnalysisModel, ChapterWritingModel
 from app.schemas.analysis import AnalysisDraft
-from app.schemas.chapter import ChapterDraft
+from app.schemas.chapter import ChapterDraftLoose
 from app.runtime.guard import get_runtime_session
 
 
@@ -43,7 +43,7 @@ class RuntimeAwareChapterWritingModel:
         *,
         system_prompt: str,
         runtime_prompt: str,
-    ) -> ChapterDraft:
+    ) -> ChapterDraftLoose:
         session = get_runtime_session()
         if session is not None:
             session.before_model_call(self.model_name)

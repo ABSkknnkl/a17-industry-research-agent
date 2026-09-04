@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "1d7d2d7bf011e1819833a1b6d752550f79a0f5c202cd3d8c0a23bc1d0e83c5a7",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "中国内地 动力电池 2024-01-01至2026-08-11 代表公司 营业收入 营业成本 净利润 ROE 经营活动现金流量净额 投资活动现金流量净额 筹资活动现金流量净额 期末现金及现金等价物余额 货币资金 总资产 负债合计 股东权益 存货 应收账款 宁德时代2023-2025财报做三步杜邦ROE拆解",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":9,\"columns\":[],\"datas\":[],\"row_count\":0,\"code_count\":0,\"status_code\":-1225}",
+  "raw_sha256": "72a421fc22a9bcde9625bf9332f1f91a3c8f6fced598de68f7c10a98bce23cc3",
+  "recorded_at": "2026-08-22T12:51:30.909455+00:00"
+}

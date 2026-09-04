@@ -1,0 +1,23 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "923d1a05b543cff1ae77176fc2644b2934444a651286a7138f2a175847a114ba",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-business-query",
+  "request": {
+    "query": "储能未来三年市场空间大概有多大概念股主营业务构成",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\": 100, \"query\": \"\", \"columns\": [], \"datas\": [], \"row_count\": 0, \"code_count\": 0, \"chunks_info\": \"\", \"status_code\": 0, \"token\": \"\"}",
+  "raw_sha256": "neutralized-empty-intent-query",
+  "recorded_at": "2026-08-22T06:05:11.918371+00:00",
+  "migrated_from": "23fb7fecb0b47b1ab718c4fb9506b73e480a058e3322d04d22556b0670619d0c",
+  "migrated_reason": "intent query neutralized to empty result to reproduce pre-intent-query evidence set (LLM cache replay)"
+}

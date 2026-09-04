@@ -10,12 +10,17 @@ from app.runtime.tool_gateway import (
     ToolCall,
     ToolDefinition,
     ToolGateway,
+    ToolExecutionError,
     ToolHookDecision,
 )
 
 
 class QueryArgs(BaseModel):
     query: str = Field(min_length=1, max_length=20)
+
+
+class LargeStructuredPayload(BaseModel):
+    rows: list[dict[str, str]]
 
 
 async def echo_tool(args: QueryArgs) -> dict[str, str]:
@@ -30,6 +35,24 @@ async def slow_tool(args: QueryArgs) -> dict[str, str]:
 async def failing_tool(args: QueryArgs) -> Any:
     del args
     raise RuntimeError("provider secret must not leak")
+
+
+@pytest.mark.asyncio
+async def test_typed_tool_execution_error_preserves_safe_code() -> None:
+    async def typed_failure(_: QueryArgs) -> object:
+        raise ToolExecutionError("rate_limited", retryable=True)
+
+    gateway = ToolGateway(
+        [ToolDefinition(name="limited", args_model=QueryArgs, handler=typed_failure)]
+    )
+
+    result = await gateway.execute(
+        ToolCall(call_id="call-limited", name="limited", arguments={"query": "test"})
+    )
+
+    assert result.is_error is True
+    assert result.error_code == "rate_limited"
+    assert result.retryable is True
 
 
 @pytest.mark.asyncio
@@ -114,6 +137,39 @@ async def test_before_hook_can_block_and_large_result_is_truncated() -> None:
     assert truncated.truncated is True
     assert truncated.content_chars == 100
     assert len(str(truncated.content)) <= policy.max_tool_result_chars + 20
+
+
+@pytest.mark.asyncio
+async def test_typed_adapter_can_preserve_large_structured_payload() -> None:
+    async def structured_tool(args: QueryArgs) -> LargeStructuredPayload:
+        del args
+        return LargeStructuredPayload(rows=[{"value": "x" * 100}])
+
+    policy = RuntimePolicy(max_tool_result_chars=40)
+    gateway = ToolGateway(
+        [
+            ToolDefinition(
+                name="structured",
+                args_model=QueryArgs,
+                handler=structured_tool,
+                preserve_structured_content=True,
+            )
+        ],
+        default_policy=policy,
+    )
+
+    result = await gateway.execute(
+        ToolCall(
+            call_id="large-structured",
+            name="structured",
+            arguments={"query": "光伏"},
+        )
+    )
+
+    assert result.truncated is False
+    assert isinstance(result.content, LargeStructuredPayload)
+    assert result.content.rows[0]["value"] == "x" * 100
+    assert result.content_chars > policy.max_tool_result_chars
 
 
 @pytest.mark.asyncio

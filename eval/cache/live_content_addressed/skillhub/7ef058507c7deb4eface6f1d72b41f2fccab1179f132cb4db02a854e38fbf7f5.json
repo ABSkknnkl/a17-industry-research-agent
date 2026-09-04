@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "7ef058507c7deb4eface6f1d72b41f2fccab1179f132cb4db02a854e38fbf7f5",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "宁德时代 2024-01-01至2026-08-11 营业收入 营业成本 归母净利润 经营活动现金流量净额 投资活动现金流量净额 筹资活动现金流量净额 期末现金及现金等价物余额 货币资金 总资产 负债合计 股东权益 存货 应收账款 看下宁德时代财务，顺便和比亚迪对比，各出一张图",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":10,\"columns\":[],\"datas\":[],\"row_count\":0,\"code_count\":0,\"status_code\":-1225}",
+  "raw_sha256": "afce182bb3c896370f8d7d6b1ac8dde8c4ac5add76525e85e0af037cd7a42160",
+  "recorded_at": "2026-08-22T16:19:36.008133+00:00"
+}

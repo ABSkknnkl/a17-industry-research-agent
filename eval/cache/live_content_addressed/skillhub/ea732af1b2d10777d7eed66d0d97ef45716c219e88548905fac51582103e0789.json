@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "ea732af1b2d10777d7eed66d0d97ef45716c219e88548905fac51582103e0789",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 宁德时代2023-2025财报做三步杜邦ROE拆解",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1264,\"query\":\"中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 宁德时代2023-2025财报做三步杜邦ROE拆解\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"children\\\":[],\\\"node_type\\\":\\\"op\\\",\\\"sonSize\\\":1.0,\\\"chunkedResult\\\":\\\"中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 宁德时代2023-2025财报做三步杜邦roe拆解\\\",\\\"ci\\\":false,\\\"opName\\\":\\\"and\\\",\\\"opPropertyMap\\\":{},\\\"opPropertiesMap\\\":{},\\\"opProperty\\\":\\\"\\\"},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"发行人中文简称是宁德时代\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@发行人中文简称\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"宁德时代\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_发行人中文简称\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含宁德时代\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"code\",\"feKey\":\"债券代码\",\"type\":\"STR\",\"index_name\":\"债券@债券代码\",\"key\":\"债券@债券代码\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"name\",\"feKey\":\"债券简称\",\"type\":\"STR\",\"index_name\":\"债券@债券简称\",\"key\":\"债券@债券简称\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"indexId\":\"\",\"source\":\"new_parser\",\"feKey\":\"发行人中文简称\",\"type\":\"STR\",\"index_name\":\"债券@发行人中文简称\",\"key\":\"债券@发行人中文简称\",\"timestamp\":\"\"}],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac9bd8f17874030904461433\",\"chunks_info\":\"[\\\"发行人中文简称是宁德时代 (0)\\\"]\"}",
+  "raw_sha256": "bc153428b19da25aa5fb3dc8814b52d4ddc18d501634941c6c75515c26fef6a5",
+  "recorded_at": "2026-08-22T12:51:30.429369+00:00"
+}

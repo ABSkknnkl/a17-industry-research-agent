@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "577ca1cebf2fa6e683f46fbc656424af0bb19b66bef276995ad58cd599ed4bf8",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "news-search",
+  "request": {
+    "query": "创新药 政策 行业新闻 技术进展 风险事件 截至2026-08-11 药明康德存货周转率是多少",
+    "channels": [
+      "news"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[{\"channel\":\"news\",\"id\":\"659ead23f46945ed\",\"uid\":\"659ead23f46945ed\",\"url\":\"http://news.10jqka.com.cn/19700122/c678847622.shtml\",\"title\":\"易方达上证50增强策略ETF（563090）较前一日份额减少100.00万份，第一大重仓股药明康德\",\"summary\":\"据同花顺iFinD数据，8月11日，易方达上证50增强策略ETF（563090）份额较前一日减少100.00万份，环比下降1.67%，资金流入200.20万元，资金流出230.97万元。 该基金最近一周涨5.53%，近一个月上涨3.74%。 数据显示，该基金成立于2024年5月27日，基金经理为张胜记，基金跟踪指数为上证50，业绩比较基准为上证50指数收益率，最新披露的定期数据显示， 截止2026年6月30日，该基金第一大重仓股药明康德，持股数5.89万股，持仓市值733.36万元。 439.00 5.750 兆易创新 603986 0.53 431.95 5.660 东山精密 002384 1.60 419.76 5.500 中际旭创 300308 0.27 342.90 4.490 海光信息 688041 0.82 303.65 3.980 恒瑞医药 600276 5.52 287.26 3.760（数据来源：同花顺iFinD） \",\"index\":\"robot_universal_search\",\"score\":0.098815404,\"extra\":{\"seq\":\"678847622\",\"publish_source\":\"同花顺财经\",\"real_publish_source\":\"同花顺iNews\",\"host_name\":\"news.10jqka.com.cn\",\"de_groupid\":\"cce216e0af0324b0\",\"site_tags\":[],\"author_name\":\"机器人\",\"image_url_list\":[],\"is_forbidden_source\":false},\"name\":\"admin\",\"status\":0,\"data_source\":\"UNIVERSAL_SENTIMENT\",\"source_original\":\"据同花顺iFinD数据，8月11日，易方达上证50增强策略ETF（563090）份额较前一日减少100.00万份，环比下降1.67%，资金流入200.20万元，资金流出230.97万元。该基金最近一周涨5.53%，近一个月上涨3.74%。 数据显示，该基金成立于2024年5月27日，基金经理为张胜记，基金跟踪指数为上证50，业绩比较基准为上证50指数收益率，最新披露的定期数据显示，截止2026年6月30日，该基金第一大重仓股药明康德，持股数5.89万股，持仓市值733.36万元。 具体前十大重仓股如下表所示： 基金前十重仓股（按占净值比例）一览表 股票简称 股票代码 持股数（万股） 持仓市值（万元） 占净值比例（%） 药明康德 603259 5.89 733.36 9.610 澜起科技 688008 2.16 670.90 8.790 中信证券 600030 19.23 552.61 7.240 紫金矿业 601899 17.60 442.46 5.800 中国石油 601857 50.58 439.00 5.750 兆易创新 603986 0.53 431.95 5.660 东山精密...\",\"publish_time\":1786410965,\"publish_date\":\"2026-08-11 09:16:05\",\"data_version\":\"v1\",\"traceability_type\":0,\"site_authority\":1,\"modify_time\":0,\"operation_type\":0},{\"channel\":\"news\",\"id\":\"94ce23abc4bd4706\",\"uid\":\"94ce23abc4bd4706\",\"url\":\"http://news.10jqka.com.cn/19700122/c678861823.shtml\",\"title\":\"贝莱德（BlackRock）对药明康德的多头持仓比例降至5.78%\",\"summary\":\"据香港交易所披露，贝莱德(BlackRock)对无锡药明康德新药开发股份有限公司-H股的多头持仓比例于2026年8月6日从6.02%降至5.78%。 \",\"index\":\"robot_universal_search\",\"score\":0.09837952,\"extra\":{\"seq\":\"678861823\",\"publish_source\":\"同花顺财经\",\"real_publish_source\":\"同花顺7x24快讯\",\"host_name\":\"news.10jqka.com.cn\",\"de_groupid\":\"99cfe300b8042e32\",\"site_tags\":[],\"image_url_list\":[],\"is_forbidden_source\":false},\"name\":\"admin\",\"status\":0,\"data_source\":\"UNIVERSAL_SENTIMENT\",\"source_original\":\"据香港交易所披露，贝莱德(BlackRock)对无锡药明康德新药开发股份有限公司-H股的多头持仓比例于2026年8月6日从6.02%降至5.78%。\",\"publish_time\":1786439248,\"publish_date\":\"2026-08-11 17:07:28\",\"data_version\":\"v1\",\"traceability_type\":0,\"site_authority\":3,\"modify_time\":0,\"operation_type\":0}],\"abtest_info\":\"\",\"took\":280,\"total\":2,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"创新药 政策 行业新闻 技术进展 风险事件 截至2026-08-11 药明康德存货周转率是多少\"],\"query\":\"创新药 政策 行业新闻 技术进展 风险事件 截至2026-08-11 药明康德存货周转率是多少\",\"integrity_result\":true,\"intents\":[\"个股正负面新闻\"],\"intent\":\"资讯消息-新闻\"},\"content_data\":[]}",
+  "raw_sha256": "11235cc6988d4e0c2f20191c1146bb1cbb2de9af43dcf5eb05670ef269f8a84a",
+  "recorded_at": "2026-08-22T06:36:42.478512+00:00"
+}

@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "c50f8419a51f6b2f061637482ba88a683764283f98b31ffcdbfabdd7b609a30a",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-business-query",
+  "request": {
+    "query": "动力电池 2025年 2026年 营业收入 净利润",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1972,\"query\":\"动力电池 2025年 2026年 营业收入 净利润\",\"columns\":[{\"index_name\":\"全量指数@指数代码\",\"key\":\"指数代码\",\"feKey\":\"指数代码\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"全量指数@指数简称\",\"key\":\"指数简称\",\"feKey\":\"指数简称\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"全量指数@最新涨跌幅:前复权\",\"key\":\"最新涨跌幅:前复权\",\"feKey\":\"最新涨跌幅:前复权\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"全量指数@最新收盘价:不复权\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"点\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"营业收入\",\"key\":\"营业收入[20261231]\",\"feKey\":\"营业收入[20261231]\",\"type\":\"DOUBLE\",\"unit\":\"\",\"label\":\"\",\"timestamp\":\"20261231\",\"source\":\"field\"},{\"index_name\":\"营业收入\",\"key\":\"营业收入[20251231]\",\"feKey\":\"营业收入[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"\",\"label\":\"\",\"timestamp\":\"20251231\",\"source\":\"field\"}],\"datas\":[{\"指数代码\":\"931664.CSI\",\"指数简称\":\"动力电池\",\"营业收入[20251231]\":1.0602624253377E12}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"动力电池 (1)\\\",\\\"从2025年到2026年动力电池的营业收入,净利润 (1)\\\"]\",\"status_code\":0,\"token\":\"0ac9b83117874031609314782\"}",
+  "raw_sha256": "f1af7348053ffbde3b6e683a2315d5d0f4b27e459c2f86702bb4d313b3a96285",
+  "recorded_at": "2026-08-22T12:52:40.912457+00:00"
+}

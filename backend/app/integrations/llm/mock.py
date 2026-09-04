@@ -10,7 +10,8 @@ from app.schemas.analysis import (
     ScenarioAnalysis,
     ValidationCard,
 )
-from app.schemas.chapter import ChapterDraft, ParagraphDraft, SectionDraft
+from app.schemas.chapter import ChapterDraftLoose, LooseParagraph, LooseSection
+from app.schemas.readability import ReadabilityFinding, ReadabilityReport
 
 
 class MockAnalysisModel:
@@ -108,7 +109,7 @@ class MockChapterWritingModel:
         *,
         system_prompt: str,
         runtime_prompt: str,
-    ) -> ChapterDraft:
+    ) -> ChapterDraftLoose:
         del system_prompt
         payload = json.loads(runtime_prompt)
         chapter_config = payload["chapter_config"]
@@ -121,12 +122,12 @@ class MockChapterWritingModel:
             )
         )
         chart_ids = list(dict.fromkeys(chart["chart_id"] for chart in ready_charts))
-        sections: list[SectionDraft] = []
+        sections: list[LooseSection] = []
 
         for section_index, section in enumerate(chapter_config["sections"], start=1):
             if claims:
                 claim = claims[(section_index - 1) % len(claims)]
-                paragraph = ParagraphDraft(
+                paragraph = LooseParagraph(
                     paragraph_id=(
                         f"P-{chapter_config['chapter_id'].removeprefix('CH-')}-"
                         f"{section_index:02d}-01"
@@ -139,7 +140,7 @@ class MockChapterWritingModel:
                 key_points = [claim["text"]]
                 uncertainties = [claim["uncertainty"]]
             else:
-                paragraph = ParagraphDraft(
+                paragraph = LooseParagraph(
                     paragraph_id=(
                         f"P-{chapter_config['chapter_id'].removeprefix('CH-')}-"
                         f"{section_index:02d}-01"
@@ -151,7 +152,7 @@ class MockChapterWritingModel:
                 uncertainties = ["缺少当前章节可用的结论"]
 
             sections.append(
-                SectionDraft(
+                LooseSection(
                     section_id=section["section_id"],
                     title=section["title"],
                     purpose=section["purpose"],
@@ -162,7 +163,7 @@ class MockChapterWritingModel:
                 )
             )
 
-        return ChapterDraft(
+        return ChapterDraftLoose(
             chapter_id=chapter_config["chapter_id"],
             title=chapter_config["title"],
             summary=(
@@ -174,4 +175,36 @@ class MockChapterWritingModel:
             chart_ids=chart_ids,
             missing_inputs=[] if claims else ["需补充当前章节的结论与证据"],
             revision=int(payload.get("revision", 1)),
+        )
+
+
+class MockReadabilityModel:
+    """Deterministic readability reviewer for tests and local demos.
+
+    Returns a fixed score so routing stays predictable without a live judge;
+    inject findings to exercise the rewrite / human-review paths.
+    """
+
+    model_name = "mock-readability-reviewer"
+
+    def __init__(
+        self,
+        *,
+        score: float = 1.0,
+        findings: list[ReadabilityFinding] | None = None,
+    ) -> None:
+        self._score = score
+        self._findings = findings or []
+
+    async def review_paragraph(
+        self,
+        *,
+        paragraph_text: str,
+        kind: str,
+    ) -> ReadabilityReport:
+        del paragraph_text, kind
+        return ReadabilityReport(
+            score=self._score,
+            findings=[finding.model_copy() for finding in self._findings],
+            needs_human_review=self._score < 0.6,
         )

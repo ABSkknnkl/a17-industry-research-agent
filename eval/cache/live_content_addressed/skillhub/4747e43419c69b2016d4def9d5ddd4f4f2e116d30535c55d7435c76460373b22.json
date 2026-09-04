@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "4747e43419c69b2016d4def9d5ddd4f4f2e116d30535c55d7435c76460373b22",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-event-query",
+  "request": {
+    "query": "梳理比亚迪近半年业绩预告",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1352,\"query\":\"梳理比亚迪近半年业绩预告\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"未来报告期(虚拟表)\",\"key\":\"报告期[20260630]\",\"feKey\":\"报告期[20260630]\",\"type\":\"STR\",\"timestamp\":\"20260630\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"002594.SZ\",\"股票简称\":\"比亚迪\",\"最新价\":\"90.47\",\"最新涨跌幅\":-0.011052000000000001,\"报告期[20260630]\":\"2026年中报\"}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"比亚迪 (1)\\\",\\\"公告日期等于近6个月且比亚迪 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9b83117874225184407697\"}",
+  "raw_sha256": "acede1792be06d45f6b65c4dfa57de7d4820cb91e6172f18fff9a512abec39db",
+  "recorded_at": "2026-08-22T18:15:18.295492+00:00"
+}

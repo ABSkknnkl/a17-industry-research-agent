@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "fe27b2c6f9222f707378e84338abf5e11616df362f1a5b611d9a8ee031fc0eb6",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-event-query",
+  "request": {
+    "query": "动力电池 梳理比亚迪近半年业绩预告事件",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1315,\"query\":\"动力电池 梳理比亚迪近半年业绩预告事件\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"未来报告期(虚拟表)\",\"key\":\"报告期[20260630]\",\"feKey\":\"报告期[20260630]\",\"type\":\"STR\",\"timestamp\":\"20260630\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"002594.SZ\",\"股票简称\":\"比亚迪\",\"最新价\":\"90.47\",\"最新涨跌幅\":-0.011052000000000001,\"报告期[20260630]\":\"2026年中报\"}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"比亚迪 (1)\\\",\\\"公告日期等于近6个月且比亚迪 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9b83117873805418926282\"}",
+  "raw_sha256": "f3f833968ce7b80329757b28bb35f6dae699e014fa1f448d2c611145cce50943",
+  "recorded_at": "2026-08-22T06:35:41.375713+00:00"
+}

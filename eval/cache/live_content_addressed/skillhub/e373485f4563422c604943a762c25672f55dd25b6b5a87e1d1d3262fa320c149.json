@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "e373485f4563422c604943a762c25672f55dd25b6b5a87e1d1d3262fa320c149",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 新能源车 2024-01-01至2026-08-11 行业规模 增速 估值",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":205,\"query\":\"中国内地 新能源车 2024-01-01至2026-08-11 行业规模 增速 估值\",\"model_sql\":\"[{\\\"chunk\\\":\\\"中国内地 新能源车 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"condition\\\":\\\"[{\\\\\\\"indexName\\\\\\\":\\\\\\\"中债估值\\\\\\\",\\\\\\\"indexOrg\\\\\\\":\\\\\\\"中债估值\\\\\\\",\\\\\\\"indexPropertiesMap\\\\\\\":{\\\\\\\"时间\\\\\\\":\\\\\\\"2024-01-01至2026-08-11\\\\\\\"},\\\\\\\"sonSize\\\\\\\":0,\\\\\\\"uiText\\\\\\\":\\\\\\\"2024-01-01至2026-08-11的中债估值\\\\\\\",\\\\\\\"datetext\\\\\\\":\\\\\\\"2024-01-01至2026-08-11\\\\\\\"}]\\\",\\\"domain\\\":\\\"bond\\\"}]\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"text2sql\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"2024-01-01至2026-08-11的中债估值\\\",\\\"chunkedResult\\\":\\\"中国内地 新能源车 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"ci\\\":false,\\\"ciChunk\\\":\\\"中国内地 新能源车 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"indexName\\\":\\\"债券@中债估值\\\",\\\"indexPropertiesMap\\\":{},\\\"valueType\\\":\\\"\\\",\\\"dateText\\\":\\\"2024-01-01至2026-08-11\\\",\\\"indexProperties\\\":[]}]\",\"columns\":[],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"intent\":\"iwencai\",\"status_code\":-1208.0,\"status_msg\":\"未找到相关指标 债券@中债估值\",\"chunks_info\":\"[]\"}",
+  "raw_sha256": "064fa458bfb572cf46265a8fee48cd365472a389fccb1f1e42a66d2140e6542c",
+  "recorded_at": "2026-08-22T06:47:19.332992+00:00"
+}

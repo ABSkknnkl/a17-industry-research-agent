@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "d41f9ec40e9b5c9961cb8d362d8bf18396e7f3431e6e1d90134bd71274d8bd3a",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "report-search",
+  "request": {
+    "query": "锂电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 锂电池行业CR3、CR5市场占有率变化",
+    "channels": [
+      "report"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[],\"abtest_info\":\"\",\"took\":129,\"total\":0,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"锂电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 锂电池行业CR3、CR5市场占有率变化\"],\"query\":\"锂电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 锂电池行业CR3、CR5市场占有率变化\",\"integrity_result\":true,\"intents\":[],\"intent\":\"资讯消息-研报\"},\"content_data\":[]}",
+  "raw_sha256": "092fbe77542670530fbfdfc0f3808d3a192a6d4143d9b5026e9458484ad4c791",
+  "recorded_at": "2026-08-22T06:37:31.639274+00:00"
+}

@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skillhub.local/schemas/chart-generation-result.schema.json",
+  "title": "ChartGenerationResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["charts", "chart_specs", "suppressed_candidates", "quality"],
+  "properties": {
+    "charts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/chartReference" }
+    },
+    "chart_specs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/chartSpec" }
+    },
+    "suppressed_candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/suppressedChart" }
+    },
+    "quality": { "$ref": "#/$defs/chartQualityReport" }
+  },
+  "$defs": {
+    "chartType": {
+      "type": "string",
+      "enum": [
+        "line",
+        "bar",
+        "pie",
+        "radar",
+        "industry_chain",
+        "combo",
+        "area",
+        "scatter",
+        "bubble",
+        "heatmap",
+        "boxplot",
+        "treemap"
+      ]
+    },
+    "chartVariant": {
+      "type": "string",
+      "enum": [
+        "line",
+        "vertical",
+        "horizontal",
+        "grouped",
+        "stacked",
+        "pie",
+        "radar",
+        "graph",
+        "combo",
+        "area",
+        "scatter",
+        "bubble",
+        "heatmap",
+        "boxplot",
+        "treemap"
+      ]
+    },
+    "chartReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chart_id",
+        "title",
+        "chart_type",
+        "status",
+        "evidence_ids",
+        "artifact_id"
+      ],
+      "properties": {
+        "chart_id": { "type": "string", "pattern": "^CHART-[A-Za-z0-9_-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "chart_type": { "$ref": "#/$defs/chartType" },
+        "requested_chart_type": {
+          "oneOf": [{ "$ref": "#/$defs/chartType" }, { "type": "null" }]
+        },
+        "resolution_reason": { "type": ["string", "null"], "minLength": 1, "maxLength": 1000 },
+        "status": { "type": "string", "enum": ["planned", "ready"] },
+        "evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "insight_goal": { "type": ["string", "null"], "minLength": 1, "maxLength": 500 },
+        "quality_issue_ids": {
+          "type": "array",
+          "maxItems": 100,
+          "items": { "type": "string", "pattern": "^DQ-[A-Za-z0-9_-]+$" }
+        },
+        "footnotes": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string" }
+        },
+        "artifact_id": { "type": ["string", "null"] }
+      }
+    },
+    "chartSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chart_id",
+        "title",
+        "chart_type",
+        "variant",
+        "option",
+        "evidence_ids",
+        "data_fingerprint",
+        "dedupe_key"
+      ],
+      "properties": {
+        "chart_id": { "type": "string", "pattern": "^CHART-[A-Za-z0-9_-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "chart_type": { "$ref": "#/$defs/chartType" },
+        "requested_chart_type": {
+          "oneOf": [{ "$ref": "#/$defs/chartType" }, { "type": "null" }]
+        },
+        "resolution_reason": { "type": ["string", "null"], "minLength": 1, "maxLength": 1000 },
+        "variant": { "$ref": "#/$defs/chartVariant" },
+        "option": { "type": "object" },
+        "evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "insight_goal": { "type": ["string", "null"], "minLength": 1, "maxLength": 500 },
+        "quality_issue_ids": {
+          "type": "array",
+          "maxItems": 100,
+          "items": { "type": "string", "pattern": "^DQ-[A-Za-z0-9_-]+$" }
+        },
+        "footnotes": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string" }
+        },
+        "data_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "dedupe_key": { "type": "string", "minLength": 1 }
+      }
+    },
+    "suppressedChart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "reason_code", "reason", "evidence_ids"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "reason_code": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 },
+        "evidence_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "chartQualityReport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "ready_count", "suppressed_count", "issues"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "ready_count": { "type": "integer", "minimum": 0 },
+        "suppressed_count": { "type": "integer", "minimum": 0 },
+        "issues": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

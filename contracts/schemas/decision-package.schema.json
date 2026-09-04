@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "decision-package.schema.json",
+  "title": "Decision Package",
+  "type": "object",
+  "properties": {
+    "decision_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "stage": { "type": "string" },
+    "revision": { "type": "integer", "minimum": 1 },
+    "all_candidates": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/chartCandidateResult" }
+    },
+    "recommended_selection": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "conflict_groups": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/conflictGroup" }
+    },
+    "risk_notices": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/riskNotice" }
+    },
+    "blocking_risk_codes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "acknowledgement_required_codes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "decision_status": {
+      "type": "string",
+      "enum": ["not_required", "awaiting_user", "accepted_recommendation", "accepted_with_risks", "customized", "cancelled"]
+    },
+    "risk_snapshot_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "decision_id",
+    "run_id",
+    "stage",
+    "revision",
+    "risk_snapshot_sha256"
+  ],
+  "$defs": {
+    "riskNotice": {
+      "type": "object",
+      "properties": {
+        "risk_code": { "type": "string" },
+        "stage": { "type": "string" },
+        "severity": { "type": "string", "enum": ["info", "warning", "high", "critical"] },
+        "disposition": { "type": "string", "enum": ["advisory", "acknowledgement_required", "hard_block"] },
+        "title": { "type": "string" },
+        "detail": { "type": "string" },
+        "affected_ids": { "type": "array", "items": { "type": "string" } },
+        "recommendation": { "type": "string" },
+        "consequence": { "type": "string" },
+        "can_override": { "type": "boolean" }
+      },
+      "required": ["risk_code", "stage", "severity", "disposition", "title", "detail", "recommendation", "consequence"]
+    },
+    "chartCandidateResult": {
+      "type": "object",
+      "properties": {
+        "candidate_id": { "type": "string" },
+        "title": { "type": "string" },
+        "chart_type": { "type": "string" },
+        "status": { "type": "string" },
+        "recommended_chapter_id": { "type": "string" },
+        "alternative_chapter_ids": { "type": "array", "items": { "type": "string" } },
+        "priority": { "type": "integer" },
+        "evidence_ids": { "type": "array", "items": { "type": "string" } },
+        "risk_notices": { "type": "array", "items": { "$ref": "#/$defs/riskNotice" } },
+        "conflict_group_id": { "type": "string" },
+        "chart_id": { "type": "string" },
+        "suppression_reason": { "type": "string" }
+      },
+      "required": ["candidate_id", "title", "chart_type", "status", "priority", "evidence_ids"]
+    },
+    "conflictGroup": {
+      "type": "object",
+      "properties": {
+        "conflict_group_id": { "type": "string" },
+        "candidate_ids": { "type": "array", "items": { "type": "string" } },
+        "recommended_candidate_id": { "type": "string" },
+        "reason": { "type": "string" },
+        "risk_if_keep_all": { "type": "string" }
+      },
+      "required": ["conflict_group_id", "candidate_ids", "recommended_candidate_id", "reason", "risk_if_keep_all"]
+    }
+  }
+}

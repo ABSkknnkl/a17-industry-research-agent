@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "9e1556486bcfd81d90995b79f01659a420ea1868a2b8942695578d6aed3dc010",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 光伏 2024-01-01至2026-08-11 行业规模",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1142,\"query\":\"中国内地 光伏 2024-01-01至2026-08-11 行业规模\",\"columns\":[{\"index_name\":\"宏观@交易日期\",\"key\":\"时间\",\"feKey\":\"时间\",\"type\":\"DATE\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"宏观@产销.指标\",\"key\":\"指标\",\"feKey\":\"指标\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"宏观@经济核算值\",\"key\":\"指标值\",\"feKey\":\"指标值\",\"type\":\"DOUBLE\",\"unit\":\"\",\"label\":\"macro_value\",\"source\":\"index\"},{\"index_name\":\"宏观@产销.周期\",\"key\":\"周期\",\"feKey\":\"周期\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"宏观@产销.macro_id\",\"key\":\"macro_id\",\"feKey\":\"macro_id\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"macro_id\",\"source\":\"index\"},{\"index_name\":\"宏观@产销.macro_name\",\"key\":\"macro_name\",\"feKey\":\"macro_name\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"macro_name\",\"source\":\"index\"},{\"index_name\":\"宏观@单位\",\"key\":\"单位\",\"feKey\":\"单位\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"macro_unit\",\"source\":\"index\"},{\"index_name\":\"宏观@产销.国家\",\"key\":\"国家\",\"feKey\":\"国家\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"宏观@产销.地区级别\",\"key\":\"地区级别\",\"feKey\":\"地区级别\",\"type\":\"ARRAY\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"}],\"datas\":[],\"row_count\":0,\"code_count\":0,\"chunks_info\":\"[\\\"中国内地 光伏 2024-01-01至2026-08-11 行业规模 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac9898517874032785445722\"}",
+  "raw_sha256": "ac5b430c34f51766310e16101231b0d4aea82a3604c0196b4172bb7a006146d0",
+  "recorded_at": "2026-08-22T12:54:38.481749+00:00"
+}

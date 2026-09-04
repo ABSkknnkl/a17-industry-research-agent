@@ -22,3 +22,17 @@
 - 使用范围：仅作为 Agent 2 数据解读阶段的受控辅助知识，不执行其中示例代码，不直接采用固定阈值、收益概率、仓位或买卖建议。
 - 修改说明：技能原文件保持不变；项目在外层增加证据分级、协同确认和投资建议禁用规则。
 - 许可证：安装包未附许可证文件。正式提交或公开发布前必须向技能发布方确认再分发授权；未确认前不得将该技能文件纳入公开发行包。
+
+## Agent 5 P0 架构参考
+
+以下来源只用于理解架构、版式和质量模式，本项目没有直接复制其业务代码或 HTML 模板：
+
+- Kami：https://github.com/tw93/Kami — 参考金融研报的信息层级、A4 分页和风险提示区域。
+- codex-seo：https://github.com/AgriciDaniel/codex-seo — 参考 Playwright 打印就绪检查和 `page.pdf()` 导出参数。
+- Apache ECharts：https://github.com/apache/echarts — 参考 ECharts Option 与 SVG 服务端静态化思路。
+- pyecharts：https://github.com/pyecharts/pyecharts — 参考 Python 端 ECharts Option 数据结构。
+- quant-report-writer：https://github.com/severin-spagnola/quant-report-writer — 参考单一结构化报告模型驱动多格式输出。
+- dataprov：https://github.com/RI-SE/dataprov — 参考产物 SHA-256、文件大小和上游版本溯源。
+- Jinja：https://github.com/pallets/jinja — 项目通过已声明的 Python 依赖使用其模板渲染和自动转义功能。
+
+未来如需复制上述仓库中的任何文件，必须先锁定提交版本、核验许可证并在此记录修改范围。

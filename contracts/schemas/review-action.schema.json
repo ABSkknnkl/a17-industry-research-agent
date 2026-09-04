@@ -19,11 +19,44 @@
     },
     "action": {
       "type": "string",
-      "enum": ["approve", "revise", "regenerate", "cancel"]
+      "enum": [
+        "approve",
+        "accept_recommendation",
+        "accept_with_risks",
+        "customize",
+        "revise",
+        "regenerate",
+        "cancel"
+      ]
     },
     "expected_revision": { "type": "integer", "minimum": 1 },
     "comment": { "type": ["string", "null"], "maxLength": 2000 },
-    "edited_data": { "type": ["object", "null"], "maxProperties": 5 }
+    "edited_data": { "type": ["object", "null"], "maxProperties": 5 },
+    "accepted_risk_codes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "release_mode": {
+      "type": "string",
+      "enum": ["formal", "draft_with_warnings"]
+    },
+    "selected_chart_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "placement_overrides": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "decision_id": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "risk_snapshot_sha256": {
+      "type": ["string", "null"],
+      "pattern": "^[a-f0-9]{64}$"
+    }
   },
   "allOf": [
     {
@@ -37,13 +70,13 @@
     }
   ],
   "x-stage-edit-whitelist": {
-    "data_fetch": ["data_fetch_options"],
+    "data_fetch": ["focus_questions", "data_fetch_options"],
     "data_interpret": [
       "focus_questions",
       "analysis_depth",
       "risk_preference",
-      "evidence_items",
-      "rejected_claim_ids"
+      "rejected_claim_ids",
+      "research_brief"
     ],
     "chart_generate": ["chart_generate_options"],
     "chapter_write": ["chapter_write_options"],

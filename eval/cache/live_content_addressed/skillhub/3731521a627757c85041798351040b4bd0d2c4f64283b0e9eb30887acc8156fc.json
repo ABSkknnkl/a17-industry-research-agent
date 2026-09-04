@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "3731521a627757c85041798351040b4bd0d2c4f64283b0e9eb30887acc8156fc",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-business-query",
+  "request": {
+    "query": "隆基绿能 2025年 2026年 营业收入 净利润",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1474,\"query\":\"隆基绿能 2025年 2026年 营业收入 净利润\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"营业收入\",\"key\":\"营业收入[20251231]\",\"feKey\":\"营业收入[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"财务报表\",\"timestamp\":\"20251231\",\"source\":\"index\"},{\"index_name\":\"归属于母公司所有者的净利润\",\"key\":\"归母净利润[20251231]\",\"feKey\":\"归母净利润[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"财务报表\",\"timestamp\":\"20251231\",\"source\":\"index\"},{\"index_name\":\"营业收入(同比增长率)\",\"key\":\"营业收入同比增长率[20261231]\",\"feKey\":\"营业收入同比增长率[20261231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"风险等级B\",\"timestamp\":\"20261231\",\"source\":\"index\"},{\"index_name\":\"营业收入(同比增长率)\",\"key\":\"营业收入同比增长率[20251231]\",\"feKey\":\"营业收入同比增长率[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"风险等级B\",\"timestamp\":\"20251231\",\"source\":\"index\"},{\"index_name\":\"归属母公司股东的净利润(同比增长率)\",\"key\":\"归母净利润同比增长率[20261231]\",\"feKey\":\"归母净利润同比增长率[20261231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"财务报表\",\"timestamp\":\"20261231\",\"source\":\"index\"},{\"index_name\":\"归属母公司股东的净利润(同比增长率)\",\"key\":\"归母净利润同比增长率[20251231]\",\"feKey\":\"归母净利润同比增长率[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"财务报表\",\"timestamp\":\"20251231\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"601012.SH\",\"股票简称\":\"隆基绿能\",\"最新价\":\"12.42\",\"最新涨跌幅\":0.08058,\"营业收入[20251231]\":7.034704995042E10,\"归母净利润[20251231]\":-6.41955684385E9,\"营业收入同比增长率[20251231]\":-14.815800000000001,\"归母净利润同比增长率[20251231]\":25.285400000000003}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"隆基绿能 (1)\\\",\\\"从2025年到2026年隆基绿能的营业收入,归母净利润 (1)\\\"]\",\"status_code\":0,\"token\":\"0ac9b83117874159587243156\"}",
+  "raw_sha256": "00ee49307e1651073314379bc33ae6ffb5bc58a9d4132b532c690a21fc87e08a",
+  "recorded_at": "2026-08-22T16:25:58.702435+00:00"
+}

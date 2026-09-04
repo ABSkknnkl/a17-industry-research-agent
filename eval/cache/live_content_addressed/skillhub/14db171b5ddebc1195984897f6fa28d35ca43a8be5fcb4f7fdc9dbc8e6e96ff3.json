@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "14db171b5ddebc1195984897f6fa28d35ca43a8be5fcb4f7fdc9dbc8e6e96ff3",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "news-search",
+  "request": {
+    "query": "动力电池 政策 行业新闻 技术进展 风险事件 截至2026-08-11 （基准）杜邦ROE三因子拆解",
+    "channels": [
+      "news"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[],\"abtest_info\":\"\",\"took\":182,\"total\":0,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"动力电池 政策 行业新闻 技术进展 风险事件 截至2026-08-11 （基准）杜邦ROE三因子拆解\"],\"query\":\"动力电池 政策 行业新闻 技术进展 风险事件 截至2026-08-11 （基准）杜邦ROE三因子拆解\",\"integrity_result\":true,\"intents\":[\"个股正负面新闻\"],\"intent\":\"资讯消息-新闻\"},\"content_data\":[]}",
+  "raw_sha256": "a86b7c5501c1239b91949fb6f7446c8911f4b656932179fe8364d1afdcbe3877",
+  "recorded_at": "2026-08-22T07:27:02.786735+00:00"
+}

@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "3c1da2c8ce7be85a41f6097891e742c242a9d0fb273aae64b6a74bef5cfc9a9f",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "宁德时代 最新 营业收入 净利润",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1961,\"query\":\"宁德时代 最新 营业收入 净利润\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"最新营业收入\",\"key\":\"营业收入\",\"feKey\":\"营业收入\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新净利润\",\"key\":\"归母净利润\",\"feKey\":\"归母净利润\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新净利润增长率(虚拟表)\",\"key\":\"归母净利润同比增长率\",\"feKey\":\"归母净利润同比增长率\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新净利润来源说明\",\"key\":\"净利润来源说明\",\"feKey\":\"净利润来源说明\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新营业收入增长率(虚拟表)\",\"key\":\"营业收入同比增长率\",\"feKey\":\"营业收入同比增长率\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新营业收入来源说明\",\"key\":\"营业收入来源说明\",\"feKey\":\"营业收入来源说明\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"300750.SZ\",\"股票简称\":\"宁德时代\",\"最新价\":\"391.15\",\"最新涨跌幅\":1.597403,\"营业收入\":2.7691658E11,\"归母净利润\":4.3284002E10,\"归母净利润同比增长率\":41.9839,\"净利润来源说明\":\"最新净利润来源于2026-07-25公告的2026年中报的定期报告。\",\"营业收入同比增长率\":54.8004,\"营业收入来源说明\":\"最新营业收入来源于2026-07-25公告的2026年中报的定期报告。\"}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"宁德时代,最新营业收入 (1)\\\",\\\"宁德时代,最新净利润 (1)\\\"]\",\"status_code\":0,\"token\":\"0ac9eb8f17873807550005199\"}",
+  "raw_sha256": "25860c3549caef120aa30b1951ccb1f6167dbcd7d549ea87ada354332d92c846",
+  "recorded_at": "2026-08-22T06:39:14.864956+00:00"
+}

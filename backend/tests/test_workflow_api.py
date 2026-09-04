@@ -68,6 +68,64 @@ def test_frontend_can_start_review_and_read_a_workflow(api_client: TestClient) -
     assert fetched.json()["stage_results"]["data_interpret"]["data"]["quality"]["passed"]
 
 
+def test_frontend_can_revise_agent1_collection_scope(api_client: TestClient) -> None:
+    api_client.headers["Authorization"] = "Bearer test-bearer-token"
+    payload = _run_payload()
+    payload["review_stages"] = ["data_fetch"]
+    started = api_client.post("/api/v1/runs", json=payload)
+
+    assert started.status_code == 201
+    snapshot = started.json()
+    assert snapshot["current_stage"] == "data_fetch"
+    assert snapshot["status"] == "waiting_review"
+    run_id = snapshot["run_id"]
+
+    revised = api_client.post(
+        f"/api/v1/runs/{run_id}/reviews",
+        json={
+            "run_id": run_id,
+            "stage": "data_fetch",
+            "action": "revise",
+            "expected_revision": 1,
+            "comment": "补充长时储能并改为2022—2025年数据。",
+            "edited_data": {
+                "data_fetch_options": {
+                    "keywords": ["长时储能"],
+                    "industry_scope": ["中国新型储能"],
+                    "time_range": ["2022-01-01", "2025-12-31"],
+                    "data_sources": ["官方公告"],
+                    "metrics": ["新增装机量"],
+                }
+            },
+        },
+    )
+
+    assert revised.status_code == 200
+    revised_state = revised.json()
+    assert revised_state["revision"] == 2
+    assert revised_state["current_stage"] == "data_fetch"
+    assert revised_state["status"] == "waiting_review"
+    plan = revised_state["stage_results"]["data_fetch"]["data"]["retrieval_plan"]
+    assert plan["applied_review_feedback"] == "补充长时储能并改为2022—2025年数据。"
+    assert all(task["time_range"] == "2022-01-01至2025-12-31" for task in plan["tasks"])
+    assert all(task["market_scope"] == ["中国新型储能"] for task in plan["tasks"])
+
+    approved = api_client.post(
+        f"/api/v1/runs/{run_id}/reviews",
+        json={
+            "run_id": run_id,
+            "stage": "data_fetch",
+            "action": "approve",
+            "expected_revision": 2,
+            "comment": "采集范围确认。",
+            "edited_data": None,
+        },
+    )
+
+    assert approved.status_code == 200
+    assert approved.json()["status"] == "completed"
+
+
 def test_frontend_can_review_and_regenerate_one_chapter(api_client: TestClient) -> None:
     api_client.headers["Authorization"] = "Bearer test-bearer-token"
     payload = _run_payload()
@@ -114,6 +172,67 @@ def test_frontend_can_review_and_regenerate_one_chapter(api_client: TestClient) 
             "expected_revision": 2,
             "comment": "章节修订通过。",
             "edited_data": None,
+        },
+    )
+
+    assert approved.status_code == 200
+    assert approved.json()["status"] == "completed"
+
+
+def test_frontend_can_review_and_regenerate_chart_configuration(
+    api_client: TestClient,
+) -> None:
+    api_client.headers["Authorization"] = "Bearer test-bearer-token"
+    payload = _run_payload()
+    payload["review_stages"] = ["chart_generate"]
+    started = api_client.post("/api/v1/runs", json=payload)
+
+    assert started.status_code == 201
+    snapshot = started.json()
+    assert snapshot["current_stage"] == "chart_generate"
+    assert snapshot["status"] == "waiting_review"
+    assert snapshot["stage_results"]["chart_generate"]["data"]["quality"]["passed"]
+    run_id = snapshot["run_id"]
+
+    revised_response = api_client.post(
+        f"/api/v1/runs/{run_id}/reviews",
+        json={
+            "run_id": run_id,
+            "stage": "chart_generate",
+            "action": "revise",
+            "expected_revision": 1,
+            "comment": "改用横向柱状图并调整标题。",
+            "edited_data": {
+                "chart_generate_options": {
+                    "title": "组件产量增速对比",
+                    "bar_variant": "horizontal",
+                    "color_theme": "colorblind_safe",
+                }
+            },
+        },
+    )
+
+    assert revised_response.status_code == 200
+    revised = revised_response.json()
+    assert revised["status"] == "waiting_review"
+    assert revised["revision"] == 2
+    chart_data = revised["stage_results"]["chart_generate"]["data"]
+    assert chart_data["chart_specs"][0]["title"] == "组件产量增速对比"
+    assert chart_data["chart_specs"][0]["variant"] == "horizontal"
+    assert revised["stage_results"]["chart_generate"]["artifacts"][0]["revision"] == 2
+    decision_package = chart_data["decision_package"]
+
+    approved = api_client.post(
+        f"/api/v1/runs/{run_id}/reviews",
+        json={
+            "run_id": run_id,
+            "stage": "chart_generate",
+            "action": "approve",
+            "expected_revision": 2,
+            "comment": "图表审核通过。",
+            "edited_data": None,
+            "decision_id": decision_package["decision_id"],
+            "risk_snapshot_sha256": decision_package["risk_snapshot_sha256"],
         },
     )
 

@@ -6,8 +6,8 @@ from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from app.schemas.analysis import ResearchBrief
 from app.schemas.chapter import ChapterWritingOptions
-from app.schemas.evidence import EvidenceItem
 
 
 class StageName(StrEnum):
@@ -30,7 +30,10 @@ class StageStatus(StrEnum):
 
 
 class ReviewAction(StrEnum):
-    APPROVE = "approve"
+    APPROVE = "approve"  # 兼容旧接口，无风险时等价于 accept_recommendation
+    ACCEPT_RECOMMENDATION = "accept_recommendation"
+    ACCEPT_WITH_RISKS = "accept_with_risks"
+    CUSTOMIZE = "customize"
     REVISE = "revise"
     REGENERATE = "regenerate"
     CANCEL = "cancel"
@@ -69,9 +72,60 @@ class WorkflowState(ContractModel):
     updated_at: datetime
 
 
+class RunSummary(ContractModel):
+    """Read-only listing entry for one run, derived from the latest snapshot."""
+
+    run_id: str = Field(min_length=1)
+    project_id: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=100)
+    current_stage: StageName
+    status: StageStatus
+    revision: int = Field(ge=1)
+    created_at: datetime
+    updated_at: datetime
+    artifact_count: int = Field(default=0, ge=0)
+    report_available: bool = False
+
+
+class RunListResponse(ContractModel):
+    total: int = Field(default=0, ge=0)
+    offset: int = Field(default=0, ge=0)
+    limit: int = Field(default=20, ge=1)
+    items: list[RunSummary] = Field(default_factory=list)
+
+
+class RevisionSummary(ContractModel):
+    """One persisted revision of a run, newest snapshot within that revision."""
+
+    revision: int = Field(ge=1)
+    status: StageStatus
+    current_stage: StageName
+    updated_at: datetime
+
+
+class RevisionListResponse(ContractModel):
+    run_id: str = Field(min_length=1)
+    current_revision: int = Field(ge=1)
+    revisions: list[RevisionSummary] = Field(default_factory=list)
+
+
 ShortReviewText = Annotated[str, Field(min_length=1, max_length=200)]
 LabelText = Annotated[str, Field(min_length=1, max_length=100)]
 RejectedClaimId = Annotated[str, Field(pattern=r"^C-[A-Za-z0-9_-]+$")]
+ChartTypeName = Literal[
+    "line",
+    "bar",
+    "pie",
+    "radar",
+    "industry_chain",
+    "combo",
+    "area",
+    "scatter",
+    "bubble",
+    "heatmap",
+    "boxplot",
+    "treemap",
+]
 
 
 class DataFetchOptions(ContractModel):
@@ -83,19 +137,40 @@ class DataFetchOptions(ContractModel):
 
 
 class DataFetchReviewEdits(ContractModel):
-    data_fetch_options: DataFetchOptions
+    # 2026-09-01 修复：advisory 升级门停在 data_fetch 阶段，用户“删除
+    # 某个研究问题”的修订诉求此前无合法通道（白名单只收
+    # data_fetch_options），revise 改不掉问题 → 升级门反复触发死循环。
+    # focus_questions 与 ResearchInput 同口径（1~12 条，每条 ≤200 字）。
+    focus_questions: list[ShortReviewText] | None = Field(
+        default=None, min_length=1, max_length=12
+    )
+    # 可选：仅修订研究问题时不必携带（exclude_none dump 不会覆盖原值）。
+    data_fetch_options: DataFetchOptions | None = None
 
 
 class DataInterpretReviewEdits(ContractModel):
+    # 证据所有权（2026-09-04 修复）：Agent 1 是证据唯一所有者（Single
+    # Writer），A2/A3 均为纯消费者。此前允许在 A2 审核时编辑 evidence_items，
+    # 而 A3 只认 A1 证据包，导致两类缺陷：①用户修正数值后 A3 图表仍渲染
+    # A1 旧值（静默不一致）；②用户新增证据后 A2 候选引用新 ID、A3 数据集
+    # 无此 ID 只能抑制图表（图表丢失）。数据修正一律回到 data_fetch 阶段
+    # （调整 data_fetch_options / focus_questions 后重采），越权提交由
+    # extra="forbid" 硬拒绝——这也是未来「审核门 LLM 意图判别」之前的
+    # 确定性第一道闸。
     focus_questions: list[ShortReviewText] | None = Field(default=None, max_length=3)
     analysis_depth: Literal["overview", "standard", "deep"] | None = None
     risk_preference: Literal["conservative", "balanced", "aggressive"] | None = None
-    evidence_items: list[EvidenceItem] | None = Field(default=None, max_length=200)
     rejected_claim_ids: list[RejectedClaimId] | None = Field(default=None, max_length=100)
+    research_brief: ResearchBrief | None = None
 
 
 class ChartGenerationOptions(ContractModel):
-    chart_type: Literal["line", "bar", "pie", "radar", "industry_chain"] | None = None
+    chart_type: ChartTypeName | None = None
+    requested_chart_count: int | None = Field(default=None, ge=1, le=30)
+    requested_chart_types: list[ChartTypeName] = Field(default_factory=list, max_length=12)
+    user_priority: bool = False
+    allow_multiple_charts_per_dataset: bool = False
+    bar_variant: Literal["vertical", "horizontal", "grouped", "stacked"] | None = None
     metric_ids: list[LabelText] = Field(default_factory=list, max_length=20)
     title: str | None = Field(default=None, min_length=1, max_length=200)
     color_theme: str | None = Field(default=None, min_length=1, max_length=100)
@@ -114,11 +189,19 @@ class ReportFusionOptions(ContractModel):
     summary_direction: str | None = Field(default=None, min_length=1, max_length=500)
     chapter_order: list[str] = Field(default_factory=list, max_length=7)
     tone: Literal["professional", "plain_language"] | None = None
+    report_depth: Literal["brief", "standard", "deep"] | None = None
     output_formats: list[Literal["markdown", "html", "pdf"]] = Field(
         default_factory=list,
         max_length=3,
     )
     final_instruction: str | None = Field(default=None, min_length=1, max_length=2_000)
+    visual_style: Literal[
+        "auto",
+        "data_manual",
+        "analysis_note",
+        "deep_research",
+    ] = "auto"
+    visual_density: Literal["compact", "balanced", "detailed"] = "balanced"
 
 
 class ReportFusionReviewEdits(ContractModel):
@@ -132,6 +215,12 @@ class ReviewRequest(ContractModel):
     expected_revision: int = Field(ge=1)
     comment: str | None = Field(default=None, max_length=2_000)
     edited_data: dict[str, Any] | None = None
+    accepted_risk_codes: list[str] = Field(default_factory=list)
+    release_mode: Literal["formal", "draft_with_warnings"] = "formal"
+    selected_chart_ids: list[str] | None = None
+    placement_overrides: dict[str, str] | None = None
+    decision_id: str | None = Field(default=None, min_length=1, max_length=100)
+    risk_snapshot_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
 
     @model_validator(mode="after")
     def validate_stage_edit_whitelist(self) -> "ReviewRequest":
@@ -149,6 +238,19 @@ class ReviewRequest(ContractModel):
         try:
             validated = edit_models[self.stage].model_validate(self.edited_data)
         except ValidationError as exc:
-            raise ValueError(f"edited_data is not allowed for {self.stage.value}") from exc
+            # 越权编辑必须在契约层硬拒绝并点名字段（例如在 data_interpret
+            # 阶段提交 evidence_items——数据修正属于 data_fetch）。字段名
+            # 让用户/前端知道被拒原因，也是未来「审核门 LLM 意图判别」
+            # 之前的确定性第一道闸：白名单拦字段，LLM 拦意图。
+            rejected = sorted(
+                {
+                    ".".join(str(part) for part in error["loc"])
+                    for error in exc.errors()
+                }
+            )
+            hint = f"; rejected fields: {', '.join(rejected)}" if rejected else ""
+            raise ValueError(
+                f"edited_data is not allowed for {self.stage.value}{hint}"
+            ) from exc
         self.edited_data = validated.model_dump(mode="json", exclude_none=True)
         return self

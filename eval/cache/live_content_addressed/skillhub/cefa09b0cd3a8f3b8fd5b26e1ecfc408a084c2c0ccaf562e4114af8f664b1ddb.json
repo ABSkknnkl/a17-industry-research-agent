@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "cefa09b0cd3a8f3b8fd5b26e1ecfc408a084c2c0ccaf562e4114af8f664b1ddb",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-index-query",
+  "request": {
+    "query": "当前新能源车板块PE",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":392,\"query\":\"当前新能源车板块PE\",\"columns\":[{\"index_name\":\"全量指数@指数代码\",\"key\":\"指数代码\",\"feKey\":\"指数代码\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"全量指数@指数简称\",\"key\":\"指数简称\",\"feKey\":\"指数简称\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"全量指数@最新涨跌幅:前复权\",\"key\":\"最新涨跌幅:前复权\",\"feKey\":\"最新涨跌幅:前复权\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"全量指数@最新收盘价:不复权\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"点\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"市盈率(pe,ttm)\",\"key\":\"市盈率(pe,ttm)[20260821]\",\"feKey\":\"市盈率(pe,ttm)[20260821]\",\"type\":\"DOUBLE\",\"unit\":\"倍\",\"label\":\"\",\"timestamp\":\"20260821\",\"source\":\"field\"}],\"datas\":[{\"指数代码\":\"885431.TI\",\"指数简称\":\"新能源汽车\",\"市盈率(pe,ttm)[20260821]\":36.529473}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"新能源车 (1)\\\",\\\"昨天新能源车的市盈率(pe,ttm) (1)\\\"]\",\"status_code\":0,\"token\":\"0ac9822717874060033651915\"}",
+  "raw_sha256": "152bc4ff0d6c706f8b92bdcca451591a5c6311bdb9f3a908d1c0b2365e23564c",
+  "recorded_at": "2026-08-22T13:40:03.438806+00:00"
+}

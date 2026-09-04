@@ -46,6 +46,15 @@ class ToolHandler(Protocol):
     async def __call__(self, args: BaseModel) -> Any: ...
 
 
+class ToolExecutionError(RuntimeError):
+    """Safe typed business error raised by a registered tool handler."""
+
+    def __init__(self, code: str, *, retryable: bool = False) -> None:
+        super().__init__(code)
+        self.code = code
+        self.retryable = retryable
+
+
 BeforeToolCallHook = Callable[[ToolCall, BaseModel], Awaitable[ToolHookDecision | None]]
 AfterToolCallHook = Callable[[ToolCall, BaseModel, ToolResult], Awaitable[ToolResult | None]]
 
@@ -55,6 +64,7 @@ class ToolDefinition:
     name: str
     args_model: type[BaseModel]
     handler: ToolHandler
+    preserve_structured_content: bool = False
 
 
 class ToolGateway:
@@ -104,10 +114,24 @@ class ToolGateway:
             return content
         return json.dumps(content, ensure_ascii=False, sort_keys=True, default=str)
 
-    def _bound_result(self, result: ToolResult, max_chars: int) -> ToolResult:
+    def _bound_result(
+        self,
+        result: ToolResult,
+        max_chars: int,
+        *,
+        preserve_structured_content: bool = False,
+    ) -> ToolResult:
         serialized = self._serialized_content(result.content)
         result.content_chars = len(serialized)
         if len(serialized) <= max_chars:
+            return result
+        # Typed provider payloads are normalized by deterministic code and are
+        # not copied into model context or runtime events. Preserve the object
+        # shape for that adapter while keeping ordinary tool text bounded.
+        if preserve_structured_content and isinstance(
+            result.content,
+            (BaseModel, dict, list),
+        ):
             return result
         result.content = f"[truncated] {serialized[:max_chars]}"
         result.truncated = True
@@ -158,6 +182,8 @@ class ToolGateway:
             )
         except TimeoutError:
             result = self._error(call, "tool_timeout", retryable=True)
+        except ToolExecutionError as exc:
+            result = self._error(call, exc.code, retryable=exc.retryable)
         except Exception:
             result = self._error(call, "tool_execution_failed", retryable=True)
 
@@ -169,7 +195,14 @@ class ToolGateway:
             except Exception:
                 result = self._error(call, "after_tool_hook_failed")
                 break
-        return self._finalize(call, result, started, session, policy)
+        return self._finalize(
+            call,
+            result,
+            started,
+            session,
+            policy,
+            preserve_structured_content=tool.preserve_structured_content,
+        )
 
     def _finalize(
         self,
@@ -178,9 +211,15 @@ class ToolGateway:
         started: float,
         session: RuntimeSession | None,
         policy: RuntimePolicy,
+        *,
+        preserve_structured_content: bool = False,
     ) -> ToolResult:
         result.duration_ms = max(0, round((monotonic() - started) * 1_000))
-        result = self._bound_result(result, policy.max_tool_result_chars)
+        result = self._bound_result(
+            result,
+            policy.max_tool_result_chars,
+            preserve_structured_content=preserve_structured_content,
+        )
         if session is not None:
             session.after_tool_call(
                 call.name,

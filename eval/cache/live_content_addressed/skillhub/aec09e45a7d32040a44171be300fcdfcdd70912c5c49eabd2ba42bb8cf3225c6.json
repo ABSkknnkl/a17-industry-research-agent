@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "aec09e45a7d32040a44171be300fcdfcdd70912c5c49eabd2ba42bb8cf3225c6",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "news-search",
+  "request": {
+    "query": "新能源车 政策 行业新闻 技术进展 风险事件 截至2026-08-11 当前新能源车板块PE、PB及历史分位",
+    "channels": [
+      "news"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[],\"abtest_info\":\"\",\"took\":149,\"total\":0,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"新能源车 政策 行业新闻 技术进展 风险事件 截至2026-08-11 当前新能源车板块PE、PB及历史分位\"],\"query\":\"新能源车 政策 行业新闻 技术进展 风险事件 截至2026-08-11 当前新能源车板块PE、PB及历史分位\",\"integrity_result\":true,\"intents\":[\"个股正负面新闻\"],\"intent\":\"资讯消息-新闻\"},\"content_data\":[]}",
+  "raw_sha256": "c9754daf8b2dcb4a251cf248c4eaffd3c0b914beab06c8e945f9496ff5285b5d",
+  "recorded_at": "2026-08-22T06:47:40.412947+00:00"
+}

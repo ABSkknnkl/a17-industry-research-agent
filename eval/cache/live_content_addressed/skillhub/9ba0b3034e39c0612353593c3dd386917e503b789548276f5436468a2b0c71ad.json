@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "9ba0b3034e39c0612353593c3dd386917e503b789548276f5436468a2b0c71ad",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-index-query",
+  "request": {
+    "query": "动力电池 宁德时代估值",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":2479,\"query\":\"动力电池 宁德时代估值\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"最新市盈率(pe,ttm)(虚拟表)\",\"key\":\"最新市盈率ttm\",\"feKey\":\"最新市盈率ttm\",\"type\":\"DOUBLE\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"最新静态市盈率(虚拟表)\",\"key\":\"最新静态市盈率\",\"feKey\":\"最新静态市盈率\",\"type\":\"DOUBLE\",\"source\":\"index\"},{\"index_name\":\"最新动态市盈率(虚拟表)\",\"key\":\"最新动态市盈率\",\"feKey\":\"最新动态市盈率\",\"type\":\"DOUBLE\",\"source\":\"index\"},{\"index_name\":\"最新市净率(虚拟表)\",\"key\":\"最新市净率\",\"feKey\":\"最新市净率\",\"type\":\"DOUBLE\",\"source\":\"index\"},{\"index_name\":\"最新a股市值(不含限售股)\",\"key\":\"最新a股流通市值\",\"feKey\":\"最新a股流通市值\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"300750.SZ\",\"股票简称\":\"宁德时代\",\"最新价\":\"391.15\",\"最新涨跌幅\":1.597403,\"最新市盈率ttm\":21.290741,\"最新静态市盈率\":25.064874,\"最新动态市盈率\":20.905138,\"最新市净率\":4.770524,\"最新a股流通市值\":\"1666330700000.000\"}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"宁德时代 (1)\\\",\\\"宁德时代的最新市盈率ttm (1)\\\"]\",\"status_code\":0,\"token\":\"0ac984b017874157071784838\"}",
+  "raw_sha256": "d55337e1275451d4ddd1f318770b576b184f28bdea85ad73e273b642ac66fa32",
+  "recorded_at": "2026-08-22T16:21:47.145232+00:00"
+}

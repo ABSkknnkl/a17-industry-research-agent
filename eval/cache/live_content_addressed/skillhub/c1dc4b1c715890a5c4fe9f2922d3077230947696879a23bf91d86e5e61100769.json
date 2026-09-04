@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "c1dc4b1c715890a5c4fe9f2922d3077230947696879a23bf91d86e5e61100769",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-sector-selector",
+  "request": {
+    "query": "动力电池板块近期市场情绪 最新",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":2179,\"query\":\"动力电池板块近期市场情绪 最新\",\"columns\":[{\"index_name\":\"全量指数@指数代码\",\"key\":\"指数代码\",\"feKey\":\"指数代码\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"全量指数@指数简称\",\"key\":\"指数简称\",\"feKey\":\"指数简称\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"全量指数@最新涨跌幅:前复权\",\"key\":\"最新涨跌幅:前复权\",\"feKey\":\"最新涨跌幅:前复权\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"全量指数@最新收盘价:不复权\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"点\",\"label\":\"price\",\"source\":\"index\"}],\"datas\":[{\"指数代码\":\"931664.CSI\",\"指数简称\":\"动力电池\"}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"动力电池 (1)\\\",\\\"近10天动力电池的板块热度 (0)\\\",\\\"动力电池的板块热度 (0)\\\"]\",\"status_code\":0,\"token\":\"0ac99b9a17874162560356624\"}",
+  "raw_sha256": "0dcca61ff63f897396a2c950c3456d0babc7b7ed1fc4ce813dc1d8b83b58d0a3",
+  "recorded_at": "2026-08-22T16:30:56.001937+00:00"
+}

@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "3f5c6ba458058b718455c51fcc861a1a29c39ad7f2cbbcee771a5ca5bbd1180b",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 白酒 2024-01-01至2026-08-11 行业规模 增速 估值",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":748,\"query\":\"中国内地 白酒 2024-01-01至2026-08-11 行业规模 增速 估值\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"所属同花顺行业是白酒\\\",\\\"chunkedResult\\\":\\\"中国内地 白酒 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@所属同花顺行业\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"白酒\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_所属同花顺行业(债券)\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含白酒\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"code\",\"feKey\":\"债券代码\",\"type\":\"STR\",\"index_name\":\"债券@债券代码\",\"key\":\"债券@债券代码\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"name\",\"feKey\":\"债券简称\",\"type\":\"STR\",\"index_name\":\"债券@债券简称\",\"key\":\"债券@债券简称\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"indexId\":\"\",\"source\":\"new_parser\",\"feKey\":\"所属同花顺行业\",\"type\":\"STR\",\"index_name\":\"债券@所属同花顺行业\",\"key\":\"债券@所属同花顺行业\",\"timestamp\":\"\"}],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac9de8817874065348101901\",\"chunks_info\":\"[\\\"所属同花顺行业是白酒 (0)\\\"]\"}",
+  "raw_sha256": "545bf1ee91223fac60dc4998c433ad223c1f5f6af1f3e7e68e3b91d0c4720fa3",
+  "recorded_at": "2026-08-22T13:48:54.832658+00:00"
+}

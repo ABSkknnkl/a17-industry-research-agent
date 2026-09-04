@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "1240372bd0e95c177da67d7728d2e015aded1168eae514f62095aef17c7b0a34",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "比亚迪 2025年 2026年 营业收入",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1395,\"query\":\"比亚迪 2025年 2026年 营业收入\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"营业收入\",\"key\":\"营业收入[20251231]\",\"feKey\":\"营业收入[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"财务报表\",\"timestamp\":\"20251231\",\"source\":\"index\"},{\"index_name\":\"营业收入(同比增长率)\",\"key\":\"营业收入同比增长率[20261231]\",\"feKey\":\"营业收入同比增长率[20261231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"风险等级B\",\"timestamp\":\"20261231\",\"source\":\"index\"},{\"index_name\":\"营业收入(同比增长率)\",\"key\":\"营业收入同比增长率[20251231]\",\"feKey\":\"营业收入同比增长率[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"风险等级B\",\"timestamp\":\"20251231\",\"source\":\"index\"},{\"index_name\":\"归属于母公司所有者的净利润_off\",\"key\":\"归母净利润[20261231]\",\"feKey\":\"归母净利润[20261231]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"timestamp\":\"20261231\",\"source\":\"index\"},{\"index_name\":\"归属于母公司所有者的净利润_off\",\"key\":\"归母净利润[20251231]\",\"feKey\":\"归母净利润[20251231]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"timestamp\":\"20251231\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"002594.SZ\",\"股票简称\":\"比亚迪\",\"最新价\":\"90.47\",\"最新涨跌幅\":-0.011052000000000001,\"营业收入[20251231]\":8.03964958E11,\"营业收入同比增长率[20251231]\":3.4568000000000003,\"归母净利润[20251231]\":3.2619022E10}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"比亚迪 (1)\\\",\\\"从2025年到2026年比亚迪的营业收入 (1)\\\"]\",\"status_code\":0,\"token\":\"0ac99b9a17874145444962038\"}",
+  "raw_sha256": "3836aa47f0d6b75f74dafd0c8a9213ddb674cae346d8abf6368dfdd4f88b0f44",
+  "recorded_at": "2026-08-22T16:02:24.446063+00:00"
+}

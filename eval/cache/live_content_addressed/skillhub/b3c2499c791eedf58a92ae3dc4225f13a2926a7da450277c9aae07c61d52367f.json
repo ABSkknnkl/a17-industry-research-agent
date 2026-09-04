@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "b3c2499c791eedf58a92ae3dc4225f13a2926a7da450277c9aae07c61d52367f",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 财务 2024-01-01至2026-08-11 行业规模 增速 估值",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":267,\"query\":\"中国内地 财务 2024-01-01至2026-08-11 行业规模 增速 估值\",\"model_sql\":\"[{\\\"chunk\\\":\\\"中国内地 财务 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"condition\\\":\\\"[{\\\\\\\"opName\\\\\\\":\\\\\\\"and\\\\\\\",\\\\\\\"opPropertyMap\\\\\\\":{},\\\\\\\"sonSize\\\\\\\":3,\\\\\\\"uiText\\\\\\\":\\\\\\\"2024-01-01至2026-08-11的中债估值并且中债估值区间增长率\\\\\\\",\\\\\\\"datetext\\\\\\\":\\\\\\\"2024-01-01至2026-08-11\\\\\\\"},{\\\\\\\"indexName\\\\\\\":\\\\\\\"中债估值\\\\\\\",\\\\\\\"indexOrg\\\\\\\":\\\\\\\"中债估值\\\\\\\",\\\\\\\"indexPropertiesMap\\\\\\\":{\\\\\\\"时间\\\\\\\":\\\\\\\"2024-01-01至2026-08-11\\\\\\\"},\\\\\\\"sonSize\\\\\\\":0,\\\\\\\"uiText\\\\\\\":\\\\\\\"2024-01-01至2026-08-11的中债估值\\\\\\\"},{\\\\\\\"opName\\\\\\\":\\\\\\\"区间增长率\\\\\\\",\\\\\\\"opPropertyMap\\\\\\\":{},\\\\\\\"sonSize\\\\\\\":1,\\\\\\\"uiText\\\\\\\":\\\\\\\"中债估值区间增长率\\\\\\\"},{\\\\\\\"indexName\\\\\\\":\\\\\\\"中债估值\\\\\\\",\\\\\\\"indexOrg\\\\\\\":\\\\\\\"中债估值\\\\\\\",\\\\\\\"indexPropertiesMap\\\\\\\":{},\\\\\\\"sonSize\\\\\\\":0,\\\\\\\"uiText\\\\\\\":\\\\\\\"中债估值\\\\\\\"}]\\\",\\\"domain\\\":\\\"bond\\\"}]\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"text2sql\\\",\\\"children\\\":[],\\\"node_type\\\":\\\"op\\\",\\\"sonSize\\\":3.0,\\\"uiText\\\":\\\"2024-01-01至2026-08-11的中债估值并且中债估值区间增长率\\\",\\\"chunkedResult\\\":\\\"中国内地 财务 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"ci\\\":false,\\\"ciChunk\\\":\\\"中国内地 财务 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"opName\\\":\\\"and\\\",\\\"opPropertyMap\\\":{},\\\"opPropertiesMap\\\":{},\\\"opProperty\\\":\\\"\\\"},{\\\"score\\\":0.0,\\\"source\\\":\\\"text2sql\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"2024-01-01至2026-08-11的中债估值\\\",\\\"ci\\\":false,\\\"ciChunk\\\":\\\"中国内地 财务 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"indexName\\\":\\\"债券@中债估值\\\",\\\"indexPropertiesMap\\\":{},\\\"valueType\\\":\\\"\\\",\\\"dateText\\\":\\\"2024-01-01至2026-08-11\\\",\\\"indexProperties\\\":[]},{\\\"score\\\":0.0,\\\"source\\\":\\\"text2sql\\\",\\\"children\\\":[],\\\"node_type\\\":\\\"op\\\",\\\"sonSize\\\":1.0,\\\"uiText\\\":\\\"中债估值区间增长率\\\",\\\"ci\\\":false,\\\"ciChunk\\\":\\\"中国内地 财务 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"opName\\\":\\\"区间增长率\\\",\\\"opPropertyMap\\\":{},\\\"opPropertiesMap\\\":{},\\\"opProperty\\\":\\\"\\\"},{\\\"score\\\":0.0,\\\"source\\\":\\\"text2sql\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"中债估值\\\",\\\"ci\\\":false,\\\"ciChunk\\\":\\\"中国内地 财务 2024-01-01至2026-08-11 行业规模 增速 估值\\\",\\\"indexName\\\":\\\"债券@中债估值\\\",\\\"indexPropertiesMap\\\":{},\\\"valueType\\\":\\\"\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[]}]\",\"columns\":[],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"intent\":\"iwencai\",\"status_code\":-1208.0,\"status_msg\":\"未找到相关指标 债券@中债估值\",\"chunks_info\":\"[]\"}",
+  "raw_sha256": "403ee471f2606c6c383cb768a25d4fd728e69511e426ebf5849f6912eb315b14",
+  "recorded_at": "2026-08-22T06:57:39.139393+00:00"
+}

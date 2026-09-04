@@ -38,7 +38,7 @@ def _request(*focus_questions: str) -> AnalysisRequest:
     )
 
 
-def test_router_selects_all_three_skills_for_matching_research_questions() -> None:
+def test_router_selects_all_existing_domain_skills_for_matching_questions() -> None:
     router = SupportingSkillRouter(load_supporting_skills())
 
     selected = router.route(
@@ -56,9 +56,36 @@ def test_router_selects_all_three_skills_for_matching_research_questions() -> No
     ]
 
 
-def test_router_does_not_add_unrelated_skills() -> None:
+def test_router_uses_macro_method_for_interest_rate_transmission() -> None:
     router = SupportingSkillRouter(load_supporting_skills())
 
     selected = router.route(_request("利率变化如何影响行业收入增速？"))
 
-    assert selected == ()
+    assert [skill.key for skill in selected] == ["macro_cycle"]
+
+
+def test_router_selects_institutional_research_only_for_matching_evidence() -> None:
+    router = SupportingSkillRouter(load_supporting_skills())
+    request = _request("盈利预测和一致预期是否出现明显预期差？")
+
+    selected = router.route(request)
+
+    assert [skill.key for skill in selected] == ["institutional_research"]
+
+
+def test_router_selects_financial_commodity_and_macro_methods_by_scope() -> None:
+    router = SupportingSkillRouter(load_supporting_skills())
+
+    selected = router.route(
+        _request(
+            "对目标公司进行三表勾稽、经营现金流和杜邦分析",
+            "分析铜库存周期、期货升贴水和供需结构",
+            "PMI、CPI和利率变化如何影响行业景气？",
+        )
+    )
+
+    assert [skill.key for skill in selected] == [
+        "financial_statement",
+        "commodity_analysis",
+        "macro_cycle",
+    ]

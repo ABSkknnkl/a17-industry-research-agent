@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "f80bc048760cf8bb1b1c97cc5b7151318885e8bc7bd39f6424109d42f88ee99d",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "创新药行业估值和盈利",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":2183,\"query\":\"创新药行业估值和盈利\",\"columns\":[{\"index_name\":\"全量指数@指数代码\",\"key\":\"指数代码\",\"feKey\":\"指数代码\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"全量指数@指数简称\",\"key\":\"指数简称\",\"feKey\":\"指数简称\",\"type\":\"STR\",\"unit\":\"\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"全量指数@最新涨跌幅:前复权\",\"key\":\"最新涨跌幅:前复权\",\"feKey\":\"最新涨跌幅:前复权\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"全量指数@最新收盘价:不复权\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"点\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"市盈率(pe,ttm)\",\"key\":\"市盈率(pe,ttm)[20260821]\",\"feKey\":\"市盈率(pe,ttm)[20260821]\",\"type\":\"DOUBLE\",\"unit\":\"倍\",\"label\":\"\",\"timestamp\":\"20260821\",\"source\":\"field\"},{\"index_name\":\"全量指数@净利润\",\"key\":\"净利润[20260630]\",\"feKey\":\"净利润[20260630]\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"\",\"timestamp\":\"20260630\",\"source\":\"index\"}],\"datas\":[{\"指数代码\":\"886015.TI\",\"指数简称\":\"创新药\",\"市盈率(pe,ttm)[20260821]\":48.805971,\"净利润[20260630]\":3.747739510687E10},{\"指数代码\":\"980086.SZ\",\"指数简称\":\"创新药\",\"市盈率(pe,ttm)[20260821]\":63.372873}],\"row_count\":2,\"code_count\":2,\"chunks_info\":\"[\\\"创新药 (2)\\\",\\\"昨天创新药的市盈率(pe,ttm) (2)\\\",\\\"1季度前创新药的净利润 (1)\\\"]\",\"status_code\":0,\"token\":\"0ac9c0ed17873805961494371\"}",
+  "raw_sha256": "d02634fcc298fe1ab0386a58431599fefbcf089c2cc87f5d6a26ef936f8c0aaf",
+  "recorded_at": "2026-08-22T06:36:35.622752+00:00"
+}

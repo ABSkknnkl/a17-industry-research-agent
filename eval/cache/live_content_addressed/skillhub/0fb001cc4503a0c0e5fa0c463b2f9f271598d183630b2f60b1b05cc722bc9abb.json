@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "0fb001cc4503a0c0e5fa0c463b2f9f271598d183630b2f60b1b05cc722bc9abb",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "report-search",
+  "request": {
+    "query": "动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 查询宁德时代最近一年股权激励公告",
+    "channels": [
+      "report"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[],\"abtest_info\":\"\",\"took\":181,\"total\":0,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 查询宁德时代最近一年股权激励公告\"],\"query\":\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 查询宁德时代最近一年股权激励公告\",\"integrity_result\":true,\"intents\":[],\"intent\":\"资讯消息-研报\"},\"content_data\":[]}",
+  "raw_sha256": "8064846ba348e911af96a4d0cd6f22d891476069fe1ba86f8b8649817096dd75",
+  "recorded_at": "2026-08-22T16:22:24.893608+00:00"
+}

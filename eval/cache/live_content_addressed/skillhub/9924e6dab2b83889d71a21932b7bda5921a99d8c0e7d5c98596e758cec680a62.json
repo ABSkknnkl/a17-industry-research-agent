@@ -1,0 +1,22 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "9924e6dab2b83889d71a21932b7bda5921a99d8c0e7d5c98596e758cec680a62",
+  "endpoint": "POST /v1/comprehensive/search",
+  "skill": "report-search",
+  "request": {
+    "query": "动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 看下宁德时代财务，顺便和比亚迪对比，各出一张图",
+    "channels": [
+      "report"
+    ],
+    "app_id": "AIME_SKILL",
+    "size": 20
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "content": "{\"status_msg\":\"OK\",\"status_code\":0,\"data\":[],\"abtest_info\":\"\",\"took\":158,\"total\":0,\"ab\":{\"scene_id\":\"hqnkkbpto\",\"layer_exp\":[{\"layer_id\":\"holistic_layer\",\"exp_id\":\"base_holistic_layer\"}]},\"header\":{\"search_query\":[\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 看下宁德时代财务，顺便和比亚迪对比，各出一张图\"],\"query\":\"动力电池 行业深度研究 竞争格局 发展趋势 2024-01-01至2026-08-11 看下宁德时代财务，顺便和比亚迪对比，各出一张图\",\"integrity_result\":true,\"intents\":[],\"intent\":\"资讯消息-研报\"},\"content_data\":[]}",
+  "raw_sha256": "f4f7a3859a7c493275a0095701e6fa22c833869198ff155467a0ec5cdc921765",
+  "recorded_at": "2026-08-22T16:19:22.519284+00:00"
+}

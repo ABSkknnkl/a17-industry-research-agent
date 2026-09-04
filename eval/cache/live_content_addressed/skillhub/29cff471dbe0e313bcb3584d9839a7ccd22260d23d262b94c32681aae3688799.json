@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "29cff471dbe0e313bcb3584d9839a7ccd22260d23d262b94c32681aae3688799",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 A股指数 2024-01-01至2026-08-11 行业规模",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":214,\"query\":\"中国内地 A股指数 2024-01-01至2026-08-11 行业规模\",\"model_sql\":\"[{\\\"chunk\\\":\\\"中国内地 a股指数 2024-01-01至2026-08-11 行业规模\\\",\\\"condition\\\":\\\"[{}]\\\",\\\"domain\\\":\\\"bond\\\"}]\",\"condition\":\"null\",\"columns\":[],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"intent\":\"iwencai\",\"status_code\":1201.0,\"status_msg\":\"解析失败\",\"chunks_info\":\"[]\"}",
+  "raw_sha256": "ec9603d651b45d204cb5830fef046fb373cf3296c85aa6eae2fa786a6c53c14e",
+  "recorded_at": "2026-08-22T16:12:11.398253+00:00"
+}

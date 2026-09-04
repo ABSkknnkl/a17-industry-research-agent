@@ -155,7 +155,20 @@
         "title": { "type": "string", "minLength": 1 },
         "chart_type": {
           "type": "string",
-          "enum": ["line", "bar", "pie", "radar", "industry_chain"]
+          "enum": [
+            "line",
+            "bar",
+            "pie",
+            "radar",
+            "industry_chain",
+            "combo",
+            "area",
+            "scatter",
+            "bubble",
+            "heatmap",
+            "boxplot",
+            "treemap"
+          ]
         },
         "status": { "type": "string", "enum": ["planned", "ready"] },
         "evidence_ids": {

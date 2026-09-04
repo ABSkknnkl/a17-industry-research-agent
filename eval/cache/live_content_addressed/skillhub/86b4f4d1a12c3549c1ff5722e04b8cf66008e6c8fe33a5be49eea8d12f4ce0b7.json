@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "86b4f4d1a12c3549c1ff5722e04b8cf66008e6c8fe33a5be49eea8d12f4ce0b7",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 看下宁德时代财务，顺便和比亚迪对比，各出一张图",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1048,\"query\":\"中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 看下宁德时代财务，顺便和比亚迪对比，各出一张图\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"children\\\":[],\\\"node_type\\\":\\\"op\\\",\\\"sonSize\\\":2.0,\\\"chunkedResult\\\":\\\"中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 看下宁德时代财务,顺便和比亚迪对比,各出一张图\\\",\\\"ci\\\":false,\\\"opName\\\":\\\"and\\\",\\\"opPropertyMap\\\":{},\\\"opPropertiesMap\\\":{},\\\"opProperty\\\":\\\"\\\"},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"发行人中文简称是宁德时代\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@发行人中文简称\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"宁德时代\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_发行人中文简称\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含宁德时代\\\"]},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"正股简称是比亚迪\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@正股简称\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"比亚迪\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_正股简称\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含比亚迪\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"code\",\"feKey\":\"债券代码\",\"type\":\"STR\",\"index_name\":\"债券@债券代码\",\"key\":\"债券@债券代码\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"source\":\"fixed_index\",\"label\":\"name\",\"feKey\":\"债券简称\",\"type\":\"STR\",\"index_name\":\"债券@债券简称\",\"key\":\"债券@债券简称\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"indexId\":\"\",\"source\":\"new_parser\",\"feKey\":\"发行人中文简称\",\"type\":\"STR\",\"index_name\":\"债券@发行人中文简称\",\"key\":\"债券@发行人中文简称\",\"timestamp\":\"\"},{\"unit\":\"\",\"domain\":\"abs_债券领域\",\"indexId\":\"\",\"source\":\"new_parser\",\"feKey\":\"正股简称\",\"type\":\"STR\",\"index_name\":\"债券@正股简称\",\"key\":\"债券@正股简称\",\"timestamp\":\"\"}],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac9e55617874155384786288\",\"chunks_info\":\"[\\\"发行人中文简称是宁德时代 (0)\\\",\\\"正股简称是比亚迪 (0)\\\"]\"}",
+  "raw_sha256": "f0bf6ae21fa625e5442a1ede1cf2737e32f3ae8a72636cafba6ff00199a51dae",
+  "recorded_at": "2026-08-22T16:18:58.424848+00:00"
+}

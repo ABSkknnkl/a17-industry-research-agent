@@ -40,6 +40,8 @@ npm-debug.log*
 # Runtime data and generated artifacts
 backend/data/
 backend/artifacts/
+/artifacts/
+/output/
 backups/
 
 # Testing

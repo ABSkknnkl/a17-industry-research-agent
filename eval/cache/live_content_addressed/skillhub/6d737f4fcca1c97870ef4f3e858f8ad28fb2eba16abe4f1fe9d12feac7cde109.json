@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "6d737f4fcca1c97870ef4f3e858f8ad28fb2eba16abe4f1fe9d12feac7cde109",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 宁德时代近四年营收、归母净利、毛利率、各项费用率并梳理主营业务结构",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":1333,\"query\":\"中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 宁德时代近四年营收、归母净利、毛利率、各项费用率并梳理主营业务结构\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"children\\\":[],\\\"node_type\\\":\\\"op\\\",\\\"sonSize\\\":2.0,\\\"chunkedResult\\\":\\\"中国内地 动力电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 宁德时代近四年营收、归母净利、毛利率、各项费用率并梳理主营业务结构\\\",\\\"ci\\\":false,\\\"opName\\\":\\\"and\\\",\\\"opPropertyMap\\\":{},\\\"opPropertiesMap\\\":{},\\\"opProperty\\\":\\\"\\\"},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"发行人中文简称是宁德时代\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@发行人中文简称\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"宁德时代\\\"},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_发行人中文简称\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[\\\"包含宁德时代\\\"]},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"主营业务\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@主营业务\\\",\\\"indexPropertiesMap\\\":{},\\\"reportType\\\":\\\"null\\\",\\\"valueType\\\":\\\"_主营业务\\\",\\\"dateText\\\":\\\"\\\",\\\"indexProperties\\\":[]}]\",\"columns\":[],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":-1208.0,\"status_msg\":\"未找到相关指标 债券@主营业务\",\"chunks_info\":\"[]\"}",
+  "raw_sha256": "bb35eb7cb9289d2ed23e5aecfb48b44ab4de56c2c5f6480f14ac810e776f8af5",
+  "recorded_at": "2026-08-22T16:17:49.259823+00:00"
+}

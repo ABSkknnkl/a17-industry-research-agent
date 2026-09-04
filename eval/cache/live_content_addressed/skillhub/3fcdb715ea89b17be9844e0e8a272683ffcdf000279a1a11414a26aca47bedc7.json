@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "3fcdb715ea89b17be9844e0e8a272683ffcdf000279a1a11414a26aca47bedc7",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-finance-query",
+  "request": {
+    "query": "中国内地 光伏 2024-01-01至2026-08-11 隆基绿能 营业收入 营业成本 净利润 ROE 经营活动现金流量净额 投资活动现金流量净额 筹资活动现金流量净额 期末现金及现金等价物余额 货币资金 总资产 负债合计 股东权益 存货 应收账款 汇总隆基绿能硅片、组件业务盈利水平",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":14,\"columns\":[],\"datas\":[],\"row_count\":0,\"code_count\":0,\"status_code\":-1225}",
+  "raw_sha256": "393e66e731bc46ad09ccf84e94172f777291e952650dee062355668576ef969f",
+  "recorded_at": "2026-08-22T17:03:13.637862+00:00"
+}

@@ -7,10 +7,11 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
 from app.schemas.workflow import StageName, StageResult, StageStatus
-from app.integrations.llm.mock import MockAnalysisModel
+from app.integrations.llm.mock import MockAnalysisModel, MockChapterWritingModel
 from app.runtime.models import RuntimePolicy
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
+from app.schemas.report import ReportFusionResult
 from app.workflow.factory import create_stage_registry
 from app.workflow.graph import build_pipeline_graph
 from app.workflow.stages import StageAgent, StageContext, StageRegistry
@@ -50,6 +51,28 @@ class SlowStageAgent(RecordingStageAgent):
     async def run(self, context: StageContext) -> StageResult:
         await asyncio.sleep(0.05)
         return await super().run(context)
+
+
+class WaitingReviewErrorAgent(RecordingStageAgent):
+    async def run(self, context: StageContext) -> StageResult:
+        self._calls.append(self.stage)
+        return StageResult(
+            stage=self.stage,
+            status=StageStatus.WAITING_REVIEW,
+            revision=context.revision,
+            data={
+                "intent_routing": {"strategy": "deterministic_only"},
+                "collaboration_requests": [
+                    {
+                        "request_id": "INTENT-CLARIFY-01",
+                        "question": "请明确研究主体。",
+                        "reason": "主体存在歧义。",
+                        "affected_dimensions": ["data_fetch"],
+                    }
+                ],
+            },
+            error="intent_clarification_required",
+        )
 
 
 @pytest.mark.asyncio
@@ -124,6 +147,195 @@ async def test_failed_stage_stops_downstream_and_requires_recovery_review() -> N
         )
 
 
+class WaitingReviewAuditOnlyAgent(RecordingStageAgent):
+    """BUG-002 second guard: audit-only payload must not count as substantive."""
+
+    async def run(self, context: StageContext) -> StageResult:
+        self._calls.append(self.stage)
+        return StageResult(
+            stage=self.stage,
+            status=StageStatus.WAITING_REVIEW,
+            revision=context.revision,
+            data={
+                "intent_routing": {"strategy": "deterministic_only"},
+                "semantic_routing": {"accepted": {}, "rejected": []},
+                "collaboration_requests": [
+                    {
+                        "request_id": "INTENT-CLARIFY-01",
+                        "question": "请明确研究主体。",
+                        "reason": "主体存在歧义。",
+                        "affected_dimensions": ["data_fetch"],
+                    }
+                ],
+            },
+        )
+
+
+@pytest.mark.asyncio
+async def test_audit_only_payload_is_never_auto_completed() -> None:
+    calls: list[StageName] = []
+    agents: list[StageAgent] = [
+        WaitingReviewAuditOnlyAgent(StageName.DATA_FETCH, calls),
+        *[RecordingStageAgent(stage, calls) for stage in tuple(StageName)[1:]],
+    ]
+    graph = build_pipeline_graph(StageRegistry(agents), checkpointer=InMemorySaver())
+
+    interrupted = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-1",
+            run_id="run-audit-only",
+            input_data={"industry": "动力电池"},
+        ),
+        {"configurable": {"thread_id": "run-audit-only"}},
+    )
+    assert calls == [StageName.DATA_FETCH]
+    assert interrupted["status"] == StageStatus.WAITING_REVIEW
+    fetch = interrupted["stage_results"][StageName.DATA_FETCH.value]
+    assert fetch["status"] == StageStatus.WAITING_REVIEW
+    assert fetch["data"]["collaboration_requests"]
+
+
+def test_runtime_policy_default_allows_realistic_agent2_latency() -> None:
+    assert RuntimePolicy().stage_timeout_seconds == 600
+
+
+@pytest.mark.asyncio
+async def test_waiting_review_with_error_is_never_auto_completed() -> None:
+    calls: list[StageName] = []
+    agents: list[StageAgent] = [
+        WaitingReviewErrorAgent(StageName.DATA_FETCH, calls),
+        *[RecordingStageAgent(stage, calls) for stage in tuple(StageName)[1:]],
+    ]
+    graph = build_pipeline_graph(StageRegistry(agents), checkpointer=InMemorySaver())
+
+    interrupted = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-1",
+            run_id="run-waiting-review-error",
+            input_data={"industry": "动力电池"},
+        ),
+        {"configurable": {"thread_id": "run-waiting-review-error"}},
+    )
+
+    assert calls == [StageName.DATA_FETCH]
+    assert interrupted["status"] == StageStatus.WAITING_REVIEW
+    fetch = interrupted["stage_results"][StageName.DATA_FETCH.value]
+    assert fetch["status"] == StageStatus.WAITING_REVIEW
+    assert fetch["error"] == "intent_clarification_required"
+    assert fetch["data"]["collaboration_requests"]
+
+
+class ReportFusionFallbackAgent(RecordingStageAgent):
+    """模拟真实 LLM 不可用→上游 fallback 产物无效→report_fusion 拦截。"""
+
+    async def run(self, context: StageContext) -> StageResult:
+        self._calls.append(self.stage)
+        return StageResult(
+            stage=self.stage,
+            status=StageStatus.WAITING_REVIEW,
+            revision=context.revision,
+            data={
+                "collaboration_requests": [
+                    {
+                        "request_id": "REPORT-INPUT-INVALID",
+                        "question": "请确认或修正正式报告的输入与导出设置。",
+                        "reason": "AnalysisResult validation failed",
+                        "affected_dimensions": ["report_fusion"],
+                    }
+                ]
+            },
+            error="report_input_invalid",
+        )
+
+
+@pytest.mark.asyncio
+async def test_error_bearing_report_fusion_never_reaches_completed() -> None:
+    """fallback 终态非法回归（18.md 遗留问题 2）：report_fusion 以
+    WAITING_REVIEW + report_input_invalid 拦截时，审核放行决策不得把 run
+    推到「终态 completed + 阶段携带 error」的非法状态。"""
+    calls: list[StageName] = []
+    agents: list[StageAgent] = [
+        ReportFusionFallbackAgent(stage, calls)
+        if stage == StageName.REPORT_FUSION
+        else RecordingStageAgent(stage, calls)
+        for stage in StageName
+    ]
+    graph = build_pipeline_graph(StageRegistry(agents), checkpointer=InMemorySaver())
+    config = {"configurable": {"thread_id": "run-fusion-error"}}
+
+    result = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-1",
+            run_id="run-fusion-error",
+            input_data={"industry": "动力电池"},
+        ),
+        config,
+    )
+
+    assert result["status"] == StageStatus.WAITING_REVIEW
+    fusion = result["stage_results"][StageName.REPORT_FUSION.value]
+    assert fusion["error"] == "report_input_invalid"
+
+    # 与 test_real_full_chain._drive 相同的放行决策：无决策包 → approve。
+    # 修复后必须被审核门拒绝（error 未解决不得放行），run 停留在 WAITING_REVIEW。
+    with pytest.raises(ValueError, match="不能直接放行"):
+        await graph.ainvoke(
+            Command(resume={"action": "approve", "expected_revision": 1}),
+            config,
+        )
+
+
+class CompletedWithErrorAgent(RecordingStageAgent):
+    """防御性场景：智能体直接返回 COMPLETED 却携带 error（契约违规）。"""
+
+    async def run(self, context: StageContext) -> StageResult:
+        self._calls.append(self.stage)
+        return StageResult(
+            stage=self.stage,
+            status=StageStatus.COMPLETED,
+            revision=context.revision,
+            data={"stage": self.stage.value},
+            error="stage_completed_with_error",
+        )
+
+
+@pytest.mark.asyncio
+async def test_completed_with_error_requires_review_instead_of_finish() -> None:
+    """graph 层防御：COMPLETED + error 的阶段结果必须转入审核，
+    不得直接 finish 产出「终态 completed + 阶段携带 error」。"""
+    calls: list[StageName] = []
+    agents: list[StageAgent] = [
+        CompletedWithErrorAgent(stage, calls)
+        if stage == StageName.DATA_FETCH
+        else RecordingStageAgent(stage, calls)
+        for stage in StageName
+    ]
+    graph = build_pipeline_graph(StageRegistry(agents), checkpointer=InMemorySaver())
+    config = {"configurable": {"thread_id": "run-completed-with-error"}}
+
+    result = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-1",
+            run_id="run-completed-with-error",
+            input_data={"industry": "动力电池"},
+        ),
+        config,
+    )
+
+    # 防御性拦截：停在 WAITING_REVIEW，下游阶段不得执行
+    assert result["status"] == StageStatus.WAITING_REVIEW
+    assert calls == [StageName.DATA_FETCH]
+    fetch = result["stage_results"][StageName.DATA_FETCH.value]
+    assert fetch["error"] == "stage_completed_with_error"
+
+    # 审核门同样拒绝放行
+    with pytest.raises(ValueError, match="不能直接放行"):
+        await graph.ainvoke(
+            Command(resume={"action": "approve", "expected_revision": 1}),
+            config,
+        )
+
+
 @pytest.mark.asyncio
 async def test_stage_attempt_budget_prevents_unbounded_regeneration() -> None:
     calls: list[StageName] = []
@@ -193,6 +405,34 @@ async def test_stage_timeout_becomes_recoverable_failure_without_running_downstr
 
 
 @pytest.mark.asyncio
+async def test_graph_without_explicit_policy_uses_configured_stage_timeout(monkeypatch) -> None:
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "STAGE_TIMEOUT_SECONDS", 0.01)
+    calls: list[StageName] = []
+    agents: list[StageAgent] = []
+    for stage in StageName:
+        agent_type = SlowStageAgent if stage == StageName.DATA_INTERPRET else RecordingStageAgent
+        agents.append(agent_type(stage, calls))
+    graph = build_pipeline_graph(
+        StageRegistry(agents),
+        checkpointer=InMemorySaver(),
+    )
+
+    interrupted = await graph.ainvoke(
+        create_pipeline_state(
+            project_id="project-config-timeout",
+            run_id="run-config-timeout",
+            input_data={"industry": "光伏"},
+        ),
+        {"configurable": {"thread_id": "run-config-timeout"}},
+    )
+
+    failed = interrupted["stage_results"][StageName.DATA_INTERPRET.value]
+    assert failed["error"] == "stage_timeout"
+
+
+@pytest.mark.asyncio
 async def test_data_interpret_stage_can_pause_for_review_and_resume() -> None:
     calls: list[StageName] = []
     registry = StageRegistry(RecordingStageAgent(stage, calls) for stage in StageName)
@@ -229,8 +469,16 @@ async def test_data_interpret_stage_can_pause_for_review_and_resume() -> None:
 
 
 @pytest.mark.asyncio
-async def test_default_registry_runs_real_interpreter_between_mock_stages() -> None:
-    graph = build_pipeline_graph(create_stage_registry(MockAnalysisModel()))
+async def test_default_registry_runs_real_interpreter_and_chart_generator(
+    tmp_path,
+    monkeypatch,
+) -> None:
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path / "artifacts")
+    graph = build_pipeline_graph(
+        create_stage_registry(MockAnalysisModel(), MockChapterWritingModel())
+    )
 
     result = await graph.ainvoke(
         create_pipeline_state(
@@ -274,9 +522,21 @@ async def test_default_registry_runs_real_interpreter_between_mock_stages() -> N
     )
     assert analysis.claims[0].evidence_ids == ["E-001"]
     assert result["stage_results"][StageName.DATA_FETCH.value]["data"]["evidence_items"]
-    assert result["stage_results"][StageName.CHART_GENERATE.value]["data"]["mock"] is True
+    chart_result = result["stage_results"][StageName.CHART_GENERATE.value]
+    assert chart_result["data"]["quality"]["passed"] is True
+    assert chart_result["data"]["charts"][0]["status"] == "ready"
+    assert chart_result["artifacts"][0]["kind"] == "echarts_option_json"
     chapters = ChapterWritingResult.model_validate(
         result["stage_results"][StageName.CHAPTER_WRITE.value]["data"]
     )
     assert len(chapters.chapters) == 7
     assert chapters.quality.passed is True
+    report_stage = result["stage_results"][StageName.REPORT_FUSION.value]
+    report = ReportFusionResult.model_validate(report_stage["data"])
+    assert report.quality.passed is True
+    assert {artifact["kind"] for artifact in report_stage["artifacts"]} == {
+        "report_markdown",
+        "report_html",
+        "report_pdf",
+        "artifact_manifest",
+    }

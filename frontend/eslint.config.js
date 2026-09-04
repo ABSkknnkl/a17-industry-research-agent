@@ -11,6 +11,16 @@ export default [
   ...tseslint.configs.recommended,
   ...eslintPluginVue.configs['flat/essential'],
   {
+    files: ['**/*.vue'],
+    languageOptions: {
+      parserOptions: {
+        parser: tseslint.parser,
+        extraFileExtensions: ['.vue'],
+        sourceType: 'module',
+      },
+    },
+  },
+  {
     files: ['**/*.{ts,vue}'],
     languageOptions: {
       globals: {

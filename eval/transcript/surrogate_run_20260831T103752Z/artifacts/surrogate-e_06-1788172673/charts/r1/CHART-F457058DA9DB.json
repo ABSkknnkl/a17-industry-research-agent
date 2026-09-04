@@ -1,0 +1,123 @@
+{
+  "chain_graph": null,
+  "chain_template": null,
+  "chart_id": "CHART-F457058DA9DB",
+  "chart_type": "bar",
+  "data_fingerprint": "9c00a2285a36a180bf009b7bc7cc40915190110c6e785a8e651d80d85bcebc42",
+  "dedupe_key": "comparison:comparison:以bar图呈现最新涨跌幅的证据分布，支撑ch-02的论述。:9c00a2285a36a180bf009b7bc7cc40915190110c6e785a8e651d80d85bcebc42",
+  "evidence_ids": [
+    "E-006f786a1985b888",
+    "E-5b2ecf69055d71cc",
+    "E-77f347c1bd39a083"
+  ],
+  "footnotes": [],
+  "generation_image_model": null,
+  "generation_prompt": null,
+  "generation_prompt_model": null,
+  "image_mime_type": null,
+  "image_uri": null,
+  "insight_goal": "以bar图呈现最新涨跌幅的证据分布，支撑CH-02的论述。",
+  "option": {
+    "animation": false,
+    "aria": {
+      "enabled": true
+    },
+    "color": [
+      "#2563EB",
+      "#0F766E",
+      "#D97706",
+      "#7C3AED",
+      "#DC2626"
+    ],
+    "grid": {
+      "bottom": 56,
+      "containLabel": true,
+      "left": 72,
+      "right": 32,
+      "top": 72
+    },
+    "legend": {
+      "top": 32,
+      "type": "scroll"
+    },
+    "series": [
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-5b2ecf69055d71cc",
+            "value": -2.266667
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "中国宝安",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "value": null
+          },
+          {
+            "value": null
+          },
+          {
+            "evidence_id": "E-77f347c1bd39a083",
+            "value": -4.081633
+          }
+        ],
+        "name": "南京公用",
+        "type": "bar"
+      },
+      {
+        "data": [
+          {
+            "evidence_id": "E-006f786a1985b888",
+            "value": -1.6166280000000002
+          },
+          {
+            "value": null
+          },
+          {
+            "value": null
+          }
+        ],
+        "name": "富奥股份",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "left": "center",
+      "text": "最新涨跌幅（富奥股份）"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "富奥股份",
+        "中国宝安",
+        "南京公用"
+      ],
+      "type": "category"
+    },
+    "yAxis": {
+      "name": "CNY %",
+      "type": "value"
+    }
+  },
+  "quality_issue_ids": [],
+  "render_mode": "echarts",
+  "requested_chart_type": "bar",
+  "resolution_reason": null,
+  "title": "最新涨跌幅（富奥股份）",
+  "user_requested": false,
+  "variant": "grouped"
+}

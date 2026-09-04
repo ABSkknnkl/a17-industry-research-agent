@@ -1,0 +1,29 @@
+# 长尾别名词表（2026-09-01 方案第四刀·改动点 3，词表双轨）
+#
+# 形态：{metric_key: [长尾别名, ...]}。核心高频别名留在
+# app/agents/data_fetcher/metric_registry.py（代码即契约）；本文件只承载
+# 长尾口语别名，启动时合并加载，核心同名别名优先。
+#
+# 维护规则：
+# - 周度 miss 周报中「高频词/别名（周 ≥3 次）」进这里，不发版；
+# - 未知 metric_key 静默忽略；加载失败静默回退核心词表；
+# - SQLite 表化后置（本期不做）。
+
+# §5 缺口清单 + OBS 4.1（有效总产能）落地
+shipment_volume:
+  - 对外供货量
+  - 发货规模
+  - 外销出货
+capacity_utilization:
+  - 产线跑满程度
+  - 生产负荷
+market_share:
+  - 行业占比
+inventory_days:
+  - 库存水平
+  - 去库情况
+  - 累库情况
+effective_capacity:
+  - 有效总产能
+net_profit:
+  - 税后利润

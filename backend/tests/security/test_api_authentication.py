@@ -155,6 +155,47 @@ def test_user_cannot_read_review_or_cancel_another_users_run(
     assert blocked_cancel.status_code == 404
 
 
+def test_report_artifact_download_requires_run_ownership(
+    monkeypatch: pytest.MonkeyPatch,
+    api_client: TestClient,
+) -> None:
+    monkeypatch.setattr(
+        settings,
+        "API_BEARER_TOKENS",
+        {
+            "owner-a": SecretStr("token-owner-a"),
+            "owner-b": SecretStr("token-owner-b"),
+        },
+    )
+    started = api_client.post(
+        "/api/v1/runs",
+        json=_valid_run_payload(),
+        headers={"Authorization": "Bearer token-owner-a"},
+    )
+    assert started.status_code == 201
+    snapshot = started.json()
+    run_id = snapshot["run_id"]
+    html_artifact = next(
+        item
+        for item in snapshot["stage_results"]["report_fusion"]["artifacts"]
+        if item["kind"] == "report_html"
+    )
+
+    downloaded = api_client.get(
+        f"/api/v1/runs/{run_id}/artifacts/{html_artifact['artifact_id']}",
+        headers={"Authorization": "Bearer token-owner-a"},
+    )
+    blocked = api_client.get(
+        f"/api/v1/runs/{run_id}/artifacts/{html_artifact['artifact_id']}",
+        headers={"Authorization": "Bearer token-owner-b"},
+    )
+
+    assert downloaded.status_code == 200
+    assert downloaded.headers["content-type"].startswith("text/html")
+    assert b"<!doctype html>" in downloaded.content
+    assert blocked.status_code == 404
+
+
 def test_create_run_rejects_fields_outside_research_whitelist(
     authenticated_client: TestClient,
 ) -> None:

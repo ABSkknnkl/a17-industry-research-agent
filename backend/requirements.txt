@@ -3,6 +3,9 @@ fastapi>=0.115.0,<1.0.0
 uvicorn[standard]>=0.34.0,<1.0.0
 pydantic>=2.10.0,<3.0.0
 pydantic-settings>=2.7.0,<3.0.0
+# Externalized routing vocab (2026-09-01 plan: metric_aliases.yaml /
+# metric_derivative_blacklist.yaml)
+PyYAML>=6.0.0,<7.0.0
 
 # HTTP, retry, and persistence
 httpx>=0.28.0,<1.0.0
@@ -25,3 +28,4 @@ pywencai>=0.12.0,<1.0.0
 # Chart and report rendering
 pyecharts>=2.0.0,<3.0.0
 playwright>=1.61.0,<2.0.0
+jinja2>=3.1.0,<4.0.0

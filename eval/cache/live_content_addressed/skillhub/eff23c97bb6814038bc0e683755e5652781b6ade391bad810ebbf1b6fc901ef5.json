@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "eff23c97bb6814038bc0e683755e5652781b6ade391bad810ebbf1b6fc901ef5",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-basicinfo-query",
+  "request": {
+    "query": "宁德时代 股票代码 上市日期",
+    "page": "1",
+    "limit": "5",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":734,\"query\":\"宁德时代 股票代码 上市日期\",\"columns\":[{\"index_name\":\"股票代码\",\"key\":\"股票代码\",\"feKey\":\"股票代码\",\"type\":\"STR\",\"label\":\"code\",\"source\":\"index\"},{\"index_name\":\"股票简称\",\"key\":\"股票简称\",\"feKey\":\"股票简称\",\"type\":\"STR\",\"label\":\"name\",\"source\":\"index\"},{\"index_name\":\"最新价\",\"key\":\"最新价\",\"feKey\":\"最新价\",\"type\":\"DOUBLE\",\"unit\":\"元\",\"label\":\"price\",\"source\":\"index\"},{\"index_name\":\"最新涨跌幅\",\"key\":\"最新涨跌幅\",\"feKey\":\"最新涨跌幅\",\"type\":\"DOUBLE\",\"unit\":\"%\",\"label\":\"ratio\",\"source\":\"index\"},{\"index_name\":\"新股上市日期\",\"key\":\"上市日期\",\"feKey\":\"上市日期\",\"type\":\"DATE\",\"unit\":\"\",\"label\":\"\",\"source\":\"index\"},{\"index_name\":\"上市地点\",\"key\":\"上市地点\",\"feKey\":\"上市地点\",\"type\":\"STR\",\"source\":\"index\"},{\"index_name\":\"上市板块\",\"key\":\"上市板块\",\"feKey\":\"上市板块\",\"type\":\"STR\",\"source\":\"index\"}],\"datas\":[{\"股票代码\":\"300750.SZ\",\"股票简称\":\"宁德时代\",\"最新价\":\"391.15\",\"最新涨跌幅\":1.597403,\"上市日期\":\"20180611\",\"上市地点\":\"深圳\",\"上市板块\":\"创业板\"}],\"row_count\":1,\"code_count\":1,\"chunks_info\":\"[\\\"宁德时代的上市日期 (1)\\\"]\",\"status_code\":0,\"token\":\"0ac99b9a17873870262253025\"}",
+  "raw_sha256": "300be604358c666d026770b5b780746e1d4bb9ca6b747253fd82b831de78616c",
+  "recorded_at": "2026-08-22T08:23:45.780602+00:00"
+}
