@@ -7,13 +7,16 @@ from app.integrations.skillhub.client import IwencaiSkillClient
 from app.integrations.skillhub.models import SkillQueryArgs
 from app.runtime.tool_gateway import ToolCall
 from app.integrations.skillhub.registry import create_skillhub_gateway
-from app.schemas.acquisition import P0_SKILLS, P1_SKILLS, SkillName
+from app.schemas.acquisition import FALLBACK_ONLY_SKILLS, P0_SKILLS, P1_SKILLS, SkillName
 
 
 def test_catalog_registers_all_p0_and_p1_tools() -> None:
     from app.integrations.skillhub.catalog import SKILL_CATALOG
 
-    assert set(SKILL_CATALOG) == P0_SKILLS | P1_SKILLS
+    # catalog 覆盖全部可路由技能，含 L3 联网兜底通道 WEB_SEARCH——它属于
+    # FALLBACK_ONLY_SKILLS（不是规划层级，planner 绝不为它生成任务），但必须
+    # 注册在 catalog 里，ToolGateway 才能路由到它并继承超时/预算/hooks/遥测。
+    assert set(SKILL_CATALOG) == P0_SKILLS | P1_SKILLS | FALLBACK_ONLY_SKILLS
 
 
 def test_catalog_registers_verified_market_data_skills() -> None:

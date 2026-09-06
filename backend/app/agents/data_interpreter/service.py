@@ -261,38 +261,23 @@ class DataInterpreterAgent:
                     },
                     error="data_fetch_not_completed",
                 )
-            # Agent 1 owns the normalized evidence package. The original API
-            # request may contain an empty evidence_items list, so it must not
-            # overwrite newly acquired evidence. Agent 2 review edits win only
-            # after the workflow revision has advanced beyond Agent 1's result.
+            # Agent 1 owns the normalized evidence package; Agent 2 is a pure
+            # consumer（Single Writer，2026-09-04）：证据绝不进入修订覆盖
+            # 循环——A2 分析池与 A3 图表取数池在任何 revision 下都与 A1
+            # 输出恒同。数据修正的唯一合法通道是回到 data_fetch 阶段修订
+            # （DataInterpretReviewEdits 已不再接受 evidence_items）。
             source_data = {**context.input_data, **fetch_result.data}
             if context.revision > fetch_result.revision:
                 for field_name in (
                     "focus_questions",
                     "analysis_depth",
                     "risk_preference",
-                    "evidence_items",
                     "research_brief",
                     "rejected_claim_ids",
                 ):
                     if field_name not in context.input_data:
                         continue
-                    value = context.input_data[field_name]
-                    # Bug 修复（2026-09-02）：ResearchInput.evidence_items 带
-                    # default_factory=list，model_dump 后恒以 [] 存在于
-                    # input_data，`in` 无法区分「创建时默认值」与「用户编辑」。
-                    # 空列表绝不允许覆盖 A1 证据包——否则 A2 任何重跑必然
-                    # analysis_input_invalid，重试耗尽后 run 永久锁死；
-                    # 只有非空证据才视为用户显式提供的替代证据。
-                    if field_name == "evidence_items" and not value:
-                        continue
-                    source_data[field_name] = value
-            # 兜底防线（数据不可丢失原则）：任何路径组装后证据为空、而 A1
-            # 已产出证据时，一律回退使用 A1 证据——用户动作不得清空已采集数据。
-            if not source_data.get("evidence_items") and fetch_result.data.get(
-                "evidence_items"
-            ):
-                source_data["evidence_items"] = fetch_result.data["evidence_items"]
+                    source_data[field_name] = context.input_data[field_name]
 
         # Agent 1 also emits query plans, call traces, source records and chart
         # datasets. Agent 2 consumes only its declared public input contract so

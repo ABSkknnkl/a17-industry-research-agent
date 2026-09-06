@@ -25,6 +25,7 @@ from app.schemas.acquisition import (
     DataGap,
     QuarantinedRecord,
     SkillName,
+    SkillPayload,
     SourceRecord,
 )
 from app.schemas.evidence import (
@@ -92,6 +93,10 @@ _COMPANY_LEVEL_SKILLS = {
     SkillName.BUSINESS,
     SkillName.BASIC_INFO,
     SkillName.STOCK_SELECTOR,
+    # 行情按个股返回行（2026-09-05 挂载），口径为公司级。
+    SkillName.MARKET,
+    # 股东股本按公司返回行（2026-09-05 挂载），口径为公司级。
+    SkillName.MANAGEMENT,
 }
 
 
@@ -173,7 +178,13 @@ def normalize_tasks(
                     as_of_date=research_as_of,
                     raw_sha256=payload.raw_sha256,
                     row_count=len(payload.rows),
-                    license_scope="authorized_provider",
+                    # 公开网络检索不是授权供应商数据源，授权口径只能记 unknown；
+                    # 谎报 authorized_provider 会让审计误以为有数据授权。
+                    license_scope=(
+                        "unknown"
+                        if result.record.acquisition_level == 3
+                        else "authorized_provider"
+                    ),
                     storage_scope="metadata_only",
                 )
             )
@@ -341,6 +352,28 @@ def normalize_tasks(
         # 文档通道降级链（2026-09-04）红线 1/2：降级任务产出的证据强制
         # document 层级 + 定性只读，层级只可降不可升，禁止进入数值计算。
         is_fallback_result = result.task.task_id in fallback_task_ids
+        # 三层级联降级（2026-09-06）红线 1：L3 联网证据恒锁 web_unverified。
+        # 判别依据是 S3 新增的 record.acquisition_level（权威层级标记），
+        # 不靠技能名猜——层级由 executor 写定，normalizer 只忠实转录。
+        is_web_result = result.record.acquisition_level == 3
+        evidence_tier = (
+            "web_unverified"
+            if is_web_result
+            else ("document" if is_fallback_result else "structured")
+        )
+        # 红线 2：降级与联网证据一律只补定性，绝不进 C1 数值计算链。
+        qualitative_only = bool(is_fallback_result or is_web_result)
+        # §3.3 跨口径降级：公司口径需求（BUSINESS/FINANCE）被行业口径技能
+        # （INDUSTRY/SECTOR/INDUSTRY_CHAIN）接住时，必须显式披露口径变化，
+        # 否则就是"用行业数据冒充公司数据"的静默降级事故重演（P0-6）。
+        degraded_from = result.record.degraded_from_skill
+        cross_caliber = bool(
+            is_fallback_result
+            and not is_web_result
+            and degraded_from is not None
+            and _evidence_caliber(degraded_from) == "company_level"
+            and _evidence_caliber(result.task.skill_name) == "industry_level"
+        )
         task_budget = max(1, remaining_budget // remaining_results)
         task_evidence_count = 0
         task_complete = False
@@ -348,6 +381,33 @@ def normalize_tasks(
         for payload in result.payloads:
             rows = clean_payload_rows.get((result.task.task_id, payload.page), [])
             for row_index, row in enumerate(rows):
+                if is_web_result:
+                    # 联网命中的行结构（title/url/site_name/snippet/summary/
+                    # published_at）与问财行（股票简称/营业收入/…）完全不同：
+                    # 走通用字段抽取会为 domain、retrieved_at 之类每个键各产
+                    # 一条垃圾证据。这里一行命中只产一条定性证据。
+                    web_item = _web_evidence_item(
+                        row=row,
+                        payload=payload,
+                        result=result,
+                        row_index=row_index,
+                        industry_topic=industry_topic,
+                        market_scope=market_scope,
+                        security_types=security_types,
+                        reporting_currency=reporting_currency,
+                        research_as_of=research_as_of,
+                    )
+                    if web_item is None:
+                        continue
+                    evidence.append(web_item)
+                    task_metric_names.setdefault(result.task.task_id, set()).add(
+                        web_item.metric_name
+                    )
+                    task_evidence_count += 1
+                    if task_evidence_count >= task_budget:
+                        task_complete = True
+                        break
+                    continue
                 entity = _first_text(row, _ENTITY_FIELDS) or industry_topic
                 period_end = _first_date(row, _PERIOD_FIELDS)
                 available_at = _first_date(row, _AVAILABLE_FIELDS) or research_as_of
@@ -437,11 +497,13 @@ def normalize_tasks(
                             source_locator=locator[:1_000],
                             grade=_grade(payload.skill_name),
                             caliber=_evidence_caliber(payload.skill_name),
-                            # 文档通道降级链（2026-09-04）红线 1/2：降级证据
-                            # 锁 document 层级 + 定性只读；层级不可上调，且下游
-                            # C1 数值计算链拒收该层级证据。
-                            evidence_tier="document" if is_fallback_result else "structured",
-                            qualitative_only=bool(is_fallback_result),
+                            # 层级三态（structured/document/web_unverified）由
+                            # 是否降级 + record.acquisition_level 共同决定，红线 1：
+                            # 只可降不可升；acquisition_level 忠实转录 executor
+                            # 写定的层级，供覆盖率封顶与前端披露使用。
+                            evidence_tier=evidence_tier,
+                            qualitative_only=qualitative_only,
+                            acquisition_level=result.record.acquisition_level,
                             notes=(
                                 f"通过{payload.skill_name.value}获取；"
                                 f"原始字段：{str(field_name)[:200]}；"
@@ -449,6 +511,14 @@ def normalize_tasks(
                                     f"文档通道降级证据（substitute_for={fallback_main_metric(result.task)}），"
                                     "仅作定性参考，数值不参与计算；"
                                     if is_fallback_result
+                                    else ""
+                                )
+                                # §3.3 跨口径降级强制标注：缺了这一句，行业口径
+                                # 数据就会被下游当成公司值使用（P0-6 事故重演）。
+                                + (
+                                    "跨口径降级：本需求为公司口径，实取行业口径数据，"
+                                    "不得当作公司值使用；"
+                                    if cross_caliber
                                     else ""
                                 )
                                 + "原始字段口径以SkillHub返回为准，未返回的审计/追溯信息不作推断。"
@@ -492,6 +562,90 @@ def normalize_tasks(
                 task_id: sorted(names) for task_id, names in task_metric_names.items()
             },
         ),
+    )
+
+
+def _web_evidence_item(
+    *,
+    row: dict[str, Any],
+    payload: SkillPayload,
+    result: ExecutedTask,
+    row_index: int,
+    industry_topic: str,
+    market_scope: list[str],
+    security_types: list[str],
+    reporting_currency: str | None,
+    research_as_of: date,
+) -> EvidenceItem | None:
+    """把一行联网命中转成一条定性证据（S7，2026-09-06 方案 §4.3/§9 红线）。
+
+    返回 ``None`` 表示该命中不可用（缺 url / 缺来源 / 无正文），由调用方跳过。
+    ``WebSearchClient`` 已在清洗阶段过滤这些情况，这里是纵深防御——出处缺失的
+    证据一旦进池就无法人工复核，宁可丢弃。
+    """
+
+    url = str(row.get("url") or "").strip()
+    source_org = str(row.get("source_org") or row.get("site_name") or "").strip()
+    if not url or not source_org:
+        # §4.3：url 与 source_org 缺一不可。
+        return None
+    title = str(row.get("title") or "").strip()
+    snippet = str(row.get("snippet") or "").strip()
+    summary = str(row.get("summary") or "").strip()
+    text = summary or snippet or title
+    if not text:
+        return None
+    main_metric = fallback_main_metric(result.task)
+    published_raw = row.get("published_at")
+    available_at = _parse_date(published_raw) or research_as_of
+    fingerprint = hashlib.sha256(
+        json.dumps(
+            [payload.skill_name.value, payload.raw_sha256, row_index, url, main_metric],
+            ensure_ascii=False,
+            default=str,
+        ).encode("utf-8")
+    ).hexdigest()[:16]
+    return EvidenceItem(
+        evidence_id=f"E-{fingerprint}",
+        metric_name=main_metric[:200],
+        value=text[:5_000],
+        # 定性文本没有计量单位；沿用文档通道的“文本”约定——quality 的
+        # validity 要求 unit 非空，留空会无谓拉低整批证据的可用率。
+        unit="文本",
+        # 联网摘要给不出可靠报告期，宁可为空也不推断（防前视/口径混淆）。
+        period_end=None,
+        fiscal_period=None,
+        available_at=available_at,
+        audit_status=AuditStatus.UNKNOWN,
+        restatement_status=RestatementStatus.UNKNOWN,
+        scope=f"{industry_topic} · 公开网络检索"[:5_000],
+        market=(market_scope[0] if market_scope else "未指定")[:100],
+        exchange="不适用",
+        security_type=(security_types[0] if security_types else "行业汇总")[:100],
+        currency=(reporting_currency or "不适用")[:20],
+        accounting_standard="不适用",
+        corporate_action_adjustment=CorporateActionAdjustment.NOT_APPLICABLE,
+        source_name=f"{source_org}（公开网络检索）"[:500],
+        publisher=source_org[:500],
+        retrieval_method="博查 Web Search（公开网络检索，非同花顺结构化数据）",
+        source_locator=url[:1_000],
+        grade=EvidenceGrade.D,
+        # 定性检索类证据无明确口径级别（见 EvidenceItem.caliber 注释）。
+        caliber=None,
+        # 红线 1/2：层级永久锁死 web_unverified + 只补定性，任何阶段不得上调。
+        evidence_tier="web_unverified",
+        qualitative_only=True,
+        acquisition_level=3,
+        notes=(
+            # “通过web_search获取”是 quality._usable_skills 与
+            # NormalizationSummary.skill_evidence_counts 的归因锚点，不可改写。
+            f"通过{SkillName.WEB_SEARCH.value}获取；"
+            f"〔网〕公开网络检索证据（substitute_for={main_metric}），"
+            "未经权威口径校验，仅作定性参考，数值不参与计算；"
+            f"标题：{title[:200]}；来源：{source_org}；"
+            f"发布：{str(published_raw)[:32] if published_raw else '未提供'}；"
+            "原始口径以检索摘要为准，未返回的审计/追溯信息不作推断。"
+        )[:5_000],
     )
 
 
@@ -895,6 +1049,7 @@ def _provider_contract_unit(skill_name: SkillName, metric_name: str) -> str | No
         SkillName.INDEX,
         SkillName.FUTURES,
         SkillName.STOCK_SELECTOR,
+        SkillName.MARKET,
     } and (
         "率" in metric_name
         or "同比" in metric_name

@@ -65,6 +65,28 @@ class Settings(BaseSettings):
     AGENT1_FALLBACK_CHAIN: bool = False
     AGENT1_FALLBACK_MAX_DEPTH: int = Field(default=2, ge=0, le=2)
     AGENT1_FALLBACK_CALL_BUDGET: int = Field(default=15, ge=0, le=50)
+    # ---- L2 结构化替代（2026-09-06 方案 §3.1/§10）----
+    # 2a：同花顺域内换技能取同一指标（如 BUSINESS 缺出货量 → INDUSTRY）。
+    # 关闭后 L2 只剩 2b 文档通道，等价于 2026-09-04 的行为。
+    AGENT1_L2_STRUCTURED_ALTERNATES: bool = True
+    # 2a ≤2 + 2b ≤2 取前 N；上限 3 与 SkillQueryTask.fallback_skills 同宽。
+    AGENT1_L2_MAX_CANDIDATES: int = Field(default=3, ge=0, le=3)
+    # ---- L3 联网插件层（2026-09-06 方案 §4/§10）----
+    # 默认关闭：关闭即完全不调外部搜索，行为与现状一致（回滚安全）。
+    AGENT1_WEB_FALLBACK_ENABLED: bool = False
+    # 本版仅实现博查；tavily 只留配置位（中文财经弱 + 数据出境合规风险）。
+    AGENT1_WEB_PROVIDER: Literal["bocha", "tavily"] = "bocha"
+    # 留空即禁用 L3——密钥只存 backend/.env（gitignored），日志绝不落盘。
+    AGENT1_BOCHA_API_KEY: SecretStr | None = None
+    AGENT1_WEB_BASE_URL: str = "https://api.bocha.ai"
+    # 单轮 L3 调用预算；单 task 只调 1 次不重试（硬编码，防额度翻倍）。
+    AGENT1_WEB_CALL_BUDGET: int = Field(default=20, ge=0, le=100)
+    # 硬超时 8s：超时即判 L3 失败，不重试（§8.1）。
+    AGENT1_WEB_TIMEOUT_SECONDS: float = Field(default=8, gt=0, le=60)
+    # 逗号分隔域名白名单；留空用内置财经权威源白名单（§4.4）。
+    AGENT1_WEB_DOMAIN_ALLOWLIST: str = ""
+    # 单 task 降级总时间盒：超出即停止后续层级直接兜底（§8.1）。
+    AGENT1_DEGRADATION_TIME_BUDGET: float = Field(default=20, gt=0, le=120)
     FEEDBACK_INTERPRETER_ENABLED: bool = False
     FEEDBACK_CONFIDENCE_ACCEPT: float = Field(default=0.90, ge=0.5, le=1)
     FEEDBACK_CONFIDENCE_REVIEW: float = Field(default=0.75, ge=0.3, le=1)

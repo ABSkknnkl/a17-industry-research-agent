@@ -42,6 +42,10 @@ _QUANTITATIVE_SKILLS = frozenset(
         SkillName.FUTURES,
         SkillName.INDEX,
         SkillName.INDUSTRY,
+        # 行情为量化取数（2026-09-05 挂载）。
+        SkillName.MARKET,
+        # 股东股本为量化取数（2026-09-05 挂载）。
+        SkillName.MANAGEMENT,
     }
 )
 
@@ -60,6 +64,10 @@ _INTENT_TYPE_BY_SKILL: tuple[tuple[SkillName, str], ...] = (
     (SkillName.INSTITUTIONAL_RESEARCH, "research_query"),
     (SkillName.REPORT, "research_query"),
     (SkillName.NEWS, "policy_query"),
+    # 行情（2026-09-05 挂载）：与 semantic_router 一致暂挂 comparison。
+    (SkillName.MARKET, "comparison"),
+    # 股东股本（2026-09-05 挂载）：与 semantic_router 一致用 financial_query。
+    (SkillName.MANAGEMENT, "financial_query"),
 )
 
 _METRIC_TYPE_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -94,6 +102,10 @@ def _metric_type(name: str) -> str:
             SkillName.BUSINESS: "business",
             SkillName.STOCK_SELECTOR: "market_share",
             SkillName.INDUSTRY: "industry",
+            # 行情指标归价格类（2026-09-05 挂载）。
+            SkillName.MARKET: "price",
+            # 股东股本指标归财务类（2026-09-05 挂载）。
+            SkillName.MANAGEMENT: "financial",
         }.get(spec.primary_skill, "unknown")
     compact = "".join(name.split()).casefold()
     for metric_type, keywords in _METRIC_TYPE_KEYWORDS:

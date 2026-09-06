@@ -1,13 +1,19 @@
-"""A2 修订重跑证据保持回归（Bug 修复 2026-09-02）。
+"""A2 修订重跑证据保持回归（Bug 修复 2026-09-02 / 所有权收紧 2026-09-04）。
 
-Bug 卡：A2 阶段点「修改条件重跑」后报 analysis_input_invalid——
+Bug 卡（2026-09-02）：A2 阶段点「修改条件重跑」后报 analysis_input_invalid——
 ResearchInput.evidence_items 带 default_factory=list，model_dump 后恒以 []
 存在于 input_data；service 的修订覆盖循环用 `in` 判断，把空列表当成
 "用户本次编辑"覆盖了 A1 的完整证据包 → 校验失败 → 重试耗尽
 max_stage_attempts → run 永久锁死。
 
-验收句：给定 A1 已产出证据且用户提交修订问题，A2 重跑应基于 A1 证据正常
-执行；用户显式提供的非空证据才允许覆盖。
+所有权收紧（2026-09-04）：Agent 1 是证据唯一所有者（Single Writer），
+A2/A3 均为纯消费者。DataInterpretReviewEdits 删除 evidence_items 字段，
+service 覆盖循环不再触碰证据——此前用户在 A2 审核编辑证据会造成 A2
+分析池与 A3 图表池分叉（A3 永远只认 A1：改值画旧值、新增证据丢图表、
+非空种子覆盖 A1 证据包）。
+
+验收句：A1 已产出证据时，A2 任何修订重跑都基于 A1 证据包执行；
+在 A2 审核提交 evidence_items 会被契约层白名单硬拒绝并点名字段。
 """
 
 from __future__ import annotations
@@ -109,22 +115,26 @@ async def test_agent2_rerun_preserves_agent1_evidence_when_input_default_empty()
 
 
 @pytest.mark.asyncio
-async def test_agent2_rerun_respects_user_provided_evidence() -> None:
-    """用户在修订中显式提供非空证据时，才允许覆盖 A1 证据。"""
+async def test_agent2_rerun_uses_agent1_evidence_even_with_seed_evidence() -> None:
+    """洞③回归：创建 run 时的种子证据（非空）也不得在 A2 修订重跑时
+    覆盖 A1 证据包——A1 是证据唯一所有者，种子证据只服务于 A1 采集；
+    若允许覆盖，A2 分析池与 A3 图表池（永远只认 A1）静默分叉。"""
 
-    user_evidence = {**_EVIDENCE_COMMON, "evidence_id": "E-USER"}
+    seed_evidence = {**_EVIDENCE_COMMON, "evidence_id": "E-SEED"}
     context = StageContext(
         project_id="project-revise-evidence",
         run_id="run-revise-evidence",
         revision=2,
-        input_data=_request_input(evidence_items=[user_evidence]),
+        input_data=_request_input(evidence_items=[seed_evidence]),
         previous_results={StageName.DATA_FETCH: _fetch_result("E-A1")},
     )
 
     result = await DataInterpreterAgent(model=MockAnalysisModel()).run(context)
 
     assert result.status == StageStatus.COMPLETED
-    assert result.evidence_sources == ["E-USER"]
+    assert result.evidence_sources == ["E-A1"], (
+        "A2 必须使用 A1 证据包：input_data 中的种子证据不得在修订重跑时覆盖"
+    )
 
 
 @pytest.mark.asyncio

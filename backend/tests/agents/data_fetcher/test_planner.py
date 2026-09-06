@@ -30,6 +30,10 @@ def test_standard_plan_covers_all_p0_and_p1_skills() -> None:
         "hithink_futures_query",
         "hithink_stock_selector",
         "hithink_basicinfo_query",
+        # 行情为条件触发 P1（2026-09-05 挂载），标准计划无行情关键词不触发。
+        "hithink_market_query",
+        # 股东股本为条件触发 P1（2026-09-05 挂载），标准计划不触发。
+        "hithink_management_query",
     }
     assert {skill.value for skill in skills} == {
         skill.value for skill in P0_SKILLS | P1_SKILLS

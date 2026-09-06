@@ -324,6 +324,86 @@ _SPECS: tuple[MetricSpec, ...] = (
         ("渗透率",),
         unsupported=True,
     ),
+    # 行情指标族（2026-09-05 挂载）：primary_skill 均 MARKET。实时行情/
+    # 资金流向/技术指标属价格类，与 INDEX 的估值分位域错开。
+    MetricSpec(
+        "latest_price",
+        "最新价",
+        ("最新价", "现价", "股价", "收盘价"),
+        SkillName.MARKET,
+        ("最新价",),
+    ),
+    MetricSpec(
+        "turnover_rate",
+        "换手率",
+        ("换手率",),
+        SkillName.MARKET,
+        ("换手率",),
+    ),
+    MetricSpec(
+        "trading_volume_value",
+        "成交额",
+        ("成交额", "成交量"),
+        SkillName.MARKET,
+        ("成交额",),
+    ),
+    MetricSpec(
+        "main_capital_flow",
+        "主力资金流向",
+        ("主力资金流向", "主力净流入"),
+        SkillName.MARKET,
+        ("主力净流入",),
+    ),
+    # 股东股本指标族（2026-09-05 挂载）：primary_skill 均 MANAGEMENT。
+    # 公司级数据，requires_company_entity=True 防行业问句静默取公司口径。
+    MetricSpec(
+        "total_share_capital",
+        "总股本",
+        ("总股本", "股本结构", "限售股本"),
+        SkillName.MANAGEMENT,
+        ("总股本",),
+        requires_company_entity=True,
+    ),
+    MetricSpec(
+        "tradable_share_capital",
+        "流通股本",
+        ("流通股本", "流通股"),
+        SkillName.MANAGEMENT,
+        ("流通股本",),
+        requires_company_entity=True,
+    ),
+    MetricSpec(
+        "shareholder_count",
+        "股东户数",
+        ("股东户数", "股东人数"),
+        SkillName.MANAGEMENT,
+        ("股东户数",),
+        requires_company_entity=True,
+    ),
+    MetricSpec(
+        "top10_shareholders",
+        "前十大股东",
+        ("前十大股东", "十大股东", "十大流通股东", "股东名称", "持股比例", "持股数量"),
+        SkillName.MANAGEMENT,
+        ("名称", "持股比例", "持股数量", "持股市值"),
+        requires_company_entity=True,
+    ),
+    MetricSpec(
+        "controlled_shareholder",
+        "实际控制人",
+        ("实际控制人", "实控人", "控股股东"),
+        SkillName.MANAGEMENT,
+        ("控股股东", "实际控制人"),
+        requires_company_entity=True,
+    ),
+    MetricSpec(
+        "share_pledge",
+        "股权质押",
+        ("股权质押", "质押比例", "质押股数"),
+        SkillName.MANAGEMENT,
+        ("质押比例",),
+        requires_company_entity=True,
+    ),
 )
 
 

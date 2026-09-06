@@ -176,3 +176,86 @@ def fields_relevant(
     except Exception:
         return True
     return reason is None
+
+
+# ---------------------------------------------------------------------------
+# S5（2026-09-06 方案 §2.2）：可用性预检——识别“空壳数据”
+#
+# 与 _field_relevance_check 互补，两者都过才算 L1 有效：
+#   _field_relevance_check → 列名不对（返回的全是行情列，P0-6 静默降级）
+#   _rows_usable_precheck  → 列名对得上但值全空（行存在、目标列全 None）
+# 后者是 2026-09-06 新增的失败形态：问财对某些公司/指标返回一行占位记录，
+# 行数>0、字段名也相关，但业务列全空——旧判定会当成成功，导致下游拿空值算数。
+# ---------------------------------------------------------------------------
+
+
+def _normalize_field_name(field_name: Any) -> str:
+    """剥离 ``[日期]`` / ``(%)`` / ``（单位）`` / 空白等修饰后缀，便于与请求指标对齐。"""
+
+    return re.sub(r"\[.*?\]|\(.*?\)|（.*?）|\s+", "", str(field_name))
+
+
+def _is_non_empty_value(value: Any) -> bool:
+    """业务值是否为空。注意 0 / 0.0 / False 都是合法观测值，绝不能当空。"""
+
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, dict, tuple, set)):
+        return bool(value)
+    return True
+
+
+def _rows_usable_precheck(payloads: Any, task: Any) -> bool:
+    """至少一行在请求的业务字段上有非空值，否则判为空壳数据（不可用）。
+
+    判定收敛在“确实匹配到目标列”这一前提上：一个目标列都没匹配到时返回
+    True 放行——列名对不上不属于空壳（可能是问财换了列名），交下游清洗与
+    隔离流程判定，避免仅因命名差异就误触发降级、白烧 L2/L3 配额。
+    fail-open：任何异常一律放行，与本模块既有哲学一致。
+    """
+
+    try:
+        rows = [
+            row
+            for payload in payloads
+            for row in (getattr(payload, "rows", None) or [])
+            if isinstance(row, dict)
+        ]
+        if not rows:
+            return False
+        expected = getattr(task, "expected_fields", None) or []
+        targets = {
+            _normalize_field_name(field)
+            for field in expected
+            if str(field).strip() and str(field).strip() not in _METADATA_FIELDS
+        }
+        if not targets:
+            # 没有明确目标字段时退化为“至少一行有任意非元数据业务值”。
+            return any(
+                _is_non_empty_value(value)
+                for row in rows
+                for key, value in row.items()
+                if _normalize_field_name(key) not in _METADATA_FIELDS
+            )
+        matched_target_column = False
+        for row in rows:
+            for key, value in row.items():
+                normalized = _normalize_field_name(key)
+                if normalized in _METADATA_FIELDS:
+                    continue
+                # 问财列名常带口径后缀，先精确后包含匹配（与别名归一同口径）。
+                hit = normalized in targets or any(
+                    target in normalized or normalized in target for target in targets
+                )
+                if not hit:
+                    continue
+                matched_target_column = True
+                if _is_non_empty_value(value):
+                    return True
+        if not matched_target_column:
+            return True
+        return False
+    except Exception:
+        return True

@@ -38,11 +38,14 @@ def test_review_actions_match_runtime_model() -> None:
 
     assert schema["properties"]["action"]["enum"] == [item.value for item in ReviewAction]
     assert schema["properties"]["comment"]["maxLength"] == 2_000
+    assert schema["x-stage-edit-whitelist"]["data_fetch"] == [
+        "focus_questions",
+        "data_fetch_options",
+    ]
     assert schema["x-stage-edit-whitelist"]["data_interpret"] == [
         "focus_questions",
         "analysis_depth",
         "risk_preference",
-        "evidence_items",
         "rejected_claim_ids",
         "research_brief",
     ]

@@ -233,6 +233,11 @@ _INTENT_BY_SKILL: dict[str, str] = {
     SkillName.REPORT.value: "research_query",
     SkillName.INSTITUTIONAL_RESEARCH.value: "research_query",
     SkillName.BASIC_INFO.value: "basic_info_query",
+    # 行情查询（2026-09-05 挂载）：intent 枚举暂无 market_query，按方案
+    # 暂挂 comparison（扩枚举会连带 intent_models 校验改动，留作后续）。
+    SkillName.MARKET.value: "comparison",
+    # 公司股东股本查询（2026-09-05 挂载）：财务结构域，复用既有 financial_query。
+    SkillName.MANAGEMENT.value: "financial_query",
 }
 
 _METRIC_TYPE_BY_SKILL: dict[str, str] = {
@@ -249,6 +254,10 @@ _METRIC_TYPE_BY_SKILL: dict[str, str] = {
     SkillName.ANNOUNCEMENT.value: "qualitative",
     SkillName.REPORT.value: "qualitative",
     SkillName.INSTITUTIONAL_RESEARCH.value: "qualitative",
+    # 行情属价格类（2026-09-05 挂载），与 capability metric_types 一致。
+    SkillName.MARKET.value: "price",
+    # 股东股本属财务类（2026-09-05 挂载），与 capability metric_types 首项一致。
+    SkillName.MANAGEMENT.value: "financial",
 }
 
 

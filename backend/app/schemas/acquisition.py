@@ -28,6 +28,16 @@ class SkillName(StrEnum):
     FUTURES = "hithink_futures_query"
     STOCK_SELECTOR = "hithink_stock_selector"
     BASIC_INFO = "hithink_basicinfo_query"
+    # 行情数据查询（2026-09-05 挂载）：个股/ETF 实时行情、资金流向、
+    # 技术指标。条件触发的 P1 技能，不计入核心数据完整性判定。
+    MARKET = "hithink_market_query"
+    # 公司股东股本查询（2026-09-05 挂载，slug hithink-management-query）：
+    # 股本结构/股东户数/前十大股东/实控人/股权质押/高管。条件触发 P1。
+    MANAGEMENT = "hithink_management_query"
+    # L3 联网插件层（2026-09-06 方案 §4.2）：由 WebSearchClient 承接，离开
+    # 同花顺域。硬约束——不得进 CONDITIONAL_P1_SKILLS，planner 也绝不能为它
+    # 生成主任务；只允许 executor 在 L1/L2 全败（或鉴权熔断）后兜底调用一次。
+    WEB_SEARCH = "web_search"
 
 
 P0_SKILLS = frozenset(
@@ -40,13 +50,21 @@ P0_SKILLS = frozenset(
         SkillName.NEWS,
     }
 )
-P1_SKILLS = frozenset(set(SkillName) - P0_SKILLS)
+# L3 联网插件（2026-09-06 方案 §4）不是可规划技能：不属于 P0/P1 任何规划
+# 层级，planner 绝不为它生成任务，只由 executor 在 L1/L2 全败（或鉴权熔断）
+# 后兜底调用一次。若让它落进 P1_SKILLS（= set(SkillName) - P0_SKILLS 的自然
+# 结果），既有不变式“标准计划覆盖全部 P0 + 非条件 P1”就会要求每轮都规划一次
+# 联网搜索——白烧配额，且直接违反 §4.5 的 L3 触发白名单。
+FALLBACK_ONLY_SKILLS = frozenset({SkillName.WEB_SEARCH})
+P1_SKILLS = frozenset(set(SkillName) - P0_SKILLS - FALLBACK_ONLY_SKILLS)
 CONDITIONAL_P1_SKILLS = frozenset(
     {
         SkillName.INDEX,
         SkillName.FUTURES,
         SkillName.STOCK_SELECTOR,
         SkillName.BASIC_INFO,
+        SkillName.MARKET,
+        SkillName.MANAGEMENT,
     }
 )
 CORE_DATA_SKILLS = frozenset(
@@ -86,9 +104,11 @@ class SkillQueryTask(AcquisitionModel):
     priority: int = Field(default=50, ge=0, le=100)
     depends_on: list[str] = Field(default_factory=list, max_length=10)
     fallback_queries: list[str] = Field(default_factory=list, max_length=2)
-    # 文档通道降级链（2026-09-04）：仅当本技能全部 query 变体均无有效数据时，
-    # 才按序尝试这些技能。与主 query 是严格串行降级关系，不是并行；空列表=不降级。
-    fallback_skills: list[SkillName] = Field(default_factory=list, max_length=2)
+    # L2 降级候选链（2026-09-04 文档通道 → 2026-09-06 扩为结构化替代优先）：
+    # 仅当本技能全部 query 变体均无有效数据时，才按序尝试这些技能。与主 query
+    # 是严格串行降级关系，不是并行；空列表=不降级。候选由 planner._l2_candidates()
+    # 推导（2a 结构化替代排前、2b 文档通道兜后），条数上限 AGENT1_L2_MAX_CANDIDATES。
+    fallback_skills: list[SkillName] = Field(default_factory=list, max_length=3)
     max_pages: int = Field(default=1, ge=1, le=5)
     requirement_ids: list[str] = Field(default_factory=list, max_length=12)
     target_entities: list[str] = Field(default_factory=list, max_length=20)
@@ -131,6 +151,11 @@ class RequirementCoverage(AcquisitionModel):
     note: str = Field(min_length=1, max_length=500)
     origin: Literal["focus_question", "user_metric", "planner_inferred"] = "focus_question"
     criticality: Literal["blocking", "acknowledgement_required", "advisory"] = "blocking"
+    # 三层级联降级留痕（2026-09-06 方案 §6.1）：level=None 表示三级全败
+    # （status 必为 missing）；degradation_path 是按序尝试过的通道 slug，
+    # 供前端披露与人工复核，绝不参与完整性判定（红线 3）。
+    acquisition_level: Literal[1, 2, 3] | None = None
+    degradation_path: list[str] = Field(default_factory=list, max_length=4)
 
 
 class ResolvedEntityGroup(AcquisitionModel):
@@ -186,6 +211,12 @@ class SkillCallRecord(AcquisitionModel):
     # task_id，fallback_depth 记录降级层级（0=主调用，1/2=降级层级）。
     fallback_from: str | None = Field(default=None, max_length=64)
     fallback_depth: int = Field(default=0, ge=0, le=2)
+    # 三层级联降级留痕（2026-09-06 方案 §6.1/§8.6）：acquisition_level 是本次
+    # 调用所属通道层级；degraded_from_skill 是降级前的主技能（跨口径判定与
+    # L2 挽救率遥测都靠它归因）；web_provider 仅 L3 调用非空。
+    acquisition_level: Literal[1, 2, 3] = 1
+    degraded_from_skill: SkillName | None = None
+    web_provider: Literal["bocha", "tavily"] | None = None
 
 
 class SourceRecord(AcquisitionModel):

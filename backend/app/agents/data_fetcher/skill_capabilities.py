@@ -102,6 +102,22 @@ SKILL_CAPABILITIES: dict[SkillName, SkillCapability] = {
         metric_types=("qualitative",),
         requires_entity=True,
     ),
+    # 行情数据查询（2026-09-05 挂载）：个股/指数实时行情、资金流向、
+    # 技术指标，均属价格类时间序列。与 INDEX 的窄重叠（沪深300最新行情）
+    # 由 planner 路由错开：INDEX 优先匹配估值分位词，MARKET 兜底行情词。
+    SkillName.MARKET: SkillCapability(
+        entity_types=("company", "index"),
+        metric_types=("price",),
+        supports_time_series=True,
+    ),
+    # 公司股东股本查询（2026-09-05 挂载）：按公司返回股本结构/股东户数/
+    # 前十大股东/实控人/股权质押/高管，财务+定性混合，需具体公司实体。
+    SkillName.MANAGEMENT: SkillCapability(
+        entity_types=("company",),
+        metric_types=("financial", "qualitative"),
+        requires_entity=True,
+        supports_time_series=True,
+    ),
 }
 
 

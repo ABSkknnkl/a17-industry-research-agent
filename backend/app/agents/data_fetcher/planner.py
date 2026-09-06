@@ -7,6 +7,7 @@ from typing import Any, Literal, NamedTuple
 
 from app.agents.data_fetcher.metric_registry import get_metric_spec, metric_expected_fields
 from app.agents.data_fetcher.intent_models import ResearchIntentPlan
+from app.core.config import settings
 from app.integrations.skillhub.catalog import get_skill_spec
 from app.schemas.acquisition import (
     CONDITIONAL_P1_SKILLS,
@@ -564,9 +565,10 @@ class QueryPlanner:
                         industry_topic,
                         compact_query,
                     ),
-                    # 文档通道降级链（2026-09-04）：仅结构化覆盖薄弱的技能配置
-                    # 降级；空列表=不降级（见 _fallback_skills 映射表）。
-                    fallback_skills=_fallback_skills(skill),
+                    # L2 降级候选（2026-09-06 方案 §3.1）：2a 结构化替代优先、
+                    # 2b 文档通道兜底；空列表=不降级。候选最多 3 个，但 executor
+                    # 按 AGENT1_FALLBACK_MAX_DEPTH（≤2）只试前两个，第三个备用。
+                    fallback_skills=_l2_candidates(skill),
                     max_pages=(
                         self._max_pages if skill in {SkillName.FINANCE, SkillName.INDUSTRY} else 1
                     ),
@@ -1225,6 +1227,54 @@ def _conditional_market_skill(value: str) -> SkillName | None:
         )
     ):
         return SkillName.INDEX
+    # 行情数据查询（2026-09-05 挂载）：实时行情/资金流向/技术指标。
+    # 置于 INDEX 之后——估值分位词更具体，优先走 INDEX；置于 FUTURES
+    # 之后——"期货行情"仍先命中 FUTURES。compact 已 casefold，拉丁词用小写。
+    if any(
+        token in compact
+        for token in (
+            "最新价",
+            "股价",
+            "涨跌幅",
+            "成交额",
+            "换手率",
+            "量比",
+            "资金流向",
+            "主力净流入",
+            "macd",
+            "kdj",
+            "rsi",
+            "布林",
+        )
+    ):
+        return SkillName.MARKET
+    # 公司股东股本查询（2026-09-05 挂载）：股本/股东/实控人/质押/高管。
+    if any(
+        token in compact
+        for token in (
+            "股本结构",
+            "总股本",
+            "流通股本",
+            "限售股本",
+            "股东户数",
+            "股东人数",
+            "前十大股东",
+            "十大股东",
+            "十大流通股东",
+            "股东名称",
+            "持股比例",
+            "持股数量",
+            "实控人",
+            "实际控制人",
+            "控股股东",
+            "股权质押",
+            "质押",
+            "高管",
+            "董事会",
+            "监事会",
+        )
+    ):
+        return SkillName.MANAGEMENT
     return None
 
 
@@ -1261,6 +1311,14 @@ def _market_skill_query(
     if skill == SkillName.FUTURES:
         compact = " ".join(request_text.split())
         return compact if "期货" in compact else f"{compact} 期货"
+    if skill == SkillName.MARKET:
+        # 行情查询：主体优先具体个股，无则回退行业概念股；拼接请求字段。
+        subject = " ".join(target_entities) if target_entities else f"{industry_topic}概念股"
+        return f"{subject} {requested_fields}"
+    if skill == SkillName.MANAGEMENT:
+        # 股东股本查询：主体优先具体公司（需公司实体），无则回退行业主题。
+        subject = " ".join(target_entities) if target_entities else industry_topic
+        return f"{subject} {requested_fields}"
     return default_query
 
 
@@ -1357,6 +1415,28 @@ def _requirement_task_profile(
             ["股票代码", "股票简称", "中文名称", "上市地点", "上市日期", "所属同花顺行业"],
             92,
         ),
+        SkillName.MARKET: (
+            "industry",
+            ["股票简称", "最新价", "涨跌幅", "成交额", "换手率", "数据日期"],
+            94,
+        ),
+        SkillName.MANAGEMENT: (
+            "finance",
+            [
+                "股票代码",
+                "股票简称",
+                "名称",
+                "持股比例",
+                "持股数量",
+                "持股市值",
+                "排名",
+                "总股本",
+                "流通股本",
+                "股东户数",
+                "公告日期",
+            ],
+            93,
+        ),
     }
     return profiles.get(skill, ("research", ["标题", "发布日期", "链接"], 80))
 
@@ -1381,6 +1461,11 @@ def _fallback_skills(skill: SkillName) -> list[SkillName]:
     只对“问财结构化覆盖薄弱”的域开降级；降级链长度 ≤2；定性技能自身
     （研报/公告/新闻/事件/机构研究）与问财域内完整的技能（指数/期货/
     宏观/板块）均不降级——前者防环路，后者无文档增量。
+
+    2026-09-06 起本函数退居 2b 兜底：权威映射已移到 ``_L2_DOCUMENT_CHANNELS``
+    （方案的 §3.1 表给宏观/指数/期货/板块也配了文档通道，与上面"均不降级"
+    的旧结论不同）。保留本函数是为了向后兼容，``_l2_document_channels`` 会
+    把两边合并去重，确保旧映射项一个都不丢。
     """
     mapping: dict[SkillName, list[SkillName]] = {
         # 出货量/产能/扩产：问财静默回退行情的高发区，研报与扩产公告可补定性。
@@ -1397,6 +1482,93 @@ def _fallback_skills(skill: SkillName) -> list[SkillName]:
         SkillName.BASIC_INFO: [SkillName.ANNOUNCEMENT, SkillName.REPORT],
     }
     return list(mapping.get(skill, ()))
+
+
+# ---------------------------------------------------------------------------
+# S4（2026-09-06 方案 §3.1）：L2 候选 = 2a 结构化替代优先 → 2b 文档通道兜底
+#
+# 为什么查表而不是机械推导：方案写的推导规则是「metric_types 有交集 AND
+# entity_types 有交集」，但它推不出方案自己的表——BUSINESS(business) 与
+# INDUSTRY(industry)、STOCK_SELECTOR(market_share,financial) 与 INDUSTRY 的
+# metric_types 交集都是空。而这两条恰恰是 P0-6 认定的正确降级路径（INDUSTRY
+# 的 entity_types 特意纳入 company，就是为了承接公司级产业运营指标需求）。
+# 因此以 §3.1 的表为权威，能力边界只作为当初制表的依据。
+# ---------------------------------------------------------------------------
+
+# 2a 结构化替代（每个主技能 ≤2，给 2b 留出候选位）。
+_L2_STRUCTURED_ALTERNATES: dict[SkillName, tuple[SkillName, ...]] = {
+    # ⚠️ 跨口径：公司级产业运营指标（出货量/产能/产量）降到行业口径。命中后
+    # 必须打 caliber="industry_level" + notes 说明，且覆盖率封顶 partial（§3.3）。
+    SkillName.BUSINESS: (SkillName.INDUSTRY,),
+    SkillName.FINANCE: (SkillName.STOCK_SELECTOR, SkillName.INSTITUTIONAL_RESEARCH),
+    SkillName.STOCK_SELECTOR: (SkillName.INDUSTRY, SkillName.FINANCE),
+    SkillName.INDUSTRY: (SkillName.SECTOR, SkillName.INDUSTRY_CHAIN),
+    SkillName.INDUSTRY_CHAIN: (SkillName.INDUSTRY, SkillName.SECTOR),
+    SkillName.SECTOR: (SkillName.INDUSTRY, SkillName.INDUSTRY_CHAIN),
+    SkillName.INDEX: (SkillName.SECTOR,),
+    SkillName.INSTITUTIONAL_RESEARCH: (SkillName.FINANCE,),
+    # 2026-09-05 新挂载技能：股东股本与财务同源，行情与指数同源。
+    SkillName.MANAGEMENT: (SkillName.FINANCE,),
+    SkillName.MARKET: (SkillName.INDEX,),
+    # MACRO / FUTURES / EVENT / BASIC_INFO 域内无结构化替代，只走 2b。
+}
+
+# 2b 文档通道（§3.1 表，是 2026-09-04 _fallback_skills 映射的超集）。
+_L2_DOCUMENT_CHANNELS: dict[SkillName, tuple[SkillName, ...]] = {
+    SkillName.BUSINESS: (SkillName.REPORT, SkillName.ANNOUNCEMENT),
+    SkillName.FINANCE: (SkillName.REPORT, SkillName.ANNOUNCEMENT),
+    SkillName.STOCK_SELECTOR: (SkillName.REPORT,),
+    SkillName.INDUSTRY: (SkillName.REPORT, SkillName.NEWS),
+    SkillName.INDUSTRY_CHAIN: (SkillName.REPORT,),
+    SkillName.SECTOR: (SkillName.REPORT, SkillName.NEWS),
+    SkillName.INDEX: (SkillName.NEWS,),
+    SkillName.INSTITUTIONAL_RESEARCH: (SkillName.REPORT,),
+    SkillName.EVENT: (SkillName.NEWS, SkillName.ANNOUNCEMENT),
+    SkillName.BASIC_INFO: (SkillName.ANNOUNCEMENT, SkillName.REPORT),
+    SkillName.MACRO: (SkillName.NEWS,),
+    SkillName.FUTURES: (SkillName.NEWS,),
+    SkillName.MANAGEMENT: (SkillName.ANNOUNCEMENT, SkillName.REPORT),
+    SkillName.MARKET: (SkillName.NEWS,),
+    # 文档通道互降级一次即止。不会成环：降级任务自身 fallback_skills 恒空
+    # （executor._run_fallback 强制），天然禁递归。
+    SkillName.REPORT: (SkillName.NEWS,),
+    SkillName.NEWS: (SkillName.REPORT,),
+    SkillName.ANNOUNCEMENT: (SkillName.REPORT,),
+}
+
+
+def _l2_document_channels(skill: SkillName) -> list[SkillName]:
+    """2b 文档通道：以 §3.1 表为准，并并入 9-04 映射，保证向后兼容不丢项。"""
+
+    table = _L2_DOCUMENT_CHANNELS.get(skill, ())
+    return list(dict.fromkeys([*table, *_fallback_skills(skill)]))
+
+
+def _l2_candidates(
+    skill: SkillName,
+    *,
+    max_candidates: int | None = None,
+) -> list[SkillName]:
+    """L2 降级候选：2a 结构化替代优先 → 2b 文档通道兜底（方案 §3.1）。
+
+    硬约束：不含自身、去重、长度 ≤ ``AGENT1_L2_MAX_CANDIDATES``（默认 3）。
+    ``WEB_SEARCH`` 永远不是 L2 候选——L3 由 executor 在 L2 全败后单独触发，
+    混进 fallback_skills 会被当成同花顺域内技能走问财网关。
+    """
+
+    cap = settings.AGENT1_L2_MAX_CANDIDATES if max_candidates is None else max_candidates
+    structured = (
+        _L2_STRUCTURED_ALTERNATES.get(skill, ())
+        if settings.AGENT1_L2_STRUCTURED_ALTERNATES
+        else ()
+    )
+    candidates: list[SkillName] = []
+    for candidate in (*structured, *_l2_document_channels(skill)):
+        if candidate == skill or candidate == SkillName.WEB_SEARCH:
+            continue
+        if candidate not in candidates:
+            candidates.append(candidate)
+    return candidates[:cap]
 
 
 def _fallback_queries(

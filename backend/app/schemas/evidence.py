@@ -72,6 +72,10 @@ class EvidenceItem(BaseModel):
     # 证据强制 qualitative_only=True，禁止进入 C1 数值计算链。
     evidence_tier: Literal["structured", "document", "web_unverified"] = "structured"
     qualitative_only: bool = False
+    # 三层级联降级（2026-09-06 方案 §6.1）：取到第几级通道，与 evidence_tier
+    # 正交——L2 命中结构化替代时 tier 仍是 structured 但 level=2；L3 联网命中
+    # 恒为 tier=web_unverified + level=3。下游据此判定覆盖率封顶与前端提示。
+    acquisition_level: Literal[1, 2, 3] = 1
     notes: str | None = Field(default=None, max_length=5_000)
 
 
