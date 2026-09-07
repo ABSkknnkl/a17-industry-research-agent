@@ -277,6 +277,10 @@ class QuarantinedRecord(AcquisitionModel):
         # BUG-3（2026-09-02）：宏观技能的指标与研究主题/任务意图无关联，
         # 隔离以免 PMI/CPI 等无关宏观序列整批进入证据库。
         "macro_off_topic",
+        # 2026-09-06 L3 根因修复：意图任务的具体指标锚点与返回数据（列名+
+        # 实体值）零交集（如碳酸锂价格 → CPI 宏观占位），整批隔离并
+        # 写 data_gap 披露，交由 L2/L3 降级通道补数。
+        "field_mismatch",
     ] = "topic_mismatch"
     reason: str = Field(min_length=1, max_length=1_000)
 

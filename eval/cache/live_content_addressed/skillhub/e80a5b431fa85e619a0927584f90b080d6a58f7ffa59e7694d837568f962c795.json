@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "e80a5b431fa85e619a0927584f90b080d6a58f7ffa59e7694d837568f962c795",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "钠离子电池2026年量产进展",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":780,\"query\":\"钠离子电池2026年量产进展\",\"model_sql\":\"[{\\\"chunk\\\":\\\"钠离子电池2026年量产进展\\\",\\\"condition\\\":\\\"[{\\\\\\\"indexName\\\\\\\":\\\\\\\"钠离子电池:产量:当月值\\\\\\\",\\\\\\\"indexPropertiesMap\\\\\\\":{\\\\\\\"时间\\\\\\\":\\\\\\\"2026年\\\\\\\"},\\\\\\\"sonSize\\\\\\\":0,\\\\\\\"uiText\\\\\\\":\\\\\\\"2026年的钠离子电池:产量:当月值\\\\\\\"}]\\\",\\\"domain\\\":\\\"macro\\\"}]\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"iwc\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_宏观领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"2026年的钠离子电池:产量:当月值\\\",\\\"chunkedResult\\\":\\\"钠离子电池2026年量产进展\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"宏观@值\\\",\\\"indexPropertiesMap\\\":{\\\"指标id\\\":\\\"M005383657\\\",\\\"指标名称\\\":\\\"锂离子电池:产量:当月值\\\",\\\"指标单位\\\":\\\"万只\\\",\\\"frequency\\\":\\\"月\\\",\\\"起始交易日期\\\":\\\"20260101\\\",\\\"截止交易日期\\\":\\\"20260906\\\"},\\\"valueType\\\":\\\"\\\",\\\"dateType\\\":\\\"+区间\\\",\\\"dateText\\\":\\\"2026年\\\",\\\"dateUnit\\\":\\\"年\\\",\\\"indexProperties\\\":[\\\"指标id M005383657\\\",\\\"指标名称 锂离子电池:产量:当月值\\\",\\\"指标单位 万只\\\",\\\"frequency 月\\\",\\\"起始交易日期 20260101\\\",\\\"截止交易日期 20260906\\\"]}]\",\"columns\":[{\"unit\":\"\",\"domain\":\"abs_宏观领域\",\"indexId\":\"\",\"source\":\"iwc\",\"feKey\":\"值[20260101-20260906]\",\"type\":\"DOUBLE\",\"index_name\":\"宏观@值\",\"key\":\"宏观@值[20260101-20260906]\",\"timestamp\":\"20260101-20260906\"}],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"macro\",\"intent\":\"iwencai\",\"status_code\":0.0,\"status_msg\":\"ok\",\"token\":\"0ac9e4f117886671819804611\",\"chunks_info\":\"[\\\"2026年的钠离子电池:产量:当月值 (0)\\\"]\"}",
+  "raw_sha256": "3ef57b523468f27d5861b84d46bb3727c4cec604f0fa25440c6e476d2cdcab4c",
+  "recorded_at": "2026-09-06T03:59:41.981295+00:00"
+}

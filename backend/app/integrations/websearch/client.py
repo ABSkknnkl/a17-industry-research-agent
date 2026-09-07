@@ -207,7 +207,7 @@ class WebSearchClient:
         self,
         *,
         api_key: str | None,
-        base_url: str = "https://api.bocha.ai",
+        base_url: str = "https://api.bochaai.com",
         timeout_seconds: float = 8,
         domain_allowlist: tuple[str, ...] | None = None,
         transport: httpx.AsyncBaseTransport | None = None,

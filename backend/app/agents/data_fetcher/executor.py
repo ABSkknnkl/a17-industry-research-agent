@@ -22,8 +22,10 @@ from time import monotonic
 from typing import Any, Callable
 
 from app.agents.data_fetcher.field_relevance import (
+    GENERIC_PROFILE_FIELDS,
     _field_relevance_check,
     _rows_usable_precheck,
+    _semantic_metric_tokens,
 )
 from app.runtime.tool_gateway import ToolCall, ToolGateway
 from app.schemas.acquisition import (
@@ -40,8 +42,13 @@ DOCUMENT_CHANNEL_SKILLS = frozenset(
     {SkillName.REPORT, SkillName.ANNOUNCEMENT, SkillName.NEWS}
 )
 
-# 构造降级 query 时需剔除的元数据字段（非指标语义）。
-_FALLBACK_QUERY_META_FIELDS = frozenset({"标题", "发布日期", "链接", "机构", "发布主体"})
+# 构造降级 query 时需剔除的元数据/泛型字段（非指标语义）。2026-09-06
+# 并入 GENERIC_PROFILE_FIELDS：意图任务的 expected_fields 前段是技能
+# profile 泛型列（指标名称/指标值/单位…），不剔除会把“指标名称 指标值”
+# 当检索词发给博查，显著拉低 L3 召回质量。
+_FALLBACK_QUERY_META_FIELDS = frozenset(
+    {"标题", "发布日期", "链接", "机构", "发布主体"}
+) | GENERIC_PROFILE_FIELDS
 
 # S9 全局熔断（§8.3）：同一 Key 必然同样失败，不做熔断则每个失败任务都要
 # 白跑 2-3 次无效降级。命中即跳过全部 L2 同花顺候选，直达 L3/兜底。
@@ -65,20 +72,33 @@ class ExecutedTask:
     gap: DataGap | None = None
 
 
-def _fields_relevant(payloads: list[SkillPayload], task: SkillQueryTask) -> bool:
-    """字段相关性判定（fail-open：任何异常一律放行，交由下游清洗隔离）。"""
+def _fields_relevance_reason(
+    payloads: list[SkillPayload], task: SkillQueryTask
+) -> str | None:
+    """字段相关性失败原因（None = 相关或无行）。
+
+    fail-open：任何异常一律放行，交由下游清洗隔离。2026-09-06 起把
+    task_origin 传入判定——意图任务启用语义相关性校验（碳酸锂价格 →
+    CPI 宏观占位数据的静默回退靠它识别），基线任务维持原语义。
+    """
     rows = [row for payload in payloads for row in payload.rows]
     if not rows:
-        return False
+        return None
     try:
         _, reason = _field_relevance_check(
             rows=rows,
             requested_metrics=task.expected_fields,
             skill=task.skill_name,
+            task_origin=getattr(task, "task_origin", None),
         )
     except Exception:
-        return True
-    return reason is None
+        return None
+    return reason
+
+
+def _fields_relevant(payloads: list[SkillPayload], task: SkillQueryTask) -> bool:
+    """字段相关性判定（fail-open：任何异常一律放行，交由下游清洗隔离）。"""
+    return _fields_relevance_reason(payloads, task) is None
 
 
 def fallback_query_for(main_task: SkillQueryTask, fallback_skill: SkillName) -> str:
@@ -190,6 +210,7 @@ class RetrievalExecutor:
                 and not guard_blocked
             )
             l2_attempts = 0
+            l2_rescued_doc_only = False
             started = monotonic()
             if can_degrade:
                 # ---- L2：同花顺域内降级（鉴权熔断时整体跳过，直达 L3）----
@@ -215,10 +236,19 @@ class RetrievalExecutor:
                             # 降级命中：以 L2 结果替换主任务结果，原缺口视为被挽救。
                             replaced = fallback_executed
                             rescued_task_ids.add(main.task.task_id)
+                            # 2026-09-06 L3 根因修复：文档通道（定性）对「指标
+                            # 型诉求」只是部分覆盖（D2：doc 命中封顶 partial）——
+                            # 碳酸锂价格被 NEWS 定性新闻接住后数值维度仍缺口。
+                            # 此时不停在 L2，继续尝试 L3 补数值：L3 命中则替换
+                            # （数值可授权参与计算+带来源），失败则保留文档挽救。
+                            if fallback_skill in DOCUMENT_CHANNEL_SKILLS and _semantic_metric_tokens(
+                                main.task.expected_fields
+                            ):
+                                l2_rescued_doc_only = True
                             break
                 # ---- L3：联网插件（L2 全败、或被鉴权熔断跳过时）----
                 if (
-                    replaced is main
+                    (replaced is main or l2_rescued_doc_only)
                     and self._web_fallback_enabled
                     and not self._web_provider_failed
                     and self._web_calls_used < self._web_call_budget
@@ -432,7 +462,10 @@ class RetrievalExecutor:
         rows = sum(len(payload.rows) for payload in payloads)
         # 字段校验前移（2026-09-04）：有行 且 字段相关 才算成功。有行但字段
         # 不相关（静默回退行情）按失败处理 → 交由降级兜底，缺口如实披露。
-        fields_ok = bool(rows) and _fields_relevant(payloads, task)
+        # 2026-09-06：失败原因细分为 market_quote_fallback / field_mismatch
+        # （碳酸锂价格 → CPI 宏观占位根因），供遥测与缺口归因使用。
+        fields_reason = _fields_relevance_reason(payloads, task)
+        fields_ok = bool(rows) and fields_reason is None
         # S5 可用性预检（2026-09-06）：列名相关但业务列全空的"空壳"同样判失败。
         usable_ok = fields_ok and _rows_usable_precheck(payloads, task)
         if rows and usable_ok:
@@ -443,7 +476,7 @@ class RetrievalExecutor:
             status = "empty"
         if rows and error_code is None:
             if not fields_ok:
-                error_code = "market_quote_fallback"
+                error_code = fields_reason or "market_quote_fallback"
             elif not usable_ok:
                 error_code = "empty_business_columns"
         record = SkillCallRecord(

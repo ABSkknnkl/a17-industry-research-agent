@@ -1,0 +1,21 @@
+{
+  "provenance": "live",
+  "provider": "skillhub",
+  "key": "2b448459345410857c7e80918f9a66545b593e168572c551e7910b1e92e12c59",
+  "endpoint": "POST /v1/query2data",
+  "skill": "hithink-industry-query",
+  "request": {
+    "query": "中国内地 钠离子电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 钠离子电池2026年量产进展与头部企业产能规划",
+    "page": "1",
+    "limit": "20",
+    "is_cache": "1",
+    "expand_index": "true"
+  },
+  "status_code": 200,
+  "headers": {
+    "content-type": "application/json;charset=UTF-8"
+  },
+  "content": "{\"QTime\":3414,\"query\":\"中国内地 钠离子电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 钠离子电池2026年量产进展与头部企业产能规划\",\"condition\":\"[{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"children\\\":[],\\\"node_type\\\":\\\"op\\\",\\\"sonSize\\\":2.0,\\\"chunkedResult\\\":\\\"中国内地 钠离子电池 2024-01-01至2026-08-11 行业规模 增速 估值 盈利 景气度 钠离子电池2026年量产进展与头部企业产能规划\\\",\\\"ci\\\":false,\\\"opName\\\":\\\"and\\\",\\\"opPropertyMap\\\":{},\\\"opPropertiesMap\\\":{},\\\"opProperty\\\":\\\"\\\"},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"uiText\\\":\\\"2026年的区间成交量、2024年1月2日到2026年8月11日的最高价均\\u003e0\\\",\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@区间成交量\\\",\\\"indexPropertiesMap\\\":{\\\"(\\\":\\\"0\\\",\\\"起始交易日期\\\":\\\"20260105\\\",\\\"截止交易日期\\\":\\\"20260904\\\"},\\\"reportType\\\":\\\"TRADE_DAILY\\\",\\\"valueType\\\":\\\"_整型数值(张)\\\",\\\"dateType\\\":\\\"交易日期\\\",\\\"dateText\\\":\\\"2026年\\\",\\\"dateUnit\\\":\\\"年\\\",\\\"indexProperties\\\":[\\\"起始交易日期 20260105\\\",\\\"截止交易日期 20260904\\\",\\\"(0\\\"]},{\\\"score\\\":0.0,\\\"source\\\":\\\"new_parser\\\",\\\"type\\\":\\\"index\\\",\\\"domain\\\":\\\"abs_债券领域\\\",\\\"node_type\\\":\\\"index\\\",\\\"sonSize\\\":0.0,\\\"ci\\\":false,\\\"indexName\\\":\\\"债券@最高价\\\",\\\"indexPropertiesMap\\\":{\\\"(\\\":\\\"0\\\",\\\"起始交易日期\\\":\\\"20240102\\\",\\\"截止交易日期\\\":\\\"20260811\\\"},\\\"reportType\\\":\\\"TRADE_DAILY\\\",\\\"valueType\\\":\\\"_浮点型数值(元)\\\",\\\"dateType\\\":\\\"交易日期\\\",\\\"dateText\\\":\\\"2024-01-01至2026-08-11\\\",\\\"dateUnit\\\":\\\"日\\\",\\\"indexProperties\\\":[\\\"起始交易日期 20240102\\\",\\\"截止交易日期 20260811\\\",\\\"(0\\\"]}]\",\"columns\":[],\"datas\":[],\"row_count\":0.0,\"code_count\":0.0,\"domain\":\"bond\",\"status_code\":-1201.0,\"status_msg\":\"java.lang.IllegalStateException: com.mongodb.MongoException: query mongo exceed time:3000, DBCursor:DBCursor{collection\\u003dDBCollection{database\\u003dDB{name\\u003d\\u0027OntologyData\\u0027}, name\\u003d\\u0027pg_bd_trade239_ds\\u0027}, find\\u003dcom.mongodb.client.model.DBCollectionFindOptions@7b660349, cursor\\u003dServerCursor{getId\\u003d6258175993709237392, address\\u003d192.168.215.15:10010}}, fetched count:386001\",\"chunks_info\":\"[]\"}",
+  "raw_sha256": "89f782bc1f2c2594cd722b71ee208b0f809989a8bd97f897dfdce1e5e4c650fa",
+  "recorded_at": "2026-09-06T03:57:39.176531+00:00"
+}

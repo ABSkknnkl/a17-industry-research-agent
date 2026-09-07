@@ -47,6 +47,12 @@ async def test_application_without_key_never_falls_back_to_mock_data() -> None:
         SKILLHUB_USE_MOCK=False,
         IWENCAI_API_KEY=None,
         SKILLHUB_API_KEY=None,
+        # 2026-09-06：本地 .env 启用了 L3 联网兜底（真实博查 key）。本用例
+        # 断言「无 SkillHub key → 零证据、auth_required 拦截」，若不显式关闭
+        # L3，鉴权熔断会按设计直达博查（executor §8.3），真实联网证据会
+        # 打破 evidence_items == [] 的旧断言，且单测不应依赖外部网络。
+        AGENT1_WEB_FALLBACK_ENABLED=False,
+        AGENT1_FALLBACK_CHAIN=False,
     )
     agent = create_data_fetcher_agent(settings)
 

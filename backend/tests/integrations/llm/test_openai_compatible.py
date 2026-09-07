@@ -671,3 +671,174 @@ async def test_deepseek_does_not_apply_unsafe_json_rewrites(invalid_json: str) -
         )
 
     assert captured.value.code is StructuredOutputFailureCode.JSON_SYNTAX_INVALID
+
+
+# ---------------------------------------------------------------------------
+# 确定性白名单结构修复（2026-09-06）：ark-code-latest Auto 路由到
+# deepseek-v4-flash-ga，长提示下顽固漂移产出 evidence_ids=[] 的 claim/chart，
+# 违反 min_length=1 红线。模型 repair turn 对漂移模型不可靠且会再超时。
+# 空 evidence 的 claim/chart 本就不可用（红线：必须证据支撑），确定性丢弃比
+# 整阶段失败更正确、零额外配额。scenarios 有 min_length=3+精确名校验不可丢，
+# 全空 claims 丢弃后触发 min_length=1 仍须 fail-closed（绝不补造）。
+# ---------------------------------------------------------------------------
+
+
+def _core_payload(draft: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: draft[key]
+        for key in (
+            "headline",
+            "overall_confidence",
+            "financial_quality",
+            "claims",
+            "dimensions",
+            "validation_cards",
+        )
+    }
+
+
+def _supplement_payload(draft: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: draft[key]
+        for key in (
+            "scenarios",
+            "risks",
+            "collaboration_requests",
+            "chart_candidates",
+            "data_quality_issues",
+            "financial_consistency_checks",
+            "dimension_coverage",
+        )
+    }
+
+
+@pytest.mark.asyncio
+async def test_deterministic_repair_drops_empty_evidence_claim_without_repair_turn() -> None:
+    """空 evidence 的 claim 被确定性丢弃，不触发模型 repair turn（仅 2 次分段调用）。"""
+    draft = _draft().model_dump(mode="json")
+    core = _core_payload(draft)
+    # 注入一条空 evidence 的漂移 claim，并让 growth 维度同时引用合法与非法 claim。
+    core["claims"] = [
+        core["claims"][0],
+        {
+            "claim_id": "C-DRIFT",
+            "claim_type": "fact",
+            "text": "漂移产出的无证据断言",
+            "evidence_ids": [],
+            "counter_evidence_ids": [],
+            "confidence": "low",
+            "uncertainty": "无证据",
+            "status": "pending_review",
+        },
+    ]
+    for dim in core["dimensions"]:
+        if dim["name"] == "growth":
+            dim["claim_ids"] = ["C-001", "C-DRIFT"]
+    supplement = _supplement_payload(draft)
+    structured = SequentialStructuredModel(
+        [_raw_response(core), _raw_response(supplement)]
+    )
+    model = OpenAICompatibleAnalysisModel(
+        model_name="ark-code-latest",
+        chat_model=FakeChatModel(structured),
+        segmented_threshold_chars=20,
+    )
+
+    result = await model.generate_analysis(
+        system_prompt="financial analysis prompt",
+        runtime_prompt='{"analysis_request":{"long":"payload"}}',
+    )
+
+    # 漂移 claim 被丢弃，只剩合法 claim；无 repair turn（core+supplement 共 2 次）。
+    assert [claim.claim_id for claim in result.claims] == ["C-001"]
+    assert len(structured.messages) == 2
+    growth = next(dim for dim in result.dimensions if dim.name == "growth")
+    # 孤儿引用被清理：growth 不再引用已丢弃的 C-DRIFT。
+    assert growth.claim_ids == ["C-001"]
+
+
+@pytest.mark.asyncio
+async def test_deterministic_repair_drops_empty_evidence_chart_candidate() -> None:
+    """空 evidence 的 chart_candidate 被确定性丢弃（chart_candidates 无最小条数约束）。"""
+    draft = _draft().model_dump(mode="json")
+    core = _core_payload(draft)
+    supplement = _supplement_payload(draft)
+    supplement["chart_candidates"] = [
+        {
+            "title": "合法图表",
+            "chart_type": "line",
+            "evidence_ids": ["E-001"],
+            "insight_goal": "展示趋势",
+        },
+        {
+            "title": "漂移无证据图表",
+            "chart_type": "bar",
+            "evidence_ids": [],
+            "insight_goal": "无证据",
+        },
+    ]
+    structured = SequentialStructuredModel(
+        [_raw_response(core), _raw_response(supplement)]
+    )
+    model = OpenAICompatibleAnalysisModel(
+        model_name="ark-code-latest",
+        chat_model=FakeChatModel(structured),
+        segmented_threshold_chars=20,
+    )
+
+    result = await model.generate_analysis(
+        system_prompt="financial analysis prompt",
+        runtime_prompt='{"analysis_request":{"long":"payload"}}',
+    )
+
+    assert [cand.title for cand in result.chart_candidates] == ["合法图表"]
+    assert len(structured.messages) == 2
+
+
+@pytest.mark.asyncio
+async def test_deterministic_repair_all_claims_empty_still_fails_closed() -> None:
+    """全部 claim 空 evidence → 丢弃后 claims=[] 触发 min_length=1，仍 fail-closed（绝不补造）。"""
+    draft = _draft().model_dump(mode="json")
+    core = _core_payload(draft)
+    core["claims"] = [
+        {**core["claims"][0], "claim_id": "C-DRIFT-1", "evidence_ids": []},
+    ]
+    structured = SequentialStructuredModel([_raw_response(core), _raw_response(core)])
+    model = OpenAICompatibleAnalysisModel(
+        model_name="ark-code-latest",
+        chat_model=FakeChatModel(structured),
+        segmented_threshold_chars=20,
+    )
+
+    with pytest.raises(StructuredOutputError) as captured:
+        await model.generate_analysis(
+            system_prompt="financial analysis prompt",
+            runtime_prompt='{"analysis_request":{"long":"payload"}}',
+        )
+
+    assert captured.value.code is StructuredOutputFailureCode.SCHEMA_VALIDATION_FAILED
+
+
+@pytest.mark.asyncio
+async def test_deterministic_repair_does_not_drop_scenarios() -> None:
+    """scenario 空 evidence 不可确定性丢弃（min_length=3+精确名校验），仍 fail-closed。"""
+    draft = _draft().model_dump(mode="json")
+    core = _core_payload(draft)
+    supplement = _supplement_payload(draft)
+    supplement["scenarios"][0]["evidence_ids"] = []
+    structured = SequentialStructuredModel(
+        [_raw_response(core), _raw_response(supplement), _raw_response(supplement)]
+    )
+    model = OpenAICompatibleAnalysisModel(
+        model_name="ark-code-latest",
+        chat_model=FakeChatModel(structured),
+        segmented_threshold_chars=20,
+    )
+
+    with pytest.raises(StructuredOutputError) as captured:
+        await model.generate_analysis(
+            system_prompt="financial analysis prompt",
+            runtime_prompt='{"analysis_request":{"long":"payload"}}',
+        )
+
+    assert captured.value.code is StructuredOutputFailureCode.SCHEMA_VALIDATION_FAILED

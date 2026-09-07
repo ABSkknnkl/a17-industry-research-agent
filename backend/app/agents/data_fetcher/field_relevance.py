@@ -114,6 +114,107 @@ _MARKET_QUOTE_FALLBACK_SKILLS = {
     SkillName.STOCK_SELECTOR,
 }
 
+# 2026-09-06 L3 根因修复：意图任务（task_origin != "baseline"）把行情回退
+# 校验扩展到 SECTOR/INDEX——A14-01 根因：PE/PB 诉求被静默回退成行情列，
+# 而这两个技能不在原集合内。基线任务维持原语义（SECTOR/INDEX 本就返回
+# 行情类数据），不扩展，避免 P0 全量扫描被误判。
+_INTENT_QUOTE_FALLBACK_SKILLS = frozenset({SkillName.SECTOR, SkillName.INDEX})
+
+# 各技能 _requirement_task_profile 的默认期望字段（泛型列名，不携带具体
+# 指标语义）。用途：① 语义相关性判定时剔除它们，只留真实指标名当匹配
+# 锚点；② executor 构造 L3 检索词时把它们当元数据剔除（否则“指标名称
+# 指标值”这类词会发给博查，拉低联网召回质量）。
+GENERIC_PROFILE_FIELDS = frozenset(
+    {
+        "指标名称",
+        "指标值",
+        "指标单位",
+        "单位",
+        "数据日期",
+        "报告期",
+        "来源",
+        "行业名称",
+        "行业规模",
+        "市场规模",
+        "同比增速",
+        "增速",
+        "估值",
+        "景气度",
+        "板块名称",
+        "成分股",
+        "产业链环节",
+        "代表企业",
+        "供需",
+        "上游",
+        "中游",
+        "下游",
+        "主营业务",
+        "业务收入占比",
+        "客户",
+        "供应商",
+        "标题",
+        "公告标题",
+        "公司",
+        "公司全称",
+        "机构",
+        "发布主体",
+        "发布日期",
+        "公告日期",
+        "报告日期",
+        "上市地点",
+        "上市日期",
+        "事件类型",
+        "评级",
+        "盈利预测",
+        "目标价",
+        "值",
+        "最新价",
+        "涨跌幅",
+        "市值",
+    }
+)
+
+# 语义相关性判定（2026-09-06 L3 根因修复）覆盖的结构化技能，仅对意图
+# 任务生效。文本检索类（NEWS/REPORT/ANNOUNCEMENT/EVENT/INDUSTRY_CHAIN）
+# 返回自然语言行，字段匹配无意义；FUTURES 的品种简称与指标名无稳定
+# 字面交叠（“镍价格” vs “沪镍”），纳入会误判，故不覆盖。
+_INTENT_SEMANTIC_SKILLS = frozenset(
+    {
+        SkillName.MACRO,
+        SkillName.INDUSTRY,
+        SkillName.SECTOR,
+        SkillName.INDEX,
+        SkillName.FINANCE,
+        SkillName.BUSINESS,
+        SkillName.BASIC_INFO,
+    }
+)
+
+
+def _semantic_metric_tokens(requested_metrics: list[str]) -> set[str]:
+    """从期望字段提取具体指标锚点（泛型 profile 字段与元数据均已剔除）。"""
+
+    tokens: set[str] = set()
+    for metric in requested_metrics:
+        normalized = _normalize_field_name(metric).lower()
+        if (
+            len(normalized) >= 2
+            and normalized not in _METADATA_FIELDS
+            and normalized not in GENERIC_PROFILE_FIELDS
+        ):
+            tokens.add(normalized)
+    return tokens
+
+
+def _token_matches(token: str, text: str) -> bool:
+    """锚点与返回文本的双向包含匹配（短文本只允许被包含，防单字误命中）。"""
+
+    if not token or not text:
+        return False
+    if token in text:
+        return True
+    return len(text) >= 2 and text in token
+
 
 def _is_market_quote_field(field_name: str) -> bool:
     """识别行情/交易类字段名（含 [日期]、(%) 等修饰后缀）。"""
@@ -127,8 +228,9 @@ def _field_relevance_check(
     rows: list[dict[str, Any]],
     requested_metrics: list[str],
     skill: SkillName,
+    task_origin: str | None = None,
 ) -> tuple[bool, str | None]:
-    """P0-6（2026-09-01 方案）：字段相关性校验（治成因 D）。
+    """P0-6（2026-09-01 方案）+ 2026-09-06 语义相关性扩展：字段相关性校验。
 
     问财在查不到业务字段时不返回空，而是静默回退行情数据（最新价/
     涨跌幅/大单卖出量…）：行数>0、能过既有质量门，Agent 2 会把
@@ -136,24 +238,69 @@ def _field_relevance_check(
     字段的技能（BUSINESS/BASIC_INFO）：返回数据列全部落在行情字段
     集合内、且请求指标并非行情类 → 判定 market_quote_fallback，
     返回 (False, "market_quote_fallback")，调用方不得计为成功证据。
+
+    2026-09-06 L3 根因修复（碳酸锂价格 → CPI 宏观占位数据）：
+    - 行情回退校验对意图任务（task_origin != "baseline"）扩展到
+      SECTOR/INDEX（PE/PB 诉求被静默回退行情列，A14-01 根因）；
+    - 新增语义相关性判定（仅意图任务）：期望指标锚点与返回数据
+      （数据列名 + 实体列取值——宏观/期货的指标名在实体值里）完全
+      零交集 → 判 field_mismatch，走降级路径而不是冒充成功。基线
+      任务（P0 全量扫描）不启用语义判定：其期望字段是泛型 profile
+      列，无具体指标语义，误判只会白烧 L2/L3 配额。
     """
 
-    if skill not in _MARKET_QUOTE_FALLBACK_SKILLS or not rows:
-        return True, None
-    # 请求指标本身是行情类（如查“最新价”）→ 合法返回，不算回退。
-    metric_fields = [
-        name for name in requested_metrics if name not in _METADATA_FIELDS
-    ]
-    if metric_fields and all(_is_market_quote_field(name) for name in metric_fields):
-        return True, None
-    data_fields: set[str] = set()
-    for row in rows:
-        for field_name in row:
-            if field_name in _METADATA_FIELDS:
-                continue
-            data_fields.add(str(field_name))
-    if data_fields and all(_is_market_quote_field(name) for name in data_fields):
-        return False, "market_quote_fallback"
+    is_intent_task = task_origin not in (None, "baseline")
+
+    if rows:
+        # ---- 行情回退校验（P0-6 原有；意图任务扩展 SECTOR/INDEX）----
+        quote_skills: set[SkillName] = set(_MARKET_QUOTE_FALLBACK_SKILLS)
+        if is_intent_task:
+            quote_skills |= _INTENT_QUOTE_FALLBACK_SKILLS
+        if skill in quote_skills:
+            # 请求指标本身是行情类（如查“最新价”）→ 合法返回，不算回退。
+            metric_fields = [
+                name for name in requested_metrics if name not in _METADATA_FIELDS
+            ]
+            if metric_fields and all(
+                _is_market_quote_field(name) for name in metric_fields
+            ):
+                return True, None
+            data_fields: set[str] = set()
+            for row in rows:
+                for field_name in row:
+                    if field_name in _METADATA_FIELDS:
+                        continue
+                    data_fields.add(str(field_name))
+            if data_fields and all(
+                _is_market_quote_field(name) for name in data_fields
+            ):
+                return False, "market_quote_fallback"
+
+        # ---- 语义相关性校验（2026-09-06 新增，仅意图任务）----
+        if is_intent_task and skill in _INTENT_SEMANTIC_SKILLS:
+            tokens = _semantic_metric_tokens(requested_metrics)
+            if tokens:
+                entity_fields = {
+                    _normalize_field_name(name) for name in _ENTITY_FIELDS
+                }
+                texts: set[str] = set()
+                for row in rows:
+                    for field_name, value in row.items():
+                        normalized = _normalize_field_name(field_name)
+                        if normalized not in _METADATA_FIELDS:
+                            texts.add(normalized.lower())
+                        if (
+                            normalized in entity_fields
+                            and isinstance(value, str)
+                            and value.strip()
+                        ):
+                            texts.add(value.strip().lower())
+                if texts and not any(
+                    _token_matches(token, text)
+                    for token in tokens
+                    for text in texts
+                ):
+                    return False, "field_mismatch"
     return True, None
 
 
@@ -210,9 +357,12 @@ def _is_non_empty_value(value: Any) -> bool:
 def _rows_usable_precheck(payloads: Any, task: Any) -> bool:
     """至少一行在请求的业务字段上有非空值，否则判为空壳数据（不可用）。
 
-    判定收敛在“确实匹配到目标列”这一前提上：一个目标列都没匹配到时返回
-    True 放行——列名对不上不属于空壳（可能是问财换了列名），交下游清洗与
-    隔离流程判定，避免仅因命名差异就误触发降级、白烧 L2/L3 配额。
+    判定收敛在“确实匹配到目标列”这一前提上：一个目标列都没匹配到时，若
+    仍存在非空业务值则放行（列名对不上可能是问财换了列名，交下游清洗与
+    隔离流程判定，避免仅因命名差异就误触发降级、白烧 L2/L3 配额）；若
+    连非空业务值都没有（占位行 + 业务列全 None 的空壳），判失败进入降级
+    （2026-09-06 L3 根因修复：问财查装机量返回空壳值同样判 succeeded，
+    把 L3 挡在门外）。
     fail-open：任何异常一律放行，与本模块既有哲学一致。
     """
 
@@ -255,7 +405,16 @@ def _rows_usable_precheck(payloads: Any, task: Any) -> bool:
                 if _is_non_empty_value(value):
                     return True
         if not matched_target_column:
-            return True
+            # 2026-09-06 L3 根因修复：列名完全对不上时不再无条件放行——
+            # 至少要求存在任一非空业务值。问财对查不到的指标会返回
+            # “占位行 + 业务列全 None”的空壳（装机量 case），旧 fail-open
+            # 把它判成成功，L3 永远没有出场机会。仍有非空值时维持放行。
+            return any(
+                _is_non_empty_value(value)
+                for row in rows
+                for key, value in row.items()
+                if _normalize_field_name(key) not in _METADATA_FIELDS
+            )
         return False
     except Exception:
         return True

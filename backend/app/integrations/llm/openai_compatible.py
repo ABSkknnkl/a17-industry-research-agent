@@ -514,6 +514,103 @@ def _normalize_known_schema_aliases(payload: Any, schema: type[Any]) -> Any:
     return payload
 
 
+def _deterministic_whitelist_repair(payload: Any, schema: type[Any]) -> Any:
+    """确定性白名单结构修复（2026-09-06）：丢弃空 evidence 的 claim / chart_candidate。
+
+    背景：``ark-code-latest`` 在 Auto 模式路由到 ``deepseek-v4-flash-ga``，长提示
+    （100+ 证据）下顽固漂移，产出 ``evidence_ids=[]`` 的 claim/chart，违反
+    ``min_length=1`` 红线。既有"模型 repair turn"（再问模型改 JSON）对漂移模型
+    不可靠，且推理模型的 repair 调用会再撞超时 → 整阶段 ``analysis_generation_failed``。
+
+    空 evidence 的 claim/chart 本就不可用（红线：结论必须证据支撑），确定性丢弃
+    比整阶段失败更正确，且零额外配额、零模型不确定性。
+
+    严格边界（绝不越权改写）：
+    - 只丢"可安全丢弃"的项：``claims``（丢后仍须 ≥1，否则 fail-closed）、
+      ``chart_candidates``（``default_factory=list``，可空）；
+    - ``scenarios`` 有 ``min_length=3`` + 精确名 {base,upside,downside} 校验，丢弃
+      会破坏不变量 → 不碰，留给模型 repair / fail-closed；
+    - 丢弃 claim 后同步清理 ``dimensions[].claim_ids`` 的孤儿引用（否则语义悬空）；
+    - 绝不修改金融事实、数字、有效 evidence_id、枚举值——只做"删除非法项"；
+    - 全空 claims 丢弃后触发 ``min_length=1`` → 仍 fail-closed（绝不补造证据）。
+    """
+    if not isinstance(payload, dict):
+        return payload
+    if schema is AnalysisCoreDraft:
+        return _repair_empty_evidence_claims(payload)
+    if schema is AnalysisSupplementDraft:
+        return _repair_empty_evidence_chart_candidates(payload)
+    if schema is AnalysisDraft:
+        # 短提示非分段路径：claims 与 chart_candidates 同在一个 draft。
+        return _repair_empty_evidence_chart_candidates(
+            _repair_empty_evidence_claims(payload)
+        )
+    return payload
+
+
+def _repair_empty_evidence_claims(payload: dict[str, Any]) -> dict[str, Any]:
+    """丢弃 ``evidence_ids`` 为空的 claim，并清理 dimensions 里的孤儿 claim_id 引用。"""
+    claims = payload.get("claims")
+    if not isinstance(claims, list):
+        return payload
+    kept: list[Any] = []
+    dropped_ids: list[str] = []
+    for claim in claims:
+        if isinstance(claim, dict):
+            evidence_ids = claim.get("evidence_ids")
+            if isinstance(evidence_ids, list) and len(evidence_ids) == 0:
+                claim_id = claim.get("claim_id")
+                if isinstance(claim_id, str) and claim_id:
+                    dropped_ids.append(claim_id)
+                continue
+        kept.append(claim)
+    if not dropped_ids:
+        return payload
+    repaired = dict(payload)
+    repaired["claims"] = kept
+    dimensions = repaired.get("dimensions")
+    if isinstance(dimensions, list):
+        cleaned: list[Any] = []
+        for dimension in dimensions:
+            if isinstance(dimension, dict):
+                claim_ids = dimension.get("claim_ids")
+                if isinstance(claim_ids, list):
+                    dimension = dict(dimension)
+                    dimension["claim_ids"] = [
+                        cid for cid in claim_ids if cid not in dropped_ids
+                    ]
+            cleaned.append(dimension)
+        repaired["dimensions"] = cleaned
+    logger.warning(
+        "deterministic_repair dropped_empty_evidence_claims=%s", dropped_ids
+    )
+    return repaired
+
+
+def _repair_empty_evidence_chart_candidates(payload: dict[str, Any]) -> dict[str, Any]:
+    """丢弃 ``evidence_ids`` 为空的 chart_candidate（无最小条数约束，可安全丢）。"""
+    candidates = payload.get("chart_candidates")
+    if not isinstance(candidates, list):
+        return payload
+    kept: list[Any] = []
+    dropped = 0
+    for candidate in candidates:
+        if isinstance(candidate, dict):
+            evidence_ids = candidate.get("evidence_ids")
+            if isinstance(evidence_ids, list) and len(evidence_ids) == 0:
+                dropped += 1
+                continue
+        kept.append(candidate)
+    if not dropped:
+        return payload
+    repaired = dict(payload)
+    repaired["chart_candidates"] = kept
+    logger.warning(
+        "deterministic_repair dropped_empty_evidence_chart_candidates=%s", dropped
+    )
+    return repaired
+
+
 def _summarize_value(value: Any, limit: int = 200) -> str:
     """Render a model-provided (possibly illegal) value for diagnostics."""
     if value is None:
@@ -540,7 +637,10 @@ def _summarize_payload(payload: Any, limit: int = 600) -> str:
 
 def _validate_payload(payload: Any, schema: type[SchemaT]) -> SchemaT:
     try:
-        return schema.model_validate(_normalize_known_schema_aliases(payload, schema))
+        # 确定性白名单修复先行（丢弃空 evidence 的 claim/chart），再归一别名，
+        # 最后严格校验。修复只删非法项、绝不补造，全空 claims 仍会 fail-closed。
+        repaired = _deterministic_whitelist_repair(payload, schema)
+        return schema.model_validate(_normalize_known_schema_aliases(repaired, schema))
     except ValidationError as exc:
         errors = exc.errors(include_url=False)
         error_types = [str(item.get("type", "unknown")) for item in errors]

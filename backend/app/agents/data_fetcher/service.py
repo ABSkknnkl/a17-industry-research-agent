@@ -519,6 +519,34 @@ class DataFetcherAgent:
             normalization,
             user_evidence_only=user_only,
         )
+        # S8（2026-09-06 方案 §6.2/§6.4）：三层级联降级汇总块——前端风险提示
+        # 的唯一读取入口（§7.1 只认 acquisition_degradation.web_fallback_used）。
+        # 注入所有返回路径（含质量门/缺口门），保证留痕不随出口分叉而丢失。
+        acquisition_degradation = _build_acquisition_degradation(
+            records, evidence, requirement_coverage
+        )
+        # §6.4 红线 5 留痕：web 证据进入结果时挂信息性风险通知（不挂 AWAITING_USER
+        # 决策包，避免在 COMPLETED 阶段误触审核门）。前端弹窗由 §7.1 读
+        # acquisition_degradation 驱动，本通知供决策包/审计侧留痕“不可抵赖”。
+        web_risk_notices: list[dict[str, Any]] = []
+        if acquisition_degradation["web_fallback_used"]:
+            web_risk_notices.append(
+                RiskNotice(
+                    risk_code="WEB-SOURCE-UNVERIFIED",
+                    stage=self.stage.value,
+                    severity=RiskSeverity.HIGH,
+                    disposition=RiskDisposition.ACKNOWLEDGEMENT_REQUIRED,
+                    title="部分数据来自公开网络检索",
+                    detail=(
+                        "同花顺结构化数据与研报/公告通道均无结果，已通过公开网络"
+                        f"检索补充 {acquisition_degradation['web_evidence_count']} 条"
+                        "材料，未经权威口径校验，仅作定性参考、数值不参与计算。"
+                    ),
+                    recommendation="报告中引用这些数据的结论与图表，请人工复核后再对外使用。",
+                    consequence="若继续，相关段落将标注〔网〕标识，来源表归入“补充来源”。",
+                    can_override=True,
+                ).model_dump(mode="json")
+            )
         data: dict[str, Any] = {
             "industry_topic": request["industry_topic"],
             "market_scope": request["market_scope"],
@@ -541,6 +569,8 @@ class DataFetcherAgent:
             "quarantined_records": [item.model_dump(mode="json") for item in quarantined],
             "normalization_summary": normalization.model_dump(mode="json"),
             "acquisition_quality": quality.model_dump(mode="json"),
+            # S8（2026-09-06 方案 §6.2）：降级汇总块，前端风险提示唯一读取入口。
+            "acquisition_degradation": acquisition_degradation,
             "provider_mode": self._provider_mode,
             "semantic_routing": semantic_routing,
             "intent_routing": intent_routing,
@@ -549,6 +579,9 @@ class DataFetcherAgent:
             "analysis_notes": _collect_analysis_notes(intent_plans),
             "blocking_issues": [],
         }
+        # S8 §6.4：web 留痕风险通知（信息性，不改阶段门）。仅在 L3 命中时非空。
+        if web_risk_notices:
+            data["risk_notices"] = web_risk_notices
         if feedback_interpretation is not None:
             data["feedback_interpretation"] = feedback_interpretation
             if feedback_structured:
@@ -1009,6 +1042,79 @@ class DataFetcherAgent:
             data=data,
             evidence_sources=[item.evidence_id for item in evidence],
         )
+
+
+def _build_acquisition_degradation(
+    records: list[Any],
+    evidence: list[EvidenceItem],
+    requirement_coverage: list[RequirementCoverage],
+) -> dict[str, Any]:
+    """S8（2026-09-06 方案 §6.2）：三层级联降级汇总块。
+
+    前端风险提示（§7.1）唯一读取入口——只认 ``web_fallback_used`` 与
+    ``web_evidence_count``。本函数纯聚合、不改判任何覆盖率/质量结论：
+
+    - ``levels_used``：按 ``SkillCallRecord.acquisition_level`` 统计各层调用数
+      （成功+失败都计，反映真实降级压力）；
+    - ``web_sources``：从 ``evidence_tier=="web_unverified"`` 的证据反解
+      标题/URL/站点/发布日期，供前端逐条展示与人工复核（红线 4 可追溯）；
+    - ``requirements``：每条需求的 level/status/path，path 取
+      ``degradation_path``（按序尝试过的通道 slug）。
+
+    红线对齐：web 证据恒 ``qualitative_only``，本块只披露不洗白——
+    ``web_fallback_used`` 为真时前端必弹提示（§7），系统不得静默使用。
+    """
+
+    levels_used: dict[str, int] = {"1": 0, "2": 0, "3": 0}
+    for record in records:
+        level = getattr(record, "acquisition_level", 1) or 1
+        levels_used[str(level)] = levels_used.get(str(level), 0) + 1
+
+    web_evidence = [
+        item for item in evidence if item.evidence_tier == "web_unverified"
+    ]
+    web_sources: list[dict[str, Any]] = []
+    seen_urls: set[str] = set()
+    for item in web_evidence:
+        url = (item.source_locator or "").strip()
+        if not url or url in seen_urls:
+            continue
+        seen_urls.add(url)
+        # 标题藏在 notes 的“标题：…；来源：…”里（见 normalizer._web_evidence_item）；
+        # 反解失败则退化为 metric_name，保证前端始终有可读文本。
+        title = ""
+        notes = item.notes or ""
+        if "标题：" in notes:
+            tail = notes.split("标题：", 1)[1]
+            title = tail.split("；", 1)[0].strip()
+        web_sources.append(
+            {
+                "title": (title or item.metric_name)[:200],
+                "url": url[:1_000],
+                "site_name": (item.publisher or item.source_name)[:200],
+                "published_at": (
+                    item.available_at.isoformat() if item.available_at else None
+                ),
+            }
+        )
+
+    requirements_summary = [
+        {
+            "question": item.question[:200],
+            "level": item.acquisition_level,
+            "status": item.status,
+            "path": list(item.degradation_path),
+        }
+        for item in requirement_coverage
+    ]
+
+    return {
+        "web_fallback_used": bool(web_evidence),
+        "web_evidence_count": len(web_evidence),
+        "levels_used": levels_used,
+        "web_sources": web_sources[:50],
+        "requirements": requirements_summary,
+    }
 
 
 def _build_requirement_coverage(

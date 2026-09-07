@@ -483,6 +483,24 @@ class QueryPlanner:
                         break
                     task_number += 1
                     dimension, expected, priority = _requirement_task_profile(skill)
+                    # 2026-09-06 L3 根因修复：把子需求的具体指标名追加进
+                    # expected_fields，作为 executor 语义相关性判定的锚点——
+                    # 「碳酸锂价格 → 问财静默回退 CPI 宏观占位数据」的识别
+                    # 依赖它（泛型 profile 字段会被 field_relevance 剔除）。
+                    # 基线任务不追加：无具体指标语义，保持 P0 全量扫描
+                    # fail-open，避免误触发降级白烧 L2/L3 配额。
+                    _sub_metric_names = [
+                        name
+                        for name in (
+                            (metric.normalized_name or metric.original_name).strip()
+                            for metric in sub.metrics
+                        )
+                        if name
+                    ]
+                    if _sub_metric_names:
+                        expected = list(
+                            dict.fromkeys([*expected, *_sub_metric_names[:4]])
+                        )
                     query = _intent_skill_query(
                         skill,
                         sub_text=sub.normalized_text,

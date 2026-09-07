@@ -19,6 +19,8 @@ from app.agents.data_fetcher.field_relevance import (
     _PERIOD_FIELDS,
     _field_relevance_check,
     _is_market_quote_field,
+    _normalize_field_name,
+    GENERIC_PROFILE_FIELDS,
 )
 from app.schemas.acquisition import (
     NormalizationSummary,
@@ -28,6 +30,7 @@ from app.schemas.acquisition import (
     SkillPayload,
     SourceRecord,
 )
+from app.core.config import settings
 from app.schemas.evidence import (
     AuditStatus,
     CorporateActionAdjustment,
@@ -196,8 +199,47 @@ def normalize_tasks(
                 rows=payload.rows,
                 requested_metrics=result.task.expected_fields,
                 skill=payload.skill_name,
+                task_origin=getattr(result.task, "task_origin", None),
             )
-            if fallback_reason == "market_quote_fallback":
+            if fallback_reason in {"market_quote_fallback", "field_mismatch"}:
+                # 2026-09-06 L3 根因修复：field_mismatch（意图任务的具体
+                # 指标锚点与返回数据零交集，如碳酸锂价格 → CPI 宏观占位）
+                # 与 market_quote_fallback 同等处置：整批行不进清洗、全部
+                # 隔离并写 data_gap 如实披露，绝不计为成功证据。
+                if fallback_reason == "market_quote_fallback":
+                    _gap_description = (
+                        f"{payload.skill_name.value}返回的列全部为行情字段"
+                        "（最新价/涨跌幅/成交量等），与请求的业务指标无关："
+                        "问财在查不到业务字段时会静默回退行情数据，"
+                        "本次调用不计为成功证据，相关需求按数据缺口披露。"
+                    )
+                    _quarantine_reason = (
+                        "返回行仅含行情字段（最新价/涨跌幅等），"
+                        "与请求的业务指标不相关，已隔离防止伪证据进入报告。"
+                    )
+                else:
+                    _requested_metrics = [
+                        _normalize_field_name(name)
+                        for name in result.task.expected_fields
+                    ]
+                    _requested_metrics = [
+                        name
+                        for name in _requested_metrics
+                        if len(name) >= 2
+                        and name not in _METADATA_FIELDS
+                        and name not in GENERIC_PROFILE_FIELDS
+                    ][:4]
+                    _gap_description = (
+                        f"{payload.skill_name.value}返回的数据与请求指标"
+                        f"（{'、'.join(_requested_metrics) or '指定指标'}）"
+                        "无字段/实体交集：问财对查不到的指标会静默回退宏观/"
+                        "行情占位数据，本次调用不计为成功证据，相关需求按数据"
+                        "缺口披露，联网兜底通道（L3）已被放行。"
+                    )
+                    _quarantine_reason = (
+                        "返回数据与请求的具体指标无字段/实体交集"
+                        "（疑似静默回退占位数据），已隔离防止伪证据进入报告。"
+                    )
                 fallback_gaps.append(
                     DataGap(
                         gap_id=(
@@ -206,12 +248,7 @@ def normalize_tasks(
                         skill_name=payload.skill_name,
                         task_id=result.task.task_id,
                         reason_code=fallback_reason,
-                        description=(
-                            f"{payload.skill_name.value}返回的列全部为行情字段"
-                            "（最新价/涨跌幅/成交量等），与请求的业务指标无关："
-                            "问财在查不到业务字段时会静默回退行情数据，"
-                            "本次调用不计为成功证据，相关需求按数据缺口披露。"
-                        ),
+                        description=_gap_description,
                         blocking=False,
                     )
                 )
@@ -227,11 +264,8 @@ def normalize_tasks(
                                 _first_text(cleaned_fallback, _ENTITY_FIELDS)
                                 or industry_topic
                             )[:500],
-                            reason_code="market_quote_fallback",
-                            reason=(
-                                "返回行仅含行情字段（最新价/涨跌幅等），"
-                                "与请求的业务指标不相关，已隔离防止伪证据进入报告。"
-                            ),
+                            reason_code=fallback_reason,
+                            reason=_quarantine_reason,
                         )
                     )
                 clean_payload_rows[(result.task.task_id, payload.page)] = []
@@ -506,7 +540,7 @@ def normalize_tasks(
                             acquisition_level=result.record.acquisition_level,
                             notes=(
                                 f"通过{payload.skill_name.value}获取；"
-                                f"原始字段：{str(field_name)[:200]}；"
+                                f"原始字段：{_display_field_name(str(field_name))[:200]}；"
                                 + (
                                     f"文档通道降级证据（substitute_for={fallback_main_metric(result.task)}），"
                                     "仅作定性参考，数值不参与计算；"
@@ -565,6 +599,98 @@ def normalize_tasks(
     )
 
 
+# L3 数值抽取（2026-09-06 阶段一，用户授权 AGENT2_WEB_NUMERIC_ENABLED）：
+# 联网证据在标注来源前提下允许数值参与 C1 计算链。取摘要中第一个
+# 「数字+单位」组合作为主值；年份（2025年）、日期（12月5日）因单位表
+# 不含年/月/日天然跳过。默认关闭（红线语义不变：只补定性不补数值）。
+_WEB_NUMERIC_UNITS: tuple[str, ...] = tuple(
+    sorted(
+        (
+            "万亿元",
+            "亿千瓦时",
+            "万千瓦时",
+            "万元/吨",
+            "亿美元",
+            "万美元",
+            "亿港元",
+            "万港元",
+            "个百分点",
+            "亿元",
+            "百万元",
+            "GWh",
+            "TWh",
+            "MWh",
+            "kWh",
+            "GW",
+            "MW",
+            "万吨",
+            "亿吨",
+            "万辆",
+            "万台",
+            "万家",
+            "万只",
+            "元/吨",
+            "元/股",
+            "美元",
+            "港元",
+            "人民币",
+            "元",
+            "吨",
+            "辆",
+            "台",
+            "家",
+            "款",
+            "股",
+            "口",
+            "千米",
+            "公里",
+            "米",
+            "平方米",
+            "吨/日",
+            "%",
+            "bp",
+            "亿",
+            "万",
+        ),
+        key=len,
+        reverse=True,
+    )
+)
+_WEB_NUMERIC_RE = re.compile(
+    r"(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s*(" + "|".join(_WEB_NUMERIC_UNITS) + ")"
+)
+
+
+def _extract_web_numeric(text: str) -> tuple[float, str] | None:
+    """阶段一联网数值抽取：返回 (数值, 单位)；未抽取到返回 None。
+
+    用户已显式授权（AGENT2_WEB_NUMERIC_ENABLED=true）默认信任 L3 数据，
+    抽取不做语义择优；原文全文保留在证据 notes 供人工复核，来源标注
+    （url/站点/检索方式）与 web_unverified 层级标记不受影响。
+    """
+
+    if not settings.AGENT2_WEB_NUMERIC_ENABLED:
+        return None
+    match = _WEB_NUMERIC_RE.search(text)
+    if match is None:
+        return None
+    try:
+        return float(match.group(1).replace(",", "")), match.group(2)
+    except ValueError:
+        return None
+
+
+def _display_field_name(field_name: str) -> str:
+    """原始 KV 字段名的展示清洗。
+
+    剥离「宏观@/期货@/板块@」等领域前缀，避免「宏观@值」「期货@交易
+    单位数量」这类内部字段名直接漏进 claims 与报告正文
+    （ReadabilityLinter R6，2026-09-06）。
+    """
+
+    return re.sub(r"^(宏观|期货|板块|指数|行业|公告|研报|新闻)@", "", field_name)
+
+
 def _web_evidence_item(
     *,
     row: dict[str, Any],
@@ -596,6 +722,8 @@ def _web_evidence_item(
     if not text:
         return None
     main_metric = fallback_main_metric(result.task)
+    # 阶段一（用户授权）：尝试从摘要抽取「数字+单位」主值参与计算链。
+    numeric = _extract_web_numeric(text)
     published_raw = row.get("published_at")
     available_at = _parse_date(published_raw) or research_as_of
     fingerprint = hashlib.sha256(
@@ -608,10 +736,11 @@ def _web_evidence_item(
     return EvidenceItem(
         evidence_id=f"E-{fingerprint}",
         metric_name=main_metric[:200],
-        value=text[:5_000],
-        # 定性文本没有计量单位；沿用文档通道的“文本”约定——quality 的
-        # validity 要求 unit 非空，留空会无谓拉低整批证据的可用率。
-        unit="文本",
+        value=numeric[0] if numeric else text[:5_000],
+        # 抽取到数值时用真实单位；纯定性文本沿用文档通道的“文本”约定
+        # ——quality 的 validity 要求 unit 非空，留空会无谓拉低整批证据
+        # 的可用率。
+        unit=numeric[1] if numeric else "文本",
         # 联网摘要给不出可靠报告期，宁可为空也不推断（防前视/口径混淆）。
         period_end=None,
         fiscal_period=None,
@@ -632,17 +761,27 @@ def _web_evidence_item(
         grade=EvidenceGrade.D,
         # 定性检索类证据无明确口径级别（见 EvidenceItem.caliber 注释）。
         caliber=None,
-        # 红线 1/2：层级永久锁死 web_unverified + 只补定性，任何阶段不得上调。
+        # 红线 1：层级永久锁死 web_unverified，任何阶段不得上调（数值授权
+        # 不改变层级标记，来源与审计语义保持诚实）。红线 2 的阶段一例外：
+        # 用户已授权（AGENT2_WEB_NUMERIC_ENABLED=true）且成功抽取数值时
+        # qualitative_only 放开为 False，允许该数值进入 C1 计算链；其余
+        # 情况维持只补定性、数值不参与计算。
         evidence_tier="web_unverified",
-        qualitative_only=True,
+        qualitative_only=numeric is None,
         acquisition_level=3,
         notes=(
             # “通过web_search获取”是 quality._usable_skills 与
             # NormalizationSummary.skill_evidence_counts 的归因锚点，不可改写。
             f"通过{SkillName.WEB_SEARCH.value}获取；"
             f"〔网〕公开网络检索证据（substitute_for={main_metric}），"
-            "未经权威口径校验，仅作定性参考，数值不参与计算；"
-            f"标题：{title[:200]}；来源：{source_org}；"
+            + (
+                "用户已授权（AGENT2_WEB_NUMERIC_ENABLED）联网数值参与计算，"
+                f"数值与单位取自摘要首个「数字+单位」组合（{numeric[1]}）；"
+                f"原文：{text[:400]}；"
+                if numeric
+                else "未经权威口径校验，仅作定性参考，数值不参与计算；"
+            )
+            + f"标题：{title[:200]}；来源：{source_org}；"
             f"发布：{str(published_raw)[:32] if published_raw else '未提供'}；"
             "原始口径以检索摘要为准，未返回的审计/追溯信息不作推断。"
         )[:5_000],

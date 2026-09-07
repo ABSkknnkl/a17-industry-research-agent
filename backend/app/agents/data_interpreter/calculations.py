@@ -40,21 +40,43 @@ _DERIVED_METRIC_TOKENS = (
 _UNKNOWN_UNITS = {"", "未提供", "不适用", "unknown", "n/a", "na", "文本"}
 
 
-def calculate_p0_metrics(
+def _numeric_evidence(
     evidence_items: list[EvidenceItem],
-) -> tuple[list[CalculatedMetric], list[CalculationIssue]]:
-    """Calculate all safe P0 metrics supported by the current evidence package."""
+    *,
+    web_numeric_enabled: bool = False,
+) -> list[EvidenceItem]:
+    """C1 计算链的合格数值证据筛选。
 
-    # 红线（2026-09-04 文档通道降级链 FB4）：document 层级/定性只读证据
-    # 绝不进入 C1 数值计算链——研报估算值只能作观点，不能当权威数值参与运算。
-    numeric = [
+    红线（2026-09-04 文档通道降级链 FB4）：document 层级/定性只读证据
+    绝不进入 C1 数值计算链——研报估算值只能作观点，不能当权威数值参与
+    运算。阶段一例外（2026-09-06，用户授权 AGENT2_WEB_NUMERIC_ENABLED）：
+    web_unverified 层级的联网证据在成功抽取数值（qualitative_only=False）
+    且开关放行时可参与计算——来源已在证据上标注（url/站点/检索方式）。
+    """
+
+    return [
         item
         for item in evidence_items
         if isinstance(item.value, (int, float))
         and not isinstance(item.value, bool)
-        and item.evidence_tier == "structured"
+        and (
+            item.evidence_tier == "structured"
+            or (web_numeric_enabled and item.evidence_tier == "web_unverified")
+        )
         and not item.qualitative_only
     ]
+
+
+def calculate_p0_metrics(
+    evidence_items: list[EvidenceItem],
+    *,
+    web_numeric_enabled: bool = False,
+) -> tuple[list[CalculatedMetric], list[CalculationIssue]]:
+    """Calculate all safe P0 metrics supported by the current evidence package."""
+
+    numeric = _numeric_evidence(
+        evidence_items, web_numeric_enabled=web_numeric_enabled
+    )
     grouped: dict[tuple[str, str, str, str], list[EvidenceItem]] = defaultdict(list)
     for item in numeric:
         grouped[(item.scope, item.market, item.currency, item.accounting_standard)].append(item)

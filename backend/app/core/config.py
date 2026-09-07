@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str | None = None
     LLM_MODEL: str = "deepseek-v4-flash"
     LLM_USE_MOCK: bool = False
-    LLM_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=300)
+    LLM_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3600)
     LLM_MAX_OUTPUT_TOKENS: int = Field(default=8_192, ge=1_024, le=32_768)
     LLM_SEGMENTED_THRESHOLD_CHARS: int = Field(default=10_000, ge=5_000, le=500_000)
     # 可读性评审器（独立配置位；为将来换供应商留口）
@@ -78,7 +78,9 @@ class Settings(BaseSettings):
     AGENT1_WEB_PROVIDER: Literal["bocha", "tavily"] = "bocha"
     # 留空即禁用 L3——密钥只存 backend/.env（gitignored），日志绝不落盘。
     AGENT1_BOCHA_API_KEY: SecretStr | None = None
-    AGENT1_WEB_BASE_URL: str = "https://api.bocha.ai"
+    # 博查真实端点是 api.bochaai.com（方案 §4.2 误写为 api.bocha.ai，DNS 不解析，
+    # 2026-09-06 真实冒烟发现并修正）。
+    AGENT1_WEB_BASE_URL: str = "https://api.bochaai.com"
     # 单轮 L3 调用预算；单 task 只调 1 次不重试（硬编码，防额度翻倍）。
     AGENT1_WEB_CALL_BUDGET: int = Field(default=20, ge=0, le=100)
     # 硬超时 8s：超时即判 L3 失败，不重试（§8.1）。
@@ -86,7 +88,15 @@ class Settings(BaseSettings):
     # 逗号分隔域名白名单；留空用内置财经权威源白名单（§4.4）。
     AGENT1_WEB_DOMAIN_ALLOWLIST: str = ""
     # 单 task 降级总时间盒：超出即停止后续层级直接兜底（§8.1）。
-    AGENT1_DEGRADATION_TIME_BUDGET: float = Field(default=20, gt=0, le=120)
+    # 2026-09-06 L3 根因修复：20s → 360s——L2 一次慢调用（TOOL_TIMEOUT_
+    # SECONDS=600）就能把 20s 吃光，L3 永远轮不到出场；360s 给 L3 留足
+    # 执行窗口（博查单次 8s 硬超时）。
+    AGENT1_DEGRADATION_TIME_BUDGET: float = Field(default=360, gt=0, le=600)
+    # ---- L3 数值参与计算（2026-09-06 阶段一，用户授权开关）----
+    # 默认 False = 红线语义不变：web_unverified 证据恒 qualitative_only，
+    # 被计算链排除。用户显式同意（backend/.env 置 true）后，联网证据在
+    # 标注来源（url/站点/检索方式）前提下抽取数值参与 C1 计算。
+    AGENT2_WEB_NUMERIC_ENABLED: bool = False
     FEEDBACK_INTERPRETER_ENABLED: bool = False
     FEEDBACK_CONFIDENCE_ACCEPT: float = Field(default=0.90, ge=0.5, le=1)
     FEEDBACK_CONFIDENCE_REVIEW: float = Field(default=0.75, ge=0.3, le=1)
@@ -96,7 +106,7 @@ class Settings(BaseSettings):
     IMAGE_BASE_URL: str = "https://api.openai.com/v1"
     IMAGE_MODEL: str = "gpt-image-1"
     IMAGE_SIZE: Literal["1536x1024", "1024x1024"] = "1536x1024"
-    IMAGE_TIMEOUT_SECONDS: float = Field(default=180, gt=0, le=600)
+    IMAGE_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3600)
     SKILLHUB_API_KEY: SecretStr | None = None
     IWENCAI_API_KEY: SecretStr | None = None
     IWENCAI_BASE_URL: str = "https://openapi.iwencai.com"
@@ -105,9 +115,9 @@ class Settings(BaseSettings):
     SKILLHUB_MAX_PAGES: int = Field(default=2, ge=1, le=5)
     SKILLHUB_PAGE_SIZE: int = Field(default=20, ge=1, le=100)
 
-    WORKFLOW_TIMEOUT_SECONDS: float = Field(default=900, gt=0, le=86_400)
+    WORKFLOW_TIMEOUT_SECONDS: float = Field(default=2400, gt=0, le=86_400)
     STAGE_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3_600)
-    TOOL_TIMEOUT_SECONDS: float = Field(default=30, gt=0, le=600)
+    TOOL_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3_600)
     MAX_TOTAL_STAGE_RUNS: int = Field(default=15, ge=5, le=100)
     MAX_STAGE_ATTEMPTS: int = Field(default=3, ge=1, le=10)
     MAX_MODEL_CALLS_PER_RUN: int = Field(default=64, ge=1, le=1_000)

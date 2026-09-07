@@ -46,9 +46,9 @@ class RuntimePolicy(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    workflow_timeout_seconds: float = Field(default=900, gt=0, le=86_400)
+    workflow_timeout_seconds: float = Field(default=2400, gt=0, le=86_400)
     stage_timeout_seconds: float = Field(default=600, gt=0, le=3_600)
-    tool_timeout_seconds: float = Field(default=30, gt=0, le=600)
+    tool_timeout_seconds: float = Field(default=600, gt=0, le=3_600)
     max_total_stage_runs: int = Field(default=15, ge=5, le=100)
     max_stage_attempts: int = Field(default=3, ge=1, le=10)
     max_model_calls: int = Field(default=64, ge=1, le=1_000)

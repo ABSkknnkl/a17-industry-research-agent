@@ -1,0 +1,151 @@
+{
+  "mode": "live_agent1_to_agent4",
+  "started_at": "2026-09-06T03:55:03.843968+00:00",
+  "model": "ark-code-latest",
+  "web_fallback_enabled": true,
+  "fallback_chain_enabled": true,
+  "cases": [
+    "A14-01",
+    "A14-02",
+    "A14-03"
+  ],
+  "cache_dir": "/Users/Zhuanz1/PycharmProjects/同花顺/eval/cache/live_content_addressed",
+  "finished_at": "2026-09-06T04:00:13.520796+00:00",
+  "results": [
+    {
+      "case_id": "A14-01",
+      "input": "当前新能源车板块整体PE、PB估值水平如何",
+      "industry_topic": "新能源车",
+      "elapsed_s": 71.9,
+      "current_stage": "data_interpret",
+      "stop_error": "analysis_generation_failed",
+      "stage_status": {
+        "data_fetch": "APPROVED",
+        "data_interpret": "FAILED",
+        "chart_generate": "",
+        "chapter_write": ""
+      },
+      "acquisition_degradation": {
+        "web_fallback_used": false,
+        "web_evidence_count": 0,
+        "levels_used": {
+          "1": 14,
+          "2": 0,
+          "3": 0
+        },
+        "web_sources": [],
+        "requirements": [
+          {
+            "question": "当前新能源车板块整体PE、PB估值水平如何",
+            "level": null,
+            "status": "supported",
+            "path": []
+          }
+        ]
+      },
+      "web_search_calls": 0,
+      "web_cache_hits": 0,
+      "external_requests": 8,
+      "cache_hits": 15,
+      "skill_call_count": 20,
+      "agent2_analysis_keys": [
+        "diagnostics",
+        "error_code",
+        "error_type",
+        "model_name",
+        "prompt_version",
+        "retryable"
+      ],
+      "agent4_chapter_count": 0
+    },
+    {
+      "case_id": "A14-02",
+      "input": "查询隆基绿能公司概况与主营业务构成",
+      "industry_topic": "光伏",
+      "elapsed_s": 64.7,
+      "current_stage": "data_interpret",
+      "stop_error": "analysis_generation_failed",
+      "stage_status": {
+        "data_fetch": "APPROVED",
+        "data_interpret": "FAILED",
+        "chart_generate": "",
+        "chapter_write": ""
+      },
+      "acquisition_degradation": {
+        "web_fallback_used": false,
+        "web_evidence_count": 0,
+        "levels_used": {
+          "1": 13,
+          "2": 0,
+          "3": 0
+        },
+        "web_sources": [],
+        "requirements": [
+          {
+            "question": "查询隆基绿能公司概况与主营业务构成",
+            "level": null,
+            "status": "supported",
+            "path": []
+          }
+        ]
+      },
+      "web_search_calls": 0,
+      "web_cache_hits": 0,
+      "external_requests": 8,
+      "cache_hits": 11,
+      "skill_call_count": 16,
+      "agent2_analysis_keys": [
+        "diagnostics",
+        "error_code",
+        "error_type",
+        "model_name",
+        "prompt_version",
+        "retryable"
+      ],
+      "agent4_chapter_count": 0
+    },
+    {
+      "case_id": "A14-03",
+      "input": "钠离子电池2026年量产进展与头部企业产能规划",
+      "industry_topic": "钠离子电池",
+      "elapsed_s": 172.8,
+      "current_stage": "data_fetch",
+      "stop_error": "required_data_unavailable",
+      "stage_status": {
+        "data_fetch": "WAITING_REVIEW",
+        "data_interpret": "",
+        "chart_generate": "",
+        "chapter_write": ""
+      },
+      "acquisition_degradation": {
+        "web_fallback_used": false,
+        "web_evidence_count": 0,
+        "levels_used": {
+          "1": 10,
+          "2": 3,
+          "3": 0
+        },
+        "web_sources": [],
+        "requirements": [
+          {
+            "question": "钠离子电池2026年量产进展与头部企业产能规划",
+            "level": null,
+            "status": "missing",
+            "path": []
+          }
+        ]
+      },
+      "web_search_calls": 0,
+      "web_cache_hits": 0,
+      "external_requests": 21,
+      "cache_hits": 6,
+      "skill_call_count": 25,
+      "agent2_analysis_keys": [],
+      "agent4_chapter_count": 0
+    }
+  ],
+  "stop": {
+    "code": null,
+    "detail": ""
+  }
+}

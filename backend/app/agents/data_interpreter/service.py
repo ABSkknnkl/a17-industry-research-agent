@@ -17,6 +17,7 @@ from app.agents.data_interpreter.prompt_loader import load_global_equity_analysi
 from app.agents.data_interpreter.reconciliation import reconcile_comparables
 from app.agents.data_interpreter.skill_loader import load_supporting_skills
 from app.agents.data_interpreter.skill_router import SupportingSkillRouter
+from app.core.config import settings
 from app.integrations.llm.openai_compatible import StructuredOutputError
 from app.integrations.llm.protocol import AnalysisModel
 from app.schemas.analysis import (
@@ -374,7 +375,9 @@ class DataInterpreterAgent:
         anomaly_issues = _detect_series_anomalies(eligible_evidence)
 
         calculated_metrics, calculation_issues = calculate_p0_metrics(
-            request.evidence_items
+            request.evidence_items,
+            # 阶段一（2026-09-06）：用户授权后联网数值可参与 C1 计算链。
+            web_numeric_enabled=settings.AGENT2_WEB_NUMERIC_ENABLED,
         )
         requested_calculation_gaps = _requested_calculation_gaps(
             request,

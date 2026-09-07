@@ -43,9 +43,11 @@ from app.core.config import settings
 from app.integrations.llm.openai_compatible import (
     OpenAICompatibleAnalysisModel,
     OpenAICompatibleChapterModel,
+    _is_deepseek_style,
 )
 from app.integrations.skillhub.client import IwencaiSkillClient
 from app.integrations.skillhub.registry import create_skillhub_gateway
+from app.integrations.websearch import WebSearchClient
 from app.runtime.model_gateway import RuntimeAwareAnalysisModel, RuntimeAwareChapterWritingModel
 from app.runtime.models import RuntimePolicy
 from app.schemas.workflow import StageName
@@ -186,18 +188,58 @@ def _live_chat(transport: LiveContentAddressedTransport) -> tuple[ChatOpenAI, ht
         "temperature": 0,
         "timeout": settings.LLM_TIMEOUT_SECONDS,
         "max_retries": 0,
-        "model_kwargs": {"max_tokens": settings.LLM_MAX_OUTPUT_TOKENS},
+        # 与生产 OpenAICompatible*Model 一致：max_tokens 走显式参数，model_kwargs
+        # 透传会触发 langchain-openai 弃用 UserWarning（生产 BUG-5 同款修复）。
+        "max_tokens": settings.LLM_MAX_OUTPUT_TOKENS,
         "http_async_client": client,
     }
-    if settings.LLM_MODEL.lower().startswith("deepseek-"):
+    # 与生产 _is_deepseek_style 对齐：ark-code-latest 在 Auto 模式路由到
+    # deepseek-v4-flash-ga，同属 deepseek 系，必须禁用 thinking。否则推理
+    # reasoning_content 吃掉 max_tokens 预算 → 结构化输出截断
+    # （LengthFinishReasonError）。此前评测仅判 "deepseek-" 漏了 "ark-code-"，
+    # 而生产 model 类自建 ChatOpenAI 时按 _is_deepseek_style 禁用——这正是
+    # 前端能跑通、评测却截断的根因（real_runner 传入 chat_model 绕过了类内分支）。
+    if _is_deepseek_style(settings.LLM_MODEL):
         kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
     return ChatOpenAI(**kwargs), client
+
+
+def _build_live_web_client(
+    transport: LiveContentAddressedTransport,
+) -> WebSearchClient | None:
+    """L3 联网客户端（录制回放版），镜像 factory._create_web_search_client 的四道门。
+
+    与生产装配唯一的差别是注入 ``LiveContentAddressedTransport``——博查响应同样
+    进内容寻址缓存，重放零配额、零触网。返回 ``None`` 表示 L3 整体禁用：
+    gateway 不注册 web_search 工具，executor 也不触发 L3（回滚保证与生产一致）。
+    """
+    if not settings.AGENT1_WEB_FALLBACK_ENABLED:
+        return None
+    if settings.AGENT1_WEB_PROVIDER != "bocha":
+        return None
+    secret = settings.AGENT1_BOCHA_API_KEY
+    api_key = secret.get_secret_value() if secret is not None else None
+    if not api_key:
+        return None
+    allowlist = tuple(
+        item.strip().lower()
+        for item in settings.AGENT1_WEB_DOMAIN_ALLOWLIST.split(",")
+        if item.strip()
+    )
+    return WebSearchClient(
+        api_key=api_key,
+        base_url=settings.AGENT1_WEB_BASE_URL,
+        timeout_seconds=settings.AGENT1_WEB_TIMEOUT_SECONDS,
+        domain_allowlist=allowlist or None,
+        transport=transport,
+    )
 
 
 def build_live_registry(
     *,
     skill_transport: LiveContentAddressedTransport,
     llm_transport: LiveContentAddressedTransport,
+    web_transport: LiveContentAddressedTransport | None = None,
 ) -> tuple[StageRegistry, RecordingSkillClient, httpx.AsyncClient]:
     """Construct the production stages with only live, intercepted providers."""
     assert_real_configuration()
@@ -210,6 +252,10 @@ def build_live_registry(
             transport=skill_transport,
         )
     )
+    # L3 联网（2026-09-06 方案 §4）：仅当 web_transport 就位且四道门通过才建客户端。
+    web_client = (
+        _build_live_web_client(web_transport) if web_transport is not None else None
+    )
     gateway = create_skillhub_gateway(
         skill_client,
         runtime_policy=RuntimePolicy(
@@ -217,6 +263,7 @@ def build_live_registry(
             max_tool_calls=settings.MAX_TOOL_CALLS_PER_RUN,
             max_tool_result_chars=settings.MAX_TOOL_RESULT_CHARS,
         ),
+        web_search_client=web_client,
     )
     chat, async_client = _live_chat(llm_transport)
     semantic_router = None
@@ -251,6 +298,19 @@ def build_live_registry(
                     gateway,
                     concurrency=1,
                     page_size=settings.SKILLHUB_PAGE_SIZE,
+                    # 三层级联降级（2026-09-06 方案）：此前 real_runner 用全默认值
+                    # （fallback_chain_enabled=False / web_fallback_enabled=False），
+                    # .env 开关被绕过 factory 而失效——L2/L3 在真实评测里根本没开。
+                    # 现镜像 factory 从 settings 读，让评测反映生产配置。
+                    fallback_chain_enabled=settings.AGENT1_FALLBACK_CHAIN,
+                    max_fallback_depth=settings.AGENT1_FALLBACK_MAX_DEPTH,
+                    fallback_call_budget=settings.AGENT1_FALLBACK_CALL_BUDGET,
+                    # 绑定"客户端是否真的建起来"而非再读一次开关：开关开着但缺密钥/
+                    # 缺 transport 时 gateway 不注册 web_search 工具，必须同步禁用 L3。
+                    web_fallback_enabled=web_client is not None,
+                    web_call_budget=settings.AGENT1_WEB_CALL_BUDGET,
+                    web_provider=settings.AGENT1_WEB_PROVIDER,
+                    degradation_time_budget=settings.AGENT1_DEGRADATION_TIME_BUDGET,
                 ),
                 provider_mode="live",
                 semantic_router=semantic_router,
@@ -529,8 +589,16 @@ async def run_case(
     llm_transport = LiveContentAddressedTransport(
         cache_dir=CACHE_DIR, provider="llm", controller=controller
     )
+    # L3 联网录制回放（2026-09-06 方案 §4/§8.5）：博查响应进独立 provider 缓存，
+    # 与 skillhub/llm 隔离，重放零配额。web_fallback 关闭时该 transport 仍建但
+    # 不会被任何请求触达（gateway 未注册 web_search 工具）。
+    web_transport = LiveContentAddressedTransport(
+        cache_dir=CACHE_DIR, provider="websearch", controller=controller
+    )
     registry, skill_client, llm_client = build_live_registry(
-        skill_transport=skill_transport, llm_transport=llm_transport
+        skill_transport=skill_transport,
+        llm_transport=llm_transport,
+        web_transport=web_transport,
     )
     run_id = f"live-{case['id'].lower().replace('-', '_')}-{int(time.time())}"
     graph = build_pipeline_graph(registry, checkpointer=InMemorySaver())
@@ -555,6 +623,7 @@ async def run_case(
         caught = f"{type(exc).__name__}:{exc}"
     finally:
         await skill_transport.aclose()
+        await web_transport.aclose()
 
     terminal = evaluate_terminal_state(case, final)
     checks = _check_rows(case, final) if caught is None else []
@@ -577,7 +646,11 @@ async def run_case(
         "elapsed_s": round(time.monotonic() - started, 3),
         "final": final,
         "skill_calls": skill_client.calls,
-        "transport": [*map(asdict, skill_transport.events), *map(asdict, llm_transport.events)],
+        "transport": [
+            *map(asdict, skill_transport.events),
+            *map(asdict, llm_transport.events),
+            *map(asdict, web_transport.events),
+        ],
         "terminal": asdict(terminal),
         "checks": checks,
         "l2": l2,
