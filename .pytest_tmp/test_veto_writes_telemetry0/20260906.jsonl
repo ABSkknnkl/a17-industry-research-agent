@@ -1,3 +1,0 @@
-{"ts":"2026-09-06T16:58:58+00:00","run_id":"run-notes-export","revision":1,"event":"derivative_suspected","text":{"sha256":"0d32d0e502fd4683"},"metric":"产能","alias":"产能","derivative":"过剩"}
-{"ts":"2026-09-06T16:58:58+00:00","run_id":"run-notes-export","revision":1,"event":"llm_veto","requirement_id":"SUB-LLM-01","text":{"sha256":"0d32d0e502fd4683"},"reason":"判断题"}
-{"ts":"2026-09-06T16:58:58+00:00","run_id":"run-notes-export","revision":1,"event":"decomposition","parser_mode":"hybrid","complexity":"simple","plan_hash":"4f53cda18c2baa0c","sub_count":0,"analysis_note_count":1,"low_confidence_rejected":0,"subs":[]}
