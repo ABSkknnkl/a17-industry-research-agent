@@ -1,2 +1,0 @@
-{"ts":"2026-09-06T16:59:03+00:00","run_id":"run-p0-silent","revision":1,"event":"decomposition","parser_mode":null,"complexity":null,"plan_hash":"4f53cda18c2baa0c","sub_count":0,"analysis_note_count":0,"low_confidence_rejected":0,"subs":[]}
-{"ts":"2026-09-06T16:59:03+00:00","run_id":"run-p0-silent","revision":1,"event":"route_decision","text":{"sha256":"2d711642b726b044"},"skill":null,"confidence":null,"below_threshold":false,"layer":"semantic"}

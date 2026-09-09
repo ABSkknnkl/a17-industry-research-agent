@@ -53,3 +53,37 @@ htmlcov/
 .cache/
 coverage/
 .ace-tool/
+
+# ---------------------------------------------------------
+# 2026-09-09 补充：缓存 / 临时产物 / 运行时状态
+# ---------------------------------------------------------
+
+# pytest 临时运行目录（basetemp 产物，非测试源码）
+.pytest_tmp/
+
+# Trae 导出的临时 HTML 分享压缩包
+.trae-html-share-packages/
+*.html.zip
+
+# 运行时日志与进程 pid
+logs/
+*.pid
+*.pids
+
+# 运行时状态数据库（LangGraph checkpoint，20MB，每次运行重新生成）
+/data/
+data/checkpoints.sqlite
+data/checkpoints.sqlite-*
+
+# AI / 编辑器工具状态目录
+.workbuddy/
+.workbuddy-ai/
+.trae/
+.aider*
+.claude/
+.cursor/
+
+# 会话日志（不进主干）
+session-log.md
+SESSION_LOG.md
+*-session-log.md
