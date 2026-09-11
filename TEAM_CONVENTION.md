@@ -1,473 +1,342 @@
-# 这个仓库怎么用（给人看）
+# 这个 Git 仓库怎么用（人话版）
 
-> 仓库：https://github.com/ABSkknnkl/a17-industry-research-agent  
-> 版本：v2.1 · 2026-09-11  
-> 适合：以后和你一起写代码的真人；也方便 AI 照着执行。
-
----
-
-## 一、这是什么项目
-
-一个用多个 AI 智能体自动写行业研究报告的系统。  
-你只需要提一个问题，系统会自动：查数据 → 分析 → 画图 → 写正文 → 出报告。
-
-代码在 `main` 分支上。大家改完代码合回 `main`。
+仓库：`ABSkknnkl/a17-industry-research-agent`  
+页面：https://github.com/ABSkknnkl/a17-industry-research-agent  
 
 ---
 
-## 二、新人怎么接入你的仓库
+## 这个仓库是干什么的
 
-### 第 0 步：你（仓库主人）要准备的
+多智能体自动写行业研报的代码。  
+`main` 是主线，要尽量保持能跑。大家在自己的分支上改，改完再合进 `main`。
 
-在 GitHub 上把队友加进来：
+---
 
-1. 打开仓库 → **Settings** → **Collaborators and teams** → **Add people**
-2. 输入对方 GitHub 用户名 → 邀请
-3. 对方邮件里点接受
+## 一、怎么加入我的仓库
 
-只有被邀请的人才能 `git push`。
+### 第 1 步：有 GitHub 账号
 
-### 第 1 步：装好电脑上的工具
+没有的话先去 https://github.com 注册一个，记下你的用户名，比如 `xxx123`。
 
-需要：
+### 第 2 步：仓库 owner 把你加成成员
 
-- **Git**（终端里敲 `git --version` 能出来版本号）
-- **GitHub 账号**（能登录 github.com）
-- 可选：装 **gh** 命令行，以后开 PR 更方便
+只有仓库主人（`ABSkknnkl`）能拉人：
 
-Windows 建议用 Git Bash；Mac 直接用「终端」。
+1. 打开仓库网页
+2. 点 **Settings** → **Collaborators**（或 **Manage access**）
+3. 点 **Add people**
+4. 输入你的 GitHub 用户名，发送邀请
 
-### 第 2 步：把自己的代码拉下来
+你那边会在 GitHub 收到邮件，或者首页有邀请提示，点 **Accept invitation**。
 
-找仓库主人要仓库地址，然后：
+权限一般选 **Write**（可读写代码）。
+
+### 第 3 步：本机安装 Git（如果还没有）
+
+- macOS：终端输入 `git --version`，有版本号就行；没有去装 Xcode Command Line Tools
+- Windows：装 Git for Windows
+- Linux：`sudo apt install git` 之类
+
+### 第 4 步：把仓库拷到电脑
 
 ```bash
+cd ~/你的代码目录
 git clone https://github.com/ABSkknnkl/a17-industry-research-agent.git
 cd a17-industry-research-agent
 ```
 
-第一次可能要登录 GitHub（输用户名密码，或用 Token）。
-
-### 第 3 步：配置你是谁
+如果用 SSH 更顺手，先在 GitHub 上传公钥，再：
 
 ```bash
-git config user.name "你的名字"
+git clone git@github.com:ABSkknnkl/a17-industry-research-agent.git
+```
+
+### 第 5 步：告诉 Git 你是谁
+
+```bash
+git config user.name "张三"
 git config user.email "你的邮箱@example.com"
 ```
 
-名字随便填什么，方便辨认就行。
+邮箱用你注册 GitHub 的那个，方便对上号。
 
-### 第 4 步：装上本仓库的检查钩子
-
-在仓库目录里执行：
+### 第 6 步：装本地小助手（钩子，可选但推荐）
 
 ```bash
 bash scripts/install-hooks.sh
 ```
 
-以后 `git commit` 时会自动帮你挡住：  
-日志文件、数据库文件、密钥、`.pytest_tmp` 这类不该进库的东西。
+装完以后，`git commit` 会帮你挡住明显不该进库的东西（比如日志、sqlite、密钥）。  
+**不会**因为你提交信息写得怪就拦你。
 
-### 第 5 步：确认环境（建议）
-
-后端：
+### 第 7 步：跑通项目（按 README）
 
 ```bash
+# 后端
 cd backend
 python3.12 -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
+source .venv/bin/activate
 pip install -r requirements.txt -r requirements-dev.txt
-```
+uvicorn app.main:app --reload --port 8000
 
-前端：
-
-```bash
+# 另开一个终端做前端
 cd frontend
 npm ci
+npm run dev
 ```
 
-后端健康检查等说明见 `backend/README.md`、`docs/development/setup.md`。
-
-### 第 6 步：你的本地目录长这样
-
-```text
-a17-industry-research-agent/     ← 你 clone 下来的仓库
-├── TEAM_CONVENTION.md           ← 本说明
-├── backend/                     ← Python 后端
-├── frontend/                    ← Vue 前端
-├── scripts/install-hooks.sh     ← 装钩子用
-└── ...
-```
-
-**只在这个仓库文件夹里改代码。**  
-随便在电脑别处拷一份改，以后会乱。
+验证：后端 `http://localhost:8000/health`，前端 `http://localhost:5173`。
 
 ---
 
-## 三、平时怎么提交代码（日常工作流）
+## 二、每天怎么提交代码（照着做就行）
 
-### 1. 先更新最新代码
+### 1. 先拉最新
 
 ```bash
 git switch main
 git pull
 ```
 
-### 2. 开一条自己的分支
+### 2. 开自己的分支
 
 ```bash
-git switch -c feat/你的名字-这次做什么
+git switch -c feat/张三-修一下图表
 ```
 
-例子：
+名字里带你的名字，别人一看就知道是谁的。
 
-```bash
-git switch -c feat/张三-修图表空数据
-```
-
-### 3. 改代码
-
-用什么编辑器都行（VSCode、Cursor、Trae 等），只改你负责的文件。
-
-### 4. 只把要进库的文件加进去
+### 3. 改代码，只添加你要的文件
 
 ```bash
 git status
-git add backend/app/xxx.py frontend/src/yyy.vue
-```
-
-不要习惯性 `git add .`（会把垃圾也加进去）。
-
-### 5. 提交
-
-```bash
+git add backend/app/某个文件.py
 git commit
 ```
 
-不带 `-m` 会打开编辑器，让你写提交说明。  
-写一行说明就行，例如：
+提交信息随便写点人能看懂的话就行。  
+钩子**不会**因为「你是一个…」这种 AI 长句拦你。  
+**会拦**的只有：空信息、纯数字 `1`、单字母 `k`。
 
-```
-fix(backend): 张三 修好图表空数据崩溃
-```
-
-**会被直接拒的只有：**
-
-- 空信息
-- 纯数字：`1`
-- 单字母：`k`
-
-其余写得乱、用了 AI 生成的长句、姓名不对，**都能提交**。
-
-### 6. 推到 GitHub
+### 4. 推到 GitHub
 
 ```bash
-git push -u origin feat/你的名字-这次做什么
+git push -u origin feat/张三-修一下图表
 ```
 
-### 7. 开 Pull Request（合并请求）
+### 5. 开 Pull Request（建议）
 
-在 GitHub 网页上：会弹出提示 → 点 **Compare & pull request**  
-或用命令：
+网页上对比改动，写两句「我改了什么」，然后等合并。  
+也可以自己在命令行：
 
 ```bash
 gh pr create
 ```
 
-### 8. 等合并
-
-- 自己或队友看一眼没问题 → 点 **Merge**（建议 Squash and merge）
-- 合完 `main` 就是最新的
-
-### 9. 合并前如果 main 又变了
+### 6. 如果 main 又更新了，同步再推
 
 ```bash
 git fetch origin
 git rebase origin/main
-# 有冲突就打开文件改完
-git add 改过的文件
-git rebase --continue
 git push --force-with-lease
 ```
 
 ---
 
-## 四、什么能进库，什么不能
+## 三、哪些文件能进仓库
 
-| 可以进 | 不要进 |
+| 进仓库 | 别进仓库 |
 | --- | --- |
-| 你写的代码 | `logs/`、`*.log` |
-| `backend/tests/` 测试源码 | `.pytest_tmp/` |
-| 前端源码 | `dist/`、`node_modules/` |
-| 配置文件、锁文件 | `__pycache__/`、`.venv/` |
-| 重要说明文档 | `*.sqlite` 数据库文件 |
-| | `.env` 密钥 |
-| | `.workbuddy/` `.trae/` 等 AI 工具本地文件 |
+| 你自己写的代码 | 测试跑出来的文件 |
+| 测试**源码** `tests/` | `logs/`、`dist/`、`coverage/` |
+| 配置文件、锁文件 | `.pytest_tmp/`、`__pycache__/`、`.venv/` |
+| 重要文档 | `.workbuddy/`、`.trae/` 等工具记忆 |
+| | 数据库 `*.sqlite` |
+| | 密钥 `.env`、`.pem`、`.key` |
+| | `node_modules/` |
 
-**判断方法：**  
-这个文件是你「写的」还是「跑出来的」？  
-写的可以进，跑出来的不要进。
-
-大文件（超过约 500KB）一般不要进，除非问过队友。
+记住一句：**人写的进，机器跑出来的不进。**
 
 ---
 
-## 五、还没验证完的代码放哪
+## 四、还不确定的代码放哪
 
-比如：AI 刚生成一大堆、你自己也不确定能不能跑。
+还没验证、AI 大段生成、外面拷来的：
 
-**不要**直接塞进 `main`。
-
-1. 开一条隔离分支：
+1. 单独开一条隔离分支，名字带自己，例如：
 
 ```bash
-git switch -c agent/你的名字-随便试
+git switch -c agent/张三-先试一版
 ```
 
-2. 可以慢慢试，**没有几天必须删的规定**。
-3. 试出有用的东西后：
-
-```bash
-git switch main && git pull
-git switch -c feat/你的名字-正式改动
-# 从隔离分支里拷有用的文件过来
-git add 具体文件
-git commit
-git push
-# 再开 PR
-```
-
-4. **不要**把整条 `agent/xxx` 一把 merge 进 main。
+2. 这条分支**可以一直留着**，没有「几天必须删」的死规定。
+3. **不要**好几个人往同一条 `agent/xxx` 里堆。
+4. 确定能用了，再从 `main` 开一条干净的 `feat/...` 分支，把有用的部分挑过去，开 PR 合进 `main`。  
+   不要把整条隔离分支一把 merge 进 `main`。
 
 ---
 
-## 六、main 分支怎么维护
+## 五、合进 main 的流程（推荐）
 
-| 做法 | 说明 |
+```text
+main ──拉分支──► 你的 feat/fix 分支 ──改代码──► push ──PR──► main
+```
+
+- 测试尽量本地跑通再合。
+- 大改动拆成几次，别一次糊几千行。
+- 合并后分支可删可留。
+
+---
+
+## 六、什么时候会被拦住
+
+| 情况 | 会不会拦 |
 | --- | --- |
-| 尽量走 PR 合并 | 有个记录，出问题好找 |
-| 别人在写代码时不要乱 force push | 容易把别人的东西弄丢 |
-| 测试挂了别硬合 | 本地跑一下相关测试 |
-| 直接 push main | **目前没有强制禁止**，能不直推就别直推 |
+| 提交信息写得随意 / AI 长句 | 不拦 |
+| 姓名不在名单里 | 不拦 |
+| 纯数字 `1`、空信息 | **拦** |
+| 提交 `logs/`、`*.sqlite`、`.env` | **拦** |
+| 前后端测试挂了（CI） | **拦** |
+| 直接 push `main` | 当前**不拦**（保护默认关着） |
 
-如果某天你们想开 GitHub 分支保护（禁止直推 main）：
+本地想强行提交：`git commit --no-verify`。
+
+---
+
+## 七、分支保护要不要开（可选）
+
+默认**不开**。想开的话，仓库 owner 在本机执行：
 
 ```bash
 bash scripts/setup-branch-protection.sh
 ```
 
-脚本会先问你是不是确定（输 `yes` 才真的开）。  
-**现在默认是关的。**
+会先问你是不是真的要开；输入 `yes` 才真正设置。  
+开了之后：合并必须走 PR、要有审核。  
+不开：大家直接 push 也行，靠自觉。
 
 ---
 
-## 七、你现在提交会被拦吗
+## 八、常见问题
 
-| 操作 | 结果 |
-| --- | --- |
-| `git commit -m "随便写"` | 可以过 |
-| `git commit -m "你是一个自动化审计工具…"` | 可以过（AI prompt 也放行） |
-| `git commit -m "1"` | **会拦** |
-| `git add logs/x.log` | **会拦** |
-| `git add backend/.env` | **会拦** |
-| 测试全挂还 push | GitHub CI 会失败 |
+**Q：我 push 被拒绝？**  
+先 `git pull --rebase origin main`，解决冲突后再推。不要对着 `main` 乱用 `--force`。
 
-本地想强行提交：
+**Q：提交信息写错了且还没 push？**  
+`git commit --amend` 改一下。
+
+**Q：已经 push 了想改？**  
+新开一个 commit 说明，或对**自己的分支** rebase 后 `--force-with-lease`。
+
+**Q：误把日志提交进去了？**  
 
 ```bash
-git commit --no-verify
+git rm --cached 文件路径
+# 再确认 .gitignore 有对应规则，然后正常提交
 ```
 
-不推荐常用。
+**Q：怎么拉我进仓库？**  
+让 owner 按上面「第 2 步」发邀请；你需要 GitHub 用户名。
 
 ---
 
-## 八、每天开工前建议做这四步
+## 九、命令小抄
 
 ```bash
-git switch main
-git pull
-git switch -c feat/你的名字-今天干什么
-# 或者切换回你昨天没做完的分支
-git switch feat/你的名字-昨天那事
+# 拉最新
+git switch main && git pull
+
+# 开发分支
+git switch -c feat/你的名-简述
+
+# 隔离试验分支
+git switch -c agent/你的名-试验
+
+# 添加并提交
+git add 文件名
+git commit
+
+# 推送
+git push -u origin 当前分支名
+
+# 同步 main 再推
 git fetch origin
 git rebase origin/main
-```
 
-改完就 commit、push、开 PR。  
-分支短命、小步提交，比攒一大包好合。
-
----
-
-## 九、出问题怎么办
-
-| 情况 | 办法 |
-| --- | --- |
-| 提交信息写错还没 push | `git commit --amend` 改一下 |
-| 提交错了还没 push | `git reset --soft HEAD~1` 退回来重做 |
-| push 被拒绝 | 先 `git pull --rebase origin main` 再 push |
-| 冲突不会解 | 拉上队友一起看，别自己瞎猜 |
-| 真 push 坏了 | 别 force main；开 revert 或找仓库主人 |
-| 钩子太烦想关掉 | `git config --unset core.hooksPath` |
-
----
-
-## 十、一页备忘
-
-```text
-开工：  git switch main && git pull
-开分支：git switch -c feat/名字-简述
-添加：  git add 具体文件
-提交：  git commit
-推送：  git push -u origin 当前分支
-合并：  GitHub 上开 PR → 审一下 → Merge
-实验：  用 agent/名字-试用 分支，别直接怼 main
+# 删掉一条没用的隔离分支
+git push origin --delete agent/你的名-试验
 ```
 
 ---
----
 
-# 附：给 AI / 脚本的严谨说明
+## 十、机器/脚本读的严谨条款（人类可略过）
 
-> 上文是给人读的。本节给自动化、评审机器人、AI 编码代理使用。  
-> 冲突时：**硬拦截以本节为准；上文写「建议」的，本节若为 MAY/SHOULD，则不构成失败。**
+> 下列规则供钩子、CI、AI Agent 使用。和上文冲突时，硬拦截以本节为准；其余以上文「宽松协作」为准。
 
-## A. 范围
+### 1. 必须拦截（fail）
 
-- 远端：`ABSkknnkl/a17-industry-research-agent`
-- 默认分支：`main`
-- 开发分支：`feat/*` `fix/*` `docs/*` `chore/*`
-- 隔离分支：`agent/*` `quarantine/*`
-
-## B. MUST（违反则 hook 或 CI fail）
-
-### B.1 提交信息
-
-Reject：
+提交信息：
 
 - 空 header
 - `^[0-9]{1,4}$`
 - `^[a-zA-Z]{1,2}$`
 
-Allow（即使格式不标准）：
-
-- AI prompt 原文
-- 非名单姓名
-- 其它任意非空字符串（除上一条 Reject）
-
-### B.2 暂存文件（pre-commit）
-
-Reject path 匹配：
+暂存文件路径若命中：
 
 ```
 \.pytest_tmp/|\.workbuddy/|\.workbuddy-ai/|\.trae/|\.trae-html-share-packages/
-\.claude/|\.cursor/|\.aider|node_modules/|__pycache__/|\.venv/|venv/
+\.claude/|\.cursor/|\.aider|node_modules/|__pycache__/|\.venv/
 ^logs/|^dist/|^build/|^coverage/|^htmlcov/|/artifacts/|^output/|session-log
 \.(log|pids?|pid|sqlite|sqlite3|html\.zip|pyc|pyo|egg-info)$
 ```
 
-Reject 敏感：
+敏感文件：
 
 ```
-(^|/)(\.env|\.env\..*|.*\.pem|.*\.key|.*_rsa|.*\.p12|credentials.*|secrets?\..*)($|\.)
+\.env|\.env\..*|\.pem|\.key|_rsa|\.p12|credentials|secrets?\.
 ```
 
-Warn only（不得 fail）：
+CI：backend pytest、frontend lint/build、同上路径检查失败。
 
-- 文件 > 500KB
-- 无 `docs/changes/`
-
-### B.3 CI
-
-| Job | Fail 条件 |
-| --- | --- |
-| commitlint | B.1 |
-| backend | pytest != 0 |
-| frontend | lint/build != 0 |
-| hygiene | 变更路径命中 B.2 垃圾集合 |
-| PR size | warning only |
-| changelog | warning only |
-
-## C. MUST NOT hard-fail
-
-禁止因下列原因 `exit 1` 或 CI fail：
+### 2. 禁止作为失败原因
 
 - 姓名是否在 `team.txt`
 - 是否符合 `type(scope): 姓名 描述`
-- 是否含 AI prompt 特征
-- 文件大小
-- 缺变更文档
-- PR 行数
-- 是否 approve 自己
-- 未开保护时是否直推 / force push main
+- 是否像 AI prompt
+- 文件 > 500KB
+- 缺少 `docs/changes/`
+- PR 行数（含 400 行）
+- 直接 push `main` / force `main`（未开保护时）
 
-## D. 隔离分支
+### 3. 隔离分支
 
-```
-agent/<owner>-<slug>
-quarantine/<owner>-<slug>
-```
+- 命名：`agent/<owner>-<slug>` 或 `quarantine/<owner>-<slug>`
+- 无存活时间上限
+- 禁止多人共用同一隔离分支
+- 禁止整支 merge 进 `main`；只能从 `main` 拉干净分支 cherry-pick 后 PR
 
-- 无最大存活时间
-- MAY force-push / 删除
-- MUST NOT 整支 merge/squash 进 `main`
-- 进 main：从 `origin/main` 开干净分支 + cherry-pick/逐文件 + PR
-- 同样适用 B.2
+### 4. 路径约定
 
-## E. 推荐提交格式（非强制）
-
-```
-<type>(<scope>): <owner> <subject>
-```
-
-## F. 分支保护
-
-默认 off。`scripts/setup-branch-protection.sh` 交互确认后才 PUT protection。
-
-## G. 关键路径
-
-| 路径 | 用途 |
+| 路径 | 作用 |
 | --- | --- |
-| `.githooks/commit-msg` | 本地信息检查 |
+| `.githooks/commit-msg` | 本地提交信息 |
 | `.githooks/pre-commit` | 本地文件卫生 |
-| `.githooks/team.txt` | 可选名单 |
-| `commitlint.config.js` | CI 信息检查 |
+| `commitlint.config.js` | CI 提交信息 |
 | `.github/workflows/ci.yml` | CI |
-| `scripts/install-hooks.sh` | 安装 hooksPath |
-| `scripts/setup-branch-protection.sh` | 可选保护 |
-| `docs/changes/` | 可选变更文档 |
-| `TEAM_CONVENTION.md` | 本文件 |
+| `scripts/install-hooks.sh` | 安装钩子 |
+| `scripts/setup-branch-protection.sh` | 可选开保护 |
 
-## H. Agent 附加约束
+### 5. AI Agent 额外约束
 
-1. MUST NOT 未经确认 force-push `main` 或删除唯一真源分支。
-2. MUST 将未验证改动放在 `agent/*` 或 `quarantine/*`。
-3. MUST NOT 整支 merge 隔离分支进 `main`。
-4. SHOULD 以最小 diff + 干净分支开 PR。
-5. MUST 遵守 B.2（密钥、sqlite、测试产物）。
-6. Commit message 可以非标、可含 AI 文案（见 B.1）。
-7. 对远端不可逆操作（push main、删分支、开保护）SHOULD 先问用户。
+- 未经用户确认：不得 force push `main`，不得删唯一真源
+- 未验证改动进 `agent/*`，不进 `main`
+- 不得整支 merge 隔离分支
+- push 远端前应向用户确认
 
-## I. 版本
+---
 
-| 版本 | 说明 |
+## 修订记录
+
+| 日期 | 说明 |
 | --- | --- |
-| v1.x | 强制规范与钩子落地 |
-| v2.0 | 人话 / AI 规范拆分 |
-| v2.1 | 补全人类接入仓库步骤；语气改为可独立阅读 |
-
-## J. 人类速查
-
-```bash
-git clone https://github.com/ABSkknnkl/a17-industry-research-agent.git
-cd a17-industry-research-agent
-git config user.name "名字"
-git config user.email "邮箱"
-bash scripts/install-hooks.sh
-
-git switch main && git pull
-git switch -c feat/名字-简述
-git add 文件 && git commit
-git push -u origin feat/名字-简述
-# GitHub 开 PR → Merge
-```
+| 2026-09-11 | 改为人话版 + 加入仓库指南 + 保留文末机器条款 |
