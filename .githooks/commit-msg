@@ -1,0 +1,64 @@
+#!/bin/sh
+# ============================================================================
+# commit-msg —— 提交信息提醒（本地提示，尽量不硬拦）
+#
+# 放宽：AI prompt 原文 / 姓名 / 格式 全部直接放行
+# 仍拦：仅纯数字与空提交（防完全不可检索）
+#
+# 绕过：git commit --no-verify
+# ============================================================================
+
+MSG_FILE="$1"
+HEADER=$(head -n 1 "$MSG_FILE" | sed 's/[[:space:]]*$//')
+REPO_ROOT=$(git rev-parse --show-toplevel)
+TEAM_FILE="$REPO_ROOT/.githooks/team.txt"
+
+RED='\033[31m'; YEL='\033[33m'; GRN='\033[32m'; RST='\033[0m'
+
+die() {
+  printf "${RED}✗ 提交被拒绝${RST}\n"
+  printf "  %s\n" "$1"
+  printf "\n"
+  printf "  正确格式： ${YEL}<type>(<scope>): <姓名> <subject>${RST}\n"
+  printf "  示例：     ${YEL}fix(backend): 张三 修复 evidence_items 空列表导致 A2 覆盖循环崩溃${RST}\n"
+  printf "\n"
+  printf "  提示：用 ${YEL}git commit${RST}（不带 -m）可以打开提交模板\n"
+  printf "        团队成员名单见 .githooks/team.txt（名单不强制）\n"
+  exit 1
+}
+
+warn() {
+  printf "${YEL}⚠ %s${RST}\n" "$1"
+}
+
+if [ -z "$HEADER" ]; then
+  die "提交信息为空"
+fi
+
+# ---------- 1. 仅拦纯数字；AI prompt 原文直接放行 ----------
+if printf '%s' "$HEADER" | grep -Eq '^[0-9]{1,4}$'; then
+  die "纯数字提交信息没有信息量"
+fi
+if printf '%s' "$HEADER" | grep -Eq '^[a-zA-Z]{1,2}$'; then
+  die "单字母/双字母提交信息没有信息量"
+fi
+
+# ---------- 2. 格式：不匹配则提醒，不拒绝 ----------
+if ! printf '%s' "$HEADER" | grep -Eq '^(feat|fix|refactor|perf|test|docs|build|ci|chore|revert)(\([a-zA-Z0-9_.-]+\))?: [^ ]+ .+$'; then
+  warn "建议格式：<type>(<scope>): <姓名> <subject>"
+  printf "  例：fix(backend): 张三 修复 evidence_items 空列表导致崩溃\n"
+  printf "  当前：%s\n" "$HEADER"
+fi
+
+# ---------- 3. 姓名在名单里：只提醒 ----------
+NAME=$(printf '%s' "$HEADER" | sed -E 's/^(feat|fix|refactor|perf|test|docs|build|ci|chore|revert)(\([a-zA-Z0-9_.-]+\))?: ([^ ]+) .+$/\3/')
+
+if [ -f "$TEAM_FILE" ] && [ -n "$NAME" ]; then
+  if ! grep -qxF "$NAME" "$TEAM_FILE"; then
+    warn "姓名「${NAME}」不在 .githooks/team.txt（名单不强制，仅方便检索）"
+    printf "  当前名单：%s\n" "$(tr '\n' ' ' < "$TEAM_FILE" | grep -v '^#' | tr -s ' ')"
+  fi
+fi
+
+printf "${GRN}✓ commit-msg 检查通过${RST}\n"
+exit 0

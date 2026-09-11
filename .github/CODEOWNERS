@@ -1,0 +1,50 @@
+# ============================================================================
+# CODEOWNERS —— 4 人按模块分工
+# 文档：https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# 上线前必做：把 @张三 @李四 @王五 @赵六 换成 4 位成员的 GitHub 用户名
+# 并在分支保护里勾选 "Require review from Code Owners"
+#
+# 规则：后面的行覆盖前面的。同一路径写多个 owner = 都要 approve
+# ============================================================================
+
+# ---------- 默认兜底：全员可见，任一 owner 批准即可 ----------
+*                       @张三 @李四 @王五 @赵六
+
+# ---------- 数据契约：前后端耦合点，需 2 人批准 ----------
+/contracts/             @王五 @李四
+/backend/app/schemas/   @王五 @张三
+
+# ---------- 后端核心 ----------
+/backend/app/agents/data_fetcher/       @张三
+/backend/app/agents/chart_generator/    @李四
+/backend/app/agents/chapter_writer/     @王五
+/backend/app/agents/data_interpreter/   @张三
+/backend/app/agents/common/             @张三 @王五
+/backend/app/core/                      @张三 @李四
+
+# ---------- 前端 ----------
+/frontend/              @李四
+
+# ---------- 测试与评测 ----------
+/backend/tests/         @赵六
+/eval/                  @赵六
+
+# ---------- 评审器规则（影响报告质量，双签） ----------
+/backend/app/agents/chapter_writer/readability_linter.py  @王五 @赵六
+
+# ---------- CI / 依赖 / 团队约定：改坏全队阻塞，双签 ----------
+/.github/               @李四 @赵六
+/.githooks/             @张三 @王五
+/backend/pyproject.toml              @张三 @赵六
+/backend/requirements*.txt           @张三 @赵六
+/frontend/package.json               @李四 @赵六
+/frontend/package-lock.json          @李四 @赵六
+/TEAM_CONVENTION.md                  @张三 @李四 @王五 @赵六
+/.gitmessage                         @张三 @李四 @王五 @赵六
+/commitlint.config.js                @李四 @赵六
+
+# ---------- 文档 ----------
+/docs/requirements/     @王五
+/docs/api/              @李四
+/docs/changes/          @张三 @李四 @王五 @赵六
