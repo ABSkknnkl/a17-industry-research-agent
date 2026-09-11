@@ -1,0 +1,42 @@
+# 提交信息模板
+#
+# 启用：git config commit.template .gitmessage
+# 之后 git commit（不带 -m）就会在编辑器里打开这个模板。
+#
+# 格式：  <type>(<scope>): <姓名> <subject>
+#         例：fix(backend): 张三 修复 evidence_items 空列表导致 A2 覆盖循环崩溃
+#
+# 规则：
+#   1. 姓名必须是 .githooks/team.txt 里的真名，否则 commit 被拒绝
+#   2. subject 一行说清「做了什么」，结尾不加句号
+#   3. 第二行必须空着
+#   4. 正文解释「为什么改」，不是「改了什么」（改了什么看 diff 就知道）
+#   5. 记得填上变更文档路径
+#
+# 反面教材（本仓库真实存在过）：
+#   ✗ 1
+#   ✗ k
+#   ✗ 新的
+#   ✗ feat: 你是一个自动化安全审计工具，负责对本代码…
+#   ✗ chore: pre-termination backup
+#   ✗ fix: 修一下            （没写姓名）
+#
+# ------------------------------------------------------------------
+# type 白名单：
+#   feat     新功能          fix      修 bug
+#   refactor 重构            perf     性能优化
+#   test     测试            docs     文档
+#   build    构建/依赖        ci       流水线
+#   chore    杂项            revert   回滚
+#
+# scope 建议：
+#   backend frontend contracts eval docs
+#   agent1 ~ agent5  linter  charts  deps
+# ------------------------------------------------------------------
+
+<type>(<scope>): <姓名> <subject>
+
+<正文：为什么改（WHY），不是改了什么（WHAT）>
+
+变更文档：docs/changes/YYYY-MM-DD-<姓名>-<slug>.md
+Refs #<issue号>

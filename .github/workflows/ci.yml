@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# 同一 PR 的新提交自动取消旧跑，省 Actions 额度
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------
+  # 0. 提交信息门禁：拦截 "1" / "k" / AI prompt 泄漏这类垃圾信息
+  # ---------------------------------------------------------------
+  commitlint:
+    name: Commit Message
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - name: Install commitlint
+        run: npm install --no-save @commitlint/cli @commitlint/config-conventional
+      - name: Lint commits in PR
+        run: >-
+          npx commitlint
+          --from ${{ github.event.pull_request.base.sha }}
+          --to ${{ github.event.pull_request.head.sha }}
+          --verbose
+
+  # ---------------------------------------------------------------
+  # 1. 后端：ruff + pytest
+  # ---------------------------------------------------------------
+  backend:
+    name: Backend (py3.12)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+          pip install -e .
+
+      - name: Lint
+        run: |
+          ruff check . --output-format=github || ruff check .
+          ruff format --check . || true
+
+      - name: Test
+        env:
+          # 关键：把 pytest 临时目录踢出仓库，避免再出现 .pytest_tmp/ 入库
+          PYTEST_DEBUG_TEMPROOT: ${{ runner.temp }}
+          BASILISP_DO_NOT_CACHE: 1
+        run: pytest -q --basetemp=${{ runner.temp }}/pytest
+
+  # ---------------------------------------------------------------
+  # 2. 前端：lint + typecheck + build
+  # ---------------------------------------------------------------
+  frontend:
+    name: Frontend (node22)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # 锁文件存在才用 ci，否则退回 install（防止 CI 直接崩）
+      - name: Install deps
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build
+        run: npm run build --if-present
+
+  # ---------------------------------------------------------------
+  # 3. 仓库卫生：防止再有人把 .pytest_tmp / eval 产出 / zip 提交进来
+  # ---------------------------------------------------------------
+  hygiene:
+    name: Repo Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Forbidden paths
+        run: |
+          set -euo pipefail
+          FORBIDDEN=(
+            ".pytest_tmp/"
+            ".workbuddy/"
+            ".workbuddy-ai/"
+            ".trae/"
+            ".trae-html-share-packages/"
+            "node_modules/"
+            "__pycache__/"
+            ".venv/"
+          )
+          BASE=origin/${{ github.base_ref || 'main' }}
+          git fetch --no-tags origin "${{ github.base_ref || 'main' }}"
+          CHANGED=$(git diff --name-only "$BASE"...HEAD)
+          BAD=""
+          for f in $CHANGED; do
+            for p in "${FORBIDDEN[@]}"; do
+              case "$f" in *"$p"*) BAD="$BAD $f";; esac
+            done
+          done
+          if [ -n "$BAD" ]; then
+            echo "::error::以下文件不应提交：$BAD"
+            exit 1
+          fi
+
+      - name: PR size guard (warning only)
+        if: github.event_name == 'pull_request'
+        run: |
+          LINES=$(git diff --numstat origin/${{ github.base_ref }}...HEAD \
+                  | awk '{a+=$1; d+=$2} END {print a+d}')
+          echo "本次 PR 变更行数：${LINES:-0}"
+          if [ "${LINES:-0}" -gt 400 ]; then
+            echo "::warning::PR 变更 ${LINES} 行，超过 400 行建议拆分。大体量 PR 无法被有效评审。"
+          fi
+
+  # ---------------------------------------------------------------
+  # 4. 变更文档门禁：每个 PR 必须更新 docs/changes/
+  #    纯格式化 / 依赖升级等可加 no-changelog 标签豁免
+  # ---------------------------------------------------------------
+  changelog:
+    name: Change Doc
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check docs/changes updated
+        env:
+          BASE: ${{ github.event.pull_request.base.ref }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "$BASE"
+          CHANGED=$(git diff --name-only "origin/$BASE"...HEAD -- docs/changes/ || true)
+
+          if [ -n "$CHANGED" ]; then
+            echo "✓ 变更文档已更新："
+            echo "$CHANGED" | sed 's/^/    /'
+            exit 0
+          fi
+
+          if echo "$LABELS" | grep -q 'no-changelog'; then
+            echo "::warning::本次 PR 未更新变更文档，但已加 no-changelog 标签，予以放行"
+            exit 0
+          fi
+
+          echo "::error::缺少最终变更文档。"
+          echo "::error::团队约定第 4 条：每次改代码必须补写 docs/changes/YYYY-MM-DD-<姓名>-<slug>.md"
+          echo "::error::模板见 docs/changes/TEMPLATE.md；纯格式化或依赖升级请加 no-changelog 标签"
+          exit 1
