@@ -1,15 +1,11 @@
 #!/bin/sh
 # ============================================================================
-# pre-commit —— 暂存区门禁（本地第一道闸）
+# pre-commit —— 暂存区卫生检查（本地提示）
 #
-# 拦截：
-#   1. 禁止目录：logs/ .pytest_tmp/ .workbuddy/ .workbuddy-ai/ .trae/ 等
-#   2. 禁止后缀：*.log *.html.zip *.pids *.sqlite 临时报告
-#   3. 单文件 > 500KB
-#   4. 敏感文件：.env 类、私钥
-#   5. （提醒）本次没有改动 docs/changes/ 下的变更文档
+# 强制拦：测试产物 / 缓存 / 敏感文件
+# 只提醒：超大文件、变更文档
 #
-# 绕过（仅限紧急情况）：git commit --no-verify
+# 绕过：git commit --no-verify
 # ============================================================================
 
 RED='\033[31m'; YEL='\033[33m'; GRN='\033[32m'; RST='\033[0m'
@@ -19,7 +15,7 @@ fail=0
 STAGED=$(git diff --cached --name-only --diff-filter=ACM)
 [ -z "$STAGED" ] && exit 0
 
-# ---------- 1 & 2. 禁止路径与后缀 ----------
+# ---------- 1 & 2. 禁止路径与后缀（强制） ----------
 BAD_PATHS='(\.pytest_tmp/|\.workbuddy/|\.workbuddy-ai/|\.trae/|\.trae-html-share-packages/|\.claude/|\.cursor/|\.aider|node_modules/|__pycache__/|\.venv/|venv/|^logs/|^dist/|^build/|^coverage/|^htmlcov/|/artifacts/|^output/|session-log)'
 BAD_EXTS='\.(log|pids?|pid|sqlite|sqlite3|html\.zip|pyc|pyo|egg-info)$'
 
@@ -31,7 +27,7 @@ if [ -n "$BAD" ]; then
   fail=1
 fi
 
-# ---------- 3. 大文件 ----------
+# ---------- 3. 大文件：只提醒，不拦 ----------
 BIG=""
 for f in $STAGED; do
   if [ -f "$f" ]; then
@@ -43,13 +39,11 @@ for f in $STAGED; do
   fi
 done
 if [ -n "$BIG" ]; then
-  printf "${RED}✗ 以下文件超过 ${MAX_KB}KB：${RST}\n"
+  printf "${YEL}⚠ 以下文件较大（> ${MAX_KB}KB），不强制拦，但请确认是否该进 Git：${RST}\n"
   printf "$BIG"
-  printf "  大文件请放对象存储或 Git LFS，不要直接进仓库\n"
-  fail=1
 fi
 
-# ---------- 4. 敏感文件 ----------
+# ---------- 4. 敏感文件（强制） ----------
 SECRET=$(printf '%s\n' "$STAGED" | grep -E '(^|/)(\.env|\.env\..*|.*\.pem|.*\.key|.*_rsa|.*\.p12|credentials.*|secrets?\..*)($|\.)' || true)
 if [ -n "$SECRET" ]; then
   printf "${RED}✗ 疑似敏感文件：${RST}\n"
@@ -57,14 +51,13 @@ if [ -n "$SECRET" ]; then
   fail=1
 fi
 
-# ---------- 5. 变更文档提醒（不阻断） ----------
+# ---------- 5. 变更文档：只提醒 ----------
 if ! printf '%s\n' "$STAGED" | grep -q '^docs/changes/'; then
-  printf "${YEL}提醒：本次提交没有改动 docs/changes/ 下的变更文档。${RST}\n"
-  printf "      团队约定：每个 PR 必须有一份变更文档（见 TEAM_CONVENTION.md 第 4 节）\n"
+  printf "${YEL}提醒：本次提交没有 docs/changes/ 变更文档（不强制）。${RST}\n"
 fi
 
 if [ "$fail" -eq 1 ]; then
-  printf "\n${RED}提交已中止。确认是误报可用 git commit --no-verify，但请说明理由。${RST}\n"
+  printf "\n${RED}提交已中止。确认是误报可用 git commit --no-verify。${RST}\n"
   exit 1
 fi
 

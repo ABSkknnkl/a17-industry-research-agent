@@ -1,9 +1,10 @@
 # a17-industry-research-agent 团队协作与文档规范
 
-> 版本 v1.1 · 更新日期 2026-09-11 · 生效日期 2026-09-09 · 适用仓库 `ABSkknnkl/a17-industry-research-agent`
-> v1.1 新增：§6.5 隔离分支（未验证 / AI 产出 / 实验代码的统一入口；**无存活时间限制**）
+> 版本 v1.2 · 更新日期 2026-09-11 · 生效日期 2026-09-09 · 适用仓库 `ABSkknnkl/a17-industry-research-agent`
+> v1.1 新增：§6.5 隔离分支（无存活时间限制）
+> v1.2 调整为**宽松协作**：姓名名单 / 大文件 / 分支保护 / PR 行数 / 变更文档 / AI 通读 等改为**提醒或可选**，不硬拦
 > 团队规模：**4 名开发者**
-> 本文件是**强制约定**，不是建议。所有机制已在 `.githooks/`、`.github/`、`commitlint.config.js` 中落地，违反会被自动拦截。
+> 本文件以**协作建议**为主；机器只硬拦垃圾提交信息与测试产物入库。
 
 ---
 
@@ -74,27 +75,18 @@ Refs #17
 
 对应把 `commitlint.config.js` 里的 `AUTHOR_FIRST` 设为 `true`（已预留开关）。
 
-### 1.5 硬性红线（会被钩子直接拒绝）
+### 1.5 建议与仅有的硬拦
 
-| 禁止 | 说明 |
+| 项 | 级别 |
 | --- | --- |
-| 提交信息无姓名 / 姓名不在 `team.txt` | 无法追溯责任人 |
-| 纯数字、单字母（`1` `k` `新的`） | 历史不可检索 |
-| 把 AI prompt 原文当提交信息 | 本仓库历史上 31 个提交犯过这个错 |
-| `pre-termination backup` / `wip` / `tmp` | 会话中断请用 `git stash` |
-| `git commit -m "..."` 不带正文 | 复杂改动必须写清 WHY |
+| 姓名在 `team.txt` | **提醒**，不强制 |
+| 格式 `type(scope): 姓名 描述` | **建议**，不强制 |
+| 纯数字 / AI prompt 原文 | **硬拦**（不可检索） |
+| `pre-termination backup` | 提醒 |
 
 ### 1.6 AI Agent 提交的署名
 
-AI 工具的提交**必须挂在使用者名下**，不能是 `traeagent` / `Copilot`：
-
-```
-feat(frontend): 李四 新增图表画廊组件
-
-Co-authored-by: traeagent <traeagent@users.noreply.github.com>
-```
-
-`Co-authored-by` 保留（说明有 AI 参与），但 **headline 的姓名必须是人**。
+AI 工具的提交可挂在使用者名下，也可带 `Co-authored-by`。建议 headline 写人名，**不强制**。
 
 ---
 
@@ -108,7 +100,7 @@ Co-authored-by: traeagent <traeagent@users.noreply.github.com>
 | 数据契约 | `contracts/*.schema.json`、前端 TS 类型 |
 | 测试**源码** | `backend/tests/**`、前端 `*.spec.ts` |
 | 构建配置 | `pyproject.toml`、`package.json`、`vite.config.ts`、锁文件 |
-| 重要文档 | 需求说明、接口文档、架构决策、`docs/changes/` 变更文档、`README.md` |
+| 重要文档 | 需求说明、接口文档、架构决策、`README.md`（`docs/changes/` 建议写） |
 | 团队约定 | 本文件、`AGENTS.md`、`CODEOWNERS`、`.githooks/` |
 
 ### 2.2 一律不进版本库
@@ -117,20 +109,21 @@ Co-authored-by: traeagent <traeagent@users.noreply.github.com>
 | --- | --- |
 | 测试**产物** | `logs/`、`*.log`、`.pytest_tmp/`、`coverage/`、`htmlcov/` |
 | 构建输出 | `dist/`、`build/`、`*.egg-info/`、`frontend/dist/` |
-| 截图 / 临时报告 | `screenshots/`、`*.pdf`（评测跑出来的）、`artifacts/`、`/output/` |
+| 截图 / 临时报告 | `screenshots/`、评测跑出来的 `*.pdf`、`artifacts/`、`/output/` |
 | 运行时状态 | `data/checkpoints.sqlite`、`*.pid`、`*.pids` |
 | 大数据/中间结果 | `eval/transcript/**` 的跑测输出、`*.jsonl` 遥测 |
 | 临时压缩包 | `.trae-html-share-packages/`、`*.html.zip` |
 
-> **判据**：这个文件是**人写的**还是**跑出来的**？人写的进，跑出来的不进。
-> 唯一例外：需要作为回归基线的 fixture，放在 `eval/fixtures/` 并显式加白名单。
+> **硬拦**：上表测试产物 / 缓存 / 敏感文件。
+> **不硬拦**：单文件 > 500KB（只提醒）、变更文档缺失（只提醒）。
+> 判据：人写的进，跑出来的不进。
 
 ### 2.3 提交前自检
 
 ```bash
-git status -s          # 逐条看，确认没有上面 2.2 的东西
-git add <具体文件>      # 禁止 git add . / git add -A
-git commit             # 不带 -m，用模板
+git status -s
+git add <具体文件>      # 建议，避免 git add .
+git commit             # 不带 -m 用模板更方便
 ```
 
 > `.gitignore` 只管**未跟踪**的文件。已经进版本的必须先 `git rm --cached <路径>`（我们已做过一次 317 文件的清理）。
@@ -182,14 +175,13 @@ git ls-files | wc -l           # 跟踪文件总数（异常增长说明漏配�
 
 ---
 
-## 4. 最终变更文档：改完代码必须补
+## 4. 最终变更文档（建议，不强制）
 
 ### 4.1 规则
 
-- **每一个 PR 必须包含一份变更文档**，路径 `docs/changes/YYYY-MM-DD-<姓名>-<slug>.md`
-- 内容必须回答三件事：**改了什么、影响范围、怎么验证**
-- 同一天同一人多件事，用不同 slug 拆成多份
-- 小到改一行配置也要写（可以很短，但不能没有）
+- **建议**每个 PR 一份变更文档，路径 `docs/changes/YYYY-MM-DD-<姓名>-<slug>.md`
+- 小改动可省略；复杂/跨模块改动建议写清：**改了什么、影响范围、怎么验证**
+- CI 只对缺失变更文档发 **warning**，不 fail
 
 ### 4.2 模板（见 `docs/changes/TEMPLATE.md`）
 
@@ -198,7 +190,7 @@ git ls-files | wc -l           # 跟踪文件总数（异常增长说明漏配�
 
 - 日期：2026-09-09
 - 作者：张三
-- 关联 PR：#18 / Issue：#17
+- 关联 PR：#18
 - 类型：功能 / 修复 / 重构 / 文档
 
 ## 改了什么
@@ -209,11 +201,11 @@ git ls-files | wc -l           # 跟踪文件总数（异常增长说明漏配�
 ## 遗留与风险
 ```
 
-### 4.3 怎么强制
+### 4.3 怎么执行
 
-- **PR 模板**：自查清单里有勾选项，不勾 reviewer 打回（见 `.github/pull_request_template.md`）
-- **CI 门禁**：`ci.yml` 的 `changelog` job 检查本次 PR 是否新增/修改了 `docs/changes/` 下文件；特殊情况下加 `no-changelog` 标签可豁免（仅限纯格式化、依赖升级）
-- **评审门槛**：没有变更文档的 PR，reviewer 直接 `Request changes`
+- PR 模板里有勾选项，**建议**填，不填不阻塞
+- CI 的 Change Doc job **只 warning**
+- 评审时可口头提醒，**不强制打回**
 
 ---
 
@@ -248,35 +240,32 @@ bash scripts/install-hooks.sh     # 会设置 core.hooksPath .githooks 并给可
 
 `commitlint.config.js` 里加了 `require-author` 规则，在 CI 中对 PR 的全部提交逐条校验，绕过本地钩子的提交在这里被拦下。
 
-### 5.5 分支保护（服务端第三道闸）
+### 5.5 分支保护（可选，默认关闭）
 
 ```bash
+# 默认不强制；需要时手动打开（脚本会先问 yes/NO）
 bash scripts/setup-branch-protection.sh
 ```
 
-对 4 人团队的建议参数：
-
-| 项 | 值 | 理由 |
+| 项 | 宽松默认 | 说明 |
 | --- | --- | --- |
-| `required_approving_review_count` | **1** | 4 人小队，1 个即可；关键目录靠 CODEOWNERS 再加一道 |
-| `dismiss_stale_reviews` | true | 改完代码旧 approve 作废 |
-| `require_code_owner_reviews` | true | 动到别人模块必须那人点头 |
-| `require_conversation_resolution` | true | 评论没解决不让合 |
-| `required_linear_history` | true | 禁止 merge commit，只走 squash/rebase |
-| `allow_force_pushes` | **false** | 历史不可篡改 |
-| `enforce_admins` | **true** | 管理员（仓库 owner）也不开后门 |
-| `required_status_checks.strict` | true | 必须先与 main 同步 |
+| 禁止直接 push main | **不强制**（约定提醒） | 可直接 push，靠团队自觉 |
+| 必须 PR | **不强制** | 建议走 PR |
+| approve 数 | 可选 ≥1 | 脚本打开时用 1 |
+| force push | 脚本宽松版**允许** | 按你们要求不强制禁止 |
+| CI 必绿 | 建议 | 保护打开时才会强制 |
 
-> 4 人团队的额外建议：给 `contracts/` 和 `.github/` 设 **2 个 approve**（在 CODEOWNERS 里指定两人）。
+> **当前策略：不跑脚本 = 无 GitHub 分支保护，规则只作约定。**
 
-### 5.6 三层防护总览
+### 5.6 三层防护总览（实际生效的）
 
 ```
-写代码 → git add  → pre-commit 钩子（本地硬拦）
-       → git commit → commit-msg 钩子（校验格式与作者）
-       → git push  → CI commitlint + 变更文档门禁（服务端）
-       → 开 PR     → CODEOWNERS + 1 approve + 状态检查（服务端）
-       → merge     → squash 进 main
+写代码 → git add  → pre-commit（拦测试产物/敏感文件；大文件/变更文档只提醒）
+       → git commit → commit-msg（拦纯数字/AI prompt；格式/名单只提醒）
+       → git push  → CI（后端/前端测试硬过；commitlint 垃圾信息硬拦
+                          变更文档/PR 行数只 warning）
+       → 开 PR     → 人审（建议，不强制）
+       → merge     → squash（若走 PR）
 ```
 
 ---
@@ -317,13 +306,13 @@ main                          ← 唯一长期分支，永远可运行，受保�
 
 | 规则 | 约束 |
 | --- | --- |
-| R1 | 开发分支尽量短命；超过 3 天未 PR 请在群内说明（**不是硬性删除**） |
-| R2 | 单个 PR 变更 ≤ 400 行（生成物/锁文件除外） |
-| R3 | 合并前必须 `git fetch && git rebase origin/main`，**禁止 `git merge main`** |
-| R4 | 合并后 24 小时内删除开发分支（隔离分支见 §6.5，**无时间限制**） |
-| R5 | `main` 禁止直接 push，禁止 force push |
-| R6 | 每人同时进行的开发分支 ≤ 2 个 |
-| R7 | 未验证 / AI 产出 / 外来代码必须走隔离分支（`agent/*`、`quarantine/*`），见 §6.5；禁止其直接进 main |
+| R1 | 开发分支尽量短命；超过 3 天未 PR 群内说一声即可 |
+| R2 | 单个 PR 变更 **不强制** ≤ 400 行（只提醒） |
+| R3 | 合并前建议 rebase；**禁止**把隔离分支整支 merge 进 main |
+| R4 | 合并后建议删除开发分支 |
+| R5 | **不强制**禁止直接 push main / force push（约定优先，保护可选） |
+| R6 | 每人同时进行的开发分支建议 ≤ 2 个 |
+| R7 | 未验证 / AI 产出 / 外来代码走隔离分支（`agent/*`、`quarantine/*`），见 §6.5 |
 | R8 | 隔离分支**无存活时间限制**，但禁止共用、禁止整支 merge 进 main |
 
 ### 6.4 合并方式：Squash and Merge
@@ -470,24 +459,25 @@ flowchart LR
 
 | 项 | 要求 |
 | --- | --- |
-| 审批数 | 1 个 approve（`contracts/`、`.github/`、CI 配置为 2 个） |
-| 自审 | **作者不能 approve 自己的 PR** |
-| 首次响应 | 4 小时内（工作时间） |
-| PR 规模 | ≤ 400 行；超出的作者自己先拆 |
-| 合并人 | 由 **reviewer** 合并，不是作者自己 |
+| 审批数 | **不强制**；建议 1 个 approve（保护打开时才有） |
+| 自审 | 建议作者不 approve 自己 |
+| 首次响应 | 尽快，无硬性 SLA |
+| PR 规模 | **不强制**行数上限 |
+| 合并人 | 建议由 reviewer 合并 |
 
-### 7.2 Reviewer 必看五项
+### 7.2 Reviewer 建议看
 
-1. **变更文档是否存在且准确**（`docs/changes/`）
-2. 有没有把测试产物 / AI 记忆文件带进来
-3. 数据契约改动是否同步更新了 `contracts/*.schema.json` 和前端 TS 类型
-4. AI 生成的代码是否有人真正读懂（不接受「AI 写的，能跑就行」）
-5. 会不会影响别人的模块（看 `影响范围` 一节）
+1. 有没有把测试产物 / AI 记忆文件带进来
+2. 数据契约改动是否同步
+3. 变更文档（若写了）是否准确
+4. 影响范围
+
+> **不要求**「AI 生成代码必须人工逐行读懂」——建议尽量通读，不强制。
 
 ### 7.3 评审意见分级
 
-- 🔴 **必须改**：逻辑错误、缺变更文档、混入垃圾文件、破坏契约
-- 🟡 **建议改**：命名、重复代码、可测性
+- 🔴 **建议改**：逻辑错误、混入垃圾文件、破坏契约
+- 🟡 **建议改**：命名、重复代码
 - 🟢 **可选**：风格、注释
 
 ---
@@ -564,14 +554,14 @@ git rebase --abort
 
 | 违规 | 处理 |
 | --- | --- |
-| 提交信息无姓名 | 钩子拒绝；已推送的用 `git rebase -i` 改掉 |
-| 混入垃圾文件 | 第一时间 `git rm --cached` + 补 `.gitignore` |
-| 缺变更文档 | reviewer 打回，补完再审 |
-| force push 到 main | 分支保护已禁；若用管理员权限强推，全队通报 |
-| 分支存活超 3 天 | 开发分支：群内说明即可，**不强制删除**；隔离分支：**无时间限制** |
-| 共用 `agent/*` 垃圾桶分支（多人往上堆） | 视为违规，拆分或删除；重蹈 `trae/agent-*` 覆辙 |
-| 把隔离分支整支 merge 进 main | PR 直接关闭；必须按 §6.5.4 拆干净分支重来 |
-| 在隔离分支提交垃圾文件（sqlite / `.pytest_tmp` / 密钥） | 钩子应已拦截；若用 `--no-verify` 绕过，全队通报 |
+| 提交信息无姓名 | 提醒即可，不强制 |
+| 混入垃圾文件 | `git rm --cached` + 补 `.gitignore` |
+| 缺变更文档 | 建议补，不强制打回 |
+| force push 到 main | 未强制禁止；若开了保护则禁止 |
+| 开发分支超 3 天未开 PR | 群内说明即可 |
+| 共用 `agent/*` 垃圾桶分支 | 建议拆分 |
+| 把隔离分支整支 merge 进 main | **仍不建议**：改为拆干净分支 PR |
+| 在隔离分支提交垃圾文件 / 密钥 | 钩子应已拦截 |
 
 ---
 

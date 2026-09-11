@@ -1,14 +1,11 @@
 #!/bin/sh
 # ============================================================================
-# commit-msg —— 提交信息门禁（本地第一道闸）
+# commit-msg —— 提交信息提醒（本地提示，尽量不硬拦）
 #
-# 校验三件事：
-#   1. 格式必须是  <type>(<scope>): <姓名> <subject>
-#   2. <姓名> 必须在 .githooks/team.txt 名单里
-#   3. 拦截垃圾信息（纯数字 / 单字母 / AI prompt / wip / pre-termination backup）
+# 保留：格式建议 + 垃圾信息拦截（纯数字 / AI prompt）
+# 放宽：姓名不在 team.txt 只警告，不拒绝
 #
-# 绕过（仅限紧急情况）：git commit --no-verify
-# 但服务端 CI 的 commitlint 仍会拦，别指望绕过能混进 main
+# 绕过：git commit --no-verify
 # ============================================================================
 
 MSG_FILE="$1"
@@ -16,7 +13,7 @@ HEADER=$(head -n 1 "$MSG_FILE" | sed 's/[[:space:]]*$//')
 REPO_ROOT=$(git rev-parse --show-toplevel)
 TEAM_FILE="$REPO_ROOT/.githooks/team.txt"
 
-RED='\033[31m'; YEL='\033[33m'; RST='\033[0m'
+RED='\033[31m'; YEL='\033[33m'; GRN='\033[32m'; RST='\033[0m'
 
 die() {
   printf "${RED}✗ 提交被拒绝${RST}\n"
@@ -26,15 +23,19 @@ die() {
   printf "  示例：     ${YEL}fix(backend): 张三 修复 evidence_items 空列表导致 A2 覆盖循环崩溃${RST}\n"
   printf "\n"
   printf "  提示：用 ${YEL}git commit${RST}（不带 -m）可以打开提交模板\n"
-  printf "        团队成员名单见 .githooks/team.txt\n"
+  printf "        团队成员名单见 .githooks/team.txt（名单不强制）\n"
   exit 1
+}
+
+warn() {
+  printf "${YEL}⚠ %s${RST}\n" "$1"
 }
 
 if [ -z "$HEADER" ]; then
   die "提交信息为空"
 fi
 
-# ---------- 1. 垃圾信息拦截 ----------
+# ---------- 1. 垃圾信息拦截（仍强制，避免不可检索） ----------
 case "$HEADER" in
   *"你是一个"*|*"你的任务是"*|*"请按照以下"*|*"负责对本代码"*|*"作为一"*)
     die "禁止把 AI prompt 原文当作提交信息" ;;
@@ -45,35 +46,26 @@ fi
 if printf '%s' "$HEADER" | grep -Eq '^[a-zA-Z]{1,2}$'; then
   die "单字母/双字母提交信息没有信息量"
 fi
-if printf '%s' "$HEADER" | grep -Eqi '^(wip|tmp|temp|backup|save|checkpoint|update|fix|test)(:|：)?$'; then
-  die "无信息量的单词提交"
-fi
-if printf '%s' "$HEADER" | grep -Eqi '^(新的|测试|更新|修改|提交|备份|保存|整理)$'; then
-  die "无信息量的中文单词提交"
-fi
 if printf '%s' "$HEADER" | grep -Eqi 'pre-?termination'; then
-  die "会话中断的救急提交，请用 git stash 而不是 commit"
+  warn "建议不要用 pre-termination backup 作提交信息，请写清改了什么"
 fi
 
-# ---------- 2. 格式校验 ----------
+# ---------- 2. 格式：不匹配则提醒，不拒绝 ----------
 if ! printf '%s' "$HEADER" | grep -Eq '^(feat|fix|refactor|perf|test|docs|build|ci|chore|revert)(\([a-zA-Z0-9_.-]+\))?: [^ ]+ .+$'; then
-  die "格式不符合 <type>(<scope>): <姓名> <subject>"
+  warn "建议格式：<type>(<scope>): <姓名> <subject>"
+  printf "  例：fix(backend): 张三 修复 evidence_items 空列表导致崩溃\n"
+  printf "  当前：%s\n" "$HEADER"
 fi
 
-# ---------- 3. 作者姓名校验 ----------
+# ---------- 3. 姓名在名单里：只提醒 ----------
 NAME=$(printf '%s' "$HEADER" | sed -E 's/^(feat|fix|refactor|perf|test|docs|build|ci|chore|revert)(\([a-zA-Z0-9_.-]+\))?: ([^ ]+) .+$/\3/')
 
-if [ -z "$NAME" ]; then
-  die "未解析出作者姓名"
+if [ -f "$TEAM_FILE" ] && [ -n "$NAME" ]; then
+  if ! grep -qxF "$NAME" "$TEAM_FILE"; then
+    warn "姓名「${NAME}」不在 .githooks/team.txt（名单不强制，仅方便检索）"
+    printf "  当前名单：%s\n" "$(tr '\n' ' ' < "$TEAM_FILE" | grep -v '^#' | tr -s ' ')"
+  fi
 fi
 
-if [ ! -f "$TEAM_FILE" ]; then
-  printf "${YEL}警告：找不到 .githooks/team.txt，跳过姓名校验${RST}\n"
-  exit 0
-fi
-
-if ! grep -qxF "$NAME" "$TEAM_FILE"; then
-  die "姓名「${NAME}」不在团队名单中。当前名单：$(tr '\n' ' ' < "$TEAM_FILE" | grep -v '^#' | tr -s ' ')"
-fi
-
+printf "${GRN}✓ commit-msg 检查通过${RST}\n"
 exit 0

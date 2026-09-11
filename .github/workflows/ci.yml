@@ -6,14 +6,13 @@ on:
   push:
     branches: [main]
 
-# 同一 PR 的新提交自动取消旧跑，省 Actions 额度
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   # ---------------------------------------------------------------
-  # 0. 提交信息门禁：拦截 "1" / "k" / AI prompt 泄漏这类垃圾信息
+  # 0. 提交信息：硬拦纯数字 / AI prompt 泄漏；其余只 warning
   # ---------------------------------------------------------------
   commitlint:
     name: Commit Message
@@ -69,7 +68,6 @@ jobs:
 
       - name: Test
         env:
-          # 关键：把 pytest 临时目录踢出仓库，避免再出现 .pytest_tmp/ 入库
           PYTEST_DEBUG_TEMPROOT: ${{ runner.temp }}
           BASILISP_DO_NOT_CACHE: 1
         run: pytest -q --basetemp=${{ runner.temp }}/pytest
@@ -92,7 +90,6 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      # 锁文件存在才用 ci，否则退回 install（防止 CI 直接崩）
       - name: Install deps
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
@@ -104,7 +101,8 @@ jobs:
         run: npm run build --if-present
 
   # ---------------------------------------------------------------
-  # 3. 仓库卫生：防止再有人把 .pytest_tmp / eval 产出 / zip 提交进来
+  # 3. 仓库卫生：禁止测试产物入库（强制）
+  #    PR 行数 / 变更文档：只 warning，不 fail
   # ---------------------------------------------------------------
   hygiene:
     name: Repo Hygiene
@@ -141,19 +139,18 @@ jobs:
             exit 1
           fi
 
-      - name: PR size guard (warning only)
+      - name: PR size (warning only)
         if: github.event_name == 'pull_request'
         run: |
           LINES=$(git diff --numstat origin/${{ github.base_ref }}...HEAD \
                   | awk '{a+=$1; d+=$2} END {print a+d}')
           echo "本次 PR 变更行数：${LINES:-0}"
           if [ "${LINES:-0}" -gt 400 ]; then
-            echo "::warning::PR 变更 ${LINES} 行，超过 400 行建议拆分。大体量 PR 无法被有效评审。"
+            echo "::warning::PR 变更 ${LINES} 行（建议但不强制拆分）。"
           fi
 
   # ---------------------------------------------------------------
-  # 4. 变更文档门禁：每个 PR 必须更新 docs/changes/
-  #    纯格式化 / 依赖升级等可加 no-changelog 标签豁免
+  # 4. 变更文档：只 warning，不 fail
   # ---------------------------------------------------------------
   changelog:
     name: Change Doc
@@ -164,14 +161,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check docs/changes updated
-        env:
-          BASE: ${{ github.event.pull_request.base.ref }}
-          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+      - name: Check docs/changes (warning only)
         run: |
           set -euo pipefail
-          git fetch --no-tags origin "$BASE"
-          CHANGED=$(git diff --name-only "origin/$BASE"...HEAD -- docs/changes/ || true)
+          BASE=origin/${{ github.base_ref }}
+          git fetch --no-tags origin "${{ github.base_ref }}"
+          CHANGED=$(git diff --name-only "$BASE"...HEAD -- docs/changes/ || true)
 
           if [ -n "$CHANGED" ]; then
             echo "✓ 变更文档已更新："
@@ -179,12 +174,5 @@ jobs:
             exit 0
           fi
 
-          if echo "$LABELS" | grep -q 'no-changelog'; then
-            echo "::warning::本次 PR 未更新变更文档，但已加 no-changelog 标签，予以放行"
-            exit 0
-          fi
-
-          echo "::error::缺少最终变更文档。"
-          echo "::error::团队约定第 4 条：每次改代码必须补写 docs/changes/YYYY-MM-DD-<姓名>-<slug>.md"
-          echo "::error::模板见 docs/changes/TEMPLATE.md；纯格式化或依赖升级请加 no-changelog 标签"
-          exit 1
+          echo "::warning::未更新 docs/changes/（建议写，但不强制）。模板：docs/changes/TEMPLATE.md"
+          exit 0
