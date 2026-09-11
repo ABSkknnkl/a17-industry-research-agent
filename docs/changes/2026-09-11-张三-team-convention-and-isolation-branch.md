@@ -11,8 +11,9 @@
 2. **§6.5 隔离分支**：`agent/*`、`quarantine/*`；无存活时间限制；禁止共用与整支 merge 进 main。
 3. 新增 `.githooks/`、`.github/`、`commitlint.config.js`、`.gitmessage`、相关 scripts。
 4. **按反馈放宽强制项**：
-   - 姓名不在 `team.txt`：只提醒
+   - 姓名不在 `team.txt`：放行
    - 单文件 > 500KB：只提醒
+   - **AI prompt 原文当提交信息：放行**
    - 禁止直接 push main / force push / 强制 PR+approve：改为约定或可选脚本
    - PR ≤ 400 行：不强制
    - 强制变更文档、强制 AI 逐行通读：去掉
@@ -28,10 +29,11 @@
 
 ## 验证方式
 
-- `git commit -m "1"` 应仍被拒。
-- 姓名不在名单：只警告不拒绝。
+- 姓名不在名单：放行。
+- AI prompt 原文当提交信息：放行。
 - 大文件：只警告不拒绝。
 - 不跑 `setup-branch-protection.sh` 则无分支保护。
+- 纯数字提交信息仍会被拒。
 
 ## 回滚方案
 
