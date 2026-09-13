@@ -1,0 +1,65 @@
+#!/bin/sh
+# ============================================================================
+# pre-commit —— 暂存区卫生检查（本地提示）
+#
+# 强制拦：测试产物 / 缓存 / 敏感文件
+# 只提醒：超大文件、变更文档
+#
+# 绕过：git commit --no-verify
+# ============================================================================
+
+RED='\033[31m'; YEL='\033[33m'; GRN='\033[32m'; RST='\033[0m'
+MAX_KB=500
+fail=0
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$STAGED" ] && exit 0
+
+# ---------- 1 & 2. 禁止路径与后缀（强制） ----------
+BAD_PATHS='(\.pytest_tmp/|\.workbuddy/|\.workbuddy-ai/|\.trae/|\.trae-html-share-packages/|\.claude/|\.cursor/|\.aider|node_modules/|__pycache__/|\.venv/|venv/|^logs/|^dist/|^build/|^coverage/|^htmlcov/|/artifacts/|^output/|session-log)'
+BAD_EXTS='\.(log|pids?|pid|sqlite|sqlite3|html\.zip|pyc|pyo|egg-info)$'
+
+BAD=$(printf '%s\n' "$STAGED" | grep -E "$BAD_PATHS|$BAD_EXTS" || true)
+if [ -n "$BAD" ]; then
+  printf "${RED}✗ 以下文件不应提交（测试产物 / 缓存 / 工具状态）：${RST}\n"
+  printf '%s\n' "$BAD" | sed 's/^/    /'
+  printf "\n  修复：${YEL}git rm --cached <路径>${RST} 并确认 .gitignore 已覆盖\n"
+  fail=1
+fi
+
+# ---------- 3. 大文件：只提醒，不拦 ----------
+BIG=""
+for f in $STAGED; do
+  if [ -f "$f" ]; then
+    size=$(wc -c < "$f" | tr -d ' ')
+    kb=$((size / 1024))
+    if [ "$kb" -gt "$MAX_KB" ]; then
+      BIG="$BIG  $f  (${kb}KB)\n"
+    fi
+  fi
+done
+if [ -n "$BIG" ]; then
+  printf "${YEL}⚠ 以下文件较大（> ${MAX_KB}KB），不强制拦，但请确认是否该进 Git：${RST}\n"
+  printf "$BIG"
+fi
+
+# ---------- 4. 敏感文件（强制） ----------
+SECRET=$(printf '%s\n' "$STAGED" | grep -E '(^|/)(\.env|\.env\..*|.*\.pem|.*\.key|.*_rsa|.*\.p12|credentials.*|secrets?\..*)($|\.)' || true)
+if [ -n "$SECRET" ]; then
+  printf "${RED}✗ 疑似敏感文件：${RST}\n"
+  printf '%s\n' "$SECRET" | sed 's/^/    /'
+  fail=1
+fi
+
+# ---------- 5. 变更文档：只提醒 ----------
+if ! printf '%s\n' "$STAGED" | grep -q '^docs/changes/'; then
+  printf "${YEL}提醒：本次提交没有 docs/changes/ 变更文档（不强制）。${RST}\n"
+fi
+
+if [ "$fail" -eq 1 ]; then
+  printf "\n${RED}提交已中止。确认是误报可用 git commit --no-verify。${RST}\n"
+  exit 1
+fi
+
+printf "${GRN}✓ pre-commit 检查通过${RST}\n"
+exit 0

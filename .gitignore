@@ -53,3 +53,6 @@ htmlcov/
 .cache/
 coverage/
 .ace-tool/
+
+# 浏览器自动化产物（2026-09-14 补，曾在 agent/chart-mvp-sync 误提交 1.8 万行）
+.playwright-mcp/
