@@ -12,6 +12,7 @@ from app.agents.chart_generator.builders import (
     build_boxplot_option,
     build_bubble_option,
     build_combo_option,
+    build_dual_panel_option,
     build_heatmap_option,
     build_industry_chain_option,
     build_line_option,
@@ -37,6 +38,9 @@ from app.agents.chart_generator.planner import (
     plan_chart_selection,
 )
 from app.agents.chart_generator.quality import build_quality_report, validate_option
+from app.agents.chart_generator.quality import data_health_check
+from app.agents.chart_generator.audit import bind_run as audit_bind_run
+from app.agents.chart_generator.audit import record_chart_operation
 from app.agents.chart_generator.router import (
     CHART_FAMILY,
     TYPE_PREFERENCE,
@@ -80,28 +84,26 @@ from app.schemas.workflow import (
 )
 from app.workflow.stages import StageContext
 
-# 推荐值（软规则，超过后生成风险提示但不删除）
-RECOMMENDED_CHARTS_PER_REPORT = (5, 8)  # 推荐5-8张
-RECOMMENDED_CHARTS_PER_CHAPTER = 2  # 推荐每章不超过2张
-RECOMMENDED_CHARTS_PER_FAMILY = 2  # 推荐同一图表族不超过2张
-RECOMMENDED_P1_CHARTS_PER_REPORT = 3  # 推荐P1不超过3张
-RECOMMENDED_CHAIN_CHARTS = 1  # 推荐产业链图1张
+# P0-4（2026-09-13 方案）：数量阈值单一来源——常量全部收敛到
+# chart_generator/constants.py；本文件保留历史导出名为别名。
+from app.agents.chart_generator.constants import (  # noqa: E402
+    HARD_LIMIT_CHARTS_PER_CHAPTER,
+    HARD_LIMIT_MAX_CANDIDATES,
+    HARD_LIMIT_MAX_DATA_POINTS,
+    HARD_LIMIT_MAX_POINTS_PER_CHART,
+    P1_CHART_TYPES as _P1_CHART_TYPES_CONST,
+    RECOMMENDED_CHAIN_CHARTS,
+    RECOMMENDED_CHARTS,
+    RECOMMENDED_PER_CHAPTER,
+    RECOMMENDED_PER_FAMILY,
+    RECOMMENDED_P1_CHARTS,
+)
 
-# 技术绝对上限（不可绕过）
-HARD_LIMIT_MAX_CANDIDATES = 30  # 单份报告最多候选图表
-HARD_LIMIT_CHARTS_PER_CHAPTER = 10  # 单章最多技术渲染图表
-HARD_LIMIT_MAX_DATA_POINTS = 100_000  # 单份报告最大数据点
-HARD_LIMIT_MAX_POINTS_PER_CHART = 20_000  # 单张图表最大数据点
-
-P1_CHART_TYPES: set[ChartType] = {
-    "combo",
-    "area",
-    "scatter",
-    "bubble",
-    "heatmap",
-    "boxplot",
-    "treemap",
-}
+RECOMMENDED_CHARTS_PER_REPORT = RECOMMENDED_CHARTS
+RECOMMENDED_CHARTS_PER_CHAPTER = RECOMMENDED_PER_CHAPTER
+RECOMMENDED_CHARTS_PER_FAMILY = RECOMMENDED_PER_FAMILY
+RECOMMENDED_P1_CHARTS_PER_REPORT = RECOMMENDED_P1_CHARTS
+P1_CHART_TYPES: set[ChartType] = set(_P1_CHART_TYPES_CONST)  # type: ignore[assignment]
 
 
 def _waiting_review(
@@ -259,6 +261,9 @@ def _build_option(
     if chart_type == "area":
         return build_area_option(title, dataset, theme)
     if chart_type == "combo":
+        # P2-2（2026-09-13 方案）：dual_panel 变体走双 grid builder。
+        if variant == "dual_panel":
+            return build_dual_panel_option(title, dataset, theme)
         return build_combo_option(title, dataset, theme)
     if chart_type == "scatter":
         return build_scatter_option(title, dataset, theme)
@@ -592,6 +597,8 @@ class ChartGeneratorAgent:
         chain_generated = False
         ambiguous_reasons: list[str] = []
         theme = options.color_theme or "research_blue"
+        # P3-1（2026-09-13 方案）：绑定 run 身份，操作审计可关联。
+        audit_bind_run(context.run_id, context.revision)
 
         candidates.sort(
             key=lambda candidate: (
@@ -649,6 +656,30 @@ class ChartGeneratorAgent:
                 suppressed.extend(consistency_issues)
                 continue
 
+            # P3-3/P3-5（2026-09-13 方案）：运行前自检——数据体检。
+            # "不完整"数据（缺失率/类型不一致/字段不足）拦截；行数不足
+            # 属"数据偏少"不属"不完整"，仅入体检结果不拦截（构成类图
+            # pie/radar 3-5 点合法，时序短样本也保留出图能力）。
+            health_issues = data_health_check(dataset)
+            blocking_health = [
+                issue
+                for issue in health_issues
+                if issue != "data_health_min_rows"
+            ]
+            if blocking_health:
+                suppressed.append(
+                    SuppressedChart(
+                        title=title,
+                        reason_code="data_health_check_failed",
+                        reason=(
+                            "数据体检未通过："
+                            + "；".join(blocking_health)
+                            + "。请补充完整数据后重试。"
+                        ),
+                        evidence_ids=candidate.evidence_ids,
+                    )
+                )
+                continue
             route = route_chart(requested_type, dataset)
             resolution_reason: str | None = None
             if not route.accepted:
@@ -782,8 +813,22 @@ class ChartGeneratorAgent:
             # 原来的 suppressed 改为记录到 risk_notices（由 planner 处理）
 
             if is_duplicate:
-                # 图表仍然生成，不抑制；仅通过 risk_notices 标记
-                pass
+                # P0-3（2026-09-13 方案）：去重键已语义归一（同义 goal 同
+                # key），恢复完全重复抑制——同 key 图表只出第一张，其余
+                # 记 suppressed；同 family 不同 key 的相似图仅告警不抑制
+                # （风险提示由 _build_risk_notices 标记）。
+                suppressed.append(
+                    SuppressedChart(
+                        title=title,
+                        reason_code="duplicate_chart",
+                        reason=(
+                            "与本报告已有图表的分析目的与数据完全重复"
+                            "（语义归一后同 key），已抑制。"
+                        ),
+                        evidence_ids=candidate.evidence_ids,
+                    )
+                )
+                continue
 
             # 硬上限检查：绝对数量限制（不可绕过）
             if len(specs) >= HARD_LIMIT_MAX_CANDIDATES:
@@ -857,6 +902,16 @@ class ChartGeneratorAgent:
                 f"{issue.metric}：{issue.description}；处理：{issue.suggested_handling}"
                 for issue in linked_issues
             ]
+            # P1-4/P0-2（2026-09-13 方案）：builder 层图注（截断轴提示、
+            # 单位占位符披露）合并进 spec.footnotes。
+            option_footnotes = [
+                str(item)
+                for item in option.get("footnotes", [])
+                if str(item).strip()
+            ]
+            for footnote in option_footnotes:
+                if footnote not in footnotes and len(footnotes) < 20:
+                    footnotes.append(footnote)
             render_mode = "echarts"
             image_uri: str | None = None
             image_mime_type: Literal["image/png", "image/webp"] | None = None
@@ -947,6 +1002,8 @@ class ChartGeneratorAgent:
                 insight_goal=candidate.insight_goal,
                 quality_issue_ids=[issue.issue_id for issue in linked_issues],
                 footnotes=footnotes,
+                # P2-2：双 panel 布局元数据透传（SVG 重绘侧消费）。
+                panels=dataset.panels,
                 data_fingerprint=fingerprint,
                 dedupe_key=dedupe_key,
             )
@@ -1151,6 +1208,31 @@ class ChartGeneratorAgent:
             suppressed=hard_suppressed,
             risk_notices=all_risk_notices,
         )
+        # P3-1（2026-09-13 方案）：操作审计日志（7 字段）——成功项记
+        # generated（含降级信息），失败项记 suppressed（P3-2 失败落盘
+        # 同时汇入 data，供排查与后续断点续跑使用）。
+        for spec in specs:
+            record_chart_operation(
+                chart_id=spec.chart_id,
+                stage="chart_generate",
+                decision="generated",
+                evidence_ids=list(spec.evidence_ids),
+                quality_issues=list(spec.quality_issue_ids),
+                degradation=spec.resolution_reason,
+                retry_of=None,
+                title=spec.title,
+            )
+        for item in suppressed:
+            record_chart_operation(
+                chart_id=f"SUPPRESSED-{hashlib.sha256(item.title.encode('utf-8')).hexdigest()[:12].upper()}",
+                stage="chart_generate",
+                decision="suppressed",
+                evidence_ids=list(item.evidence_ids),
+                quality_issues=[item.reason_code or "unknown"],
+                degradation=None,
+                retry_of=None,
+                title=item.title,
+            )
         generation = ChartGenerationResult(
             charts=references,
             chart_specs=specs,
@@ -1205,6 +1287,16 @@ class ChartGeneratorAgent:
 
         payload = generation.model_dump(mode="json")
         payload["decision_package"] = decision_package.model_dump(mode="json")
+        # P3-2（2026-09-13 方案）：Agent3 内失败项落盘（跨阶段断点续跑按
+        # 方案延后；此处先提供失败清单供排查）。
+        payload["chart_generation_failures"] = [
+            {
+                "title": item.title,
+                "reason_code": item.reason_code,
+                "reason": item.reason,
+            }
+            for item in suppressed
+        ][:50]
         if feedback_interpretation is not None:
             payload["feedback_interpretation"] = feedback_interpretation
             if any(

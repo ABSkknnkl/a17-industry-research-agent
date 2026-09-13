@@ -5,6 +5,14 @@ from collections import defaultdict
 from typing import cast
 
 from app.agents.chart_generator.router import CHART_FAMILY
+from app.agents.chart_generator.constants import (
+    P1_CHART_TYPES as _P1_CHART_TYPES,
+    RECOMMENDED_CHAIN_CHARTS,
+    RECOMMENDED_PER_CHAPTER,
+    RECOMMENDED_PER_FAMILY,
+    RECOMMENDED_P1_CHARTS,
+    RECOMMENDED_CHARTS,
+)
 from app.schemas.chart import ChartDataset, ChartType
 from app.schemas.decision import (
     ChartCandidateResult,
@@ -15,13 +23,11 @@ from app.schemas.decision import (
     RiskSeverity,
 )
 
-RECOMMENDED_CHARTS = (5, 8)
-RECOMMENDED_PER_CHAPTER = 2
-RECOMMENDED_PER_FAMILY = 2
-RECOMMENDED_P1 = 3
-RECOMMENDED_CHAIN = 1
-
-P1_CHART_TYPES = {"combo", "area", "scatter", "bubble", "heatmap", "boxplot", "treemap"}
+# P0-4（2026-09-13 方案）：预算常量收敛到 constants.py 单一来源。
+# planner 侧历史导出名保留为别名，防止既有 import 断裂。
+RECOMMENDED_P1 = RECOMMENDED_P1_CHARTS
+RECOMMENDED_CHAIN = RECOMMENDED_CHAIN_CHARTS
+P1_CHART_TYPES = set(_P1_CHART_TYPES)
 
 
 def plan_chart_selection(

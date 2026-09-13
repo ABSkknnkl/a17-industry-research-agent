@@ -46,6 +46,7 @@ ChartVariant = Literal[
     "heatmap",
     "boxplot",
     "treemap",
+    "dual_panel",
 ]
 
 
@@ -164,6 +165,41 @@ class ChainEdge(BaseModel):
     evidence_ids: list[str] = Field(min_length=1)
 
 
+class ChartPanel(BaseModel):
+    """Dual-panel layout metadata (P2-2, 2026-09-13 方案).
+
+    一个 panel 承载一组序列（左 grid 或右 grid）；series 为该 panel 内的
+    序列名列表。缺 panels 元数据时路由回退 line，不抛错。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    panel_id: str = Field(min_length=1, max_length=50)
+    position: Literal["left", "right"]
+    series: list[str] = Field(min_length=1, max_length=4)
+    axis_name: str | None = Field(default=None, max_length=100)
+
+
+class ChartAnnotation(BaseModel):
+    """Chart annotation metadata (P1-5, 2026-09-13 方案).
+
+    三种标注：reference_line（markLine 目标线）/ shaded_region（markArea
+    时间段）/ callout（markPoint 标注点）。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    annotation_type: Literal["reference_line", "shaded_region", "callout"]
+    label: str = Field(min_length=1, max_length=100)
+    # reference_line：目标值；callout：标注点的数据值。
+    value: float | None = None
+    # shaded_region：起止 x 类目标签（含）；callout：x 类目标签。
+    start: str | None = Field(default=None, max_length=200)
+    end: str | None = Field(default=None, max_length=200)
+    # 标注归属序列；None 表示应用于全部序列。
+    series: str | None = Field(default=None, max_length=100)
+
+
 class ChartDataset(BaseModel):
     """Standardized input dataset for chart generation."""
 
@@ -188,7 +224,8 @@ class ChartDataset(BaseModel):
     scale_min: float | None = None
     scale_max: float | None = None
     business_linked: bool = False
-    series_meta: list[ChartSeriesMeta] = Field(default_factory=list, max_length=2)
+    # P2-4（2026-09-13 方案）：2→4，支持多序列 combo/dual_panel。
+    series_meta: list[ChartSeriesMeta] = Field(default_factory=list, max_length=4)
     x_metric: str | None = Field(default=None, max_length=200)
     x_unit: str | None = Field(default=None, max_length=50)
     y_metric: str | None = Field(default=None, max_length=200)
@@ -207,6 +244,12 @@ class ChartDataset(BaseModel):
     core_product_name: str | None = Field(default=None, min_length=1, max_length=100)
     chart_subtitle: str | None = Field(default=None, min_length=1, max_length=300)
     evidence_ids: list[str] = Field(min_length=1)
+    # P2-2：双图并排布局元数据（可选；缺省走单 grid）。
+    panels: list[ChartPanel] | None = None
+    # P1-5：三种标注元数据（可选）。
+    annotations: list[ChartAnnotation] | None = None
+    # P2-6：高亮法——重点序列名（可选；其余序列灰化）。
+    highlight_series: str | None = Field(default=None, max_length=100)
 
 
 class ChartReference(BaseModel):
@@ -265,6 +308,8 @@ class ChartSpec(BaseModel):
     resolution_reason: str | None = Field(default=None, min_length=1, max_length=1_000)
     variant: ChartVariant
     option: dict[str, Any]
+    # P2-2：双图并排布局元数据透传（SVG 重绘侧消费）。
+    panels: list[ChartPanel] | None = None
     render_mode: Literal["echarts", "generated_image"] = "echarts"
     image_uri: str | None = Field(default=None, min_length=1, max_length=1_000)
     image_mime_type: Literal["image/png", "image/webp"] | None = None
@@ -319,6 +364,8 @@ class ChartQualityReport(BaseModel):
     ready_count: int
     suppressed_count: int
     issues: list[str] = Field(default_factory=list)
+    # P1-8（2026-09-13 方案）：质量门三问（5秒看懂/轴骗人/重点埋没）。
+    review_checklist: dict[str, bool] | None = None
 
 
 class ChartGenerationResult(BaseModel):
