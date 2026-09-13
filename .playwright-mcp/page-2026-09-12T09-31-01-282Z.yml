@@ -1,0 +1,91 @@
+- generic [active]:
+  - banner [ref=f23e3]:
+    - generic [ref=f23e5]:
+      - link [ref=f23e7] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/
+        - img "三个皮匠报告" [ref=f23e8]
+      - generic [ref=f23e9]:
+        - link "首页" [ref=f23e11] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/
+        - link "最新" [ref=f23e14] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?cd=1
+        - generic [ref=f23e16] [cursor=pointer]:
+          - generic [ref=f23e17]:
+            - img "报告分类" [ref=f23e18]
+            - text: 研搜
+          - generic [ref=f23e19]: BETA
+        - link "合集" [ref=f23e21] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/bggroup.html
+        - link "英文" [ref=f23e24] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/yingwenbaogao.html
+        - link "会议" [ref=f23e27] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/huiyibaogao.html
+        - link "数据" [ref=f23e30] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/hyshuju.html
+        - link "财报库" [ref=f23e33] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/caibaoku.html
+        - link "政策库" [ref=f23e36] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/zc.html
+        - link "自研报告 new" [ref=f23e39] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/selfdeveloped.html
+          - generic [ref=f23e40]: 自研报告
+          - img "new" [ref=f23e41]
+        - link "入驻" [ref=f23e43] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/smlist.html
+      - link [ref=f23e49] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html
+        - img "搜索" [ref=f23e50]
+  - table [ref=f23e53]:
+    - rowgroup [ref=f23e54]:
+      - row [ref=f23e55]:
+        - cell [ref=f23e56]
+        - cell [ref=f23e60]:
+          - generic [ref=f23e61]:
+            - text: 您访问的资源尚未审核通过或者已经被删除。
+            - link "点击此处，返回首页" [ref=f23e62] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/
+  - generic [ref=f23e63]:
+    - generic [ref=f23e64]:
+      - generic [ref=f23e65]:
+        - generic [ref=f23e68]: 全行业研究报告分享下载平台
+        - list [ref=f23e69]:
+          - listitem [ref=f23e70]: 0731-84720580
+          - listitem [ref=f23e72]: 商务合作：really158d
+      - generic [ref=f23e75]:
+        - text: 关于我们
+        - list [ref=f23e76]:
+          - listitem [ref=f23e77]:
+            - link "网站声明" [ref=f23e78] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-22277.html
+          - listitem [ref=f23e79]:
+            - link "免责声明" [ref=f23e80] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-42671.html
+          - listitem [ref=f23e81]:
+            - link "网站公告" [ref=f23e82] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/newslist.html
+          - listitem [ref=f23e83]:
+            - link "我要入驻" [ref=f23e84] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+      - generic [ref=f23e85]:
+        - text: 更多
+        - list [ref=f23e86]:
+          - listitem [ref=f23e87]:
+            - link "常见问题" [ref=f23e88] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-24877.html
+          - listitem [ref=f23e89]:
+            - link "用户协议" [ref=f23e90] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-33145.html
+          - listitem [ref=f23e91]:
+            - link "认证协议" [ref=f23e92] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/sgpjbg/WebClause.aspx?id=12
+          - listitem [ref=f23e93]:
+            - link "版权申诉" [ref=f23e94] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-19193.html
+      - generic [ref=f23e95]:
+        - text: 关于我们
+        - generic [ref=f23e96]:
+          - generic [ref=f23e97]: 三个皮匠报告微信公众号
+          - generic [ref=f23e100]: 三个皮匠报告微信小程序
+          - generic [ref=f23e103]: 扫码咨询网站充值下载问题
+    - generic [ref=f23e106]: copyright@2008-2013 长沙景略智创信息技术有限公司版权所有 网站备案/许可证号：湘B2-20190120 | 工信部备案号：湘ICP备17000430号-2 | 公安备案号：湘公网安备43010402001071号
+  - generic [ref=f23e108] [cursor=pointer]: 展开

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import cast
 
 from app.agents.common.content_dedup import content_fingerprint
+from app.agents.chart_generator.constants import UNIT_PLACEHOLDERS
 from app.schemas.chart import BarVariant, ChartDataset, ChartType, ChartVariant
 
 CHART_FAMILY: dict[ChartType, str] = {
@@ -56,6 +57,13 @@ def choose_bar_variant(dataset: ChartDataset) -> BarVariant:
     if len(labels) > 6 or any(len(label) > 12 for label in labels):
         return "horizontal"
     return "vertical"
+
+
+def _normalized_unit(unit: str | None) -> str:
+    """P0-2 联动：占位符单位归一为空串（量纲判定不受占位符干扰）。"""
+
+    text = (unit or "").strip()
+    return "" if text in UNIT_PLACEHOLDERS else text
 
 
 def route_chart(requested_type: ChartType, dataset: ChartDataset) -> ChartRouteDecision:
@@ -199,19 +207,60 @@ def route_chart(requested_type: ChartType, dataset: ChartDataset) -> ChartRouteD
             }
             for name in series_names
         }
-        units = {(item.currency, item.unit) for item in dataset.series_meta}
+        # P2-4（2026-09-13 方案）：series_meta 已放开到 4，按实际序列分组
+        # 数校验（2~4 序列），不再硬性要求恰好 2。
+        # P0-1（2026-09-13 方案）：量纲分支——2 量纲双轴、1 量纲单轴、
+        # 单位不可知拒绝；P2-2：3+ 序列需 panels 元数据走 dual_panel，
+        # 缺 panels 拒绝（由降级链回退 line，不抛错）。
+        units = {
+            (item.currency or "", _normalized_unit(item.unit))
+            for item in dataset.series_meta
+        }
+        units.discard(("", ""))
+        if len(dataset.series_meta) >= 3:
+            if dataset.panels:
+                panel_series = [
+                    name for panel in (dataset.panels or []) for name in panel.series
+                ]
+                if (
+                    not dataset.business_linked
+                    or set(panel_series) != series_names
+                    or series_names != set(meta_by_name)
+                    or len({frozenset(periods) for periods in period_sets.values()}) != 1
+                    or not all(period_sets.values())
+                ):
+                    return ChartRouteDecision(
+                        accepted=False,
+                        reason_code="combo_requirements_not_met",
+                        reason="双面板组合图要求业务相关、时间轴一致且 panels 覆盖全部序列",
+                    )
+                return ChartRouteDecision(
+                    accepted=True,
+                    chart_type=requested_type,
+                    variant="dual_panel",
+                )
+            return ChartRouteDecision(
+                accepted=False,
+                reason_code="panels_missing_for_dual_panel",
+                reason="3 个以上序列的组合图需要 panels 面板元数据，缺失时回退折线图",
+            )
         if (
             not dataset.business_linked
-            or len(dataset.series_meta) != 2
+            or not 2 <= len(dataset.series_meta) <= 4
             or series_names != set(meta_by_name)
-            or len(units) != 2
+            # P0-1：单位不可知（归一后无任何有效量纲）拒绝出图。
+            or len(units) == 0
+            or len(units) > 2
             or len({frozenset(periods) for periods in period_sets.values()}) != 1
             or not all(period_sets.values())
         ):
             return ChartRouteDecision(
                 accepted=False,
                 reason_code="combo_requirements_not_met",
-                reason="组合图要求两个业务相关、时间轴一致且量纲不同的完整序列",
+                reason=(
+                    "组合图要求业务相关、时间轴一致且量纲可辨（同量纲单轴、"
+                    "双量纲双轴）的完整序列"
+                ),
             )
         variant = "combo"
     elif requested_type == "pie":
@@ -288,5 +337,32 @@ def build_dedupe_key(
 ) -> str:
     family = CHART_FAMILY[chart_type]
     purpose = family if analysis_purpose == "auto" else analysis_purpose
-    normalized_goal = " ".join((insight_goal or "").split()).lower()
+    # P0-3（2026-09-13 方案）：语义槽位归一——"展示趋势"/"展示变化"/
+    # "…走势" 等同义表达必须映射到同一槽位，否则去重键永远不同。
+    normalized_goal = _normalize_insight_goal(insight_goal)
     return f"{family}:{purpose}:{normalized_goal}:{data_fingerprint}"
+
+
+_INSIGHT_GOAL_SLOTS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    # 长词优先，避免"变化趋势"被"变化"抢先命中（同槽位无影响，防御性排序）。
+    ("trend", ("展示趋势", "展示变化", "变化趋势", "走势", "趋势", "变化", "增长", "下滑")),
+    ("composition", ("构成", "占比", "结构", "份额构成", "成本结构")),
+    ("comparison", ("对比", "比较", "比较分析", "差异")),
+    ("ranking", ("排名", "排序", "排行", "榜单")),
+    ("positioning", ("定位", "矩阵", "竞争格局", "梯队")),
+)
+
+
+def _normalize_insight_goal(text: str | None) -> str:
+    """P0-3：insight_goal 语义槽位归一（trend/composition/comparison/ranking/positioning）。
+
+    未命中任何槽位时保留归一化原文（不强制归类，防止语义误并）。
+    """
+
+    compact = "".join((text or "").split()).casefold()
+    if not compact:
+        return ""
+    for slot, tokens in _INSIGHT_GOAL_SLOTS:
+        if any(token in compact for token in tokens):
+            return slot
+    return compact

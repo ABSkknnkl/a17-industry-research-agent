@@ -46,7 +46,10 @@ def _placement_chapter(placement_section_id: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def render_html(report: ReportViewModel) -> str:
+def render_html(report: ReportViewModel, *, continuous_numbering: bool = False) -> str:
+    """P1-2（2026-09-13 方案）：continuous_numbering=True 时图表编号全文
+    连续（图1/图2…），默认保持章内编号（图{章}-{序}）。"""
+
     template = _ENVIRONMENT.get_template("report.html.j2")
     citation_map = citation_lookup(report.evidence_catalog)
 
@@ -60,9 +63,9 @@ def render_html(report: ReportViewModel) -> str:
                 entries.append(entry)
         return entries
 
+    # Pass 1：构造 item、按 placement 分组、记录所属章号（编号留到 Pass 2 按渲染顺序定）。
     charts_by_section: dict[str, list[dict[str, object]]] = {}
     unplaced: list[dict[str, object]] = []
-    chart_numbers: dict[int, int] = {}
     for chart in report.charts:
         item = chart.model_dump(exclude={"svg"})
         item["svg"] = Markup(chart.svg)
@@ -71,21 +74,67 @@ def render_html(report: ReportViewModel) -> str:
             if chart.placement_section_id
             else None
         )
+        item["_chapter"] = chapter_number
         if chapter_number is not None:
-            chart_numbers[chapter_number] = chart_numbers.get(chapter_number, 0) + 1
-            item["display_number"] = (
-                f"图{chapter_number}-{chart_numbers[chapter_number]}"
-            )
             charts_by_section.setdefault(chart.placement_section_id, []).append(item)
         else:
             # placement 为空或格式非法（防御：schema pattern 已拦截）都归入附录，
             # 单个坏字段不允许让图表凭空消失或炸掉整份 HTML 导出。
-            item["display_number"] = f"附图-{len(unplaced) + 1}"
             unplaced.append(item)
+
+    # placement 合法但未匹配任何被渲染小节的图 → 归入附录。否则它会进了目录却在
+    # 正文凭空消失，导致 P0-5 目录与正文不一致（防御，正常 assembler 不会触发）。
+    rendered_section_ids = {
+        section.section_id
+        for chapter in report.chapters
+        for section in chapter.sections
+    }
+    for section_id in list(charts_by_section):
+        if section_id not in rendered_section_ids:
+            for item in charts_by_section.pop(section_id):
+                item["_chapter"] = None
+                unplaced.append(item)
+
+    # 渲染顺序：章节/小节顺序 → 附录。编号与目录都按此序，保证「图表目录」与正文
+    # 编号、顺序完全一致（P1-2 验收：连续编号 图1/图2… 且与 P0-5 目录一致）。
+    ordered: list[dict[str, object]] = []
+    for chapter in report.chapters:
+        for section in chapter.sections:
+            ordered.extend(charts_by_section.get(section.section_id, []))
+    ordered.extend(unplaced)
+
+    # Pass 2：按渲染顺序编号 + 建目录。
+    chart_toc: list[dict[str, object]] = []
+    chart_numbers: dict[int, int] = {}
+    appendix_number = 0
+    global_chart_number = 0
+    for item in ordered:
+        chapter_number = item.get("_chapter")
+        if continuous_numbering:
+            global_chart_number += 1
+            item["display_number"] = f"图{global_chart_number}"
+        elif chapter_number is not None:
+            chart_numbers[chapter_number] = chart_numbers.get(chapter_number, 0) + 1
+            item["display_number"] = (
+                f"图{chapter_number}-{chart_numbers[chapter_number]}"
+            )
+        else:
+            appendix_number += 1
+            item["display_number"] = f"附图-{appendix_number}"
+        item.pop("_chapter", None)
+        # P0-5（2026-09-13 方案）：图表目录（编号+标题+所属章节），与正文同序。
+        chart_toc.append(
+            {
+                "number": item["display_number"],
+                "title": item["title"],
+                "section": item.get("placement_section_id") or "附录",
+            }
+        )
     return template.render(
         report=report,
         charts_by_section=charts_by_section,
         unplaced_charts=unplaced,
+        chart_toc=chart_toc,
         evidence_entries=evidence_entries,
         source_rows=source_table_rows(report.evidence_catalog),
         chapter_label=chapter_label,

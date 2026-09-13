@@ -8,6 +8,11 @@ constraints remain enforced elsewhere in the report-fusion stage.
 from collections import Counter
 from collections.abc import Sequence
 
+from app.agents.chart_generator.constants import (
+    DENSITY_LOW_MAX,
+    DENSITY_MEDIUM_MAX,
+)
+
 from app.schemas.chapter import ChapterDraft
 from app.schemas.report import (
     ChapterVisualStrategy,
@@ -105,7 +110,14 @@ def plan_visual_decision(
             dominant_content=_dominant_content(chapter),
         )
 
-    chart_density = "low" if chart_count <= 4 else ("medium" if chart_count <= 10 else "high")
+    # P0-4（2026-09-13 方案·低风险下游对齐）：密度档引用 Agent3 常量
+    # （<=4 low / 5-8 medium / 9-10 high- / >10 high），与推荐区间 5-8
+    # 单一来源对齐，不再各自硬编码。
+    chart_density = (
+        "low"
+        if chart_count <= DENSITY_LOW_MAX
+        else ("medium" if chart_count <= DENSITY_MEDIUM_MAX else "high")
+    )
     table_priority = "high" if table_candidates >= 4 else (
         "medium" if table_candidates else "low"
     )

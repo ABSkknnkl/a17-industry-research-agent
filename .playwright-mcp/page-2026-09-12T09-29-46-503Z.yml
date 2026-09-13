@@ -1,0 +1,101 @@
+- generic [active]:
+  - banner [ref=f12e3]:
+    - generic [ref=f12e5]:
+      - link [ref=f12e7] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/
+        - img "三个皮匠报告" [ref=f12e8]
+      - generic [ref=f12e9]:
+        - link "首页" [ref=f12e11] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/
+        - link "最新" [ref=f12e14] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?cd=1
+        - generic [ref=f12e16] [cursor=pointer]:
+          - generic [ref=f12e17]:
+            - img "报告分类" [ref=f12e18]
+            - text: 研搜
+          - generic [ref=f12e19]: BETA
+        - link "合集" [ref=f12e21] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/bggroup.html
+        - link "英文" [ref=f12e24] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/yingwenbaogao.html
+        - link "会议" [ref=f12e27] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/huiyibaogao.html
+        - link "数据" [ref=f12e30] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/hyshuju.html
+        - link "财报库" [ref=f12e33] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/caibaoku.html
+        - link "政策库" [ref=f12e36] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/zc.html
+        - link "自研报告 new" [ref=f12e39] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/selfdeveloped.html
+          - generic [ref=f12e40]: 自研报告
+          - img "new" [ref=f12e41]
+        - link "入驻" [ref=f12e43] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/smlist.html
+      - generic [ref=f12e48]:
+        - link [ref=f12e49] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/search.html
+          - img "搜索" [ref=f12e50]
+        - generic [ref=f12e51]:
+          - link [ref=f12e52] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/sgpjbg/UserManage/Recharge.aspx?f=0
+          - generic [ref=f12e55]:
+            - link "登录" [ref=f12e56] [cursor=pointer]:
+              - /url: javascript:void(0);
+            - text: "|"
+            - link "注册" [ref=f12e57] [cursor=pointer]:
+              - /url: javascript:void(0);
+  - table [ref=f12e60]:
+    - rowgroup [ref=f12e61]:
+      - row [ref=f12e62]:
+        - cell [ref=f12e63]
+        - cell [ref=f12e67]:
+          - generic [ref=f12e68]:
+            - text: 您访问的资源尚未审核通过或者已经被删除。
+            - link "点击此处，返回首页" [ref=f12e69] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/
+  - generic [ref=f12e70]:
+    - generic [ref=f12e71]:
+      - generic [ref=f12e72]:
+        - generic [ref=f12e75]: 全行业研究报告分享下载平台
+        - list [ref=f12e76]:
+          - listitem [ref=f12e77]: 0731-84720580
+          - listitem [ref=f12e79]: 商务合作：really158d
+      - generic [ref=f12e82]:
+        - text: 关于我们
+        - list [ref=f12e83]:
+          - listitem [ref=f12e84]:
+            - link "网站声明" [ref=f12e85] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-22277.html
+          - listitem [ref=f12e86]:
+            - link "免责声明" [ref=f12e87] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-42671.html
+          - listitem [ref=f12e88]:
+            - link "网站公告" [ref=f12e89] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/newslist.html
+          - listitem [ref=f12e90]:
+            - link "我要入驻" [ref=f12e91] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+      - generic [ref=f12e92]:
+        - text: 更多
+        - list [ref=f12e93]:
+          - listitem [ref=f12e94]:
+            - link "常见问题" [ref=f12e95] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-24877.html
+          - listitem [ref=f12e96]:
+            - link "用户协议" [ref=f12e97] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-33145.html
+          - listitem [ref=f12e98]:
+            - link "认证协议" [ref=f12e99] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/sgpjbg/WebClause.aspx?id=12
+          - listitem [ref=f12e100]:
+            - link "版权申诉" [ref=f12e101] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-19193.html
+      - generic [ref=f12e102]:
+        - text: 关于我们
+        - generic [ref=f12e103]:
+          - generic [ref=f12e104]: 三个皮匠报告微信公众号
+          - generic [ref=f12e107]: 三个皮匠报告微信小程序
+          - generic [ref=f12e110]: 扫码咨询网站充值下载问题
+    - generic [ref=f12e113]: copyright@2008-2013 长沙景略智创信息技术有限公司版权所有 网站备案/许可证号：湘B2-20190120 | 工信部备案号：湘ICP备17000430号-2 | 公安备案号：湘公网安备43010402001071号
+  - generic [ref=f12e115] [cursor=pointer]: 展开

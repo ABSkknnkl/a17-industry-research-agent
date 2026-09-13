@@ -1,0 +1,1941 @@
+- generic [active]:
+  - banner [ref=f27e3]:
+    - generic [ref=f27e4]:
+      - generic:
+        - link [ref=f27e6] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/
+          - img "三个皮匠报告" [ref=f27e7]
+        - generic [ref=f27e8]:
+          - link [ref=f27e10] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/
+          - link "最新" [ref=f27e14] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/Search.html?cd=1
+          - generic [ref=f27e18] [cursor=pointer]:
+            - img "报告分类" [ref=f27e19]
+            - text: 研搜
+            - generic [ref=f27e20]: BETA
+          - link [ref=f27e22] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/bggroup.html
+          - link [ref=f27e26] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/yingwenbaogao.html
+          - link [ref=f27e30] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/huiyibaogao.html
+          - link "数据" [ref=f27e34] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/hyshuju.html
+          - link [ref=f27e37] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/caibaoku.html
+          - link "政策库" [ref=f27e41] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/zc.html
+          - link "自研报告 new" [ref=f27e44] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/selfdeveloped.html
+            - generic [ref=f27e45]: 自研报告
+            - img "new" [ref=f27e46]
+          - link "入驻" [ref=f27e48] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/smlist.html
+        - generic [ref=f27e53]:
+          - link [ref=f27e54] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/search.html
+            - img "搜索" [ref=f27e55]
+          - generic [ref=f27e56]:
+            - link [ref=f27e57] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/sgpjbg/UserManage/Recharge.aspx?f=0
+            - generic [ref=f27e60]:
+              - link "登录" [ref=f27e61] [cursor=pointer]:
+                - /url: javascript:void(0);
+              - text: "|"
+              - link "注册" [ref=f27e62] [cursor=pointer]:
+                - /url: javascript:void(0);
+  - generic [ref=f27e64]:
+    - generic [ref=f27e65]:
+      - heading "海量报告 匠心严选" [level=2] [ref=f27e66]
+      - generic [ref=f27e67]:
+        - generic [ref=f27e68]:
+          - generic [ref=f27e69]:
+            - generic [ref=f27e70]:
+              - generic [ref=f27e71]: "0"
+              - generic [ref=f27e72]: "1"
+              - generic [ref=f27e73]: "2"
+              - generic [ref=f27e74]: "3"
+              - generic [ref=f27e75]: "4"
+              - generic [ref=f27e76]: "5"
+              - generic [ref=f27e77]: "6"
+              - generic [ref=f27e78]: "7"
+              - generic [ref=f27e79]: "8"
+              - generic [ref=f27e80]: "9"
+            - generic [ref=f27e81]: ","
+            - generic [ref=f27e83]:
+              - generic [ref=f27e84]: "0"
+              - generic [ref=f27e85]: "1"
+              - generic [ref=f27e86]: "2"
+              - generic [ref=f27e87]: "3"
+              - generic [ref=f27e88]: "4"
+              - generic [ref=f27e89]: "5"
+              - generic [ref=f27e90]: "6"
+              - generic [ref=f27e91]: "7"
+              - generic [ref=f27e92]: "8"
+              - generic [ref=f27e93]: "9"
+            - generic [ref=f27e94]:
+              - generic [ref=f27e95]: "0"
+              - generic [ref=f27e96]: "1"
+              - generic [ref=f27e97]: "2"
+              - generic [ref=f27e98]: "3"
+              - generic [ref=f27e99]: "4"
+              - generic [ref=f27e100]: "5"
+              - generic [ref=f27e101]: "6"
+              - generic [ref=f27e102]: "7"
+              - generic [ref=f27e103]: "8"
+              - generic [ref=f27e104]: "9"
+            - generic [ref=f27e105]:
+              - generic [ref=f27e106]: "0"
+              - generic [ref=f27e107]: "1"
+              - generic [ref=f27e108]: "2"
+              - generic [ref=f27e109]: "3"
+              - generic [ref=f27e110]: "4"
+              - generic [ref=f27e111]: "5"
+              - generic [ref=f27e112]: "6"
+              - generic [ref=f27e113]: "7"
+              - generic [ref=f27e114]: "8"
+              - generic [ref=f27e115]: "9"
+            - generic [ref=f27e116]: ","
+            - generic [ref=f27e118]:
+              - generic [ref=f27e119]: "0"
+              - generic [ref=f27e120]: "1"
+              - generic [ref=f27e121]: "2"
+              - generic [ref=f27e122]: "3"
+              - generic [ref=f27e123]: "4"
+              - generic [ref=f27e124]: "5"
+              - generic [ref=f27e125]: "6"
+              - generic [ref=f27e126]: "7"
+              - generic [ref=f27e127]: "8"
+              - generic [ref=f27e128]: "9"
+            - generic [ref=f27e129]:
+              - generic [ref=f27e130]: "0"
+              - generic [ref=f27e131]: "1"
+              - generic [ref=f27e132]: "2"
+              - generic [ref=f27e133]: "3"
+              - generic [ref=f27e134]: "4"
+              - generic [ref=f27e135]: "5"
+              - generic [ref=f27e136]: "6"
+              - generic [ref=f27e137]: "7"
+              - generic [ref=f27e138]: "8"
+              - generic [ref=f27e139]: "9"
+            - generic [ref=f27e140]:
+              - generic [ref=f27e141]: "0"
+              - generic [ref=f27e142]: "1"
+              - generic [ref=f27e143]: "2"
+              - generic [ref=f27e144]: "3"
+              - generic [ref=f27e145]: "4"
+              - generic [ref=f27e146]: "5"
+              - generic [ref=f27e147]: "6"
+              - generic [ref=f27e148]: "7"
+              - generic [ref=f27e149]: "8"
+              - generic [ref=f27e150]: "9"
+          - generic [ref=f27e151]: +
+          - generic [ref=f27e152]: 报告总量
+        - generic [ref=f27e153]:
+          - generic [ref=f27e154]:
+            - generic [ref=f27e155]:
+              - generic [ref=f27e156]: "0"
+              - generic [ref=f27e157]: "1"
+              - generic [ref=f27e158]: "2"
+              - generic [ref=f27e159]: "3"
+              - generic [ref=f27e160]: "4"
+              - generic [ref=f27e161]: "5"
+              - generic [ref=f27e162]: "6"
+              - generic [ref=f27e163]: "7"
+              - generic [ref=f27e164]: "8"
+              - generic [ref=f27e165]: "9"
+            - generic [ref=f27e166]:
+              - generic [ref=f27e167]: "0"
+              - generic [ref=f27e168]: "1"
+              - generic [ref=f27e169]: "2"
+              - generic [ref=f27e170]: "3"
+              - generic [ref=f27e171]: "4"
+              - generic [ref=f27e172]: "5"
+              - generic [ref=f27e173]: "6"
+              - generic [ref=f27e174]: "7"
+              - generic [ref=f27e175]: "8"
+              - generic [ref=f27e176]: "9"
+            - generic [ref=f27e177]: ","
+            - generic [ref=f27e179]:
+              - generic [ref=f27e180]: "0"
+              - generic [ref=f27e181]: "1"
+              - generic [ref=f27e182]: "2"
+              - generic [ref=f27e183]: "3"
+              - generic [ref=f27e184]: "4"
+              - generic [ref=f27e185]: "5"
+              - generic [ref=f27e186]: "6"
+              - generic [ref=f27e187]: "7"
+              - generic [ref=f27e188]: "8"
+              - generic [ref=f27e189]: "9"
+            - generic [ref=f27e190]:
+              - generic [ref=f27e191]: "0"
+              - generic [ref=f27e192]: "1"
+              - generic [ref=f27e193]: "2"
+              - generic [ref=f27e194]: "3"
+              - generic [ref=f27e195]: "4"
+              - generic [ref=f27e196]: "5"
+              - generic [ref=f27e197]: "6"
+              - generic [ref=f27e198]: "7"
+              - generic [ref=f27e199]: "8"
+              - generic [ref=f27e200]: "9"
+            - generic [ref=f27e201]:
+              - generic [ref=f27e202]: "0"
+              - generic [ref=f27e203]: "1"
+              - generic [ref=f27e204]: "2"
+              - generic [ref=f27e205]: "3"
+              - generic [ref=f27e206]: "4"
+              - generic [ref=f27e207]: "5"
+              - generic [ref=f27e208]: "6"
+              - generic [ref=f27e209]: "7"
+              - generic [ref=f27e210]: "8"
+              - generic [ref=f27e211]: "9"
+            - generic [ref=f27e212]: ","
+            - generic [ref=f27e214]:
+              - generic [ref=f27e215]: "0"
+              - generic [ref=f27e216]: "1"
+              - generic [ref=f27e217]: "2"
+              - generic [ref=f27e218]: "3"
+              - generic [ref=f27e219]: "4"
+              - generic [ref=f27e220]: "5"
+              - generic [ref=f27e221]: "6"
+              - generic [ref=f27e222]: "7"
+              - generic [ref=f27e223]: "8"
+              - generic [ref=f27e224]: "9"
+            - generic [ref=f27e225]:
+              - generic [ref=f27e226]: "0"
+              - generic [ref=f27e227]: "1"
+              - generic [ref=f27e228]: "2"
+              - generic [ref=f27e229]: "3"
+              - generic [ref=f27e230]: "4"
+              - generic [ref=f27e231]: "5"
+              - generic [ref=f27e232]: "6"
+              - generic [ref=f27e233]: "7"
+              - generic [ref=f27e234]: "8"
+              - generic [ref=f27e235]: "9"
+            - generic [ref=f27e236]:
+              - generic [ref=f27e237]: "0"
+              - generic [ref=f27e238]: "1"
+              - generic [ref=f27e239]: "2"
+              - generic [ref=f27e240]: "3"
+              - generic [ref=f27e241]: "4"
+              - generic [ref=f27e242]: "5"
+              - generic [ref=f27e243]: "6"
+              - generic [ref=f27e244]: "7"
+              - generic [ref=f27e245]: "8"
+              - generic [ref=f27e246]: "9"
+          - generic [ref=f27e247]: 数据总量
+        - generic [ref=f27e248]:
+          - generic [ref=f27e249]:
+            - generic [ref=f27e250]:
+              - generic [ref=f27e251]: "0"
+              - generic [ref=f27e252]: "1"
+              - generic [ref=f27e253]: "2"
+              - generic [ref=f27e254]: "3"
+              - generic [ref=f27e255]: "4"
+              - generic [ref=f27e256]: "5"
+              - generic [ref=f27e257]: "6"
+              - generic [ref=f27e258]: "7"
+              - generic [ref=f27e259]: "8"
+              - generic [ref=f27e260]: "9"
+            - generic [ref=f27e261]:
+              - generic [ref=f27e262]: "0"
+              - generic [ref=f27e263]: "1"
+              - generic [ref=f27e264]: "2"
+              - generic [ref=f27e265]: "3"
+              - generic [ref=f27e266]: "4"
+              - generic [ref=f27e267]: "5"
+              - generic [ref=f27e268]: "6"
+              - generic [ref=f27e269]: "7"
+              - generic [ref=f27e270]: "8"
+              - generic [ref=f27e271]: "9"
+            - generic [ref=f27e272]:
+              - generic [ref=f27e273]: "0"
+              - generic [ref=f27e274]: "1"
+              - generic [ref=f27e275]: "2"
+              - generic [ref=f27e276]: "3"
+              - generic [ref=f27e277]: "4"
+              - generic [ref=f27e278]: "5"
+              - generic [ref=f27e279]: "6"
+              - generic [ref=f27e280]: "7"
+              - generic [ref=f27e281]: "8"
+              - generic [ref=f27e282]: "9"
+          - generic [ref=f27e283]: 今日更新报告
+    - generic [ref=f27e284]:
+      - generic [ref=f27e285] [cursor=pointer]: 报告
+      - textbox "搜索行业报告、合集、数据" [ref=f27e289]
+      - link [ref=f27e290] [cursor=pointer]:
+        - /url: javascript:SearchWord2($('#keyword').val());
+    - generic [ref=f27e291]:
+      - generic [ref=f27e292]:
+        - img "热门搜索" [ref=f27e293]
+        - text: 热门搜索：
+      - link "具身智能" [ref=f27e294] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html?q=具身智能
+      - link "情绪经济" [ref=f27e295] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html?q=情绪经济
+      - link "商业航天" [ref=f27e296] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html?q=商业航天
+      - link "十五五" [ref=f27e297] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html?q=十五五
+      - link "银发经济" [ref=f27e298] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html?q=银发经济
+      - link "存储芯片" [ref=f27e299] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html?q=存储芯片
+      - link "词元（token）" [ref=f27e300] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html?q=词元（token）
+      - link "AI应用" [ref=f27e301] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html?q=AI应用
+      - link "低空经济" [ref=f27e302] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/search.html?q=低空经济
+  - generic [ref=f27e304]:
+    - generic [ref=f27e306] [cursor=pointer]:
+      - heading "行业深潜" [level=3] [ref=f27e307]
+      - paragraph [ref=f27e308]:
+        - link "深度行研" [ref=f27e309]:
+          - /url: https://www.sgpjbg.com/search.html?type=1&cd=1
+        - text: "|"
+        - link "券商" [ref=f27e310]:
+          - /url: https://www.sgpjbg.com/search.html?type=3&cd=1
+        - text: "|"
+        - link "会议" [ref=f27e311]:
+          - /url: https://www.sgpjbg.com/bggrouplist-00020.html
+        - text: "|"
+        - link "合集" [ref=f27e312]:
+          - /url: https://www.sgpjbg.com/bggrouplist-0.html
+    - generic [ref=f27e314] [cursor=pointer]:
+      - heading "全球视野" [level=3] [ref=f27e315]
+      - paragraph [ref=f27e317]:
+        - link "外文报告" [ref=f27e318]:
+          - /url: https://www.sgpjbg.com/yingwenbaogao.html
+        - text: "|"
+        - link "美股财报" [ref=f27e319]:
+          - /url: https://www.sgpjbg.com/caibaokulist.html?t1=,2,
+        - text: "|"
+        - link "全球数据" [ref=f27e320]:
+          - /url: https://www.sgpjbg.com/hyshuju.html?type=3
+    - generic [ref=f27e322] [cursor=pointer]:
+      - heading "产业透视" [level=3] [ref=f27e323]
+      - paragraph [ref=f27e325]:
+        - link "数据" [ref=f27e326]:
+          - /url: https://www.sgpjbg.com/hyshuju.html
+        - text: "|"
+        - link "财报库" [ref=f27e327]:
+          - /url: https://www.sgpjbg.com/caibaoku.html
+        - text: "|"
+        - link "政策库" [ref=f27e328]:
+          - /url: https://www.sgpjbg.com/zc.html
+        - text: "|"
+        - link "AI功能" [ref=f27e329]:
+          - /url: https://www.sgpjbg.com/searchai.html
+        - text: "|"
+        - link "自研库" [ref=f27e330]:
+          - /url: https://www.sgpjbg.com/selfdeveloped.html
+  - generic [ref=f27e331]:
+    - generic [ref=f27e334]:
+      - generic [ref=f27e336]:
+        - generic [ref=f27e337]:
+          - img "今日推荐报告" [ref=f27e338]
+          - generic [ref=f27e339]: 今日推荐
+        - generic [ref=f27e340]: 共 256 个
+      - generic [ref=f27e342]:
+        - generic:
+          - generic [ref=f27e343]:
+            - link [ref=f27e345] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1331937.html
+              - img "三个皮匠报告：2026全球及中国算电协同发展研究报告" [ref=f27e346]
+            - generic [ref=f27e347]:
+              - link "三个皮匠报告：2026全球及中国算电协同发展研究报告.pdf" [ref=f27e349] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1331937.html
+              - generic [ref=f27e350]: 12026全球及中国算电协同发展研究报告前言PREFACE在AI算力需求爆发式增长与全球能源转型加速推进的双重交汇点上,算电协同正从一个技术概念迅速演变为关乎产业发展全局的战略命题,2026年,算电协同首次写入中国政府工作报告,标志着算力与
+              - generic [ref=f27e351]:
+                - generic [ref=f27e352]: 算电协同
+                - link [ref=f27e353] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1331937.html
+                  - img "下载" [ref=f27e354]
+                  - text: 下载
+                - link [ref=f27e355]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e356]
+                  - text: 221页
+          - generic [ref=f27e357]:
+            - link [ref=f27e359] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1331938.html
+              - img "Moka AI：2026 中国企业 AI 组织转型能力报告（39页）" [ref=f27e360]
+            - generic [ref=f27e361]:
+              - link "Moka AI：2026 中国企业 AI 组织转型能力报告（39页）.pdf" [ref=f27e363] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1331938.html
+              - generic [ref=f27e365]:
+                - generic [ref=f27e366]: AI产业
+                - link [ref=f27e367] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1331938.html
+                  - img "下载" [ref=f27e368]
+                  - text: 下载
+                - link [ref=f27e369]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e370]
+                  - text: 39页
+          - link "[AI产业] CIC灼识：2026具身智能大脑行业白皮书（31页）.pdf 2026-09-12" [ref=f27e371] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332712.html
+            - generic [ref=f27e372]: "[AI产业] CIC灼识：2026具身智能大脑行业白皮书（31页）.pdf"
+            - generic [ref=f27e373]: 2026-09-12
+          - link "[医药行业] 药融圈：2026年中国宠物药行业发展白皮书（73页）.pdf 2026-09-12" [ref=f27e374] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332718.html
+            - generic [ref=f27e375]: "[医药行业] 药融圈：2026年中国宠物药行业发展白皮书（73页）.pdf"
+            - generic [ref=f27e376]: 2026-09-12
+          - link "[消费市场] 魔镜洞察：2026年半年度消费新潜力白皮书（82页）.pdf 2026-09-11" [ref=f27e377] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332286.html
+            - generic [ref=f27e378]: "[消费市场] 魔镜洞察：2026年半年度消费新潜力白皮书（82页）.pdf"
+            - generic [ref=f27e379]: 2026-09-11
+          - link "[AI产业] 斯坦福大学：2026年人工智能指数报告（官方中文版）（425页）.pdf 2026-09-07" [ref=f27e380] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1324367.html
+            - generic [ref=f27e381]: "[AI产业] 斯坦福大学：2026年人工智能指数报告（官方中文版）（425页）.pdf"
+            - generic [ref=f27e382]: 2026-09-07
+          - link "[医药行业] 药融圈：2026年中国原料药行业发展白皮书（134页）.pdf 2026-09-12" [ref=f27e383] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332711.html
+            - generic [ref=f27e384]: "[医药行业] 药融圈：2026年中国原料药行业发展白皮书（134页）.pdf"
+            - generic [ref=f27e385]: 2026-09-12
+          - link "[制造业] 腾讯研究院：2026迈向自适应制造：制造业智能体实践白皮书（69页）.pdf 2026-09-11" [ref=f27e386] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332290.html
+            - generic [ref=f27e387]: "[制造业] 腾讯研究院：2026迈向自适应制造：制造业智能体实践白皮书（69页）.pdf"
+            - generic [ref=f27e388]: 2026-09-11
+          - link "[大健康] 第一财经：2026中国城市年轻力和抗衰健康白皮书（69页）.pdf 2026-09-11" [ref=f27e389] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332152.html
+            - generic [ref=f27e390]: "[大健康] 第一财经：2026中国城市年轻力和抗衰健康白皮书（69页）.pdf"
+            - generic [ref=f27e391]: 2026-09-11
+          - link "[银发经济] 世界经济论坛：2026长寿红利： 健康与财富联动的经济价值研究报告（39页）.pdf 2026-09-09" [ref=f27e392] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1329986.html
+            - generic [ref=f27e393]: "[银发经济] 世界经济论坛：2026长寿红利： 健康与财富联动的经济价值研究报告（39页）.pdf"
+            - generic [ref=f27e394]: 2026-09-09
+          - link "[电力行业] 阳光电源&中国信通院：2026面向算电协同的AIDC微电网技术指南（34页）.pdf 2026-09-09" [ref=f27e395] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1329988.html
+            - generic [ref=f27e396]: "[电力行业] 阳光电源&中国信通院：2026面向算电协同的AIDC微电网技术指南（34页）.pdf"
+            - generic [ref=f27e397]: 2026-09-09
+          - link "[汽车市场] Sensor Tower：2026年全球汽车行业趋势洞察报告（42页）.pdf 2026-09-12" [ref=f27e398] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332709.html
+            - generic [ref=f27e399]: "[汽车市场] Sensor Tower：2026年全球汽车行业趋势洞察报告（42页）.pdf"
+            - generic [ref=f27e400]: 2026-09-12
+          - link "[AI产业] IDC&联想：2026 AI主机白皮书：智能体边缘新物种（46页）.pdf 2026-09-11" [ref=f27e401] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332146.html
+            - generic [ref=f27e402]: "[AI产业] IDC&联想：2026 AI主机白皮书：智能体边缘新物种（46页）.pdf"
+            - generic [ref=f27e403]: 2026-09-11
+          - link "[美容护理] WWD国际时尚特讯：Beauty Leap 立足中国面向全球——2026 中国美妆产业发展白皮书（120页）.pdf 2026-09-10" [ref=f27e404] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1330316.html
+            - generic [ref=f27e405]: "[美容护理] WWD国际时尚特讯：Beauty Leap 立足中国面向全球——2026 中国美妆产业发展白皮书（120页）.pdf"
+            - generic [ref=f27e406]: 2026-09-10
+          - link "[AIGC] 三个皮匠报告：2026全球及中国AIGC（人工智能生成内容）发展研究报告.pdf 2026-09-08" [ref=f27e407] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1327184.html
+            - generic [ref=f27e408]: "[AIGC] 三个皮匠报告：2026全球及中国AIGC（人工智能生成内容）发展研究报告.pdf"
+            - generic [ref=f27e409]: 2026-09-08
+          - link "[低空经济] 粤港澳大湾区数字经济研究院：2026低空经济发展白皮书5.0-低空进化论（179页）.pdf 2026-09-09" [ref=f27e410] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1329610.html
+            - generic [ref=f27e411]: "[低空经济] 粤港澳大湾区数字经济研究院：2026低空经济发展白皮书5.0-低空进化论（179页）.pdf"
+            - generic [ref=f27e412]: 2026-09-09
+    - generic [ref=f27e415]:
+      - generic [ref=f27e416]:
+        - generic [ref=f27e417]:
+          - generic [ref=f27e418]:
+            - img "报告更新" [ref=f27e419]
+            - generic [ref=f27e420]: 报告更新
+          - generic [ref=f27e421]: 共 5141247+ 个 | 今日更新数量 910 个
+        - link "查看更多" [ref=f27e424] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/baogaolist-0.html
+      - generic [ref=f27e425]:
+        - generic [ref=f27e426]: 机构报告
+        - generic [ref=f27e427]: 券商研报
+        - generic [ref=f27e428]: 英文报告
+      - generic [ref=f27e429]:
+        - generic [ref=f27e430]:
+          - generic [ref=f27e431]:
+            - link [ref=f27e434] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332718.html
+              - img "药融圈：2026年中国宠物药行业发展白皮书（73页）" [ref=f27e435]
+            - generic [ref=f27e436]:
+              - link "药融圈：2026年中国宠物药行业发展白皮书（73页）.pdf" [ref=f27e438] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332718.html
+              - generic [ref=f27e439]:
+                - generic [ref=f27e440]: 医药行业
+                - link [ref=f27e441] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1332718.html
+                  - img "下载" [ref=f27e442]
+                  - text: 下载
+                - link [ref=f27e443]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e444]
+                  - text: 73页
+          - generic [ref=f27e445]:
+            - link [ref=f27e448] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332717.html
+              - img "工银亚洲研究：2026怎么看美国消费？四重扰动因素分析报告（14页）" [ref=f27e449]
+            - generic [ref=f27e450]:
+              - link "工银亚洲研究：2026怎么看美国消费？四重扰动因素分析报告（14页）.pdf" [ref=f27e452] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332717.html
+              - generic [ref=f27e453]:
+                - generic [ref=f27e454]: 宏观经济
+                - link [ref=f27e455] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1332717.html
+                  - img "下载" [ref=f27e456]
+                  - text: 下载
+                - link [ref=f27e457]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e458]
+                  - text: 14页
+          - generic [ref=f27e459]:
+            - link "[餐饮] 未来轻食产业研究院：2026年7月轻食产业月度数据洞察报告-功能性酸奶（34页）.pdf 2026-09-12" [ref=f27e460] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332716.html
+              - generic [ref=f27e461]: "[餐饮] 未来轻食产业研究院：2026年7月轻食产业月度数据洞察报告-功能性酸奶（34页）.pdf"
+              - generic [ref=f27e462]: 2026-09-12
+            - link "[农林牧渔] 远翔神思咨询：2026年中国海洋牧场专题报告（38页）.pdf 2026-09-12" [ref=f27e463] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332715.html
+              - generic [ref=f27e464]: "[农林牧渔] 远翔神思咨询：2026年中国海洋牧场专题报告（38页）.pdf"
+              - generic [ref=f27e465]: 2026-09-12
+            - link "[货币基金] CoinGecko：2026年第一季度加密货币行业报告（55页）.pdf 2026-09-12" [ref=f27e466] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332714.html
+              - generic [ref=f27e467]: "[货币基金] CoinGecko：2026年第一季度加密货币行业报告（55页）.pdf"
+              - generic [ref=f27e468]: 2026-09-12
+            - link "[广告营销] 小红书：2026小红书小语种赛道营销通案（98页）.pdf 2026-09-12" [ref=f27e469] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332713.html
+              - generic [ref=f27e470]: "[广告营销] 小红书：2026小红书小语种赛道营销通案（98页）.pdf"
+              - generic [ref=f27e471]: 2026-09-12
+            - link "[AI产业] CIC灼识：2026具身智能大脑行业白皮书（31页）.pdf 2026-09-12" [ref=f27e472] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332712.html
+              - generic [ref=f27e473]: "[AI产业] CIC灼识：2026具身智能大脑行业白皮书（31页）.pdf"
+              - generic [ref=f27e474]: 2026-09-12
+            - link "[医药行业] 药融圈：2026年中国原料药行业发展白皮书（134页）.pdf 2026-09-12" [ref=f27e475] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332711.html
+              - generic [ref=f27e476]: "[医药行业] 药融圈：2026年中国原料药行业发展白皮书（134页）.pdf"
+              - generic [ref=f27e477]: 2026-09-12
+            - link "[AI产业] 22枢纽云：2026 AI友好型网站建设与GEO优化落地指南白皮书（36页）.pdf 2026-09-12" [ref=f27e478] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332710.html
+              - generic [ref=f27e479]: "[AI产业] 22枢纽云：2026 AI友好型网站建设与GEO优化落地指南白皮书（36页）.pdf"
+              - generic [ref=f27e480]: 2026-09-12
+        - generic [ref=f27e481]:
+          - generic [ref=f27e482]:
+            - link [ref=f27e485] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332709.html
+              - img "Sensor Tower：2026年全球汽车行业趋势洞察报告（42页）" [ref=f27e486]
+            - generic [ref=f27e487]:
+              - link "Sensor Tower：2026年全球汽车行业趋势洞察报告（42页）.pdf" [ref=f27e489] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332709.html
+              - generic [ref=f27e490]:
+                - generic [ref=f27e491]: 汽车市场
+                - link [ref=f27e492] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1332709.html
+                  - img "下载" [ref=f27e493]
+                  - text: 下载
+                - link [ref=f27e494]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e495]
+                  - text: 42页
+          - generic [ref=f27e496]:
+            - link [ref=f27e499] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332294.html
+              - img "仲望咨询：2026基于国际局势的潮玩外贸行业人才趋势分析报告（17页）" [ref=f27e500]
+            - generic [ref=f27e501]:
+              - link "仲望咨询：2026基于国际局势的潮玩外贸行业人才趋势分析报告（17页）.pdf" [ref=f27e503] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332294.html
+              - generic [ref=f27e504]:
+                - generic [ref=f27e505]: 人力资源
+                - link [ref=f27e506] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1332294.html
+                  - img "下载" [ref=f27e507]
+                  - text: 下载
+                - link [ref=f27e508]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e509]
+                  - text: 17页
+          - generic [ref=f27e510]:
+            - link "[大数据] 维普智图：2026智慧图书馆数据治理白皮书4.0（18页）.pdf 2026-09-11" [ref=f27e511] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332293.html
+              - generic [ref=f27e512]: "[大数据] 维普智图：2026智慧图书馆数据治理白皮书4.0（18页）.pdf"
+              - generic [ref=f27e513]: 2026-09-11
+            - link "[能源报告] 上海政法学院：2026阿塞拜疆绿色能源行业发展报告（17页）.pdf 2026-09-11" [ref=f27e514] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332292.html
+              - generic [ref=f27e515]: "[能源报告] 上海政法学院：2026阿塞拜疆绿色能源行业发展报告（17页）.pdf"
+              - generic [ref=f27e516]: 2026-09-11
+            - link "[食品饮料] 炼丹炉全域洞察：2026饮料行业场景化趋势洞察报告（37页）.pdf 2026-09-11" [ref=f27e517] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332291.html
+              - generic [ref=f27e518]: "[食品饮料] 炼丹炉全域洞察：2026饮料行业场景化趋势洞察报告（37页）.pdf"
+              - generic [ref=f27e519]: 2026-09-11
+            - link "[制造业] 腾讯研究院：2026迈向自适应制造：制造业智能体实践白皮书（69页）.pdf 2026-09-11" [ref=f27e520] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332290.html
+              - generic [ref=f27e521]: "[制造业] 腾讯研究院：2026迈向自适应制造：制造业智能体实践白皮书（69页）.pdf"
+              - generic [ref=f27e522]: 2026-09-11
+            - link "[电子商务] 一财商学院&天猫：2026天猫大快消增长白皮书（31页）.pdf 2026-09-11" [ref=f27e523] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332289.html
+              - generic [ref=f27e524]: "[电子商务] 一财商学院&天猫：2026天猫大快消增长白皮书（31页）.pdf"
+              - generic [ref=f27e525]: 2026-09-11
+            - link "[房地产] 南粤评估：2026年第二季度广州房地产市场分析报告（45页）.pdf 2026-09-11" [ref=f27e526] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332287.html
+              - generic [ref=f27e527]: "[房地产] 南粤评估：2026年第二季度广州房地产市场分析报告（45页）.pdf"
+              - generic [ref=f27e528]: 2026-09-11
+            - link "[消费市场] 魔镜洞察：2026年半年度消费新潜力白皮书（82页）.pdf 2026-09-11" [ref=f27e529] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332286.html
+              - generic [ref=f27e530]: "[消费市场] 魔镜洞察：2026年半年度消费新潜力白皮书（82页）.pdf"
+              - generic [ref=f27e531]: 2026-09-11
+    - generic [ref=f27e534]:
+      - generic [ref=f27e537]:
+        - img "下载榜单" [ref=f27e538]
+        - generic [ref=f27e539]: 下载榜单
+      - generic [ref=f27e540]:
+        - generic [ref=f27e541]: 周榜
+        - generic [ref=f27e542]: 月榜
+        - generic [ref=f27e543]: 季榜
+      - generic [ref=f27e544]:
+        - generic [ref=f27e545]:
+          - generic [ref=f27e546]:
+            - link [ref=f27e549] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1324367.html
+              - img "斯坦福大学：2026年人工智能指数报告（官方中文版）（425页）" [ref=f27e550]
+            - generic [ref=f27e551]:
+              - link "斯坦福大学：2026年人工智能指数报告（官方中文版）（425页）.pdf" [ref=f27e553] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1324367.html
+              - generic [ref=f27e554]:
+                - generic [ref=f27e555]: AI产业
+                - link [ref=f27e556] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1324367.html
+                  - img "下载" [ref=f27e557]
+                  - text: 下载
+                - link [ref=f27e558]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e559]
+                  - text: 425页
+          - generic [ref=f27e560]:
+            - link [ref=f27e563] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322640.html
+              - img "中国新闻周刊：2026有意思生活方式报告（80页）" [ref=f27e564]
+            - generic [ref=f27e565]:
+              - link "中国新闻周刊：2026有意思生活方式报告（80页）.pdf" [ref=f27e567] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1322640.html
+              - generic [ref=f27e568]:
+                - generic [ref=f27e569]: 消费市场
+                - link [ref=f27e570] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1322640.html
+                  - img "下载" [ref=f27e571]
+                  - text: 下载
+                - link [ref=f27e572]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e573]
+                  - text: 80页
+          - generic [ref=f27e574]:
+            - link "[具身智能] 赛迪智库：2026具身智能产业创新发展趋势及路径研究报告（64页）.pdf 2026-09-08" [ref=f27e575] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1324740.html
+              - generic [ref=f27e576]: "[具身智能] 赛迪智库：2026具身智能产业创新发展趋势及路径研究报告（64页）.pdf"
+              - generic [ref=f27e577]: 2026-09-08
+            - link "[智能体] 模智空间：2026 AI原生软件时代-从软件工程到智能体工程的范式革命（61页）.pdf 2026-09-06" [ref=f27e578] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322591.html
+              - generic [ref=f27e579]: "[智能体] 模智空间：2026 AI原生软件时代-从软件工程到智能体工程的范式革命（61页）.pdf"
+              - generic [ref=f27e580]: 2026-09-06
+            - link "[智能体] 京硅基行动科技有限公司：2026年AI智能体在各行业的应用全景白皮书（159页）.pdf 2026-09-08" [ref=f27e581] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1324790.html
+              - generic [ref=f27e582]: "[智能体] 京硅基行动科技有限公司：2026年AI智能体在各行业的应用全景白皮书（159页）.pdf"
+              - generic [ref=f27e583]: 2026-09-08
+            - link "[低空经济] 熵基科技：2026无人值守场景技术趋势与落地指南-AI Agent 驱动空间智能升级：从无人值守迈向自主运营时代产业白皮书（27页）.pdf 2026-09-06" [ref=f27e584] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322597.html
+              - generic [ref=f27e585]: "[低空经济] 熵基科技：2026无人值守场景技术趋势与落地指南-AI Agent 驱动空间智能升级：从无人值守迈向自主运营时代产业白皮书（27页）.pdf"
+              - generic [ref=f27e586]: 2026-09-06
+            - link "[AI产业] 大任智库：2026年AI-FDE能力素养与评价体系白皮书（51页）.pdf 2026-09-06" [ref=f27e587] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322590.html
+              - generic [ref=f27e588]: "[AI产业] 大任智库：2026年AI-FDE能力素养与评价体系白皮书（51页）.pdf"
+              - generic [ref=f27e589]: 2026-09-06
+            - link "[计算机产业] 中国信通院：算力中心服务商分析报告（2026年）（39页）.pdf 2026-09-04" [ref=f27e590] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322243.html
+              - generic [ref=f27e591]: "[计算机产业] 中国信通院：算力中心服务商分析报告（2026年）（39页）.pdf"
+              - generic [ref=f27e592]: 2026-09-04
+            - link "[AI产业] Moka AI：2026 中国企业 AI 组织转型能力报告（39页）.pdf 2026-09-10" [ref=f27e593] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1331938.html
+              - generic [ref=f27e594]: "[AI产业] Moka AI：2026 中国企业 AI 组织转型能力报告（39页）.pdf"
+              - generic [ref=f27e595]: 2026-09-10
+        - generic [ref=f27e596]:
+          - generic [ref=f27e597]:
+            - link [ref=f27e600] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322476.html
+              - img "北京硅基行动科技有限公司：WorkBuddy企业岗位应用全景白皮书（2026）（161页）" [ref=f27e601]
+            - generic [ref=f27e602]:
+              - link "北京硅基行动科技有限公司：WorkBuddy企业岗位应用全景白皮书（2026）（161页）.pdf" [ref=f27e604] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1322476.html
+              - generic [ref=f27e605]:
+                - generic [ref=f27e606]: 人力资源
+                - link [ref=f27e607] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1322476.html
+                  - img "下载" [ref=f27e608]
+                  - text: 下载
+                - link [ref=f27e609]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e610]
+                  - text: 161页
+          - generic [ref=f27e611]:
+            - link [ref=f27e614] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322594.html
+              - img "大任智库：2026年AI-FDE驻场服务全流程作业指南白皮书（76页）" [ref=f27e615]
+            - generic [ref=f27e616]:
+              - link "大任智库：2026年AI-FDE驻场服务全流程作业指南白皮书（76页）.pdf" [ref=f27e618] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1322594.html
+              - generic [ref=f27e619]:
+                - generic [ref=f27e620]: AI产业
+                - link [ref=f27e621] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1322594.html
+                  - img "下载" [ref=f27e622]
+                  - text: 下载
+                - link [ref=f27e623]:
+                  - /url: javascript:void(0);
+                  - img "页数" [ref=f27e624]
+                  - text: 76页
+          - generic [ref=f27e625]:
+            - link "[AI产业] QuestMobile：2026年 AI 平台发展研究报告（33页）.pdf 2026-09-05" [ref=f27e626] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322580.html
+              - generic [ref=f27e627]: "[AI产业] QuestMobile：2026年 AI 平台发展研究报告（33页）.pdf"
+              - generic [ref=f27e628]: 2026-09-05
+            - link "[AI产业] 大任智库：2026年AI-FDE赋能江苏制造典型场景清单白皮书（71页）.pdf 2026-09-06" [ref=f27e629] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322596.html
+              - generic [ref=f27e630]: "[AI产业] 大任智库：2026年AI-FDE赋能江苏制造典型场景清单白皮书（71页）.pdf"
+              - generic [ref=f27e631]: 2026-09-06
+            - link "[低空经济] 粤港澳大湾区数字经济研究院：2026低空经济发展白皮书5.0-低空进化论（179页）.pdf 2026-09-09" [ref=f27e632] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1329610.html
+              - generic [ref=f27e633]: "[低空经济] 粤港澳大湾区数字经济研究院：2026低空经济发展白皮书5.0-低空进化论（179页）.pdf"
+              - generic [ref=f27e634]: 2026-09-09
+            - link "[智能体] 复旦大学住房政策研究中心：2026中国智能体经济白皮书（52页）.pdf 2026-09-08" [ref=f27e635] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1325342.html
+              - generic [ref=f27e636]: "[智能体] 复旦大学住房政策研究中心：2026中国智能体经济白皮书（52页）.pdf"
+              - generic [ref=f27e637]: 2026-09-08
+            - link "[跨境电商] 世界互联网大会：2026中小企业跨境电商实践指南（58页）.pdf 2026-09-07" [ref=f27e638] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322646.html
+              - generic [ref=f27e639]: "[跨境电商] 世界互联网大会：2026中小企业跨境电商实践指南（58页）.pdf"
+              - generic [ref=f27e640]: 2026-09-07
+            - link "[AI产业] 深度智控：2026面向绿色算力的人工智能应用研究报告（78页）.pdf 2026-09-04" [ref=f27e641] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322484.html
+              - generic [ref=f27e642]: "[AI产业] 深度智控：2026面向绿色算力的人工智能应用研究报告（78页）.pdf"
+              - generic [ref=f27e643]: 2026-09-04
+            - link "[具身智能] 深圳市人工智能与机器人研究院：全国具身智能产业政策汇编（2025.1.1-2026.6.30）（544页）.pdf 2026-09-04" [ref=f27e644] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322231.html
+              - generic [ref=f27e645]: "[具身智能] 深圳市人工智能与机器人研究院：全国具身智能产业政策汇编（2025.1.1-2026.6.30）（544页）.pdf"
+              - generic [ref=f27e646]: 2026-09-04
+    - generic [ref=f27e649]:
+      - generic [ref=f27e650]:
+        - generic [ref=f27e652]:
+          - img "自研报告" [ref=f27e653]
+          - generic [ref=f27e654]: 自研报告
+        - link [ref=f27e656] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/selfdevelopedlist.html
+      - generic [ref=f27e661]:
+        - generic [ref=f27e662]: 全部
+        - generic [ref=f27e663]: 十五五
+        - generic [ref=f27e664]: 人工智能+
+        - generic [ref=f27e665]: 空天海洋
+        - generic [ref=f27e666]: 高端制造
+        - generic [ref=f27e667]: 绿色能源
+        - generic [ref=f27e668]: 医药健康
+        - generic [ref=f27e669]: 新兴经济
+        - generic [ref=f27e670]: 大众消费
+      - generic [ref=f27e672]:
+        - generic [ref=f27e673]:
+          - generic [ref=f27e674]:
+            - generic [ref=f27e675]:
+              - link [ref=f27e677] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1331937.html
+                - img "三个皮匠报告：2026全球及中国算电协同发展研究报告" [ref=f27e679]
+              - generic [ref=f27e680]: VIP免费
+              - generic [ref=f27e682]: 算电协同
+            - generic [ref=f27e683]:
+              - link "三个皮匠报告：2026全球及中国算电协同发展研究报告.pdf" [ref=f27e685] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1331937.html
+              - generic [ref=f27e686]:
+                - generic [ref=f27e687]:
+                  - generic [ref=f27e688]: 2026-09-10
+                  - generic [ref=f27e690]: 页数：221页
+                - generic [ref=f27e692]:
+                  - generic [ref=f27e693]: 143张自研图表
+                  - generic [ref=f27e695]:
+                    - text: 格式：
+                    - link "下载PDF格式" [ref=f27e698] [cursor=pointer]:
+                      - /url: https://www.sgpjbg.com/baogao/1331937.html
+          - generic [ref=f27e699]:
+            - generic [ref=f27e700]:
+              - link [ref=f27e702] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1327185.html
+                - img "三个皮匠报告：2026-2031年全球及中国干细胞行业市场发展报告" [ref=f27e704]
+              - generic [ref=f27e705]: VIP免费
+              - generic [ref=f27e707]: 干细胞
+            - generic [ref=f27e708]:
+              - link "三个皮匠报告：2026-2031年全球及中国干细胞行业市场发展报告.pdf" [ref=f27e710] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1327185.html
+              - generic [ref=f27e711]:
+                - generic [ref=f27e712]:
+                  - generic [ref=f27e713]: 2026-09-08
+                  - generic [ref=f27e715]: 页数：190页
+                - generic [ref=f27e717]:
+                  - generic [ref=f27e718]: 140张自研图表
+                  - generic [ref=f27e720]:
+                    - text: 格式：
+                    - link "下载PDF格式" [ref=f27e723] [cursor=pointer]:
+                      - /url: https://www.sgpjbg.com/baogao/1327185.html
+          - generic [ref=f27e724]:
+            - generic [ref=f27e725]:
+              - link [ref=f27e727] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1327184.html
+                - img "三个皮匠报告：2026全球及中国AIGC（人工智能生成内容）发展研究报告" [ref=f27e729]
+              - generic [ref=f27e730]: VIP免费
+              - generic [ref=f27e732]: AIGC
+            - generic [ref=f27e733]:
+              - link "三个皮匠报告：2026全球及中国AIGC（人工智能生成内容）发展研究报告.pdf" [ref=f27e735] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1327184.html
+              - generic [ref=f27e736]:
+                - generic [ref=f27e737]:
+                  - generic [ref=f27e738]: 2026-09-08
+                  - generic [ref=f27e740]: 页数：160页
+                - generic [ref=f27e742]:
+                  - generic [ref=f27e743]: 120张自研图表
+                  - generic [ref=f27e745]:
+                    - text: 格式：
+                    - link "下载PDF格式" [ref=f27e748] [cursor=pointer]:
+                      - /url: https://www.sgpjbg.com/baogao/1327184.html
+          - generic [ref=f27e749]:
+            - generic [ref=f27e750]:
+              - link [ref=f27e752] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1324377.html
+                - img "三个皮匠报告：2026-2031年全球及中国滑雪产业市场发展报告" [ref=f27e754]
+              - generic [ref=f27e755]: VIP免费
+              - generic [ref=f27e757]: 滑雪
+            - generic [ref=f27e758]:
+              - link "三个皮匠报告：2026-2031年全球及中国滑雪产业市场发展报告.pdf" [ref=f27e760] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1324377.html
+              - generic [ref=f27e761]:
+                - generic [ref=f27e762]:
+                  - generic [ref=f27e763]: 2026-09-07
+                  - generic [ref=f27e765]: 页数：169页
+                - generic [ref=f27e767]:
+                  - generic [ref=f27e768]: 120张自研图表
+                  - generic [ref=f27e770]:
+                    - text: 格式：
+                    - link "下载PDF格式" [ref=f27e773] [cursor=pointer]:
+                      - /url: https://www.sgpjbg.com/baogao/1324377.html
+        - generic:
+          - generic:
+            - link "三个皮匠报告：2026-2031年全球及中国露营行业市场发展报告 三个皮匠报告：2026-2031年全球及中国露营行业市场发展报告.pdf 2026-09-04 199页" [ref=f27e774] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1322254.html
+              - img "三个皮匠报告：2026-2031年全球及中国露营行业市场发展报告" [ref=f27e776]
+              - generic [ref=f27e777]:
+                - generic [ref=f27e778]: 三个皮匠报告：2026-2031年全球及中国露营行业市场发展报告.pdf
+                - generic [ref=f27e779]:
+                  - generic [ref=f27e780]: 2026-09-04
+                  - generic [ref=f27e782]: 199页
+            - link "三个皮匠报告：2026-2031年全球及中国稀土永磁行业市场发展报告 三个皮匠报告：2026-2031年全球及中国稀土永磁行业市场发展报告.pdf 2026-09-02 204页" [ref=f27e784] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1321015.html
+              - img "三个皮匠报告：2026-2031年全球及中国稀土永磁行业市场发展报告" [ref=f27e786]
+              - generic [ref=f27e787]:
+                - generic [ref=f27e788]: 三个皮匠报告：2026-2031年全球及中国稀土永磁行业市场发展报告.pdf
+                - generic [ref=f27e789]:
+                  - generic [ref=f27e790]: 2026-09-02
+                  - generic [ref=f27e792]: 204页
+            - link "三个皮匠报告：2026全球及中国跨境电商产业发展研究报告 三个皮匠报告：2026全球及中国跨境电商产业发展研究报告.pdf 2026-09-02 196页" [ref=f27e794] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1321018.html
+              - img "三个皮匠报告：2026全球及中国跨境电商产业发展研究报告" [ref=f27e796]
+              - generic [ref=f27e797]:
+                - generic [ref=f27e798]: 三个皮匠报告：2026全球及中国跨境电商产业发展研究报告.pdf
+                - generic [ref=f27e799]:
+                  - generic [ref=f27e800]: 2026-09-02
+                  - generic [ref=f27e802]: 196页
+            - link "三个皮匠报告：2026-2031年全球及中国四足机器人行业市场发展报告 三个皮匠报告：2026-2031年全球及中国四足机器人行业市场发展报告.pdf 2026-09-02 188页" [ref=f27e804] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1320985.html
+              - img "三个皮匠报告：2026-2031年全球及中国四足机器人行业市场发展报告" [ref=f27e806]
+              - generic [ref=f27e807]:
+                - generic [ref=f27e808]: 三个皮匠报告：2026-2031年全球及中国四足机器人行业市场发展报告.pdf
+                - generic [ref=f27e809]:
+                  - generic [ref=f27e810]: 2026-09-02
+                  - generic [ref=f27e812]: 188页
+    - generic [ref=f27e816]:
+      - generic [ref=f27e817]:
+        - generic [ref=f27e819]:
+          - img "英文报告" [ref=f27e820]
+          - generic [ref=f27e821]: 英文报告
+        - link [ref=f27e823] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/yingwenbaogao.html
+      - generic [ref=f27e828]:
+        - generic [ref=f27e829]: 行业报告
+        - generic [ref=f27e830]: 美股年报
+        - generic [ref=f27e831]: 美股招股书
+        - generic [ref=f27e832]: 海外企业研究
+      - generic [ref=f27e834]:
+        - generic [ref=f27e835]:
+          - link "Anthropic：2026变革性 AI 的经济情景报告（英文版）（57页） 译" [ref=f27e837] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332285.html
+            - img "Anthropic：2026变革性 AI 的经济情景报告（英文版）（57页）" [ref=f27e838]
+            - generic [ref=f27e839]: 译
+          - link "Anthropic：2026变革性 AI 的经济情景报告（英文版）（57页）.pdf" [ref=f27e842] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332285.html
+        - generic [ref=f27e843]:
+          - link "安联：行业地图2026：三速经济-企业如何应对人工智能、地缘政治与碎片化（英文版）（52页） 译" [ref=f27e845] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332196.html
+            - img "安联：行业地图2026：三速经济-企业如何应对人工智能、地缘政治与碎片化（英文版）（52页）" [ref=f27e846]
+            - generic [ref=f27e847]: 译
+          - link "安联：行业地图2026：三速经济-企业如何应对人工智能、地缘政治与碎片化（英文版）（52页）.pdf" [ref=f27e850] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332196.html
+        - generic [ref=f27e851]:
+          - link "兰德公司：2026争取时间延缓 AI 扩散研究报告：受控准入的经济学分析（英文版）（74页） 译" [ref=f27e853] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332205.html
+            - img "兰德公司：2026争取时间延缓 AI 扩散研究报告：受控准入的经济学分析（英文版）（74页）" [ref=f27e854]
+            - generic [ref=f27e855]: 译
+          - link "兰德公司：2026争取时间延缓 AI 扩散研究报告：受控准入的经济学分析（英文版）（74页）.pdf" [ref=f27e858] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332205.html
+        - generic [ref=f27e859]:
+          - link "兰德公司：2026安全领域治理与管理新兴技术研究报告（英文版）（59页） 译" [ref=f27e861] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332170.html
+            - img "兰德公司：2026安全领域治理与管理新兴技术研究报告（英文版）（59页）" [ref=f27e862]
+            - generic [ref=f27e863]: 译
+          - link "兰德公司：2026安全领域治理与管理新兴技术研究报告（英文版）（59页）.pdf" [ref=f27e866] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1332170.html
+        - generic [ref=f27e867]:
+          - link "GeoTechNexus：2026全球科技展望报告：从政策无序走向公开博弈（英文版）（30页） 译" [ref=f27e869] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1330368.html
+            - img "GeoTechNexus：2026全球科技展望报告：从政策无序走向公开博弈（英文版）（30页）" [ref=f27e870]
+            - generic [ref=f27e871]: 译
+          - link "GeoTechNexus：2026全球科技展望报告：从政策无序走向公开博弈（英文版）（30页）.pdf" [ref=f27e874] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1330368.html
+        - generic [ref=f27e875]:
+          - link "世界经济论坛（WEF）：2026欧洲增长与竞争力领军者年度报告（首版）（英文版）（123页） 译" [ref=f27e877] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1329979.html
+            - img "世界经济论坛（WEF）：2026欧洲增长与竞争力领军者年度报告（首版）（英文版）（123页）" [ref=f27e878]
+            - generic [ref=f27e879]: 译
+          - link "世界经济论坛（WEF）：2026欧洲增长与竞争力领军者年度报告（首版）（英文版）（123页）.pdf" [ref=f27e882] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1329979.html
+        - generic [ref=f27e883]:
+          - link "Strategic Foresight Group：2026核心共识：AI 极端风险全球契约报告（英文版）（96页） 译" [ref=f27e885] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1330387.html
+            - img "Strategic Foresight Group：2026核心共识：AI 极端风险全球契约报告（英文版）（96页）" [ref=f27e886]
+            - generic [ref=f27e887]: 译
+          - link "Strategic Foresight Group：2026核心共识：AI 极端风险全球契约报告（英文版）（96页）.pdf" [ref=f27e890] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1330387.html
+        - generic [ref=f27e891]:
+          - link "世界知识产权组织：2026年全球创新指数报告：全球百强创新集群排行榜（英文版）（30页） 译" [ref=f27e893] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1330404.html
+            - img "世界知识产权组织：2026年全球创新指数报告：全球百强创新集群排行榜（英文版）（30页）" [ref=f27e894]
+            - generic [ref=f27e895]: 译
+          - link "世界知识产权组织：2026年全球创新指数报告：全球百强创新集群排行榜（英文版）（30页）.pdf" [ref=f27e898] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1330404.html
+        - generic [ref=f27e899]:
+          - link "Ember：2026中国能源转型回顾报告：步入“边立边破”新阶段（英文版）（45页） 译" [ref=f27e901] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1330407.html
+            - img "Ember：2026中国能源转型回顾报告：步入“边立边破”新阶段（英文版）（45页）" [ref=f27e902]
+            - generic [ref=f27e903]: 译
+          - link "Ember：2026中国能源转型回顾报告：步入“边立边破”新阶段（英文版）（45页）.pdf" [ref=f27e906] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1330407.html
+        - generic [ref=f27e907]:
+          - link "iCV TA&K：2026全球量子计算云平台评估报告（英文版）（75页） 译" [ref=f27e909] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1329644.html
+            - img "iCV TA&K：2026全球量子计算云平台评估报告（英文版）（75页）" [ref=f27e910]
+            - generic [ref=f27e911]: 译
+          - link "iCV TA&K：2026全球量子计算云平台评估报告（英文版）（75页）.pdf" [ref=f27e914] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/baogao/1329644.html
+    - generic [ref=f27e917]:
+      - generic [ref=f27e918]:
+        - generic [ref=f27e919]:
+          - generic [ref=f27e920]: 报告合集
+          - generic [ref=f27e922]: 共 12063 个
+        - link [ref=f27e924] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/bggroup.html
+      - generic [ref=f27e930]:
+        - generic [ref=f27e931]:
+          - link [ref=f27e933] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/bggroup/3271.html
+            - img "十五五规划系列报告合集（共50套打包）" [ref=f27e934]
+          - generic [ref=f27e935]:
+            - link "十五五规划系列报告合集（共50套打包）" [ref=f27e937] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/3271.html
+            - generic [ref=f27e938]:
+              - generic [ref=f27e939]: 热点概念
+              - link [ref=f27e940] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroupdown/3271.html
+                - img "下载" [ref=f27e941]
+                - text: 下载
+        - generic [ref=f27e942]:
+          - link [ref=f27e944] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/bggroup/1276.html
+            - img "2026年宠物经济/它经济报告合集（共50套打包）" [ref=f27e945]
+          - generic [ref=f27e946]:
+            - link "2026年宠物经济/它经济报告合集（共50套打包）" [ref=f27e948] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/1276.html
+            - generic [ref=f27e949]:
+              - generic [ref=f27e950]: 热点概念
+              - link [ref=f27e951] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroupdown/1276.html
+                - img "下载" [ref=f27e952]
+                - text: 下载
+        - generic [ref=f27e953]:
+          - link [ref=f27e955] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/bggroup/987.html
+            - img "2026年养老经济/银发经济/长寿经济/银发族/老龄化报告合集（共40套打包）" [ref=f27e956]
+          - generic [ref=f27e957]:
+            - link "2026年养老经济/银发经济/长寿经济/银发族/老龄化报告合集（共40套打包）" [ref=f27e959] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/987.html
+            - generic [ref=f27e960]:
+              - generic [ref=f27e961]: 热点概念
+              - link [ref=f27e962] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroupdown/987.html
+                - img "下载" [ref=f27e963]
+                - text: 下载
+        - generic [ref=f27e964]:
+          - link [ref=f27e966] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/bggroup/3891.html
+            - img "2026情绪经济/情绪消费报告合集（共19套打包）" [ref=f27e967]
+          - generic [ref=f27e968]:
+            - link "2026情绪经济/情绪消费报告合集（共19套打包）" [ref=f27e970] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/3891.html
+            - generic [ref=f27e971]:
+              - generic [ref=f27e972]: 热点概念
+              - link [ref=f27e973] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroupdown/3891.html
+                - img "下载" [ref=f27e974]
+                - text: 下载
+    - generic [ref=f27e977]:
+      - generic [ref=f27e978]:
+        - generic [ref=f27e979]:
+          - generic [ref=f27e980]: 数据图表
+          - generic [ref=f27e982]: 共 12260314 个
+        - link [ref=f27e984] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/hyshuju.html
+      - generic [ref=f27e990]:
+        - list:
+          - listitem [ref=f27e991]:
+            - link "图6：拉美与中国主要出口商品的世界贸易：左侧为出口(X），右侧为进口（M) 点击下载该数据对应excel版数据 图6：拉美与中国主要出口商品的世界贸易：左侧为出口(X），右侧为进口（M)" [ref=f27e992] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/hyshuju/77f3b27f732effc482f545dfde0f73b2.html
+              - generic [ref=f27e993]:
+                - generic [ref=f27e994]: 图6：拉美与中国主要出口商品的世界贸易：左侧为出口(X），右侧为进口（M)
+                - img "点击下载该数据对应excel版数据" [ref=f27e995]
+              - img "图6：拉美与中国主要出口商品的世界贸易：左侧为出口(X），右侧为进口（M)" [ref=f27e997]
+            - generic:
+              - generic [ref=f27e998]:
+                - generic [ref=f27e999]: 行业数据
+                - generic [ref=f27e1000]: 2026-09-07
+              - generic [ref=f27e1001]:
+                - link "原图定位" [ref=f27e1003] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/baogao/1322692.html?newsid=7312268
+                - link "查看详情" [ref=f27e1006] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/hyshuju/77f3b27f732effc482f545dfde0f73b2.html
+          - listitem [ref=f27e1007]:
+            - link "图5：2015-2024年拉美对华主要出口商品 点击下载该数据对应excel版数据 图5：2015-2024年拉美对华主要出口商品" [ref=f27e1008] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/hyshuju/be64eea883d18dbf25115532a21e9261.html
+              - generic [ref=f27e1009]:
+                - generic [ref=f27e1010]: 图5：2015-2024年拉美对华主要出口商品
+                - img "点击下载该数据对应excel版数据" [ref=f27e1011]
+              - img "图5：2015-2024年拉美对华主要出口商品" [ref=f27e1013]
+            - generic:
+              - generic [ref=f27e1014]:
+                - generic [ref=f27e1015]: 行业数据
+                - generic [ref=f27e1016]: 2026-09-07
+              - generic [ref=f27e1017]:
+                - link "原图定位" [ref=f27e1019] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/baogao/1322692.html?newsid=7312267
+                - link "查看详情" [ref=f27e1022] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/hyshuju/be64eea883d18dbf25115532a21e9261.html
+          - listitem [ref=f27e1023]:
+            - link "图2：2024年中国与拉美和加勒比地区贸易差额，占GDP百分比 点击下载该数据对应excel版数据 图2：2024年中国与拉美和加勒比地区贸易差额，占GDP百分比" [ref=f27e1024] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/hyshuju/34a06cb60e4e69e7ad86ab04bf808861.html
+              - generic [ref=f27e1025]:
+                - generic [ref=f27e1026]: 图2：2024年中国与拉美和加勒比地区贸易差额，占GDP百分比
+                - img "点击下载该数据对应excel版数据" [ref=f27e1027]
+              - img "图2：2024年中国与拉美和加勒比地区贸易差额，占GDP百分比" [ref=f27e1029]
+            - generic:
+              - generic [ref=f27e1030]:
+                - generic [ref=f27e1031]: 行业数据
+                - generic [ref=f27e1032]: 2026-09-07
+              - generic [ref=f27e1033]:
+                - link "原图定位" [ref=f27e1035] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/baogao/1322692.html?newsid=7312264
+                - link "查看详情" [ref=f27e1038] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/hyshuju/34a06cb60e4e69e7ad86ab04bf808861.html
+          - listitem [ref=f27e1039]:
+            - link "2025年美国十大贸易伙伴 点击下载该数据对应excel版数据 2025年美国十大贸易伙伴" [ref=f27e1040] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/hyshuju/3e08205af056a2562d1b1ee1052cb6e8.html
+              - generic [ref=f27e1041]:
+                - generic [ref=f27e1042]: 2025年美国十大贸易伙伴
+                - img "点击下载该数据对应excel版数据" [ref=f27e1043]
+              - img "2025年美国十大贸易伙伴" [ref=f27e1045]
+            - generic:
+              - generic [ref=f27e1046]:
+                - generic [ref=f27e1047]: 行业数据
+                - generic [ref=f27e1048]: 2026-09-07
+              - generic [ref=f27e1049]:
+                - link "原图定位" [ref=f27e1051] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/baogao/1322710.html?newsid=7311429
+                - link "查看详情" [ref=f27e1054] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/hyshuju/3e08205af056a2562d1b1ee1052cb6e8.html
+    - generic [ref=f27e1057]:
+      - generic [ref=f27e1058]:
+        - generic [ref=f27e1059]:
+          - generic [ref=f27e1060]: 会议报告
+          - generic [ref=f27e1062]: 共 884 个
+        - link [ref=f27e1064] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/huiyibaogao.html
+      - generic [ref=f27e1069]:
+        - generic [ref=f27e1070]:
+          - generic [ref=f27e1071]:
+            - link [ref=f27e1073] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21549.html
+              - img "第26届雅克·波拉克年度研究会议-全球贸易和金融一体化的演变格局嘉宾演讲PPT合集（共14套打包）" [ref=f27e1074]
+            - generic [ref=f27e1075]:
+              - link "第26届雅克·波拉克年度研究会议-全球贸易和金融一体化的演变格局嘉宾演讲PPT合集（共14套打包）" [ref=f27e1077] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroup/21549.html
+              - generic [ref=f27e1078]: 第26届雅克183,波拉克年度研究会议,全球贸易和金融一体化的演变格局嘉宾演讲PPT合集
+              - link [ref=f27e1080] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroupdown/21549.html
+                - img "下载" [ref=f27e1081]
+                - text: 下载
+          - generic [ref=f27e1082]:
+            - link "[能源化工] 2026年绿色制冷峰会：过于环保而无法规模化（Green Cooling Summit 2026 Too green to scale ）嘉宾演讲PPT合集（共12套打包） 2026-08-31" [ref=f27e1083] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21544.html
+              - generic [ref=f27e1084]: "[能源化工] 2026年绿色制冷峰会：过于环保而无法规模化（Green Cooling Summit 2026 Too green to scale ）嘉宾演讲PPT合集（共12套打包）"
+              - generic [ref=f27e1085]: 2026-08-31
+            - link "[其他行业] 2026年度牛饲养质量论坛（2026 Feeding Quality Forum）嘉宾演讲PPT合集（共6套打包） 2026-08-31" [ref=f27e1086] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21543.html
+              - generic [ref=f27e1087]: "[其他行业] 2026年度牛饲养质量论坛（2026 Feeding Quality Forum）嘉宾演讲PPT合集（共6套打包）"
+              - generic [ref=f27e1088]: 2026-08-31
+            - link "[医疗医学] 2026美国圣地亚哥-先进疗法周（ATW2026）嘉宾演讲PPT合集（共52套打包） 2026-08-25" [ref=f27e1089] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21533.html
+              - generic [ref=f27e1090]: "[医疗医学] 2026美国圣地亚哥-先进疗法周（ATW2026）嘉宾演讲PPT合集（共52套打包）"
+              - generic [ref=f27e1091]: 2026-08-25
+            - link "[智能制造] 2026网络安全车辆论坛-日本东京（Cybersecurity Vehicle Forum：Tokyo）嘉宾演讲PPT合集（共15套打包） 2026-08-25" [ref=f27e1092] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21532.html
+              - generic [ref=f27e1093]: "[智能制造] 2026网络安全车辆论坛-日本东京（Cybersecurity Vehicle Forum：Tokyo）嘉宾演讲PPT合集（共15套打包）"
+              - generic [ref=f27e1094]: 2026-08-25
+            - link "[智能制造] 2026网络安全车辆论坛-底特律（Cybersecurity Vehicle Forum：Detroit）嘉宾演讲PPT合集（共15套打包） 2026-08-25" [ref=f27e1095] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21531.html
+              - generic [ref=f27e1096]: "[智能制造] 2026网络安全车辆论坛-底特律（Cybersecurity Vehicle Forum：Detroit）嘉宾演讲PPT合集（共15套打包）"
+              - generic [ref=f27e1097]: 2026-08-25
+            - link "[AI ▪ 科技 ▪ 通信] 2026年科学峰会-在人工智能时代打造生命科学品牌嘉宾演讲PPT合集（共6套打包） 2026-08-25" [ref=f27e1098] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21528.html
+              - generic [ref=f27e1099]: "[AI ▪ 科技 ▪ 通信] 2026年科学峰会-在人工智能时代打造生命科学品牌嘉宾演讲PPT合集（共6套打包）"
+              - generic [ref=f27e1100]: 2026-08-25
+            - link "[AI ▪ 科技 ▪ 通信] 2026 CIRAS人工智能峰会（CIRAS AI Summit）嘉宾演讲PPT合集（共26套打包） 2026-08-25" [ref=f27e1101] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21526.html
+              - generic [ref=f27e1102]: "[AI ▪ 科技 ▪ 通信] 2026 CIRAS人工智能峰会（CIRAS AI Summit）嘉宾演讲PPT合集（共26套打包）"
+              - generic [ref=f27e1103]: 2026-08-25
+        - generic [ref=f27e1104]:
+          - generic [ref=f27e1105]:
+            - link [ref=f27e1107] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21525.html
+              - img "SANS ICS 2026年安全峰会嘉宾演讲PPT合集（共4套打包）" [ref=f27e1108]
+            - generic [ref=f27e1109]:
+              - link "SANS ICS 2026年安全峰会嘉宾演讲PPT合集（共4套打包）" [ref=f27e1111] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroup/21525.html
+              - generic [ref=f27e1112]: SANSICS2026年安全峰会嘉宾演讲PPT合集
+              - link [ref=f27e1114] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroupdown/21525.html
+                - img "下载" [ref=f27e1115]
+                - text: 下载
+          - generic [ref=f27e1116]:
+            - link "[AI ▪ 科技 ▪ 通信] SANS AI 网络安全峰会2026嘉宾演讲PPT合集（共20套打包） 2026-08-17" [ref=f27e1117] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21524.html
+              - generic [ref=f27e1118]: "[AI ▪ 科技 ▪ 通信] SANS AI 网络安全峰会2026嘉宾演讲PPT合集（共20套打包）"
+              - generic [ref=f27e1119]: 2026-08-17
+            - link "[其他行业] Food Safety Magazine：2026年食品安全峰会嘉宾演讲PPT合集（共27套打包） 2026-08-17" [ref=f27e1120] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21523.html
+              - generic [ref=f27e1121]: "[其他行业] Food Safety Magazine：2026年食品安全峰会嘉宾演讲PPT合集（共27套打包）"
+              - generic [ref=f27e1122]: 2026-08-17
+            - link "[电商传媒] 2026年Shopee卖家激励大会嘉宾演讲PPT合集（共12套打包） 2026-08-17" [ref=f27e1123] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21517.html
+              - generic [ref=f27e1124]: "[电商传媒] 2026年Shopee卖家激励大会嘉宾演讲PPT合集（共12套打包）"
+              - generic [ref=f27e1125]: 2026-08-17
+            - link "[医疗医学] 美国公共卫生基金会：2025公共卫生学习论坛（2025 Public Health Learning Forum）嘉宾演讲PPT合集（共6套打包） 2026-08-10" [ref=f27e1126] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21515.html
+              - generic [ref=f27e1127]: "[医疗医学] 美国公共卫生基金会：2025公共卫生学习论坛（2025 Public Health Learning Forum）嘉宾演讲PPT合集（共6套打包）"
+              - generic [ref=f27e1128]: 2026-08-10
+            - link "[能源化工] 2026第九届水热工艺专家论坛（9th Expert Forum on Hydrothermal Processes）嘉宾演讲PPT合集（共9套打包） 2026-08-10" [ref=f27e1129] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21514.html
+              - generic [ref=f27e1130]: "[能源化工] 2026第九届水热工艺专家论坛（9th Expert Forum on Hydrothermal Processes）嘉宾演讲PPT合集（共9套打包）"
+              - generic [ref=f27e1131]: 2026-08-10
+            - link "[其他行业] 2026年斯洛伐克英语教师协会暨布里奇教学论坛（SCELT & The Bridge Forum 2026）嘉宾演讲PPT合集（共17套打包） 2026-08-10" [ref=f27e1132] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21511.html
+              - generic [ref=f27e1133]: "[其他行业] 2026年斯洛伐克英语教师协会暨布里奇教学论坛（SCELT & The Bridge Forum 2026）嘉宾演讲PPT合集（共17套打包）"
+              - generic [ref=f27e1134]: 2026-08-10
+            - link "[其他行业] 2025新西兰国家生命线公用事业论坛（National Lifeline Utilities Forum）嘉宾演讲PPT合集（共36套打包） 2026-08-10" [ref=f27e1135] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/bggroup/21509.html
+              - generic [ref=f27e1136]: "[其他行业] 2025新西兰国家生命线公用事业论坛（National Lifeline Utilities Forum）嘉宾演讲PPT合集（共36套打包）"
+              - generic [ref=f27e1137]: 2026-08-10
+    - generic [ref=f27e1140]:
+      - generic [ref=f27e1141]:
+        - generic [ref=f27e1142]:
+          - generic [ref=f27e1143]: 报告分类
+          - generic [ref=f27e1145]: 共 5141247 个 | 今日更新数量 910 个
+        - link [ref=f27e1147] [cursor=pointer]:
+          - /url: javascript:void(0);
+      - generic [ref=f27e1152]:
+        - generic [ref=f27e1153] [cursor=pointer]: 人工智能
+        - generic [ref=f27e1154] [cursor=pointer]: 信息科技
+        - generic [ref=f27e1155] [cursor=pointer]: 互联网
+        - generic [ref=f27e1156] [cursor=pointer]: 消费经济
+        - generic [ref=f27e1157] [cursor=pointer]: 汽车交通
+        - generic [ref=f27e1158] [cursor=pointer]: 电商零售
+        - generic [ref=f27e1159] [cursor=pointer]: 传媒娱乐
+        - generic [ref=f27e1160] [cursor=pointer]: 医疗健康
+        - generic [ref=f27e1161] [cursor=pointer]: 投资金融
+        - generic [ref=f27e1162] [cursor=pointer]: 能源环境
+        - generic [ref=f27e1163] [cursor=pointer]: 地产建筑
+        - generic [ref=f27e1164] [cursor=pointer]: 传统产业
+        - generic [ref=f27e1165] [cursor=pointer]: 英文报告
+        - generic [ref=f27e1166] [cursor=pointer]: 券商报告
+        - generic [ref=f27e1167] [cursor=pointer]: 年报财报
+        - generic [ref=f27e1168] [cursor=pointer]: 定制报告
+        - generic [ref=f27e1169] [cursor=pointer]: 自研报告
+        - generic [ref=f27e1170] [cursor=pointer]: 其它
+      - generic [ref=f27e1171]:
+        - generic [ref=f27e1172]:
+          - generic [ref=f27e1173]:
+            - link [ref=f27e1175] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332712.html
+              - img "CIC灼识：2026具身智能大脑行业白皮书（31页）" [ref=f27e1176]
+            - generic [ref=f27e1177]:
+              - link "CIC灼识：2026具身智能大脑行业白皮书（31页）.pdf" [ref=f27e1179] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332712.html
+              - generic [ref=f27e1180]: 2025ChinaInsightsConsultancy,Allrightsreserved,Thisdocumentcontainshighlyconfidentialinformationandissolelyfortheuseofou
+              - generic [ref=f27e1181]: AI产业
+              - generic [ref=f27e1182]:
+                - generic [ref=f27e1183]:
+                  - img "发布时间" [ref=f27e1184] [cursor=pointer]
+                  - text: 2026-09-12
+                - link [ref=f27e1185] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1332712.html
+                  - img "下载" [ref=f27e1186]
+                  - text: 下载
+                - link [ref=f27e1187]:
+                  - /url: javascript:void(0);
+                  - img "星级" [ref=f27e1188]
+                  - text: 5星级
+          - generic [ref=f27e1189]:
+            - link "[AI产业] 22枢纽云：2026 AI友好型网站建设与GEO优化落地指南白皮书（36页）.pdf 2026-09-12" [ref=f27e1190] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332710.html
+              - generic [ref=f27e1191]: "[AI产业] 22枢纽云：2026 AI友好型网站建设与GEO优化落地指南白皮书（36页）.pdf"
+              - generic [ref=f27e1192]: 2026-09-12
+            - link "[机器人] 知行元界：2026年中国机器人多功能体验服务店业态发展蓝皮书（80页）.pdf 2026-09-09" [ref=f27e1193] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332304.html
+              - generic [ref=f27e1194]: "[机器人] 知行元界：2026年中国机器人多功能体验服务店业态发展蓝皮书（80页）.pdf"
+              - generic [ref=f27e1195]: 2026-09-09
+            - link "[AI产业] 亚信安全：2026 AIDR（AI检测与响应）白皮书（47页）.pdf 2026-09-11" [ref=f27e1196] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332155.html
+              - generic [ref=f27e1197]: "[AI产业] 亚信安全：2026 AIDR（AI检测与响应）白皮书（47页）.pdf"
+              - generic [ref=f27e1198]: 2026-09-11
+            - link "[AI产业] Datawhale：FDE 100案例集（2026）（246页）.pdf 2026-09-11" [ref=f27e1199] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332148.html
+              - generic [ref=f27e1200]: "[AI产业] Datawhale：FDE 100案例集（2026）（246页）.pdf"
+              - generic [ref=f27e1201]: 2026-09-11
+            - link "[AI产业] IDC&联想：2026 AI主机白皮书：智能体边缘新物种（46页）.pdf 2026-09-11" [ref=f27e1202] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1332146.html
+              - generic [ref=f27e1203]: "[AI产业] IDC&联想：2026 AI主机白皮书：智能体边缘新物种（46页）.pdf"
+              - generic [ref=f27e1204]: 2026-09-11
+            - link "[AI产业] 清华大学：2026豆包科研手册（39页）.pdf 2026-09-10" [ref=f27e1205] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1331947.html
+              - generic [ref=f27e1206]: "[AI产业] 清华大学：2026豆包科研手册（39页）.pdf"
+              - generic [ref=f27e1207]: 2026-09-10
+            - link "[AI产业] Moka AI：2026 中国企业 AI 组织转型能力报告（39页）.pdf 2026-09-10" [ref=f27e1208] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1331938.html
+              - generic [ref=f27e1209]: "[AI产业] Moka AI：2026 中国企业 AI 组织转型能力报告（39页）.pdf"
+              - generic [ref=f27e1210]: 2026-09-10
+        - generic [ref=f27e1211]:
+          - generic [ref=f27e1212]:
+            - link [ref=f27e1214] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1330327.html
+              - img "元宇宙与人工智能三十人论坛：2026个人超级智能与OPC白皮书（29页）" [ref=f27e1215]
+            - generic [ref=f27e1216]:
+              - link "元宇宙与人工智能三十人论坛：2026个人超级智能与OPC白皮书（29页）.pdf" [ref=f27e1218] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1330327.html
+              - generic [ref=f27e1219]: 个超级智能与OPC书2026,09,09深圳第1共29个超级智能与OPC迈向机共的智能经济新纪元当机器可以做乎切事的时候,还剩什么,届企业家个超级智能与OPC态会暨第六届元宇宙与智能三论坛产业峰会2个定义2个公式90天动路线图1个核结论发布
+              - generic [ref=f27e1220]: AI产业
+              - generic [ref=f27e1221]:
+                - generic [ref=f27e1222]:
+                  - img "发布时间" [ref=f27e1223] [cursor=pointer]
+                  - text: 2026-09-10
+                - link [ref=f27e1224] [cursor=pointer]:
+                  - /url: https://www.sgpjbg.com/bgdown/1330327.html
+                  - img "下载" [ref=f27e1225]
+                  - text: 下载
+                - link [ref=f27e1226]:
+                  - /url: javascript:void(0);
+                  - img "星级" [ref=f27e1227]
+                  - text: 5星级
+          - generic [ref=f27e1228]:
+            - link "[AI产业] 上海社会科学院信息研究所：2026澳大利亚国家人工智能计划与全民受益机制研究报告（25页）.pdf 2026-09-10" [ref=f27e1229] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1330324.html
+              - generic [ref=f27e1230]: "[AI产业] 上海社会科学院信息研究所：2026澳大利亚国家人工智能计划与全民受益机制研究报告（25页）.pdf"
+              - generic [ref=f27e1231]: 2026-09-10
+            - link "[AI产业] ifenxi：2026爱分析·中国AI厂商Token收入榜单（25页）.pdf 2026-09-09" [ref=f27e1232] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1329990.html
+              - generic [ref=f27e1233]: "[AI产业] ifenxi：2026爱分析·中国AI厂商Token收入榜单（25页）.pdf"
+              - generic [ref=f27e1234]: 2026-09-09
+            - link "[AI产业] 有云数智：2026能源AI智能巡检应用研究报告（53页）.pdf 2026-09-09" [ref=f27e1235] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1329608.html
+              - generic [ref=f27e1236]: "[AI产业] 有云数智：2026能源AI智能巡检应用研究报告（53页）.pdf"
+              - generic [ref=f27e1237]: 2026-09-09
+            - link "[AI产业] 模智空间：2026GitHub热门Harness项目解析-架构拆解、机制对比与选型指南（46页）.pdf 2026-09-09" [ref=f27e1238] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1329602.html
+              - generic [ref=f27e1239]: "[AI产业] 模智空间：2026GitHub热门Harness项目解析-架构拆解、机制对比与选型指南（46页）.pdf"
+              - generic [ref=f27e1240]: 2026-09-09
+            - link "[AI产业] 波士顿咨询（BCG）：2026智能体驱动的企业运营报告：发挥AI应用的最大价值（英文版）（32页）.pdf 2026-09-09" [ref=f27e1241] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1329596.html
+              - generic [ref=f27e1242]: "[AI产业] 波士顿咨询（BCG）：2026智能体驱动的企业运营报告：发挥AI应用的最大价值（英文版）（32页）.pdf"
+              - generic [ref=f27e1243]: 2026-09-09
+            - link "[具身智能] 中国移动&中关村泛联院：6G通算融合赋能具身智能白皮书（2026年）（20页）.pdf 2026-09-09" [ref=f27e1244] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1329594.html
+              - generic [ref=f27e1245]: "[具身智能] 中国移动&中关村泛联院：6G通算融合赋能具身智能白皮书（2026年）（20页）.pdf"
+              - generic [ref=f27e1246]: 2026-09-09
+            - link "[AI产业] 中国通信标准化协会：AI+DevOps（AIDO）现状调查报告（2026年）（92页）.pdf 2026-09-09" [ref=f27e1247] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/baogao/1329591.html
+              - generic [ref=f27e1248]: "[AI产业] 中国通信标准化协会：AI+DevOps（AIDO）现状调查报告（2026年）（92页）.pdf"
+              - generic [ref=f27e1249]: 2026-09-09
+    - generic [ref=f27e1250]:
+      - generic [ref=f27e1251]: 合作机构矩阵
+      - generic [ref=f27e1252]:
+        - link "了解入驻详情" [ref=f27e1253] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+        - link "入驻机构报告" [ref=f27e1256] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/smlist.html
+      - generic [ref=f27e1257]:
+        - generic [ref=f27e1258]:
+          - link "亿欧 亿欧智库" [ref=f27e1259] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/895157.html
+            - img "亿欧" [ref=f27e1260]
+            - generic "亿欧" [ref=f27e1261]: 亿欧智库
+          - link "红餐产业研究院 红餐产业研究院" [ref=f27e1262] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1215880.html
+            - img "红餐产业研究院" [ref=f27e1263]
+            - generic "红餐产业研究院" [ref=f27e1264]
+          - link "爱分析ifenxi 爱分析ifenxi" [ref=f27e1265] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1461069.html
+            - img "爱分析ifenxi" [ref=f27e1266]
+            - generic "爱分析ifenxi" [ref=f27e1267]
+          - link "中广国研 中广国研" [ref=f27e1268] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1381111.html
+            - img "中广国研" [ref=f27e1269]
+            - generic "中广国研" [ref=f27e1270]
+          - link "果集 果集" [ref=f27e1271] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/890871.html
+            - img "果集" [ref=f27e1272]
+            - generic "果集" [ref=f27e1273]
+        - generic [ref=f27e1274]:
+          - link "炼丹炉大数据 炼丹炉大数据" [ref=f27e1275] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/434575.html
+            - img "炼丹炉大数据" [ref=f27e1276]
+            - generic "炼丹炉大数据" [ref=f27e1277]
+          - link "三个皮匠报告 三个皮匠报告" [ref=f27e1278] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/295723.html
+            - img "三个皮匠报告" [ref=f27e1279]
+            - generic "三个皮匠报告" [ref=f27e1280]
+          - link "甲子光年科技产业智库 甲子光年" [ref=f27e1281] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/180910.html
+            - img "甲子光年科技产业智库" [ref=f27e1282]
+            - generic "甲子光年科技产业智库" [ref=f27e1283]: 甲子光年
+          - link "博思人才 博思人才" [ref=f27e1284] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1501280.html
+            - img "博思人才" [ref=f27e1285]
+            - generic "博思人才" [ref=f27e1286]
+          - link "思宇MedTech 思宇MedTech" [ref=f27e1287] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1493164.html
+            - img "思宇MedTech" [ref=f27e1288]
+            - generic "思宇MedTech" [ref=f27e1289]
+        - generic [ref=f27e1290]:
+          - link "OceanBase OceanBase" [ref=f27e1291] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1462085.html
+            - img "OceanBase" [ref=f27e1292]
+            - generic "OceanBase" [ref=f27e1293]
+          - link "弄好 弄好" [ref=f27e1294] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1444722.html
+            - img "弄好" [ref=f27e1295]
+            - generic "弄好" [ref=f27e1296]
+          - link "蔚云出海 蔚云出海" [ref=f27e1297] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1427879.html
+            - img "蔚云出海" [ref=f27e1298]
+            - generic "蔚云出海" [ref=f27e1299]
+          - link "高岩科技 高岩科技" [ref=f27e1300] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1367324.html
+            - img "高岩科技" [ref=f27e1301]
+            - generic "高岩科技" [ref=f27e1302]
+          - link "勤策消费研究 勤策消费研究" [ref=f27e1303] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/977484.html
+            - img "勤策消费研究" [ref=f27e1304]
+            - generic "勤策消费研究" [ref=f27e1305]
+        - generic [ref=f27e1306]:
+          - link "深企投产业研究院 深企投产业研究院" [ref=f27e1307] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/887144.html
+            - img "深企投产业研究院" [ref=f27e1308]
+            - generic "深企投产业研究院" [ref=f27e1309]
+          - link "亿邦智库 亿邦智库" [ref=f27e1310] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/457311.html
+            - img "亿邦智库" [ref=f27e1311]
+            - generic "亿邦智库" [ref=f27e1312]
+          - link "AppGrowing AppGrowing" [ref=f27e1313] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/201739.html
+            - img "AppGrowing" [ref=f27e1314]
+            - generic "AppGrowing" [ref=f27e1315]
+          - link "诺舟智数 诺舟智数" [ref=f27e1316] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1453139.html
+            - img "诺舟智数" [ref=f27e1317]
+            - generic "诺舟智数" [ref=f27e1318]
+          - link "DIA数皆智能 DIA数皆智能" [ref=f27e1319] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1086295.html
+            - img "DIA数皆智能" [ref=f27e1320]
+            - generic "DIA数皆智能" [ref=f27e1321]
+        - generic [ref=f27e1322]:
+          - link "顺为咨询 顺为咨询" [ref=f27e1323] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1023344.html
+            - img "顺为咨询" [ref=f27e1324]
+            - generic "顺为咨询" [ref=f27e1325]
+          - link "今元集团研究院 今元集团" [ref=f27e1326] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/942440.html
+            - img "今元集团研究院" [ref=f27e1327]
+            - generic "今元集团研究院" [ref=f27e1328]: 今元集团
+          - link "探迹Tungee 探迹科技" [ref=f27e1329] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/809546.html
+            - img "探迹Tungee" [ref=f27e1330]
+            - generic "探迹Tungee" [ref=f27e1331]: 探迹科技
+          - link "阿里妈妈数字营销 阿里妈妈" [ref=f27e1332] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/582501.html
+            - img "阿里妈妈数字营销" [ref=f27e1333]
+            - generic "阿里妈妈数字营销" [ref=f27e1334]: 阿里妈妈
+          - link "微播易 微播易" [ref=f27e1335] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/535249.html
+            - img "微播易" [ref=f27e1336]
+            - generic "微播易" [ref=f27e1337]
+        - generic [ref=f27e1338]:
+          - link "卡思优派产业研究院 卡思优派人力资源" [ref=f27e1339] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1135260.html
+            - img "卡思优派产业研究院" [ref=f27e1340]
+            - generic "卡思优派产业研究院" [ref=f27e1341]: 卡思优派人力资源
+          - link "亦莘咨询 亦莘咨询" [ref=f27e1342] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1107165.html
+            - img "亦莘咨询" [ref=f27e1343]
+            - generic "亦莘咨询" [ref=f27e1344]
+          - link "东西互动 东西互动" [ref=f27e1345] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/859589.html
+            - img "东西互动" [ref=f27e1346]
+            - generic "东西互动" [ref=f27e1347]
+          - link "中兴新云·财务云 中兴新云" [ref=f27e1348] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/606707.html
+            - img "中兴新云·财务云" [ref=f27e1349]
+            - generic "中兴新云·财务云" [ref=f27e1350]: 中兴新云
+          - link "MarketUP MarketUP" [ref=f27e1351] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/562920.html
+            - img "MarketUP" [ref=f27e1352]
+            - generic "MarketUP" [ref=f27e1353]
+        - generic [ref=f27e1354]:
+          - link "GeoQ智图 GeoQ智图" [ref=f27e1355] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/533241.html
+            - img "GeoQ智图" [ref=f27e1356]
+            - generic "GeoQ智图" [ref=f27e1357]
+          - link "MSC咨询 MSC咨询" [ref=f27e1358] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/507829.html
+            - img "MSC咨询" [ref=f27e1359]
+            - generic "MSC咨询" [ref=f27e1360]
+          - link "中物联智慧物流分会 中物联智慧物流分会" [ref=f27e1361] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1472863.html
+            - img "中物联智慧物流分会" [ref=f27e1362]
+            - generic "中物联智慧物流分会" [ref=f27e1363]
+          - link "成联数据 成联数据" [ref=f27e1364] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1302437.html
+            - img "成联数据" [ref=f27e1365]
+            - generic "成联数据" [ref=f27e1366]
+          - link "用友大易 用友大易" [ref=f27e1367] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1298566.html
+            - img "用友大易" [ref=f27e1368]
+            - generic "用友大易" [ref=f27e1369]
+        - generic [ref=f27e1370]:
+          - link "集之互动 集之互动" [ref=f27e1371] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1255224.html
+            - img "集之互动" [ref=f27e1372]
+            - generic "集之互动" [ref=f27e1373]
+          - link "玄晶引擎 玄晶引擎" [ref=f27e1374] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1245205.html
+            - img "玄晶引擎" [ref=f27e1375]
+            - generic "玄晶引擎" [ref=f27e1376]
+          - link "鲸叹号-WhaleBuzz 鲸哨" [ref=f27e1377] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1210708.html
+            - img "鲸叹号-WhaleBuzz" [ref=f27e1378]
+            - generic "鲸叹号-WhaleBuzz" [ref=f27e1379]: 鲸哨
+          - link "升空音乐 升空音乐" [ref=f27e1380] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1197111.html
+            - img "升空音乐" [ref=f27e1381]
+            - generic "升空音乐" [ref=f27e1382]
+          - link "赤象咨询[Careersee] 赤象咨询[Careersee]" [ref=f27e1383] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1150608.html
+            - img "赤象咨询[Careersee]" [ref=f27e1384]
+            - generic "赤象咨询[Careersee]" [ref=f27e1385]
+        - generic [ref=f27e1386]:
+          - link "中项网行研院 中项网行业研究院" [ref=f27e1387] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1108305.html
+            - img "中项网行研院" [ref=f27e1388]
+            - generic "中项网行研院" [ref=f27e1389]: 中项网行业研究院
+          - link "简道云 简道云" [ref=f27e1390] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/1065004.html
+            - img "简道云" [ref=f27e1391]
+            - generic "简道云" [ref=f27e1392]
+          - link "原点安全 原点安全" [ref=f27e1393] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/995889.html
+            - img "原点安全" [ref=f27e1394]
+            - generic "原点安全" [ref=f27e1395]
+          - link "材韵战新研究院 材韵战新" [ref=f27e1396] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/940551.html
+            - img "材韵战新研究院" [ref=f27e1397]
+            - generic "材韵战新研究院" [ref=f27e1398]: 材韵战新
+          - link "英格玛服务外包 英格玛" [ref=f27e1399] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/888028.html
+            - img "英格玛服务外包" [ref=f27e1400]
+            - generic "英格玛服务外包" [ref=f27e1401]: 英格玛
+        - generic [ref=f27e1402]:
+          - link "百思特管理咨询 百思特咨询" [ref=f27e1403] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/794140.html
+            - img "百思特管理咨询" [ref=f27e1404]
+            - generic "百思特管理咨询" [ref=f27e1405]: 百思特咨询
+          - link "思码逸 思码逸" [ref=f27e1406] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/704947.html
+            - img "思码逸" [ref=f27e1407]
+            - generic "思码逸" [ref=f27e1408]
+          - link "北京数字认证股份有限公司 数字认证" [ref=f27e1409] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/697903.html
+            - img "北京数字认证股份有限公司" [ref=f27e1410]
+            - generic "北京数字认证股份有限公司" [ref=f27e1411]: 数字认证
+          - link "店匠Shoplazza 店匠Shoplazza" [ref=f27e1412] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/691956.html
+            - img "店匠Shoplazza" [ref=f27e1413]
+            - generic "店匠Shoplazza" [ref=f27e1414]
+          - link "环球旅讯（TravelDaily） 环球旅讯" [ref=f27e1415] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/689288.html
+            - img "环球旅讯（TravelDaily）" [ref=f27e1416]
+            - generic "环球旅讯（TravelDaily）" [ref=f27e1417]: 环球旅讯
+        - generic [ref=f27e1418]:
+          - link "邻汇吧｜商业空间流量运营服务商 邻汇吧" [ref=f27e1419] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/666684.html
+            - img "邻汇吧｜商业空间流量运营服务商" [ref=f27e1420]
+            - generic "邻汇吧｜商业空间流量运营服务商" [ref=f27e1421]: 邻汇吧
+          - link "合思信息 合思信息" [ref=f27e1422] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/655255.html
+            - img "合思信息" [ref=f27e1423]
+            - generic "合思信息" [ref=f27e1424]
+          - link "合肥市善水环境保护发展中心 合肥市善水环境保护发展中心" [ref=f27e1425] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/599675.html
+            - img "合肥市善水环境保护发展中心" [ref=f27e1426]
+            - generic "合肥市善水环境保护发展中心" [ref=f27e1427]
+          - link "BOJSD咨询 BOJSD咨询" [ref=f27e1428] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/512238.html
+            - img "BOJSD咨询" [ref=f27e1429]
+            - generic "BOJSD咨询" [ref=f27e1430]
+          - link "中经智策 中经智策" [ref=f27e1431] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/502101.html
+            - img "中经智策" [ref=f27e1432]
+            - generic "中经智策" [ref=f27e1433]
+        - generic [ref=f27e1434]:
+          - link "向量研究院 向量研究院" [ref=f27e1435] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/487591.html
+            - img "向量研究院" [ref=f27e1436]
+            - generic "向量研究院" [ref=f27e1437]
+          - link "华信咨询 华信咨询" [ref=f27e1438] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/444886.html
+            - img "华信咨询" [ref=f27e1439]
+            - generic "华信咨询" [ref=f27e1440]
+          - link "ADVANCE.AI ADVANCE.AI" [ref=f27e1441] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/324407.html
+            - img "ADVANCE.AI" [ref=f27e1442]
+            - generic "ADVANCE.AI" [ref=f27e1443]
+          - link "上奇产业通 上奇产业通" [ref=f27e1444] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/243558.html
+            - img "上奇产业通" [ref=f27e1445]
+            - generic "上奇产业通" [ref=f27e1446]
+          - link "永洪科技 永洪科技" [ref=f27e1447] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/228202.html
+            - img "永洪科技" [ref=f27e1448]
+            - generic "永洪科技" [ref=f27e1449]
+        - generic [ref=f27e1450]:
+          - link "世隆科技 世隆科技" [ref=f27e1451] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/223491.html
+            - img "世隆科技" [ref=f27e1452]
+            - generic "世隆科技" [ref=f27e1453]
+          - link "町芒研究院 町芒研究院" [ref=f27e1454] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/user/210531.html
+            - img "町芒研究院" [ref=f27e1455]
+            - generic "町芒研究院" [ref=f27e1456]
+      - generic [ref=f27e1461]:
+        - link "专业团队引流" [ref=f27e1462] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+        - link "便捷报告分发" [ref=f27e1467] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+        - link "权威机构标识" [ref=f27e1472] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+        - link "专属机构主页" [ref=f27e1477] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/user/507829.html
+        - link "超值售卖服务" [ref=f27e1482] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/smlist.html
+        - link "专享定制入口" [ref=f27e1487] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+  - generic [ref=f27e1492]:
+    - generic [ref=f27e1493]:
+      - generic [ref=f27e1494]:
+        - generic [ref=f27e1497]: 全行业研究报告分享下载平台
+        - list [ref=f27e1498]:
+          - listitem [ref=f27e1499]: 0731-84720580
+          - listitem [ref=f27e1501]: 商务合作：really158d
+      - generic [ref=f27e1504]:
+        - text: 关于我们
+        - list [ref=f27e1505]:
+          - listitem [ref=f27e1506]:
+            - link "网站声明" [ref=f27e1507] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-22277.html
+          - listitem [ref=f27e1508]:
+            - link "免责声明" [ref=f27e1509] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-42671.html
+          - listitem [ref=f27e1510]:
+            - link "网站公告" [ref=f27e1511] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/newslist.html
+          - listitem [ref=f27e1512]:
+            - link "我要入驻" [ref=f27e1513] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+      - generic [ref=f27e1514]:
+        - text: 更多
+        - list [ref=f27e1515]:
+          - listitem [ref=f27e1516]:
+            - link "常见问题" [ref=f27e1517] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-24877.html
+          - listitem [ref=f27e1518]:
+            - link "用户协议" [ref=f27e1519] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-33145.html
+          - listitem [ref=f27e1520]:
+            - link "认证协议" [ref=f27e1521] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/sgpjbg/WebClause.aspx?id=12
+          - listitem [ref=f27e1522]:
+            - link "版权申诉" [ref=f27e1523] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-19193.html
+      - generic [ref=f27e1524]:
+        - text: 关于我们
+        - generic [ref=f27e1525]:
+          - generic [ref=f27e1526]: 三个皮匠报告微信公众号
+          - generic [ref=f27e1529]: 三个皮匠报告微信小程序
+          - generic [ref=f27e1532]: 扫码咨询网站充值下载问题
+    - generic [ref=f27e1535]: copyright@2008-2013 长沙景略智创信息技术有限公司版权所有 网站备案/许可证号：湘B2-20190120 | 工信部备案号：湘ICP备17000430号-2 | 公安备案号：湘公网安备43010402001071号
+  - generic [ref=f27e1537]:
+    - link "个人中心" [ref=f27e1539] [cursor=pointer]:
+      - /url: javascript:$('#aLogin').click();
+    - link [ref=f27e1541] [cursor=pointer]:
+      - /url: https://www.sgpjbg.com/searchai.html
+    - link [ref=f27e1543] [cursor=pointer]:
+      - /url: https://www.sgpjbg.com/sgpjbg/UserManage/Recharge.aspx?f=0
+    - generic [ref=f27e1545] [cursor=pointer]: 客服
+    - link "商务合作" [ref=f27e1549] [cursor=pointer]:
+      - /url: https://www.sgpjbg.com/sgpjbg/JiGouRuZhu.aspx
+    - generic [ref=f27e1551] [cursor=pointer]: 小程序
+    - generic [ref=f27e1554] [cursor=pointer]: 服务号
+  - generic [ref=f27e1557] [cursor=pointer]: 折叠
+  - generic [ref=f27e1561]:
+    - img "会员动态" [ref=f27e1562]
+    - generic [ref=f27e1563]:
+      - img "会员动态" [ref=f27e1564]
+      - text: 会员动态：
+      - img "关闭" [ref=f27e1565] [cursor=pointer]
+    - table [ref=f27e1567]:
+      - rowgroup [ref=f27e1568]:
+        - row [ref=f27e1569]:
+          - cell [ref=f27e1570]:
+            - table [ref=f27e1571]:
+              - rowgroup [ref=f27e1572]:
+                - row [ref=f27e1573]:
+                  - cell [ref=f27e1574]:
+                    - paragraph [ref=f27e1575]:
+                      - generic [ref=f27e1576]: wei**n_... 升级为至尊VIP
+                      - generic [ref=f27e1577]: 183**91... 升级为标准VIP
+                    - paragraph [ref=f27e1578]:
+                      - generic [ref=f27e1579]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1580]: wei**n_... 升级为至尊VIP
+                    - paragraph [ref=f27e1581]:
+                      - generic [ref=f27e1582]: 七**... 升级为至尊VIP
+                      - generic [ref=f27e1583]: 七**... 升级为标准VIP
+                    - paragraph [ref=f27e1584]:
+                      - generic [ref=f27e1585]: 大** 升级为高级VIP
+                      - generic [ref=f27e1586]: wei**n_... 升级为至尊VIP
+                    - paragraph [ref=f27e1587]:
+                      - generic [ref=f27e1588]: 悬** 升级为至尊VIP
+                      - generic [ref=f27e1589]: 神**... 升级为高级VIP
+                    - paragraph [ref=f27e1590]:
+                      - generic [ref=f27e1591]: 182**91... 升级为标准VIP
+                      - generic [ref=f27e1592]: 微**... 升级为标准VIP
+                    - paragraph [ref=f27e1593]:
+                      - generic [ref=f27e1594]: 135**08... 升级为「预见者」VIP
+                      - generic [ref=f27e1595]: 152**48... 升级为至尊VIP
+                    - paragraph [ref=f27e1596]:
+                      - generic [ref=f27e1597]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1598]: 134**40... 升级为高级VIP
+                    - paragraph [ref=f27e1599]:
+                      - generic [ref=f27e1600]: 159**99... 升级为标准VIP
+                      - generic [ref=f27e1601]: 188**39... 升级为至尊VIP
+                    - paragraph [ref=f27e1602]:
+                      - generic [ref=f27e1603]: 135**19... 升级为高级VIP
+                      - generic [ref=f27e1604]: 156**71... 升级为标准VIP
+                    - paragraph [ref=f27e1605]:
+                      - generic [ref=f27e1606]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1607]: 大**... 升级为至尊VIP
+                    - paragraph [ref=f27e1608]:
+                      - generic [ref=f27e1609]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1610]: 187**35... 升级为至尊VIP
+                    - paragraph [ref=f27e1611]:
+                      - generic [ref=f27e1612]: 133**26... 升级为「预见者」VIP
+                      - generic [ref=f27e1613]: 133**26... 升级为高级VIP
+                    - paragraph [ref=f27e1614]:
+                      - generic [ref=f27e1615]: 156**61... 升级为至尊VIP
+                      - generic [ref=f27e1616]: 151**17... 升级为至尊VIP
+                    - paragraph [ref=f27e1617]:
+                      - generic [ref=f27e1618]: 186**81... 升级为至尊VIP
+                      - generic [ref=f27e1619]: wei**n_... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1620]:
+                      - generic [ref=f27e1621]: 138**08... 升级为标准VIP
+                      - generic [ref=f27e1622]: 152**66... 升级为至尊VIP
+                    - paragraph [ref=f27e1623]:
+                      - generic [ref=f27e1624]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1625]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1626]:
+                      - generic [ref=f27e1627]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1628]: 137**52... 升级为标准VIP
+                    - paragraph [ref=f27e1629]:
+                      - generic [ref=f27e1630]: 135**05... 升级为标准VIP
+                      - generic [ref=f27e1631]: wei**n_... 升级为至尊VIP
+                    - paragraph [ref=f27e1632]:
+                      - generic [ref=f27e1633]: ju**ie 升级为至尊VIP
+                      - generic [ref=f27e1634]: 紫**... 升级为企业年度VIP
+                    - paragraph [ref=f27e1635]:
+                      - generic [ref=f27e1636]: wei**n_... 升级为至尊VIP
+                      - generic [ref=f27e1637]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1638]:
+                      - generic [ref=f27e1639]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1640]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1641]:
+                      - generic [ref=f27e1642]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1643]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1644]:
+                      - generic [ref=f27e1645]: 138**60... 升级为标准VIP
+                      - generic [ref=f27e1646]: wei**n_... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1647]:
+                      - generic [ref=f27e1648]: 139**33... 升级为标准VIP
+                      - generic [ref=f27e1649]: 189**97... 升级为高级VIP
+                    - paragraph [ref=f27e1650]:
+                      - generic [ref=f27e1651]: 189**00... 升级为企业年度VIP
+                      - generic [ref=f27e1652]: 151**68... 升级为至尊VIP
+                    - paragraph [ref=f27e1653]:
+                      - generic [ref=f27e1654]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1655]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1656]:
+                      - generic [ref=f27e1657]: 137**21... 升级为「预见者」VIP
+                      - generic [ref=f27e1658]: 152**19... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1659]:
+                      - generic [ref=f27e1660]: 137**21... 升级为至尊VIP
+                      - generic [ref=f27e1661]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1662]:
+                      - generic [ref=f27e1663]: wei**n_... 升级为至尊VIP
+                      - generic [ref=f27e1664]: 137**21... 升级为高级VIP
+                    - paragraph [ref=f27e1665]:
+                      - generic [ref=f27e1666]: wei**n_... 升级为高级VIP
+                      - generic [ref=f27e1667]: 139**56... 升级为高级VIP
+                    - paragraph [ref=f27e1668]:
+                      - generic [ref=f27e1669]: 186**55... 升级为标准VIP
+                      - generic [ref=f27e1670]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1671]:
+                      - generic [ref=f27e1672]: su**ng 升级为至尊VIP
+                      - generic [ref=f27e1673]: 张毅 升级为高级VIP
+                    - paragraph [ref=f27e1674]:
+                      - generic [ref=f27e1675]: 138**50... 升级为至尊VIP
+                      - generic [ref=f27e1676]: 数**... 升级为标准VIP
+                    - paragraph [ref=f27e1677]:
+                      - generic [ref=f27e1678]: 136**79... 升级为「预见者」VIP
+                      - generic [ref=f27e1679]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1680]:
+                      - generic [ref=f27e1681]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1682]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1683]:
+                      - generic [ref=f27e1684]: 152**14... 升级为标准VIP
+                      - generic [ref=f27e1685]: 189**39... 升级为标准VIP
+                    - paragraph [ref=f27e1686]:
+                      - generic [ref=f27e1687]: 139**81... 升级为「预见者」VIP
+                      - generic [ref=f27e1688]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1689]:
+                      - generic [ref=f27e1690]: 135**04... 升级为「预见者」VIP
+                      - generic [ref=f27e1691]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1692]:
+                      - generic [ref=f27e1693]: 136**41... 升级为标准VIP
+                      - generic [ref=f27e1694]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1695]:
+                      - generic [ref=f27e1696]: 微**... 升级为「预见者」VIP
+                      - generic [ref=f27e1697]: 微**... 升级为至尊VIP
+                    - paragraph [ref=f27e1698]:
+                      - generic [ref=f27e1699]: 185**51... 升级为标准VIP
+                      - generic [ref=f27e1700]: wei**n_... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1701]:
+                      - generic [ref=f27e1702]: wei**n_... 升级为至尊VIP
+                      - generic [ref=f27e1703]: 185**06... 升级为高级VIP
+                    - paragraph [ref=f27e1704]:
+                      - generic [ref=f27e1705]: 188**99... 升级为标准VIP
+                      - generic [ref=f27e1706]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1707]:
+                      - generic [ref=f27e1708]: 135**71... 升级为标准VIP
+                      - generic [ref=f27e1709]: 131**35... 升级为标准VIP
+                    - paragraph [ref=f27e1710]:
+                      - generic [ref=f27e1711]: 186**30... 升级为高级VIP
+                      - generic [ref=f27e1712]: 155**32... 升级为至尊VIP
+                    - paragraph [ref=f27e1713]:
+                      - generic [ref=f27e1714]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1715]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1716]:
+                      - generic [ref=f27e1717]: JHY**66... 升级为「预见者」VIP
+                      - generic [ref=f27e1718]: wei**n_... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1719]:
+                      - generic [ref=f27e1720]: 185**67... 升级为至尊VIP
+                      - generic [ref=f27e1721]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1722]:
+                      - generic [ref=f27e1723]: 135**74... 升级为「预见者」VIP
+                      - generic [ref=f27e1724]: 微**... 升级为至尊VIP
+        - row [ref=f27e1725]:
+          - cell [ref=f27e1726]:
+            - table [ref=f27e1727]:
+              - rowgroup [ref=f27e1728]:
+                - row [ref=f27e1729]:
+                  - cell [ref=f27e1730]:
+                    - paragraph [ref=f27e1731]:
+                      - generic [ref=f27e1732]: wei**n_... 升级为至尊VIP
+                      - generic [ref=f27e1733]: 183**91... 升级为标准VIP
+                    - paragraph [ref=f27e1734]:
+                      - generic [ref=f27e1735]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1736]: wei**n_... 升级为至尊VIP
+                    - paragraph [ref=f27e1737]:
+                      - generic [ref=f27e1738]: 七**... 升级为至尊VIP
+                      - generic [ref=f27e1739]: 七**... 升级为标准VIP
+                    - paragraph [ref=f27e1740]:
+                      - generic [ref=f27e1741]: 大** 升级为高级VIP
+                      - generic [ref=f27e1742]: wei**n_... 升级为至尊VIP
+                    - paragraph [ref=f27e1743]:
+                      - generic [ref=f27e1744]: 悬** 升级为至尊VIP
+                      - generic [ref=f27e1745]: 神**... 升级为高级VIP
+                    - paragraph [ref=f27e1746]:
+                      - generic [ref=f27e1747]: 182**91... 升级为标准VIP
+                      - generic [ref=f27e1748]: 微**... 升级为标准VIP
+                    - paragraph [ref=f27e1749]:
+                      - generic [ref=f27e1750]: 135**08... 升级为「预见者」VIP
+                      - generic [ref=f27e1751]: 152**48... 升级为至尊VIP
+                    - paragraph [ref=f27e1752]:
+                      - generic [ref=f27e1753]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1754]: 134**40... 升级为高级VIP
+                    - paragraph [ref=f27e1755]:
+                      - generic [ref=f27e1756]: 159**99... 升级为标准VIP
+                      - generic [ref=f27e1757]: 188**39... 升级为至尊VIP
+                    - paragraph [ref=f27e1758]:
+                      - generic [ref=f27e1759]: 135**19... 升级为高级VIP
+                      - generic [ref=f27e1760]: 156**71... 升级为标准VIP
+                    - paragraph [ref=f27e1761]:
+                      - generic [ref=f27e1762]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1763]: 大**... 升级为至尊VIP
+                    - paragraph [ref=f27e1764]:
+                      - generic [ref=f27e1765]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1766]: 187**35... 升级为至尊VIP
+                    - paragraph [ref=f27e1767]:
+                      - generic [ref=f27e1768]: 133**26... 升级为「预见者」VIP
+                      - generic [ref=f27e1769]: 133**26... 升级为高级VIP
+                    - paragraph [ref=f27e1770]:
+                      - generic [ref=f27e1771]: 156**61... 升级为至尊VIP
+                      - generic [ref=f27e1772]: 151**17... 升级为至尊VIP
+                    - paragraph [ref=f27e1773]:
+                      - generic [ref=f27e1774]: 186**81... 升级为至尊VIP
+                      - generic [ref=f27e1775]: wei**n_... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1776]:
+                      - generic [ref=f27e1777]: 138**08... 升级为标准VIP
+                      - generic [ref=f27e1778]: 152**66... 升级为至尊VIP
+                    - paragraph [ref=f27e1779]:
+                      - generic [ref=f27e1780]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1781]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1782]:
+                      - generic [ref=f27e1783]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1784]: 137**52... 升级为标准VIP
+                    - paragraph [ref=f27e1785]:
+                      - generic [ref=f27e1786]: 135**05... 升级为标准VIP
+                      - generic [ref=f27e1787]: wei**n_... 升级为至尊VIP
+                    - paragraph [ref=f27e1788]:
+                      - generic [ref=f27e1789]: ju**ie 升级为至尊VIP
+                      - generic [ref=f27e1790]: 紫**... 升级为企业年度VIP
+                    - paragraph [ref=f27e1791]:
+                      - generic [ref=f27e1792]: wei**n_... 升级为至尊VIP
+                      - generic [ref=f27e1793]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1794]:
+                      - generic [ref=f27e1795]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1796]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1797]:
+                      - generic [ref=f27e1798]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1799]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1800]:
+                      - generic [ref=f27e1801]: 138**60... 升级为标准VIP
+                      - generic [ref=f27e1802]: wei**n_... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1803]:
+                      - generic [ref=f27e1804]: 139**33... 升级为标准VIP
+                      - generic [ref=f27e1805]: 189**97... 升级为高级VIP
+                    - paragraph [ref=f27e1806]:
+                      - generic [ref=f27e1807]: 189**00... 升级为企业年度VIP
+                      - generic [ref=f27e1808]: 151**68... 升级为至尊VIP
+                    - paragraph [ref=f27e1809]:
+                      - generic [ref=f27e1810]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1811]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1812]:
+                      - generic [ref=f27e1813]: 137**21... 升级为「预见者」VIP
+                      - generic [ref=f27e1814]: 152**19... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1815]:
+                      - generic [ref=f27e1816]: 137**21... 升级为至尊VIP
+                      - generic [ref=f27e1817]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1818]:
+                      - generic [ref=f27e1819]: wei**n_... 升级为至尊VIP
+                      - generic [ref=f27e1820]: 137**21... 升级为高级VIP
+                    - paragraph [ref=f27e1821]:
+                      - generic [ref=f27e1822]: wei**n_... 升级为高级VIP
+                      - generic [ref=f27e1823]: 139**56... 升级为高级VIP
+                    - paragraph [ref=f27e1824]:
+                      - generic [ref=f27e1825]: 186**55... 升级为标准VIP
+                      - generic [ref=f27e1826]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1827]:
+                      - generic [ref=f27e1828]: su**ng 升级为至尊VIP
+                      - generic [ref=f27e1829]: 张毅 升级为高级VIP
+                    - paragraph [ref=f27e1830]:
+                      - generic [ref=f27e1831]: 138**50... 升级为至尊VIP
+                      - generic [ref=f27e1832]: 数**... 升级为标准VIP
+                    - paragraph [ref=f27e1833]:
+                      - generic [ref=f27e1834]: 136**79... 升级为「预见者」VIP
+                      - generic [ref=f27e1835]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1836]:
+                      - generic [ref=f27e1837]: wei**n_... 升级为标准VIP
+                      - generic [ref=f27e1838]: wei**n_... 升级为标准VIP
+                    - paragraph [ref=f27e1839]:
+                      - generic [ref=f27e1840]: 152**14... 升级为标准VIP
+                      - generic [ref=f27e1841]: 189**39... 升级为标准VIP
+                    - paragraph [ref=f27e1842]:
+                      - generic [ref=f27e1843]: 139**81... 升级为「预见者」VIP
+                      - generic [ref=f27e1844]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1845]:
+                      - generic [ref=f27e1846]: 135**04... 升级为「预见者」VIP
+                      - generic [ref=f27e1847]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1848]:
+                      - generic [ref=f27e1849]: 136**41... 升级为标准VIP
+                      - generic [ref=f27e1850]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1851]:
+                      - generic [ref=f27e1852]: 微**... 升级为「预见者」VIP
+                      - generic [ref=f27e1853]: 微**... 升级为至尊VIP
+                    - paragraph [ref=f27e1854]:
+                      - generic [ref=f27e1855]: 185**51... 升级为标准VIP
+                      - generic [ref=f27e1856]: wei**n_... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1857]:
+                      - generic [ref=f27e1858]: wei**n_... 升级为至尊VIP
+                      - generic [ref=f27e1859]: 185**06... 升级为高级VIP
+                    - paragraph [ref=f27e1860]:
+                      - generic [ref=f27e1861]: 188**99... 升级为标准VIP
+                      - generic [ref=f27e1862]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1863]:
+                      - generic [ref=f27e1864]: 135**71... 升级为标准VIP
+                      - generic [ref=f27e1865]: 131**35... 升级为标准VIP
+                    - paragraph [ref=f27e1866]:
+                      - generic [ref=f27e1867]: 186**30... 升级为高级VIP
+                      - generic [ref=f27e1868]: 155**32... 升级为至尊VIP
+                    - paragraph [ref=f27e1869]:
+                      - generic [ref=f27e1870]: wei**n_... 升级为「预见者」VIP
+                      - generic [ref=f27e1871]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1872]:
+                      - generic [ref=f27e1873]: JHY**66... 升级为「预见者」VIP
+                      - generic [ref=f27e1874]: wei**n_... 升级为「预见者」VIP
+                    - paragraph [ref=f27e1875]:
+                      - generic [ref=f27e1876]: 185**67... 升级为至尊VIP
+                      - generic [ref=f27e1877]: wei**n_... 升级为高级VIP
+                    - paragraph [ref=f27e1878]:
+                      - generic [ref=f27e1879]: 135**74... 升级为「预见者」VIP
+                      - generic [ref=f27e1880]: 微**... 升级为至尊VIP

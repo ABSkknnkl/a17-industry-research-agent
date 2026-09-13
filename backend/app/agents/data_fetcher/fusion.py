@@ -113,7 +113,11 @@ def build_chart_datasets(
                 dataset_id=f"DS-{digest}",
                 kind=kind,
                 metric_name=scope_key or metric,
-                unit=unit,
+                # P0-2（2026-09-13 方案·低风险上游根因）：占位符单位归一
+                # 为 None（与 currency 归一对称），从源头消除占位符，并
+                # 缓解同指标因 unit 占位差异被拆成两个 dataset 的
+                # dedup 断点。
+                unit=unit if unit not in {"未提供", "文本", "不适用"} else None,
                 currency=None if currency == "不适用" else currency,
                 data_as_of=max(
                     (item.available_at for item in items if item.available_at), default=None

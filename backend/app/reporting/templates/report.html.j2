@@ -153,6 +153,13 @@
   {% for chapter in report.chapters %}<li><a href="#chapter-{{ loop.index }}">{{ chapter_label(chapter.chapter_id) }} · {{ display_text(chapter.title) }}</a></li>{% endfor %}
   </ol>
 
+  {% if chart_toc %}
+  <h2>图表目录</h2>
+  <ol class="toc chart-toc">
+  {% for item in chart_toc %}<li>{{ item.number }} · {{ display_text(item.title) }}（{{ item.section }}）</li>{% endfor %}
+  </ol>
+  {% endif %}
+
   <h2>执行摘要</h2>
   <section class="summary">
     <p class="headline">{{ display_text(report.executive_summary.headline) }}</p>

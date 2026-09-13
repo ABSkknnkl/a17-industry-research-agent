@@ -1,6 +1,10 @@
 """Deterministic pre-export quality gate with risk classification."""
 
 from app.schemas.analysis import AnalysisResult
+from app.agents.chart_generator.constants import (
+    HARD_LIMIT_MAX_CANDIDATES,
+    RECOMMENDED_CHARTS,
+)
 from app.schemas.chapter import ChapterWritingResult
 from app.schemas.chart import ChartGenerationResult
 from app.schemas.report import ReportQualityReport
@@ -92,9 +96,11 @@ def evaluate_report_quality(
         advisory_issues.append("正文证据覆盖率不足100%")
 
     # 图表数量超过推荐值（软规则，不超过技术上限30就不阻断）
-    if len(included_chart_ids) > 8:
+    # P0-4（2026-09-13 方案·低风险下游对齐）：引用 Agent3 常量，无裸 8。
+    if len(included_chart_ids) > RECOMMENDED_CHARTS[1]:
         advisory_issues.append(
-            f"正式报告嵌入 {len(included_chart_ids)} 张图表，超过推荐上限8张（技术上限30张）"
+            f"正式报告嵌入 {len(included_chart_ids)} 张图表，超过推荐上限"
+            f"{RECOMMENDED_CHARTS[1]}张（技术上限{HARD_LIMIT_MAX_CANDIDATES}张）"
         )
 
     # 上游质量门: 区分风险类型

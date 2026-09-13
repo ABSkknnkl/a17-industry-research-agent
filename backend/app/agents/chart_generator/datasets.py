@@ -4,6 +4,8 @@ import hashlib
 import re
 from dataclasses import dataclass, field
 
+from app.agents.chart_generator.constants import UNIT_PLACEHOLDERS
+
 from app.schemas.chart import (
     ChainEdge,
     ChainNode,
@@ -13,6 +15,14 @@ from app.schemas.chart import (
     ChartType,
     SuppressedChart,
 )
+
+
+def _unit_text(unit: str | None) -> str:
+    """P0-2（2026-09-13 方案）：占位符单位归一为空串。"""
+
+    text = (unit or "").strip()
+    return "" if text in UNIT_PLACEHOLDERS else text
+
 
 
 @dataclass
@@ -186,7 +196,9 @@ def _merge_time_series_cover(
         series_meta = [
             ChartSeriesMeta(
                 name=dataset.metric_name[:100],
-                unit=dataset.unit or "未提供",
+                # P0-2（2026-09-13 方案）：占位符单位不进序列元数据（轴名
+                # 层过滤 + 图注披露由 builders/quality 承担）。
+                unit=_unit_text(dataset.unit) or None,
                 currency=dataset.currency,
                 render_as="bar" if index == 0 else "line",
             )

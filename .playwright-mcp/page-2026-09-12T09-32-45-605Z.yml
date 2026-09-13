@@ -1,0 +1,985 @@
+- generic [active]:
+  - banner [ref=f37e3]:
+    - generic [ref=f37e5]:
+      - link [ref=f37e7] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/
+        - img "三个皮匠报告" [ref=f37e8]
+      - generic [ref=f37e9]:
+        - link "首页" [ref=f37e11] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/
+        - link "最新" [ref=f37e14] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?cd=1
+        - generic [ref=f37e16] [cursor=pointer]:
+          - generic [ref=f37e17]:
+            - img "报告分类" [ref=f37e18]
+            - text: 研搜
+          - generic [ref=f37e19]: BETA
+        - link "合集" [ref=f37e21] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/bggroup.html
+        - link "英文" [ref=f37e24] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/yingwenbaogao.html
+        - link "会议" [ref=f37e27] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/huiyibaogao.html
+        - link "数据" [ref=f37e30] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/hyshuju.html
+        - link "财报库" [ref=f37e33] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/caibaoku.html
+        - link "政策库" [ref=f37e36] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/zc.html
+        - link "自研报告 new" [ref=f37e39] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/selfdeveloped.html
+          - generic [ref=f37e40]: 自研报告
+          - img "new" [ref=f37e41]
+        - link "入驻" [ref=f37e43] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/smlist.html
+      - generic [ref=f37e48]:
+        - link [ref=f37e49] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/search.html
+          - img "搜索" [ref=f37e50]
+        - generic [ref=f37e51]:
+          - link [ref=f37e52] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/sgpjbg/UserManage/Recharge.aspx?f=0
+          - generic [ref=f37e55]:
+            - link "登录" [ref=f37e56] [cursor=pointer]:
+              - /url: javascript:void(0);
+            - text: "|"
+            - link "注册" [ref=f37e57] [cursor=pointer]:
+              - /url: javascript:void(0);
+  - generic [ref=f37e58]:
+    - generic [ref=f37e60]:
+      - generic [ref=f37e61]:
+        - generic [ref=f37e62] [cursor=pointer]: 报告搜索
+        - link "数据搜索" [ref=f37e63] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/hyshuju-0-1-1-吉图 汽车市场分析报告.html?qws=0&jingpin=0
+        - link "政策搜索" [ref=f37e64] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/zc.html?q=吉图 汽车市场分析报告
+      - link [ref=f37e65] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/searchai.html
+    - generic [ref=f37e68]:
+      - generic [ref=f37e69]:
+        - generic [ref=f37e70] [cursor=pointer]: 全部
+        - textbox "关键词尽量简短，多个关键词可用空格隔开" [ref=f37e74]: 吉图 汽车市场分析报告
+        - link [ref=f37e76] [cursor=pointer]:
+          - /url: javascript:SearchWord1($('#keyword1').val());
+      - generic [ref=f37e78]:
+        - generic [ref=f37e79]: 标题
+        - generic [ref=f37e82]: 全文
+  - generic [ref=f37e86]:
+    - generic [ref=f37e87]:
+      - generic [ref=f37e88]:
+        - link "全部" [ref=f37e89] [cursor=pointer]:
+          - /url: javascript:guolv1(0);
+        - link "机构报告" [ref=f37e90] [cursor=pointer]:
+          - /url: javascript:guolv1('1_1');
+        - link "英文报告" [ref=f37e92] [cursor=pointer]:
+          - /url: javascript:guolv1(2);
+        - link "券商报告" [ref=f37e95] [cursor=pointer]:
+          - /url: javascript:guolv1(3);
+        - link "自研报告" [ref=f37e96] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/selfdevelopedlist.html?q=吉图 汽车市场分析报告
+        - link "会议PPT" [ref=f37e98] [cursor=pointer]:
+          - /url: javascript:guolv1(4);
+        - link "财报" [ref=f37e99] [cursor=pointer]:
+          - /url: javascript:guolv1(1006);
+        - link "政策文件" [ref=f37e100] [cursor=pointer]:
+          - /url: javascript:guolv1(6);
+        - link "合集" [ref=f37e101] [cursor=pointer]:
+          - /url: javascript:guolv1(1001);
+      - generic [ref=f37e103]:
+        - checkbox [ref=f37e104]
+        - text: 搜目录
+    - generic [ref=f37e105]:
+      - generic [ref=f37e106]:
+        - generic [ref=f37e109] [cursor=pointer]: 综合
+        - generic [ref=f37e110]: "|"
+        - generic [ref=f37e111] [cursor=pointer]: 最新
+        - generic [ref=f37e112]: "|"
+        - generic [ref=f37e113] [cursor=pointer]: 热门
+        - generic [ref=f37e114]: 8441条结果
+        - generic [ref=f37e115]: 时间
+        - generic [ref=f37e119]:
+          - generic [ref=f37e120]: 精度
+          - generic [ref=f37e121] [cursor=pointer]: 100%
+        - generic [ref=f37e124] [cursor=pointer]: AI摘要
+        - generic [ref=f37e127]:
+          - checkbox [ref=f37e128]
+          - text: 关键词不分割
+        - generic [ref=f37e129]:
+          - checkbox [checked] [ref=f37e130]
+          - text: 分词
+          - generic [ref=f37e133]:
+            - generic [ref=f37e134]: 当前为『分词』模式，
+            - generic [ref=f37e135]: 取消勾选可按最新查看全部
+        - generic [ref=f37e136]:
+          - generic [ref=f37e137]: 不看
+          - generic [ref=f37e138]:
+            - generic [ref=f37e139]:
+              - checkbox [ref=f37e140]
+              - text: 研报
+            - generic [ref=f37e141]:
+              - checkbox [ref=f37e142]
+              - text: 英文
+            - generic [ref=f37e143]:
+              - checkbox [checked] [ref=f37e144]
+              - text: 政策
+            - generic [ref=f37e145]:
+              - checkbox [checked] [ref=f37e146]
+              - text: 会议、及其他
+      - table [ref=f37e147]:
+        - rowgroup [ref=f37e148]:
+          - row [ref=f37e149]:
+            - columnheader "格式" [ref=f37e150]
+            - columnheader "资源名称" [ref=f37e151]
+            - columnheader "页数/份数" [ref=f37e152]
+            - columnheader "更新时间" [ref=f37e153]
+            - columnheader "资料分类" [ref=f37e154]
+            - columnheader "推荐指数" [ref=f37e155]
+            - columnheader "下载" [ref=f37e156]
+          - row [ref=f37e157]:
+            - cell [ref=f37e158]
+            - cell [ref=f37e160]:
+              - link "2026年工业经济/汽车工业/医药工业/食品工业报告合集（共48套打包） 合集" [ref=f37e161] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroup/1876.html
+                - text: 2026年工业经济/汽车工业/医药工业/食品工业报告合集（共48套打包）
+                - generic [ref=f37e162]: 合集
+            - cell "48份" [ref=f37e163]
+            - cell "2026-09-07" [ref=f37e164]
+            - cell [ref=f37e165]:
+              - link "传统产业" [ref=f37e166] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggrouplist-00006.html
+            - cell "2080" [ref=f37e167]
+            - cell [ref=f37e169]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e172]:
+            - cell [ref=f37e173]
+            - cell [ref=f37e175]:
+              - link "2026年智能网联汽车报告合集（共50套打包） 合集" [ref=f37e176] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroup/1859.html
+                - text: 2026年智能网联汽车报告合集（共50套打包）
+                - generic [ref=f37e177]: 合集
+            - cell "50份" [ref=f37e178]
+            - cell "2026-09-07" [ref=f37e179]
+            - cell [ref=f37e180]:
+              - link "物流交通" [ref=f37e181] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggrouplist-00018.html
+            - cell "5265" [ref=f37e182]
+            - cell [ref=f37e184]:
+              - link:
+                - /url: javascript:void(0);
+      - table [ref=f37e187]:
+        - rowgroup [ref=f37e188]:
+          - row [ref=f37e189]:
+            - cell [ref=f37e190]:
+              - img "三个皮匠报告：2026全球及中国汽车智能座舱行业发展研究报告" [ref=f37e192]
+            - cell "三个皮匠报告：2026全球及中国汽车智能座舱行业发展研究报告（147页）.pdf 自研报告" [ref=f37e193]:
+              - link "三个皮匠报告：2026全球及中国汽车智能座舱行业发展研究报告（147页）.pdf" [ref=f37e194] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1152920.html
+              - generic [ref=f37e196]: 自研报告
+            - cell "147页" [ref=f37e197]
+            - cell "2026-03-10" [ref=f37e198]
+            - cell [ref=f37e199]:
+              - link "自研报告库" [ref=f37e200] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/selfdevelopedlist.html.html?q=吉图 汽车市场分析报告
+            - cell "3826" [ref=f37e201]
+            - cell [ref=f37e203]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e206]:
+            - cell [ref=f37e207]
+          - row [ref=f37e208]:
+            - cell [ref=f37e209]:
+              - img "三个皮匠报告：2026-2031年全球及中国汽车底盘行业市场发展报告" [ref=f37e211]
+            - cell "三个皮匠报告：2026-2031年全球及中国汽车底盘行业市场发展报告（164页）.pdf 自研报告" [ref=f37e212]:
+              - link "三个皮匠报告：2026-2031年全球及中国汽车底盘行业市场发展报告（164页）.pdf" [ref=f37e213] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1297741.html
+              - generic [ref=f37e215]: 自研报告
+            - cell "164页" [ref=f37e216]
+            - cell "2026-08-20" [ref=f37e217]
+            - cell [ref=f37e218]:
+              - link "自研报告库" [ref=f37e219] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/selfdevelopedlist.html.html?q=吉图 汽车市场分析报告
+            - cell "400" [ref=f37e220]
+            - cell [ref=f37e222]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e225]:
+            - cell [ref=f37e226]
+      - table [ref=f37e227]:
+        - rowgroup [ref=f37e228]:
+          - row [ref=f37e229]:
+            - cell [ref=f37e230]
+            - cell [ref=f37e232]:
+              - link "吉图咨询：2026H1辽宁省汽车市场分析报告（36页）.pdf" [ref=f37e233] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1287925.html
+            - cell "36页" [ref=f37e235]
+            - cell "2026-08-09" [ref=f37e236]
+            - cell [ref=f37e237]:
+              - link "汽车市场" [ref=f37e238] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "67" [ref=f37e239]
+            - cell [ref=f37e241]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e244]:
+            - cell [ref=f37e245]
+            - cell [ref=f37e247]:
+              - link "吉图咨询：2026H1广西省汽车市场分析报告（36页）.pdf" [ref=f37e248] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1287921.html
+            - cell "36页" [ref=f37e250]
+            - cell "2026-08-09" [ref=f37e251]
+            - cell [ref=f37e252]:
+              - link "汽车市场" [ref=f37e253] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "60" [ref=f37e254]
+            - cell [ref=f37e256]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e259]:
+            - cell [ref=f37e260]
+            - cell [ref=f37e262]:
+              - link "吉图咨询：2026H1山西省汽车市场分析报告（36页）.pdf" [ref=f37e263] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1289180.html
+            - cell "36页" [ref=f37e265]
+            - cell "2026-08-11" [ref=f37e266]
+            - cell [ref=f37e267]:
+              - link "汽车市场" [ref=f37e268] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "75" [ref=f37e269]
+            - cell [ref=f37e271]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e274]:
+            - cell [ref=f37e275]
+            - cell [ref=f37e277]:
+              - link "吉图咨询：2026H1江西省汽车市场分析报告（36页）.pdf" [ref=f37e278] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1287926.html
+            - cell "36页" [ref=f37e280]
+            - cell "2026-08-09" [ref=f37e281]
+            - cell [ref=f37e282]:
+              - link "汽车市场" [ref=f37e283] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "93" [ref=f37e284]
+            - cell [ref=f37e286]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e289]:
+            - cell [ref=f37e290]
+            - cell [ref=f37e292]:
+              - link "吉图咨询：2026H1甘肃省汽车市场分析报告（36页）.pdf" [ref=f37e293] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1289170.html
+            - cell "36页" [ref=f37e295]
+            - cell "2026-08-11" [ref=f37e296]
+            - cell [ref=f37e297]:
+              - link "汽车市场" [ref=f37e298] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "61" [ref=f37e299]
+            - cell [ref=f37e301]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e304]:
+            - cell [ref=f37e305]
+            - cell [ref=f37e307]:
+              - link "吉图咨询：2026H1贵州省汽车市场分析报告（36页）.pdf" [ref=f37e308] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1287924.html
+            - cell "36页" [ref=f37e310]
+            - cell "2026-08-09" [ref=f37e311]
+            - cell [ref=f37e312]:
+              - link "汽车市场" [ref=f37e313] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "78" [ref=f37e314]
+            - cell [ref=f37e316]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e319]:
+            - cell [ref=f37e320]
+            - cell [ref=f37e322]:
+              - link "吉图咨询：2026H1吉林省汽车市场分析报告（36页）.pdf" [ref=f37e323] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1289174.html
+            - cell "36页" [ref=f37e325]
+            - cell "2026-08-11" [ref=f37e326]
+            - cell [ref=f37e327]:
+              - link "汽车市场" [ref=f37e328] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "84" [ref=f37e329]
+            - cell [ref=f37e331]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e334]:
+            - cell [ref=f37e335]
+            - cell [ref=f37e337]:
+              - link "吉图咨询：2026H1黑龙江省汽车市场分析报告（36页）.pdf" [ref=f37e338] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1289177.html
+            - cell "36页" [ref=f37e340]
+            - cell "2026-08-11" [ref=f37e341]
+            - cell [ref=f37e342]:
+              - link "汽车市场" [ref=f37e343] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "61" [ref=f37e344]
+            - cell [ref=f37e346]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e349]:
+            - cell [ref=f37e350]
+            - cell [ref=f37e352]:
+              - link "吉图咨询：2026H1新疆自治区汽车市场分析报告（36页）.pdf" [ref=f37e353] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1289745.html
+            - cell "36页" [ref=f37e355]
+            - cell "2026-08-12" [ref=f37e356]
+            - cell [ref=f37e357]:
+              - link "汽车市场" [ref=f37e358] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "142" [ref=f37e359]
+            - cell [ref=f37e361]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e364]:
+            - cell [ref=f37e365]
+            - cell [ref=f37e367]:
+              - link "吉图咨询：2026H1内蒙古自治区汽车市场分析报告（36页）.pdf" [ref=f37e368] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1289747.html
+            - cell "36页" [ref=f37e370]
+            - cell "2026-08-12" [ref=f37e371]
+            - cell [ref=f37e372]:
+              - link "汽车市场" [ref=f37e373] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "82" [ref=f37e374]
+            - cell [ref=f37e376]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e379]:
+            - cell [ref=f37e380]
+            - cell [ref=f37e382]:
+              - link "吉图咨询：2026成都车展展前报告（101页）.pdf 最新" [ref=f37e383] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1300012.html
+                - generic [ref=f37e384]:
+                  - text: 吉图咨询：2026成都车展展前报告（101页）.pdf
+                  - generic [ref=f37e385]: 最新
+            - cell "101页" [ref=f37e386]
+            - cell "2026-08-24" [ref=f37e387]
+            - cell [ref=f37e388]:
+              - link "汽车市场" [ref=f37e389] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "165" [ref=f37e390]
+            - cell [ref=f37e392]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e395]:
+            - cell [ref=f37e396]
+            - cell [ref=f37e398]:
+              - link "【华金证券】吉和昌（920193）-新股覆盖研究：吉和昌-260623（15页）.pdf" [ref=f37e399] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1270683.html
+            - cell "15页" [ref=f37e401]
+            - cell "2026-06-23" [ref=f37e402]
+            - cell [ref=f37e403]:
+              - link "公司研究" [ref=f37e404] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "39" [ref=f37e405]
+            - cell [ref=f37e407]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e410]:
+            - cell [ref=f37e411]
+            - cell [ref=f37e413]:
+              - link "嘉吉食品（天津）有限公司：2016 年嘉吉食品（天津）有限公司 碳盘查报告（10页）.pdf" [ref=f37e414] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/62050.html
+            - cell "10页" [ref=f37e416]
+            - cell "2016-12-02" [ref=f37e417]
+            - cell [ref=f37e418]:
+              - link "食品饮料" [ref=f37e419] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001800020.html
+            - cell "200" [ref=f37e420]
+            - cell [ref=f37e422]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e425]:
+            - cell [ref=f37e426]
+            - cell [ref=f37e428]:
+              - link "洛图科技：2021年中国智能投影市场分析报告（31页）.pdf" [ref=f37e429] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/600308.html
+            - cell "31页" [ref=f37e431]
+            - cell "2022-02-01" [ref=f37e432]
+            - cell [ref=f37e433]:
+              - link "其他" [ref=f37e434] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002200014.html
+            - cell "53" [ref=f37e435]
+            - cell [ref=f37e437]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e440]:
+            - cell [ref=f37e441]
+            - cell [ref=f37e443]:
+              - link "聆英：2021汽车半导体市场分析（20页）.pdf" [ref=f37e444] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/69272.html
+            - cell "20页" [ref=f37e446]
+            - cell "2021-07-02" [ref=f37e447]
+            - cell [ref=f37e448]:
+              - link "汽车市场" [ref=f37e449] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "396" [ref=f37e450]
+            - cell [ref=f37e452]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e455]:
+            - cell [ref=f37e456]
+            - cell [ref=f37e458]:
+              - link "Runto洛图科技：2023年中国智能投影市场分析报告（30页）.pdf" [ref=f37e459] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/402177.html
+            - cell "30页" [ref=f37e461]
+            - cell "2024-12-10" [ref=f37e462]
+            - cell [ref=f37e463]:
+              - link "电子行业" [ref=f37e464] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001900019.html
+            - cell "170" [ref=f37e465]
+            - cell [ref=f37e467]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e470]:
+            - cell [ref=f37e471]
+            - cell [ref=f37e473]:
+              - link "Runto洛图科技：2021年中国智能音箱市场分析报告（39页）.pdf" [ref=f37e474] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/138148.html
+            - cell "39页" [ref=f37e476]
+            - cell "2023-08-28" [ref=f37e477]
+            - cell [ref=f37e478]:
+              - link "家电家居" [ref=f37e479] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001700009.html
+            - cell "248" [ref=f37e480]
+            - cell [ref=f37e482]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e485]:
+            - cell [ref=f37e486]
+            - cell [ref=f37e488]:
+              - link "【申万宏源】吉冈精密-精密制造“小巨人”“电动工具+清洁电器+汽车”架马车并驾齐驱-20211230（41页）.pdf" [ref=f37e489] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/58537.html
+            - cell "41页" [ref=f37e491]
+            - cell "2021-12-31" [ref=f37e492]
+            - cell [ref=f37e493]:
+              - link "公司研究" [ref=f37e494] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "144" [ref=f37e495]
+            - cell [ref=f37e497]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e500]:
+            - cell [ref=f37e501]
+            - cell [ref=f37e503]:
+              - link "【安信证券】吉冈精密-电动工具、汽车齐发力精密铸造“小巨人”未来或可期-20211017（34页）.pdf" [ref=f37e504] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/53945.html
+            - cell "34页" [ref=f37e506]
+            - cell "2021-10-18" [ref=f37e507]
+            - cell [ref=f37e508]:
+              - link "公司研究" [ref=f37e509] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "107" [ref=f37e510]
+            - cell [ref=f37e512]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e515]:
+            - cell [ref=f37e516]
+            - cell [ref=f37e518]:
+              - link "【国元证券】【公司研究】吉比特-公司跟踪报告：从新游看吉比特的品类扩张及商业化改善-20200925（25页）.pdf" [ref=f37e519] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/19853.html
+            - cell "25页" [ref=f37e521]
+            - cell "2020-09-27" [ref=f37e522]
+            - cell [ref=f37e523]:
+              - link "公司研究" [ref=f37e524] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "138" [ref=f37e525]
+            - cell [ref=f37e527]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e530]:
+            - cell [ref=f37e531]
+            - cell [ref=f37e533]:
+              - link "【中泰证券】吉冈精密-深度报告：电动工具、清洁小家电、汽车共驱“小巨人”成长-220610（28页）.pdf" [ref=f37e534] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/77441.html
+            - cell "28页" [ref=f37e536]
+            - cell "2022-06-14" [ref=f37e537]
+            - cell [ref=f37e538]:
+              - link "公司研究" [ref=f37e539] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "148" [ref=f37e540]
+            - cell [ref=f37e542]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e545]:
+            - cell [ref=f37e546]
+            - cell [ref=f37e548]:
+              - link "洛图科技：2021年中国大陆液晶数字标牌市场市场分析报告（30页）.pdf" [ref=f37e549] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/600293.html
+            - cell "30页" [ref=f37e551]
+            - cell "2022-02-01" [ref=f37e552]
+            - cell [ref=f37e553]:
+              - link "其他" [ref=f37e554] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002200014.html
+            - cell "31" [ref=f37e555]
+            - cell [ref=f37e557]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e560]:
+            - cell [ref=f37e561]
+            - cell [ref=f37e563]:
+              - link "【东吴证券】汽车零部件行业2024年汽车零部件的思考（三）：佛吉亚发展历程复盘及启示-240530（45页）.pdf" [ref=f37e564] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/163676.html
+            - cell "45页" [ref=f37e566]
+            - cell "2024-05-31" [ref=f37e567]
+            - cell [ref=f37e568]:
+              - link "汽车产业链" [ref=f37e569] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200020.html
+            - cell "155" [ref=f37e570]
+            - cell [ref=f37e572]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e575]:
+            - cell [ref=f37e576]
+            - cell [ref=f37e578]:
+              - link "嘉吉：2023年全球霉菌毒素报告（23页）.pdf" [ref=f37e579] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/157972.html
+            - cell "23页" [ref=f37e581]
+            - cell "2024-04-01" [ref=f37e582]
+            - cell [ref=f37e583]:
+              - link "生物医药" [ref=f37e584] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001000020.html
+            - cell "148" [ref=f37e585]
+            - cell [ref=f37e587]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e590]:
+            - cell [ref=f37e591]
+            - cell [ref=f37e593]:
+              - link "【东吴证券】吉冈精密-公司研究报告-精密制造小巨人企业汽车轻量化打开长期成长空间-240911（15页）.pdf" [ref=f37e594] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/174690.html
+            - cell "15页" [ref=f37e596]
+            - cell "2024-09-12" [ref=f37e597]
+            - cell [ref=f37e598]:
+              - link "公司研究" [ref=f37e599] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "42" [ref=f37e600]
+            - cell [ref=f37e602]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e605]:
+            - cell [ref=f37e606]
+            - cell [ref=f37e608]:
+              - link "Runto洛图科技：2021年中国大陆交互平板（IB）市场分析报告（53页）.pdf" [ref=f37e609] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/138564.html
+            - cell "53页" [ref=f37e611]
+            - cell "2023-09-03" [ref=f37e612]
+            - cell [ref=f37e613]:
+              - link "电子行业" [ref=f37e614] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001900019.html
+            - cell "171" [ref=f37e615]
+            - cell [ref=f37e617]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e620]:
+            - cell [ref=f37e621]
+            - cell [ref=f37e623]:
+              - link "乘联会：2023年汽车终端市场分析及展望报告（52页）.pdf" [ref=f37e624] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/125941.html
+            - cell "52页" [ref=f37e626]
+            - cell "2023-05-18" [ref=f37e627]
+            - cell [ref=f37e628]:
+              - link "汽车市场" [ref=f37e629] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "330" [ref=f37e630]
+            - cell [ref=f37e632]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e635]:
+            - cell [ref=f37e636]
+            - cell [ref=f37e638]:
+              - link "Runto洛图科技：中国大陆智慧安防场景显示设备市场分析报告（54页）.pdf" [ref=f37e639] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/137838.html
+            - cell "54页" [ref=f37e641]
+            - cell "2023-08-28" [ref=f37e642]
+            - cell [ref=f37e643]:
+              - link "信息安全" [ref=f37e644] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001400017.html
+            - cell "495" [ref=f37e645]
+            - cell [ref=f37e647]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e650]:
+            - cell [ref=f37e651]
+            - cell [ref=f37e653]:
+              - link "求信咨询：2022年度汽车市场分析报告（42页）.pdf" [ref=f37e654] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/600895.html
+            - cell "42页" [ref=f37e656]
+            - cell "2022-12-01" [ref=f37e657]
+            - cell [ref=f37e658]:
+              - link "其他" [ref=f37e659] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002200014.html
+            - cell "34" [ref=f37e660]
+            - cell [ref=f37e662]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e665]:
+            - cell [ref=f37e666]
+            - cell [ref=f37e668]:
+              - link "【民生证券】吉大正元：数据安全新“黑马”-220821（23页）.pdf" [ref=f37e669] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/94208.html
+            - cell "23页" [ref=f37e671]
+            - cell "2022-08-25" [ref=f37e672]
+            - cell [ref=f37e673]:
+              - link "其它行业" [ref=f37e674] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001700022.html
+            - cell "87" [ref=f37e675]
+            - cell [ref=f37e677]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e680]:
+            - cell [ref=f37e681]
+            - cell [ref=f37e683]:
+              - link "【财通证券】汽车行业专题报告：南美及墨西哥汽车市场分析报告-250113（16页）.pdf" [ref=f37e684] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/402574.html
+            - cell "16页" [ref=f37e686]
+            - cell "2025-01-14" [ref=f37e687]
+            - cell [ref=f37e688]:
+              - link "汽车市场" [ref=f37e689] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "255" [ref=f37e690]
+            - cell [ref=f37e692]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e695]:
+            - cell [ref=f37e696]
+            - cell [ref=f37e698]:
+              - link "玺承集团：2021年汽车后市场分析及线上市场展望（37页）.pdf" [ref=f37e699] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/62499.html
+            - cell "35页" [ref=f37e701]
+            - cell "2021-12-02" [ref=f37e702]
+            - cell [ref=f37e703]:
+              - link "汽车市场" [ref=f37e704] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "1255" [ref=f37e705]
+            - cell [ref=f37e707]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e710]:
+            - cell [ref=f37e711]
+            - cell [ref=f37e713]:
+              - link "Runto洛图科技：2022中国大陆智慧零售场景显示设备市场分析报告（45页）.pdf" [ref=f37e714] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/138269.html
+            - cell "45页" [ref=f37e716]
+            - cell "2023-08-29" [ref=f37e717]
+            - cell [ref=f37e718]:
+              - link "商贸零售" [ref=f37e719] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0000400038.html
+            - cell "231" [ref=f37e720]
+            - cell [ref=f37e722]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e725]:
+            - cell [ref=f37e726]
+            - cell [ref=f37e728]:
+              - link "吉视传媒-数字电视时代的弄潮儿-120207（15页）.pdf" [ref=f37e729] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/46257.html
+            - cell "15页" [ref=f37e731]
+            - cell "2021-07-22" [ref=f37e732]
+            - cell [ref=f37e733]:
+              - link "券商报告" [ref=f37e734] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-00024.html
+            - cell "63" [ref=f37e735]
+            - cell [ref=f37e737]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e740]:
+            - cell [ref=f37e741]
+            - cell [ref=f37e743]:
+              - link "【招商证券】【公司研究】吉宏股份-价值重构蓄势待发-20200310[33页].pdf" [ref=f37e744] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/5237.html
+            - cell "33页" [ref=f37e746]
+            - cell "2020-07-30" [ref=f37e747]
+            - cell [ref=f37e748]:
+              - link "公司研究" [ref=f37e749] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "73" [ref=f37e750]
+            - cell [ref=f37e752]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e755]:
+            - cell [ref=f37e756]
+            - cell [ref=f37e758]:
+              - link "【中泰证券】汽车行业：中美欧三大汽车市场分析及2022年展望-210923（47页）.pdf" [ref=f37e759] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/52148.html
+            - cell "47页" [ref=f37e761]
+            - cell "2021-09-24" [ref=f37e762]
+            - cell [ref=f37e763]:
+              - link "其它行业" [ref=f37e764] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001700022.html
+            - cell "160" [ref=f37e765]
+            - cell [ref=f37e767]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e770]:
+            - cell [ref=f37e771]
+            - cell [ref=f37e773]:
+              - link "【国海证券】吉比特-深度报告：创新驱动研运共进-211112（69页）.pdf" [ref=f37e774] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/55380.html
+            - cell "69页" [ref=f37e776]
+            - cell "2021-11-15" [ref=f37e777]
+            - cell [ref=f37e778]:
+              - link "公司研究" [ref=f37e779] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "112" [ref=f37e780]
+            - cell [ref=f37e782]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e785]:
+            - cell [ref=f37e786]
+            - cell [ref=f37e788]:
+              - link "求信咨询：2023H1上海市汽车市场分析报告（39页）.pdf" [ref=f37e789] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/136375.html
+            - cell "39页" [ref=f37e791]
+            - cell "2023-08-15" [ref=f37e792]
+            - cell [ref=f37e793]:
+              - link "汽车市场" [ref=f37e794] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "116" [ref=f37e795]
+            - cell [ref=f37e797]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e800]:
+            - cell [ref=f37e801]
+            - cell [ref=f37e803]:
+              - link "求信咨询：2022前三季度汽车市场分析报告（41页）.pdf" [ref=f37e804] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/103792.html
+            - cell "41页" [ref=f37e806]
+            - cell "2022-10-20" [ref=f37e807]
+            - cell [ref=f37e808]:
+              - link "汽车市场" [ref=f37e809] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "676" [ref=f37e810]
+            - cell [ref=f37e812]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e815]:
+            - cell [ref=f37e816]
+            - cell [ref=f37e818]:
+              - link "邦吉公司（BUNGE）2020年年度报告（英文版）（146页）.pdf" [ref=f37e819] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/101385.html
+            - cell "146页" [ref=f37e821]
+            - cell "2021-08-04" [ref=f37e822]
+            - cell [ref=f37e823]:
+              - link "年度报告" [ref=f37e824] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100014.html
+            - cell "47" [ref=f37e825]
+            - cell [ref=f37e827]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e830]:
+            - cell [ref=f37e831]
+            - cell [ref=f37e833]:
+              - link "邦吉公司（BUNGE）2019年年度报告（英文版）（118页）.pdf" [ref=f37e834] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/101356.html
+            - cell "118页" [ref=f37e836]
+            - cell "2021-08-04" [ref=f37e837]
+            - cell [ref=f37e838]:
+              - link "年度报告" [ref=f37e839] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100014.html
+            - cell "44" [ref=f37e840]
+            - cell [ref=f37e842]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e845]:
+            - cell [ref=f37e846]
+            - cell [ref=f37e848]:
+              - link "邦吉公司（BUNGE）2021年年度报告（英文版）（144页）.pdf" [ref=f37e849] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/76790.html
+            - cell "144页" [ref=f37e851]
+            - cell "2022-07-14" [ref=f37e852]
+            - cell [ref=f37e853]:
+              - link "年度报告" [ref=f37e854] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100014.html
+            - cell "104" [ref=f37e855]
+            - cell [ref=f37e857]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e860]:
+            - cell [ref=f37e861]
+            - cell [ref=f37e863]:
+              - link "邦吉公司（BUNGE）2022年年度报告（英文版）（359页）.pdf" [ref=f37e864] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/138714.html
+              - link "邦吉公司（BUNGE）2022年年度报告（英文版）（359页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/138714.html?istrans=2
+            - cell "359页" [ref=f37e867]
+            - cell "2023-09-05" [ref=f37e868]
+            - cell [ref=f37e869]:
+              - link "年度报告" [ref=f37e870] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100014.html
+            - cell "106" [ref=f37e871]
+            - cell [ref=f37e873]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e876]:
+            - cell [ref=f37e877]
+            - cell [ref=f37e879]:
+              - link "求信咨询：2023H1成都市汽车市场分析报告（39页）.pdf" [ref=f37e880] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/136387.html
+            - cell "39页" [ref=f37e882]
+            - cell "2023-08-15" [ref=f37e883]
+            - cell [ref=f37e884]:
+              - link "汽车市场" [ref=f37e885] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "136" [ref=f37e886]
+            - cell [ref=f37e888]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e891]:
+            - cell [ref=f37e892]
+            - cell [ref=f37e894]:
+              - link "求信咨询：2022年9月江门市汽车市场分析报告（40页）.pdf" [ref=f37e895] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/106620.html
+            - cell "40页" [ref=f37e897]
+            - cell "2022-11-17" [ref=f37e898]
+            - cell [ref=f37e899]:
+              - link "汽车市场" [ref=f37e900] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "61" [ref=f37e901]
+            - cell [ref=f37e903]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e906]:
+            - cell [ref=f37e907]
+            - cell [ref=f37e909]:
+              - link "2021年吉比特公司摩尔庄园手游发展前景分析报告.pdf" [ref=f37e910] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/40015.html
+            - cell "16页" [ref=f37e912]
+            - cell "2021-06-11" [ref=f37e913]
+            - cell [ref=f37e914]:
+              - link "企业分析" [ref=f37e915] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002200009.html
+            - cell "204" [ref=f37e916]
+            - cell [ref=f37e918]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e921]:
+            - cell [ref=f37e922]
+            - cell [ref=f37e924]:
+              - link "【招商证券】【公司研究】吉比特-匠心独具向高则达-20200804[32页].pdf" [ref=f37e925] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/16652.html
+            - cell "32页" [ref=f37e927]
+            - cell "2020-08-05" [ref=f37e928]
+            - cell [ref=f37e929]:
+              - link "公司研究" [ref=f37e930] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "111" [ref=f37e931]
+            - cell [ref=f37e933]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e936]:
+            - cell [ref=f37e937]
+            - cell [ref=f37e939]:
+              - link "【申万宏源】海吉亚医疗-国内民营肿瘤医疗服务领军者-221014（28页）.pdf" [ref=f37e940] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/103231.html
+            - cell "28页" [ref=f37e942]
+            - cell "2022-10-17" [ref=f37e943]
+            - cell [ref=f37e944]:
+              - link "公司研究" [ref=f37e945] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "100" [ref=f37e946]
+            - cell [ref=f37e948]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e951]:
+            - cell [ref=f37e952]
+            - cell [ref=f37e954]:
+              - link "【国金证券】吉比特-具有“超长线运营能力”的“小网易”-211112（32页）.pdf" [ref=f37e955] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/55397.html
+            - cell "32页" [ref=f37e957]
+            - cell "2021-11-15" [ref=f37e958]
+            - cell [ref=f37e959]:
+              - link "公司研究" [ref=f37e960] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100011.html
+            - cell "104" [ref=f37e961]
+            - cell [ref=f37e963]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f37e966]:
+            - cell [ref=f37e967]
+            - cell [ref=f37e969]:
+              - link "毕马威（KPMG）：2022年纯电动汽车(BEV)市场分析报告-押注汽车的未来（英文版）（27页）.pdf" [ref=f37e970] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/100791.html
+              - link "毕马威（KPMG）：2022年纯电动汽车(BEV)市场分析报告-押注汽车的未来（英文版）（27页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/100791.html?istrans=2
+            - cell "27页" [ref=f37e973]
+            - cell "2022-09-28" [ref=f37e974]
+            - cell [ref=f37e975]:
+              - link "物流交通" [ref=f37e976] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100021.html
+            - cell "505" [ref=f37e977]
+            - cell [ref=f37e979]:
+              - link:
+                - /url: javascript:void(0);
+    - generic [ref=f37e984]:
+      - generic [ref=f37e985]: 共8441条 共169页
+      - generic [ref=f37e986]:
+        - generic: <<
+        - generic: <
+        - generic [ref=f37e989]: "1"
+        - link "2" [ref=f37e990] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=2&q=吉图 汽车市场分析报告&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=2&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link "3" [ref=f37e992] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=3&q=吉图 汽车市场分析报告&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=2&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link "4" [ref=f37e994] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=4&q=吉图 汽车市场分析报告&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=2&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link "5" [ref=f37e996] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=5&q=吉图 汽车市场分析报告&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=2&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link "..." [ref=f37e998] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=6&q=吉图 汽车市场分析报告&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=2&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link ">" [ref=f37e1000] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=2&q=吉图 汽车市场分析报告&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=2&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link ">>" [ref=f37e1002] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=169&q=吉图 汽车市场分析报告&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=2&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+      - generic [ref=f37e1004]:
+        - text: 前往
+        - textbox [ref=f37e1005]: "1"
+        - text: 页
+  - generic [ref=f37e1006]:
+    - generic [ref=f37e1007]:
+      - generic [ref=f37e1008]:
+        - generic [ref=f37e1011]: 全行业研究报告分享下载平台
+        - list [ref=f37e1012]:
+          - listitem [ref=f37e1013]: 0731-84720580
+          - listitem [ref=f37e1015]: 商务合作：really158d
+      - generic [ref=f37e1018]:
+        - text: 关于我们
+        - list [ref=f37e1019]:
+          - listitem [ref=f37e1020]:
+            - link "网站声明" [ref=f37e1021] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-22277.html
+          - listitem [ref=f37e1022]:
+            - link "免责声明" [ref=f37e1023] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-42671.html
+          - listitem [ref=f37e1024]:
+            - link "网站公告" [ref=f37e1025] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/newslist.html
+          - listitem [ref=f37e1026]:
+            - link "我要入驻" [ref=f37e1027] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+      - generic [ref=f37e1028]:
+        - text: 更多
+        - list [ref=f37e1029]:
+          - listitem [ref=f37e1030]:
+            - link "常见问题" [ref=f37e1031] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-24877.html
+          - listitem [ref=f37e1032]:
+            - link "用户协议" [ref=f37e1033] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-33145.html
+          - listitem [ref=f37e1034]:
+            - link "认证协议" [ref=f37e1035] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/sgpjbg/WebClause.aspx?id=12
+          - listitem [ref=f37e1036]:
+            - link "版权申诉" [ref=f37e1037] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-19193.html
+      - generic [ref=f37e1038]:
+        - text: 关于我们
+        - generic [ref=f37e1039]:
+          - generic [ref=f37e1040]: 三个皮匠报告微信公众号
+          - generic [ref=f37e1043]: 三个皮匠报告微信小程序
+          - generic [ref=f37e1046]: 扫码咨询网站充值下载问题
+    - generic [ref=f37e1049]: copyright@2008-2013 长沙景略智创信息技术有限公司版权所有 网站备案/许可证号：湘B2-20190120 | 工信部备案号：湘ICP备17000430号-2 | 公安备案号：湘公网安备43010402001071号
+  - generic [ref=f37e1051] [cursor=pointer]: 展开

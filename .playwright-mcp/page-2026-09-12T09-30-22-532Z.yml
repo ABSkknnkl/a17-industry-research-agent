@@ -1,0 +1,1070 @@
+- generic [active] [ref=e1]:
+  - link "欢迎进入 百度一下，你就知道，盲人用户进入读屏幕模式请按快捷键Ctrl加Alt加R；阅读详细操作说明请按快捷键Ctrl加Alt加问号键。":
+    - /url: javascript:void(0)
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic:
+          - link [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "到百度首页" [ref=e7]
+          - generic [ref=e10]:
+            - textbox [ref=e12]: site:sgpjbg.com 吉图咨询 汽车市场分析报告
+            - button "百度一下" [ref=e37] [cursor=pointer]
+      - generic [ref=e39]:
+        - link "百度首页" [ref=e40] [cursor=pointer]:
+          - /url: /
+        - link "设置" [ref=e41] [cursor=pointer]:
+          - /url: javascript:;
+        - link "登录" [ref=e42] [cursor=pointer]:
+          - /url: https://passport.baidu.com/v2/?login&tpl=mn&u=http%3A%2F%2Fwww.baidu.com%2F
+    - generic [ref=e45]:
+      - link [ref=e46] [cursor=pointer]:
+        - /url: https://chat.baidu.com/search?word=site%3Asgpjbg.com+%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2+%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&dyTabStr=MTIsMCwzLDEsMiwxMyw3LDYsNSw5&pd=csaitab&setype=csaitab&extParamsJson=%7B%22enter_type%22%3A%22search_a_tab%22%2C%22sa%22%3A%22vs_tab%22%2C%22apagelid%22%3A%229773586810949147616%22%2C%22ori_lid%22%3A%229773586810949147616%22%7D
+      - generic [ref=e48]: 网页
+      - link "图片" [ref=e49] [cursor=pointer]:
+        - /url: http://image.baidu.com/i?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=2&nc=1&ie=utf-8&lid=87a2c16c00111be0&dyTabStr=MTIsMCwzLDEsMiwxMyw3LDYsNSw5&word=site%3Asgpjbg.com+%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2+%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A
+      - link "资讯" [ref=e50] [cursor=pointer]:
+        - /url: https://www.baidu.com/s?rtt=1&bsst=1&cl=2&tn=news&ie=utf-8&word=site%3Asgpjbg.com+%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2+%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A
+      - link "视频" [ref=e51] [cursor=pointer]:
+        - /url: /sf/vsearch?pd=video&tn=vsearch&lid=87a2c16c00111be0&ie=utf-8&wd=site%3Asgpjbg.com+%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2+%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_spt=7&rsv_bp=1&f=8&oq=site%3Asgpjbg.com+%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2+%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI
+      - link "笔记" [ref=e52] [cursor=pointer]:
+        - /url: https://www.baidu.com/s?pd=note&rpf=pc&dyTabStr=MTIsMCwzLDEsMiwxMyw3LDYsNSw5&word=site%3Asgpjbg.com+%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2+%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A
+      - link "地图" [ref=e53] [cursor=pointer]:
+        - /url: https://map.baidu.com/?newmap=1&ie=utf-8&from=pstab&s=s%26wd%3Dsite%3Asgpjbg.com+%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2+%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A
+      - link "贴吧" [ref=e54] [cursor=pointer]:
+        - /url: http://tieba.baidu.com/f?fr=wwwt&ie=utf-8&dyTabStr=MTIsMCwzLDEsMiwxMyw3LDYsNSw5&kw=site%3Asgpjbg.com+%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2+%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A
+      - link "文库" [ref=e55] [cursor=pointer]:
+        - /url: http://wenku.baidu.com/search?lm=0&od=0&ie=utf-8&dyTabStr=MTIsMCwzLDEsMiwxMyw3LDYsNSw5&word=site%3Asgpjbg.com+%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2+%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A
+      - link "更多" [ref=e56] [cursor=pointer]:
+        - /url: http://www.baidu.com/more/
+      - generic [ref=e57] [cursor=pointer]: 搜索工具
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - table [ref=e61]:
+          - rowgroup [ref=e62]:
+            - row [ref=e63]:
+              - cell "相关搜索  市场分析报告  大众汽车市场调查分析  新能源汽车市场分析报告论文  汽车电动助力行业市场分析报告  汽车检测市场分析报告  吉利汽车市场分析报告 深度合作 百度信誉V 开放平台 官网认证 百度开放 计划，让搜索引擎发现您的价值    换一换 热搜榜 财经榜 民生榜  习近平抵达新德里 1 微信：使用这类头像需要认证 热 2 雷军现身徐州 给首批车主开车门 热 3 携手推动“大金砖合作”高质量发展 4 北大硕士因本科非北大年薪被降5万 热 5 中国男篮105比59大胜巴林 新 6 中国每8个新生儿就有1个在广东 热 7 房东买烤肠转了20000元转身就走 8 张雪比赛中失误不断 调侃车行人不行 新 9 宁波大学开学典礼暴雨 校长只讲3句话 10 付航脱口秀1000张黄牛票被拦 新 11 “救护中心圈养雪豹博流量”系谣言 12 洪秀柱等人在新疆乌鲁木齐发声 13 “预制朋友圈”退潮 新 14 张雪被问带薪休假爽不：我是发钱那个 热 15 俄媒发布接机普京“印度运镜”视频" [ref=e64]:
+                - generic [ref=e65]:
+                  - generic [ref=e71]:
+                    - generic [ref=e72]: 相关搜索
+                    - generic [ref=e74]:
+                      - link " 市场分析报告" [ref=e77] [cursor=pointer]:
+                        - /url: /s?wd=%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=d40dD3WLRx76Pj4%2B%2FK2qC50CkmwTIYVAxA0aZTVsv5PgJ8%2FriWPTPHhGTyI&rfqid=87a2c16c00111be0&rsv_dl=0_prs_28616_1&rq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsf=101631202
+                        - generic [ref=e78]:
+                          - generic [ref=e79]: 
+                          - generic [ref=e80]: 市场分析报告
+                      - link " 大众汽车市场调查分析" [ref=e83] [cursor=pointer]:
+                        - /url: /s?wd=%E5%A4%A7%E4%BC%97%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E8%B0%83%E6%9F%A5%E5%88%86%E6%9E%90&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=d40dD3WLRx76Pj4%2B%2FK2qC50CkmwTIYVAxA0aZTVsv5PgJ8%2FriWPTPHhGTyI&rfqid=87a2c16c00111be0&rsv_dl=0_prs_28616_2&rq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsf=101631202
+                        - generic [ref=e84]:
+                          - generic [ref=e85]: 
+                          - generic [ref=e86]: 大众汽车市场调查分析
+                      - link " 新能源汽车市场分析报告论文" [ref=e89] [cursor=pointer]:
+                        - /url: /s?wd=%E6%96%B0%E8%83%BD%E6%BA%90%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A%E8%AE%BA%E6%96%87&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=d40dD3WLRx76Pj4%2B%2FK2qC50CkmwTIYVAxA0aZTVsv5PgJ8%2FriWPTPHhGTyI&rfqid=87a2c16c00111be0&rsv_dl=0_prs_28616_3&rq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsf=101631202
+                        - generic [ref=e90]:
+                          - generic [ref=e91]: 
+                          - generic [ref=e92]: 新能源汽车市场分析报告论文
+                      - link " 汽车电动助力行业市场分析报告" [ref=e95] [cursor=pointer]:
+                        - /url: /s?wd=%E6%B1%BD%E8%BD%A6%E7%94%B5%E5%8A%A8%E5%8A%A9%E5%8A%9B%E8%A1%8C%E4%B8%9A%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=d40dD3WLRx76Pj4%2B%2FK2qC50CkmwTIYVAxA0aZTVsv5PgJ8%2FriWPTPHhGTyI&rfqid=87a2c16c00111be0&rsv_dl=0_prs_28616_4&rq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsf=101631202
+                        - generic [ref=e96]:
+                          - generic [ref=e97]: 
+                          - generic [ref=e98]: 汽车电动助力行业市场分析报告
+                      - link " 汽车检测市场分析报告" [ref=e101] [cursor=pointer]:
+                        - /url: /s?wd=%E6%B1%BD%E8%BD%A6%E6%A3%80%E6%B5%8B%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=d40dD3WLRx76Pj4%2B%2FK2qC50CkmwTIYVAxA0aZTVsv5PgJ8%2FriWPTPHhGTyI&rfqid=87a2c16c00111be0&rsv_dl=0_prs_28616_5&rq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsf=101631202
+                        - generic [ref=e102]:
+                          - generic [ref=e103]: 
+                          - generic [ref=e104]: 汽车检测市场分析报告
+                      - link " 吉利汽车市场分析报告" [ref=e107] [cursor=pointer]:
+                        - /url: /s?wd=%E5%90%89%E5%88%A9%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=d40dD3WLRx76Pj4%2B%2FK2qC50CkmwTIYVAxA0aZTVsv5PgJ8%2FriWPTPHhGTyI&rfqid=87a2c16c00111be0&rsv_dl=0_prs_28616_6&rq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsf=101631202
+                        - generic [ref=e108]:
+                          - generic [ref=e109]: 
+                          - generic [ref=e110]: 吉利汽车市场分析报告
+                  - generic [ref=e112]:
+                    - paragraph [ref=e113]: 深度合作
+                    - generic [ref=e114]:
+                      - list [ref=e115]:
+                        - listitem [ref=e116]: 百度信誉V
+                        - listitem [ref=e117] [cursor=pointer]: 开放平台
+                        - listitem [ref=e118] [cursor=pointer]
+                        - listitem [ref=e119] [cursor=pointer]: 官网认证
+                      - generic [ref=e120]:
+                        - paragraph [ref=e121]: 百度开放计划，让搜索引擎发现您的价值
+                        - paragraph [ref=e123]:
+                          - link [ref=e124] [cursor=pointer]:
+                            - /url: http://www.baidu.com/link?url=Mn2pOI0gt3SEnFowEywaquhKCMXvCZIw8daoknj6zmW
+                  - generic [ref=e129]:
+                    - generic "百度热搜" [ref=e130]:
+                      - link " " [ref=e131] [cursor=pointer]:
+                        - /url: https://top.baidu.com/board?platform=pc&sa=pcindex_a_right
+                        - generic [ref=e132]: 
+                        - generic [ref=e133]: 
+                      - link " 换一换" [ref=e135] [cursor=pointer]:
+                        - /url: javascript:void(0);
+                        - generic [ref=e136]: 
+                        - text: 换一换
+                    - generic [ref=e137]:
+                      - generic [ref=e138] [cursor=pointer]: 热搜榜
+                      - generic [ref=e139] [cursor=pointer]: 财经榜
+                      - generic [ref=e140] [cursor=pointer]: 民生榜
+                    - generic [ref=e142]:
+                      - generic [ref=e144]:
+                        - generic [ref=e145]: 
+                        - link "习近平抵达新德里" [ref=e147] [cursor=pointer]:
+                          - /url: /s?wd=%E4%B9%A0%E8%BF%91%E5%B9%B3%E6%8A%B5%E8%BE%BE%E6%96%B0%E5%BE%B7%E9%87%8C&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=d40dD3WLRx76Pj4%2B%2FK2qC50CkmwTIYVAxA0aZTVsv5PgJ8%2FriWPTPHhGTyI&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_1&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                      - generic [ref=e149]:
+                        - generic [ref=e150]: "1"
+                        - link "微信：使用这类头像需要认证" [ref=e151] [cursor=pointer]:
+                          - /url: /s?wd=%E5%BE%AE%E4%BF%A1%EF%BC%9A%E4%BD%BF%E7%94%A8%E8%BF%99%E7%B1%BB%E5%A4%B4%E5%83%8F%E9%9C%80%E8%A6%81%E8%AE%A4%E8%AF%81&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=d40dD3WLRx76Pj4%2B%2FK2qC50CkmwTIYVAxA0aZTVsv5PgJ8%2FriWPTPHhGTyI&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_2&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                        - generic [ref=e152]: 热
+                      - generic [ref=e154]:
+                        - generic [ref=e155]: "2"
+                        - link "雷军现身徐州 给首批车主开车门" [ref=e156] [cursor=pointer]:
+                          - /url: /s?wd=%E9%9B%B7%E5%86%9B%E7%8E%B0%E8%BA%AB%E5%BE%90%E5%B7%9E%20%E7%BB%99%E9%A6%96%E6%89%B9%E8%BD%A6%E4%B8%BB%E5%BC%80%E8%BD%A6%E9%97%A8&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_3&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                        - generic [ref=e157]: 热
+                      - generic [ref=e159]:
+                        - generic [ref=e160]: "3"
+                        - link "携手推动“大金砖合作”高质量发展" [ref=e161] [cursor=pointer]:
+                          - /url: /s?wd=%E6%90%BA%E6%89%8B%E6%8E%A8%E5%8A%A8%E2%80%9C%E5%A4%A7%E9%87%91%E7%A0%96%E5%90%88%E4%BD%9C%E2%80%9D%E9%AB%98%E8%B4%A8%E9%87%8F%E5%8F%91%E5%B1%95&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_4&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                      - generic [ref=e163]:
+                        - generic [ref=e164]: "4"
+                        - link "北大硕士因本科非北大年薪被降5万" [ref=e165] [cursor=pointer]:
+                          - /url: /s?wd=%E5%8C%97%E5%A4%A7%E7%A1%95%E5%A3%AB%E5%9B%A0%E6%9C%AC%E7%A7%91%E9%9D%9E%E5%8C%97%E5%A4%A7%E5%B9%B4%E8%96%AA%E8%A2%AB%E9%99%8D5%E4%B8%87&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_5&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                        - generic [ref=e166]: 热
+                      - generic [ref=e168]:
+                        - generic [ref=e169]: "5"
+                        - link "中国男篮105比59大胜巴林" [ref=e170] [cursor=pointer]:
+                          - /url: /s?wd=%E4%B8%AD%E5%9B%BD%E7%94%B7%E7%AF%AE105%E6%AF%9459%E5%A4%A7%E8%83%9C%E5%B7%B4%E6%9E%97&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_6&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                        - generic [ref=e171]: 新
+                      - generic [ref=e173]:
+                        - generic [ref=e174]: "6"
+                        - link "中国每8个新生儿就有1个在广东" [ref=e175] [cursor=pointer]:
+                          - /url: /s?wd=%E4%B8%AD%E5%9B%BD%E6%AF%8F8%E4%B8%AA%E6%96%B0%E7%94%9F%E5%84%BF%E5%B0%B1%E6%9C%891%E4%B8%AA%E5%9C%A8%E5%B9%BF%E4%B8%9C&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_7&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                        - generic [ref=e176]: 热
+                      - generic [ref=e178]:
+                        - generic [ref=e179]: "7"
+                        - link "房东买烤肠转了20000元转身就走" [ref=e180] [cursor=pointer]:
+                          - /url: /s?wd=%E6%88%BF%E4%B8%9C%E4%B9%B0%E7%83%A4%E8%82%A0%E8%BD%AC%E4%BA%8620000%E5%85%83%E8%BD%AC%E8%BA%AB%E5%B0%B1%E8%B5%B0&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_8&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                      - generic [ref=e182]:
+                        - generic [ref=e183]: "8"
+                        - link "张雪比赛中失误不断 调侃车行人不行" [ref=e184] [cursor=pointer]:
+                          - /url: /s?wd=%E5%BC%A0%E9%9B%AA%E6%AF%94%E8%B5%9B%E4%B8%AD%E5%A4%B1%E8%AF%AF%E4%B8%8D%E6%96%AD%20%E8%B0%83%E4%BE%83%E8%BD%A6%E8%A1%8C%E4%BA%BA%E4%B8%8D%E8%A1%8C&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_9&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                        - generic [ref=e185]: 新
+                      - generic [ref=e187]:
+                        - generic [ref=e188]: "9"
+                        - link "宁波大学开学典礼暴雨 校长只讲3句话" [ref=e189] [cursor=pointer]:
+                          - /url: /s?wd=%E5%AE%81%E6%B3%A2%E5%A4%A7%E5%AD%A6%E5%BC%80%E5%AD%A6%E5%85%B8%E7%A4%BC%E6%9A%B4%E9%9B%A8%20%E6%A0%A1%E9%95%BF%E5%8F%AA%E8%AE%B23%E5%8F%A5%E8%AF%9D&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_10&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                      - generic [ref=e191]:
+                        - generic [ref=e192]: "10"
+                        - link "付航脱口秀1000张黄牛票被拦" [ref=e193] [cursor=pointer]:
+                          - /url: /s?wd=%E4%BB%98%E8%88%AA%E8%84%B1%E5%8F%A3%E7%A7%801000%E5%BC%A0%E9%BB%84%E7%89%9B%E7%A5%A8%E8%A2%AB%E6%8B%A6&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_11&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                        - generic [ref=e194]: 新
+                      - generic [ref=e196]:
+                        - generic [ref=e197]: "11"
+                        - link "“救护中心圈养雪豹博流量”系谣言" [ref=e198] [cursor=pointer]:
+                          - /url: /s?wd=%E2%80%9C%E6%95%91%E6%8A%A4%E4%B8%AD%E5%BF%83%E5%9C%88%E5%85%BB%E9%9B%AA%E8%B1%B9%E5%8D%9A%E6%B5%81%E9%87%8F%E2%80%9D%E7%B3%BB%E8%B0%A3%E8%A8%80&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_12&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                      - generic [ref=e200]:
+                        - generic [ref=e201]: "12"
+                        - link "洪秀柱等人在新疆乌鲁木齐发声" [ref=e202] [cursor=pointer]:
+                          - /url: /s?wd=%E6%B4%AA%E7%A7%80%E6%9F%B1%E7%AD%89%E4%BA%BA%E5%9C%A8%E6%96%B0%E7%96%86%E4%B9%8C%E9%B2%81%E6%9C%A8%E9%BD%90%E5%8F%91%E5%A3%B0&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_13&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                      - generic [ref=e204]:
+                        - generic [ref=e205]: "13"
+                        - link "“预制朋友圈”退潮" [ref=e206] [cursor=pointer]:
+                          - /url: /s?wd=%E2%80%9C%E9%A2%84%E5%88%B6%E6%9C%8B%E5%8F%8B%E5%9C%88%E2%80%9D%E9%80%80%E6%BD%AE&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_14&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                        - generic [ref=e207]: 新
+                      - generic [ref=e209]:
+                        - generic [ref=e210]: "14"
+                        - link "张雪被问带薪休假爽不：我是发钱那个" [ref=e211] [cursor=pointer]:
+                          - /url: /s?wd=%E5%BC%A0%E9%9B%AA%E8%A2%AB%E9%97%AE%E5%B8%A6%E8%96%AA%E4%BC%91%E5%81%87%E7%88%BD%E4%B8%8D%EF%BC%9A%E6%88%91%E6%98%AF%E5%8F%91%E9%92%B1%E9%82%A3%E4%B8%AA&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_1_15_15&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+                        - generic [ref=e212]: 热
+                      - generic [ref=e214]:
+                        - generic [ref=e215]: "15"
+                        - link "俄媒发布接机普京“印度运镜”视频" [ref=e216] [cursor=pointer]:
+                          - /url: /s?wd=%E4%BF%84%E5%AA%92%E5%8F%91%E5%B8%83%E6%8E%A5%E6%9C%BA%E6%99%AE%E4%BA%AC%E2%80%9C%E5%8D%B0%E5%BA%A6%E8%BF%90%E9%95%9C%E2%80%9D%E8%A7%86%E9%A2%91&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=80cel2h6oMXHw4FEhodrML2845234Po17t%2B61TmRgWRXCIV4lvrsZPnvuXA&rqid=87a2c16c00111be0&rsf=4d34be0c26cd4d6d31826ea0081fdab2_16_30_16&rsv_dl=0_right_fyb_pchot_20811&sa=0_right_fyb_pchot_20811
+        - generic [ref=e219]:
+          - generic [ref=e220]:
+            - generic [ref=e221]: 清除
+            - generic [ref=e224] [cursor=pointer]: 时间不限
+            - generic [ref=e227] [cursor=pointer]: 所有网页和文件
+            - generic [ref=e229] [cursor=pointer]: sgpjbg.com
+          - generic [ref=e231]: 百度为您找到以下结果
+        - generic [ref=e232]:
+          - generic [ref=e236]:
+            - generic [ref=e238]:
+              - heading [level=3] [ref=e239]:
+                - link [ref=e240] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUpeoOFsjxjMxTS0NNalesj_JtLHfARindXMSgXnyNqA6q
+                  - generic [ref=e242]:
+                    - emphasis [ref=e243]: 吉图咨询
+                    - text: :2025H1广州市
+                    - emphasis [ref=e244]: 汽车市场分析报告
+                    - text: "-三个皮匠报告"
+              - link [ref=e245] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUpeoOFsjxjMxTS0NNalesj_JtLHfARindXMSgXnyNqA6q
+            - generic [ref=e250] [cursor=pointer]:
+              - text: 2025年8月18日
+              - generic [ref=e251]:
+                - text: 2025年累计2024年累计2024年广州市上半年(H1)
+                - emphasis [ref=e252]: 汽车市场
+                - text: 中,国产汽车在月度及累计销量上均占据主导地位,本期月度销量和累计销量中,国产占比均为 85.31%,进口占 3.74%,商用占10.95%。从环比数据来看,市场波动较为明显,如 2 月环比下降达 44.00%,而 3 月环比增长 92.73%。同比方面,年初同比下
+            - generic [ref=e254]:
+              - link "三个皮匠报告" [ref=e257] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUpeoOFsjxjMxTS0NNalesj_JtLHfARindXMSgXnyNqA6q
+                - generic [ref=e259]: 
+              - link "" [ref=e266] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e271]:
+            - generic [ref=e273]:
+              - heading [level=3] [ref=e274]:
+                - link [ref=e275] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUpeoOFsjxjMxTS0NNalesj_68iYtf67DEfsguHhXWn7dK
+                  - generic [ref=e277]:
+                    - emphasis [ref=e278]: 吉图咨询
+                    - text: :2025湖北省一季度
+                    - emphasis [ref=e279]: 汽车市场分析报告
+                    - text: "-三个皮匠报告"
+              - link [ref=e280] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUpeoOFsjxjMxTS0NNalesj_68iYtf67DEfsguHhXWn7dK
+            - generic [ref=e281]:
+              - link [ref=e283] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUpeoOFsjxjMxTS0NNalesj_68iYtf67DEfsguHhXWn7dK
+              - generic [ref=e288]:
+                - generic [ref=e294] [cursor=pointer]:
+                  - text: 2025年5月16日
+                  - generic [ref=e295]:
+                    - text: 1、对标研究 求信咨询
+                    - emphasis [ref=e296]: 吉图咨询
+                    - text: 361ci010203
+                    - emphasis [ref=e297]: 汽车市场
+                    - text: 整体概况国产乘用车
+                    - emphasis [ref=e298]: 市场分析
+                    - text: 进口乘用车市...
+                - generic [ref=e300]:
+                  - link "三个皮匠报告" [ref=e303] [cursor=pointer]:
+                    - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUpeoOFsjxjMxTS0NNalesj_68iYtf67DEfsguHhXWn7dK
+                    - generic [ref=e305]: 
+                  - link "" [ref=e312] [cursor=pointer]:
+                    - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e317]:
+            - generic [ref=e319]:
+              - heading [level=3] [ref=e320]:
+                - link [ref=e321] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGTdIfW5mQJ19_JycXLy1pAfH2lLVrw-b-L-s0WLsy9a4K
+                  - generic [ref=e323]:
+                    - emphasis [ref=e324]: 吉图咨询
+                    - text: :2026一季度湖北省
+                    - emphasis [ref=e325]: 汽车市场分析报告
+                    - text: "-三个皮匠报告"
+              - link [ref=e326] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGTdIfW5mQJ19_JycXLy1pAfH2lLVrw-b-L-s0WLsy9a4K
+            - generic [ref=e331] [cursor=pointer]:
+              - text: 2026年5月1日
+              - generic [ref=e332]:
+                - text: 1、对标研究 求信咨询
+                - emphasis [ref=e333]: 吉图咨询
+                - text: 361ci010203汽车市场整体概况国产乘用车市场分析进口乘用车市场分析目录CONTENT04商用
+                - emphasis [ref=e334]: 车市场分析
+                - text: 01汽车市场概况求信咨询 吉图咨询P42026 年 1-3 月湖北省汽车市场整体同比深度承压,呈现先抑后扬、月度强势回暖、结构高度固化的运行特征。全省市场结构稳定,国产乘用车占比82.05%,是市场绝对...
+            - generic [ref=e336]:
+              - link "三个皮匠报告" [ref=e339] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGTdIfW5mQJ19_JycXLy1pAfH2lLVrw-b-L-s0WLsy9a4K
+                - generic [ref=e341]: 
+              - link "" [ref=e348] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e353]:
+            - generic [ref=e355]:
+              - heading [level=3] [ref=e356]:
+                - link [ref=e357] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUJtXTi4HOaEVIOe_PMBYERK
+                  - generic [ref=e359]:
+                    - emphasis [ref=e360]: 吉图咨询
+                    - text: :2025安徽省一季度
+                    - emphasis [ref=e361]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠..."
+              - link [ref=e362] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUJtXTi4HOaEVIOe_PMBYERK
+            - generic [ref=e368] [cursor=pointer]:
+              - text: 361ci010203汽车市场整体概况国产乘用车市场分析进口乘用车市场分析目录content04商用
+              - emphasis [ref=e369]: 车市场分析
+              - text: 01汽车市场概况求信咨询
+              - emphasis [ref=e370]: 吉图咨询
+              - text: p41-2月安徽省汽车市场销量下滑,环比降幅分别为 27.21%和 26.85%;2-3月回升,环比增长 38.01%.累计销量方面,1-3月同比增长 9.27%,市场逐步回暖.国产乘用车占比 86.72%,主导市场;进口乘用车...
+            - generic [ref=e372]:
+              - link "三个皮匠报告" [ref=e375] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUJtXTi4HOaEVIOe_PMBYERK
+                - generic [ref=e377]: 
+              - link "" [ref=e384] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e389]:
+            - generic [ref=e391]:
+              - heading [level=3] [ref=e392]:
+                - link [ref=e393] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwU9qdPUxKWmmG2zZaxkDzdo_
+                  - generic [ref=e395]:
+                    - emphasis [ref=e396]: 吉图咨询
+                    - text: :山东省2025年前三季度
+                    - emphasis [ref=e397]: 汽车市场分析报告
+                    - text: "-在线下载-三个..."
+              - link [ref=e398] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwU9qdPUxKWmmG2zZaxkDzdo_
+            - generic [ref=e404] [cursor=pointer]:
+              - text: 1、对标研究 求信咨询
+              - emphasis [ref=e405]: 吉图咨询
+              - text: 361ci010203汽车市场整体概况国产乘用车市场分析进口乘用车市场分析目录CONTENT04商用
+              - emphasis [ref=e406]: 车市场分析
+              - text: 01汽车市场概况求信咨询 吉图咨询P4从市场份额看,国产乘用车占比 86.79%,进口仅 1.44%,商用车 11.77%,国产车型绝对主导市场。销量走势上,月度销量同比从 1 月-16.75%逐步回升,9 月实现 ...
+            - generic [ref=e408]:
+              - link "三个皮匠报告" [ref=e411] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwU9qdPUxKWmmG2zZaxkDzdo_
+                - generic [ref=e413]: 
+              - link "" [ref=e420] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e425]:
+            - generic [ref=e427]:
+              - heading [level=3] [ref=e428]:
+                - link [ref=e429] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUpxMcy93PGPm8QAwSKGVhJ_
+                  - generic [ref=e431]:
+                    - emphasis [ref=e432]: 吉图咨询
+                    - text: :2025广东省一季度
+                    - emphasis [ref=e433]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠..."
+              - link [ref=e434] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUpxMcy93PGPm8QAwSKGVhJ_
+            - generic [ref=e440] [cursor=pointer]:
+              - text: 1、对标研究 求信咨询
+              - emphasis [ref=e441]: 吉图咨询
+              - text: 361ci010203汽车市场整体概况国产乘用车市场分析进口乘用车市场分析目录CONTENT04商用
+              - emphasis [ref=e442]: 车市场分析
+              - text: 01汽车市场概况求信咨询 吉图咨询P4本期月度销量和累计销量中,国产汽车占比均为 85.81%,占据绝对主导地位,反映出国产汽车在广东省市场的强大影响力。进口汽车占比 3.83%,商用车占比 10.36%...
+            - generic [ref=e444]:
+              - link "三个皮匠报告" [ref=e447] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUpxMcy93PGPm8QAwSKGVhJ_
+                - generic [ref=e449]: 
+              - link "" [ref=e456] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e461]:
+            - generic [ref=e463]:
+              - heading [level=3] [ref=e464]:
+                - link [ref=e465] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUGJtE4GAoJw4lqgMmAgzJk_
+                  - generic [ref=e467]:
+                    - emphasis [ref=e468]: 吉图咨询
+                    - text: :2025H1深圳市
+                    - emphasis [ref=e469]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠报告"
+              - link [ref=e470] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUGJtE4GAoJw4lqgMmAgzJk_
+            - generic [ref=e476] [cursor=pointer]:
+              - text: 3、下滑态势明显,市场需求有待提振。商用车在市场中占比 20.25%,在基建、物流等行业需求带动下,月度销量同比多数实现增长,累计销量稳步上升,展现出较好的市场活力。整体来看,上半年深圳
+              - emphasis [ref=e477]: 汽车市场
+              - text: 国产乘用车主导,进口乘用车承压,商用车保持增长。求信咨询
+              - emphasis [ref=e478]: 吉图咨询
+              - text: P5本期销量同比增量年上半年,深圳市汽车市场在车型大类与...
+            - generic [ref=e480]:
+              - link "三个皮匠报告" [ref=e483] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUGJtE4GAoJw4lqgMmAgzJk_
+                - generic [ref=e485]: 
+              - link "" [ref=e492] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e495]:
+            - generic [ref=e496]: 大家还在搜
+            - generic [ref=e497]:
+              - link "市场分析报告" [ref=e498] [cursor=pointer]:
+                - /url: /s?wd=%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=5876vVAxdYVOrQv%2F3iI%2FTSoM27yo3cFIyP%2FdTLWlWGs95OR4hrkpRTZd49Q&rsf=101631202&rsv_dl=0_prs_28608_1
+              - link "大众汽车市场调查分析" [ref=e501] [cursor=pointer]:
+                - /url: /s?wd=%E5%A4%A7%E4%BC%97%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E8%B0%83%E6%9F%A5%E5%88%86%E6%9E%90&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=5876vVAxdYVOrQv%2F3iI%2FTSoM27yo3cFIyP%2FdTLWlWGs95OR4hrkpRTZd49Q&rsf=101631202&rsv_dl=0_prs_28608_2
+              - link "新能源汽车市场分析报告论文" [ref=e504] [cursor=pointer]:
+                - /url: /s?wd=%E6%96%B0%E8%83%BD%E6%BA%90%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A%E8%AE%BA%E6%96%87&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=5876vVAxdYVOrQv%2F3iI%2FTSoM27yo3cFIyP%2FdTLWlWGs95OR4hrkpRTZd49Q&rsf=101631202&rsv_dl=0_prs_28608_3
+              - link "汽车电动助力行业市场分析报告" [ref=e507] [cursor=pointer]:
+                - /url: /s?wd=%E6%B1%BD%E8%BD%A6%E7%94%B5%E5%8A%A8%E5%8A%A9%E5%8A%9B%E8%A1%8C%E4%B8%9A%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=5876vVAxdYVOrQv%2F3iI%2FTSoM27yo3cFIyP%2FdTLWlWGs95OR4hrkpRTZd49Q&rsf=101631202&rsv_dl=0_prs_28608_4
+              - link "汽车检测市场分析报告" [ref=e510] [cursor=pointer]:
+                - /url: /s?wd=%E6%B1%BD%E8%BD%A6%E6%A3%80%E6%B5%8B%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=5876vVAxdYVOrQv%2F3iI%2FTSoM27yo3cFIyP%2FdTLWlWGs95OR4hrkpRTZd49Q&rsf=101631202&rsv_dl=0_prs_28608_5
+              - link "吉利汽车市场分析报告" [ref=e513] [cursor=pointer]:
+                - /url: /s?wd=%E5%90%89%E5%88%A9%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rn=30&ie=utf-8&rsv_pq=87a2c16c00111be0&oq=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&rsv_t=5876vVAxdYVOrQv%2F3iI%2FTSoM27yo3cFIyP%2FdTLWlWGs95OR4hrkpRTZd49Q&rsf=101631202&rsv_dl=0_prs_28608_6
+          - generic [ref=e519]:
+            - generic [ref=e521]:
+              - heading [level=3] [ref=e522]:
+                - link [ref=e523] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUJot702qy-WdxRcfeiwpODq
+                  - generic [ref=e525]:
+                    - emphasis [ref=e526]: 吉图咨询
+                    - text: :2025长沙市一季度
+                    - emphasis [ref=e527]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠..."
+              - link [ref=e528] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUJot702qy-WdxRcfeiwpODq
+            - generic [ref=e534] [cursor=pointer]:
+              - text: 1、对标研究、求信咨询、
+              - emphasis [ref=e535]: 吉图咨询
+              - text: 、361ci010203汽车市场整体概况国产乘用车市场分析进口乘用车市场分析目录CONTENT04商用
+              - emphasis [ref=e536]: 车市场分析
+              - text: 01汽车市场概况求信咨询 吉图咨询P4-9.62%21.64%17.22%-34.62%-30.51%47.51%28.5k19.8k29.2k1月2月3月4月5月6月7月8月9月10月11月12月国产乘进口乘国产商环比同比销量同比销量28.5...
+            - generic [ref=e538]:
+              - link "三个皮匠报告" [ref=e541] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUJot702qy-WdxRcfeiwpODq
+                - generic [ref=e543]: 
+              - link "" [ref=e550] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e555]:
+            - generic [ref=e557]:
+              - heading [level=3] [ref=e558]:
+                - link [ref=e559] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwU0D3HAZ_2uW7tHcE24CUpyq
+                  - generic [ref=e561]:
+                    - emphasis [ref=e562]: 吉图咨询
+                    - text: :2025H1西安市
+                    - emphasis [ref=e563]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠报告"
+              - link [ref=e564] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwU0D3HAZ_2uW7tHcE24CUpyq
+            - generic [ref=e570] [cursor=pointer]:
+              - text: 总体而言,西安市 2025 年上半年
+              - emphasis [ref=e571]: 汽车市场
+              - text: 中,国产乘用车占据绝对主导地位,市场销量在不同月份环比、同比波动明显,而累计销量则呈现出从年初同比下滑到逐步回升的态势。求信咨询
+              - emphasis [ref=e572]: 吉图咨询
+              - text: P5本期销量同比增量2025 年上半年,西安市汽车市场销售结构呈现车型与燃料维度的多元特征。车型大...
+            - generic [ref=e574]:
+              - link "三个皮匠报告" [ref=e577] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwU0D3HAZ_2uW7tHcE24CUpyq
+                - generic [ref=e579]: 
+              - link "" [ref=e586] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e591]:
+            - generic [ref=e593]:
+              - heading [level=3] [ref=e594]:
+                - link [ref=e595] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3_S3lL5vEo1Tb98WwHt8BJ_
+                  - generic [ref=e597]:
+                    - emphasis [ref=e598]: 吉图咨询
+                    - text: :2026一季度山西省
+                    - emphasis [ref=e599]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠..."
+              - link [ref=e600] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3_S3lL5vEo1Tb98WwHt8BJ_
+            - generic [ref=e606] [cursor=pointer]:
+              - text: 1、对标研究 求信咨询
+              - emphasis [ref=e607]: 吉图咨询
+              - text: 361ci山西省
+              - emphasis [ref=e608]: 汽车市场分析报告
+              - text: 2026Q1报告编号:00-202603Cu-Pro21-JTQX010203汽车市场整体概况国产乘用车市场分析进口乘用车市场分析目录CONTENT04商用车市场分析01汽车市场概况求信咨询 吉图咨询P42026 年 1-3 月山西省汽车市场整体呈现下滑态势,累计销量同比下降 16.48%,市场表现承压。从...
+            - generic [ref=e610]:
+              - link "三个皮匠报告" [ref=e613] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3_S3lL5vEo1Tb98WwHt8BJ_
+                - generic [ref=e615]: 
+              - link "" [ref=e622] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e627]:
+            - generic [ref=e629]:
+              - heading [level=3] [ref=e630]:
+                - link [ref=e631] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3v3UhwGzfMjJGE5cydEhvh_
+                  - generic [ref=e633]:
+                    - emphasis [ref=e634]: 吉图咨询
+                    - text: :2026一季度福建省
+                    - emphasis [ref=e635]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠..."
+              - link [ref=e636] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3v3UhwGzfMjJGE5cydEhvh_
+            - generic [ref=e642] [cursor=pointer]:
+              - text: 1、对标研究 求信咨询
+              - emphasis [ref=e643]: 吉图咨询
+              - text: 361ci福建省
+              - emphasis [ref=e644]: 汽车市场分析报告
+              - text: 2026Q1报告编号:00-202603Cu-Pro17-JTQX010203汽车市场整体概况国产乘用车市场分析进口乘用车市场分析目录CONTENT04商用车市场分析01汽车市场概况求信咨询 吉图咨询P42026 年 1-3 月福建省汽车市场整体承压,月度销量结构中国产占比 84.56%、
+            - generic [ref=e646]:
+              - link "三个皮匠报告" [ref=e649] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3v3UhwGzfMjJGE5cydEhvh_
+                - generic [ref=e651]: 
+              - link "" [ref=e658] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e663]:
+            - generic [ref=e665]:
+              - heading [level=3] [ref=e666]:
+                - link [ref=e667] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3O6mXOoLlAfmq1B0fAS-hLq
+                  - generic [ref=e669]:
+                    - emphasis [ref=e670]: 吉图咨询
+                    - text: :2026南充市一季度
+                    - emphasis [ref=e671]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠..."
+              - link [ref=e672] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3O6mXOoLlAfmq1B0fAS-hLq
+            - generic [ref=e678] [cursor=pointer]:
+              - text: 1、对标研究、求信咨询、
+              - emphasis [ref=e679]: 吉图咨询
+              - text: 、361ci南充市
+              - emphasis [ref=e680]: 汽车市场分析报告
+              - text: 2026Q1报告编号:00-202603Cu-City111-JTQX010203汽车市场整体概况国产乘用车市场分析进口乘用车市场分析目录CONTENT04商用车市场分析01汽车市场概况求信咨询 吉图咨询P4-34.70%-7.88%-9.82%-23.95%4.03%13.63%3,124 3,250 3,693 1月2月3月4月5月6...
+            - generic [ref=e682]:
+              - link "三个皮匠报告" [ref=e685] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3O6mXOoLlAfmq1B0fAS-hLq
+                - generic [ref=e687]: 
+              - link "" [ref=e694] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e699]:
+            - generic [ref=e701]:
+              - heading [level=3] [ref=e702]:
+                - link [ref=e703] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwU3FVATNmNVavbJPjiwQ708_
+                  - generic [ref=e705]:
+                    - emphasis [ref=e706]: 吉图咨询
+                    - text: :2025理想
+                    - emphasis [ref=e707]: 汽车
+                    - text: 5月销售
+                    - emphasis [ref=e708]: 分析报告
+                    - text: "-增程优势驱动,细分"
+                    - emphasis [ref=e709]: 市场
+                    - text: 破...
+              - link [ref=e710] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwU3FVATNmNVavbJPjiwQ708_
+            - generic [ref=e716] [cursor=pointer]:
+              - text: 1、 理想
+              - emphasis [ref=e717]: 汽车
+              - text: :增程优势驱动,细分
+              - emphasis [ref=e718]: 市场
+              - text: 破局见长期潜力
+              - emphasis [ref=e719]: 报告
+              - text: 编号:11-202505Cu-15-YQT 完成日期:2025-7-1 对标企业深度研究 2 2/1515 理想5月增速领跑市场,走势彰显竞争韧性与发展挑战 2025年 5月,理想汽车销量达 44534辆,增速 28.76%,市场份额 2.41%,份额增长 0.33pp;乘用车大市场增速 10.94%。理想汽车增速远...
+            - generic [ref=e721]:
+              - link "三个皮匠报告" [ref=e724] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwU3FVATNmNVavbJPjiwQ708_
+                - generic [ref=e726]: 
+              - link "" [ref=e733] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e739]:
+            - heading [level=3] [ref=e744]:
+              - link [ref=e745] [cursor=pointer]:
+                - /url: https://image.baidu.com/search/index?tn=baiduimage&ct=201326592&lm=-1&cl=2&ie=utf8&sa=vs_ala_img&fr=ala&ala=1&alatpl=normal&pos=3&dyTabStr=MCwzLDEsMiwxMyw3LDYsNSwxMiw5&word=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&lid=87a2c16c00111be0&topic=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A
+                - generic [ref=e747]:
+                  - paragraph [ref=e748]:
+                    - text: site:sgpjbg.com
+                    - emphasis [ref=e749]: 吉图咨询 汽车市场分析报告
+                  - paragraph [ref=e750]: "- 百度图片"
+            - generic [ref=e751]:
+              - generic [ref=e753]:
+                - generic [ref=e757]:
+                  - generic [ref=e758]:
+                    - link [ref=e759] [cursor=pointer]:
+                      - /url: https://image.baidu.com/search/detail?ct=503316480&z=0&tn=baiduimagedetail&ipn=d&cl=2&cm=1&sc=0&sa=vs_ala_img_datu&lm=-1&ie=utf8&pn=0&rn=1&di=7646086322926387201&ln=0&word=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&os=1784721450,1369330837&cs=1127572943,1718075531&objurl=http%3A%2F%2Fq3.itc.cn%2Fq_70%2Fimages01%2F20251107%2F2d0e44a1779c4bef8f603191c29da973.png&bdtype=0&simid=3606821036,690827165&pi=0&adpicid=0&timingneed=&spn=0&is=0,0&lid=87a2c16c00111be0
+                    - link [ref=e763] [cursor=pointer]:
+                      - /url: https://image.baidu.com/search/detail?ct=503316480&z=0&tn=baiduimagedetail&ipn=d&cl=2&cm=1&sc=0&sa=vs_ala_img_datu&lm=-1&ie=utf8&pn=1&rn=1&di=7646086322926387201&ln=0&word=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&os=2678609921,1539468004&cs=2344955378,1680613329&objurl=http%3A%2F%2Fq4.itc.cn%2Fq_70%2Fimages01%2F20250817%2Fc01947f1869c4961b7af2bb7eff5e594.png&bdtype=0&simid=4162255641,428370871&pi=0&adpicid=0&timingneed=&spn=0&is=0,0&lid=87a2c16c00111be0
+                    - link [ref=e767] [cursor=pointer]:
+                      - /url: https://image.baidu.com/search/detail?ct=503316480&z=0&tn=baiduimagedetail&ipn=d&cl=2&cm=1&sc=0&sa=vs_ala_img_datu&lm=-1&ie=utf8&pn=2&rn=1&di=7646086322926387201&ln=0&word=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&os=3633325958,962970855&cs=1121864108,3074892322&objurl=http%3A%2F%2Fq4.itc.cn%2Fq_70%2Fimages01%2F20250502%2F68f2a6d849fb43379d0fcae92789a31d.png&bdtype=0&simid=3358071245,362097255&pi=0&adpicid=0&timingneed=&spn=0&is=0,0&lid=87a2c16c00111be0
+                  - generic [ref=e771]:
+                    - link [ref=e772] [cursor=pointer]:
+                      - /url: https://image.baidu.com/search/detail?ct=503316480&z=0&tn=baiduimagedetail&ipn=d&cl=2&cm=1&sc=0&sa=vs_ala_img_datu&lm=-1&ie=utf8&pn=3&rn=1&di=7646086322926387201&ln=0&word=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&os=276658155,2926673533&cs=131646841,2737780914&objurl=http%3A%2F%2Fq4.itc.cn%2Fq_70%2Fimages01%2F20250402%2F2a798e3890dc4dbb89fadff99f040625.jpeg&bdtype=0&simid=131646841,2737780914&pi=0&adpicid=0&timingneed=&spn=0&is=0,0&lid=87a2c16c00111be0
+                    - link [ref=e776] [cursor=pointer]:
+                      - /url: https://image.baidu.com/search/detail?ct=503316480&z=0&tn=baiduimagedetail&ipn=d&cl=2&cm=1&sc=0&sa=vs_ala_img_datu&lm=-1&ie=utf8&pn=4&rn=1&di=7646086322926387201&ln=0&word=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&os=3063576110,2485897621&cs=2849087022,439532546&objurl=http%3A%2F%2Fq0.itc.cn%2Fq_70%2Fimages01%2F20250324%2F007476ada40144e1bca875b2889e65be.jpeg&bdtype=0&simid=4284655172,730009510&pi=0&adpicid=0&timingneed=&spn=0&is=0,0&lid=87a2c16c00111be0
+                    - link [ref=e780] [cursor=pointer]:
+                      - /url: https://image.baidu.com/search/detail?ct=503316480&z=0&tn=baiduimagedetail&ipn=d&cl=2&cm=1&sc=0&sa=vs_ala_img_datu&lm=-1&ie=utf8&pn=5&rn=1&di=7646086322926387201&ln=0&word=site%3Asgpjbg.com%20%E5%90%89%E5%9B%BE%E5%92%A8%E8%AF%A2%20%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&os=2530919369,755177359&cs=3058461497,4119768719&objurl=http%3A%2F%2Fq7.itc.cn%2Fq_70%2Fimages01%2F20250208%2F4577def7de8243468362020f5da7eb49.png&bdtype=0&simid=4166187625,726959006&pi=0&adpicid=0&timingneed=&spn=0&is=0,0&lid=87a2c16c00111be0
+                - link "查看全部47张图片 " [ref=e786] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=YQlTrYrvH2O0zRSuossyH5pjV3Ms83C55k0CsyvI2QoqD25xNBSlPPhBpcpWGx_f0XYS8-x0HENEQCWj9f6J31B7JYmot7cniyOh2RxEHW3-cH3B3fqxNIGquL24e2PhSYfgvSkakazKAK9b6UuKcFPu24kzN9kaESg9j3R8gM8SsFtZy8uEkVmaMnTPa_ylI5uEiYE34Wv_uPKpBtWpp_f5cL8v1tT660It-W6coVlz0CgAcnYz9Z2wwRppBB8J5_zzstFcOu-xUoWWLVBwJCFoHWPHRQveLnpsFg0UzRB7_yybRLiCENf7T_8Ki9tf9AA1O2YxXf9rjS5A_xNwwYEKCPURiDxrxEPEOcPK6Afl8V2nzzY_C_LuMZlFCw7dwPS59U5gaR9Ul-kjICSLsjVPotNKH48y4KMRaSK2fBBqWb83asHmQ3Dyt0q7WCMbrBoWUb_tX8NOl9DMLE90nkoOdXSf0u15EsBZPcN93YEDHTOMKOGPMrq0ySRxOq7wyHamuJKOEu1hj9GdrueVBj2ykvV9-gmDoU1-BwBIlvXLF2Qoh1BtIbHUagzY8zD_waIbHD1-dklS01Fxc6UtYE-ULK1SGIsYqkSgltttdhSKT0KY_PccEPAnk6nRQMX6
+                  - generic [ref=e787]:
+                    - generic [ref=e788]: 查看全部47张图片
+                    - generic [ref=e789]: 
+              - generic [ref=e791]:
+                - generic [ref=e792]: 百度图片
+                - generic [ref=e796]: 
+          - generic [ref=e802]:
+            - generic [ref=e804]:
+              - heading [level=3] [ref=e805]:
+                - link [ref=e806] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8Y5kWmdyUN46_AJBdYwJCAa
+                  - generic [ref=e808]:
+                    - text: 乘用车
+                    - emphasis [ref=e809]: 汽车
+                    - text: 销量数据统计-三个皮匠
+                    - emphasis [ref=e810]: 报告
+                    - text: "-全行业研究报告分享下载平台"
+              - link [ref=e811] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8Y5kWmdyUN46_AJBdYwJCAa
+            - generic [ref=e816] [cursor=pointer]:
+              - text: 2026年9月3日
+              - generic [ref=e817]:
+                - text: 查看更多报告 汽车市场 报告
+                - emphasis [ref=e818]: 吉图咨询
+                - text: :2026h1内蒙古自治区
+                - emphasis [ref=e819]: 汽车市场分析报告
+                - text: (36页).pdf 2026-08-12 36页 汽车市场 报告 吉图咨询:2026h1新疆自治区汽车市场分析报告(36页).pdf 2026-08-12 36页 汽车市场 报告 吉图咨询:2026h1吉林省汽车市场分析报告(36页).pdf 2026-08-11 36页 汽车市场 报告 吉图咨询:2026...
+            - generic [ref=e820]:
+              - generic [ref=e823]:
+                - link [ref=e825] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8Y5kWmdyUN46_AJBdYwJCAa
+                - link [ref=e830] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8Y5kWmdyUN46_AJBdYwJCAa
+                - link [ref=e835] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8Y5kWmdyUN46_AJBdYwJCAa
+                - link [ref=e840] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8Y5kWmdyUN46_AJBdYwJCAa
+              - generic [ref=e844]:
+                - generic [ref=e845]: 
+                - text: "5"
+            - generic [ref=e847]:
+              - link "三个皮匠报告" [ref=e850] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8Y5kWmdyUN46_AJBdYwJCAa
+                - generic [ref=e852]: 
+              - link "" [ref=e859] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e864]:
+            - generic [ref=e866]:
+              - heading [level=3] [ref=e867]:
+                - link [ref=e868] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8DtcIVfioxxXuMVMFN5oKaa
+                  - generic [ref=e870]:
+                    - emphasis [ref=e871]: 汽车
+                    - text: 制造行业现状和发展前景-三个皮匠
+                    - emphasis [ref=e872]: 报告
+                    - text: "-全行业研究报告分享..."
+              - link [ref=e873] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8DtcIVfioxxXuMVMFN5oKaa
+            - generic [ref=e878] [cursor=pointer]:
+              - text: 5天前
+              - generic [ref=e879]:
+                - text: 报告 联合国工业发展组织&韩国能源署:2026马来西亚汽车产业能效提升政策白皮书(英文版)(71页).pdf 2026-08-13 71页 汽车市场 报告
+                - emphasis [ref=e880]: 吉图咨询
+                - text: :2026h1新疆自治区
+                - emphasis [ref=e881]: 汽车市场分析报告
+                - text: (36页).pdf 2026-08-12 36页 汽车市场 报告 吉图咨询:2026h1内蒙古自治区汽车市场分析报告(36页).pdf 2026-08-12 36页 物流交通 ...
+            - generic [ref=e883]:
+              - link "三个皮匠报告" [ref=e886] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8DtcIVfioxxXuMVMFN5oKaa
+                - generic [ref=e888]: 
+              - link "" [ref=e895] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e900]:
+            - generic [ref=e902]:
+              - heading [level=3] [ref=e903]:
+                - link [ref=e904] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8KUoh2Jm0mcHXMQOq1vTGGa
+                  - generic [ref=e906]:
+                    - emphasis [ref=e907]: 汽车
+                    - text: 行业消息-汽车行业消息
+                    - emphasis [ref=e908]: 报告
+                    - text: "-汽车行业消息下载-三个皮匠报告网"
+              - link [ref=e909] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8KUoh2Jm0mcHXMQOq1vTGGa
+            - generic [ref=e914] [cursor=pointer]:
+              - text: 7天前
+              - generic [ref=e915]:
+                - text: 汽车市场 报告 中汽协:2025-2026中国汽车行业可持续发展报告(42页).pdf 2026-08-17 42页 物流交通 报告 联合国工业发展组织&韩国能源署:2026马来西亚汽车产业能效提升政策白皮书(英文版)(71页).pdf 2026-08-13 71页 汽车市场 报告
+                - emphasis [ref=e916]: 吉图咨询
+                - text: :2026h1内蒙古自治区
+                - emphasis [ref=e917]: 汽车市场分析报告
+                - text: (36页).pdf 2026-08-12 36页 ...
+            - generic [ref=e918]:
+              - generic [ref=e921]:
+                - link [ref=e923] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8KUoh2Jm0mcHXMQOq1vTGGa
+                - link [ref=e928] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8KUoh2Jm0mcHXMQOq1vTGGa
+                - link [ref=e933] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8KUoh2Jm0mcHXMQOq1vTGGa
+                - link [ref=e938] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8KUoh2Jm0mcHXMQOq1vTGGa
+              - generic [ref=e942]:
+                - generic [ref=e943]: 
+                - text: "5"
+            - generic [ref=e945]:
+              - link "三个皮匠报告" [ref=e948] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8KUoh2Jm0mcHXMQOq1vTGGa
+                - generic [ref=e950]: 
+              - link "" [ref=e957] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e962]:
+            - generic [ref=e964]:
+              - heading [level=3] [ref=e965]:
+                - link [ref=e966] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8epkyHfSeXWdt5CmE-epcUa
+                  - generic [ref=e968]:
+                    - text: 丹参
+                    - emphasis [ref=e969]: 市场分析报告
+                    - text: "-三个皮匠报告-全行业研究报告分享下载平台"
+              - link [ref=e970] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8epkyHfSeXWdt5CmE-epcUa
+            - generic [ref=e975] [cursor=pointer]:
+              - text: 7天前
+              - generic [ref=e976]:
+                - text: 查看更多报告 游戏 报告 mcr嘉世
+                - emphasis [ref=e977]: 咨询
+                - text: :2025中国手机游戏市场现状报告(57页).pdf 2025-06-20 57页 app 报告 远瞩咨询:2022年中国手机app行业
+                - emphasis [ref=e978]: 市场分析报告
+                - text: (37页).pdf 2022-09-19 37页 手机 报告 比达咨询:2019年第3季度中国手机地图市场研究报告(26页).pdf 2019-12-01 26页 丹参市场分析报告分析:市场规模,...
+            - generic [ref=e979]:
+              - generic [ref=e982]:
+                - link [ref=e984] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8epkyHfSeXWdt5CmE-epcUa
+                - link [ref=e989] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8epkyHfSeXWdt5CmE-epcUa
+                - link [ref=e994] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8epkyHfSeXWdt5CmE-epcUa
+                - link [ref=e999] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8epkyHfSeXWdt5CmE-epcUa
+              - generic [ref=e1003]:
+                - generic [ref=e1004]: 
+                - text: "5"
+            - generic [ref=e1006]:
+              - link "三个皮匠报告" [ref=e1009] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8epkyHfSeXWdt5CmE-epcUa
+                - generic [ref=e1011]: 
+              - link "" [ref=e1018] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1023]:
+            - generic [ref=e1025]:
+              - heading [level=3] [ref=e1026]:
+                - link [ref=e1027] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8vCXmf9r-PRTDkaH2L52mha
+                  - generic [ref=e1029]:
+                    - text: 2026年
+                    - emphasis [ref=e1030]: 汽车
+                    - text: 整车
+                    - emphasis [ref=e1031]: 市场
+                    - text: 走势-三个皮匠
+                    - emphasis [ref=e1032]: 报告
+                    - text: "-全行业研究报告分享下载平台"
+              - link [ref=e1033] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8vCXmf9r-PRTDkaH2L52mha
+            - generic [ref=e1038] [cursor=pointer]:
+              - text: 3天前
+              - generic [ref=e1039]:
+                - text: 瑞银预测2026年国内汽车批发端销量将出现低个位数下跌;德意志银行与摩根大通分别预测中国汽车总销量将下滑3%至5%。高盛则将2026年中国乘用车行业销量预测下调5%,预计国内零售乘用车销量同比跌9%,出口则同比升30%。车百会理事长张永伟预计2026年国内
+                - emphasis [ref=e1040]: 汽车市场
+                - text: 将实现2%的微增长,销量达2820万辆,远低于2025年1至11月9.7%的...
+            - generic [ref=e1041]:
+              - generic [ref=e1044]:
+                - link [ref=e1046] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8vCXmf9r-PRTDkaH2L52mha
+                - link [ref=e1051] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8vCXmf9r-PRTDkaH2L52mha
+                - link [ref=e1056] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8vCXmf9r-PRTDkaH2L52mha
+                - link [ref=e1061] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8vCXmf9r-PRTDkaH2L52mha
+              - generic [ref=e1065]:
+                - generic [ref=e1066]: 
+                - text: "5"
+            - generic [ref=e1068]:
+              - link "三个皮匠报告" [ref=e1071] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8vCXmf9r-PRTDkaH2L52mha
+                - generic [ref=e1073]: 
+              - link "" [ref=e1080] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1085]:
+            - generic [ref=e1087]:
+              - heading [level=3] [ref=e1088]:
+                - link [ref=e1089] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8SXUaZkGnaGZX34-Jpmircq
+                  - generic [ref=e1091]:
+                    - text: 车载摄像头行业
+                    - emphasis [ref=e1092]: 报告
+                    - text: "-三个皮匠报告-全行业研究报告分享下载平台"
+              - link [ref=e1093] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8SXUaZkGnaGZX34-Jpmircq
+            - generic [ref=e1094]:
+              - link [ref=e1096] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8SXUaZkGnaGZX34-Jpmircq
+              - generic [ref=e1101]:
+                - generic [ref=e1107] [cursor=pointer]:
+                  - text: 2026年9月2日
+                  - generic [ref=e1108]:
+                    - text: 报告 scsp:2026全速前行:东南亚-中国如何驱动全球增长最快的电动汽车市场报告(英文版)(35页).pdf 2026-09-02 35页 物流交通 报告 t&e:2026中国车企在欧盟汽车市场的布局现状报告(英文版)(44页).pdf 2026-08-28 44页 汽车市场 报告
+                    - emphasis [ref=e1109]: 吉图咨询
+                    - text: :2026h1内蒙古自治区
+                    - emphasis [ref=e1110]: 汽车市场分析报告
+                    - text: (36页).pdf 2026-08-12 36...
+                - generic [ref=e1112]:
+                  - link "三个皮匠报告" [ref=e1115] [cursor=pointer]:
+                    - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8SXUaZkGnaGZX34-Jpmircq
+                    - generic [ref=e1117]: 
+                  - link "" [ref=e1124] [cursor=pointer]:
+                    - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1129]:
+            - generic [ref=e1131]:
+              - heading [level=3] [ref=e1132]:
+                - link [ref=e1133] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8gqLRcWi_IDLmi-LFb5SXNq
+                  - generic [ref=e1135]:
+                    - text: 2026年燃油
+                    - emphasis [ref=e1136]: 车市场
+                    - text: 将有新动向-2026年燃油车市场将有新动向
+                    - emphasis [ref=e1137]: 报告
+                    - text: ...
+              - link [ref=e1138] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8gqLRcWi_IDLmi-LFb5SXNq
+            - generic [ref=e1143] [cursor=pointer]:
+              - text: 2026年9月4日
+              - generic [ref=e1144]:
+                - text: 本文全部销量数据、份额数据、政策文件、技术参数等均引自中国
+                - emphasis [ref=e1145]: 汽车
+                - text: 工业协会(中汽协)发布数据、乘联会(乘用车
+                - emphasis [ref=e1146]: 市场
+                - text: 信息联席分会)零售数据、工信部公开政策文件、商务部等8部门《2026年汽车以旧换新补贴实施细则》、各车企(吉利、奇瑞、一汽-大众等)官方发布信息及各研究机构(懂车帝、盖世汽车、经济观察报等)公开报道。
+            - generic [ref=e1148]:
+              - link "三个皮匠报告" [ref=e1151] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8gqLRcWi_IDLmi-LFb5SXNq
+                - generic [ref=e1153]: 
+              - link "" [ref=e1160] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1165]:
+            - generic [ref=e1167]:
+              - heading [level=3] [ref=e1168]:
+                - link [ref=e1169] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu892IkN3RsVORlk6lxYmEYDa
+                  - generic [ref=e1171]:
+                    - text: 2025年
+                    - emphasis [ref=e1172]: 汽车
+                    - text: 保有量最新数据-三个皮匠
+                    - emphasis [ref=e1173]: 报告
+                    - text: "-全行业研究报告分享下载..."
+              - link [ref=e1174] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu892IkN3RsVORlk6lxYmEYDa
+            - generic [ref=e1179] [cursor=pointer]:
+              - text: 2026年9月4日
+              - generic [ref=e1180]:
+                - text: 2025年,中国机动车保有量继续保持全球第一。据公安部统计,全国机动车保有量达4.69亿辆,其中
+                - emphasis [ref=e1181]: 汽车
+                - text: 3.66亿辆。
+                - emphasis [ref=e1182]: 汽车
+                - text: 占机动车总量的78%。 2025年全国新注册登记机动车3535万辆,其中新注册登记汽车2619万辆。机动车新注册登记量已连续11年超过3000万辆。这一数据表明,尽管中国
+                - emphasis [ref=e1183]: 汽车市场
+                - text: 已从高速增长转入存量
+            - generic [ref=e1185]:
+              - link "三个皮匠报告" [ref=e1188] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu892IkN3RsVORlk6lxYmEYDa
+                - generic [ref=e1190]: 
+              - link "" [ref=e1197] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1202]:
+            - generic [ref=e1204]:
+              - heading [level=3] [ref=e1205]:
+                - link [ref=e1206] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=19FoklSiecT7JbAFglJ57wp23LQKPkx1A_E4Ekj3E2zC2d0eNtFkRmtTBw0SUGDSeUMWBGSIbnL7QNpYJsqYk_
+                  - generic [ref=e1208]:
+                    - text: 摩托
+                    - emphasis [ref=e1209]: 车市场
+                    - text: ",和摩托车市场的更多相关内容-三个皮匠"
+                    - emphasis [ref=e1210]: 报告
+              - link [ref=e1211] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=19FoklSiecT7JbAFglJ57wp23LQKPkx1A_E4Ekj3E2zC2d0eNtFkRmtTBw0SUGDSeUMWBGSIbnL7QNpYJsqYk_
+            - generic [ref=e1217] [cursor=pointer]:
+              - text: "摩托车市场Tag内容描述: 1、证券研究"
+              - emphasis [ref=e1218]: 报告
+              - text: 1报告摘要报告摘要,
+              - emphasis [ref=e1219]: 汽车市场
+              - text: 进入全新时代,行业洗牌下龙头效应凸显,看好新能源车和智能网联汽车,机电,电子,通讯等板块有望受益,汽车销量短期看政策,中期看收入,长期看人口汽车销量短期看政策,中期看收入,长期看人口汽车销量和人口结构。
+            - generic [ref=e1221]:
+              - link "三个皮匠报告" [ref=e1224] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=19FoklSiecT7JbAFglJ57wp23LQKPkx1A_E4Ekj3E2zC2d0eNtFkRmtTBw0SUGDSeUMWBGSIbnL7QNpYJsqYk_
+                - generic [ref=e1226]: 
+              - link "" [ref=e1233] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1238]:
+            - generic [ref=e1240]:
+              - heading [level=3] [ref=e1241]:
+                - link [ref=e1242] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=-swXplVi041RZEnOAbEJW_teJqKKUXZwXk46vIdAyoSfS9PAef88H-DSBdLVJdRx13pEANFdszkuCvFU88LK5dPdBJm8ZobwP4bnQhvy6CG
+                  - generic [ref=e1244]:
+                    - text: 无人驾驶
+                    - emphasis [ref=e1245]: 汽车市场
+                    - text: 研究,和无人驾驶汽车市场研究的更多相关内容-三...
+              - link [ref=e1246] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=-swXplVi041RZEnOAbEJW_teJqKKUXZwXk46vIdAyoSfS9PAef88H-DSBdLVJdRx13pEANFdszkuCvFU88LK5dPdBJm8ZobwP4bnQhvy6CG
+            - generic [ref=e1247]:
+              - link [ref=e1249] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=-swXplVi041RZEnOAbEJW_teJqKKUXZwXk46vIdAyoSfS9PAef88H-DSBdLVJdRx13pEANFdszkuCvFU88LK5dPdBJm8ZobwP4bnQhvy6CG
+              - generic [ref=e1254]:
+                - generic [ref=e1261] [cursor=pointer]:
+                  - text: 三个皮匠
+                  - emphasis [ref=e1262]: 报告
+                  - text: 为您整理了关于无人驾驶
+                  - emphasis [ref=e1263]: 汽车市场
+                  - text: 研究的更多内容分享,帮助您更详细的了解无人驾...
+                - generic [ref=e1265]:
+                  - link "三个皮匠报告" [ref=e1268] [cursor=pointer]:
+                    - /url: http://www.baidu.com/link?url=-swXplVi041RZEnOAbEJW_teJqKKUXZwXk46vIdAyoSfS9PAef88H-DSBdLVJdRx13pEANFdszkuCvFU88LK5dPdBJm8ZobwP4bnQhvy6CG
+                    - generic [ref=e1270]: 
+                  - link "" [ref=e1277] [cursor=pointer]:
+                    - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1282]:
+            - generic [ref=e1284]:
+              - heading [level=3] [ref=e1285]:
+                - link [ref=e1286] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3TbGAVWlg1DU844bozoHoMa
+                  - generic [ref=e1288]:
+                    - emphasis [ref=e1289]: 吉图咨询
+                    - text: :2026一季度湖南省
+                    - emphasis [ref=e1290]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠..."
+              - link [ref=e1291] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3TbGAVWlg1DU844bozoHoMa
+            - generic [ref=e1297] [cursor=pointer]:
+              - text: 1、对标研究 求信咨询
+              - emphasis [ref=e1298]: 吉图咨询
+              - text: 361ci010203汽车市场整体概况国产乘用车市场分析进口乘用车市场分析目录CONTENT04商用
+              - emphasis [ref=e1299]: 车市场分析
+              - text: 01汽车市场概况求信咨询 吉图咨询P42026 年 1-3 月湖南省汽车市场整体处于调整期,同比下滑明显,但 3 月环比大幅回暖,市场结构保持稳定。一季度国产乘用车占比 86.95%,为市场绝对主力;商用...
+            - generic [ref=e1301]:
+              - link "三个皮匠报告" [ref=e1304] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3TbGAVWlg1DU844bozoHoMa
+                - generic [ref=e1306]: 
+              - link "" [ref=e1313] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1318]:
+            - generic [ref=e1320]:
+              - heading [level=3] [ref=e1321]:
+                - link [ref=e1322] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUlzQqT8vGO2nw-A1Zs6vAJq
+                  - generic [ref=e1324]:
+                    - emphasis [ref=e1325]: 吉图咨询
+                    - text: :2025贵阳市一季度
+                    - emphasis [ref=e1326]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠..."
+              - link [ref=e1327] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUlzQqT8vGO2nw-A1Zs6vAJq
+            - generic [ref=e1333] [cursor=pointer]:
+              - emphasis [ref=e1334]: 吉图咨询
+              - text: :2025贵阳市一季度
+              - emphasis [ref=e1335]: 汽车市场分析报告
+              - text: (38页).pdf 友情提示 1、下载报告失败解决办法 2、PDF文件下载后,可能会被浏览器默认打开,此种情况可以点击浏览器菜单,保存网页到桌面,就可以正常下载了。 3、本站不支持迅雷下载,请使用电脑自带的IE浏览器,或者360浏览器、谷歌浏览器下载即可。
+            - generic [ref=e1337]:
+              - link "三个皮匠报告" [ref=e1340] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=k-EJ07n2FnVrfLSSMtSYtJq6YY0a4OV-4gffbM9WzUnhbW1Vk9_qp58pFrbXZuwUlzQqT8vGO2nw-A1Zs6vAJq
+                - generic [ref=e1342]: 
+              - link "" [ref=e1349] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1354]:
+            - generic [ref=e1356]:
+              - heading [level=3] [ref=e1357]:
+                - link [ref=e1358] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3IrHK_aEV-CYZKAr3uT6gKa
+                  - generic [ref=e1360]:
+                    - emphasis [ref=e1361]: 吉图咨询
+                    - text: :2026一季度北京市
+                    - emphasis [ref=e1362]: 汽车市场分析报告
+                    - text: "-在线下载-三个皮匠..."
+              - link [ref=e1363] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3IrHK_aEV-CYZKAr3uT6gKa
+            - generic [ref=e1369] [cursor=pointer]:
+              - emphasis [ref=e1370]: 吉图咨询
+              - text: :2026一季度北京市
+              - emphasis [ref=e1371]: 汽车市场分析报告
+              - text: (37页).pdf 友情提示 1、下载报告失败解决办法 2、PDF文件下载后,可能会被浏览器默认打开,此种情况可以点击浏览器菜单,保存网页到桌面,就可以正常下载了。 3、本站不支持迅雷下载,请使用电脑自带的IE浏览器,或者360浏览器、谷歌浏览器下载即可。
+            - generic [ref=e1373]:
+              - link "三个皮匠报告" [ref=e1376] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=hWG1qw_gVo-3mz1QalC0-aYc0ylEsxARQvA-VD3OiGVU6Xi3HcVkigEHr_0Gs6A3IrHK_aEV-CYZKAr3uT6gKa
+                - generic [ref=e1378]: 
+              - link "" [ref=e1385] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1390]:
+            - generic [ref=e1392]:
+              - heading [level=3] [ref=e1393]:
+                - link [ref=e1394] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8myN-6YosAEET1WGvTl_SBa
+                  - generic [ref=e1396]:
+                    - text: 中汽协预测2026年我国
+                    - emphasis [ref=e1397]: 汽车
+                    - text: 总销量-三个皮匠
+                    - emphasis [ref=e1398]: 报告
+                    - text: "-全行业研究报告..."
+              - link [ref=e1399] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8myN-6YosAEET1WGvTl_SBa
+            - generic [ref=e1404] [cursor=pointer]:
+              - text: 2026年9月4日
+              - generic [ref=e1405]:
+                - text: 查看更多报告 汽车市场 报告
+                - emphasis [ref=e1406]: 吉图咨询
+                - text: :2026h1新疆自治区
+                - emphasis [ref=e1407]: 汽车市场分析报告
+                - text: (36页).pdf 2026-08-12 36页 汽车市场 报告 吉图咨询:2026h1内蒙古自治区汽车市场分析报告(36页).pdf 2026-08-12 36页 汽车市场 报告 吉图咨询:2026h1黑龙江省汽车市场分析报告(36页).pdf 2026-08-11 36页 汽车市场 报告 吉图咨询:...
+            - generic [ref=e1408]:
+              - generic [ref=e1411]:
+                - link [ref=e1413] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8myN-6YosAEET1WGvTl_SBa
+                - link [ref=e1418] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8myN-6YosAEET1WGvTl_SBa
+                - link [ref=e1423] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8myN-6YosAEET1WGvTl_SBa
+                - link [ref=e1428] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8myN-6YosAEET1WGvTl_SBa
+              - generic [ref=e1432]:
+                - generic [ref=e1433]: 
+                - text: "5"
+            - generic [ref=e1435]:
+              - link "三个皮匠报告" [ref=e1438] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8myN-6YosAEET1WGvTl_SBa
+                - generic [ref=e1440]: 
+              - link "" [ref=e1447] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+          - generic [ref=e1452]:
+            - generic [ref=e1454]:
+              - heading [level=3] [ref=e1455]:
+                - link [ref=e1456] [cursor=pointer]:
+                  - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8DH3RMHhCZrprIMo4Lc6-6_
+                  - generic [ref=e1458]:
+                    - emphasis [ref=e1459]: 汽车
+                    - text: 行业动态政策发展趋势-三个皮匠
+                    - emphasis [ref=e1460]: 报告
+                    - text: "-全行业研究报告分享下载..."
+              - link [ref=e1461] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8DH3RMHhCZrprIMo4Lc6-6_
+            - generic [ref=e1466] [cursor=pointer]:
+              - text: 5天前
+              - generic [ref=e1467]:
+                - text: 汽车市场 报告 中汽协:2025-2026中国汽车行业可持续发展报告(42页).pdf 2026-08-17 42页 物流交通 报告 联合国工业发展组织&韩国能源署:2026马来西亚汽车产业能效提升政策白皮书(英文版)(71页).pdf 2026-08-13 71页 汽车市场 报告
+                - emphasis [ref=e1468]: 吉图咨询
+                - text: :2026h1内蒙古自治区
+                - emphasis [ref=e1469]: 汽车市场分析报告
+                - text: (36页).pdf 2026-08-12 36页 ...
+            - generic [ref=e1471]:
+              - link "三个皮匠报告" [ref=e1474] [cursor=pointer]:
+                - /url: http://www.baidu.com/link?url=oPvecef_FPyFCRUJSUOeGtpKzUH53YW3G7qKlRW-DHdK1ef54-vBsEIJ-GwKYLu8DH3RMHhCZrprIMo4Lc6-6_
+                - generic [ref=e1476]: 
+              - link "" [ref=e1483] [cursor=pointer]:
+                - /url: https://www.baidu.com/s?wd=%E9%95%BF%E6%B2%99%E6%99%AF%E7%95%A5%E6%99%BA%E5%88%9B%E4%BF%A1%E6%81%AF%E6%8A%80%E6%9C%AF%E6%9C%89%E9%99%90%E5%85%AC%E5%8F%B8@v&product=brand&rsv_dl=0_left_v_#vmp-tm-brand
+        - generic [ref=e1487]:
+          - generic [ref=e1488]: 相关搜索
+          - table [ref=e1489]:
+            - rowgroup [ref=e1490]:
+              - row [ref=e1491]:
+                - cell [ref=e1492]:
+                  - link "市场分析报告" [ref=e1493] [cursor=pointer]:
+                    - /url: /s?wd=%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&tn=baidu&rsf=101631202&rsp=0&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_1
+                - cell [ref=e1496]:
+                  - link "大众汽车市场调查分析" [ref=e1497] [cursor=pointer]:
+                    - /url: /s?wd=%E5%A4%A7%E4%BC%97%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E8%B0%83%E6%9F%A5%E5%88%86%E6%9E%90&tn=baidu&rsf=101631202&rsp=1&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_2
+              - row [ref=e1500]:
+                - cell [ref=e1501]:
+                  - link "汽车电动助力行业市场分析报告" [ref=e1502] [cursor=pointer]:
+                    - /url: /s?wd=%E6%B1%BD%E8%BD%A6%E7%94%B5%E5%8A%A8%E5%8A%A9%E5%8A%9B%E8%A1%8C%E4%B8%9A%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&tn=baidu&rsf=101631202&rsp=2&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_3
+                - cell [ref=e1505]:
+                  - link "新能源汽车市场分析报告论文" [ref=e1506] [cursor=pointer]:
+                    - /url: /s?wd=%E6%96%B0%E8%83%BD%E6%BA%90%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A%E8%AE%BA%E6%96%87&tn=baidu&rsf=101631202&rsp=3&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_4
+              - row [ref=e1509]:
+                - cell [ref=e1510]:
+                  - link "吉利汽车市场分析报告" [ref=e1511] [cursor=pointer]:
+                    - /url: /s?wd=%E5%90%89%E5%88%A9%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&tn=baidu&rsf=101631202&rsp=4&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_5
+                - cell [ref=e1514]:
+                  - link "汽车检测市场分析报告" [ref=e1515] [cursor=pointer]:
+                    - /url: /s?wd=%E6%B1%BD%E8%BD%A6%E6%A3%80%E6%B5%8B%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&tn=baidu&rsf=101631202&rsp=5&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_6
+              - row [ref=e1518]:
+                - cell [ref=e1519]:
+                  - link "大众汽车市场调查报告" [ref=e1520] [cursor=pointer]:
+                    - /url: /s?wd=%E5%A4%A7%E4%BC%97%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E8%B0%83%E6%9F%A5%E6%8A%A5%E5%91%8A&tn=baidu&rsf=101631202&rsp=6&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_7
+                - cell [ref=e1523]:
+                  - link "新能源汽车市场调查报告" [ref=e1524] [cursor=pointer]:
+                    - /url: /s?wd=%E6%96%B0%E8%83%BD%E6%BA%90%E6%B1%BD%E8%BD%A6%E5%B8%82%E5%9C%BA%E8%B0%83%E6%9F%A5%E6%8A%A5%E5%91%8A&tn=baidu&rsf=101631202&rsp=7&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_8
+              - row [ref=e1527]:
+                - cell [ref=e1528]:
+                  - link "汽车零部件市场分析报告" [ref=e1529] [cursor=pointer]:
+                    - /url: /s?wd=%E6%B1%BD%E8%BD%A6%E9%9B%B6%E9%83%A8%E4%BB%B6%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&tn=baidu&rsf=101631202&rsp=8&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_9
+                - cell [ref=e1532]:
+                  - link "汽车行业市场分析报告" [ref=e1533] [cursor=pointer]:
+                    - /url: /s?wd=%E6%B1%BD%E8%BD%A6%E8%A1%8C%E4%B8%9A%E5%B8%82%E5%9C%BA%E5%88%86%E6%9E%90%E6%8A%A5%E5%91%8A&tn=baidu&rsf=101631202&rsp=9&f=1&rs_src=0&rsv_pq=87a2c16c00111be0&rsv_t=28dchOoqIn4GWLFJORoRp5Vl3NiI%2FCczVQvoliSiVbchjylfxoDB1BjmiUI&rsv_dl=brs_28338_10
+      - generic [ref=e1541]:
+        - link "帮助" [ref=e1542] [cursor=pointer]:
+          - /url: https://help.baidu.com/question?prod_id=1
+        - link "举报" [ref=e1543] [cursor=pointer]:
+          - /url: https://help.baidu.com/jubao?source=search
+        - link "用户反馈" [ref=e1544] [cursor=pointer]:
+          - /url: javascript:;
+        - link "企业推广" [ref=e1545] [cursor=pointer]:
+          - /url: https://e.baidu.com/lp/search/?refer=1298

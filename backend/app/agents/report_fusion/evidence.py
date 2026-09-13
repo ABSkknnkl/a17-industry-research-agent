@@ -103,10 +103,24 @@ def build_evidence_catalog(
         first = items[0]
         number = len(entries) + 1
         source_name = _truncate(first.source_name, 30)
+        # P0-6（2026-09-13 方案）：资料来源具名——优先拼发布主体
+        # （如「Wind，国信证券经济研究所整理」），无发布主体时退化为
+        # 数据源名，两者皆缺标 [需核实:数据来源]。
+        named_publishers = "，".join(
+            publisher
+            for publisher in _unique(item.publisher or "" for item in items)
+            if publisher and publisher != "未提供"
+        )
+        if named_publishers and source_name:
+            display_label = f"来源{number}：{source_name}，{named_publishers}整理"
+        elif source_name:
+            display_label = f"来源{number}：{source_name}"
+        else:
+            display_label = f"来源{number}：[需核实:数据来源]"
         entries.append(
             EvidenceSourceEntry(
                 citation_number=number,
-                display_label=f"来源{number}：{source_name}",
+                display_label=display_label,
                 material_title=source_name,
                 publishers=_unique(item.publisher or "未提供" for item in items),
                 retrieval_methods=_unique(

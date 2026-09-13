@@ -1,0 +1,965 @@
+- generic [active]:
+  - banner [ref=f32e3]:
+    - generic [ref=f32e5]:
+      - link [ref=f32e7] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/
+        - img "三个皮匠报告" [ref=f32e8]
+      - generic [ref=f32e9]:
+        - link "首页" [ref=f32e11] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/
+        - link "最新" [ref=f32e14] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?cd=1
+        - generic [ref=f32e16] [cursor=pointer]:
+          - generic [ref=f32e17]:
+            - img "报告分类" [ref=f32e18]
+            - text: 研搜
+          - generic [ref=f32e19]: BETA
+        - link "合集" [ref=f32e21] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/bggroup.html
+        - link "英文" [ref=f32e24] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/yingwenbaogao.html
+        - link "会议" [ref=f32e27] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/huiyibaogao.html
+        - link "数据" [ref=f32e30] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/hyshuju.html
+        - link "财报库" [ref=f32e33] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/caibaoku.html
+        - link "政策库" [ref=f32e36] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/zc.html
+        - link "自研报告 new" [ref=f32e39] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/selfdeveloped.html
+          - generic [ref=f32e40]: 自研报告
+          - img "new" [ref=f32e41]
+        - link "入驻" [ref=f32e43] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/smlist.html
+      - generic [ref=f32e48]:
+        - link [ref=f32e49] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/search.html
+          - img "搜索" [ref=f32e50]
+        - generic [ref=f32e51]:
+          - link [ref=f32e52] [cursor=pointer]:
+            - /url: https://www.sgpjbg.com/sgpjbg/UserManage/Recharge.aspx?f=0
+          - generic [ref=f32e55]:
+            - link "登录" [ref=f32e56] [cursor=pointer]:
+              - /url: javascript:void(0);
+            - text: "|"
+            - link "注册" [ref=f32e57] [cursor=pointer]:
+              - /url: javascript:void(0);
+  - generic [ref=f32e58]:
+    - generic [ref=f32e60]:
+      - generic [ref=f32e61]:
+        - generic [ref=f32e62] [cursor=pointer]: 报告搜索
+        - link "数据搜索" [ref=f32e63] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/hyshuju-0-1-1-.html?qws=0&jingpin=0
+        - link "政策搜索" [ref=f32e64] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/zc.html?q=
+      - link [ref=f32e65] [cursor=pointer]:
+        - /url: https://www.sgpjbg.com/searchai.html
+    - generic [ref=f32e68]:
+      - generic [ref=f32e69]:
+        - generic [ref=f32e70] [cursor=pointer]: 全部
+        - textbox "关键词尽量简短，多个关键词可用空格隔开" [ref=f32e74]
+        - link [ref=f32e75] [cursor=pointer]:
+          - /url: javascript:SearchWord1($('#keyword1').val());
+      - generic [ref=f32e77]:
+        - generic [ref=f32e78]: 标题
+        - generic [ref=f32e81]: 全文
+  - generic [ref=f32e85]:
+    - generic [ref=f32e86]:
+      - generic [ref=f32e87]:
+        - link "全部" [ref=f32e88] [cursor=pointer]:
+          - /url: javascript:guolv1(0);
+        - link "机构报告" [ref=f32e89] [cursor=pointer]:
+          - /url: javascript:guolv1('1_1');
+        - link "英文报告" [ref=f32e91] [cursor=pointer]:
+          - /url: javascript:guolv1(2);
+        - link "券商报告" [ref=f32e94] [cursor=pointer]:
+          - /url: javascript:guolv1(3);
+        - link "自研报告" [ref=f32e95] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/selfdevelopedlist.html?q=
+        - link "会议PPT" [ref=f32e97] [cursor=pointer]:
+          - /url: javascript:guolv1(4);
+        - link "财报" [ref=f32e98] [cursor=pointer]:
+          - /url: javascript:guolv1(1006);
+        - link "政策文件" [ref=f32e99] [cursor=pointer]:
+          - /url: javascript:guolv1(6);
+        - link "合集" [ref=f32e100] [cursor=pointer]:
+          - /url: javascript:guolv1(1001);
+      - generic [ref=f32e102]:
+        - checkbox [ref=f32e103]
+        - text: 搜目录
+    - generic [ref=f32e104]:
+      - generic [ref=f32e105]:
+        - generic [ref=f32e108] [cursor=pointer]: 综合
+        - generic [ref=f32e109]: "|"
+        - generic [ref=f32e110] [cursor=pointer]: 最新
+        - generic [ref=f32e111]: "|"
+        - generic [ref=f32e112] [cursor=pointer]: 热门
+        - generic [ref=f32e113]: 10000条结果
+        - generic [ref=f32e114]: 时间
+        - generic [ref=f32e118]:
+          - generic [ref=f32e119]: 精度
+          - generic [ref=f32e120] [cursor=pointer]: 100%
+        - generic [ref=f32e123] [cursor=pointer]: AI摘要
+        - generic [ref=f32e126]:
+          - checkbox [ref=f32e127]
+          - text: 关键词不分割
+        - generic [ref=f32e128]:
+          - checkbox [ref=f32e129]
+          - text: 分词
+        - generic [ref=f32e130]:
+          - generic [ref=f32e131]: 不看
+          - generic [ref=f32e132]:
+            - generic [ref=f32e133]:
+              - checkbox [ref=f32e134]
+              - text: 研报
+            - generic [ref=f32e135]:
+              - checkbox [ref=f32e136]
+              - text: 英文
+            - generic [ref=f32e137]:
+              - checkbox [checked] [ref=f32e138]
+              - text: 政策
+            - generic [ref=f32e139]:
+              - checkbox [checked] [ref=f32e140]
+              - text: 会议、及其他
+      - table [ref=f32e141]:
+        - rowgroup [ref=f32e142]:
+          - row [ref=f32e143]:
+            - columnheader "格式" [ref=f32e144]
+            - columnheader "资源名称" [ref=f32e145]
+            - columnheader "页数/份数" [ref=f32e146]
+            - columnheader "更新时间" [ref=f32e147]
+            - columnheader "资料分类" [ref=f32e148]
+            - columnheader "推荐指数" [ref=f32e149]
+            - columnheader "下载" [ref=f32e150]
+          - row [ref=f32e151]:
+            - cell [ref=f32e152]
+            - cell [ref=f32e154]:
+              - link "2026年超节点报告合集（共17套打包） 合集" [ref=f32e155] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroup/21551.html
+                - text: 2026年超节点报告合集（共17套打包）
+                - generic [ref=f32e156]: 合集
+            - cell "17份" [ref=f32e157]
+            - cell "2026-09-11" [ref=f32e158]
+            - cell [ref=f32e159]:
+              - link "人工智能+" [ref=f32e160] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggrouplist-00025.html
+            - cell "23" [ref=f32e161]
+            - cell [ref=f32e163]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e166]:
+            - cell [ref=f32e167]
+            - cell [ref=f32e169]:
+              - link "2026前沿部署工程师（FDE）报告合集（共11套打包） 合集" [ref=f32e170] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggroup/21550.html
+                - text: 2026前沿部署工程师（FDE）报告合集（共11套打包）
+                - generic [ref=f32e171]: 合集
+            - cell "11份" [ref=f32e172]
+            - cell "2026-09-11" [ref=f32e173]
+            - cell [ref=f32e174]:
+              - link "人力资源" [ref=f32e175] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/bggrouplist-00027.html
+            - cell "26" [ref=f32e176]
+            - cell [ref=f32e178]:
+              - link:
+                - /url: javascript:void(0);
+      - table [ref=f32e181]:
+        - rowgroup [ref=f32e182]:
+          - row [ref=f32e183]:
+            - cell [ref=f32e184]
+            - cell [ref=f32e186]:
+              - link "CoinGecko：2026年第一季度加密货币行业报告（55页）.pdf" [ref=f32e187] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332714.html
+            - cell "55页" [ref=f32e189]
+            - cell "2026-09-12" [ref=f32e190]
+            - cell [ref=f32e191]:
+              - link "货币基金" [ref=f32e192] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001100027.html
+            - cell "13" [ref=f32e193]
+            - cell [ref=f32e195]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e198]:
+            - cell [ref=f32e199]
+            - cell [ref=f32e201]:
+              - link "远翔神思咨询：2026年中国海洋牧场专题报告（38页）.pdf" [ref=f32e202] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332715.html
+            - cell "38页" [ref=f32e204]
+            - cell "2026-09-12" [ref=f32e205]
+            - cell [ref=f32e206]:
+              - link "农林牧渔" [ref=f32e207] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001700021.html
+            - cell "15" [ref=f32e208]
+            - cell [ref=f32e210]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e213]:
+            - cell [ref=f32e214]
+            - cell [ref=f32e216]:
+              - link "药融圈：2026年中国宠物药行业发展白皮书（73页）.pdf" [ref=f32e217] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332718.html
+            - cell "73页" [ref=f32e219]
+            - cell "2026-09-12" [ref=f32e220]
+            - cell [ref=f32e221]:
+              - link "医药行业" [ref=f32e222] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001000029.html
+            - cell "30" [ref=f32e223]
+            - cell [ref=f32e225]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e228]:
+            - cell [ref=f32e229]
+            - cell [ref=f32e231]:
+              - link "小红书：2026小红书小语种赛道营销通案（98页）.pdf" [ref=f32e232] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332713.html
+            - cell "98页" [ref=f32e234]
+            - cell "2026-09-12" [ref=f32e235]
+            - cell [ref=f32e236]:
+              - link "广告营销" [ref=f32e237] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002700002.html
+            - cell "25" [ref=f32e238]
+            - cell [ref=f32e240]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e243]:
+            - cell [ref=f32e244]
+            - cell [ref=f32e246]:
+              - link "工银亚洲研究：2026怎么看美国消费？四重扰动因素分析报告（14页）.pdf" [ref=f32e247] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332717.html
+            - cell "14页" [ref=f32e249]
+            - cell "2026-09-12" [ref=f32e250]
+            - cell [ref=f32e251]:
+              - link "宏观经济" [ref=f32e252] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002200001.html
+            - cell "13" [ref=f32e253]
+            - cell [ref=f32e255]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e258]:
+            - cell [ref=f32e259]
+            - cell [ref=f32e261]:
+              - link "CIC灼识：2026具身智能大脑行业白皮书（31页）.pdf" [ref=f32e262] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332712.html
+            - cell "31页" [ref=f32e264]
+            - cell "2026-09-12" [ref=f32e265]
+            - cell [ref=f32e266]:
+              - link "AI产业" [ref=f32e267] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0000600022.html
+            - cell "32" [ref=f32e268]
+            - cell [ref=f32e270]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e273]:
+            - cell [ref=f32e274]
+            - cell [ref=f32e276]:
+              - link "未来轻食产业研究院：2026年7月轻食产业月度数据洞察报告-功能性酸奶（34页）.pdf" [ref=f32e277] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332716.html
+            - cell "34页" [ref=f32e279]
+            - cell "2026-09-12" [ref=f32e280]
+            - cell [ref=f32e281]:
+              - link "餐饮" [ref=f32e282] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001800007.html
+            - cell "19" [ref=f32e283]
+            - cell [ref=f32e285]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e288]:
+            - cell [ref=f32e289]
+            - cell [ref=f32e291]:
+              - link "药融圈：2026年中国原料药行业发展白皮书（134页）.pdf" [ref=f32e292] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332711.html
+            - cell "134页" [ref=f32e294]
+            - cell "2026-09-12" [ref=f32e295]
+            - cell [ref=f32e296]:
+              - link "医药行业" [ref=f32e297] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001000029.html
+            - cell "18" [ref=f32e298]
+            - cell [ref=f32e300]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e303]:
+            - cell [ref=f32e304]
+            - cell [ref=f32e306]:
+              - link "Sensor Tower：2026年全球汽车行业趋势洞察报告（42页）.pdf" [ref=f32e307] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332709.html
+            - cell "42页" [ref=f32e309]
+            - cell "2026-09-12" [ref=f32e310]
+            - cell [ref=f32e311]:
+              - link "汽车市场" [ref=f32e312] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200019.html
+            - cell "22" [ref=f32e313]
+            - cell [ref=f32e315]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e318]:
+            - cell [ref=f32e319]
+            - cell [ref=f32e321]:
+              - link "22枢纽云：2026 AI友好型网站建设与GEO优化落地指南白皮书（36页）.pdf" [ref=f32e322] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332710.html
+            - cell "36页" [ref=f32e324]
+            - cell "2026-09-12" [ref=f32e325]
+            - cell [ref=f32e326]:
+              - link "AI产业" [ref=f32e327] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0000600022.html
+            - cell "19" [ref=f32e328]
+            - cell [ref=f32e330]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e333]:
+            - cell [ref=f32e334]
+            - cell [ref=f32e336]:
+              - link "上海政法学院：2026阿塞拜疆绿色能源行业发展报告（17页）.pdf" [ref=f32e337] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332292.html
+            - cell "17页" [ref=f32e339]
+            - cell "2026-09-11" [ref=f32e340]
+            - cell [ref=f32e341]:
+              - link "能源报告" [ref=f32e342] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002600001.html
+            - cell "33" [ref=f32e343]
+            - cell [ref=f32e345]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e348]:
+            - cell [ref=f32e349]
+            - cell [ref=f32e351]:
+              - link "仲望咨询：2026基于国际局势的潮玩外贸行业人才趋势分析报告（17页）.pdf" [ref=f32e352] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332294.html
+            - cell "17页" [ref=f32e354]
+            - cell "2026-09-11" [ref=f32e355]
+            - cell [ref=f32e356]:
+              - link "人力资源" [ref=f32e357] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002200004.html
+            - cell "35" [ref=f32e358]
+            - cell [ref=f32e360]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e363]:
+            - cell [ref=f32e364]
+            - cell [ref=f32e366]:
+              - link "维普智图：2026智慧图书馆数据治理白皮书4.0（18页）.pdf" [ref=f32e367] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332293.html
+            - cell "18页" [ref=f32e369]
+            - cell "2026-09-11" [ref=f32e370]
+            - cell [ref=f32e371]:
+              - link "大数据" [ref=f32e372] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001900013.html
+            - cell "39" [ref=f32e373]
+            - cell [ref=f32e375]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e378]:
+            - cell [ref=f32e379]
+            - cell [ref=f32e381]:
+              - link "腾讯研究院：2026迈向自适应制造：制造业智能体实践白皮书（69页）.pdf" [ref=f32e382] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332290.html
+            - cell "69页" [ref=f32e384]
+            - cell "2026-09-11" [ref=f32e385]
+            - cell [ref=f32e386]:
+              - link "制造业" [ref=f32e387] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001700028.html
+            - cell "71" [ref=f32e388]
+            - cell [ref=f32e390]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e393]:
+            - cell [ref=f32e394]
+            - cell [ref=f32e396]:
+              - link "炼丹炉全域洞察：2026饮料行业场景化趋势洞察报告（37页）.pdf" [ref=f32e397] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332291.html
+            - cell "37页" [ref=f32e399]
+            - cell "2026-09-11" [ref=f32e400]
+            - cell [ref=f32e401]:
+              - link "食品饮料" [ref=f32e402] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001700027.html
+            - cell "76" [ref=f32e403]
+            - cell [ref=f32e405]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e408]:
+            - cell [ref=f32e409]
+            - cell [ref=f32e411]:
+              - link "一财商学院&天猫：2026天猫大快消增长白皮书（31页）.pdf" [ref=f32e412] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332289.html
+            - cell "31页" [ref=f32e414]
+            - cell "2026-09-11" [ref=f32e415]
+            - cell [ref=f32e416]:
+              - link "电子商务" [ref=f32e417] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0000400016.html
+            - cell "29" [ref=f32e418]
+            - cell [ref=f32e420]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e423]:
+            - cell [ref=f32e424]
+            - cell [ref=f32e426]:
+              - link "魔镜洞察：2026年半年度消费新潜力白皮书（82页）.pdf" [ref=f32e427] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332286.html
+            - cell "82页" [ref=f32e429]
+            - cell "2026-09-11" [ref=f32e430]
+            - cell [ref=f32e431]:
+              - link "消费市场" [ref=f32e432] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001800013.html
+            - cell "71" [ref=f32e433]
+            - cell [ref=f32e435]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e438]:
+            - cell [ref=f32e439]
+            - cell [ref=f32e441]:
+              - link "南粤评估：2026年第二季度广州房地产市场分析报告（45页）.pdf" [ref=f32e442] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332287.html
+            - cell "45页" [ref=f32e444]
+            - cell "2026-09-11" [ref=f32e445]
+            - cell [ref=f32e446]:
+              - link "房地产" [ref=f32e447] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001500001.html
+            - cell "25" [ref=f32e448]
+            - cell [ref=f32e450]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e453]:
+            - cell [ref=f32e454]
+            - cell [ref=f32e456]:
+              - link "颖通集团：2026中国嗅觉生态白皮书（59页）.pdf" [ref=f32e457] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332165.html
+            - cell "59页" [ref=f32e459]
+            - cell "2026-09-11" [ref=f32e460]
+            - cell [ref=f32e461]:
+              - link "消费市场" [ref=f32e462] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001800013.html
+            - cell "76" [ref=f32e463]
+            - cell [ref=f32e465]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e468]:
+            - cell [ref=f32e469]
+            - cell [ref=f32e471]:
+              - link "中关村数字媒体产业联盟：2026 AI品牌白皮书（130页）.pdf" [ref=f32e472] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332164.html
+            - cell "130页" [ref=f32e474]
+            - cell "2026-09-11" [ref=f32e475]
+            - cell [ref=f32e476]:
+              - link "文化传媒" [ref=f32e477] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002700001.html
+            - cell "79" [ref=f32e478]
+            - cell [ref=f32e480]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e483]:
+            - cell [ref=f32e484]
+            - cell [ref=f32e486]:
+              - link "同济大学：2026长三角乡镇城乡流动性指数报告（28页）.pdf" [ref=f32e487] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332154.html
+            - cell "28页" [ref=f32e489]
+            - cell "2026-09-11" [ref=f32e490]
+            - cell [ref=f32e491]:
+              - link "宏观经济" [ref=f32e492] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002200001.html
+            - cell "31" [ref=f32e493]
+            - cell [ref=f32e495]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e498]:
+            - cell [ref=f32e499]
+            - cell [ref=f32e501]:
+              - link "深圳市商务发展促进中心：2026年上半年深圳市遭遇贸易摩擦情况报告（128页）.pdf" [ref=f32e502] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332156.html
+            - cell "128页" [ref=f32e504]
+            - cell "2026-09-11" [ref=f32e505]
+            - cell [ref=f32e506]:
+              - link "商贸零售" [ref=f32e507] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0000400038.html
+            - cell "28" [ref=f32e508]
+            - cell [ref=f32e510]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e513]:
+            - cell [ref=f32e514]
+            - cell [ref=f32e516]:
+              - link "木白装备云：装备制造生产运营数字化与AI实践白皮书2026（29页）.pdf" [ref=f32e517] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332160.html
+            - cell "29页" [ref=f32e519]
+            - cell "2026-09-11" [ref=f32e520]
+            - cell [ref=f32e521]:
+              - link "数字化" [ref=f32e522] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001400029.html
+            - cell "35" [ref=f32e523]
+            - cell [ref=f32e525]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e528]:
+            - cell [ref=f32e529]
+            - cell [ref=f32e531]:
+              - link "博报堂：2025生活者“动”察报告⸺《智向》（10页）.pdf" [ref=f32e532] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332153.html
+            - cell "10页" [ref=f32e534]
+            - cell "2026-09-11" [ref=f32e535]
+            - cell [ref=f32e536]:
+              - link "消费市场" [ref=f32e537] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001800013.html
+            - cell "36" [ref=f32e538]
+            - cell [ref=f32e540]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e543]:
+            - cell [ref=f32e544]
+            - cell [ref=f32e546]:
+              - link "威胁猎人：2026年上半年中国数据泄露风险趋势报告（32页）.pdf" [ref=f32e547] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332162.html
+            - cell "32页" [ref=f32e549]
+            - cell "2026-09-11" [ref=f32e550]
+            - cell [ref=f32e551]:
+              - link "大数据" [ref=f32e552] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001900013.html
+            - cell "34" [ref=f32e553]
+            - cell [ref=f32e555]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e558]:
+            - cell [ref=f32e559]
+            - cell [ref=f32e561]:
+              - link "亚信安全：2026 AIDR（AI检测与响应）白皮书（47页）.pdf" [ref=f32e562] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332155.html
+            - cell "47页" [ref=f32e564]
+            - cell "2026-09-11" [ref=f32e565]
+            - cell [ref=f32e566]:
+              - link "AI产业" [ref=f32e567] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0000600022.html
+            - cell "45" [ref=f32e568]
+            - cell [ref=f32e570]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e573]:
+            - cell [ref=f32e574]
+            - cell [ref=f32e576]:
+              - link "久谦中台：2026年滋补产业蓝皮书（66页）.pdf" [ref=f32e577] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332159.html
+            - cell "66页" [ref=f32e579]
+            - cell "2026-09-11" [ref=f32e580]
+            - cell [ref=f32e581]:
+              - link "大健康" [ref=f32e582] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001000017.html
+            - cell "47" [ref=f32e583]
+            - cell [ref=f32e585]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e588]:
+            - cell [ref=f32e589]
+            - cell [ref=f32e591]:
+              - link "仲量联行：2026全球办公空间使用基准指南（25页）.pdf" [ref=f32e592] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332158.html
+            - cell "25页" [ref=f32e594]
+            - cell "2026-09-11" [ref=f32e595]
+            - cell [ref=f32e596]:
+              - link "商业地产" [ref=f32e597] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001500010.html
+            - cell "27" [ref=f32e598]
+            - cell [ref=f32e600]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e603]:
+            - cell [ref=f32e604]
+            - cell [ref=f32e606]:
+              - link "第一财经：2026中国城市年轻力和抗衰健康白皮书（69页）.pdf" [ref=f32e607] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332152.html
+            - cell "69页" [ref=f32e609]
+            - cell "2026-09-11" [ref=f32e610]
+            - cell [ref=f32e611]:
+              - link "大健康" [ref=f32e612] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001000017.html
+            - cell "69" [ref=f32e613]
+            - cell [ref=f32e615]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e618]:
+            - cell [ref=f32e619]
+            - cell [ref=f32e621]:
+              - link "CTR洞察：2026以真破局·向实而生——2026中国广告营销趋势报告（18页）.pdf" [ref=f32e622] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332151.html
+            - cell "18页" [ref=f32e624]
+            - cell "2026-09-11" [ref=f32e625]
+            - cell [ref=f32e626]:
+              - link "广告营销" [ref=f32e627] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002700002.html
+            - cell "30" [ref=f32e628]
+            - cell [ref=f32e630]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e633]:
+            - cell [ref=f32e634]
+            - cell [ref=f32e636]:
+              - link "万宝盛华：2026年第四季度中国内地雇佣前景报告（40页）.pdf" [ref=f32e637] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332150.html
+            - cell "40页" [ref=f32e639]
+            - cell "2026-09-11" [ref=f32e640]
+            - cell [ref=f32e641]:
+              - link "人力资源" [ref=f32e642] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002200004.html
+            - cell "29" [ref=f32e643]
+            - cell [ref=f32e645]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e648]:
+            - cell [ref=f32e649]
+            - cell [ref=f32e651]:
+              - link "京东服饰：2026秋冬服饰趋势白皮书（35页）.pdf" [ref=f32e652] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332149.html
+            - cell "35页" [ref=f32e654]
+            - cell "2026-09-11" [ref=f32e655]
+            - cell [ref=f32e656]:
+              - link "纺织服饰" [ref=f32e657] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001700006.html
+            - cell "42" [ref=f32e658]
+            - cell [ref=f32e660]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e663]:
+            - cell [ref=f32e664]
+            - cell [ref=f32e666]:
+              - link "Datawhale：FDE 100案例集（2026）（246页）.pdf" [ref=f32e667] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332148.html
+            - cell "246页" [ref=f32e669]
+            - cell "2026-09-11" [ref=f32e670]
+            - cell [ref=f32e671]:
+              - link "AI产业" [ref=f32e672] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0000600022.html
+            - cell "74" [ref=f32e673]
+            - cell [ref=f32e675]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e678]:
+            - cell [ref=f32e679]
+            - cell [ref=f32e681]:
+              - link "北京交通发展研究院：2026北京交通发展年度报告（129页）.pdf" [ref=f32e682] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332147.html
+            - cell "129页" [ref=f32e684]
+            - cell "2026-09-11" [ref=f32e685]
+            - cell [ref=f32e686]:
+              - link "交通运输" [ref=f32e687] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0001200024.html
+            - cell "27" [ref=f32e688]
+            - cell [ref=f32e690]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e693]:
+            - cell [ref=f32e694]
+            - cell [ref=f32e696]:
+              - link "IDC&联想：2026 AI主机白皮书：智能体边缘新物种（46页）.pdf" [ref=f32e697] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332146.html
+            - cell "46页" [ref=f32e699]
+            - cell "2026-09-11" [ref=f32e700]
+            - cell [ref=f32e701]:
+              - link "AI产业" [ref=f32e702] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0000600022.html
+            - cell "80" [ref=f32e703]
+            - cell [ref=f32e705]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e708]:
+            - cell [ref=f32e709]
+            - cell [ref=f32e711]:
+              - link "104雇主品牌：2026台湾半导体产业人才白皮书（繁体版）（45页）.pdf" [ref=f32e712] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332145.html
+            - cell "45页" [ref=f32e714]
+            - cell "2026-09-11" [ref=f32e715]
+            - cell [ref=f32e716]:
+              - link "人力资源" [ref=f32e717] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002200004.html
+            - cell "35" [ref=f32e718]
+            - cell [ref=f32e720]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e723]:
+            - cell [ref=f32e724]
+            - cell [ref=f32e726]:
+              - link "Anthropic：2026变革性 AI 的经济情景报告（英文版）（57页）.pdf" [ref=f32e727] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332285.html
+              - link "Anthropic：2026变革性 AI 的经济情景报告（英文版）（57页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332285.html?istrans=2
+            - cell "57页" [ref=f32e730]
+            - cell "2026-09-11" [ref=f32e731]
+            - cell [ref=f32e732]:
+              - link "AI/科技通信" [ref=f32e733] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100016.html
+            - cell "49" [ref=f32e734]
+            - cell [ref=f32e736]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e739]:
+            - cell [ref=f32e740]
+            - cell [ref=f32e742]:
+              - link "兰德公司：2026争取时间延缓 AI 扩散研究报告：受控准入的经济学分析（英文版）（74页）.pdf" [ref=f32e743] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332205.html
+              - link "兰德公司：2026争取时间延缓 AI 扩散研究报告：受控准入的经济学分析（英文版）（74页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332205.html?istrans=2
+            - cell "74页" [ref=f32e746]
+            - cell "2026-09-11" [ref=f32e747]
+            - cell [ref=f32e748]:
+              - link "AI/科技通信" [ref=f32e749] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100016.html
+            - cell "29" [ref=f32e750]
+            - cell [ref=f32e752]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e755]:
+            - cell [ref=f32e756]
+            - cell [ref=f32e758]:
+              - link "WWD国际时尚特讯：Beauty Leap 立足中国面向全球——2026中国美妆产业发展白皮书（英文版）（65页）.pdf" [ref=f32e759] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332169.html
+              - link "WWD国际时尚特讯：Beauty Leap 立足中国面向全球——2026中国美妆产业发展白皮书（英文版）（65页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332169.html?istrans=2
+            - cell "65页" [ref=f32e762]
+            - cell "2026-09-11" [ref=f32e763]
+            - cell [ref=f32e764]:
+              - link "商贸消费" [ref=f32e765] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100017.html
+            - cell "23" [ref=f32e766]
+            - cell [ref=f32e768]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e771]:
+            - cell [ref=f32e772]
+            - cell [ref=f32e774]:
+              - link "全球贸易与创新政策联盟（GTIPA）：2026跨大西洋次国家创新竞争力指数报告3.0（英文版）（74页）.pdf" [ref=f32e775] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332211.html
+              - link "全球贸易与创新政策联盟（GTIPA）：2026跨大西洋次国家创新竞争力指数报告3.0（英文版）（74页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332211.html?istrans=2
+            - cell "74页" [ref=f32e778]
+            - cell "2026-09-11" [ref=f32e779]
+            - cell [ref=f32e780]:
+              - link "国际报告" [ref=f32e781] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100001.html
+            - cell "27" [ref=f32e782]
+            - cell [ref=f32e784]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e787]:
+            - cell [ref=f32e788]
+            - cell [ref=f32e790]:
+              - link "兰德公司：2026人才缺口危机：应对威胁美国航天工业基础韧性的劳动力约束研究报告（英文版）（23页）.pdf" [ref=f32e791] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332192.html
+              - link "兰德公司：2026人才缺口危机：应对威胁美国航天工业基础韧性的劳动力约束研究报告（英文版）（23页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332192.html?istrans=2
+            - cell "23页" [ref=f32e794]
+            - cell "2026-09-11" [ref=f32e795]
+            - cell [ref=f32e796]:
+              - link "HR/企业管理" [ref=f32e797] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100023.html
+            - cell "23" [ref=f32e798]
+            - cell [ref=f32e800]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e803]:
+            - cell [ref=f32e804]
+            - cell [ref=f32e806]:
+              - link "兰德公司：2026供应链运营对 AI 的依赖与新兴保险风险研究报告（英文版）（83页）.pdf" [ref=f32e807] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332202.html
+              - link "兰德公司：2026供应链运营对 AI 的依赖与新兴保险风险研究报告（英文版）（83页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332202.html?istrans=2
+            - cell "83页" [ref=f32e810]
+            - cell "2026-09-11" [ref=f32e811]
+            - cell [ref=f32e812]:
+              - link "AI/科技通信" [ref=f32e813] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100016.html
+            - cell "27" [ref=f32e814]
+            - cell [ref=f32e816]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e819]:
+            - cell [ref=f32e820]
+            - cell [ref=f32e822]:
+              - link "经合组织（OECD）：2026人工智能时代劳动力市场技能研究报告（英文版）（36页）.pdf" [ref=f32e823] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332210.html
+              - link "经合组织（OECD）：2026人工智能时代劳动力市场技能研究报告（英文版）（36页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332210.html?istrans=2
+            - cell "36页" [ref=f32e826]
+            - cell "2026-09-11" [ref=f32e827]
+            - cell [ref=f32e828]:
+              - link "HR/企业管理" [ref=f32e829] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100023.html
+            - cell "35" [ref=f32e830]
+            - cell [ref=f32e832]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e835]:
+            - cell [ref=f32e836]
+            - cell [ref=f32e838]:
+              - link "安联：行业地图2026：三速经济-企业如何应对人工智能、地缘政治与碎片化（英文版）（52页）.pdf" [ref=f32e839] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332196.html
+              - link "安联：行业地图2026：三速经济-企业如何应对人工智能、地缘政治与碎片化（英文版）（52页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332196.html?istrans=2
+            - cell "52页" [ref=f32e842]
+            - cell "2026-09-11" [ref=f32e843]
+            - cell [ref=f32e844]:
+              - link "AI/科技通信" [ref=f32e845] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100016.html
+            - cell "30" [ref=f32e846]
+            - cell [ref=f32e848]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e851]:
+            - cell [ref=f32e852]
+            - cell [ref=f32e854]:
+              - link "兰德公司：2026安全领域治理与管理新兴技术研究报告（英文版）（59页）.pdf" [ref=f32e855] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332170.html
+              - link "兰德公司：2026安全领域治理与管理新兴技术研究报告（英文版）（59页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332170.html?istrans=2
+            - cell "59页" [ref=f32e858]
+            - cell "2026-09-11" [ref=f32e859]
+            - cell [ref=f32e860]:
+              - link "AI/科技通信" [ref=f32e861] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100016.html
+            - cell "31" [ref=f32e862]
+            - cell [ref=f32e864]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e867]:
+            - cell [ref=f32e868]
+            - cell [ref=f32e870]:
+              - link "英国人力资源协会（CIPD）：2026英国优质工作指数调查报告（英文版）（48页）.pdf" [ref=f32e871] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332215.html
+              - link "英国人力资源协会（CIPD）：2026英国优质工作指数调查报告（英文版）（48页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332215.html?istrans=2
+            - cell "48页" [ref=f32e874]
+            - cell "2026-09-11" [ref=f32e875]
+            - cell [ref=f32e876]:
+              - link "HR/企业管理" [ref=f32e877] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100023.html
+            - cell "24" [ref=f32e878]
+            - cell [ref=f32e880]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e883]:
+            - cell [ref=f32e884]
+            - cell [ref=f32e886]:
+              - link "Skift Meetings：2026企业会议研究报告：策划者如何管控成本、全球风险与实现可量化 ROI（英文版）（22页）.pdf" [ref=f32e887] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332191.html
+              - link "Skift Meetings：2026企业会议研究报告：策划者如何管控成本、全球风险与实现可量化 ROI（英文版）（22页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332191.html?istrans=2
+            - cell "22页" [ref=f32e890]
+            - cell "2026-09-11" [ref=f32e891]
+            - cell [ref=f32e892]:
+              - link "HR/企业管理" [ref=f32e893] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100023.html
+            - cell "17" [ref=f32e894]
+            - cell [ref=f32e896]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e899]:
+            - cell [ref=f32e900]
+            - cell [ref=f32e902]:
+              - link "WatchGuard：2026中小企业员工网络安全行为习惯调查报告：企业最大安全缺口是员工而非漏洞（英文版）（12页）.pdf" [ref=f32e903] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332182.html
+              - link "WatchGuard：2026中小企业员工网络安全行为习惯调查报告：企业最大安全缺口是员工而非漏洞（英文版）（12页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332182.html?istrans=2
+            - cell "12页" [ref=f32e906]
+            - cell "2026-09-11" [ref=f32e907]
+            - cell [ref=f32e908]:
+              - link "AI/科技通信" [ref=f32e909] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100016.html
+            - cell "22" [ref=f32e910]
+            - cell [ref=f32e912]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e915]:
+            - cell [ref=f32e916]
+            - cell [ref=f32e918]:
+              - link "金融稳定理事会（FSB）：2026负责任采用人工智能的良好实践磋商报告（英文版）（66页）.pdf" [ref=f32e919] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332219.html
+              - link "金融稳定理事会（FSB）：2026负责任采用人工智能的良好实践磋商报告（英文版）（66页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332219.html?istrans=2
+            - cell "66页" [ref=f32e922]
+            - cell "2026-09-11" [ref=f32e923]
+            - cell [ref=f32e924]:
+              - link "AI/科技通信" [ref=f32e925] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100016.html
+            - cell "21" [ref=f32e926]
+            - cell [ref=f32e928]:
+              - link:
+                - /url: javascript:void(0);
+          - row [ref=f32e931]:
+            - cell [ref=f32e932]
+            - cell [ref=f32e934]:
+              - link "Accertify：2026 3DS 效能最大化商户实操指南（英文版）（13页）.pdf" [ref=f32e935] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogao/1332166.html
+              - link "Accertify：2026 3DS 效能最大化商户实操指南（英文版）（13页）.pdf":
+                - /url: https://www.sgpjbg.com/baogao/1332166.html?istrans=2
+            - cell "13页" [ref=f32e938]
+            - cell "2026-09-11" [ref=f32e939]
+            - cell [ref=f32e940]:
+              - link "商贸消费" [ref=f32e941] [cursor=pointer]:
+                - /url: https://www.sgpjbg.com/baogaolist-0002100017.html
+            - cell "15" [ref=f32e942]
+            - cell [ref=f32e944]:
+              - link:
+                - /url: javascript:void(0);
+    - generic [ref=f32e949]:
+      - generic [ref=f32e950]: 共10000条 共200页
+      - generic [ref=f32e951]:
+        - generic: <<
+        - generic: <
+        - generic [ref=f32e954]: "1"
+        - link "2" [ref=f32e955] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=2&q=&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=1&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link "3" [ref=f32e957] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=3&q=&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=1&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link "4" [ref=f32e959] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=4&q=&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=1&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link "5" [ref=f32e961] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=5&q=&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=1&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link "..." [ref=f32e963] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=6&q=&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=1&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link ">" [ref=f32e965] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=2&q=&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=1&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+        - link ">>" [ref=f32e967] [cursor=pointer]:
+          - /url: https://www.sgpjbg.com/Search.html?page=200&q=&d=-1&type=0&cd=1&qws=0&esp=100&hybg=0&vt=list&kqs=0&hgjc=1&iszc=1_1&kyw=1&kthyb=1&gslx=&khyhj=0
+      - generic [ref=f32e969]:
+        - text: 前往
+        - textbox [ref=f32e970]: "1"
+        - text: 页
+  - generic [ref=f32e971]:
+    - generic [ref=f32e972]:
+      - generic [ref=f32e973]:
+        - generic [ref=f32e976]: 全行业研究报告分享下载平台
+        - list [ref=f32e977]:
+          - listitem [ref=f32e978]: 0731-84720580
+          - listitem [ref=f32e980]: 商务合作：really158d
+      - generic [ref=f32e983]:
+        - text: 关于我们
+        - list [ref=f32e984]:
+          - listitem [ref=f32e985]:
+            - link "网站声明" [ref=f32e986] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-22277.html
+          - listitem [ref=f32e987]:
+            - link "免责声明" [ref=f32e988] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-42671.html
+          - listitem [ref=f32e989]:
+            - link "网站公告" [ref=f32e990] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/newslist.html
+          - listitem [ref=f32e991]:
+            - link "我要入驻" [ref=f32e992] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/JiGouRuZhu.html
+      - generic [ref=f32e993]:
+        - text: 更多
+        - list [ref=f32e994]:
+          - listitem [ref=f32e995]:
+            - link "常见问题" [ref=f32e996] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-24877.html
+          - listitem [ref=f32e997]:
+            - link "用户协议" [ref=f32e998] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-33145.html
+          - listitem [ref=f32e999]:
+            - link "认证协议" [ref=f32e1000] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/sgpjbg/WebClause.aspx?id=12
+          - listitem [ref=f32e1001]:
+            - link "版权申诉" [ref=f32e1002] [cursor=pointer]:
+              - /url: https://www.sgpjbg.com/h-19193.html
+      - generic [ref=f32e1003]:
+        - text: 关于我们
+        - generic [ref=f32e1004]:
+          - generic [ref=f32e1005]: 三个皮匠报告微信公众号
+          - generic [ref=f32e1008]: 三个皮匠报告微信小程序
+          - generic [ref=f32e1011]: 扫码咨询网站充值下载问题
+    - generic [ref=f32e1014]: copyright@2008-2013 长沙景略智创信息技术有限公司版权所有 网站备案/许可证号：湘B2-20190120 | 工信部备案号：湘ICP备17000430号-2 | 公安备案号：湘公网安备43010402001071号
+  - generic [ref=f32e1016] [cursor=pointer]: 展开
