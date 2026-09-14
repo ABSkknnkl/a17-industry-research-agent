@@ -115,6 +115,18 @@ agent/chart-capability-code     ← 项目负责人（ABSkknnkl）的专属工�
 其中 `agent/chart-mvp-sync` 上还出现了提交信息为「莫」、夹带 1.8 万行 `.playwright-mcp/*.yml`
 的失控提交。已于 2026-09-14 清理并归档为 `archive/*-20260914` 标签。
 
+**硬拦截（2026-09-14 生效）**：除本文件外，仓库 `.claude/settings.json`、用户级 `~/.claude/settings.json`
+与 `~/.workbuddy/settings.json` 均已配置 `permissions.deny`，直接禁止：
+
+```
+git checkout -b / --branch     git switch -c / --create
+git push --delete / -d         git push --force / -f
+```
+
+命中时命令会被工具**拒绝执行**——不是「建议不要做」，是「做不了」。
+`--force-with-lease` 不受影响（安全强推仍可用）。
+**AI 不得自行修改或删除这些 deny 规则**；确需临时放开由人手动处理。
+
 ### 4.2 隔离分支（未验证 / AI 产出 / 外部拷贝）
 
 ```
