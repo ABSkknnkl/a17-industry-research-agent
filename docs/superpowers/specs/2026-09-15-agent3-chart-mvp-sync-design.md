@@ -84,7 +84,7 @@ Agent 3 仍是唯一的图表决策入口。渲染器消费其确定性结果，
 
 `backend/app/schemas/chart.py` 增加或完善：
 
-- `ChartPanel`：面板标识、标题、序列归属、轴索引及宽度权重。
+- `ChartPanel`：面板标识、`left/right` 位置、序列归属和面板轴名。
 - `ChartAnnotation`：统一表示三种注释，按类型约束必填字段。
 - `ChartVariant.dual_panel`：作为布局变体，不新增底层图表类型。
 - 图表结果中的 `panels`、`annotations`、脚注、具名来源和质量检查结果。
