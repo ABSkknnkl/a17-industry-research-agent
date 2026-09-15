@@ -12,9 +12,16 @@ from app.agents.chart_generator.builders import (
     build_line_option,
 )
 from app.reporting.svg import render_chart_svg
+from app.agents.report_fusion.visual import plan_visual_decision
 from app.schemas.chart import ChartAnnotation, ChartDataset, ChartPanel, ChartPoint, ChartSpec
 
 NS = {"s": "http://www.w3.org/2000/svg"}
+
+
+@pytest.mark.parametrize("count,expected", [(4, "low"), (5, "medium"), (8, "medium"), (9, "high")])
+def test_report_chart_density_uses_shared_budget_bands(count: int, expected: str) -> None:
+    decision = plan_visual_decision(chapters=[], charts=[object() for _ in range(count)])
+    assert decision.chart_density == expected
 
 
 def chart(option: dict[str, Any], kind: str = "line", variant: str | None = None) -> ChartSpec:

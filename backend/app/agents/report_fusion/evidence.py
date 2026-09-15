@@ -1,6 +1,8 @@
 """Build deterministic, Chinese evidence citations without touching Agent 1."""
 
+import re
 from collections.abc import Iterable
+from urllib.parse import urlsplit
 
 from app.schemas.analysis import AnalysisResult, EvidenceCatalogItem
 from app.schemas.chapter import ChapterWritingResult
@@ -21,6 +23,41 @@ _AUDIT_LABELS = {
     "not_applicable": "不适用",
     "unknown": "未提供",
 }
+_UNNAMED_SOURCES = {"", "未提供", "未知", "不适用", "来源信息待补充", "[需核实:数据来源]"}
+
+
+def _source_text(value: str | None) -> str:
+    text = " ".join((value or "").split())
+    if text in _UNNAMED_SOURCES or re.fullmatch(r"(?:\[\d+\]\s*)+", text):
+        return ""
+    return text if "://" not in text else ""
+
+
+def resolve_source_name(item: EvidenceCatalogItem) -> str:
+    """Resolve a declared title, publisher, or public URL host without inventing metadata."""
+    for value in (item.source_name, item.publisher):
+        if name := _source_text(value):
+            return name
+    for value in (item.source_name, item.source_locator):
+        try:
+            url = urlsplit((value or "").strip())
+            if url.scheme in {"https", "http"} and url.hostname:
+                return url.hostname
+        except ValueError:
+            continue
+    return ""
+
+
+def _named_source_label(number: int, items: list[EvidenceCatalogItem]) -> str:
+    name = resolve_source_name(items[0])
+    if not name:
+        return f"来源{number}：[需核实:数据来源]"
+    publishers = _unique(_source_text(item.publisher) for item in items)
+    attribution = "，".join(
+        _truncate(publisher, 30) for publisher in publishers if publisher != name
+    )
+    label = f"来源{number}：{_truncate(name, 30)}"
+    return _truncate(f"{label}，{attribution}整理" if attribution else label, 500)
 
 
 def _unique(values: Iterable[str]) -> list[str]:
@@ -66,7 +103,7 @@ def _referenced_ids(
 def _source_key(item: EvidenceCatalogItem) -> str:
     # One material may support many metrics.  Grouping by its declared title
     # removes repetitive rows while individual evidence IDs remain traceable.
-    return " ".join(item.source_name.split()).casefold()
+    return resolve_source_name(item).casefold() or item.evidence_id
 
 
 def build_evidence_catalog(
@@ -102,16 +139,14 @@ def build_evidence_catalog(
         items = groups[key]
         first = items[0]
         number = len(entries) + 1
-        source_name = _truncate(first.source_name, 30)
+        source_name = _truncate(resolve_source_name(first), 30) or "[需核实:数据来源]"
         entries.append(
             EvidenceSourceEntry(
                 citation_number=number,
-                display_label=f"来源{number}：{source_name}",
+                display_label=_named_source_label(number, items),
                 material_title=source_name,
                 publishers=_unique(item.publisher or "未提供" for item in items),
-                retrieval_methods=_unique(
-                    item.retrieval_method or "未提供" for item in items
-                ),
+                retrieval_methods=_unique(item.retrieval_method or "未提供" for item in items),
                 metric_names=_unique(item.metric_name for item in items),
                 available_dates=_unique(
                     item.available_at.isoformat() if item.available_at else "未提供"

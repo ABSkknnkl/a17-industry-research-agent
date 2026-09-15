@@ -46,7 +46,37 @@ def _placement_chapter(placement_section_id: str) -> int | None:
     return int(match.group(1)) if match else None
 
 
-def render_html(report: ReportViewModel) -> str:
+def _chart_directory(
+    report: ReportViewModel,
+    charts_by_section: dict[str, list[dict[str, object]]],
+    unplaced: list[dict[str, object]],
+    *,
+    continuous_numbering: bool,
+) -> list[dict[str, object]]:
+    """Number the final reading order, retaining the body's exact chart objects."""
+    ordered: list[dict[str, object]] = []
+    for chapter in report.chapters:
+        chapter_count = 0
+        for section in chapter.sections:
+            for item in charts_by_section.get(section.section_id, []):
+                chapter_count += 1
+                item["display_number"] = (
+                    f"图{_placement_chapter(section.section_id)}-{chapter_count}"
+                )
+                item["chapter"] = f"{chapter_label(chapter.chapter_id)} · {chapter.title}"
+                ordered.append(item)
+    for number, item in enumerate(unplaced, 1):
+        item["display_number"] = f"附图-{number}"
+        item["chapter"] = "附录 · 图表"
+        ordered.append(item)
+    for number, item in enumerate(ordered, 1):
+        if continuous_numbering:
+            item["display_number"] = f"图{number}"
+        item["anchor"] = f"chart-{number}"
+    return ordered
+
+
+def render_html(report: ReportViewModel, *, continuous_numbering: bool = True) -> str:
     template = _ENVIRONMENT.get_template("report.html.j2")
     citation_map = citation_lookup(report.evidence_catalog)
 
@@ -62,30 +92,28 @@ def render_html(report: ReportViewModel) -> str:
 
     charts_by_section: dict[str, list[dict[str, object]]] = {}
     unplaced: list[dict[str, object]] = []
-    chart_numbers: dict[int, int] = {}
+    rendered_sections = {
+        section.section_id
+        for chapter in report.chapters
+        for section in chapter.sections
+        if report.report_depth != "brief"
+    }
     for chart in report.charts:
         item = chart.model_dump(exclude={"svg"})
         item["svg"] = Markup(chart.svg)
-        chapter_number = (
-            _placement_chapter(chart.placement_section_id)
-            if chart.placement_section_id
-            else None
-        )
-        if chapter_number is not None:
-            chart_numbers[chapter_number] = chart_numbers.get(chapter_number, 0) + 1
-            item["display_number"] = (
-                f"图{chapter_number}-{chart_numbers[chapter_number]}"
-            )
+        if chart.placement_section_id in rendered_sections:
             charts_by_section.setdefault(chart.placement_section_id, []).append(item)
         else:
-            # placement 为空或格式非法（防御：schema pattern 已拦截）都归入附录，
-            # 单个坏字段不允许让图表凭空消失或炸掉整份 HTML 导出。
-            item["display_number"] = f"附图-{len(unplaced) + 1}"
+            # Missing, unknown and hidden section placements all belong in the appendix.
             unplaced.append(item)
+    directory = _chart_directory(
+        report, charts_by_section, unplaced, continuous_numbering=continuous_numbering
+    )
     return template.render(
         report=report,
         charts_by_section=charts_by_section,
         unplaced_charts=unplaced,
+        chart_directory=directory,
         evidence_entries=evidence_entries,
         source_rows=source_table_rows(report.evidence_catalog),
         chapter_label=chapter_label,

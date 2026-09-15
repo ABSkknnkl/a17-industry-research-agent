@@ -8,6 +8,7 @@ constraints remain enforced elsewhere in the report-fusion stage.
 from collections import Counter
 from collections.abc import Sequence
 
+from app.agents.chart_generator.constants import DENSITY_LOW_MAX, DENSITY_MEDIUM_MAX
 from app.schemas.chapter import ChapterDraft
 from app.schemas.report import (
     ChapterVisualStrategy,
@@ -15,7 +16,6 @@ from app.schemas.report import (
     VisualDecision,
     VisualDensity,
 )
-
 
 _STYLE_LABELS = {
     "data_manual": "数据手册型",
@@ -29,9 +29,7 @@ def visual_style_label(style: str) -> str:
 
 
 def _dominant_content(chapter: ChapterDraft) -> str:
-    counts = Counter(
-        section.visual_semantics.content_type for section in chapter.sections
-    )
+    counts = Counter(section.visual_semantics.content_type for section in chapter.sections)
     return counts.most_common(1)[0][0]
 
 
@@ -44,15 +42,15 @@ def plan_visual_decision(
 ) -> VisualDecision:
     sections = [section for chapter in chapters for section in chapter.sections]
     section_count = max(len(sections), 1)
-    table_candidates = sum(
-        1 for section in sections if section.visual_semantics.preferred_table
+    table_candidates = sum(1 for section in sections if section.visual_semantics.preferred_table)
+    quantitative_ratio = (
+        sum(section.visual_semantics.quantitative_density or 0 for section in sections)
+        / section_count
     )
-    quantitative_ratio = sum(
-        section.visual_semantics.quantitative_density or 0 for section in sections
-    ) / section_count
-    qualitative_ratio = sum(
-        section.visual_semantics.qualitative_density or 0 for section in sections
-    ) / section_count
+    qualitative_ratio = (
+        sum(section.visual_semantics.qualitative_density or 0 for section in sections)
+        / section_count
+    )
     chart_count = len(charts)
 
     reasons: list[str]
@@ -64,7 +62,7 @@ def plan_visual_decision(
             f"量化内容占比约{quantitative_ratio:.0%}",
             f"识别到{table_candidates}个精确表格候选",
         ]
-    elif qualitative_ratio >= 0.60 and chart_count <= 4:
+    elif qualitative_ratio >= 0.60 and chart_count <= DENSITY_LOW_MAX:
         recommended = "deep_research"
         reasons = [
             f"定性论述占比约{qualitative_ratio:.0%}",
@@ -105,10 +103,12 @@ def plan_visual_decision(
             dominant_content=_dominant_content(chapter),
         )
 
-    chart_density = "low" if chart_count <= 4 else ("medium" if chart_count <= 10 else "high")
-    table_priority = "high" if table_candidates >= 4 else (
-        "medium" if table_candidates else "low"
+    chart_density = (
+        "low"
+        if chart_count <= DENSITY_LOW_MAX
+        else ("medium" if chart_count <= DENSITY_MEDIUM_MAX else "high")
     )
+    table_priority = "high" if table_candidates >= 4 else ("medium" if table_candidates else "low")
     return VisualDecision(
         recommended_style=recommended,
         requested_style=requested_style,

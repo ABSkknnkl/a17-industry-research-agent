@@ -1,5 +1,7 @@
 """Deterministic pre-export quality gate with risk classification."""
 
+from app.agents.chart_generator.constants import HARD_LIMIT_MAX_CANDIDATES, RECOMMENDED_CHARTS
+from app.agents.report_fusion.evidence import resolve_source_name
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
 from app.schemas.chart import ChartGenerationResult
@@ -92,10 +94,20 @@ def evaluate_report_quality(
         advisory_issues.append("正文证据覆盖率不足100%")
 
     # 图表数量超过推荐值（软规则，不超过技术上限30就不阻断）
-    if len(included_chart_ids) > 8:
+    if len(included_chart_ids) > RECOMMENDED_CHARTS[1]:
         advisory_issues.append(
-            f"正式报告嵌入 {len(included_chart_ids)} 张图表，超过推荐上限8张（技术上限30张）"
+            f"正式报告嵌入 {len(included_chart_ids)} 张图表，"
+            f"超过推荐上限{RECOMMENDED_CHARTS[1]}张（技术上限{HARD_LIMIT_MAX_CANDIDATES}张）"
         )
+
+    named_evidence = {
+        item.evidence_id for item in analysis.evidence_catalog if resolve_source_name(item)
+    }
+    for spec in charts.chart_specs:
+        if spec.chart_id in included_chart_ids and not named_evidence.intersection(
+            spec.evidence_ids
+        ):
+            advisory_issues.append(f"图表缺少可识别的数据来源：{spec.title}")
 
     # 上游质量门: 区分风险类型
     # 只有数据完整性、未知引用等硬问题才阻断，其余是建议

@@ -153,6 +153,16 @@
   {% for chapter in report.chapters %}<li><a href="#chapter-{{ loop.index }}">{{ chapter_label(chapter.chapter_id) }} · {{ display_text(chapter.title) }}</a></li>{% endfor %}
   </ol>
 
+  {% if chart_directory %}
+  <section class="chart-directory">
+    <h2>图表目录</h2>
+    <table class="quality-table">
+      <thead><tr><th>图号</th><th>图表标题</th><th>所属章节</th></tr></thead>
+      <tbody>{% for chart in chart_directory %}<tr><td><a href="#{{ chart.anchor }}">{{ chart.display_number }}</a></td><td>{{ display_text(chart.title) }}</td><td>{{ display_text(chart.chapter) }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </section>
+  {% endif %}
+
   <h2>执行摘要</h2>
   <section class="summary">
     <p class="headline">{{ display_text(report.executive_summary.headline) }}</p>
@@ -184,7 +194,7 @@
         {% if paragraph.evidence_ids %}<p class="reference">资料依据：{% for source in evidence_entries(paragraph.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">来源{{ source.citation_number }}</a>{% else %}来源信息待补充{% endfor %}</p>{% endif %}
       {% endfor %}
       {% for chart in charts_by_section.get(section.section_id, []) %}
-      <figure class="chart chart-{{ chart.chart_type }}">{{ chart.svg }}<figcaption><span class="chart-number">{{ chart.display_number }}</span> · {{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}{% if chart.insight_goal %}<br>分析目的：{{ display_text(chart.insight_goal) }}{% endif %}{% for note in chart.footnotes %}<br>数据说明：{{ display_text(note) }}{% endfor %}</figcaption></figure>
+      <figure class="chart chart-{{ chart.chart_type }}" id="{{ chart.anchor }}">{{ chart.svg }}<figcaption><span class="chart-number">{{ chart.display_number }}</span> · {{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}{% if chart.insight_goal %}<br>分析目的：{{ display_text(chart.insight_goal) }}{% endif %}{% for note in chart.footnotes %}<br>数据说明：{{ display_text(note) }}{% endfor %}</figcaption></figure>
       {% endfor %}
       {% if section.uncertainties %}<div class="uncertainty"><strong>待验证事项</strong><ul>{% for item in section.uncertainties %}<li>{{ display_text(item) }}</li>{% endfor %}</ul></div>{% endif %}
     {% endfor %}
@@ -193,7 +203,7 @@
   {% endfor %}
 
   {% if unplaced_charts %}
-  <section class="chapter"><h2>附录 · 图表</h2>{% for chart in unplaced_charts %}<figure class="chart chart-{{ chart.chart_type }}">{{ chart.svg }}<figcaption><span class="chart-number">{{ chart.display_number }}</span> · {{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}</figcaption></figure>{% endfor %}</section>
+  <section class="chapter"><h2>附录 · 图表</h2>{% for chart in unplaced_charts %}<figure class="chart chart-{{ chart.chart_type }}" id="{{ chart.anchor }}">{{ chart.svg }}<figcaption><span class="chart-number">{{ chart.display_number }}</span> · {{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}</figcaption></figure>{% endfor %}</section>
   {% endif %}
 
   {% set appendix = report.quality_appendix %}

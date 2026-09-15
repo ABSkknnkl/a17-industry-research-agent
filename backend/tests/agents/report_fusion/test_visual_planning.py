@@ -95,5 +95,5 @@ def test_html_uses_effective_visual_style_and_exposes_decision(
     assert report.visual_decision.selection_source == "user"
     assert 'class="visual-data-manual density-compact' in html
     assert "数据手册型" in html
-    assert "图2-1" in html
+    assert '<span class="chart-number">图1</span>' in html
     assert "表附-1 · 来源与证据索引" in html
