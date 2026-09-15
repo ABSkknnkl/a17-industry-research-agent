@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import cast
 
 from app.agents.common.content_dedup import content_fingerprint
+from app.agents.chart_generator.constants import UNIT_PLACEHOLDERS
 from app.schemas.chart import BarVariant, ChartDataset, ChartType, ChartVariant
 
 CHART_FAMILY: dict[ChartType, str] = {
@@ -56,6 +57,70 @@ def choose_bar_variant(dataset: ChartDataset) -> BarVariant:
     if len(labels) > 6 or any(len(label) > 12 for label in labels):
         return "horizontal"
     return "vertical"
+
+
+_PURPOSE_ALIASES = {"趋势": "trend", "变化": "trend", "走势": "trend"}
+
+
+def normalize_text(value: str | None) -> str:
+    """Normalize free-form intent text without inferring a semantic slot."""
+
+    return "".join((value or "").split()).casefold()
+
+
+def normalize_purpose(value: str | None) -> str:
+    """Map only known trend synonyms to one deduplication intent slot."""
+
+    normalized = normalize_text(value)
+    for alias, slot in _PURPOSE_ALIASES.items():
+        if alias in normalized:
+            return slot
+    return normalized
+
+
+def _normalized_unit(unit: str | None) -> str:
+    text = (unit or "").strip()
+    return "" if text in UNIT_PLACEHOLDERS else text
+
+
+def _combo_units(dataset: ChartDataset) -> set[tuple[str, str]]:
+    units = {(meta.currency or "", _normalized_unit(meta.unit)) for meta in dataset.series_meta}
+    units.discard(("", ""))
+    return units
+
+
+def _has_complete_aligned_combo_series(dataset: ChartDataset) -> bool:
+    """Require one non-null point for every series and shared reporting periods."""
+
+    meta_by_name = {meta.name: meta for meta in dataset.series_meta}
+    series_names = {point.series for point in dataset.points}
+    if len(meta_by_name) != len(dataset.series_meta) or series_names != set(meta_by_name):
+        return False
+
+    period_sets: list[frozenset[object]] = []
+    for series_name in meta_by_name:
+        points = [point for point in dataset.points if point.series == series_name]
+        if not points or any(point.period_end is None or point.value is None for point in points):
+            return False
+        periods = [point.period_end for point in points]
+        if len(set(periods)) != len(periods):
+            return False
+        period_sets.append(frozenset(periods))
+    return bool(period_sets) and len(set(period_sets)) == 1 and bool(period_sets[0])
+
+
+def _has_complete_dual_panels(dataset: ChartDataset) -> bool:
+    """Validate the explicit left/right partition required for three-plus series."""
+
+    panels = dataset.panels or []
+    series_names = {point.series for point in dataset.points}
+    panel_series = [series for panel in panels for series in panel.series]
+    return (
+        len(panels) == 2
+        and {panel.position for panel in panels} == {"left", "right"}
+        and len(panel_series) == len(series_names)
+        and set(panel_series) == series_names
+    )
 
 
 def route_chart(requested_type: ChartType, dataset: ChartDataset) -> ChartRouteDecision:
@@ -189,31 +254,35 @@ def route_chart(requested_type: ChartType, dataset: ChartDataset) -> ChartRouteD
             )
         variant = "area"
     elif requested_type == "combo":
-        meta_by_name = {item.name: item for item in dataset.series_meta}
-        series_names = {point.series for point in dataset.points}
-        period_sets = {
-            name: {
-                point.period_end
-                for point in dataset.points
-                if point.series == name and point.period_end is not None and point.value is not None
-            }
-            for name in series_names
-        }
-        units = {(item.currency, item.unit) for item in dataset.series_meta}
+        series_count = len(dataset.series_meta)
+        units = _combo_units(dataset)
         if (
             not dataset.business_linked
-            or len(dataset.series_meta) != 2
-            or series_names != set(meta_by_name)
-            or len(units) != 2
-            or len({frozenset(periods) for periods in period_sets.values()}) != 1
-            or not all(period_sets.values())
+            or not 2 <= series_count <= 4
+            or not 1 <= len(units) <= 2
+            or not _has_complete_aligned_combo_series(dataset)
         ):
             return ChartRouteDecision(
                 accepted=False,
                 reason_code="combo_requirements_not_met",
-                reason="组合图要求两个业务相关、时间轴一致且量纲不同的完整序列",
+                reason="组合图要求业务相关、时间轴一致且量纲可辨的2至4条完整序列",
             )
-        variant = "combo"
+        if series_count >= 3:
+            if not dataset.panels:
+                return ChartRouteDecision(
+                    accepted=False,
+                    reason_code="panels_missing_for_dual_panel",
+                    reason="3至4条序列的组合图需要完整的左右面板元数据",
+                )
+            if not _has_complete_dual_panels(dataset):
+                return ChartRouteDecision(
+                    accepted=False,
+                    reason_code="combo_requirements_not_met",
+                    reason="双面板组合图的左右面板必须无重复地覆盖全部序列",
+                )
+            variant = "dual_panel"
+        else:
+            variant = "combo"
     elif requested_type == "pie":
         values = [point.value for point in dataset.points if point.value is not None]
         categories = {point.label for point in dataset.points}
@@ -285,8 +354,11 @@ def build_dedupe_key(
     data_fingerprint: str,
     analysis_purpose: str = "auto",
     insight_goal: str | None = None,
+    *,
+    purpose: str | None = None,
 ) -> str:
     family = CHART_FAMILY[chart_type]
-    purpose = family if analysis_purpose == "auto" else analysis_purpose
-    normalized_goal = " ".join((insight_goal or "").split()).lower()
-    return f"{family}:{purpose}:{normalized_goal}:{data_fingerprint}"
+    raw_purpose = purpose if purpose is not None else analysis_purpose
+    normalized_purpose = family if raw_purpose == "auto" else normalize_purpose(raw_purpose)
+    normalized_goal = normalize_purpose(insight_goal)
+    return f"{family}:{normalized_purpose}:{normalized_goal}:{data_fingerprint}"

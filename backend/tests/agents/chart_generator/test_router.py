@@ -1,10 +1,51 @@
+from datetime import date
+
 from app.agents.chart_generator.router import (
+    _combo_units,
     build_data_fingerprint,
+    build_dedupe_key,
     choose_bar_variant,
     route_chart,
 )
 from app.schemas.analysis import ChartCandidate
-from app.schemas.chart import ChartDataset, ChartPoint
+from app.schemas.chart import ChartDataset, ChartPanel, ChartPoint, ChartSeriesMeta
+
+
+def _combo_dataset(
+    units: list[str],
+    *,
+    values: list[int | float | None] | None = None,
+    panels: list[ChartPanel] | None = None,
+) -> ChartDataset:
+    names = [f"指标{index}" for index in range(1, len(units) + 1)]
+    point_values = values or [100 + index for index in range(len(units))]
+    return ChartDataset(
+        dataset_id="DS-COMBO",
+        kind="time_series",
+        metric_name="业务联动指标",
+        business_linked=True,
+        series_meta=[
+            ChartSeriesMeta(
+                name=name,
+                unit=unit,
+                render_as="bar" if index == 0 else "line",
+            )
+            for index, (name, unit) in enumerate(zip(names, units, strict=True))
+        ],
+        points=[
+            ChartPoint(
+                label=str(year),
+                value=point_values[index],
+                series=name,
+                period_end=date(year, 12, 31),
+                evidence_id=f"E-{index}-{year}",
+            )
+            for index, name in enumerate(names)
+            for year in (2024, 2025)
+        ],
+        evidence_ids=[f"E-{index}-{year}" for index in range(len(names)) for year in (2024, 2025)],
+        panels=panels,
+    )
 
 
 def test_router_maps_supported_dataset_kinds(
@@ -80,4 +121,45 @@ def test_fingerprint_ignores_title_but_changes_with_data(
     )
     assert build_data_fingerprint(first.chart_type, categorical_dataset) != (
         build_data_fingerprint(first.chart_type, changed_dataset)
+    )
+
+
+def test_combo_same_unit_is_single_axis_and_different_unit_is_dual_axis() -> None:
+    same = _combo_dataset(["亿元", "亿元"])
+    mixed = _combo_dataset(["亿元", "%"])
+    empty = _combo_dataset(["未提供", "不适用"], values=[None, None])
+
+    assert route_chart("combo", same).variant == "combo"
+    assert route_chart("combo", mixed).variant == "combo"
+    assert route_chart("combo", empty).accepted is False
+    assert _combo_units(same) == {("", "亿元")}
+    assert _combo_units(mixed) == {("", "%"), ("", "亿元")}
+    assert _combo_units(empty) == set()
+
+
+def test_combo_three_series_requires_complete_two_sided_panel_coverage() -> None:
+    complete = _combo_dataset(
+        ["万吨", "万吨", "%"],
+        panels=[
+            ChartPanel(panel_id="volume", position="left", series=["指标1", "指标2"]),
+            ChartPanel(panel_id="rate", position="right", series=["指标3"]),
+        ],
+    )
+    incomplete = complete.model_copy(update={"panels": None})
+
+    assert route_chart("combo", complete).variant == "dual_panel"
+    assert route_chart("combo", incomplete).accepted is False
+    assert route_chart("combo", incomplete).reason_code == "panels_missing_for_dual_panel"
+
+
+def test_trend_synonyms_share_one_dedupe_slot_without_merging_different_data() -> None:
+    source = build_data_fingerprint("line", _combo_dataset(["亿元", "亿元"]))
+    keys = {
+        build_dedupe_key("line", source, purpose=purpose)
+        for purpose in ("展示趋势", "展示变化", "展示走势")
+    }
+
+    assert len(keys) == 1
+    assert build_dedupe_key("line", "a" * 64, purpose="展示趋势") != build_dedupe_key(
+        "line", "b" * 64, purpose="展示趋势"
     )

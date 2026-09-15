@@ -4,6 +4,7 @@ import hashlib
 import re
 from dataclasses import dataclass, field
 
+from app.agents.chart_generator.constants import UNIT_PLACEHOLDERS
 from app.schemas.chart import (
     ChainEdge,
     ChainNode,
@@ -13,6 +14,13 @@ from app.schemas.chart import (
     ChartType,
     SuppressedChart,
 )
+
+
+def _unit_text(unit: str | None) -> str:
+    """Normalize display-only unit placeholders before combo metadata is built."""
+
+    text = (unit or "").strip()
+    return "" if text in UNIT_PLACEHOLDERS else text
 
 
 @dataclass
@@ -143,12 +151,13 @@ def _merge_time_series_cover(
         selected.append(chosen)
         uncovered -= set(chosen.evidence_ids)
 
-    if len(selected) < 2 or len(selected) > 5:
+    if len(selected) < 2 or len(selected) > 4:
         return None
 
-    units = {(dataset.currency, dataset.unit) for dataset in selected}
+    units = {(dataset.currency or "", _unit_text(dataset.unit)) for dataset in selected}
+    units.discard(("", ""))
     mixed_units = len(units) > 1
-    if mixed_units and (candidate_chart_type != "combo" or len(selected) != 2):
+    if mixed_units and candidate_chart_type != "combo":
         return None
 
     merged_points: list[ChartPoint] = []
@@ -164,16 +173,18 @@ def _merge_time_series_cover(
     if (
         not merged_points
         or {point.evidence_id for point in merged_points} != candidate_set
-        or len({point.series for point in merged_points}) > 5
+        or len({point.series for point in merged_points}) > 4
     ):
         return None
 
-    if mixed_units:
+    if candidate_chart_type == "combo":
         period_sets = [
             {
                 point.period_end
                 for point in merged_points
-                if point.series == dataset.metric_name and point.period_end is not None
+                if point.series == dataset.metric_name
+                and point.period_end is not None
+                and point.value is not None
             }
             for dataset in selected
         ]
@@ -183,17 +194,15 @@ def _merge_time_series_cover(
             or not all(dataset.business_linked for dataset in selected)
         ):
             return None
-        series_meta = [
-            ChartSeriesMeta(
-                name=dataset.metric_name[:100],
-                unit=dataset.unit or "未提供",
-                currency=dataset.currency,
-                render_as="bar" if index == 0 else "line",
-            )
-            for index, dataset in enumerate(selected)
-        ]
-    else:
-        series_meta = []
+    series_meta = [
+        ChartSeriesMeta(
+            name=dataset.metric_name[:100],
+            unit=_unit_text(dataset.unit) or "未提供",
+            currency=dataset.currency,
+            render_as="bar" if index == 0 else "line",
+        )
+        for index, dataset in enumerate(selected)
+    ]
 
     digest = (
         hashlib.sha256(

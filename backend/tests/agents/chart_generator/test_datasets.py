@@ -104,6 +104,8 @@ def test_candidate_can_merge_two_time_series_datasets_by_union_evidence() -> Non
         "E-PROFIT-25",
     }
     assert {point.series for point in merged.points} == {"营业收入", "净利润"}
+    assert {meta.name for meta in merged.series_meta} == {"营业收入", "净利润"}
+    assert {meta.unit for meta in merged.series_meta} == {"亿元"}
 
 
 def test_chain_candidate_builds_only_nodes_supported_by_cited_text() -> None:
