@@ -292,6 +292,9 @@ def _render_panel_series(
         )
         for i in range(len(labels))
     ]
+    # SVG y coordinates increase downward; normal category y-axes increase upward.
+    if horizontal and not _axes(option, "yAxis")[0].get("inverse", False):
+        positions.reverse()
     totals: dict[tuple[int, str, int, bool], float] = {}
     endpoints: dict[tuple[int, int], tuple[float, float]] = {}
     values_by_axis: dict[int, list[float]] = {}

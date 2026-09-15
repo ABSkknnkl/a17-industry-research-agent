@@ -6,7 +6,11 @@ from xml.etree import ElementTree as ET
 
 import pytest
 
-from app.agents.chart_generator.builders import build_dual_panel_option, build_line_option
+from app.agents.chart_generator.builders import (
+    build_bar_option,
+    build_dual_panel_option,
+    build_line_option,
+)
 from app.reporting.svg import render_chart_svg
 from app.schemas.chart import ChartAnnotation, ChartDataset, ChartPanel, ChartPoint, ChartSpec
 
@@ -280,3 +284,54 @@ def test_specialized_axes_preserve_annotations(kind: str) -> None:
 def test_area_legacy_option_still_renders_fill() -> None:
     spec = chart({"xAxis": {"data": ["A", "B"]}, "series": [{"data": [1, 2]}]}, "area")
     assert ET.fromstring(render_chart_svg(spec)).findall(".//s:polygon", NS)
+
+
+@pytest.mark.parametrize("inverse", [None, False, True])
+def test_horizontal_builder_category_direction_positions_labels_bars_and_marks(
+    inverse: bool | None,
+) -> None:
+    dataset = ChartDataset(
+        dataset_id="DS-HORIZONTAL-DIRECTION",
+        kind="categorical",
+        metric_name="收入",
+        unit="亿元",
+        points=[
+            ChartPoint(label=name, value=value, evidence_id="E-1")
+            for name, value in (("A", 5), ("B", 10), ("C", 15))
+        ],
+        annotations=[
+            ChartAnnotation(annotation_type="callout", label="A类注释", start="A", value=5),
+            ChartAnnotation(annotation_type="shaded_region", label="AB区间", start="A", end="B"),
+        ],
+        evidence_ids=["E-1"],
+    )
+    option = build_bar_option("收入增长20%", dataset, "horizontal")
+    if inverse is not None:
+        option["yAxis"]["inverse"] = inverse
+    root = ET.fromstring(render_chart_svg(chart(option, "bar", "horizontal")))
+    label_y = {
+        node.text: float(node.attrib["y"]) - 4
+        for node in root.findall(".//s:text", NS)
+        if node.text in {"A", "B", "C"}
+    }
+    # The plot spans y=86..408. Normal ECharts category y-axes start at the bottom.
+    expected = [139.7, 247.0, 354.3] if inverse else [354.3, 247.0, 139.7]
+    assert [label_y[name] for name in ("A", "B", "C")] == pytest.approx(expected, abs=0.1)
+    bars = [
+        node
+        for node in root.findall(".//s:rect", NS)
+        if node.get("fill") == "#2563EB" and float(node.get("height", "0")) > 20
+    ]
+    assert len(bars) == 3
+    for bar, center in zip(bars, expected, strict=True):
+        assert (
+            float(bar.attrib["y"]) < center < float(bar.attrib["y"]) + float(bar.attrib["height"])
+        )
+    callout = root.find(".//s:circle", NS)
+    assert callout is not None
+    assert float(callout.attrib["cy"]) == pytest.approx(expected[0], abs=0.1)
+    region = next(
+        node for node in root.findall(".//s:rect", NS) if node.get("fill-opacity") == "0.18"
+    )
+    assert float(region.attrib["y"]) == pytest.approx(min(expected[:2]), abs=0.1)
+    assert float(region.attrib["height"]) == pytest.approx(abs(expected[0] - expected[1]), abs=0.1)
