@@ -36,7 +36,13 @@ from app.agents.chart_generator.planner import (
     detect_conflict_groups,
     plan_chart_selection,
 )
-from app.agents.chart_generator.quality import build_quality_report, validate_option
+from app.agents.chart_generator.audit import bind_run as audit_bind_run
+from app.agents.chart_generator.audit import record_chart_operation
+from app.agents.chart_generator.quality import (
+    build_quality_report,
+    data_health_check,
+    validate_option,
+)
 from app.agents.chart_generator.router import (
     CHART_FAMILY,
     TYPE_PREFERENCE,
@@ -180,15 +186,11 @@ def _calculated_metric_datasets(
 
     datasets: list[ChartDataset] = []
     for (metric_name, unit), metrics in grouped.items():
-        periods = {
-            metric.period_end for metric in metrics if metric.period_end is not None
-        }
+        periods = {metric.period_end for metric in metrics if metric.period_end is not None}
         entities = {metric.entity_scope for metric in metrics}
         kind = "time_series" if len(periods) > 1 else "categorical"
         evidence_ids = list(
-            dict.fromkeys(
-                evidence_id for metric in metrics for evidence_id in metric.evidence_ids
-            )
+            dict.fromkeys(evidence_id for metric in metrics for evidence_id in metric.evidence_ids)
         )
         digest = (
             hashlib.sha256(
@@ -218,9 +220,7 @@ def _calculated_metric_datasets(
                         ),
                         value=metric.value,
                         series=(
-                            metric.entity_scope[:100]
-                            if len(entities) > 1
-                            else metric_name[:100]
+                            metric.entity_scope[:100] if len(entities) > 1 else metric_name[:100]
                         ),
                         period_end=metric.period_end,
                         evidence_id=metric.evidence_ids[0],
@@ -491,9 +491,7 @@ class ChartGeneratorAgent:
         generate_industry_chain_images: bool = False,
         feedback_interpreter: FeedbackInterpreter | None = None,
     ) -> None:
-        if generate_industry_chain_images and (
-            prompt_compiler is None or image_generator is None
-        ):
+        if generate_industry_chain_images and (prompt_compiler is None or image_generator is None):
             raise ValueError("industry-chain image generation requires both providers")
         self._prompt_compiler = prompt_compiler
         self._image_generator = image_generator
@@ -531,8 +529,7 @@ class ChartGeneratorAgent:
                 for issue in interpretation.data.get("data_quality_issues", [])
             ]
             datasets = [
-                ChartDataset.model_validate(dataset)
-                for dataset in source.get("chart_datasets", [])
+                ChartDataset.model_validate(dataset) for dataset in source.get("chart_datasets", [])
             ]
             options = ChartGenerationOptions.model_validate(
                 context.input_data.get("chart_generate_options", {})
@@ -546,9 +543,7 @@ class ChartGeneratorAgent:
             )
 
         datasets.extend(
-            _calculated_metric_datasets(
-                interpretation.data.get("calculated_metrics", [])
-            )
+            _calculated_metric_datasets(interpretation.data.get("calculated_metrics", []))
         )
 
         # Shared feedback interpreter (阶段一): review feedback becomes
@@ -592,6 +587,7 @@ class ChartGeneratorAgent:
         chain_generated = False
         ambiguous_reasons: list[str] = []
         theme = options.color_theme or "research_blue"
+        audit_bind_run(context.run_id, context.revision)
 
         candidates.sort(
             key=lambda candidate: (
@@ -617,11 +613,7 @@ class ChartGeneratorAgent:
                     candidate.title,
                     candidate.insight_goal,
                     candidate.evidence_ids,
-                    [
-                        item
-                        for item in source.get("evidence_items", [])
-                        if isinstance(item, dict)
-                    ],
+                    [item for item in source.get("evidence_items", []) if isinstance(item, dict)],
                 )
                 if derived_chain is not None:
                     candidate_datasets = [*datasets, derived_chain]
@@ -647,6 +639,23 @@ class ChartGeneratorAgent:
             )
             if consistency_issues:
                 suppressed.extend(consistency_issues)
+                continue
+
+            health_issues = data_health_check(dataset)
+            # The five-row signal is preserved for all ordinary point datasets,
+            # but remains advisory: legitimate composition and early time-series
+            # views can have fewer than five audited points. Completeness and type
+            # failures cannot safely reach a chart builder.
+            blocking_health = [issue for issue in health_issues if issue != "data_health_min_rows"]
+            if blocking_health:
+                suppressed.append(
+                    SuppressedChart(
+                        title=title,
+                        reason_code="data_health_check_failed",
+                        reason="数据体检未通过：" + "；".join(blocking_health),
+                        evidence_ids=candidate.evidence_ids,
+                    )
+                )
                 continue
 
             route = route_chart(requested_type, dataset)
@@ -782,8 +791,15 @@ class ChartGeneratorAgent:
             # 原来的 suppressed 改为记录到 risk_notices（由 planner 处理）
 
             if is_duplicate:
-                # 图表仍然生成，不抑制；仅通过 risk_notices 标记
-                pass
+                suppressed.append(
+                    SuppressedChart(
+                        title=title,
+                        reason_code="duplicate_chart",
+                        reason="与本报告已有图表的分析目的与数据完全重复，已抑制。",
+                        evidence_ids=candidate.evidence_ids,
+                    )
+                )
+                continue
 
             # 硬上限检查：绝对数量限制（不可绕过）
             if len(specs) >= HARD_LIMIT_MAX_CANDIDATES:
@@ -800,8 +816,7 @@ class ChartGeneratorAgent:
             # 硬上限检查：单章最多渲染图表数量
             if (
                 candidate.chapter_hint is not None
-                and chapter_counts.get(candidate.chapter_hint, 0)
-                >= HARD_LIMIT_CHARTS_PER_CHAPTER
+                and chapter_counts.get(candidate.chapter_hint, 0) >= HARD_LIMIT_CHARTS_PER_CHAPTER
             ):
                 suppressed.append(
                     SuppressedChart(
@@ -866,16 +881,11 @@ class ChartGeneratorAgent:
             chain_template: ChainTemplate | None = None
             chain_graph: dict[str, Any] | None = None
             image_artifact: ArtifactRef | None = None
-            if (
-                route.chart_type == "industry_chain"
-                and self._generate_industry_chain_images
-            ):
+            if route.chart_type == "industry_chain" and self._generate_industry_chain_images:
                 assert self._prompt_compiler is not None
                 assert self._image_generator is not None
                 try:
-                    selected_template = select_chain_template(
-                        dataset, context.input_data
-                    )
+                    selected_template = select_chain_template(dataset, context.input_data)
                     chain_graph = build_verified_chain_graph(
                         title=title,
                         dataset=dataset,
@@ -951,9 +961,7 @@ class ChartGeneratorAgent:
                 dedupe_key=dedupe_key,
             )
             artifact_id = (
-                image_artifact.artifact_id
-                if image_artifact is not None
-                else f"ARTIFACT-{chart_id}"
+                image_artifact.artifact_id if image_artifact is not None else f"ARTIFACT-{chart_id}"
             )
             artifact_payload = spec.model_dump(mode="json")
             uri, checksum = save_chart_json(
@@ -1022,10 +1030,7 @@ class ChartGeneratorAgent:
                 break
 
         generated_types = {spec.chart_type for spec in specs}
-        if (
-            options.requested_chart_count is not None
-            and len(specs) < options.requested_chart_count
-        ):
+        if options.requested_chart_count is not None and len(specs) < options.requested_chart_count:
             all_risk_notices.append(
                 RiskNotice(
                     risk_code="CHART-USER-COUNT-NOT-MET",
@@ -1042,9 +1047,7 @@ class ChartGeneratorAgent:
                 )
             )
         missing_requested_types = [
-            item
-            for item in options.requested_chart_types
-            if item not in generated_types
+            item for item in options.requested_chart_types if item not in generated_types
         ]
         if missing_requested_types:
             all_risk_notices.append(
@@ -1070,9 +1073,7 @@ class ChartGeneratorAgent:
         )
 
         # 调用全局规划器
-        decision_id = (
-            f"DEC-{hashlib.sha256(context.run_id.encode()).hexdigest()[:12].upper()}"
-        )
+        decision_id = f"DEC-{hashlib.sha256(context.run_id.encode()).hexdigest()[:12].upper()}"
         chapter_assignments: dict[str, str] = {}
         for spec, candidate in zip(specs, candidates):
             if candidate.chapter_hint:
@@ -1097,9 +1098,7 @@ class ChartGeneratorAgent:
             "chart_chapter_density",
             "chart_family_duplicate",
         }
-        hard_suppressed = [
-            s for s in suppressed if s.reason_code not in soft_suppress_codes
-        ]
+        hard_suppressed = [s for s in suppressed if s.reason_code not in soft_suppress_codes]
 
         # Every skipped/downgraded candidate is visible to the user as an advisory.
         # Agent 3 never converts a professional chart issue into a pipeline stop.
@@ -1151,6 +1150,28 @@ class ChartGeneratorAgent:
             suppressed=hard_suppressed,
             risk_notices=all_risk_notices,
         )
+        for spec in specs:
+            record_chart_operation(
+                chart_id=spec.chart_id,
+                stage="chart_generate",
+                decision="degraded" if spec.resolution_reason else "generated",
+                evidence_ids=list(spec.evidence_ids),
+                quality_issues=list(spec.quality_issue_ids),
+                degradation=spec.resolution_reason,
+                title=spec.title,
+            )
+        for item in suppressed:
+            record_chart_operation(
+                chart_id=(
+                    "SUPPRESSED-"
+                    + hashlib.sha256(item.title.encode("utf-8")).hexdigest()[:12].upper()
+                ),
+                stage="chart_generate",
+                decision="suppressed",
+                evidence_ids=list(item.evidence_ids),
+                quality_issues=[item.reason_code],
+                title=item.title,
+            )
         generation = ChartGenerationResult(
             charts=references,
             chart_specs=specs,
@@ -1160,11 +1181,7 @@ class ChartGeneratorAgent:
 
         # 构建 DecisionPackage
         blocking_risk_codes = sorted(
-            {
-                n.risk_code
-                for n in all_risk_notices
-                if n.disposition == RiskDisposition.HARD_BLOCK
-            }
+            {n.risk_code for n in all_risk_notices if n.disposition == RiskDisposition.HARD_BLOCK}
         )
         ack_required_codes = sorted(
             {
@@ -1174,9 +1191,7 @@ class ChartGeneratorAgent:
             }
         )
         recommended_ids = [
-            c.candidate_id
-            for c in chart_candidates
-            if c.status == ChartCandidateStatus.RECOMMENDED
+            c.candidate_id for c in chart_candidates if c.status == ChartCandidateStatus.RECOMMENDED
         ]
         risk_snapshot_sha256 = compute_risk_snapshot_sha256(
             risk_notices=all_risk_notices,
@@ -1195,9 +1210,7 @@ class ChartGeneratorAgent:
             blocking_risk_codes=blocking_risk_codes,
             acknowledgement_required_codes=ack_required_codes,
             decision_status=(
-                DecisionStatus.AWAITING_USER
-                if ack_required_codes
-                else DecisionStatus.NOT_REQUIRED
+                DecisionStatus.AWAITING_USER if ack_required_codes else DecisionStatus.NOT_REQUIRED
             ),
             risk_snapshot_sha256=risk_snapshot_sha256,
             generated_at=datetime.now(UTC),
@@ -1221,11 +1234,7 @@ class ChartGeneratorAgent:
                     if item.get("status") == "applied"
                 ]
         evidence_sources = sorted(
-            {
-                evidence_id
-                for reference in references
-                for evidence_id in reference.evidence_ids
-            }
+            {evidence_id for reference in references for evidence_id in reference.evidence_ids}
         )
         return StageResult(
             stage=self.stage,

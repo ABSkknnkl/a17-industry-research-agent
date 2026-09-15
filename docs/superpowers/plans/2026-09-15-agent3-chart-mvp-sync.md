@@ -353,7 +353,7 @@ def record_chart_operation(*, chart_id: str, stage: str, decision: str,
         return
 ```
 
-In `service.py`, run health checks before routing, omit suppressed duplicates from `specs`, append a `SuppressedChart` with a stable reason, audit generated/suppressed/degraded outcomes, and write chart-generation failures to the existing artifact root. In `fusion.py`, normalize the four unit placeholders before constructing `ChartDataset`.
+In `service.py`, run health checks before routing: `data_health_min_rows` is advisory so valid short categorical and one-point workflow datasets stay renderable; `data_health_min_fields`, `data_health_missing_ratio` (>20%), and `data_health_type_consistency` block readiness. Omit suppressed duplicates from `specs`, append a `SuppressedChart` with a stable reason, audit generated/suppressed/degraded outcomes, and write chart-generation failures to the existing artifact root. In `fusion.py`, normalize the four unit placeholders before constructing `ChartDataset`.
 
 - [ ] **Step 4: Run Agent 3 service, quality, and workflow smoke tests**
 

@@ -8,6 +8,7 @@ from collections import defaultdict
 from datetime import date
 from typing import Any
 
+from app.agents.chart_generator.constants import UNIT_PLACEHOLDERS
 from app.schemas.acquisition import ConflictRecord, DuplicateGroup
 from app.schemas.chart import ChainEdge, ChainNode, ChartDataset, ChartPoint
 from app.schemas.evidence import EvidenceItem
@@ -95,7 +96,9 @@ def build_chart_datasets(
             # Keeping those scopes separate prevents unrelated time series from
             # being merged into one misleading chart.
             scope_key = item.scope if item.metric_name in {"宏观@值", "指标值", "值"} else None
-            numeric_groups[(item.metric_name, item.unit, item.currency, scope_key)].append(item)
+            numeric_groups[
+                (item.metric_name, _chart_unit_or_none(item.unit), item.currency, scope_key)
+            ].append(item)
     datasets: list[ChartDataset] = []
     for (metric, unit, currency, scope_key), items in numeric_groups.items():
         periods = {item.period_end for item in items}
@@ -113,7 +116,7 @@ def build_chart_datasets(
                 dataset_id=f"DS-{digest}",
                 kind=kind,
                 metric_name=scope_key or metric,
-                unit=unit,
+                unit=_chart_unit_or_none(unit),
                 currency=None if currency == "不适用" else currency,
                 data_as_of=max(
                     (item.available_at for item in items if item.available_at), default=None
@@ -139,6 +142,12 @@ def build_chart_datasets(
     if chain is not None:
         datasets.append(chain)
     return datasets[:30]
+
+
+def _chart_unit_or_none(unit: str | None) -> str | None:
+    """Remove unit placeholders before they reach the ChartDataset contract."""
+    normalized = (unit or "").strip()
+    return None if normalized in UNIT_PLACEHOLDERS else unit
 
 
 def _chain_dataset(

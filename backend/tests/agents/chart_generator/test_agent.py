@@ -1,5 +1,6 @@
 import hashlib
 import json
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -7,7 +8,7 @@ import pytest
 from app.agents.chart_generator.service import ChartGeneratorAgent
 from app.core.config import settings
 from app.integrations.visuals.mock import MockImageGenerator, MockPromptCompiler
-from app.schemas.chart import ChartDataset
+from app.schemas.chart import ChartDataset, ChartPoint
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
 
@@ -75,9 +76,7 @@ async def test_agent_generates_industry_chain_image_with_ds_compiled_prompt(
         "chart_spec_json",
     }
     image_artifact = next(
-        artifact
-        for artifact in result.artifacts
-        if artifact.kind == "generated_chart_image"
+        artifact for artifact in result.artifacts if artifact.kind == "generated_chart_image"
     )
     assert (tmp_path / image_artifact.uri).read_bytes().startswith(b"\x89PNG")
 
@@ -136,6 +135,183 @@ async def test_agent_generates_ready_artifact_and_suppresses_duplicate(
     raw = artifact_path.read_bytes()
     assert hashlib.sha256(raw).hexdigest() == result.artifacts[0].checksum
     assert json.loads(raw)["chart_type"] == "bar"
+
+
+@pytest.mark.asyncio
+async def test_agent_truly_suppresses_duplicate_view_and_audits_outcomes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path / "artifacts")
+    monkeypatch.setenv("CHART_AUDIT_DIR", str(tmp_path / "audit"))
+    dataset = ChartDataset(
+        dataset_id="DS-DEDUPE",
+        kind="time_series",
+        metric_name="行业收入",
+        unit="亿元",
+        points=[
+            ChartPoint(
+                label=str(year),
+                value=year - 2020,
+                period_end=date(year, 12, 31),
+                evidence_id=f"E-{year}",
+            )
+            for year in range(2021, 2026)
+        ],
+        evidence_ids=[f"E-{year}" for year in range(2021, 2026)],
+    )
+    candidate = {
+        "title": "行业收入同比增长",
+        "chart_type": "line",
+        "analysis_purpose": "trend",
+        "insight_goal": "显示行业收入增长",
+        "evidence_ids": dataset.evidence_ids,
+    }
+    context = StageContext(
+        project_id="project-dedupe-audit",
+        run_id="run-dedupe-audit",
+        revision=1,
+        input_data={
+            "chart_datasets": [dataset.model_dump(mode="json")],
+            "evidence_items": _evidence_items(dataset.evidence_ids),
+            "chart_generate_options": {"allow_multiple_charts_per_dataset": True},
+        },
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.COMPLETED,
+                data={"chart_candidates": [candidate, candidate]},
+            )
+        },
+    )
+
+    result = await ChartGeneratorAgent().run(context)
+
+    assert len(result.data["chart_specs"]) == 1
+    assert any(
+        item["reason_code"] == "duplicate_chart" for item in result.data["suppressed_candidates"]
+    )
+    rows = [
+        json.loads(line)
+        for path in (tmp_path / "audit").glob("*.jsonl")
+        for line in path.read_text().splitlines()
+    ]
+    assert {row["decision"] for row in rows} == {"generated", "suppressed"}
+
+
+@pytest.mark.asyncio
+async def test_agent_keeps_short_complete_dataset_as_min_rows_advisory(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path / "artifacts")
+    dataset = ChartDataset(
+        dataset_id="DS-SHORT",
+        kind="time_series",
+        metric_name="行业收入",
+        points=[
+            ChartPoint(
+                label=str(year),
+                value=year - 2020,
+                period_end=date(year, 12, 31),
+                evidence_id=f"E-{year}",
+            )
+            for year in range(2021, 2025)
+        ],
+        evidence_ids=[f"E-{year}" for year in range(2021, 2025)],
+    )
+    context = StageContext(
+        project_id="project-short",
+        run_id="run-short",
+        revision=1,
+        input_data={
+            "chart_datasets": [dataset.model_dump(mode="json")],
+            "evidence_items": _evidence_items(dataset.evidence_ids),
+        },
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.COMPLETED,
+                data={
+                    "chart_candidates": [
+                        {
+                            "title": "行业收入增长",
+                            "chart_type": "line",
+                            "evidence_ids": dataset.evidence_ids,
+                        }
+                    ]
+                },
+            )
+        },
+    )
+
+    result = await ChartGeneratorAgent().run(context)
+
+    assert len(result.data["chart_specs"]) == 1
+    assert result.data["suppressed_candidates"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("values", "expected_health_issue"),
+    [
+        ((1, 2, 3, None, None), "data_health_missing_ratio"),
+        ((1, 2.0, 3, 4, 5), "data_health_type_consistency"),
+    ],
+)
+async def test_agent_suppresses_incomplete_data_before_routing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    values: tuple[int | float | None, ...],
+    expected_health_issue: str,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path / "artifacts")
+    dataset = ChartDataset(
+        dataset_id="DS-INCOMPLETE",
+        kind="time_series",
+        metric_name="行业收入",
+        points=[
+            ChartPoint(
+                label=str(year),
+                value=value,
+                period_end=date(year, 12, 31),
+                evidence_id=f"E-{year}",
+            )
+            for year, value in zip(range(2021, 2026), values)
+        ],
+        evidence_ids=[f"E-{year}" for year in range(2021, 2026)],
+    )
+    context = StageContext(
+        project_id="project-health",
+        run_id="run-health",
+        revision=1,
+        input_data={
+            "chart_datasets": [dataset.model_dump(mode="json")],
+            "evidence_items": _evidence_items(dataset.evidence_ids),
+        },
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.COMPLETED,
+                data={
+                    "chart_candidates": [
+                        {
+                            "title": "行业收入承压",
+                            "chart_type": "line",
+                            "evidence_ids": dataset.evidence_ids,
+                        }
+                    ]
+                },
+            )
+        },
+    )
+
+    result = await ChartGeneratorAgent().run(context)
+
+    assert result.data["chart_specs"] == []
+    suppressed = result.data["suppressed_candidates"][0]
+    assert suppressed["reason_code"] == "data_health_check_failed"
+    assert expected_health_issue in suppressed["reason"]
 
 
 @pytest.mark.asyncio
@@ -235,9 +411,7 @@ async def test_agent_auto_selects_ambiguous_dataset_and_warns(
     assert result.error is None
     assert len(result.data["charts"]) == 1
     risks = result.data["decision_package"]["risk_notices"]
-    assert any(
-        risk["risk_code"] == "CHART-DATASET-AMBIGUOUS-AUTO-SELECTED" for risk in risks
-    )
+    assert any(risk["risk_code"] == "CHART-DATASET-AMBIGUOUS-AUTO-SELECTED" for risk in risks)
 
 
 @pytest.mark.asyncio
@@ -290,9 +464,7 @@ async def test_agent_does_not_backfill_unmatched_suggestions_from_unrequested_da
         radar_dataset,
         chain_dataset,
     ]
-    evidence_ids = [
-        evidence_id for dataset in datasets for evidence_id in dataset.evidence_ids
-    ]
+    evidence_ids = [evidence_id for dataset in datasets for evidence_id in dataset.evidence_ids]
     context = StageContext(
         project_id="project-backfill",
         run_id="run-backfill",
@@ -352,10 +524,7 @@ async def test_agent_refuses_to_run_when_agent2_is_waiting_review(
 
     assert result.status == StageStatus.WAITING_REVIEW
     assert result.error == "analysis_not_completed"
-    assert (
-        result.data["collaboration_requests"][0]["request_id"]
-        == "ANALYSIS-NOT-COMPLETED"
-    )
+    assert result.data["collaboration_requests"][0]["request_id"] == "ANALYSIS-NOT-COMPLETED"
 
 
 @pytest.mark.asyncio
@@ -420,9 +589,7 @@ async def test_agent_generates_all_five_p0_chart_families(
         radar_dataset,
         chain_dataset,
     ]
-    evidence_ids = [
-        evidence_id for dataset in datasets for evidence_id in dataset.evidence_ids
-    ]
+    evidence_ids = [evidence_id for dataset in datasets for evidence_id in dataset.evidence_ids]
     context = StageContext(
         project_id="project-p0",
         run_id="run-p0",
@@ -570,9 +737,7 @@ async def test_agent_limits_repeated_advanced_chart_family_without_forcing_minim
     candidates = []
     all_evidence_ids: list[str] = []
     for dataset_index in range(4):
-        evidence_ids = [
-            f"E-P1-{dataset_index}-{point_index}" for point_index in range(5)
-        ]
+        evidence_ids = [f"E-P1-{dataset_index}-{point_index}" for point_index in range(5)]
         all_evidence_ids.extend(evidence_ids)
         dataset = ChartDataset(
             dataset_id=f"DS-P1-{dataset_index}",
