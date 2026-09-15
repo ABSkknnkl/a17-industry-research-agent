@@ -46,6 +46,7 @@ ChartVariant = Literal[
     "heatmap",
     "boxplot",
     "treemap",
+    "dual_panel",
 ]
 
 
@@ -164,6 +165,30 @@ class ChainEdge(BaseModel):
     evidence_ids: list[str] = Field(min_length=1)
 
 
+class ChartPanel(BaseModel):
+    """Metadata describing one side of a dual-panel chart."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    panel_id: str = Field(min_length=1, max_length=50)
+    position: Literal["left", "right"]
+    series: list[str] = Field(min_length=1, max_length=4)
+    axis_name: str | None = Field(default=None, max_length=100)
+
+
+class ChartAnnotation(BaseModel):
+    """Auditable annotation metadata for rendered charts."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    annotation_type: Literal["reference_line", "shaded_region", "callout"]
+    label: str = Field(min_length=1, max_length=100)
+    value: float | None = None
+    start: str | None = Field(default=None, max_length=200)
+    end: str | None = Field(default=None, max_length=200)
+    series: str | None = Field(default=None, max_length=100)
+
+
 class ChartDataset(BaseModel):
     """Standardized input dataset for chart generation."""
 
@@ -188,7 +213,7 @@ class ChartDataset(BaseModel):
     scale_min: float | None = None
     scale_max: float | None = None
     business_linked: bool = False
-    series_meta: list[ChartSeriesMeta] = Field(default_factory=list, max_length=2)
+    series_meta: list[ChartSeriesMeta] = Field(default_factory=list, max_length=4)
     x_metric: str | None = Field(default=None, max_length=200)
     x_unit: str | None = Field(default=None, max_length=50)
     y_metric: str | None = Field(default=None, max_length=200)
@@ -207,6 +232,8 @@ class ChartDataset(BaseModel):
     core_product_name: str | None = Field(default=None, min_length=1, max_length=100)
     chart_subtitle: str | None = Field(default=None, min_length=1, max_length=300)
     evidence_ids: list[str] = Field(min_length=1)
+    panels: list[ChartPanel] | None = None
+    annotations: list[ChartAnnotation] | None = None
 
 
 class ChartReference(BaseModel):
@@ -265,6 +292,7 @@ class ChartSpec(BaseModel):
     resolution_reason: str | None = Field(default=None, min_length=1, max_length=1_000)
     variant: ChartVariant
     option: dict[str, Any]
+    panels: list[ChartPanel] | None = None
     render_mode: Literal["echarts", "generated_image"] = "echarts"
     image_uri: str | None = Field(default=None, min_length=1, max_length=1_000)
     image_mime_type: Literal["image/png", "image/webp"] | None = None
