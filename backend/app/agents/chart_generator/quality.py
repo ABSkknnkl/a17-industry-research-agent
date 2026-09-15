@@ -78,6 +78,8 @@ def build_quality_report(
     - advisory/acknowledgement issues → quality.passed = True but with notices
     """
     issues = [issue for spec in specs for issue in validate_option(spec.option)]
+    if any("data_health_min_rows" in spec.quality_issue_ids for spec in specs):
+        issues.append("data_health_min_rows")
     if any(not check_title_conclusive(spec) for spec in specs):
         issues.append("title_not_conclusive")
 

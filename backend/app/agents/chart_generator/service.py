@@ -38,6 +38,7 @@ from app.agents.chart_generator.planner import (
 )
 from app.agents.chart_generator.audit import bind_run as audit_bind_run
 from app.agents.chart_generator.audit import record_chart_operation
+from app.agents.chart_generator.constants import UNIT_PLACEHOLDERS
 from app.agents.chart_generator.quality import (
     build_quality_report,
     data_health_check,
@@ -179,10 +180,18 @@ def _calculated_metric_datasets(
     raw_metrics: list[dict[str, Any]],
 ) -> list[ChartDataset]:
     """Expose Agent 2 formula results to Agent 3 without inventing chart data."""
-    grouped: dict[tuple[str, str], list[CalculatedMetric]] = {}
+    grouped: dict[tuple[str, str | None], list[CalculatedMetric]] = {}
     for raw in raw_metrics:
-        metric = CalculatedMetric.model_validate(raw)
-        grouped.setdefault((metric.metric_name, metric.unit), []).append(metric)
+        normalized_raw = dict(raw)
+        if normalized_raw.get("unit") in UNIT_PLACEHOLDERS:
+            # CalculatedMetric currently requires a non-empty unit. Preserve its
+            # validation contract while normalizing the placeholder before data
+            # grouping and chart construction.
+            normalized_raw["unit"] = "未提供"
+        metric = CalculatedMetric.model_validate(normalized_raw)
+        grouped.setdefault((metric.metric_name, _chart_unit_or_none(metric.unit)), []).append(
+            metric
+        )
 
     datasets: list[ChartDataset] = []
     for (metric_name, unit), metrics in grouped.items():
@@ -197,7 +206,7 @@ def _calculated_metric_datasets(
                 "|".join(
                     [
                         metric_name,
-                        unit,
+                        unit or "",
                         *sorted(metric.calculation_id for metric in metrics),
                     ]
                 ).encode("utf-8")
@@ -237,6 +246,10 @@ def _calculated_metric_datasets(
             )
         )
     return datasets
+
+
+def _chart_unit_or_none(unit: str | None) -> str | None:
+    return None if unit in UNIT_PLACEHOLDERS else unit
 
 
 def _allow_multiple_views(options: ChartGenerationOptions) -> bool:
@@ -872,6 +885,9 @@ class ChartGeneratorAgent:
                 f"{issue.metric}：{issue.description}；处理：{issue.suggested_handling}"
                 for issue in linked_issues
             ]
+            chart_quality_issue_ids = [issue.issue_id for issue in linked_issues]
+            if "data_health_min_rows" in health_issues:
+                chart_quality_issue_ids.append("data_health_min_rows")
             render_mode = "echarts"
             image_uri: str | None = None
             image_mime_type: Literal["image/png", "image/webp"] | None = None
@@ -955,7 +971,7 @@ class ChartGeneratorAgent:
                 chain_graph=chain_graph,
                 evidence_ids=dataset.evidence_ids,
                 insight_goal=candidate.insight_goal,
-                quality_issue_ids=[issue.issue_id for issue in linked_issues],
+                quality_issue_ids=chart_quality_issue_ids,
                 footnotes=footnotes,
                 data_fingerprint=fingerprint,
                 dedupe_key=dedupe_key,
@@ -982,7 +998,7 @@ class ChartGeneratorAgent:
                     status="ready",
                     evidence_ids=dataset.evidence_ids,
                     insight_goal=candidate.insight_goal,
-                    quality_issue_ids=[issue.issue_id for issue in linked_issues],
+                    quality_issue_ids=chart_quality_issue_ids,
                     footnotes=footnotes,
                     artifact_id=artifact_id,
                     recommended_chapter_id=candidate.chapter_hint,

@@ -205,6 +205,7 @@ async def test_agent_keeps_short_complete_dataset_as_min_rows_advisory(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path / "artifacts")
+    monkeypatch.setenv("CHART_AUDIT_DIR", str(tmp_path / "audit"))
     dataset = ChartDataset(
         dataset_id="DS-SHORT",
         kind="time_series",
@@ -249,6 +250,10 @@ async def test_agent_keeps_short_complete_dataset_as_min_rows_advisory(
 
     assert len(result.data["chart_specs"]) == 1
     assert result.data["suppressed_candidates"] == []
+    assert "data_health_min_rows" in result.data["quality"]["issues"]
+    assert "data_health_min_rows" in result.data["chart_specs"][0]["quality_issue_ids"]
+    audit_row = json.loads(next((tmp_path / "audit").glob("*.jsonl")).read_text())
+    assert "data_health_min_rows" in audit_row["quality_issues"]
 
 
 @pytest.mark.asyncio
@@ -363,7 +368,7 @@ async def test_agent_propagates_data_quality_footnotes_without_suppressing_chart
     chart = result.data["charts"][0]
 
     assert result.status == StageStatus.COMPLETED
-    assert chart["quality_issue_ids"] == ["DQ-SCOPE"]
+    assert set(chart["quality_issue_ids"]) == {"DQ-SCOPE", "data_health_min_rows"}
     assert chart["insight_goal"] == "比较样本企业市场份额"
     assert "样本企业统计口径存在差异" in chart["footnotes"][0]
 

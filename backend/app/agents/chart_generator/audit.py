@@ -3,20 +3,20 @@
 import hashlib
 import json
 import os
+from contextvars import ContextVar
 from datetime import datetime, timezone
 from pathlib import Path
 
 from app.core.config import settings
 
-_RUN_ID: str | None = None
-_REVISION = 0
+_RUN_CONTEXT: ContextVar[tuple[str | None, int]] = ContextVar(
+    "chart_audit_run_context", default=(None, 0)
+)
 
 
 def bind_run(run_id: str | None, revision: int = 0) -> None:
     """Attach run metadata to later best-effort audit records."""
-    global _RUN_ID, _REVISION
-    _RUN_ID = run_id
-    _REVISION = revision
+    _RUN_CONTEXT.set((run_id, revision))
 
 
 def record_chart_operation(
@@ -32,14 +32,15 @@ def record_chart_operation(
 ) -> None:
     """Append a bounded record without letting observability break the stage."""
     try:
+        run_id, revision = _RUN_CONTEXT.get()
         directory = Path(
             os.environ.get("CHART_AUDIT_DIR", str(settings.ARTIFACT_ROOT / "chart_audit"))
         )
         directory.mkdir(parents=True, exist_ok=True)
         row = {
             "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "run_id": _RUN_ID,
-            "revision": _REVISION,
+            "run_id": run_id,
+            "revision": revision,
             "chart_id": chart_id,
             "stage": stage,
             "decision": decision,

@@ -1,8 +1,13 @@
+import asyncio
 import json
 
-from app.agents.chart_generator.audit import record_chart_operation
+import pytest
+
+from app.agents.chart_generator.audit import bind_run, record_chart_operation
+from app.agents.chart_generator.builders import build_bar_option
 from app.agents.chart_generator.constants import DATALABEL_MAX_POINTS, UNIT_PLACEHOLDERS
 from app.agents.chart_generator.quality import check_title_conclusive, data_health_check
+from app.agents.chart_generator.service import _calculated_metric_datasets
 from app.schemas.chart import ChartAnnotation, ChartDataset, ChartPanel, ChartPoint, ChartSpec
 from app.agents.data_fetcher.fusion import build_chart_datasets
 from app.schemas.evidence import EvidenceItem
@@ -138,3 +143,60 @@ def test_fusion_normalizes_all_chart_unit_placeholders() -> None:
 
     assert len(datasets) == 1
     assert datasets[0].unit is None
+
+
+def test_calculated_metrics_normalize_placeholder_units_before_axis_handoff() -> None:
+    metrics = [
+        {
+            "calculation_id": f"CALC-U-{index}",
+            "calculation_type": "cr3",
+            "metric_name": "集中度",
+            "entity_scope": f"样本{index}",
+            "market": "中国内地",
+            "value": float(index),
+            "unit": unit,
+            "formula": "样本计算",
+            "inputs": [
+                {
+                    "name": "份额",
+                    "value": 1.0,
+                    "unit": "%",
+                    "evidence_id": f"E-U-{index}",
+                }
+            ],
+            "evidence_ids": [f"E-U-{index}"],
+            "methodology_note": "同口径样本。",
+        }
+        for index, unit in enumerate(("未提供", "文本", "不适用", ""), 1)
+    ]
+
+    datasets = _calculated_metric_datasets(metrics)
+
+    assert len(datasets) == 1
+    assert datasets[0].unit is None
+    assert build_bar_option("集中度比较", datasets[0], "grouped")["yAxis"]["name"] == ""
+
+
+@pytest.mark.asyncio
+async def test_audit_run_context_is_isolated_between_concurrent_tasks(
+    tmp_path, monkeypatch
+) -> None:
+    monkeypatch.setenv("CHART_AUDIT_DIR", str(tmp_path))
+
+    async def record_for_run(run_id: str, revision: int, chart_id: str) -> None:
+        bind_run(run_id, revision)
+        await asyncio.sleep(0)
+        record_chart_operation(chart_id=chart_id, stage="route", decision="generated")
+
+    await asyncio.gather(
+        record_for_run("run-one", 1, "CHART-ONE"),
+        record_for_run("run-two", 2, "CHART-TWO"),
+    )
+
+    rows = {
+        row["chart_id"]: row
+        for line in next(tmp_path.glob("*.jsonl")).read_text().splitlines()
+        for row in [json.loads(line)]
+    }
+    assert (rows["CHART-ONE"]["run_id"], rows["CHART-ONE"]["revision"]) == ("run-one", 1)
+    assert (rows["CHART-TWO"]["run_id"], rows["CHART-TWO"]["revision"]) == ("run-two", 2)
