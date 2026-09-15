@@ -152,6 +152,76 @@ def test_combo_three_series_requires_complete_two_sided_panel_coverage() -> None
     assert route_chart("combo", incomplete).reason_code == "panels_missing_for_dual_panel"
 
 
+def test_combo_dual_panels_reject_overlap_and_incomplete_coverage() -> None:
+    source = _combo_dataset(["万吨", "万吨", "%"])
+    overlapping = source.model_copy(
+        update={
+            "panels": [
+                ChartPanel(
+                    panel_id="volume",
+                    position="left",
+                    series=["指标1", "指标2"],
+                ),
+                ChartPanel(
+                    panel_id="rate",
+                    position="right",
+                    series=["指标2", "指标3"],
+                ),
+            ]
+        }
+    )
+    incomplete = source.model_copy(
+        update={
+            "panels": [
+                ChartPanel(panel_id="volume", position="left", series=["指标1"]),
+                ChartPanel(panel_id="rate", position="right", series=["指标3"]),
+            ]
+        }
+    )
+
+    for dataset in (overlapping, incomplete):
+        decision = route_chart("combo", dataset)
+        assert decision.accepted is False
+        assert decision.reason_code == "combo_requirements_not_met"
+
+
+def test_real_time_series_fingerprint_prevents_false_merge() -> None:
+    source = _combo_dataset(["亿元", "%"])
+    changed_period = source.model_copy(
+        update={
+            "points": [
+                source.points[0].model_copy(
+                    update={"label": "2023", "period_end": date(2023, 12, 31)}
+                ),
+                *source.points[1:],
+            ]
+        }
+    )
+    changed_unit = source.model_copy(
+        update={
+            "series_meta": [
+                source.series_meta[0].model_copy(update={"unit": "万元"}),
+                source.series_meta[1],
+            ]
+        }
+    )
+    changed_series_value = source.model_copy(
+        update={
+            "points": [
+                *source.points[:-1],
+                source.points[-1].model_copy(update={"value": 999}),
+            ]
+        }
+    )
+
+    fingerprint = build_data_fingerprint("combo", source)
+    assert {
+        build_data_fingerprint("combo", changed_period),
+        build_data_fingerprint("combo", changed_unit),
+        build_data_fingerprint("combo", changed_series_value),
+    }.isdisjoint({fingerprint})
+
+
 def test_trend_synonyms_share_one_dedupe_slot_without_merging_different_data() -> None:
     source = build_data_fingerprint("line", _combo_dataset(["亿元", "亿元"]))
     keys = {

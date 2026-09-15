@@ -152,7 +152,11 @@ export default { name: 'ChartGallery' }
           <div v-else class="chart-img-missing muted">AI 生成图未内联，请从产出物下载查看</div>
         </div>
         <div v-if="spec.insight_goal" class="chart-goal muted">{{ spec.insight_goal }}</div>
-        <div v-for="(note, i) in chartFootnotes(spec)" :key="i" class="chart-goal chart-footnote muted">
+        <div
+          v-for="(note, i) in chartFootnotes(spec)"
+          :key="i"
+          class="chart-goal chart-footnote muted"
+        >
           {{ note }}
         </div>
       </div>
@@ -169,7 +173,11 @@ export default { name: 'ChartGallery' }
       <div v-if="activeSpec?.insight_goal" class="chart-goal muted" style="margin-top: 8px">
         分析目的：{{ activeSpec.insight_goal }}
       </div>
-      <div v-for="(note, i) in chartFootnotes(activeSpec)" :key="i" class="chart-goal chart-footnote muted">
+      <div
+        v-for="(note, i) in chartFootnotes(activeSpec)"
+        :key="i"
+        class="chart-goal chart-footnote muted"
+      >
         {{ note }}
       </div>
     </el-dialog>

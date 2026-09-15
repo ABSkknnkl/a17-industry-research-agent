@@ -6,7 +6,7 @@ import math
 import re
 from collections import defaultdict
 from datetime import date
-from typing import Any
+from typing import Any, Literal
 
 from app.agents.chart_generator.constants import UNIT_PLACEHOLDERS
 from app.schemas.acquisition import ConflictRecord, DuplicateGroup
@@ -102,7 +102,9 @@ def build_chart_datasets(
     datasets: list[ChartDataset] = []
     for (metric, unit, currency, scope_key), items in numeric_groups.items():
         periods = {item.period_end for item in items}
-        kind = "time_series" if len(periods) > 1 else "categorical"
+        kind: Literal["time_series", "categorical"] = (
+            "time_series" if len(periods) > 1 else "categorical"
+        )
         digest = hashlib.sha256(
             "|".join(sorted(item.evidence_id for item in items)).encode("utf-8")
         ).hexdigest()[:12]
@@ -154,7 +156,11 @@ def _chain_dataset(
     evidence: list[EvidenceItem],
     rows: list[dict[str, Any]],
 ) -> ChartDataset | None:
-    stages = (("上游", "upstream"), ("中游", "midstream"), ("下游", "downstream"))
+    stages: tuple[tuple[str, Literal["upstream", "midstream", "downstream", "support"]], ...] = (
+        ("上游", "upstream"),
+        ("中游", "midstream"),
+        ("下游", "downstream"),
+    )
     nodes: list[ChainNode] = []
     for row in rows:
         for field, stage in stages:

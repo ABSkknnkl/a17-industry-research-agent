@@ -148,9 +148,22 @@ export type ChartTypeName =
 // ---------- 图表公开契约（contracts/schemas/chart-generation-result.schema.json） ----------
 
 export type ChartVariant =
-  | 'line' | 'vertical' | 'horizontal' | 'grouped' | 'stacked'
-  | 'pie' | 'radar' | 'graph' | 'combo' | 'area' | 'scatter'
-  | 'bubble' | 'heatmap' | 'boxplot' | 'treemap' | 'dual_panel'
+  | 'line'
+  | 'vertical'
+  | 'horizontal'
+  | 'grouped'
+  | 'stacked'
+  | 'pie'
+  | 'radar'
+  | 'graph'
+  | 'combo'
+  | 'area'
+  | 'scatter'
+  | 'bubble'
+  | 'heatmap'
+  | 'boxplot'
+  | 'treemap'
+  | 'dual_panel'
 
 export interface ChartPanel {
   panel_id: string
@@ -205,24 +218,29 @@ interface ChartImageMetadata {
   chain_graph?: Record<string, unknown> | null
 }
 
-export type ChartSpec = ChartSpecBase & (
-  | ({ render_mode?: 'echarts' } & ChartImageMetadata)
-  | ({ render_mode: 'generated_image'; chart_type: 'industry_chain' } & {
-      [K in keyof ChartImageMetadata]-?: NonNullable<ChartImageMetadata[K]>
-    })
-)
+export type ChartSpec = ChartSpecBase &
+  (
+    | ({ render_mode?: 'echarts' } & ChartImageMetadata)
+    | ({ render_mode: 'generated_image'; chart_type: 'industry_chain' } & {
+        [K in keyof ChartImageMetadata]-?: NonNullable<ChartImageMetadata[K]>
+      })
+  )
 
 interface ChartReferenceBase extends ChartMetadata {
   recommended_chapter_id?: string | null
   candidate_status?:
-    | 'valid' | 'recommended' | 'not_recommended' | 'selected'
-    | 'excluded_by_user' | 'hard_blocked' | 'needs_reassignment' | null
+    | 'valid'
+    | 'recommended'
+    | 'not_recommended'
+    | 'selected'
+    | 'excluded_by_user'
+    | 'hard_blocked'
+    | 'needs_reassignment'
+    | null
 }
 
-export type ChartReference = ChartReferenceBase & (
-  | { status: 'planned'; artifact_id?: string | null }
-  | { status: 'ready'; artifact_id: string }
-)
+export type ChartReference = ChartReferenceBase &
+  ({ status: 'planned'; artifact_id?: string | null } | { status: 'ready'; artifact_id: string })
 
 /** 确定性机器检查提示，不代表人工视觉审核，也不改变 passed 发布门槛。 */
 export interface ChartReviewChecklist {

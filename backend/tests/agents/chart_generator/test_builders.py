@@ -394,6 +394,42 @@ def test_null_gaps_do_not_count_toward_line_area_or_bar_label_limit() -> None:
     )
 
 
+def test_combo_and_dual_panel_use_per_series_visible_label_limit() -> None:
+    def expanded(dataset: ChartDataset, count: int) -> ChartDataset:
+        names = [meta.name for meta in dataset.series_meta]
+        points = [
+            ChartPoint(
+                label=str(2010 + index),
+                value=index,
+                series=name,
+                period_end=date(2010 + index, 12, 31),
+                value_kind="forecast" if index == count else "actual",
+                evidence_id=f"E-{name}-{index}",
+            )
+            for name in names
+            for index in range(1, count + 1)
+        ]
+        return dataset.model_copy(
+            update={
+                "points": points,
+                "evidence_ids": [point.evidence_id for point in points],
+            }
+        )
+
+    for count, expected in ((12, True), (13, False)):
+        combo = build_combo_option(
+            f"组合图{count}个可见点",
+            expanded(_combo_dataset(units=("亿元", "%")), count),
+        )
+        dual_panel = build_dual_panel_option(
+            f"双面板{count}个可见点",
+            expanded(_dual_panel_dataset(), count),
+        )
+
+        assert {series["label"]["show"] for series in combo["series"]} == {expected}
+        assert {series["label"]["show"] for series in dual_panel["series"]} == {expected}
+
+
 def test_dual_panel_sanitizes_placeholder_axis_names_and_discloses_them() -> None:
     dataset = _dual_panel_dataset().model_copy(
         update={

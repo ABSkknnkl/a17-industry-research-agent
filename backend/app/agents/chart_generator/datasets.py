@@ -3,6 +3,7 @@
 import hashlib
 import re
 from dataclasses import dataclass, field
+from typing import Literal
 
 from app.agents.chart_generator.constants import UNIT_PLACEHOLDERS
 from app.schemas.chart import (
@@ -261,7 +262,7 @@ def build_evidence_backed_chain_dataset(
         return None
 
     markers = list(re.finditer(r"上游|中游|下游|终端|配套", insight_goal))
-    stage_map = {
+    stage_map: dict[str, Literal["upstream", "midstream", "downstream", "support"]] = {
         "上游": "upstream",
         "中游": "midstream",
         "下游": "downstream",

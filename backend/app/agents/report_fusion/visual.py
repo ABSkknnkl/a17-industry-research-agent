@@ -7,6 +7,7 @@ constraints remain enforced elsewhere in the report-fusion stage.
 
 from collections import Counter
 from collections.abc import Sequence
+from typing import Literal, cast
 
 from app.agents.chart_generator.constants import DENSITY_LOW_MAX, DENSITY_MEDIUM_MAX
 from app.schemas.chapter import ChapterDraft
@@ -15,7 +16,19 @@ from app.schemas.report import (
     RequestedVisualStyle,
     VisualDecision,
     VisualDensity,
+    VisualStyle,
 )
+
+DominantContent = Literal[
+    "narrative",
+    "time_series",
+    "comparison",
+    "financial_detail",
+    "industry_chain",
+    "risk",
+    "scenario",
+    "summary",
+]
 
 _STYLE_LABELS = {
     "data_manual": "数据手册型",
@@ -28,9 +41,9 @@ def visual_style_label(style: str) -> str:
     return _STYLE_LABELS.get(style, style)
 
 
-def _dominant_content(chapter: ChapterDraft) -> str:
+def _dominant_content(chapter: ChapterDraft) -> DominantContent:
     counts = Counter(section.visual_semantics.content_type for section in chapter.sections)
-    return counts.most_common(1)[0][0]
+    return cast(DominantContent, counts.most_common(1)[0][0])
 
 
 def plan_visual_decision(
@@ -53,6 +66,7 @@ def plan_visual_decision(
     )
     chart_count = len(charts)
 
+    recommended: VisualStyle
     reasons: list[str]
     if table_candidates >= max(4, chart_count * 2) or (
         quantitative_ratio >= 0.70 and table_candidates >= 3
@@ -76,8 +90,8 @@ def plan_visual_decision(
         ]
 
     if requested_style == "auto":
-        effective = recommended
-        source = "agent_recommendation"
+        effective: VisualStyle = recommended
+        source: Literal["user", "agent_recommendation", "default"] = "agent_recommendation"
         warnings: list[str] = []
     else:
         effective = requested_style
@@ -103,12 +117,14 @@ def plan_visual_decision(
             dominant_content=_dominant_content(chapter),
         )
 
-    chart_density = (
+    chart_density: Literal["low", "medium", "high"] = (
         "low"
         if chart_count <= DENSITY_LOW_MAX
         else ("medium" if chart_count <= DENSITY_MEDIUM_MAX else "high")
     )
-    table_priority = "high" if table_candidates >= 4 else ("medium" if table_candidates else "low")
+    table_priority: Literal["low", "medium", "high"] = (
+        "high" if table_candidates >= 4 else ("medium" if table_candidates else "low")
+    )
     return VisualDecision(
         recommended_style=recommended,
         requested_style=requested_style,

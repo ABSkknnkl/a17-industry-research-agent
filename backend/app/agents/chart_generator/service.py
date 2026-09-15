@@ -198,7 +198,9 @@ def _calculated_metric_datasets(
     for (metric_name, unit), metrics in grouped.items():
         periods = {metric.period_end for metric in metrics if metric.period_end is not None}
         entities = {metric.entity_scope for metric in metrics}
-        kind = "time_series" if len(periods) > 1 else "categorical"
+        kind: Literal["time_series", "categorical"] = (
+            "time_series" if len(periods) > 1 else "categorical"
+        )
         evidence_ids = list(
             dict.fromkeys(evidence_id for metric in metrics for evidence_id in metric.evidence_ids)
         )
@@ -899,7 +901,7 @@ class ChartGeneratorAgent:
             chart_quality_issue_ids = [issue.issue_id for issue in linked_issues]
             if "data_health_min_rows" in health_issues:
                 chart_quality_issue_ids.append("data_health_min_rows")
-            render_mode = "echarts"
+            render_mode: Literal["echarts", "generated_image"] = "echarts"
             image_uri: str | None = None
             image_mime_type: Literal["image/png", "image/webp"] | None = None
             generation_prompt: str | None = None
