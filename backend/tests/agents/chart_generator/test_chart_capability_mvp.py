@@ -7,7 +7,7 @@ from app.agents.chart_generator.audit import bind_run, record_chart_operation
 from app.agents.chart_generator.builders import build_bar_option
 from app.agents.chart_generator.constants import DATALABEL_MAX_POINTS, UNIT_PLACEHOLDERS
 from app.agents.chart_generator.quality import check_title_conclusive, data_health_check
-from app.agents.chart_generator.service import _calculated_metric_datasets
+from app.agents.chart_generator.service import _build_option, _calculated_metric_datasets
 from app.schemas.chart import ChartAnnotation, ChartDataset, ChartPanel, ChartPoint, ChartSpec
 from app.agents.data_fetcher.fusion import build_chart_datasets
 from app.schemas.evidence import EvidenceItem
@@ -200,3 +200,44 @@ async def test_audit_run_context_is_isolated_between_concurrent_tasks(
     }
     assert (rows["CHART-ONE"]["run_id"], rows["CHART-ONE"]["revision"]) == ("run-one", 1)
     assert (rows["CHART-TWO"]["run_id"], rows["CHART-TWO"]["revision"]) == ("run-two", 2)
+
+
+def test_service_wires_dual_panel_variant_to_the_panel_builder() -> None:
+    dataset = ChartDataset(
+        dataset_id="DS-SERVICE-PANEL",
+        kind="time_series",
+        metric_name="量价",
+        business_linked=True,
+        series_meta=[
+            {"name": "销量", "unit": "万吨", "render_as": "bar"},
+            {"name": "产量", "unit": "万吨", "render_as": "bar"},
+            {"name": "增速", "unit": "%", "render_as": "line"},
+        ],
+        points=[
+            ChartPoint(
+                label=str(year),
+                value=index + year,
+                series=name,
+                period_end=f"{year}-12-31",
+                evidence_id=f"E-{index}-{year}",
+            )
+            for index, name in enumerate(("销量", "产量", "增速"), 1)
+            for year in (2024, 2025)
+        ],
+        evidence_ids=[f"E-{index}-{year}" for index in range(1, 4) for year in (2024, 2025)],
+        panels=[
+            {"panel_id": "volume", "position": "left", "series": ["销量", "产量"]},
+            {"panel_id": "rate", "position": "right", "series": ["增速"]},
+        ],
+    )
+
+    option = _build_option(
+        title="量增价稳",
+        chart_type="combo",
+        variant="dual_panel",
+        dataset=dataset,
+        theme="research_blue",
+    )
+
+    assert len(option["grid"]) == 2
+    assert [series["xAxisIndex"] for series in option["series"]] == [0, 0, 1]

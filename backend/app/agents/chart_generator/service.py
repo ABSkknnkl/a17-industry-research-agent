@@ -12,6 +12,7 @@ from app.agents.chart_generator.builders import (
     build_boxplot_option,
     build_bubble_option,
     build_combo_option,
+    build_dual_panel_option,
     build_heatmap_option,
     build_industry_chain_option,
     build_line_option,
@@ -272,6 +273,8 @@ def _build_option(
     if chart_type == "area":
         return build_area_option(title, dataset, theme)
     if chart_type == "combo":
+        if variant == "dual_panel":
+            return build_dual_panel_option(title, dataset, theme)
         return build_combo_option(title, dataset, theme)
     if chart_type == "scatter":
         return build_scatter_option(title, dataset, theme)
@@ -885,6 +888,14 @@ class ChartGeneratorAgent:
                 f"{issue.metric}：{issue.description}；处理：{issue.suggested_handling}"
                 for issue in linked_issues
             ]
+            for option_footnote in option.get("footnotes", []):
+                normalized_footnote = str(option_footnote).strip()
+                if (
+                    normalized_footnote
+                    and normalized_footnote not in footnotes
+                    and len(footnotes) < 20
+                ):
+                    footnotes.append(normalized_footnote)
             chart_quality_issue_ids = [issue.issue_id for issue in linked_issues]
             if "data_health_min_rows" in health_issues:
                 chart_quality_issue_ids.append("data_health_min_rows")
@@ -961,6 +972,7 @@ class ChartGeneratorAgent:
                 resolution_reason=resolution_reason,
                 variant=variant,
                 option=option,
+                panels=dataset.panels,
                 render_mode=render_mode,
                 image_uri=image_uri,
                 image_mime_type=image_mime_type,
