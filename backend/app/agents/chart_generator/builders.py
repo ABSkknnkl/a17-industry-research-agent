@@ -89,6 +89,7 @@ def _unit_placeholder_footnote(dataset: ChartDataset) -> list[str]:
             units.append(dataset.size_unit)
     else:
         units = [dataset.unit]
+    units.extend(panel.axis_name for panel in dataset.panels or [] if panel.axis_name is not None)
     return ["[需核实:货币单位]"] if any(_unit_text(unit) == "" for unit in units) else []
 
 
@@ -96,7 +97,11 @@ def _footnotes(dataset: ChartDataset, axes: list[dict[str, Any]]) -> list[str]:
     return [*_axis_scale_footnote(axes), *_unit_placeholder_footnote(dataset)]
 
 
-def _annotation_marks(dataset: ChartDataset) -> dict[str, dict[str, Any]]:
+def _annotation_marks(
+    dataset: ChartDataset,
+    *,
+    horizontal: bool = False,
+) -> dict[str, dict[str, Any]]:
     marks: dict[str, dict[str, Any]] = {}
     for annotation in dataset.annotations or []:
         bucket = marks.setdefault(annotation.series or "*", {})
@@ -104,14 +109,18 @@ def _annotation_marks(dataset: ChartDataset) -> dict[str, dict[str, Any]]:
             bucket.setdefault(
                 "markLine",
                 {"silent": True, "symbol": "none", "data": []},
-            )[
-                "data"
-            ].append({"yAxis": annotation.value, "name": annotation.label})
+            )["data"].append(
+                {
+                    "xAxis" if horizontal else "yAxis": annotation.value,
+                    "name": annotation.label,
+                }
+            )
         elif annotation.annotation_type == "shaded_region" and annotation.start and annotation.end:
+            category_axis = "yAxis" if horizontal else "xAxis"
             bucket.setdefault("markArea", {"silent": True, "data": []})["data"].append(
                 [
-                    {"xAxis": annotation.start, "name": annotation.label},
-                    {"xAxis": annotation.end},
+                    {category_axis: annotation.start, "name": annotation.label},
+                    {category_axis: annotation.end},
                 ]
             )
         elif (
@@ -121,7 +130,11 @@ def _annotation_marks(dataset: ChartDataset) -> dict[str, dict[str, Any]]:
         ):
             bucket.setdefault("markPoint", {"symbol": "pin", "data": []})["data"].append(
                 {
-                    "coord": [annotation.start, annotation.value],
+                    "coord": (
+                        [annotation.value, annotation.start]
+                        if horizontal
+                        else [annotation.start, annotation.value]
+                    ),
                     "name": annotation.label,
                 }
             )
@@ -184,7 +197,10 @@ def build_line_option(
     axis_style = _theme_axis_style(theme)
     y_axis = {"type": "value", "name": _axis_name(dataset), "scale": True, **axis_style}
     marks = _annotation_marks(dataset)
-    point_count = max((len(points) for points in series_points.values()), default=0)
+    point_count = max(
+        (sum(value is not None for value in points.values()) for points in series_points.values()),
+        default=0,
+    )
     option.update(
         {
             "tooltip": {"trigger": "axis"},
@@ -242,7 +258,12 @@ def build_area_option(
     axis_style = _theme_axis_style(theme)
     y_axis = {"type": "value", "name": _axis_name(dataset), "scale": True, **axis_style}
     marks = _annotation_marks(dataset)
-    label_style = _auto_datalabel(len(periods))
+    actual_label_style = _auto_datalabel(
+        sum(point.value is not None and point.value_kind == "actual" for point in dataset.points)
+    )
+    forecast_label_style = _auto_datalabel(
+        sum(point.value is not None and point.value_kind == "forecast" for point in dataset.points)
+    )
     option.update(
         {
             "tooltip": {"trigger": "axis"},
@@ -259,7 +280,7 @@ def build_area_option(
                     "type": "line",
                     "connectNulls": False,
                     "areaStyle": {"opacity": 0.18},
-                    "label": label_style,
+                    "label": actual_label_style,
                     **_theme_series_style(theme, "line"),
                     **_marks_for_series(marks, "历史"),
                     "data": history,
@@ -274,7 +295,7 @@ def build_area_option(
                     },
                     "showSymbol": theme != "broker_thin",
                     "areaStyle": {"opacity": 0.1},
-                    "label": label_style,
+                    "label": forecast_label_style,
                     **_marks_for_series(marks, "预测"),
                     "data": forecast,
                 },
@@ -328,7 +349,10 @@ def build_combo_option(
                     "type": meta.render_as,
                     "yAxisIndex": axis_by_unit[(meta.currency or "", _unit_text(meta.unit))],
                     "label": _auto_datalabel(
-                        sum(point.series == meta.name for point in dataset.points)
+                        sum(
+                            point.series == meta.name and point.value is not None
+                            for point in dataset.points
+                        )
                     ),
                     **_theme_series_style(theme, meta.render_as),
                     **_marks_for_series(marks, meta.name),
@@ -383,7 +407,7 @@ def build_dual_panel_option(
             {
                 "type": "value",
                 "gridIndex": panel_index,
-                "name": panel.axis_name or "",
+                "name": _unit_text(panel.axis_name),
                 "scale": True,
                 **axis_style,
             }
@@ -398,7 +422,10 @@ def build_dual_panel_option(
                     "xAxisIndex": panel_index,
                     "yAxisIndex": panel_index,
                     "label": _auto_datalabel(
-                        sum(point.series == series_name for point in dataset.points)
+                        sum(
+                            point.series == series_name and point.value is not None
+                            for point in dataset.points
+                        )
                     ),
                     **_theme_series_style(theme, render_as),
                     **_marks_for_series(marks, series_name),
@@ -683,13 +710,18 @@ def build_bar_option(
     values: dict[tuple[str, str], dict[str, Any]] = {}
     for point in dataset.points:
         values[(point.series, point.label)] = _styled_point(point, dataset)
-    marks = _annotation_marks(dataset)
+    marks = _annotation_marks(dataset, horizontal=variant == "horizontal")
     series = []
     for series_name in series_names:
         item: dict[str, Any] = {
             "name": series_name,
             "type": "bar",
-            "label": _auto_datalabel(sum(point.series == series_name for point in dataset.points)),
+            "label": _auto_datalabel(
+                sum(
+                    point.series == series_name and point.value is not None
+                    for point in dataset.points
+                )
+            ),
             **_marks_for_series(marks, series_name),
             "data": [values.get((series_name, label), {"value": None}) for label in labels],
         }
@@ -701,7 +733,6 @@ def build_bar_option(
     value_axis = {
         "type": "value",
         "name": _axis_name(dataset),
-        "scale": True,
         **axis_style,
     }
     option.update(

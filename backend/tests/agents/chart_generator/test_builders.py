@@ -288,8 +288,9 @@ def test_shared_rules_apply_to_area_bar_and_boxplot() -> None:
 
     for option in (area, bar, box):
         assert "[需核实:货币单位]" in option["footnotes"]
-        assert "纵轴未从 0 开始" in option["footnotes"]
         assert option["series"][0]["label"]["show"] is True
+    for option in (area, box):
+        assert "纵轴未从 0 开始" in option["footnotes"]
     assert area["series"][0]["lineStyle"]["width"] == 1.5
     assert area["series"][0]["showSymbol"] is False
     assert bar["series"][0]["data"][0]["itemStyle"]["color"] == "#1E8449"
@@ -314,3 +315,154 @@ def test_area_applies_a_share_directional_colors_to_visible_points() -> None:
     assert isinstance(option["series"][1]["data"][1], dict)
     assert option["series"][0]["data"][0]["itemStyle"]["color"] == "#1E8449"
     assert option["series"][1]["data"][1]["itemStyle"]["color"] == "#C0392B"
+
+
+def test_null_gaps_do_not_count_toward_line_area_or_bar_label_limit() -> None:
+    line_twelve = _time_series_dataset(13).model_copy(
+        update={
+            "points": [
+                *_time_series_dataset(13).points[:12],
+                _time_series_dataset(13)
+                .points[12]
+                .model_copy(update={"value": None, "value_kind": "forecast"}),
+            ]
+        }
+    )
+    line_thirteen = _time_series_dataset(14).model_copy(
+        update={
+            "points": [
+                *_time_series_dataset(14).points[:13],
+                _time_series_dataset(14)
+                .points[13]
+                .model_copy(update={"value": None, "value_kind": "forecast"}),
+            ]
+        }
+    )
+    area_twelve = line_twelve.model_copy(
+        update={
+            "points": [
+                *line_twelve.points[:12],
+                line_twelve.points[12].model_copy(update={"value_kind": "forecast"}),
+            ]
+        }
+    )
+    area_thirteen = line_thirteen.model_copy(
+        update={
+            "points": [
+                *line_thirteen.points[:13],
+                line_thirteen.points[13].model_copy(update={"value_kind": "forecast"}),
+            ]
+        }
+    )
+    bar_twelve = ChartDataset(
+        dataset_id="DS-BAR-NULL-12",
+        kind="categorical",
+        metric_name="收入",
+        unit="亿元",
+        points=[
+            ChartPoint(label=f"公司{i}", value=i if i <= 12 else None, evidence_id=f"E-B-{i}")
+            for i in range(1, 14)
+        ],
+        evidence_ids=[f"E-B-{i}" for i in range(1, 14)],
+    )
+    bar_thirteen = bar_twelve.model_copy(
+        update={
+            "points": [
+                *bar_twelve.points[:12],
+                bar_twelve.points[12].model_copy(update={"value": 13}),
+                ChartPoint(label="公司14", value=None, evidence_id="E-B-14"),
+            ],
+            "evidence_ids": [*bar_twelve.evidence_ids, "E-B-14"],
+        }
+    )
+
+    assert build_line_option("12个可见点", line_twelve)["series"][0]["label"]["show"] is True
+    assert build_line_option("13个可见点", line_thirteen)["series"][0]["label"]["show"] is False
+    assert (
+        build_area_option("12个可见点和预测缺口", area_twelve)["series"][0]["label"]["show"] is True
+    )
+    assert (
+        build_area_option("13个可见点和预测缺口", area_thirteen)["series"][0]["label"]["show"]
+        is False
+    )
+    assert (
+        build_bar_option("12个可见点", bar_twelve, "vertical")["series"][0]["label"]["show"] is True
+    )
+    assert (
+        build_bar_option("13个可见点", bar_thirteen, "vertical")["series"][0]["label"]["show"]
+        is False
+    )
+
+
+def test_dual_panel_sanitizes_placeholder_axis_names_and_discloses_them() -> None:
+    dataset = _dual_panel_dataset().model_copy(
+        update={
+            "panels": [
+                ChartPanel(
+                    panel_id="volume",
+                    position="left",
+                    series=["销量", "产量"],
+                    axis_name="未提供",
+                ),
+                ChartPanel(
+                    panel_id="rate",
+                    position="right",
+                    series=["同比增速"],
+                    axis_name="%",
+                ),
+            ]
+        }
+    )
+
+    option = build_dual_panel_option("量价", dataset)
+
+    assert option["yAxis"][0]["name"] == ""
+    assert "[需核实:货币单位]" in option["footnotes"]
+
+
+def test_horizontal_bar_annotations_follow_swapped_axes() -> None:
+    dataset = ChartDataset(
+        dataset_id="DS-HORIZONTAL-ANNOTATIONS",
+        kind="categorical",
+        metric_name="收入",
+        unit="亿元",
+        points=[
+            ChartPoint(label="公司A", value=1, evidence_id="E-A"),
+            ChartPoint(label="公司B", value=2, evidence_id="E-B"),
+        ],
+        evidence_ids=["E-A", "E-B"],
+        annotations=[
+            ChartAnnotation(annotation_type="reference_line", label="门槛", value=1.5),
+            ChartAnnotation(
+                annotation_type="shaded_region", label="观察组", start="公司A", end="公司B"
+            ),
+            ChartAnnotation(annotation_type="callout", label="领先", start="公司B", value=2),
+        ],
+    )
+
+    series = build_bar_option("收入比较", dataset, "horizontal")["series"][0]
+
+    assert series["markLine"]["data"] == [{"xAxis": 1.5, "name": "门槛"}]
+    assert series["markArea"]["data"] == [
+        [{"yAxis": "公司A", "name": "观察组"}, {"yAxis": "公司B"}]
+    ]
+    assert series["markPoint"]["data"] == [{"coord": [2, "公司B"], "name": "领先"}]
+
+
+def test_bar_value_axes_keep_zero_baseline_without_truncation_footnote() -> None:
+    dataset = ChartDataset(
+        dataset_id="DS-BAR-BASELINE",
+        kind="categorical",
+        metric_name="收入",
+        unit="亿元",
+        points=[ChartPoint(label="公司A", value=10, evidence_id="E-A")],
+        evidence_ids=["E-A"],
+    )
+
+    vertical = build_bar_option("收入比较", dataset, "vertical")
+    horizontal = build_bar_option("收入比较", dataset, "horizontal")
+
+    assert vertical["yAxis"].get("scale", False) is False
+    assert horizontal["xAxis"].get("scale", False) is False
+    assert "纵轴未从 0 开始" not in vertical["footnotes"]
+    assert "纵轴未从 0 开始" not in horizontal["footnotes"]
