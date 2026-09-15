@@ -3,7 +3,7 @@ import { defineComponent, nextTick, watch } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as echarts from 'echarts'
 import ChartGallery from '../ChartGallery.vue'
-import type { ChartSpec } from '../../api/types'
+import type { ChartReference, ChartSpec } from '../../api/types'
 
 // Canvas rendering belongs to ECharts; record the options crossing that boundary.
 vi.mock('echarts', () => ({ init: vi.fn() }))
@@ -33,6 +33,19 @@ const spec: ChartSpec = {
   annotations: [{ annotation_type: 'reference_line', label: '目标', value: 110 }],
   footnotes: ['[需核实:货币单位]', '<b>原始数据说明</b>'],
 }
+
+// Compile-time regressions for producer model-validator rules (checked by vue-tsc).
+function acceptSpec(value: ChartSpec) { return value }
+function acceptReference(value: ChartReference) { return value }
+// @ts-expect-error Generated images cannot omit their required generation metadata.
+acceptSpec({ ...spec, chart_type: 'industry_chain', render_mode: 'generated_image' })
+// @ts-expect-error Generated images are restricted to industry_chain.
+acceptSpec({ ...spec, chart_type: 'line', render_mode: 'generated_image', image_uri: 'image.png', image_mime_type: 'image/png', generation_prompt: '绘图', generation_prompt_model: 'prompt', generation_image_model: 'image', chain_template: 'horizontal_flow', chain_graph: {} })
+// @ts-expect-error Ready references must carry a non-null artifact_id.
+acceptReference({ chart_id: 'CHART-1', title: '收入增长', chart_type: 'line', evidence_ids: ['E-1'], status: 'ready', artifact_id: null })
+acceptReference({ chart_id: 'CHART-1', title: '收入增长', chart_type: 'line', evidence_ids: ['E-1'], status: 'planned' })
+acceptSpec({ ...spec, render_mode: 'echarts', image_uri: null, chain_graph: null })
+acceptSpec({ ...spec, chart_type: 'industry_chain', render_mode: 'generated_image', image_uri: 'image.png', image_mime_type: 'image/png', generation_prompt: '绘图', generation_prompt_model: 'prompt', generation_image_model: 'image', chain_template: 'horizontal_flow', chain_graph: {} })
 
 const Dialog = defineComponent({
   props: { modelValue: Boolean },

@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 from langchain_core.messages import AIMessage
+from jsonschema import Draft202012Validator
 
 from app.agents.chart_generator.service import ChartGeneratorAgent
 from app.agents.common.feedback_interpreter import FeedbackInterpreter
@@ -18,6 +19,16 @@ from app.core.config import settings
 from app.schemas.chart import ChartDataset
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
+
+
+def _assert_public_contract(result: StageResult) -> None:
+    path = (
+        Path(__file__).resolve().parents[4]
+        / "contracts/schemas/chart-generation-result.schema.json"
+    )
+    schema = json.loads(path.read_text(encoding="utf-8"))
+    errors = list(Draft202012Validator(schema).iter_errors(result.data))
+    assert not errors, "\n".join(error.message for error in errors)
 
 
 class ScriptedChatModel:
@@ -107,6 +118,7 @@ async def test_feedback_adds_chart_type_and_reports_applied_edits(
     assert interpretation["outcomes"][0]["status"] == "applied"
     # 原始候选不受影响，正常出图。
     assert result.data["charts"][0]["status"] == "ready"
+    _assert_public_contract(result)
 
 
 @pytest.mark.asyncio
@@ -138,12 +150,10 @@ async def test_metric_outside_datasets_is_rejected_without_fabrication(
     assert result.status == StageStatus.COMPLETED
     interpretation = result.data["feedback_interpretation"]
     assert interpretation["outcomes"][0]["status"] == "rejected"
-    assert (
-        interpretation["outcomes"][0]["reject_reason"]
-        == "metric_not_in_available_datasets"
-    )
+    assert interpretation["outcomes"][0]["reject_reason"] == "metric_not_in_available_datasets"
     assert "applied_feedback_edits" not in result.data
     assert result.data["charts"][0]["status"] == "ready"
+    _assert_public_contract(result)
 
 
 @pytest.mark.asyncio
@@ -161,3 +171,4 @@ async def test_without_interpreter_deterministic_path_unchanged(
     assert result.status == StageStatus.COMPLETED
     assert "feedback_interpretation" not in result.data
     assert result.data["charts"][0]["status"] == "ready"
+    _assert_public_contract(result)

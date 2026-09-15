@@ -78,6 +78,19 @@ def _axes_disclosed(spec: ChartSpec) -> bool:
             minimum = axis.get("min")
             if (axis.get("scale") or minimum not in (None, 0)) and disclosure not in footnotes:
                 return False
+    radars = spec.option.get("radar") or []
+    if isinstance(radars, dict):
+        radars = [radars]
+    for radar in radars:
+        if not isinstance(radar, dict):
+            continue
+        for indicator in radar.get("indicator") or []:
+            if (
+                isinstance(indicator, dict)
+                and indicator.get("min") not in (None, 0)
+                and "雷达轴未从 0 开始" not in footnotes
+            ):
+                return False
     return True
 
 

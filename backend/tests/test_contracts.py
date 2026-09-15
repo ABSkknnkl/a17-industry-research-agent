@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator
+from pydantic import ValidationError
 import pytest
 
 from app.schemas.chart import (
@@ -22,6 +23,102 @@ CONTRACT_ROOT = Path(__file__).resolve().parents[2] / "contracts" / "schemas"
 
 def load_schema(name: str) -> dict[str, Any]:
     return json.loads((CONTRACT_ROOT / name).read_text(encoding="utf-8"))
+
+
+def _validate_chart_definition(definition: str, payload: dict[str, Any]) -> bool:
+    schema = load_schema("chart-generation-result.schema.json")
+    return Draft202012Validator(
+        {"$ref": f"#/$defs/{definition}", "$defs": schema["$defs"]}
+    ).is_valid(payload)
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "image_uri",
+        "image_mime_type",
+        "generation_prompt",
+        "generation_prompt_model",
+        "generation_image_model",
+        "chain_template",
+        "chain_graph",
+    ],
+)
+@pytest.mark.parametrize("mutation", ["missing", "null"])
+def test_generated_image_contract_requires_runtime_metadata(field: str, mutation: str) -> None:
+    spec = ChartSpec(
+        chart_id="CHART-IMAGE",
+        title="产业链增长",
+        chart_type="industry_chain",
+        variant="graph",
+        option={},
+        evidence_ids=["E-1"],
+        data_fingerprint="a" * 64,
+        dedupe_key="image:test",
+        render_mode="generated_image",
+        image_uri="image.png",
+        image_mime_type="image/png",
+        generation_prompt="绘制产业链",
+        generation_prompt_model="prompt-model",
+        generation_image_model="image-model",
+        chain_template="horizontal_flow",
+        chain_graph={},
+    ).model_dump(mode="json")
+    assert _validate_chart_definition("chartSpec", spec)
+    if mutation == "missing":
+        del spec[field]
+    else:
+        spec[field] = None
+    with pytest.raises(ValidationError):
+        ChartSpec.model_validate(spec)
+    assert not _validate_chart_definition("chartSpec", spec)
+
+
+def test_generated_image_contract_rejects_non_industry_chart() -> None:
+    spec = dict(
+        chart_id="CHART-IMAGE",
+        title="收入增长",
+        chart_type="line",
+        variant="line",
+        option={},
+        evidence_ids=["E-1"],
+        data_fingerprint="a" * 64,
+        dedupe_key="image:test",
+        render_mode="generated_image",
+        image_uri="image.png",
+        image_mime_type="image/png",
+        generation_prompt="绘图",
+        generation_prompt_model="prompt-model",
+        generation_image_model="image-model",
+        chain_template="horizontal_flow",
+        chain_graph={},
+    )
+    with pytest.raises(ValidationError):
+        ChartSpec.model_validate(spec)
+    assert not _validate_chart_definition("chartSpec", spec)
+
+
+@pytest.mark.parametrize("status", ["planned", "ready"])
+@pytest.mark.parametrize("artifact", [None, "", "ARTIFACT-1", "missing"])
+def test_chart_reference_artifact_condition_matches_runtime(
+    status: str, artifact: str | None
+) -> None:
+    payload = dict(
+        chart_id="CHART-REF",
+        title="收入增长",
+        chart_type="line",
+        evidence_ids=["E-1"],
+        status=status,
+    )
+    if artifact != "missing":
+        payload["artifact_id"] = artifact
+    expected = status == "planned" or artifact == "ARTIFACT-1"
+    if expected:
+        ChartReference.model_validate(payload)
+    else:
+        with pytest.raises(ValidationError):
+            ChartReference.model_validate(payload)
+    assert _validate_chart_definition("chartReference", payload) is expected
 
 
 def test_contract_schemas_are_valid_draft_2020_12() -> None:

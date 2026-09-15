@@ -186,12 +186,16 @@ interface ChartMetadata {
   footnotes?: string[]
 }
 
-export interface ChartSpec extends ChartMetadata {
+interface ChartSpecBase extends ChartMetadata {
   variant: ChartVariant
   option: ChartOption
   panels?: ChartPanel[] | null
   annotations?: ChartAnnotation[] | null
-  render_mode?: 'echarts' | 'generated_image'
+  data_fingerprint: string
+  dedupe_key: string
+}
+
+interface ChartImageMetadata {
   image_uri?: string | null
   image_mime_type?: 'image/png' | 'image/webp' | null
   generation_prompt?: string | null
@@ -199,18 +203,26 @@ export interface ChartSpec extends ChartMetadata {
   generation_image_model?: string | null
   chain_template?: 'product_decomposition' | 'horizontal_flow' | null
   chain_graph?: Record<string, unknown> | null
-  data_fingerprint: string
-  dedupe_key: string
 }
 
-export interface ChartReference extends ChartMetadata {
-  status: 'planned' | 'ready'
-  artifact_id: string | null
+export type ChartSpec = ChartSpecBase & (
+  | ({ render_mode?: 'echarts' } & ChartImageMetadata)
+  | ({ render_mode: 'generated_image'; chart_type: 'industry_chain' } & {
+      [K in keyof ChartImageMetadata]-?: NonNullable<ChartImageMetadata[K]>
+    })
+)
+
+interface ChartReferenceBase extends ChartMetadata {
   recommended_chapter_id?: string | null
   candidate_status?:
     | 'valid' | 'recommended' | 'not_recommended' | 'selected'
     | 'excluded_by_user' | 'hard_blocked' | 'needs_reassignment' | null
 }
+
+export type ChartReference = ChartReferenceBase & (
+  | { status: 'planned'; artifact_id?: string | null }
+  | { status: 'ready'; artifact_id: string }
+)
 
 /** 确定性机器检查提示，不代表人工视觉审核，也不改变 passed 发布门槛。 */
 export interface ChartReviewChecklist {
@@ -238,6 +250,27 @@ export interface ChartGenerationResult {
   }[]
   quality: ChartQualityReport
   decision_package?: Record<string, unknown> | null
+  /** 审核反馈路径在模型序列化后附加的审计字段。 */
+  feedback_interpretation?: ChartFeedbackInterpretation
+  applied_feedback_edits?: { op: string; value: string; resolved_value: string | null }[]
+}
+
+export interface ChartFeedbackInterpretation {
+  stage: string
+  original_feedback: string
+  outcomes?: {
+    op: string
+    value: string
+    resolved_value?: string | null
+    confidence: number
+    reason?: string
+    status: 'applied' | 'pending_review' | 'rejected'
+    reject_reason?: string | null
+  }[]
+  unparsed_text?: string | null
+  clarification_question?: string | null
+  parser_mode?: 'llm' | 'fallback'
+  warnings?: string[]
 }
 
 /** ChartGenerationOptions（workflow.py L158-169），全部字段可选 */

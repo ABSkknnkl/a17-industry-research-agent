@@ -4,7 +4,7 @@ import json
 import pytest
 
 from app.agents.chart_generator.audit import bind_run, record_chart_operation
-from app.agents.chart_generator.builders import build_bar_option
+from app.agents.chart_generator.builders import build_bar_option, build_radar_option
 from app.agents.chart_generator.constants import DATALABEL_MAX_POINTS, UNIT_PLACEHOLDERS
 from app.agents.chart_generator.quality import (
     build_quality_report,
@@ -192,6 +192,38 @@ def test_advisory_checklist_does_not_crash_on_null_optional_echarts_fields() -> 
     assert report.passed is True
     assert report.model_dump()["review_checklist"]["five_second_readable"] is False
     assert report.model_dump()["review_checklist"]["key_point_highlighted"] is False
+
+
+@pytest.mark.parametrize("scale_min", [0, 50])
+@pytest.mark.parametrize("disclosure_location", [None, "spec", "option"])
+@pytest.mark.parametrize("radar_array", [False, True])
+def test_radar_axis_checklist_requires_truncation_disclosure(
+    radar_dataset: ChartDataset,
+    scale_min: int,
+    disclosure_location: str | None,
+    radar_array: bool,
+) -> None:
+    dataset = radar_dataset.model_copy(update={"scale_min": scale_min})
+    option = build_radar_option("能力评分提升", dataset)
+    assert option["radar"]["indicator"][0]["min"] == scale_min
+    if radar_array:
+        option["radar"] = [option["radar"]]
+    spec = _spec_with_title("能力评分提升").model_copy(
+        update={
+            "chart_type": "radar",
+            "variant": "radar",
+            "option": option,
+        }
+    )
+    if disclosure_location == "spec":
+        spec.footnotes.append("雷达轴未从 0 开始")
+    elif disclosure_location == "option":
+        spec.option["footnotes"].append("雷达轴未从 0 开始")
+    report = build_quality_report(candidate_count=1, specs=[spec], suppressed=[])
+    assert report.review_checklist["axis_not_misleading"] is (
+        scale_min == 0 or disclosure_location is not None
+    )
+    assert report.passed is True
 
 
 def test_data_health_boundaries_and_title_rule() -> None:
