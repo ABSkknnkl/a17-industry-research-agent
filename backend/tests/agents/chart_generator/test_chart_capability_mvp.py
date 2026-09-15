@@ -6,7 +6,11 @@ import pytest
 from app.agents.chart_generator.audit import bind_run, record_chart_operation
 from app.agents.chart_generator.builders import build_bar_option
 from app.agents.chart_generator.constants import DATALABEL_MAX_POINTS, UNIT_PLACEHOLDERS
-from app.agents.chart_generator.quality import check_title_conclusive, data_health_check
+from app.agents.chart_generator.quality import (
+    build_quality_report,
+    check_title_conclusive,
+    data_health_check,
+)
 from app.agents.chart_generator.service import _build_option, _calculated_metric_datasets
 from app.schemas.chart import ChartAnnotation, ChartDataset, ChartPanel, ChartPoint, ChartSpec
 from app.agents.data_fetcher.fusion import build_chart_datasets
@@ -73,6 +77,121 @@ def _spec_with_title(title: str) -> ChartSpec:
         data_fingerprint="0" * 64,
         dedupe_key="title-test",
     )
+
+
+@pytest.mark.parametrize(
+    ("title", "option", "footnotes", "expected"),
+    [
+        (
+            "收入增长20%",
+            {"series": [{"type": "line", "data": [1, 2]}]},
+            [],
+            {
+                "five_second_readable": True,
+                "axis_not_misleading": True,
+                "key_point_highlighted": False,
+            },
+        ),
+        (
+            "收入趋势",
+            {"series": [{"type": "line", "data": [1, 2]}]},
+            [],
+            {
+                "five_second_readable": False,
+                "axis_not_misleading": True,
+                "key_point_highlighted": False,
+            },
+        ),
+        (
+            "收入增长20%",
+            {"series": []},
+            [],
+            {
+                "five_second_readable": False,
+                "axis_not_misleading": True,
+                "key_point_highlighted": False,
+            },
+        ),
+        (
+            "收入增长20%",
+            {"yAxis": {"scale": True}, "series": [{"type": "line", "data": [1, 2]}]},
+            [],
+            {
+                "five_second_readable": True,
+                "axis_not_misleading": False,
+                "key_point_highlighted": False,
+            },
+        ),
+        (
+            "收入增长20%",
+            {"yAxis": [{"scale": True}], "series": [{"type": "line", "data": [1, 2]}]},
+            ["纵轴未从 0 开始"],
+            {
+                "five_second_readable": True,
+                "axis_not_misleading": True,
+                "key_point_highlighted": False,
+            },
+        ),
+        (
+            "收入增长20%",
+            {"xAxis": {"min": 5}, "series": [{"type": "bar", "data": [6, 7]}]},
+            [],
+            {
+                "five_second_readable": True,
+                "axis_not_misleading": False,
+                "key_point_highlighted": False,
+            },
+        ),
+        (
+            "收入增长20%",
+            {
+                "yAxis": {"min": 1},
+                "footnotes": ["纵轴未从 0 开始"],
+                "series": [{"type": "line", "data": [1, 2]}],
+            },
+            [],
+            {
+                "five_second_readable": True,
+                "axis_not_misleading": True,
+                "key_point_highlighted": False,
+            },
+        ),
+    ],
+)
+def test_quality_checklist_reports_machine_checks_without_changing_passed(
+    title, option, footnotes, expected
+) -> None:
+    spec = _spec_with_title(title).model_copy(update={"option": option, "footnotes": footnotes})
+    report = build_quality_report(candidate_count=1, specs=[spec], suppressed=[])
+    assert report.model_dump()["review_checklist"] == expected
+    assert report.passed is True
+
+
+@pytest.mark.parametrize("mark", ["markLine", "markArea", "markPoint"])
+@pytest.mark.parametrize("data", [[], [{"name": "目标", "yAxis": 2}]])
+def test_quality_checklist_requires_rendered_nonempty_marks(mark, data) -> None:
+    spec = _spec_with_title("收入增长20%")
+    spec.option["series"][0][mark] = {"data": data}
+    report = build_quality_report(candidate_count=1, specs=[spec], suppressed=[])
+    assert report.model_dump()["review_checklist"]["key_point_highlighted"] is bool(data)
+
+
+def test_quality_checklist_does_not_claim_empty_output_was_reviewed() -> None:
+    report = build_quality_report(candidate_count=0, specs=[], suppressed=[])
+    assert report.model_dump()["review_checklist"] == {
+        "five_second_readable": False,
+        "axis_not_misleading": False,
+        "key_point_highlighted": False,
+    }
+
+
+def test_advisory_checklist_does_not_crash_on_null_optional_echarts_fields() -> None:
+    spec = _spec_with_title("收入增长20%")
+    spec.option.update({"xAxis": None, "yAxis": None, "series": None, "footnotes": None})
+    report = build_quality_report(candidate_count=1, specs=[spec], suppressed=[])
+    assert report.passed is True
+    assert report.model_dump()["review_checklist"]["five_second_readable"] is False
+    assert report.model_dump()["review_checklist"]["key_point_highlighted"] is False
 
 
 def test_data_health_boundaries_and_title_rule() -> None:

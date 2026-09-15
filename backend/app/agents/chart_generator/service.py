@@ -973,6 +973,7 @@ class ChartGeneratorAgent:
                 variant=variant,
                 option=option,
                 panels=dataset.panels,
+                annotations=dataset.annotations,
                 render_mode=render_mode,
                 image_uri=image_uri,
                 image_mime_type=image_mime_type,

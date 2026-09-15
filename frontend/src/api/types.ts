@@ -145,6 +145,101 @@ export type ChartTypeName =
   | 'boxplot'
   | 'treemap'
 
+// ---------- 图表公开契约（contracts/schemas/chart-generation-result.schema.json） ----------
+
+export type ChartVariant =
+  | 'line' | 'vertical' | 'horizontal' | 'grouped' | 'stacked'
+  | 'pie' | 'radar' | 'graph' | 'combo' | 'area' | 'scatter'
+  | 'bubble' | 'heatmap' | 'boxplot' | 'treemap' | 'dual_panel'
+
+export interface ChartPanel {
+  panel_id: string
+  position: 'left' | 'right'
+  series: string[]
+  axis_name?: string | null
+}
+
+export interface ChartAnnotation {
+  annotation_type: 'reference_line' | 'shaded_region' | 'callout'
+  label: string
+  value?: number | null
+  start?: string | null
+  end?: string | null
+  series?: string | null
+}
+
+/** 完整 ECharts 配置直接透传；footnotes 为后端附加的原文说明。 */
+export interface ChartOption extends Record<string, unknown> {
+  footnotes?: string[]
+}
+
+interface ChartMetadata {
+  chart_id: string
+  title: string
+  chart_type: ChartTypeName
+  user_requested?: boolean
+  requested_chart_type?: ChartTypeName | null
+  resolution_reason?: string | null
+  evidence_ids: string[]
+  insight_goal?: string | null
+  quality_issue_ids?: string[]
+  footnotes?: string[]
+}
+
+export interface ChartSpec extends ChartMetadata {
+  variant: ChartVariant
+  option: ChartOption
+  panels?: ChartPanel[] | null
+  annotations?: ChartAnnotation[] | null
+  render_mode?: 'echarts' | 'generated_image'
+  image_uri?: string | null
+  image_mime_type?: 'image/png' | 'image/webp' | null
+  generation_prompt?: string | null
+  generation_prompt_model?: string | null
+  generation_image_model?: string | null
+  chain_template?: 'product_decomposition' | 'horizontal_flow' | null
+  chain_graph?: Record<string, unknown> | null
+  data_fingerprint: string
+  dedupe_key: string
+}
+
+export interface ChartReference extends ChartMetadata {
+  status: 'planned' | 'ready'
+  artifact_id: string | null
+  recommended_chapter_id?: string | null
+  candidate_status?:
+    | 'valid' | 'recommended' | 'not_recommended' | 'selected'
+    | 'excluded_by_user' | 'hard_blocked' | 'needs_reassignment' | null
+}
+
+/** 确定性机器检查提示，不代表人工视觉审核，也不改变 passed 发布门槛。 */
+export interface ChartReviewChecklist {
+  five_second_readable?: boolean
+  axis_not_misleading?: boolean
+  key_point_highlighted?: boolean
+}
+
+export interface ChartQualityReport {
+  passed: boolean
+  ready_count: number
+  suppressed_count: number
+  issues: string[]
+  review_checklist?: ChartReviewChecklist
+}
+
+export interface ChartGenerationResult {
+  charts: ChartReference[]
+  chart_specs: ChartSpec[]
+  suppressed_candidates: {
+    title: string
+    reason_code: string
+    reason: string
+    evidence_ids: string[]
+  }[]
+  quality: ChartQualityReport
+  decision_package?: Record<string, unknown> | null
+}
+
 /** ChartGenerationOptions（workflow.py L158-169），全部字段可选 */
 export interface ChartGenerationOptions {
   chart_type?: ChartTypeName

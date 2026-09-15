@@ -18,7 +18,8 @@
       "type": "array",
       "items": { "$ref": "#/$defs/suppressedChart" }
     },
-    "quality": { "$ref": "#/$defs/chartQualityReport" }
+    "quality": { "$ref": "#/$defs/chartQualityReport" },
+    "decision_package": { "type": ["object", "null"] }
   },
   "$defs": {
     "chartType": {
@@ -38,6 +39,30 @@
         "treemap"
       ]
     },
+    "chartPanel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["panel_id", "position", "series"],
+      "properties": {
+        "panel_id": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "position": { "enum": ["left", "right"] },
+        "series": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "type": "string" } },
+        "axis_name": { "type": ["string", "null"], "maxLength": 100 }
+      }
+    },
+    "chartAnnotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["annotation_type", "label"],
+      "properties": {
+        "annotation_type": { "enum": ["reference_line", "shaded_region", "callout"] },
+        "label": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "value": { "type": ["number", "null"] },
+        "start": { "type": ["string", "null"], "maxLength": 200 },
+        "end": { "type": ["string", "null"], "maxLength": 200 },
+        "series": { "type": ["string", "null"], "maxLength": 100 }
+      }
+    },
     "chartVariant": {
       "type": "string",
       "enum": [
@@ -55,7 +80,8 @@
         "bubble",
         "heatmap",
         "boxplot",
-        "treemap"
+        "treemap",
+        "dual_panel"
       ]
     },
     "chartReference": {
@@ -70,6 +96,7 @@
         "artifact_id"
       ],
       "properties": {
+        "user_requested": { "type": "boolean" },
         "chart_id": { "type": "string", "pattern": "^CHART-[A-Za-z0-9_-]+$" },
         "title": { "type": "string", "minLength": 1, "maxLength": 200 },
         "chart_type": { "$ref": "#/$defs/chartType" },
@@ -87,14 +114,18 @@
         "quality_issue_ids": {
           "type": "array",
           "maxItems": 100,
-          "items": { "type": "string", "pattern": "^DQ-[A-Za-z0-9_-]+$" }
+          "items": { "type": "string" }
         },
         "footnotes": {
           "type": "array",
           "maxItems": 20,
           "items": { "type": "string" }
         },
-        "artifact_id": { "type": ["string", "null"] }
+        "artifact_id": { "type": ["string", "null"] },
+        "recommended_chapter_id": { "type": ["string", "null"], "pattern": "^CH-\\d{2}$" },
+        "candidate_status": {
+          "enum": ["valid", "recommended", "not_recommended", "selected", "excluded_by_user", "hard_blocked", "needs_reassignment", null]
+        }
       }
     },
     "chartSpec": {
@@ -111,6 +142,7 @@
         "dedupe_key"
       ],
       "properties": {
+        "user_requested": { "type": "boolean" },
         "chart_id": { "type": "string", "pattern": "^CHART-[A-Za-z0-9_-]+$" },
         "title": { "type": "string", "minLength": 1, "maxLength": 200 },
         "chart_type": { "$ref": "#/$defs/chartType" },
@@ -120,6 +152,22 @@
         "resolution_reason": { "type": ["string", "null"], "minLength": 1, "maxLength": 1000 },
         "variant": { "$ref": "#/$defs/chartVariant" },
         "option": { "type": "object" },
+        "panels": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/chartPanel" }
+        },
+        "annotations": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/chartAnnotation" }
+        },
+        "render_mode": { "enum": ["echarts", "generated_image"] },
+        "image_uri": { "type": ["string", "null"], "minLength": 1, "maxLength": 1000 },
+        "image_mime_type": { "enum": ["image/png", "image/webp", null] },
+        "generation_prompt": { "type": ["string", "null"], "minLength": 1, "maxLength": 30000 },
+        "generation_prompt_model": { "type": ["string", "null"], "minLength": 1, "maxLength": 200 },
+        "generation_image_model": { "type": ["string", "null"], "minLength": 1, "maxLength": 200 },
+        "chain_template": { "enum": ["product_decomposition", "horizontal_flow", null] },
+        "chain_graph": { "type": ["object", "null"] },
         "evidence_ids": {
           "type": "array",
           "minItems": 1,
@@ -129,7 +177,7 @@
         "quality_issue_ids": {
           "type": "array",
           "maxItems": 100,
-          "items": { "type": "string", "pattern": "^DQ-[A-Za-z0-9_-]+$" }
+          "items": { "type": "string" }
         },
         "footnotes": {
           "type": "array",
@@ -163,6 +211,16 @@
         "passed": { "type": "boolean" },
         "ready_count": { "type": "integer", "minimum": 0 },
         "suppressed_count": { "type": "integer", "minimum": 0 },
+        "review_checklist": {
+          "type": "object",
+          "description": "Deterministic advisory checks, not human perceptual approval or the release gate.",
+          "additionalProperties": false,
+          "properties": {
+            "five_second_readable": { "type": "boolean" },
+            "axis_not_misleading": { "type": "boolean" },
+            "key_point_highlighted": { "type": "boolean" }
+          }
+        },
         "issues": {
           "type": "array",
           "items": { "type": "string" }

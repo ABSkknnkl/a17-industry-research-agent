@@ -1,18 +1,10 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
+import type { ChartSpec } from '../api/types'
 
 /** chart_generate 阶段 data.chart_specs 的宽松类型（与后端 ChartSpec 对齐，仅取渲染所需字段） */
-interface ChartSpecLoose {
-  chart_id?: string
-  title?: string
-  chart_type?: string
-  option?: Record<string, unknown>
-  render_mode?: string
-  image_uri?: string | null
-  insight_goal?: string | null
-  footnotes?: string[]
-}
+type ChartSpecLoose = Partial<ChartSpec>
 
 const props = defineProps<{ specs: ChartSpecLoose[] }>()
 
@@ -40,22 +32,8 @@ const thumbsRef = ref<HTMLElement[]>([])
 const thumbInstances: echarts.ECharts[] = []
 let resizeObserver: ResizeObserver | null = null
 
-/** 渲染 chart 宽度 320px 高度固定，文本统一缩小 */
-const BASE_TEXT = 11
-
-function buildOption(option: Record<string, unknown>): Record<string, unknown> {
-  return {
-    animation: false,
-    textStyle: { fontSize: BASE_TEXT },
-    ...option,
-    grid: (option.grid as Record<string, unknown>) ?? {
-      left: 8,
-      right: 12,
-      top: 40,
-      bottom: 8,
-      containLabel: true,
-    },
-  }
+function chartFootnotes(spec: ChartSpecLoose | null): string[] {
+  return [...new Set([...(spec?.footnotes ?? []), ...(spec?.option?.footnotes ?? [])])]
 }
 
 function renderThumbs(): void {
@@ -66,7 +44,7 @@ function renderThumbs(): void {
       const el = thumbsRef.value[index]
       if (!el || !spec.option) return
       const instance = echarts.init(el)
-      instance.setOption(buildOption(spec.option))
+      instance.setOption(spec.option)
       thumbInstances.push(instance)
     })
     if (thumbInstances.length > 0) {
@@ -118,10 +96,7 @@ async function nextTickRenderDialog(): Promise<void> {
   if (!dialogRef.value || !activeSpec.value?.option) return
   dialogInstance?.dispose()
   dialogInstance = echarts.init(dialogRef.value)
-  dialogInstance.setOption({
-    animation: false,
-    ...activeSpec.value.option,
-  })
+  dialogInstance.setOption(activeSpec.value.option)
 }
 
 function typeLabel(type: string | undefined): string {
@@ -177,6 +152,9 @@ export default { name: 'ChartGallery' }
           <div v-else class="chart-img-missing muted">AI 生成图未内联，请从产出物下载查看</div>
         </div>
         <div v-if="spec.insight_goal" class="chart-goal muted">{{ spec.insight_goal }}</div>
+        <div v-for="(note, i) in chartFootnotes(spec)" :key="i" class="chart-goal chart-footnote muted">
+          {{ note }}
+        </div>
       </div>
     </div>
 
@@ -191,11 +169,9 @@ export default { name: 'ChartGallery' }
       <div v-if="activeSpec?.insight_goal" class="chart-goal muted" style="margin-top: 8px">
         分析目的：{{ activeSpec.insight_goal }}
       </div>
-      <template v-if="activeSpec?.footnotes?.length">
-        <div v-for="(note, i) in activeSpec.footnotes" :key="i" class="chart-goal muted">
-          数据说明：{{ note }}
-        </div>
-      </template>
+      <div v-for="(note, i) in chartFootnotes(activeSpec)" :key="i" class="chart-goal chart-footnote muted">
+        {{ note }}
+      </div>
     </el-dialog>
   </div>
 </template>

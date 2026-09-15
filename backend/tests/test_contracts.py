@@ -3,6 +3,16 @@ from pathlib import Path
 from typing import Any
 
 from jsonschema import Draft202012Validator
+import pytest
+
+from app.schemas.chart import (
+    ChartAnnotation,
+    ChartGenerationResult,
+    ChartPanel,
+    ChartQualityReport,
+    ChartReference,
+    ChartSpec,
+)
 
 from app.schemas.workflow import ReviewAction, StageName, StageStatus
 from app.schemas.run import RunCreateRequest
@@ -79,6 +89,136 @@ def test_chart_generation_contract_exposes_p0_and_audited_p1_types() -> None:
         "treemap",
     ]
     assert schema["properties"]["chart_specs"]["items"]["$ref"] == "#/$defs/chartSpec"
+
+
+@pytest.mark.parametrize(
+    ("chart_type", "variant"),
+    [
+        ("line", "line"),
+        ("bar", "vertical"),
+        ("bar", "horizontal"),
+        ("bar", "grouped"),
+        ("bar", "stacked"),
+        ("pie", "pie"),
+        ("radar", "radar"),
+        ("industry_chain", "graph"),
+        ("combo", "combo"),
+        ("area", "area"),
+        ("scatter", "scatter"),
+        ("bubble", "bubble"),
+        ("heatmap", "heatmap"),
+        ("boxplot", "boxplot"),
+        ("treemap", "treemap"),
+        ("combo", "dual_panel"),
+    ],
+)
+def test_expanded_chart_result_matches_public_schema(chart_type: str, variant: str) -> None:
+    spec = ChartSpec.model_validate(
+        {
+            "chart_id": "CHART-CONTRACT",
+            "title": "销量增长20%且增速回升",
+            "chart_type": chart_type,
+            "variant": variant,
+            "option": {
+                "grid": [{"left": "8%", "width": "35%"}, {"left": "58%", "width": "35%"}],
+                "xAxis": [{"data": ["2024", "2025"]}, {"data": ["2024", "2025"]}],
+                "yAxis": [{"name": "万吨"}, {"name": "%"}],
+                "footnotes": ["纵轴未从 0 开始"],
+                "series": [
+                    {"name": "销量", "type": "bar", "data": [100, 120], "xAxisIndex": 0},
+                    {
+                        "name": "增速",
+                        "type": "line",
+                        "data": [10, 20],
+                        "xAxisIndex": 1,
+                        "markLine": {"data": [{"yAxis": 15, "name": "目标"}]},
+                    },
+                ],
+            },
+            "panels": (
+                [
+                    ChartPanel(
+                        panel_id="volume", position="left", series=["销量"], axis_name="万吨"
+                    ),
+                    ChartPanel(panel_id="rate", position="right", series=["增速"], axis_name="%"),
+                ]
+                if variant == "dual_panel"
+                else None
+            ),
+            "annotations": [
+                ChartAnnotation(annotation_type="reference_line", label="目标", value=15),
+                ChartAnnotation(
+                    annotation_type="shaded_region", label="政策窗口", start="2024", end="2025"
+                ),
+                ChartAnnotation(
+                    annotation_type="callout",
+                    label="增速回升",
+                    start="2025",
+                    value=20,
+                    series="增速",
+                ),
+            ],
+            "footnotes": ["[需核实:货币单位]"],
+            "quality_issue_ids": ["data_health_min_rows"],
+            "evidence_ids": ["E-1"],
+            "data_fingerprint": "d" * 64,
+            "dedupe_key": "combo:contract",
+        }
+    )
+    result = ChartGenerationResult(
+        chart_specs=[spec],
+        charts=[
+            ChartReference(
+                chart_id=spec.chart_id,
+                title=spec.title,
+                chart_type=spec.chart_type,
+                status="ready",
+                artifact_id="ARTIFACT-CONTRACT",
+                evidence_ids=["E-1"],
+                recommended_chapter_id="CH-03",
+                candidate_status="selected",
+                user_requested=True,
+                quality_issue_ids=["data_health_min_rows"],
+            )
+        ],
+        quality=ChartQualityReport(
+            passed=True,
+            ready_count=1,
+            suppressed_count=0,
+            review_checklist={
+                "five_second_readable": True,
+                "axis_not_misleading": True,
+                "key_point_highlighted": True,
+            },
+        ),
+        decision_package={"decision_id": "DECISION-CONTRACT"},
+    )
+    payload = result.model_dump(mode="json")
+    validator = Draft202012Validator(load_schema("chart-generation-result.schema.json"))
+    errors = list(validator.iter_errors(payload))
+    assert not errors, "\n".join(f"{list(error.path)}: {error.message}" for error in errors)
+    assert payload["chart_specs"][0]["option"] == spec.option
+
+
+def test_legacy_chart_result_without_optional_metadata_matches_public_schema() -> None:
+    payload = ChartGenerationResult(
+        chart_specs=[
+            ChartSpec(
+                chart_id="CHART-LEGACY",
+                title="收入增长",
+                chart_type="line",
+                variant="line",
+                option={"series": [{"type": "line", "data": [1, 2]}]},
+                evidence_ids=["E-1"],
+                data_fingerprint="a" * 64,
+                dedupe_key="line:legacy",
+            )
+        ],
+        quality=ChartQualityReport(passed=True, ready_count=1, suppressed_count=0),
+    ).model_dump(mode="json", exclude_unset=True)
+    payload.update(charts=[], suppressed_candidates=[])
+    payload["quality"]["issues"] = []
+    Draft202012Validator(load_schema("chart-generation-result.schema.json")).validate(payload)
 
 
 def test_report_fusion_contract_exposes_three_formats_and_manifest() -> None:

@@ -1,0 +1,111 @@
+import { flushPromises, mount } from '@vue/test-utils'
+import { defineComponent, nextTick, watch } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import * as echarts from 'echarts'
+import ChartGallery from '../ChartGallery.vue'
+import type { ChartSpec } from '../../api/types'
+
+// Canvas rendering belongs to ECharts; record the options crossing that boundary.
+vi.mock('echarts', () => ({ init: vi.fn() }))
+
+const option = {
+  grid: [{ left: '8%', width: '35%' }, { left: '58%', width: '35%' }],
+  xAxis: [{ data: ['2024', '2025'] }, { gridIndex: 1, data: ['2024', '2025'] }],
+  yAxis: [{ name: '万吨' }, { gridIndex: 1, name: '%' }],
+  footnotes: ['纵轴未从 0 开始', '[需核实:货币单位]'],
+  series: [
+    { name: '销量', type: 'bar', xAxisIndex: 0, yAxisIndex: 0, data: [100, 120],
+      markLine: { data: [{ yAxis: 110, name: '目标' }] } },
+    { name: '增速', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: [10, 20],
+      markArea: { data: [[{ xAxis: '2024' }, { xAxis: '2025' }]] },
+      markPoint: { data: [{ coord: ['2025', 20], name: '回升' }] } },
+  ],
+}
+
+const spec: ChartSpec = {
+  chart_id: 'CHART-PANEL', title: '销量增长20%且增速回升', chart_type: 'combo',
+  variant: 'dual_panel', option, evidence_ids: ['E-1'],
+  data_fingerprint: 'a'.repeat(64), dedupe_key: 'combo:test',
+  panels: [
+    { panel_id: 'volume', position: 'left', series: ['销量'], axis_name: '万吨' },
+    { panel_id: 'rate', position: 'right', series: ['增速'], axis_name: '%' },
+  ],
+  annotations: [{ annotation_type: 'reference_line', label: '目标', value: 110 }],
+  footnotes: ['[需核实:货币单位]', '<b>原始数据说明</b>'],
+}
+
+const Dialog = defineComponent({
+  props: { modelValue: Boolean },
+  emits: ['opened', 'update:modelValue'],
+  setup(props, { emit }) {
+    watch(() => props.modelValue, async (visible) => {
+      if (visible) { await nextTick(); emit('opened') }
+    })
+  },
+  template: '<section v-if="modelValue" class="preview"><slot /></section>',
+})
+
+const received: unknown[] = []
+const wrappers: ReturnType<typeof mount>[] = []
+
+beforeEach(() => {
+  received.length = 0
+  vi.mocked(echarts.init).mockImplementation((el) => ({
+    setOption: (value: unknown) => received.push(value),
+    getDom: () => el, resize: vi.fn(), dispose: vi.fn(),
+  }) as unknown as echarts.ECharts)
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    queueMicrotask(() => callback(0))
+    return 0
+  })
+  vi.stubGlobal('ResizeObserver', class {
+    observe() {}
+    disconnect() {}
+  })
+})
+
+afterEach(() => {
+  wrappers.forEach((wrapper) => wrapper.unmount())
+  wrappers.length = 0
+  vi.unstubAllGlobals()
+  vi.clearAllMocks()
+})
+
+function mountGallery(specs: Partial<ChartSpec>[] = [spec]) {
+  const wrapper = mount(ChartGallery, {
+    props: { specs },
+    global: { stubs: { 'el-dialog': Dialog, 'el-tag': true, 'el-empty': true } },
+  })
+  wrappers.push(wrapper)
+  return wrapper
+}
+
+describe('ChartGallery contract consumption', () => {
+  it('passes the entire producer option unchanged in thumbnails and previews', async () => {
+    const wrapper = mountGallery()
+    await flushPromises()
+    expect(received).toEqual([option])
+    await wrapper.find('.chart-head').trigger('click')
+    await flushPromises()
+    expect(received).toEqual([option, option])
+  })
+
+  it('displays both producer footnote locations as literal text in both views', async () => {
+    const wrapper = mountGallery()
+    await flushPromises()
+    const expected = ['[需核实:货币单位]', '<b>原始数据说明</b>', '纵轴未从 0 开始']
+    expect(wrapper.find('.chart-card').findAll('.chart-footnote').map((el) => el.text())).toEqual(expected)
+    expect(wrapper.find('.chart-card b').exists()).toBe(false)
+    await wrapper.find('.chart-head').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('.preview').findAll('.chart-footnote').map((el) => el.text())).toEqual(expected)
+  })
+
+  it('renders legacy specs with no panel, annotation, or footnote metadata', async () => {
+    const wrapper = mountGallery([{ chart_id: 'CHART-LEGACY', option: { series: [{ type: 'line', data: [1, 2] }] } }])
+    await flushPromises()
+    expect(wrapper.find('.chart-card').exists()).toBe(true)
+    expect(wrapper.findAll('.chart-footnote')).toHaveLength(0)
+    expect(received).toEqual([{ series: [{ type: 'line', data: [1, 2] }] }])
+  })
+})

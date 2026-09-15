@@ -65,6 +65,31 @@ def validate_option(option: dict[str, Any]) -> list[str]:
     return issues
 
 
+def _axes_disclosed(spec: ChartSpec) -> bool:
+    """Check that a scale/nonzero minimum has the producer's axis footnote."""
+    footnotes = [*spec.footnotes, *(spec.option.get("footnotes") or [])]
+    for key, disclosure in (("xAxis", "横轴未从 0 开始"), ("yAxis", "纵轴未从 0 开始")):
+        axes = spec.option.get(key) or []
+        if isinstance(axes, dict):
+            axes = [axes]
+        for axis in axes:
+            if not isinstance(axis, dict) or axis.get("type") == "category":
+                continue
+            minimum = axis.get("min")
+            if (axis.get("scale") or minimum not in (None, 0)) and disclosure not in footnotes:
+                return False
+    return True
+
+
+def _has_rendered_highlight(spec: ChartSpec) -> bool:
+    return any(
+        isinstance(item.get(mark), dict) and bool(item[mark].get("data"))
+        for item in (spec.option.get("series") or [])
+        if isinstance(item, dict)
+        for mark in ("markLine", "markArea", "markPoint")
+    )
+
+
 def build_quality_report(
     *,
     candidate_count: int,
@@ -117,4 +142,15 @@ def build_quality_report(
         ready_count=len(specs),
         suppressed_count=len(suppressed),
         issues=issues,
+        # Machine checks: conclusive/serializable, disclosed scales, rendered marks.
+        # They are advisory and deliberately do not feed the existing passed gate.
+        review_checklist={
+            "five_second_readable": bool(specs)
+            and all(
+                check_title_conclusive(spec) and not validate_option(spec.option) for spec in specs
+            ),
+            "axis_not_misleading": bool(specs) and all(_axes_disclosed(spec) for spec in specs),
+            "key_point_highlighted": bool(specs)
+            and all(_has_rendered_highlight(spec) for spec in specs),
+        },
     )

@@ -293,6 +293,7 @@ class ChartSpec(BaseModel):
     variant: ChartVariant
     option: dict[str, Any]
     panels: list[ChartPanel] | None = None
+    annotations: list[ChartAnnotation] | None = None
     render_mode: Literal["echarts", "generated_image"] = "echarts"
     image_uri: str | None = Field(default=None, min_length=1, max_length=1_000)
     image_mime_type: Literal["image/png", "image/webp"] | None = None
@@ -347,6 +348,10 @@ class ChartQualityReport(BaseModel):
     ready_count: int
     suppressed_count: int
     issues: list[str] = Field(default_factory=list)
+    # Deterministic review hints, not human perceptual approval or a release gate.
+    review_checklist: dict[
+        Literal["five_second_readable", "axis_not_misleading", "key_point_highlighted"], bool
+    ] = Field(default_factory=dict)
 
 
 class ChartGenerationResult(BaseModel):

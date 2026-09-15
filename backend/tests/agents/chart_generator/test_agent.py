@@ -8,13 +8,54 @@ import pytest
 from app.agents.chart_generator.service import ChartGeneratorAgent
 from app.core.config import settings
 from app.integrations.visuals.mock import MockImageGenerator, MockPromptCompiler
-from app.schemas.chart import ChartDataset, ChartPoint
+from app.schemas.chart import ChartAnnotation, ChartDataset, ChartPoint
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
 
 
 def _evidence_items(evidence_ids: list[str]) -> list[dict[str, str]]:
     return [{"evidence_id": evidence_id} for evidence_id in evidence_ids]
+
+
+@pytest.mark.asyncio
+async def test_agent_preserves_annotation_metadata_in_result_and_artifact(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    time_series_dataset: ChartDataset,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    annotation = ChartAnnotation(annotation_type="reference_line", label="目标", value=110)
+    dataset = time_series_dataset.model_copy(update={"annotations": [annotation]})
+    context = StageContext(
+        project_id="project-annotation",
+        run_id="run-annotation",
+        revision=1,
+        input_data={
+            "chart_datasets": [dataset.model_dump(mode="json")],
+            "evidence_items": _evidence_items(dataset.evidence_ids),
+        },
+        previous_results={
+            StageName.DATA_INTERPRET: StageResult(
+                stage=StageName.DATA_INTERPRET,
+                status=StageStatus.COMPLETED,
+                data={
+                    "chart_candidates": [
+                        {
+                            "title": "收入增长20%",
+                            "chart_type": "line",
+                            "evidence_ids": dataset.evidence_ids,
+                        }
+                    ]
+                },
+            )
+        },
+    )
+    result = await ChartGeneratorAgent().run(context)
+    spec = result.data["chart_specs"][0]
+    assert spec.get("annotations") == [annotation.model_dump(mode="json")]
+    assert spec["option"]["series"][0]["markLine"]["data"][0]["name"] == "目标"
+    artifact = next(item for item in result.artifacts if item.kind == "echarts_option_json")
+    assert json.loads((tmp_path / artifact.uri).read_text())["annotations"] == spec["annotations"]
 
 
 @pytest.mark.asyncio
