@@ -206,4 +206,24 @@ describe('ChartGallery contract consumption', () => {
     expect(wrapper.findAll('.chart-footnote')).toHaveLength(0)
     expect(received).toEqual([{ series: [{ type: 'line', data: [1, 2] }] }])
   })
+
+  it('renders a labelled article with a keyboard-openable chart surface', async () => {
+    const wrapper = mountGallery([{ ...spec, insight_goal: '比较销量与增速的联动关系' }])
+    await flushPromises()
+
+    const article = wrapper.find('article.chart-card')
+    const title = article.find('h3.chart-title')
+    const surface = article.find('.chart-surface')
+    expect(article.attributes('aria-labelledby')).toBe(title.attributes('id'))
+    expect(title.text()).toBe(spec.title)
+    expect(surface.attributes('role')).toBe('button')
+    expect(surface.attributes('tabindex')).toBe('0')
+    expect(surface.attributes('aria-label')).toBe(`查看“${spec.title}”大图`)
+    expect(article.find('.chart-insight').text()).toContain('比较销量与增速的联动关系')
+
+    await surface.trigger('keydown.enter')
+    await flushPromises()
+    expect(wrapper.find('.preview').exists()).toBe(true)
+    expect(received).toEqual([option, option])
+  })
 })

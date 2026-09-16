@@ -604,7 +604,7 @@ class ChartGeneratorAgent:
         seen_dataset_fingerprints: set[str] = set()
         chain_generated = False
         ambiguous_reasons: list[str] = []
-        theme = options.color_theme or "research_blue"
+        theme = options.color_theme or "finance_dashboard"
         audit_bind_run(context.run_id, context.revision)
 
         candidates.sort(

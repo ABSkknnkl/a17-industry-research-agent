@@ -13,6 +13,7 @@ from app.agents.chart_generator.builders import (
     build_radar_option,
 )
 from app.schemas.chart import (
+    ChainNode,
     ChartAnnotation,
     ChartDataset,
     ChartPanel,
@@ -71,6 +72,35 @@ def _combo_dataset(*, units: tuple[str, str]) -> ChartDataset:
             for year, value in zip((2024, 2025), values, strict=True)
         ],
         evidence_ids=[f"E-{name}-{year}" for name in names for year in (2024, 2025)],
+    )
+
+
+def _long_combo_dataset(point_count: int = 13) -> ChartDataset:
+    names = ("规模", "增速")
+    years = range(2010, 2010 + point_count)
+    return ChartDataset(
+        dataset_id="DS-COMBO-LONG",
+        kind="time_series",
+        metric_name="规模与增速",
+        business_linked=True,
+        series_meta=[
+            ChartSeriesMeta(name="规模", unit="亿元", currency="CNY", render_as="bar"),
+            ChartSeriesMeta(name="增速", unit="%", render_as="line"),
+        ],
+        points=[
+            ChartPoint(
+                label=str(year),
+                value=100 + index * 20 if name == "规模" else 30 - index,
+                series=name,
+                period_end=date(year, 12, 31),
+                evidence_id=f"E-LONG-{name}-{year}",
+            )
+            for name in names
+            for index, year in enumerate(years)
+        ],
+        evidence_ids=[
+            f"E-LONG-{name}-{year}" for name in names for year in range(2010, 2010 + point_count)
+        ],
     )
 
 
@@ -222,6 +252,233 @@ def test_combo_axis_count_and_series_binding_follow_normalized_units() -> None:
     assert len(mixed["yAxis"]) == 2
     assert [axis["position"] for axis in mixed["yAxis"]] == ["left", "right"]
     assert [series["yAxisIndex"] for series in mixed["series"]] == [0, 1]
+
+
+def test_combo_updown_colors_only_apply_to_the_growth_series() -> None:
+    option = build_combo_option("规模与增速", _combo_dataset(units=("亿元", "%")))
+
+    scale, growth = option["series"]
+    assert all("itemStyle" not in point for point in scale["data"])
+    assert [point["itemStyle"]["color"] for point in growth["data"]] == [
+        "#C0392B",
+        "#C0392B",
+    ]
+
+
+def test_finance_dashboard_combo_has_explicit_research_presentation() -> None:
+    option = build_combo_option(
+        "资产规模与负债率",
+        _combo_dataset(units=("亿元", "%")),
+        "finance_dashboard",
+    )
+
+    assert option["color"][:3] == ["#3473EA", "#69B2ED", "#F3AC28"]
+    assert option["title"] == {"text": "资产规模与负债率", "show": False}
+    assert option["legend"]["left"] == 0
+    assert option["legend"]["top"] == 0
+    assert option["grid"]["top"] == 48
+    assert option["xAxis"]["axisTick"]["show"] is False
+    assert option["xAxis"]["axisLabel"]["hideOverlap"] is True
+    assert option["yAxis"][0]["min"] == 0
+    assert option["yAxis"][0]["scale"] is False
+    assert option["yAxis"][1]["scale"] is True
+    scale, growth = option["series"]
+    assert scale["barMaxWidth"] == 22
+    assert scale["itemStyle"]["borderRadius"] == [4, 4, 0, 0]
+    assert growth["showSymbol"] is False
+    assert growth["lineStyle"] == {"width": 2.5, "color": "#F3AC28"}
+
+
+def test_finance_dashboard_adds_zoom_only_for_long_time_series() -> None:
+    short = build_combo_option(
+        "规模与增速",
+        _combo_dataset(units=("亿元", "%")),
+        "finance_dashboard",
+    )
+    long = build_combo_option("规模与增速", _long_combo_dataset(), "finance_dashboard")
+
+    assert "dataZoom" not in short
+    assert [item["type"] for item in long["dataZoom"]] == ["inside", "slider"]
+    assert long["grid"]["bottom"] == 82
+
+
+def test_finance_dashboard_line_and_area_distinguish_actual_and_forecast() -> None:
+    line = build_line_option("收入趋势", _time_series_dataset(4), "finance_dashboard")
+    base = _time_series_dataset(4)
+    area_dataset = base.model_copy(
+        update={
+            "points": [
+                *base.points[:2],
+                *[point.model_copy(update={"value_kind": "forecast"}) for point in base.points[2:]],
+            ]
+        }
+    )
+    area = build_area_option("收入预测", area_dataset, "finance_dashboard")
+
+    assert line["series"][0]["lineStyle"] == {"width": 2.5, "color": "#3473EA"}
+    assert line["series"][0]["showSymbol"] is False
+    assert line["legend"]["show"] is False
+    history, forecast = area["series"]
+    assert history["lineStyle"]["color"] == "#3473EA"
+    assert history["areaStyle"] == {"color": "rgba(52, 115, 234, 0.18)"}
+    assert forecast["lineStyle"] == {"type": "dashed", "width": 2.5, "color": "#F3AC28"}
+    assert forecast["itemStyle"] == {"color": "#F3AC28"}
+    assert forecast["areaStyle"] == {"color": "rgba(243, 172, 40, 0.10)"}
+
+
+def test_finance_dashboard_bars_adapt_rounding_to_orientation(
+    categorical_dataset: ChartDataset,
+) -> None:
+    vertical = build_bar_option("市场份额", categorical_dataset, "vertical", "finance_dashboard")
+    horizontal = build_bar_option(
+        "市场份额", categorical_dataset, "horizontal", "finance_dashboard"
+    )
+
+    assert vertical["series"][0]["barMaxWidth"] == 22
+    assert vertical["series"][0]["itemStyle"]["borderRadius"] == [4, 4, 0, 0]
+    assert horizontal["series"][0]["barMaxWidth"] == 22
+    assert horizontal["series"][0]["itemStyle"]["borderRadius"] == [0, 4, 4, 0]
+    assert horizontal["tooltip"]["backgroundColor"] == "rgba(19, 28, 45, 0.94)"
+    assert horizontal["legend"]["show"] is False
+
+
+def test_finance_dashboard_pie_and_radar_have_readable_depth(
+    composition_dataset: ChartDataset,
+    radar_dataset: ChartDataset,
+) -> None:
+    pie = build_pie_option("市场份额", composition_dataset, "finance_dashboard")
+    radar = build_radar_option("综合能力", radar_dataset, "finance_dashboard")
+
+    pie_series = pie["series"][0]
+    assert pie["legend"]["orient"] == "vertical"
+    assert pie["legend"]["right"] == 20
+    assert pie_series["center"] == ["38%", "52%"]
+    assert pie_series["itemStyle"] == {
+        "borderColor": "#FFFFFF",
+        "borderWidth": 3,
+        "borderRadius": 4,
+    }
+    assert pie_series["labelLine"]["lineStyle"]["color"] == "#AAB2BF"
+    assert pie_series["label"]["alignTo"] == "edge"
+    assert pie_series["label"]["edgeDistance"] == "8%"
+
+    radar_series = radar["series"][0]
+    assert radar["radar"]["splitArea"]["areaStyle"]["color"] == ["#F7F9FC", "#FFFFFF"]
+    assert radar["radar"]["axisName"]["color"] == "#3E4755"
+    assert radar_series["areaStyle"]["opacity"] == 0.12
+    assert radar_series["lineStyle"]["width"] == 2
+    assert radar_series["label"]["show"] is False
+
+
+def test_finance_dashboard_pie_maps_every_brand_to_a_unique_legend_color() -> None:
+    points = [
+        ChartPoint(label=f"品牌{index}", value=value, evidence_id=f"E-PIE-{index}")
+        for index, value in enumerate((30, 24, 18, 12, 9, 7), 1)
+    ]
+    dataset = ChartDataset(
+        dataset_id="DS-FINANCE-PIE-BRANDS",
+        kind="categorical",
+        metric_name="品牌份额",
+        unit="%",
+        is_additive=True,
+        is_composition=True,
+        points=points,
+        evidence_ids=[point.evidence_id for point in points],
+    )
+
+    option = build_pie_option("品牌份额", dataset, "finance_dashboard")
+    series = option["series"][0]
+
+    assert len(set(option["color"][:6])) == 6
+    assert series["label"]["show"] is False
+    assert [item["name"] for item in series["data"]] == [
+        "品牌1 · 30.0%",
+        "品牌2 · 24.0%",
+        "品牌3 · 18.0%",
+        "品牌4 · 12.0%",
+        "品牌5 · 9.0%",
+        "品牌6 · 7.0%",
+    ]
+    assert [item["raw_name"] for item in series["data"]] == [f"品牌{i}" for i in range(1, 7)]
+
+
+def test_finance_dashboard_dual_panel_boxplot_and_chain_use_specialized_styles(
+    chain_dataset: ChartDataset,
+) -> None:
+    dual = build_dual_panel_option("量价", _dual_panel_dataset(), "finance_dashboard")
+    box_dataset = ChartDataset(
+        dataset_id="DS-FINANCE-BOX",
+        kind="distribution",
+        metric_name="估值分布",
+        unit="倍",
+        distribution_samples=[
+            DistributionSample(group="行业", entity=f"公司{i}", value=i, evidence_id=f"E-{i}")
+            for i in range(1, 9)
+        ],
+        evidence_ids=[f"E-{i}" for i in range(1, 9)],
+    )
+    box = build_boxplot_option("估值分布", box_dataset, "finance_dashboard")
+    chain = build_industry_chain_option("产业链", chain_dataset, "finance_dashboard")
+
+    assert dual["tooltip"]["backgroundColor"] == "rgba(19, 28, 45, 0.94)"
+    assert [grid["top"] for grid in dual["grid"]] == [56, 56]
+    assert dual["xAxis"][0]["splitLine"]["show"] is False
+    assert dual["yAxis"][0]["min"] == 0
+    assert dual["yAxis"][1]["scale"] is True
+
+    box_series = box["series"][0]
+    assert box_series["itemStyle"] == {
+        "color": "#DCEBFF",
+        "borderColor": "#3473EA",
+        "borderWidth": 2,
+    }
+    assert box["xAxis"]["splitLine"]["show"] is False
+    assert box["legend"]["show"] is False
+
+    chain_series = chain["series"][0]
+    assert "grid" not in chain
+    assert chain_series["symbol"] == "roundRect"
+    assert chain_series["symbolSize"] == [124, 48]
+    assert chain_series["categories"][0]["itemStyle"]["color"] == "#E7F0FF"
+    assert chain_series["lineStyle"]["color"] == "#9AA7B8"
+    assert all(link["label"]["show"] is False for link in chain_series["links"])
+
+
+def test_finance_dashboard_chain_places_support_below_midstream_nodes(
+    chain_dataset: ChartDataset,
+) -> None:
+    dataset = chain_dataset.model_copy(
+        update={
+            "nodes": [
+                ChainNode(
+                    node_id="cell",
+                    label="电芯",
+                    stage="midstream",
+                    evidence_ids=["E-CELL"],
+                ),
+                ChainNode(
+                    node_id="pack",
+                    label="电池包",
+                    stage="midstream",
+                    evidence_ids=["E-PACK"],
+                ),
+                ChainNode(
+                    node_id="recycle",
+                    label="回收",
+                    stage="support",
+                    evidence_ids=["E-RECYCLE"],
+                ),
+            ],
+            "edges": [],
+            "evidence_ids": ["E-CELL", "E-PACK", "E-RECYCLE"],
+        }
+    )
+
+    nodes = build_industry_chain_option("产业链", dataset, "finance_dashboard")["series"][0]["data"]
+    midstream_y = [node["y"] for node in nodes if node["category"] == 1]
+    support_y = [node["y"] for node in nodes if node["category"] == 3]
+
+    assert min(support_y) > max(midstream_y)
 
 
 def test_dual_panel_uses_left_right_grids_and_all_annotation_types() -> None:

@@ -24,6 +24,16 @@ CONTRAST_MIN_RATIO = 4.5
 UP_COLOR = "#C0392B"
 DOWN_COLOR = "#1E8449"
 HIGHLIGHT_MUTED_COLOR = "#9CA3AF"
+FINANCE_DASHBOARD_COLORS = [
+    "#3473EA",
+    "#69B2ED",
+    "#F3AC28",
+    "#7C3AED",
+    "#D14B3F",
+    "#2CA58D",
+    "#5B6CFA",
+    "#E07A5F",
+]
 
 P1_CHART_TYPES: frozenset[str] = frozenset(
     {"combo", "area", "scatter", "bubble", "heatmap", "boxplot", "treemap"}

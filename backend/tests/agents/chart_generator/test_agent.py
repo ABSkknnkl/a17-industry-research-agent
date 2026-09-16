@@ -691,6 +691,11 @@ async def test_agent_generates_all_five_p0_chart_families(
         "radar",
         "industry_chain",
     }
+    assert all(
+        spec["option"]["color"][:3] == ["#3473EA", "#69B2ED", "#F3AC28"]
+        for spec in result.data["chart_specs"]
+    )
+    assert all(spec["option"]["title"]["show"] is False for spec in result.data["chart_specs"])
     assert len(result.artifacts) == 5
 
 

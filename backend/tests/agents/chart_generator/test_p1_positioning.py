@@ -49,3 +49,26 @@ def test_bubble_upgrades_scatter_when_size_is_non_negative() -> None:
     assert decision.variant == "bubble"
     assert option["series"][0]["type"] == "scatter"
     assert option["series"][0]["data"][0]["value"] == [10.0, 20.0, 100.0]
+
+
+def test_finance_dashboard_positioning_charts_have_clear_points_and_tooltips() -> None:
+    scatter = build_scatter_option(
+        "竞争定位", _positioning_dataset(with_size=False), "finance_dashboard"
+    )
+    bubble = build_bubble_option(
+        "竞争定位", _positioning_dataset(with_size=True), "finance_dashboard"
+    )
+
+    for option in (scatter, bubble):
+        series = option["series"][0]
+        assert option["tooltip"]["backgroundColor"] == "rgba(19, 28, 45, 0.94)"
+        assert series["itemStyle"] == {
+            "color": "#3473EA",
+            "borderColor": "#FFFFFF",
+            "borderWidth": 2,
+            "opacity": 0.82,
+        }
+        assert series["emphasis"]["scale"] is True
+        assert series["label"]["position"] == "top"
+        assert option["legend"]["show"] is False
+    assert scatter["series"][0]["symbolSize"] == 14

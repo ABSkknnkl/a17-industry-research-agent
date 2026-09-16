@@ -8,12 +8,20 @@ import pytest
 
 from app.agents.chart_generator.builders import (
     build_bar_option,
+    build_combo_option,
     build_dual_panel_option,
     build_line_option,
 )
 from app.reporting.svg import render_chart_svg
 from app.agents.report_fusion.visual import plan_visual_decision
-from app.schemas.chart import ChartAnnotation, ChartDataset, ChartPanel, ChartPoint, ChartSpec
+from app.schemas.chart import (
+    ChartAnnotation,
+    ChartDataset,
+    ChartPanel,
+    ChartPoint,
+    ChartSeriesMeta,
+    ChartSpec,
+)
 
 NS = {"s": "http://www.w3.org/2000/svg"}
 
@@ -130,6 +138,235 @@ def test_combo_shares_scale_by_axis_index_and_displays_both_units() -> None:
     ]
     assert points[0] == points[2]
     assert points[1][1][1] > points[0][1][1] + 100
+
+
+def test_finance_combo_svg_keeps_builder_colors_width_and_rounding() -> None:
+    dataset = ChartDataset(
+        dataset_id="DS-FINANCE-COMBO",
+        kind="time_series",
+        metric_name="资产规模与负债率",
+        unit="亿元",
+        currency="CNY",
+        business_linked=True,
+        series_meta=[
+            ChartSeriesMeta(name="总资产", unit="亿元", currency="CNY", render_as="bar"),
+            ChartSeriesMeta(name="资产负债率", unit="%", render_as="line"),
+        ],
+        points=[
+            ChartPoint(
+                label=str(year),
+                period_end=date(year, 12, 31),
+                value=value,
+                series=series,
+                evidence_id="E-1",
+            )
+            for series, values in (("总资产", [4000, 5200, 6800]), ("资产负债率", [68, 66, 64]))
+            for year, value in zip((2023, 2024, 2025), values, strict=True)
+        ],
+        evidence_ids=["E-1"],
+    )
+    option = build_combo_option("资产规模与负债率", dataset, "finance_dashboard")
+    root = ET.fromstring(render_chart_svg(chart(option, "combo")))
+    bars = [
+        node
+        for node in root.findall(".//s:rect", NS)
+        if node.get("fill") == "#3473EA" and float(node.get("height", "0")) > 20
+    ]
+
+    assert len(bars) == 3
+    assert all(float(node.attrib["width"]) <= 22 for node in bars)
+    assert all(node.get("rx") == "4" for node in bars)
+    line = root.find(".//s:polyline", NS)
+    assert line is not None
+    assert line.get("stroke") == "#F3AC28"
+    assert line.get("stroke-width") == "2.5"
+
+
+def test_specialized_svg_honors_finance_radar_heatmap_and_boxplot_styles() -> None:
+    radar = chart(
+        {
+            "color": ["#3473EA"],
+            "radar": {"indicator": [{"name": "技术", "max": 100}, {"name": "渠道", "max": 100}]},
+            "series": [
+                {
+                    "type": "radar",
+                    "lineStyle": {"width": 2},
+                    "areaStyle": {"opacity": 0.12},
+                    "data": [{"name": "公司A", "value": [80, 70]}],
+                }
+            ],
+        },
+        "radar",
+    )
+    radar_polygon = ET.fromstring(render_chart_svg(radar)).findall(".//s:polygon", NS)[-1]
+    assert radar_polygon.get("fill-opacity") == "0.12"
+    assert radar_polygon.get("stroke-width") == "2"
+
+    heatmap = chart(
+        {
+            "xAxis": {"data": ["技术", "渠道"]},
+            "yAxis": {"data": ["公司A"]},
+            "visualMap": {
+                "min": 0,
+                "max": 100,
+                "inRange": {"color": ["#EEF4FF", "#A9CEF7", "#3473EA", "#173F8A"]},
+            },
+            "series": [
+                {
+                    "type": "heatmap",
+                    "label": {"show": True, "formatter": "{@[2]}", "color": "#FFFFFF"},
+                    "itemStyle": {"borderColor": "#FFFFFF", "borderWidth": 3, "borderRadius": 4},
+                    "data": [
+                        {"value": [0, 0, 0], "label": {"color": "#173F8A"}},
+                        {"value": [1, 0, 100], "label": {"color": "#FFFFFF"}},
+                    ],
+                }
+            ],
+        },
+        "heatmap",
+    )
+    heat_cells = [
+        node
+        for node in ET.fromstring(render_chart_svg(heatmap)).findall(".//s:rect", NS)
+        if node.get("fill") in {"#EEF4FF", "#173F8A"}
+    ]
+    assert [node.get("fill") for node in heat_cells] == ["#EEF4FF", "#173F8A"]
+    assert all(node.get("rx") == "4" and node.get("stroke-width") == "3" for node in heat_cells)
+    heat_text = {
+        node.text: node.get("fill")
+        for node in ET.fromstring(render_chart_svg(heatmap)).findall(".//s:text", NS)
+    }
+    assert heat_text["0.0"] == "#173F8A"
+    assert heat_text["100.0"] == "#FFFFFF"
+
+    boxplot = chart(
+        {
+            "xAxis": {"data": ["行业"]},
+            "yAxis": {"scale": True},
+            "series": [
+                {
+                    "type": "boxplot",
+                    "itemStyle": {
+                        "color": "#DCEBFF",
+                        "borderColor": "#3473EA",
+                        "borderWidth": 2,
+                    },
+                    "data": [[1, 2, 3, 4, 5]],
+                }
+            ],
+        },
+        "boxplot",
+    )
+    box = next(
+        node
+        for node in ET.fromstring(render_chart_svg(boxplot)).findall(".//s:rect", NS)
+        if node.get("fill") == "#DCEBFF"
+    )
+    assert box.get("stroke") == "#3473EA"
+    assert box.get("stroke-width") == "2"
+
+    scatter = chart(
+        {
+            "xAxis": {"scale": True},
+            "yAxis": {"scale": True},
+            "series": [
+                {
+                    "type": "scatter",
+                    "symbolSize": 14,
+                    "itemStyle": {
+                        "color": "#3473EA",
+                        "borderColor": "#FFFFFF",
+                        "borderWidth": 2,
+                        "opacity": 0.82,
+                    },
+                    "data": [{"name": "公司A", "value": [10, 20]}],
+                }
+            ],
+        },
+        "scatter",
+    )
+    point = ET.fromstring(render_chart_svg(scatter)).find(".//s:circle", NS)
+    assert point is not None
+    assert point.get("fill") == "#3473EA"
+    assert point.get("fill-opacity") == "0.82"
+    assert point.get("stroke") == "#FFFFFF"
+    assert point.get("stroke-width") == "2"
+
+
+def test_specialized_svg_honors_finance_pie_treemap_and_chain_styles() -> None:
+    pie = chart(
+        {
+            "color": ["#3473EA", "#69B2ED"],
+            "series": [
+                {
+                    "type": "pie",
+                    "itemStyle": {"borderColor": "#FFFFFF", "borderWidth": 3},
+                    "data": [{"name": "A", "value": 60}, {"name": "B", "value": 40}],
+                }
+            ],
+        },
+        "pie",
+    )
+    pie_paths = ET.fromstring(render_chart_svg(pie)).findall(".//s:path", NS)
+    assert all(node.get("stroke") == "#FFFFFF" for node in pie_paths)
+    assert all(node.get("stroke-width") == "3" for node in pie_paths)
+
+    treemap = chart(
+        {
+            "color": ["#3473EA", "#69B2ED"],
+            "series": [
+                {
+                    "type": "treemap",
+                    "itemStyle": {"borderColor": "#FFFFFF", "borderWidth": 3},
+                    "label": {
+                        "show": True,
+                        "formatter": "{b}\n{c} 亿元",
+                        "color": "#FFFFFF",
+                    },
+                    "data": [{"name": "硬件", "value": 70}, {"name": "软件", "value": 30}],
+                }
+            ],
+        },
+        "treemap",
+    )
+    tree_cells = [
+        node
+        for node in ET.fromstring(render_chart_svg(treemap)).findall(".//s:rect", NS)
+        if node.get("fill") in {"#3473EA", "#69B2ED"}
+    ]
+    assert len(tree_cells) == 2
+    assert all(node.get("stroke-width") == "3" for node in tree_cells)
+    assert "硬件 · 70.0 亿元" in texts(render_chart_svg(treemap))
+
+    chain = chart(
+        {
+            "series": [
+                {
+                    "type": "graph",
+                    "categories": [
+                        {"name": "上游", "itemStyle": {"color": "#E7F0FF"}},
+                        {"name": "中游", "itemStyle": {"color": "#D8E8FF"}},
+                    ],
+                    "lineStyle": {"color": "#9AA7B8", "width": 2},
+                    "label": {"show": True, "color": "#253247"},
+                    "data": [
+                        {"id": "a", "name": "原料", "category": 0},
+                        {"id": "b", "name": "制造", "category": 1},
+                    ],
+                    "links": [{"source": "a", "target": "b"}],
+                }
+            ]
+        },
+        "industry_chain",
+        "graph",
+    )
+    chain_root = ET.fromstring(render_chart_svg(chain))
+    assert any(node.get("fill") == "#E7F0FF" for node in chain_root.findall(".//s:rect", NS))
+    assert any(node.get("stroke") == "#9AA7B8" for node in chain_root.findall(".//s:line", NS))
+    assert any(
+        node.text == "原料" and node.get("fill") == "#253247"
+        for node in chain_root.findall(".//s:text", NS)
+    )
 
 
 def test_builder_broker_thin_labels_threshold_and_null_gaps() -> None:

@@ -6,6 +6,7 @@ from typing import Any
 from app.agents.chart_generator.constants import (
     DATALABEL_MAX_POINTS,
     DOWN_COLOR,
+    FINANCE_DASHBOARD_COLORS,
     UNIT_PLACEHOLDERS,
     UP_COLOR,
 )
@@ -15,6 +16,7 @@ THEMES: dict[str, list[str]] = {
     "research_blue": ["#2563EB", "#0F766E", "#D97706", "#7C3AED", "#DC2626"],
     "colorblind_safe": ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#56B4E9"],
     "broker_thin": ["#1F3864", "#8496AB", "#B45309", "#6B7280", "#7F1D1D"],
+    "finance_dashboard": FINANCE_DASHBOARD_COLORS,
 }
 
 
@@ -30,8 +32,8 @@ def _axis_name(dataset: ChartDataset) -> str:
     return " ".join(item for item in (dataset.currency, _unit_text(dataset.unit)) if item)
 
 
-def _is_updown_dataset(dataset: ChartDataset) -> bool:
-    names = [dataset.metric_name, *(point.series for point in dataset.points)]
+def _is_updown_series(dataset: ChartDataset, series_name: str | None = None) -> bool:
+    names = [series_name] if dataset.series_meta else [dataset.metric_name, series_name]
     return any(token in str(name) for name in names for token in _UPDOWN_TOKENS)
 
 
@@ -44,19 +46,110 @@ def _auto_datalabel(point_count: int, *, formatter: str = "{c}") -> dict[str, An
 
 
 def _theme_axis_style(theme: str) -> dict[str, Any]:
-    if theme != "broker_thin":
-        return {}
-    return {"splitLine": {"show": False}, "axisTick": {"show": False}}
+    if theme == "broker_thin":
+        return {"splitLine": {"show": False}, "axisTick": {"show": False}}
+    if theme == "finance_dashboard":
+        return {
+            "axisLine": {"lineStyle": {"color": "#DFE3E8"}},
+            "axisTick": {"show": False},
+            "axisLabel": {"color": "#626A75", "hideOverlap": True},
+            "splitLine": {"lineStyle": {"color": "#E7EAF0", "width": 1}},
+        }
+    return {}
 
 
-def _theme_series_style(theme: str, series_type: str) -> dict[str, Any]:
-    if theme != "broker_thin" or series_type != "line":
-        return {}
-    return {"lineStyle": {"width": 1.5}, "showSymbol": False}
+def _theme_series_style(
+    theme: str,
+    series_type: str,
+    *,
+    accent: bool = False,
+    horizontal: bool = False,
+) -> dict[str, Any]:
+    if theme == "broker_thin" and series_type == "line":
+        return {"lineStyle": {"width": 1.5}, "showSymbol": False}
+    if theme == "finance_dashboard" and series_type == "line":
+        color = FINANCE_DASHBOARD_COLORS[2] if accent else FINANCE_DASHBOARD_COLORS[0]
+        return {
+            "lineStyle": {"width": 2.5, "color": color},
+            "itemStyle": {"color": color},
+            "showSymbol": False,
+            "symbol": "circle",
+            "symbolSize": 7,
+        }
+    if theme == "finance_dashboard" and series_type == "bar":
+        return {
+            "barMaxWidth": 22,
+            "itemStyle": {"borderRadius": [0, 4, 4, 0] if horizontal else [4, 4, 0, 0]},
+        }
+    return {}
 
 
-def _point_item_style(value: float | None, dataset: ChartDataset) -> dict[str, Any] | None:
-    if value is None or not _is_updown_dataset(dataset):
+def _tooltip(theme: str, trigger: str) -> dict[str, Any]:
+    tooltip: dict[str, Any] = {"trigger": trigger}
+    if theme == "finance_dashboard":
+        tooltip.update(
+            {
+                "backgroundColor": "rgba(19, 28, 45, 0.94)",
+                "borderWidth": 0,
+                "padding": [12, 14],
+                "textStyle": {"color": "#FFFFFF", "fontSize": 13},
+            }
+        )
+    return tooltip
+
+
+def _axis_tooltip(theme: str) -> dict[str, Any]:
+    tooltip = _tooltip(theme, "axis")
+    if theme == "finance_dashboard":
+        tooltip.update(
+            {
+                "axisPointer": {
+                    "type": "shadow",
+                    "shadowStyle": {"color": "rgba(52, 115, 234, 0.06)"},
+                },
+            }
+        )
+    return tooltip
+
+
+def _item_tooltip(theme: str) -> dict[str, Any]:
+    return _tooltip(theme, "item")
+
+
+def _apply_time_density(option: dict[str, Any], labels: list[str], theme: str) -> None:
+    if theme != "finance_dashboard" or len(labels) <= DATALABEL_MAX_POINTS:
+        return
+    option["grid"]["bottom"] = 82
+    option["dataZoom"] = [
+        {"type": "inside", "start": 0, "end": 100},
+        {
+            "type": "slider",
+            "start": 0,
+            "end": 100,
+            "height": 20,
+            "bottom": 12,
+            "showDetail": False,
+            "brushSelect": False,
+            "borderColor": "#D9E0EB",
+            "backgroundColor": "#F4F7FC",
+            "fillerColor": "rgba(52, 115, 234, 0.16)",
+        },
+    ]
+
+
+def _hide_single_series_legend(
+    option: dict[str, Any], theme: str, series: list[dict[str, Any]]
+) -> None:
+    if theme == "finance_dashboard" and len(series) == 1:
+        option["legend"]["show"] = False
+
+
+def _point_item_style(
+    value: float | None,
+    dataset: ChartDataset,
+    series_name: str | None = None,
+) -> dict[str, Any] | None:
+    if value is None or not _is_updown_series(dataset, series_name):
         return None
     return {"color": UP_COLOR if value >= 0 else DOWN_COLOR}
 
@@ -64,14 +157,18 @@ def _point_item_style(value: float | None, dataset: ChartDataset) -> dict[str, A
 def _styled_point(point: ChartPoint, dataset: ChartDataset) -> dict[str, Any]:
     value = None if point.value is None else float(point.value)
     item: dict[str, Any] = {"value": value, "evidence_id": point.evidence_id}
-    style = _point_item_style(value, dataset)
+    style = _point_item_style(value, dataset, point.series)
     if style is not None:
         item["itemStyle"] = style
     return item
 
 
-def _styled_value(value: float | None, dataset: ChartDataset) -> float | dict[str, Any] | None:
-    style = _point_item_style(value, dataset)
+def _styled_value(
+    value: float | None,
+    dataset: ChartDataset,
+    series_name: str | None = None,
+) -> float | dict[str, Any] | None:
+    style = _point_item_style(value, dataset, series_name)
     return {"value": value, "itemStyle": style} if style is not None else value
 
 
@@ -161,7 +258,7 @@ def _required_number(point: ChartPoint) -> float:
 def _base_option(title: str, theme: str) -> dict[str, Any]:
     if theme not in THEMES:
         raise ValueError(f"unsupported chart theme: {theme}")
-    return {
+    option = {
         "animation": False,
         "aria": {"enabled": True},
         "color": THEMES[theme],
@@ -169,6 +266,31 @@ def _base_option(title: str, theme: str) -> dict[str, Any]:
         "legend": {"type": "scroll", "top": 32},
         "grid": {"left": 72, "right": 32, "top": 72, "bottom": 56, "containLabel": True},
     }
+    if theme == "finance_dashboard":
+        option.update(
+            {
+                "backgroundColor": "#FFFFFF",
+                "title": {"text": title, "show": False},
+                "legend": {
+                    "type": "scroll",
+                    "left": 0,
+                    "top": 0,
+                    "itemWidth": 12,
+                    "itemHeight": 12,
+                    "itemGap": 24,
+                    "icon": "roundRect",
+                    "textStyle": {"color": "#69717D", "fontSize": 13},
+                },
+                "grid": {
+                    "left": 12,
+                    "right": 18,
+                    "top": 48,
+                    "bottom": 50,
+                    "containLabel": True,
+                },
+            }
+        )
+    return option
 
 
 def build_line_option(
@@ -203,7 +325,7 @@ def build_line_option(
     )
     option.update(
         {
-            "tooltip": {"trigger": "axis"},
+            "tooltip": _axis_tooltip(theme),
             "xAxis": {
                 "type": "category",
                 "boundaryGap": False,
@@ -221,7 +343,7 @@ def build_line_option(
                     **_theme_series_style(theme, "line"),
                     **_marks_for_series(marks, series_name),
                     "data": [
-                        _styled_value(value, dataset)
+                        _styled_value(value, dataset, series_name)
                         for period_end, _ in periods
                         for value in [series_points[series_name].get(period_end)]
                     ],
@@ -232,6 +354,10 @@ def build_line_option(
             "footnotes": _footnotes(dataset, [y_axis]),
         }
     )
+    if theme == "finance_dashboard":
+        option["xAxis"]["splitLine"] = {"show": False}
+    _hide_single_series_legend(option, theme, option["series"])
+    _apply_time_density(option, labels, theme)
     return option
 
 
@@ -266,7 +392,7 @@ def build_area_option(
     )
     option.update(
         {
-            "tooltip": {"trigger": "axis"},
+            "tooltip": _axis_tooltip(theme),
             "xAxis": {
                 "type": "category",
                 "boundaryGap": False,
@@ -279,7 +405,11 @@ def build_area_option(
                     "name": "历史",
                     "type": "line",
                     "connectNulls": False,
-                    "areaStyle": {"opacity": 0.18},
+                    "areaStyle": (
+                        {"color": "rgba(52, 115, 234, 0.18)"}
+                        if theme == "finance_dashboard"
+                        else {"opacity": 0.18}
+                    ),
                     "label": actual_label_style,
                     **_theme_series_style(theme, "line"),
                     **_marks_for_series(marks, "历史"),
@@ -292,9 +422,23 @@ def build_area_option(
                     "lineStyle": {
                         "type": "dashed",
                         **({"width": 1.5} if theme == "broker_thin" else {}),
+                        **(
+                            {"width": 2.5, "color": FINANCE_DASHBOARD_COLORS[2]}
+                            if theme == "finance_dashboard"
+                            else {}
+                        ),
                     },
-                    "showSymbol": theme != "broker_thin",
-                    "areaStyle": {"opacity": 0.1},
+                    "showSymbol": theme not in {"broker_thin", "finance_dashboard"},
+                    **(
+                        {"itemStyle": {"color": FINANCE_DASHBOARD_COLORS[2]}}
+                        if theme == "finance_dashboard"
+                        else {}
+                    ),
+                    "areaStyle": (
+                        {"color": "rgba(243, 172, 40, 0.10)"}
+                        if theme == "finance_dashboard"
+                        else {"opacity": 0.1}
+                    ),
                     "label": forecast_label_style,
                     **_marks_for_series(marks, "预测"),
                     "data": forecast,
@@ -304,6 +448,9 @@ def build_area_option(
             "footnotes": _footnotes(dataset, [y_axis]),
         }
     )
+    if theme == "finance_dashboard":
+        option["xAxis"]["splitLine"] = {"show": False}
+    _apply_time_density(option, labels, theme)
     return option
 
 
@@ -331,7 +478,8 @@ def build_combo_option(
             "type": "value",
             "name": " ".join(item for item in unit_key if item),
             "position": "left" if index == 0 else "right",
-            "scale": True,
+            "scale": not (theme == "finance_dashboard" and "%" not in unit_key),
+            **({"min": 0} if theme == "finance_dashboard" and "%" not in unit_key else {}),
             **axis_style,
         }
         for index, unit_key in enumerate(unit_keys)
@@ -340,8 +488,13 @@ def build_combo_option(
     marks = _annotation_marks(dataset)
     option.update(
         {
-            "tooltip": {"trigger": "axis"},
-            "xAxis": {"type": "category", "data": labels, **axis_style},
+            "tooltip": _axis_tooltip(theme),
+            "xAxis": {
+                "type": "category",
+                "data": labels,
+                **axis_style,
+                **({"splitLine": {"show": False}} if theme == "finance_dashboard" else {}),
+            },
             "yAxis": y_axes,
             "series": [
                 {
@@ -354,7 +507,11 @@ def build_combo_option(
                             for point in dataset.points
                         )
                     ),
-                    **_theme_series_style(theme, meta.render_as),
+                    **_theme_series_style(
+                        theme,
+                        meta.render_as,
+                        accent=meta.render_as == "line",
+                    ),
                     **_marks_for_series(marks, meta.name),
                     "data": [
                         _styled_point(values[(meta.name, period_end)], dataset)
@@ -366,6 +523,7 @@ def build_combo_option(
             "footnotes": _footnotes(dataset, y_axes),
         }
     )
+    _apply_time_density(option, labels, theme)
     return option
 
 
@@ -401,14 +559,17 @@ def build_dual_panel_option(
                 "gridIndex": panel_index,
                 "data": labels,
                 **axis_style,
+                **({"splitLine": {"show": False}} if theme == "finance_dashboard" else {}),
             }
         )
+        axis_name = _unit_text(panel.axis_name)
         y_axes.append(
             {
                 "type": "value",
                 "gridIndex": panel_index,
-                "name": _unit_text(panel.axis_name),
-                "scale": True,
+                "name": axis_name,
+                "scale": not (theme == "finance_dashboard" and "%" not in axis_name),
+                **({"min": 0} if theme == "finance_dashboard" and "%" not in axis_name else {}),
                 **axis_style,
             }
         )
@@ -427,7 +588,11 @@ def build_dual_panel_option(
                             for point in dataset.points
                         )
                     ),
-                    **_theme_series_style(theme, render_as),
+                    **_theme_series_style(
+                        theme,
+                        render_as,
+                        accent=render_as == "line",
+                    ),
                     **_marks_for_series(marks, series_name),
                     "data": [
                         _styled_point(values[(series_name, period_end)], dataset)
@@ -438,20 +603,20 @@ def build_dual_panel_option(
             )
     option.update(
         {
-            "tooltip": {"trigger": "axis"},
+            "tooltip": _axis_tooltip(theme),
             "grid": [
                 {
                     "left": 64,
                     "right": "56%",
-                    "top": 88,
-                    "bottom": 56,
+                    "top": 56 if theme == "finance_dashboard" else 88,
+                    "bottom": 50 if theme == "finance_dashboard" else 56,
                     "containLabel": True,
                 },
                 {
                     "left": "56%",
                     "right": 40,
-                    "top": 88,
-                    "bottom": 56,
+                    "top": 56 if theme == "finance_dashboard" else 88,
+                    "bottom": 50 if theme == "finance_dashboard" else 56,
                     "containLabel": True,
                 },
             ],
@@ -509,15 +674,37 @@ def _build_xy_option(
         "label": _auto_datalabel(len(data), formatter="{b}"),
         **_marks_for_series(_annotation_marks(dataset), dataset.metric_name),
     }
+    if theme == "finance_dashboard":
+        series.update(
+            {
+                "symbolSize": 14 if not bubble else None,
+                "itemStyle": {
+                    "color": FINANCE_DASHBOARD_COLORS[0],
+                    "borderColor": "#FFFFFF",
+                    "borderWidth": 2,
+                    "opacity": 0.82,
+                },
+                "emphasis": {"scale": True, "focus": "series"},
+                "label": {
+                    **series["label"],
+                    "position": "top",
+                    "color": "#3E4755",
+                    "fontWeight": 600,
+                },
+            }
+        )
+        if bubble:
+            series.pop("symbolSize", None)
     option.update(
         {
-            "tooltip": {"trigger": "item"},
+            "tooltip": _item_tooltip(theme),
             "xAxis": x_axis,
             "yAxis": y_axis,
             "series": [series],
             "footnotes": _footnotes(dataset, [y_axis]),
         }
     )
+    _hide_single_series_legend(option, theme, option["series"])
     return option
 
 
@@ -548,11 +735,21 @@ def build_heatmap_option(
     row_index = {row: index for index, row in enumerate(rows)}
     column_index = {column: index for index, column in enumerate(columns)}
     values = [float(cell.value) for cell in dataset.matrix_cells]
+    finance_low = min(values)
+    finance_high = max(values)
+    if finance_low == finance_high:
+        finance_high = finance_low + 1
     axis_style = _theme_axis_style(theme)
     option.update(
         {
-            "tooltip": {"trigger": "item"},
-            "grid": {"left": 96, "right": 52, "top": 72, "bottom": 72, "containLabel": True},
+            "tooltip": _item_tooltip(theme),
+            "grid": {
+                "left": 96,
+                "right": 52,
+                "top": 48 if theme == "finance_dashboard" else 72,
+                "bottom": 72,
+                "containLabel": True,
+            },
             "xAxis": {
                 "type": "category",
                 "data": columns,
@@ -566,18 +763,56 @@ def build_heatmap_option(
                 **axis_style,
             },
             "visualMap": {
-                "min": float(dataset.scale_min) if dataset.scale_min is not None else min(values),
-                "max": float(dataset.scale_max) if dataset.scale_max is not None else max(values),
+                "min": (
+                    finance_low
+                    if theme == "finance_dashboard"
+                    else float(dataset.scale_min) if dataset.scale_min is not None else min(values)
+                ),
+                "max": (
+                    finance_high
+                    if theme == "finance_dashboard"
+                    else float(dataset.scale_max) if dataset.scale_max is not None else max(values)
+                ),
                 "calculable": False,
                 "orient": "horizontal",
                 "left": "center",
                 "bottom": 8,
+                **(
+                    {
+                        "inRange": {"color": ["#EEF4FF", "#A9CEF7", "#3473EA", "#173F8A"]},
+                        "textStyle": {"color": "#69717D"},
+                    }
+                    if theme == "finance_dashboard"
+                    else {}
+                ),
             },
             "series": [
                 {
                     "name": dataset.metric_name,
                     "type": "heatmap",
-                    "label": _auto_datalabel(len(dataset.matrix_cells)),
+                    "label": (
+                        {
+                            "show": len(dataset.matrix_cells) <= 30,
+                            "formatter": "{@[2]}",
+                            "color": "#FFFFFF",
+                            "fontWeight": 700,
+                            "textBorderColor": "rgba(20, 33, 61, 0.45)",
+                            "textBorderWidth": 2,
+                        }
+                        if theme == "finance_dashboard"
+                        else _auto_datalabel(len(dataset.matrix_cells))
+                    ),
+                    **(
+                        {
+                            "itemStyle": {
+                                "borderColor": "#FFFFFF",
+                                "borderWidth": 3,
+                                "borderRadius": 4,
+                            }
+                        }
+                        if theme == "finance_dashboard"
+                        else {}
+                    ),
                     "data": [
                         {
                             "value": [
@@ -586,6 +821,22 @@ def build_heatmap_option(
                                 float(cell.value),
                             ],
                             "evidence_id": cell.evidence_id,
+                            **(
+                                {
+                                    "label": {
+                                        "color": (
+                                            "#173F8A"
+                                            if (float(cell.value) - finance_low)
+                                            / (finance_high - finance_low)
+                                            < 0.45
+                                            else "#FFFFFF"
+                                        ),
+                                        "textBorderWidth": 0,
+                                    }
+                                }
+                                if theme == "finance_dashboard"
+                                else {}
+                            ),
                         }
                         for cell in dataset.matrix_cells
                     ],
@@ -594,6 +845,7 @@ def build_heatmap_option(
             "footnotes": _unit_placeholder_footnote(dataset),
         }
     )
+    _hide_single_series_legend(option, theme, option["series"])
     return option
 
 
@@ -634,14 +886,31 @@ def build_boxplot_option(
     y_axis = {"type": "value", "name": _axis_name(dataset), "scale": True, **axis_style}
     option.update(
         {
-            "tooltip": {"trigger": "item"},
-            "xAxis": {"type": "category", "data": names, **axis_style},
+            "tooltip": _item_tooltip(theme),
+            "xAxis": {
+                "type": "category",
+                "data": names,
+                **axis_style,
+                **({"splitLine": {"show": False}} if theme == "finance_dashboard" else {}),
+            },
             "yAxis": y_axis,
             "series": [
                 {
                     "name": dataset.metric_name,
                     "type": "boxplot",
                     "label": _auto_datalabel(len(box_data)),
+                    **(
+                        {
+                            "itemStyle": {
+                                "color": "#DCEBFF",
+                                "borderColor": FINANCE_DASHBOARD_COLORS[0],
+                                "borderWidth": 2,
+                            },
+                            "emphasis": {"itemStyle": {"borderWidth": 3}},
+                        }
+                        if theme == "finance_dashboard"
+                        else {}
+                    ),
                     **_marks_for_series(_annotation_marks(dataset), dataset.metric_name),
                     "data": box_data,
                 }
@@ -650,6 +919,7 @@ def build_boxplot_option(
             "footnotes": _footnotes(dataset, [y_axis]),
         }
     )
+    _hide_single_series_legend(option, theme, option["series"])
     return option
 
 
@@ -677,9 +947,38 @@ def build_treemap_option(
         return item
 
     roots = sorted(children_by_parent.get(None, []), key=lambda node: node.label)
+    finance = theme == "finance_dashboard"
+    tree_data = [convert(node) for node in roots]
+    if finance:
+        tree_data = [
+            {
+                "id": node.node_id,
+                "name": node.label,
+                "value": float(node.value),
+                "evidence_ids": node.evidence_ids,
+                "itemStyle": {
+                    "color": FINANCE_DASHBOARD_COLORS[index % len(FINANCE_DASHBOARD_COLORS)]
+                },
+            }
+            for index, node in enumerate(roots)
+        ]
+    unit = _unit_text(dataset.unit)
+    tree_formatter = f"{{b}}\n{{c}} {unit}".rstrip()
+    tree_label = _auto_datalabel(len(dataset.hierarchy_nodes), formatter=tree_formatter)
+    if finance:
+        tree_label.update(
+            {
+                "position": "inside",
+                "color": "#FFFFFF",
+                "fontWeight": 700,
+                "lineHeight": 18,
+                "overflow": "truncate",
+                "ellipsis": "…",
+            }
+        )
     option.update(
         {
-            "tooltip": {"trigger": "item"},
+            "tooltip": _item_tooltip(theme),
             "series": [
                 {
                     "name": dataset.metric_name,
@@ -687,14 +986,53 @@ def build_treemap_option(
                     "roam": False,
                     "nodeClick": False,
                     "breadcrumb": {"show": False},
-                    "label": _auto_datalabel(len(dataset.hierarchy_nodes), formatter="{b}"),
+                    "label": tree_label,
                     "upperLabel": {"show": True},
-                    "data": [convert(node) for node in roots],
+                    **(
+                        {
+                            "left": 16,
+                            "right": 16,
+                            "top": 28,
+                            "bottom": 12,
+                            "itemStyle": {
+                                "borderColor": "#FFFFFF",
+                                "borderWidth": 3,
+                                "gapWidth": 3,
+                            },
+                            "upperLabel": {
+                                "show": True,
+                                "height": 28,
+                                "color": "#FFFFFF",
+                                "fontWeight": 700,
+                                "formatter": "{b}",
+                            },
+                            "colorMappingBy": "id",
+                            "levels": [
+                                {"itemStyle": {"gapWidth": 4, "borderWidth": 0}},
+                                {
+                                    "color": FINANCE_DASHBOARD_COLORS,
+                                    "colorSaturation": [0.45, 0.72],
+                                    "itemStyle": {"gapWidth": 3, "borderColor": "#FFFFFF"},
+                                },
+                                {
+                                    "colorSaturation": [0.32, 0.7],
+                                    "itemStyle": {
+                                        "gapWidth": 2,
+                                        "borderColor": "#FFFFFF",
+                                    },
+                                },
+                            ],
+                        }
+                        if finance
+                        else {}
+                    ),
+                    "data": tree_data,
                 }
             ],
             "footnotes": _unit_placeholder_footnote(dataset),
         }
     )
+    _hide_single_series_legend(option, theme, option["series"])
     return option
 
 
@@ -723,6 +1061,11 @@ def build_bar_option(
                 )
             ),
             **_marks_for_series(marks, series_name),
+            **_theme_series_style(
+                theme,
+                "bar",
+                horizontal=variant == "horizontal",
+            ),
             "data": [values.get((series_name, label), {"value": None}) for label in labels],
         }
         if variant == "stacked":
@@ -737,13 +1080,14 @@ def build_bar_option(
     }
     option.update(
         {
-            "tooltip": {"trigger": "axis", "axisPointer": {"type": "shadow"}},
+            "tooltip": _axis_tooltip(theme),
             "xAxis": value_axis if variant == "horizontal" else category_axis,
             "yAxis": category_axis if variant == "horizontal" else value_axis,
             "series": series,
             "footnotes": _footnotes(dataset, [value_axis]),
         }
     )
+    _hide_single_series_legend(option, theme, option["series"])
     return option
 
 
@@ -754,29 +1098,73 @@ def build_pie_option(
 ) -> dict[str, Any]:
     option = _base_option(title, theme)
     option.pop("grid", None)
+    finance = theme == "finance_dashboard"
+    unit = _unit_text(dataset.unit)
+
+    def pie_data(point: ChartPoint) -> dict[str, Any]:
+        value = float(point.value)
+        return {
+            "name": f"{point.label} · {value:.1f}{unit}" if finance else point.label,
+            "raw_name": point.label,
+            "value": value,
+            "evidence_id": point.evidence_id,
+        }
+
     option.update(
         {
-            "tooltip": {"trigger": "item"},
-            "legend": {"type": "scroll", "bottom": 8},
+            "tooltip": _item_tooltip(theme),
+            "legend": (
+                {
+                    "type": "scroll",
+                    "orient": "vertical",
+                    "right": 20,
+                    "top": "middle",
+                    "itemWidth": 12,
+                    "itemHeight": 12,
+                    "textStyle": {"color": "#69717D", "fontSize": 13},
+                }
+                if finance
+                else {"type": "scroll", "bottom": 8}
+            ),
             "series": [
                 {
                     "name": dataset.metric_name,
                     "type": "pie",
                     "radius": ["42%", "70%"],
-                    "center": ["50%", "52%"],
+                    "center": ["38%", "52%"] if finance else ["50%", "52%"],
                     "avoidLabelOverlap": True,
                     "label": _auto_datalabel(
                         sum(point.value is not None for point in dataset.points),
                         formatter="{b}: {d}%",
                     ),
-                    "data": [
+                    **(
                         {
-                            "name": point.label,
-                            "value": float(point.value),
-                            "evidence_id": point.evidence_id,
+                            "itemStyle": {
+                                "borderColor": "#FFFFFF",
+                                "borderWidth": 3,
+                                "borderRadius": 4,
+                            },
+                            "label": {
+                                **_auto_datalabel(
+                                    sum(point.value is not None for point in dataset.points),
+                                    formatter="{b}: {d}%",
+                                ),
+                                "show": False,
+                                "color": "#3E4755",
+                                "fontSize": 12,
+                                "fontWeight": 600,
+                                "alignTo": "edge",
+                                "edgeDistance": "8%",
+                                "bleedMargin": 4,
+                            },
+                            "labelLine": {"lineStyle": {"color": "#AAB2BF"}},
+                            "emphasis": {"scaleSize": 7},
                         }
-                        for point in dataset.points
-                        if point.value is not None
+                        if finance
+                        else {}
+                    ),
+                    "data": [
+                        pie_data(point) for point in dataset.points if point.value is not None
                     ],
                 }
             ],
@@ -800,11 +1188,21 @@ def build_radar_option(
     scale_max = float(dataset.scale_max if dataset.scale_max is not None else 100)
     option.update(
         {
-            "tooltip": {"trigger": "item"},
+            "tooltip": _item_tooltip(theme),
             "radar": {
                 "center": ["50%", "56%"],
                 "radius": "64%",
                 **({"splitLine": {"show": False}} if theme == "broker_thin" else {}),
+                **(
+                    {
+                        "axisName": {"color": "#3E4755", "fontSize": 12},
+                        "axisLine": {"lineStyle": {"color": "#D8DEE8"}},
+                        "splitLine": {"lineStyle": {"color": "#D8DEE8"}},
+                        "splitArea": {"areaStyle": {"color": ["#F7F9FC", "#FFFFFF"]}},
+                    }
+                    if theme == "finance_dashboard"
+                    else {}
+                ),
                 "indicator": [
                     {"name": label, "min": scale_min, "max": scale_max} for label in labels
                 ],
@@ -813,6 +1211,17 @@ def build_radar_option(
                 {
                     "type": "radar",
                     "label": _auto_datalabel(len(dataset.points)),
+                    **(
+                        {
+                            "lineStyle": {"width": 2},
+                            "areaStyle": {"opacity": 0.12},
+                            "symbol": "circle",
+                            "symbolSize": 5,
+                            "label": {"show": False},
+                        }
+                        if theme == "finance_dashboard"
+                        else {}
+                    ),
                     "data": [
                         {
                             "name": series_name,
@@ -839,6 +1248,8 @@ def build_industry_chain_option(
     theme: str = "research_blue",
 ) -> dict[str, Any]:
     option = _base_option(title, theme)
+    if theme == "finance_dashboard":
+        option.pop("grid", None)
     stage_x = {"upstream": 0, "midstream": 1, "downstream": 2, "support": 1}
     stage_category = {"upstream": 0, "midstream": 1, "downstream": 2, "support": 3}
     stage_labels = ["上游", "中游", "下游", "支撑"]
@@ -849,28 +1260,45 @@ def build_industry_chain_option(
     for stage in ("upstream", "midstream", "downstream", "support"):
         stage_nodes = grouped[stage]
         for index, node in enumerate(stage_nodes):
+            support_offset = len(grouped["midstream"]) * 140 if stage == "support" else 0
             nodes.append(
                 {
                     "id": node.node_id,
                     "name": node.label,
                     "category": stage_category[stage],
                     "x": stage_x[stage] * 400,
-                    "y": (index + 1) * 140 + (70 if stage == "support" else 0),
+                    "y": (index + 1) * 140 + support_offset,
                     "evidence_ids": node.evidence_ids,
+                    **(
+                        {
+                            "symbolSize": [142, 56],
+                            "itemStyle": {
+                                "color": FINANCE_DASHBOARD_COLORS[0],
+                                "borderColor": "#FFFFFF",
+                                "borderWidth": 2,
+                            },
+                            "label": {"color": "#FFFFFF", "fontWeight": 700},
+                        }
+                        if theme == "finance_dashboard" and node.is_core
+                        else {}
+                    ),
                 }
             )
     links = [
         {
             "source": edge.source,
             "target": edge.target,
-            "label": {"show": bool(edge.label), "formatter": edge.label or ""},
+            "label": {
+                "show": bool(edge.label) and theme != "finance_dashboard",
+                "formatter": edge.label or "",
+            },
             "evidence_ids": edge.evidence_ids,
         }
         for edge in dataset.edges
     ]
     option.update(
         {
-            "tooltip": {"trigger": "item"},
+            "tooltip": _item_tooltip(theme),
             "series": [
                 {
                     "type": "graph",
@@ -880,14 +1308,54 @@ def build_industry_chain_option(
                     "top": 80,
                     "bottom": 40,
                     "roam": False,
-                    "symbolSize": 62,
-                    "categories": [{"name": label} for label in stage_labels],
+                    "symbolSize": [124, 48] if theme == "finance_dashboard" else 62,
+                    **({"symbol": "roundRect"} if theme == "finance_dashboard" else {}),
+                    "categories": [
+                        {
+                            "name": label,
+                            **(
+                                {
+                                    "itemStyle": {
+                                        "color": ["#E7F0FF", "#D8E8FF", "#E8F4EF", "#FFF2D8"][
+                                            index
+                                        ],
+                                        "borderColor": [
+                                            "#8EB8F4",
+                                            "#75A7ED",
+                                            "#8DBEAA",
+                                            "#E3B75E",
+                                        ][index],
+                                        "borderWidth": 1.5,
+                                    }
+                                }
+                                if theme == "finance_dashboard"
+                                else {}
+                            ),
+                        }
+                        for index, label in enumerate(stage_labels)
+                    ],
                     "data": nodes,
                     "links": links,
                     "edgeSymbol": ["none", "arrow"],
                     "edgeSymbolSize": 8,
-                    "label": {"show": True, "position": "inside"},
-                    "lineStyle": {"width": 2, "curveness": 0.08},
+                    "label": {
+                        "show": True,
+                        "position": "inside",
+                        **(
+                            {"color": "#253247", "fontSize": 13, "fontWeight": 600}
+                            if theme == "finance_dashboard"
+                            else {}
+                        ),
+                    },
+                    "lineStyle": {
+                        "width": 2,
+                        "curveness": 0.08,
+                        **(
+                            {"color": "#9AA7B8", "opacity": 0.82}
+                            if theme == "finance_dashboard"
+                            else {}
+                        ),
+                    },
                 }
             ],
         }

@@ -30,10 +30,19 @@ def _number(value: Any) -> float | None:
     return number if isfinite(number) else None
 
 
-def _text(x: float, y: float, value: object, *, anchor: str = "middle", size: int = 13) -> str:
+def _text(
+    x: float,
+    y: float,
+    value: object,
+    *,
+    anchor: str = "middle",
+    size: int = 13,
+    color: str = "#475569",
+) -> str:
+    rendered = str(value).replace("\n", " · ")
     return (
         f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{anchor}" '
-        f'font-size="{size}" fill="#475569">{escape(str(value))}</text>'
+        f'font-size="{size}" fill="{escape(color)}">{escape(rendered)}</text>'
     )
 
 
@@ -84,6 +93,39 @@ def _color(item: Any, fallback: str, *, line: bool = False) -> str:
     return str(color) if color else fallback
 
 
+def _bar_radius(item: dict[str, Any], raw: Any) -> float:
+    """Translate ECharts bar corner radii to SVG's uniform rounded rect radius."""
+    raw_style = raw.get("itemStyle", {}) if isinstance(raw, dict) else {}
+    radius = raw_style.get("borderRadius", item.get("itemStyle", {}).get("borderRadius", 0))
+    if isinstance(radius, list):
+        values = [_number(value) or 0 for value in radius[:2]]
+        return max(values, default=0)
+    return _number(radius) or 0
+
+
+def _color_ramp(colors: list[str], ratio: float, fallback: str) -> str:
+    """Interpolate an ECharts hex color ramp for deterministic offline SVG output."""
+    valid = [color for color in colors if len(color) == 7 and color.startswith("#")]
+    if not valid:
+        return fallback
+    if len(valid) == 1:
+        return valid[0]
+    scaled = min(max(ratio, 0), 1) * (len(valid) - 1)
+    left = min(int(scaled), len(valid) - 2)
+    weight = scaled - left
+
+    def rgb(color: str) -> tuple[int, int, int]:
+        return (
+            int(color[1:3], 16),
+            int(color[3:5], 16),
+            int(color[5:7], 16),
+        )
+
+    start, end = rgb(valid[left]), rgb(valid[left + 1])
+    mixed = tuple(round(a + (b - a) * weight) for a, b in zip(start, end, strict=True))
+    return "#" + "".join(f"{channel:02X}" for channel in mixed)
+
+
 def _label(
     item: dict[str, Any], raw: Any, value: object, *, name: str = "", percent: float = 0
 ) -> str | None:
@@ -96,6 +138,7 @@ def _label(
         .replace("{b}", str(raw.get("name", name) if isinstance(raw, dict) else name))
         .replace("{c}", str(value))
         .replace("{d}", f"{percent:g}")
+        .replace("{@[2]}", str(value))
     )
 
 
@@ -368,13 +411,16 @@ def _render_panel_series(
                 horizontal=horizontal,
             )
         )
-    bar_size = min(48.0, band * 0.72 / max(len(bar_groups), 1))
+    bar_slot = min(48.0, band * 0.72 / max(len(bar_groups), 1))
     for si, item in enumerate(series):
         axis_index = int(item.get("yAxisIndex", 0))
         low, high = scales.get(axis_index, scales[0])
         color = _color(item, str(colors[si % len(colors)]))
         line_color = escape(_color(item, color, line=True))
         is_bar = item.get("type", default_type) == "bar"
+        requested_bar_size = _number(item.get("barWidth")) or bar_slot
+        maximum_bar_size = _number(item.get("barMaxWidth"))
+        bar_size = min(requested_bar_size, maximum_bar_size or requested_bar_size)
         segments: list[list[tuple[float, float]]] = [[]]
         for index, raw in enumerate(item.get("data", [])[: len(labels)]):
             value = _number(raw)
@@ -391,7 +437,7 @@ def _render_panel_series(
             point_color = escape(_color(raw, color))
             if is_bar:
                 group = (axis_index, str(item.get("stack") or f"series-{si}"))
-                offset = (bar_groups.index(group) - (len(bar_groups) - 1) / 2) * bar_size
+                offset = (bar_groups.index(group) - (len(bar_groups) - 1) / 2) * bar_slot
                 if horizontal:
                     px = x + (end - low) / (high - low) * width
                     base = x + (baseline - low) / (high - low) * width
@@ -401,9 +447,11 @@ def _render_panel_series(
                     px += offset
                     base = PLOT_TOP + (high - baseline) / (high - low) * height
                     bx, by, bw, bh = px - bar_size / 2, min(py, base), bar_size - 2, abs(py - base)
+                radius = _bar_radius(item, raw)
+                rounded = f' rx="{radius:g}" ry="{radius:g}"' if radius else ""
                 parts.append(
                     f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bw:.1f}" height="{bh:.1f}" '
-                    f'fill="{point_color}"/>'
+                    f'fill="{point_color}"{rounded}/>'
                 )
             else:
                 segments[-1].append((px, py))
@@ -527,6 +575,9 @@ def _render_pie(spec: ChartSpec) -> str:
     total = sum(values) or 1
     colors = spec.option.get("color") or DEFAULT_COLORS
     cx, cy, radius = 420.0, 250.0, 145.0
+    item_style = series[0].get("itemStyle", {}) if series else {}
+    border_color = str(item_style.get("borderColor", "#fff"))
+    border_width = _number(item_style.get("borderWidth")) or 2
     angle = -pi / 2
     parts: list[str] = []
     for index, (item, value) in enumerate(zip(data, values, strict=True)):
@@ -538,7 +589,8 @@ def _render_pie(spec: ChartSpec) -> str:
         parts.append(
             f'<path d="M {cx:.1f} {cy:.1f} L {x1:.1f} {y1:.1f} '
             f'A {radius:.1f} {radius:.1f} 0 {large} 1 {x2:.1f} {y2:.1f} Z" '
-            f'fill="{escape(color)}" stroke="#fff" stroke-width="2"/>'
+            f'fill="{escape(color)}" stroke="{escape(border_color)}" '
+            f'stroke-width="{border_width:g}"/>'
         )
         legend_y = 120 + index * 38
         parts.append(
@@ -603,10 +655,12 @@ def _render_radar(spec: ChartSpec) -> str:
                 )
             )
         color = _color(item, _color(series[0], str(colors[series_index % len(colors)])))
+        opacity = _number(series[0].get("areaStyle", {}).get("opacity")) or 0.16
+        line_width = _number(series[0].get("lineStyle", {}).get("width")) or 3
         points = " ".join(f"{x:.1f},{y:.1f}" for x, y in coordinates)
         parts.append(
-            f'<polygon points="{points}" fill="{escape(color)}" fill-opacity="0.16" '
-            f'stroke="{escape(color)}" stroke-width="3"/>'
+            f'<polygon points="{points}" fill="{escape(color)}" fill-opacity="{opacity:g}" '
+            f'stroke="{escape(color)}" stroke-width="{line_width:g}"/>'
         )
         for index, (x, y) in enumerate(coordinates):
             if (label := _label(series[0], item, values[index])) is not None:
@@ -656,9 +710,18 @@ def _render_xy(spec: ChartSpec) -> str:
         if spec.chart_type == "bubble" and len(value) >= 3:
             radius = 8 + 22 * (float(value[2]) / size_max) ** 0.5
         color = _color(item, _color(group, str(colors[series_index % len(colors)])))
+        item_style = {**group.get("itemStyle", {}), **item.get("itemStyle", {})}
+        opacity = _number(item_style.get("opacity")) or 0.72
+        border_color = item_style.get("borderColor")
+        border_width = _number(item_style.get("borderWidth")) or 0
+        border = (
+            f' stroke="{escape(str(border_color))}" stroke-width="{border_width:g}"'
+            if border_color and border_width
+            else ""
+        )
         parts.append(
             f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius:.1f}" '
-            f'fill="{escape(color)}" fill-opacity="0.72"/>'
+            f'fill="{escape(color)}" fill-opacity="{opacity:g}"{border}/>'
         )
         if (label := _label(group, item, ",".join(str(v) for v in value))) is not None:
             parts.append(_text(x, y - radius - 5, label, size=10))
@@ -676,23 +739,43 @@ def _render_heatmap(spec: ChartSpec) -> str:
     cell_width = (WIDTH - PLOT_LEFT - PLOT_RIGHT) / max(len(x_labels), 1)
     cell_height = (HEIGHT - PLOT_TOP - PLOT_BOTTOM) / max(len(y_labels), 1)
     parts: list[str] = []
+    color_stops = list(visual.get("inRange", {}).get("color", []))
+    series_style = series[0].get("itemStyle", {}) if series else {}
+    border_color = str(series_style.get("borderColor", "#fff"))
+    border_width = _number(series_style.get("borderWidth")) or 1
+    border_radius = _number(series_style.get("borderRadius")) or 0
     for item in data:
         value = item.get("value", []) if isinstance(item, dict) else item
         if len(value) < 3:
             continue
         column, row, number = int(value[0]), int(value[1]), float(value[2])
         ratio = min(max((number - low) / max(high - low, 1e-9), 0), 1)
-        opacity = 0.12 + ratio * 0.78
+        opacity = 1.0 if color_stops else 0.12 + ratio * 0.78
         x = PLOT_LEFT + column * cell_width
         y = PLOT_TOP + row * cell_height
-        color = escape(_color(item, _color(series[0], "#2563eb")))
+        fallback = _color(item, _color(series[0], "#2563eb"))
+        color = escape(_color_ramp(color_stops, ratio, fallback))
+        rounded = f' rx="{border_radius:g}" ry="{border_radius:g}"' if border_radius else ""
         parts.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{cell_width:.1f}" '
             f'height="{cell_height:.1f}" fill="{color}" '
-            f'fill-opacity="{opacity:.2f}" stroke="#fff"/>'
+            f'fill-opacity="{opacity:g}" stroke="{escape(border_color)}" '
+            f'stroke-width="{border_width:g}"{rounded}/>'
         )
         if (label := _label(series[0], item, number)) is not None:
-            parts.append(_text(x + cell_width / 2, y + cell_height / 2 + 4, label, size=10))
+            label_style = {
+                **series[0].get("label", {}),
+                **(item.get("label", {}) if isinstance(item, dict) else {}),
+            }
+            parts.append(
+                _text(
+                    x + cell_width / 2,
+                    y + cell_height / 2 + 4,
+                    label,
+                    size=10,
+                    color=str(label_style.get("color", "#475569")),
+                )
+            )
     for index, label in enumerate(x_labels):
         parts.append(_text(PLOT_LEFT + (index + 0.5) * cell_width, HEIGHT - 38, label, size=10))
     for index, label in enumerate(y_labels):
@@ -728,7 +811,10 @@ def _render_boxplot(spec: ChartSpec) -> str:
             continue
         minimum, q1, median, q3, maximum = map(float, item)
         x = PLOT_LEFT + band * (index + 0.5)
+        style = series[0].get("itemStyle", {})
         color = escape(_color(series[0], str((spec.option.get("color") or DEFAULT_COLORS)[0])))
+        border_color = escape(str(style.get("borderColor", "#2563eb")))
+        border_width = _number(style.get("borderWidth")) or 2
         parts.append(
             f'<line x1="{x:.1f}" y1="{y_position(maximum):.1f}" x2="{x:.1f}" '
             f'y2="{y_position(minimum):.1f}" stroke="#475569"/>'
@@ -736,7 +822,7 @@ def _render_boxplot(spec: ChartSpec) -> str:
         parts.append(
             f'<rect x="{x - 34:.1f}" y="{y_position(q3):.1f}" width="68" '
             f'height="{max(y_position(q1) - y_position(q3), 1):.1f}" fill="{color}" '
-            'stroke="#2563eb" stroke-width="2"/>'
+            f'stroke="{border_color}" stroke-width="{border_width:g}"/>'
         )
         parts.append(
             f'<line x1="{x - 34:.1f}" y1="{y_position(median):.1f}" '
@@ -771,17 +857,29 @@ def _render_treemap(spec: ChartSpec) -> str:
     x, y, width, height = 70.0, 90.0, 820.0, 320.0
     cursor = x
     parts: list[str] = []
+    series_style = series[0].get("itemStyle", {}) if series else {}
+    border_color = str(series_style.get("borderColor", "#fff"))
+    border_width = _number(series_style.get("borderWidth")) or 2
+    label_color = str(series[0].get("label", {}).get("color", "#475569")) if series else "#475569"
     for index, (item, value) in enumerate(zip(leaves, values, strict=True)):
         item_width = width * value / total
         color = _color(item, _color(series[0], str(colors[index % len(colors)])))
         parts.append(
             f'<rect x="{cursor:.1f}" y="{y:.1f}" width="{item_width:.1f}" '
-            f'height="{height:.1f}" fill="{escape(color)}" stroke="#fff" '
-            'stroke-width="2"/>'
+            f'height="{height:.1f}" fill="{escape(color)}" stroke="{escape(border_color)}" '
+            f'stroke-width="{border_width:g}"/>'
         )
         label = _label(series[0], item, value)
         if item_width >= 55 and label is not None:
-            parts.append(_text(cursor + item_width / 2, y + height / 2, label, size=12))
+            parts.append(
+                _text(
+                    cursor + item_width / 2,
+                    y + height / 2,
+                    label,
+                    size=12,
+                    color=label_color,
+                )
+            )
         cursor += item_width
     return _shell(spec, "".join(parts))
 
@@ -792,6 +890,10 @@ def _render_chain(spec: ChartSpec) -> str:
     nodes = list(graph.get("data", []))
     links = list(graph.get("links", []))
     colors = spec.option.get("color") or DEFAULT_COLORS
+    categories = list(graph.get("categories", []))
+    graph_line_style = graph.get("lineStyle", {})
+    edge_color = str(graph_line_style.get("color", "#64748b"))
+    edge_width = _number(graph_line_style.get("width")) or 2
     stage_x = {0: 180, 1: 480, 2: 780, 3: 480}
     stage_y_offset = {0: 0, 1: 0, 2: 0, 3: 210}
     grouped: dict[int, list[dict[str, Any]]] = {}
@@ -805,7 +907,7 @@ def _render_chain(spec: ChartSpec) -> str:
     parts = [
         '<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" '
         'markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
-        '<path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/></marker></defs>'
+        f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{escape(edge_color)}"/></marker></defs>'
     ]
     for link in links:
         source = positions.get(str(link.get("source")))
@@ -814,7 +916,8 @@ def _render_chain(spec: ChartSpec) -> str:
             parts.append(
                 f'<line x1="{source[0]+65:.1f}" y1="{source[1]:.1f}" '
                 f'x2="{target[0]-65:.1f}" y2="{target[1]:.1f}" '
-                'stroke="#64748b" stroke-width="2" marker-end="url(#arrow)"/>'
+                f'stroke="{escape(edge_color)}" stroke-width="{edge_width:g}" '
+                'marker-end="url(#arrow)"/>'
             )
     stage_names = {0: "上游", 1: "中游", 2: "下游", 3: "支撑"}
     for category, items in grouped.items():
@@ -824,13 +927,23 @@ def _render_chain(spec: ChartSpec) -> str:
                 x, 102 + stage_y_offset.get(category, 0), stage_names.get(category, "其他"), size=14
             )
         )
-        color = colors[category % len(colors)]
+        category_style = (
+            categories[category].get("itemStyle", {}) if category < len(categories) else {}
+        )
+        color = str(category_style.get("color", colors[category % len(colors)]))
         for node in items:
             node_x, node_y = positions[str(node.get("id"))]
             node_color = escape(_color(node, _color(graph, str(color))))
+            node_style = {**category_style, **node.get("itemStyle", {})}
+            node_border = str(node_style.get("borderColor", "none"))
+            node_border_width = _number(node_style.get("borderWidth")) or 0
+            graph_label = graph.get("label", {})
+            node_label = {**graph_label, **node.get("label", {})}
+            label_color = str(node_label.get("color", "#fff"))
             parts.append(
                 f'<rect x="{node_x - 65:.1f}" y="{node_y - 28:.1f}" width="130" '
-                f'height="56" rx="10" fill="{node_color}" opacity="0.92"/>'
+                f'height="56" rx="10" fill="{node_color}" opacity="0.92" '
+                f'stroke="{escape(node_border)}" stroke-width="{node_border_width:g}"/>'
             )
             label = _label(
                 {**graph, "label": {"show": True, "formatter": "{b}", **graph.get("label", {})}},
@@ -840,7 +953,7 @@ def _render_chain(spec: ChartSpec) -> str:
             if label is not None:
                 parts.append(
                     f'<text x="{node_x:.1f}" y="{node_y + 5:.1f}" text-anchor="middle" '
-                    'font-size="13" font-weight="600" fill="#fff">'
+                    f'font-size="13" font-weight="600" fill="{escape(label_color)}">'
                     f"{escape(label)}</text>"
                 )
     return _shell(spec, "".join(parts))
