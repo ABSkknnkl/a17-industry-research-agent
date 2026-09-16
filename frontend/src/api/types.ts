@@ -134,6 +134,7 @@ export interface ResearchBrief {
 export type ChartTypeName =
   | 'line'
   | 'bar'
+  | 'comparison_bar'
   | 'pie'
   | 'radar'
   | 'industry_chain'
@@ -153,6 +154,7 @@ export type ChartVariant =
   | 'horizontal'
   | 'grouped'
   | 'stacked'
+  | 'comparison_bar'
   | 'pie'
   | 'radar'
   | 'graph'

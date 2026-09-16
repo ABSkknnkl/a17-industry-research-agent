@@ -45,6 +45,7 @@ class EmbeddedChart(ReportContract):
     chart_type: Literal[
         "line",
         "bar",
+        "comparison_bar",
         "pie",
         "radar",
         "industry_chain",

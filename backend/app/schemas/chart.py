@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-P0ChartType = Literal["line", "bar", "pie", "radar", "industry_chain"]
+P0ChartType = Literal["line", "bar", "comparison_bar", "pie", "radar", "industry_chain"]
 P1ChartType = Literal[
     "combo",
     "area",
@@ -18,6 +18,7 @@ P1ChartType = Literal[
 ChartType = Literal[
     "line",
     "bar",
+    "comparison_bar",
     "pie",
     "radar",
     "industry_chain",
@@ -36,6 +37,7 @@ ChartVariant = Literal[
     "horizontal",
     "grouped",
     "stacked",
+    "comparison_bar",
     "pie",
     "radar",
     "graph",

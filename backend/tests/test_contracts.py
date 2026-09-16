@@ -174,6 +174,7 @@ def test_chart_generation_contract_exposes_p0_and_audited_p1_types() -> None:
     assert schema["$defs"]["chartType"]["enum"] == [
         "line",
         "bar",
+        "comparison_bar",
         "pie",
         "radar",
         "industry_chain",
@@ -196,6 +197,7 @@ def test_chart_generation_contract_exposes_p0_and_audited_p1_types() -> None:
         ("bar", "horizontal"),
         ("bar", "grouped"),
         ("bar", "stacked"),
+        ("comparison_bar", "comparison_bar"),
         ("pie", "pie"),
         ("radar", "radar"),
         ("industry_chain", "graph"),
