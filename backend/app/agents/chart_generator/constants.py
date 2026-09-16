@@ -36,6 +36,15 @@ FINANCE_DASHBOARD_COLORS = [
 ]
 
 P1_CHART_TYPES: frozenset[str] = frozenset(
-    {"combo", "area", "scatter", "bubble", "heatmap", "boxplot", "treemap"}
+    {
+        "combo",
+        "area",
+        "scatter",
+        "bubble",
+        "heatmap",
+        "boxplot",
+        "treemap",
+        "comparison_bar",
+    }
 )
 UNIT_PLACEHOLDERS = frozenset({"未提供", "文本", "不适用", ""})

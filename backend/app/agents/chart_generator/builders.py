@@ -1091,6 +1091,125 @@ def build_bar_option(
     return option
 
 
+def build_comparison_bar_option(
+    title: str,
+    dataset: ChartDataset,
+    theme: str = "research_blue",
+) -> dict[str, Any]:
+    """Build a signed two-series comparison with a prominent zero baseline."""
+
+    option = _base_option(title, theme)
+    labels = list(dict.fromkeys(point.label for point in dataset.points))
+    series_names = list(dict.fromkeys(point.series for point in dataset.points))
+    points = {(point.series, point.label): point for point in dataset.points}
+    visible_values = [float(point.value) for point in dataset.points if point.value is not None]
+    lower = min([0.0, *visible_values])
+    upper = max([0.0, *visible_values])
+    padding = max((upper - lower) * 0.1, 1.0)
+    y_min = lower - padding if lower < 0 else 0
+    y_max = upper + padding if upper > 0 else 0
+    positive_colors = (UP_COLOR, "#E59A96")
+    negative_colors = (DOWN_COLOR, "#92CFC2")
+    evidence_map: dict[str, dict[str, str]] = {}
+    series: list[dict[str, Any]] = []
+
+    for series_index, series_name in enumerate(series_names):
+        evidence_map[series_name] = {}
+        data: list[dict[str, Any]] = []
+        for label in labels:
+            point = points[(series_name, label)]
+            value = float(point.value) if point.value is not None else None
+            evidence_map[series_name][label] = point.evidence_id
+            data.append(
+                {
+                    "value": value,
+                    "evidence_id": point.evidence_id,
+                    "itemStyle": {
+                        "color": (
+                            positive_colors[series_index]
+                            if value is not None and value >= 0
+                            else negative_colors[series_index]
+                        ),
+                        "borderRadius": (
+                            [3, 3, 0, 0] if value is not None and value >= 0 else [0, 0, 3, 3]
+                        ),
+                    },
+                }
+            )
+        item: dict[str, Any] = {
+            "name": series_name,
+            "type": "bar",
+            "barMaxWidth": 34,
+            "barGap": "18%",
+            "itemStyle": {"color": positive_colors[series_index]},
+            "label": _auto_datalabel(len(visible_values) // max(len(series_names), 1)),
+            "data": data,
+        }
+        if series_index == 0:
+            item["markLine"] = {
+                "silent": True,
+                "symbol": "none",
+                "label": {"show": False},
+                "lineStyle": {"color": "#8D96A5", "width": 1.5},
+                "data": [{"yAxis": 0}],
+            }
+        series.append(item)
+
+    axis_style = _theme_axis_style(theme)
+    category_axis = {
+        "type": "category",
+        "data": labels,
+        **axis_style,
+        "axisLabel": {
+            **axis_style.get("axisLabel", {}),
+            "rotate": 32,
+            "interval": 0,
+            "overflow": "truncate",
+            "width": 92,
+            "color": "#667085",
+            "fontSize": 11,
+        },
+        **({"splitLine": {"show": False}} if theme == "finance_dashboard" else {}),
+    }
+    value_axis = {
+        "type": "value",
+        "name": _axis_name(dataset),
+        "min": y_min,
+        "max": y_max,
+        **axis_style,
+    }
+    option.update(
+        {
+            "tooltip": _axis_tooltip(theme),
+            "grid": {
+                "left": 56,
+                "right": 24,
+                "top": 62,
+                "bottom": 108 if len(labels) > 10 else 82,
+                "containLabel": True,
+            },
+            "xAxis": category_axis,
+            "yAxis": value_axis,
+            "series": series,
+            "evidenceMap": evidence_map,
+            "footnotes": _footnotes(dataset, [value_axis]),
+        }
+    )
+    if len(labels) > 10:
+        option["dataZoom"] = [
+            {"type": "inside", "xAxisIndex": 0, "start": 0, "end": 75},
+            {
+                "type": "slider",
+                "xAxisIndex": 0,
+                "height": 16,
+                "bottom": 8,
+                "start": 0,
+                "end": 75,
+            },
+        ]
+    return option
+
+
 def build_pie_option(
     title: str,
     dataset: ChartDataset,

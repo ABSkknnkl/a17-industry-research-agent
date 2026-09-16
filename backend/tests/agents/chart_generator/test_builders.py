@@ -6,6 +6,7 @@ from app.agents.chart_generator.builders import (
     build_bar_option,
     build_boxplot_option,
     build_combo_option,
+    build_comparison_bar_option,
     build_dual_panel_option,
     build_industry_chain_option,
     build_line_option,
@@ -73,6 +74,61 @@ def _combo_dataset(*, units: tuple[str, str]) -> ChartDataset:
         ],
         evidence_ids=[f"E-{name}-{year}" for name in names for year in (2024, 2025)],
     )
+
+
+def _comparison_bar_dataset(category_count: int = 2) -> ChartDataset:
+    labels = [f"名称较长的公司{index}" for index in range(1, category_count + 1)]
+    points = [
+        ChartPoint(
+            label=label,
+            value=(24 if series_index == 0 else 6) * (-1 if label_index % 2 else 1),
+            series=series,
+            evidence_id=f"E-COMP-{series_index}-{label_index}",
+        )
+        for series_index, series in enumerate(("年度涨跌幅", "上周涨跌幅"))
+        for label_index, label in enumerate(labels)
+    ]
+    return ChartDataset(
+        dataset_id="DS-COMPARISON-BAR",
+        kind="categorical",
+        metric_name="公司涨跌幅对比",
+        unit="%",
+        points=points,
+        evidence_ids=[point.evidence_id for point in points],
+    )
+
+
+def test_finance_comparison_bar_has_signed_domain_direction_colors_and_zero_line() -> None:
+    option = build_comparison_bar_option(
+        "公司年度与上周涨跌幅",
+        _comparison_bar_dataset(),
+        "finance_dashboard",
+    )
+
+    assert [series["type"] for series in option["series"]] == ["bar", "bar"]
+    assert option["yAxis"]["min"] < 0 < option["yAxis"]["max"]
+    assert option["xAxis"]["axisLabel"]["rotate"] == 32
+    assert option["series"][0]["markLine"]["data"] == [{"yAxis": 0}]
+    assert option["series"][1].get("markLine") is None
+    assert option["series"][0]["data"][0]["itemStyle"]["color"] == "#C0392B"
+    assert option["series"][0]["data"][1]["itemStyle"]["color"] == "#1E8449"
+    assert option["series"][1]["data"][0]["itemStyle"]["color"] == "#E59A96"
+    assert option["series"][1]["data"][1]["itemStyle"]["color"] == "#92CFC2"
+    assert option["evidenceMap"]["年度涨跌幅"]["名称较长的公司1"] == "E-COMP-0-0"
+    assert option["yAxis"]["name"] == "%"
+
+
+def test_comparison_bar_adds_data_zoom_for_dense_categories() -> None:
+    option = build_comparison_bar_option(
+        "公司年度与上周涨跌幅",
+        _comparison_bar_dataset(category_count=13),
+        "finance_dashboard",
+    )
+
+    assert option["dataZoom"] == [
+        {"type": "inside", "xAxisIndex": 0, "start": 0, "end": 75},
+        {"type": "slider", "xAxisIndex": 0, "height": 16, "bottom": 8, "start": 0, "end": 75},
+    ]
 
 
 def _long_combo_dataset(point_count: int = 13) -> ChartDataset:

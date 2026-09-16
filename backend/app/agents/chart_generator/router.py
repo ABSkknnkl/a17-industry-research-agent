@@ -12,6 +12,7 @@ CHART_FAMILY: dict[ChartType, str] = {
     "area": "trend",
     "combo": "trend",
     "bar": "comparison",
+    "comparison_bar": "comparison",
     "heatmap": "comparison",
     "pie": "composition",
     "treemap": "composition",
@@ -30,6 +31,7 @@ TYPE_PREFERENCE: dict[ChartType, int] = {
     "scatter": 10,
     "heatmap": 20,
     "bar": 10,
+    "comparison_bar": 20,
     "treemap": 20,
     "pie": 15,
     "radar": 20,
@@ -123,6 +125,24 @@ def _has_complete_dual_panels(dataset: ChartDataset) -> bool:
     )
 
 
+def _has_aligned_comparison_series(dataset: ChartDataset) -> bool:
+    """Require exactly two complete series over the same unique categories."""
+
+    by_series: dict[str, list[str]] = {}
+    for point in dataset.points:
+        if point.value is None:
+            return False
+        by_series.setdefault(point.series, []).append(point.label)
+    if len(by_series) != 2:
+        return False
+    label_sets = []
+    for labels in by_series.values():
+        if not labels or len(labels) != len(set(labels)):
+            return False
+        label_sets.append(frozenset(labels))
+    return len(set(label_sets)) == 1
+
+
 def route_chart(requested_type: ChartType, dataset: ChartDataset) -> ChartRouteDecision:
     """Route a candidate only when its chart family matches the dataset kind."""
 
@@ -131,6 +151,7 @@ def route_chart(requested_type: ChartType, dataset: ChartDataset) -> ChartRouteD
         "area": "time_series",
         "combo": "time_series",
         "bar": "categorical",
+        "comparison_bar": "categorical",
         "pie": "categorical",
         "radar": "categorical",
         "scatter": "xy",
@@ -323,6 +344,14 @@ def route_chart(requested_type: ChartType, dataset: ChartDataset) -> ChartRouteD
                 reason="雷达图要求3至8个同尺度指标和完整的实体评分",
             )
         variant = "radar"
+    elif requested_type == "comparison_bar":
+        if not _has_aligned_comparison_series(dataset):
+            return ChartRouteDecision(
+                accepted=False,
+                reason_code="comparison_bar_series_not_aligned",
+                reason="涨跌幅对比图要求两条非空序列完整覆盖同一组类别",
+            )
+        variant = "comparison_bar"
     elif requested_type == "bar":
         variant = choose_bar_variant(dataset)
     elif requested_type == "line":

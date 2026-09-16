@@ -12,6 +12,7 @@ from app.agents.chart_generator.builders import (
     build_boxplot_option,
     build_bubble_option,
     build_combo_option,
+    build_comparison_bar_option,
     build_dual_panel_option,
     build_heatmap_option,
     build_industry_chain_option,
@@ -288,6 +289,8 @@ def _build_option(
         return build_boxplot_option(title, dataset, theme)
     if chart_type == "treemap":
         return build_treemap_option(title, dataset, theme)
+    if chart_type == "comparison_bar":
+        return build_comparison_bar_option(title, dataset, theme)
     if chart_type == "bar":
         return build_bar_option(title, dataset, cast(BarVariant, variant), theme)
     if chart_type == "pie":

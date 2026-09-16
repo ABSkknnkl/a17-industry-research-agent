@@ -392,3 +392,37 @@ def test_service_wires_dual_panel_variant_to_the_panel_builder() -> None:
 
     assert len(option["grid"]) == 2
     assert [series["xAxisIndex"] for series in option["series"]] == [0, 0, 1]
+
+
+def test_service_wires_comparison_bar_to_dedicated_builder() -> None:
+    points = [
+        ChartPoint(label=label, value=value, series=series, evidence_id=f"E-{index}")
+        for index, (label, series, value) in enumerate(
+            [
+                ("公司A", "年度涨跌幅", 20),
+                ("公司B", "年度涨跌幅", -12),
+                ("公司A", "上周涨跌幅", 4),
+                ("公司B", "上周涨跌幅", -3),
+            ],
+            1,
+        )
+    ]
+    dataset = ChartDataset(
+        dataset_id="DS-SERVICE-COMPARISON",
+        kind="categorical",
+        metric_name="公司涨跌幅对比",
+        unit="%",
+        points=points,
+        evidence_ids=[point.evidence_id for point in points],
+    )
+
+    option = _build_option(
+        title="公司涨跌幅对比",
+        chart_type="comparison_bar",
+        variant="comparison_bar",
+        dataset=dataset,
+        theme="finance_dashboard",
+    )
+
+    assert [series["type"] for series in option["series"]] == ["bar", "bar"]
+    assert option["series"][0]["markLine"]["data"] == [{"yAxis": 0}]

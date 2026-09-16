@@ -99,6 +99,50 @@ def test_bar_variant_is_deterministic() -> None:
     assert choose_bar_variant(stacked) == "stacked"
 
 
+def _comparison_dataset() -> ChartDataset:
+    points = [
+        ChartPoint(label=label, value=value, series=series, evidence_id=f"E-{index}")
+        for index, (label, series, value) in enumerate(
+            [
+                ("公司A", "年度涨跌幅", 24),
+                ("公司B", "年度涨跌幅", -16),
+                ("公司A", "上周涨跌幅", 6),
+                ("公司B", "上周涨跌幅", -3),
+            ],
+            1,
+        )
+    ]
+    return ChartDataset(
+        dataset_id="DS-COMPARISON-BAR",
+        kind="categorical",
+        metric_name="公司涨跌幅对比",
+        unit="%",
+        points=points,
+        evidence_ids=[point.evidence_id for point in points],
+    )
+
+
+def test_comparison_bar_requires_two_complete_aligned_series() -> None:
+    complete = _comparison_dataset()
+    missing_category = complete.model_copy(update={"points": complete.points[:-1]})
+    one_series = complete.model_copy(
+        update={"points": [point for point in complete.points if point.series == "年度涨跌幅"]}
+    )
+    all_null = complete.model_copy(
+        update={"points": [point.model_copy(update={"value": None}) for point in complete.points]}
+    )
+
+    decision = route_chart("comparison_bar", complete)
+
+    assert decision.accepted is True
+    assert decision.chart_type == "comparison_bar"
+    assert decision.variant == "comparison_bar"
+    for invalid in (missing_category, one_series, all_null):
+        rejected = route_chart("comparison_bar", invalid)
+        assert rejected.accepted is False
+        assert rejected.reason_code == "comparison_bar_series_not_aligned"
+
+
 def test_fingerprint_ignores_title_but_changes_with_data(
     categorical_dataset: ChartDataset,
 ) -> None:
