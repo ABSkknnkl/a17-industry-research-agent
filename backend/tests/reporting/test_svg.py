@@ -150,6 +150,58 @@ def test_offline_svg_renderer_supports_all_p1_chart_families() -> None:
         assert "&lt;unsafe&gt;" in svg
 
 
+def test_comparison_bar_svg_places_signed_bars_around_real_zero_axis() -> None:
+    option = {
+        "xAxis": {"data": ["公司A", "公司B"]},
+        "yAxis": {"min": -30, "max": 50, "name": "%"},
+        "series": [
+            {
+                "name": "年度涨跌幅",
+                "type": "bar",
+                "markLine": {
+                    "lineStyle": {"color": "#8D96A5"},
+                    "data": [{"yAxis": 0}],
+                },
+                "data": [
+                    {"value": 40, "itemStyle": {"color": "#C0392B"}},
+                    {"value": -20, "itemStyle": {"color": "#1E8449"}},
+                ],
+            },
+            {
+                "name": "上周涨跌幅",
+                "type": "bar",
+                "data": [
+                    {"value": 8, "itemStyle": {"color": "#E59A96"}},
+                    {"value": -5, "itemStyle": {"color": "#92CFC2"}},
+                ],
+            },
+        ],
+    }
+
+    root = ET.fromstring(render_chart_svg(_spec("comparison_bar", "comparison_bar", option)))
+    zero_line = next(
+        node
+        for node in root.iter()
+        if node.tag.endswith("line") and node.get("stroke") == "#8D96A5"
+    )
+    zero_y = float(zero_line.get("y1"))
+    bars = {
+        node.get("fill"): node
+        for node in root.iter()
+        if node.tag.endswith("rect")
+        and node.get("fill") in {"#C0392B", "#1E8449", "#E59A96", "#92CFC2"}
+    }
+
+    assert set(bars) == {"#C0392B", "#1E8449", "#E59A96", "#92CFC2"}
+    assert float(bars["#C0392B"].get("y")) < zero_y
+    assert float(bars["#C0392B"].get("y")) + float(bars["#C0392B"].get("height")) == pytest.approx(
+        zero_y,
+        abs=0.2,
+    )
+    assert float(bars["#1E8449"].get("y")) == pytest.approx(zero_y, abs=0.2)
+    assert float(bars["#1E8449"].get("y")) + float(bars["#1E8449"].get("height")) > zero_y
+
+
 @pytest.mark.parametrize(
     "kind,data,extra",
     [

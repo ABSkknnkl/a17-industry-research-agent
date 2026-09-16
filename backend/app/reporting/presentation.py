@@ -35,6 +35,7 @@ CHECK_STATUS_LABELS = {
 CHART_TYPE_LABELS = {
     "line": "折线图",
     "bar": "柱状图",
+    "comparison_bar": "涨跌幅对比图",
     "pie": "饼图",
     "radar": "雷达图",
     "industry_chain": "产业链图",

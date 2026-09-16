@@ -528,7 +528,7 @@ def _render_cartesian(spec: ChartSpec) -> str:
             width=WIDTH - PLOT_LEFT - PLOT_RIGHT,
             option=spec.option,
             horizontal=spec.variant == "horizontal",
-            default_type="bar" if spec.chart_type == "bar" else "line",
+            default_type=("bar" if spec.chart_type in {"bar", "comparison_bar"} else "line"),
         ),
     )
 
@@ -962,7 +962,7 @@ def _render_chain(spec: ChartSpec) -> str:
 def render_chart_svg(spec: ChartSpec) -> str:
     if spec.variant == "dual_panel":
         return _render_dual_panel(spec)
-    if spec.chart_type in {"line", "area", "bar", "combo"}:
+    if spec.chart_type in {"line", "area", "bar", "comparison_bar", "combo"}:
         return _render_cartesian(spec)
     if spec.chart_type == "pie":
         return _render_pie(spec)
