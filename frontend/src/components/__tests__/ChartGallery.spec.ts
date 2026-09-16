@@ -160,7 +160,13 @@ afterEach(() => {
 function mountGallery(specs: Partial<ChartSpec>[] = [spec]) {
   const wrapper = mount(ChartGallery, {
     props: { specs },
-    global: { stubs: { 'el-dialog': Dialog, 'el-tag': true, 'el-empty': true } },
+    global: {
+      stubs: {
+        'el-dialog': Dialog,
+        'el-tag': { template: '<span><slot /></span>' },
+        'el-empty': true,
+      },
+    },
   })
   wrappers.push(wrapper)
   return wrapper
@@ -205,6 +211,27 @@ describe('ChartGallery contract consumption', () => {
     expect(wrapper.find('.chart-card').exists()).toBe(true)
     expect(wrapper.findAll('.chart-footnote')).toHaveLength(0)
     expect(received).toEqual([{ series: [{ type: 'line', data: [1, 2] }] }])
+  })
+
+  it('renders the comparison bar type label through the shared ECharts path', async () => {
+    const comparisonOption = {
+      xAxis: { data: ['公司A', '公司B'] },
+      yAxis: { min: -20, max: 30 },
+      series: [{ type: 'bar', data: [20, -10] }],
+    }
+    const wrapper = mountGallery([
+      {
+        ...spec,
+        chart_id: 'CHART-COMPARISON',
+        chart_type: 'comparison_bar',
+        variant: 'comparison_bar',
+        option: comparisonOption,
+      },
+    ])
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('涨跌幅对比图')
+    expect(received).toEqual([comparisonOption])
   })
 
   it('renders a labelled article with a keyboard-openable chart surface', async () => {
