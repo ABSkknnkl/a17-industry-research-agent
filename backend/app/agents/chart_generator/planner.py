@@ -21,7 +21,16 @@ RECOMMENDED_PER_FAMILY = 2
 RECOMMENDED_P1 = 3
 RECOMMENDED_CHAIN = 1
 
-P1_CHART_TYPES = {"combo", "area", "scatter", "bubble", "heatmap", "boxplot", "treemap"}
+P1_CHART_TYPES = {
+    "combo",
+    "area",
+    "scatter",
+    "bubble",
+    "heatmap",
+    "boxplot",
+    "treemap",
+    "comparison_bar",
+}
 
 
 def plan_chart_selection(
@@ -165,6 +174,7 @@ _VALID_CHART_TYPES = frozenset(
     {
         "line",
         "bar",
+        "comparison_bar",
         "pie",
         "radar",
         "industry_chain",

@@ -6,11 +6,12 @@ Agent 3 是顶层五阶段 LangGraph 的第三个节点，内部不再创建 Age
 
 - `line`：时间序列，按 `period_end` 排序，保留 `null` 断点，最多五条序列。
 - `bar`：确定性选择 `vertical`、`horizontal`、`grouped`、`stacked`；堆叠要求 `is_additive=true`。
+- `comparison_bar`：双序列涨跌幅对比；要求两条非空序列完整覆盖同一组类别，并围绕零轴展示正负值。
 - `pie`：只接受单时点、正值、互斥且不超过5类的构成数据；不满足时审计降级为柱状图。
 - `radar`：只接受3—8个已标准化、共享同一刻度的指标；不满足时审计降级为柱状图。
 - `industry_chain`：使用 ECharts `graph` 和固定上游→中游→下游布局，不虚构边权。
 
-P1 已提供 `combo`、`area`、`scatter`、`bubble`、`heatmap`、`boxplot`、`treemap` 的条件路由和降级能力，但不是每份报告的必备图表。P0 五类是比赛要求的基础能力。
+P1 已提供 `combo`、`area`、`scatter`、`bubble`、`heatmap`、`boxplot`、`treemap`、`comparison_bar` 的条件路由和降级能力，但不是每份报告的必备图表。P0 五类是比赛要求的基础能力。
 
 ## Router + Skill
 

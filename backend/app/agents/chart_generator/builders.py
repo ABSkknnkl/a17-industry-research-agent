@@ -1221,6 +1221,8 @@ def build_pie_option(
     unit = _unit_text(dataset.unit)
 
     def pie_data(point: ChartPoint) -> dict[str, Any]:
+        if point.value is None:
+            raise ValueError("pie data cannot contain null values")
         value = float(point.value)
         return {
             "name": f"{point.label} · {value:.1f}{unit}" if finance else point.label,

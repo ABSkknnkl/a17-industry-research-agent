@@ -7,6 +7,8 @@ from app.agents.chart_generator.router import (
     choose_bar_variant,
     route_chart,
 )
+from app.agents.chart_generator.fallbacks import downgrade_chart
+from app.agents.chart_generator.planner import _to_chart_type
 from app.schemas.analysis import ChartCandidate
 from app.schemas.chart import ChartDataset, ChartPanel, ChartPoint, ChartSeriesMeta
 
@@ -141,6 +143,15 @@ def test_comparison_bar_requires_two_complete_aligned_series() -> None:
         rejected = route_chart("comparison_bar", invalid)
         assert rejected.accepted is False
         assert rejected.reason_code == "comparison_bar_series_not_aligned"
+
+
+def test_comparison_bar_is_known_to_planner_and_can_downgrade_to_plain_bar(
+    categorical_dataset: ChartDataset,
+) -> None:
+    assert _to_chart_type("comparison_bar") == "comparison_bar"
+    fallback = downgrade_chart("comparison_bar", categorical_dataset)
+    assert fallback is not None
+    assert fallback[0] == "bar"
 
 
 def test_fingerprint_ignores_title_but_changes_with_data(

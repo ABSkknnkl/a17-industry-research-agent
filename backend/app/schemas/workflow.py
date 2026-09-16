@@ -142,9 +142,7 @@ class DataFetchReviewEdits(ContractModel):
     # 某个研究问题”的修订诉求此前无合法通道（白名单只收
     # data_fetch_options），revise 改不掉问题 → 升级门反复触发死循环。
     # focus_questions 与 ResearchInput 同口径（1~12 条，每条 ≤200 字）。
-    focus_questions: list[ShortReviewText] | None = Field(
-        default=None, min_length=1, max_length=12
-    )
+    focus_questions: list[ShortReviewText] | None = Field(default=None, min_length=1, max_length=12)
     # 可选：仅修订研究问题时不必携带（exclude_none dump 不会覆盖原值）。
     data_fetch_options: DataFetchOptions | None = None
 
@@ -241,14 +239,9 @@ class ReviewRequest(ContractModel):
             # 用户/前端才知道被拒原因、该去哪个阶段改；这也是未来「审核门
             # LLM 意图判别」之前的确定性第一道闸：白名单拦字段，LLM 拦意图。
             rejected = sorted(
-                {
-                    ".".join(str(part) for part in error["loc"])
-                    for error in exc.errors()
-                }
+                {".".join(str(part) for part in error["loc"]) for error in exc.errors()}
             )
             hint = f"；被拒字段：{'、'.join(rejected)}" if rejected else ""
-            raise ValueError(
-                f"edited_data is not allowed for {self.stage.value}{hint}"
-            ) from exc
+            raise ValueError(f"edited_data is not allowed for {self.stage.value}{hint}") from exc
         self.edited_data = validated.model_dump(mode="json", exclude_none=True)
         return self
