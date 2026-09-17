@@ -2,8 +2,10 @@
 
 import json
 import re
+from pathlib import Path
 
 import pytest
+from jsonschema import Draft202012Validator
 
 from app.agents.report_fusion.service import ReportFusionAgent
 from app.agents.report_fusion.assembler import build_report_view
@@ -17,6 +19,8 @@ from app.schemas.chart import ChartGenerationResult
 from app.schemas.report import ReportFusionResult, ReportViewModel
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
+
+CONTRACT_ROOT = Path(__file__).resolve().parents[4] / "contracts" / "schemas"
 
 REPORT_DIR = "run-report-p0/reports/r1"
 
@@ -290,6 +294,102 @@ async def test_default_delivery_is_html_and_pdf_with_markdown_preview(
     }
     for filename in ("report.md", "report.html", "report.pdf", "report_view.json"):
         assert (tmp_path / REPORT_DIR / filename).is_file(), filename
+
+
+@pytest.mark.asyncio
+async def test_fusion_exposes_chapters_and_scoring_baseline_for_frontend(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+    stable_pdf,
+    report_analysis,
+    report_charts,
+    report_chapters,
+) -> None:
+    """阶段五必须把章节结构下发到 API，前端才能按后端命名渲染目录。
+
+    关键断言：
+    - chapters 顺序与上游一致（HTML 模板同序 → 前端锚点 chapter-${idx+1} 不串位）
+    - title 是**纯标题**（不带「N、」之类前缀，前端不做任何改写）
+    - 评分基准由后端下发（前端不再写死 7 / 21）
+    """
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    result = await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, report_chapters)
+    )
+    fusion = ReportFusionResult.model_validate(result.data)
+
+    assert len(fusion.chapters) == 7
+    assert [chapter.chapter_id for chapter in fusion.chapters] == [
+        f"CH-{index:02d}" for index in range(1, 8)
+    ]
+
+    # 顺序与上游 chapter_write 一致（锚点契约依赖它）
+    upstream = report_chapters
+    assert [chapter.chapter_id for chapter in fusion.chapters] == [
+        chapter.chapter_id for chapter in upstream.chapters
+    ]
+    assert [chapter.title for chapter in fusion.chapters] == [
+        chapter.title for chapter in upstream.chapters
+    ]
+
+    # 纯标题：不得带「1、」这类序号前缀
+    for chapter in fusion.chapters:
+        assert not re.match(r"^\s*\d+\s*[、.．]", chapter.title), chapter.title
+
+    # 每章 3 节，且只暴露 id/title
+    for chapter in fusion.chapters:
+        assert len(chapter.sections) == 3
+        assert chapter.sections[0].section_id.startswith(f"SEC-{chapter.chapter_id[-2:]}-")
+
+    # 大纲版本溯源
+    assert fusion.outline_version == upstream.outline_version
+
+    # 评分基准（分母）由后端下发
+    assert fusion.quality.expected_chapter_count == 7
+    assert fusion.quality.expected_section_count == 21
+    assert fusion.quality.chapter_count == 7
+    assert fusion.quality.section_count == 21
+
+
+@pytest.mark.asyncio
+async def test_fusion_payload_passes_whole_package_contract_validation(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+    stable_pdf,
+    report_analysis,
+    report_charts,
+    report_chapters,
+) -> None:
+    """整包契约校验：真实 payload 必须能通过 report-fusion-result 契约。
+
+    背景：该契约曾经漏收 `visual_decision` —— Pydantic 侧必填且实际下发，但契约
+    `properties` 里没有，而契约是 `additionalProperties: false`。后果是任何消费方
+    对合法 payload 做整包校验都会失败（chart 契约有同类校验，fusion 契约漏了）。
+
+    这里刻意用**真实 agent 产物**而不是手工构造的 payload：手工构造的 payload
+    可能碰巧满足契约，反而掩盖真实差异 —— 这正是该缺陷长期没被发现的原因。
+    """
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    result = await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, report_chapters)
+    )
+
+    schema = json.loads(
+        (CONTRACT_ROOT / "report-fusion-result.schema.json").read_text(encoding="utf-8")
+    )
+    errors = list(Draft202012Validator(schema).iter_errors(result.data))
+    assert not errors, "\n".join(
+        f"{list(error.path)}: {error.message}" for error in errors
+    )
+
+    # 显式锁住曾经缺失的字段，避免它再次从契约里消失
+    decision = result.data["visual_decision"]
+    assert decision["effective_style"] in {"data_manual", "analysis_note", "deep_research"}
+    assert decision["selection_source"] in {"user", "agent_recommendation", "default"}
+
+    # payload 顶层键必须全部被契约收录（反向确认没有第二个「漏收」字段）
+    missing = sorted(set(result.data) - set(schema["properties"]))
+    assert missing == [], f"契约漏收以下顶层字段：{missing}"
 
 
 @pytest.mark.asyncio

@@ -12,6 +12,26 @@
 
 ## 文件
 
+- `display-labels.json`：**展示用中文标签映射**（2026-09-15 新增）。后端 `SkillName`、
+  `DimensionName`、覆盖状态、证据来源类型等内部英文标识 → 终端用户可读的中文。
+  后端通过 `app/schemas/display_labels.py` 加载。**新增技能或维度时必须在此补一行**，
+  否则前端会退回显示英文标识。
+
+  ⚠️ **下发范围有限制**，改动前务必读完：
+
+  | 字段 | 后端下发？ | 原因 |
+  | --- | --- | --- |
+  | `SourceRecord.skill_label` | ✅ 是 | `computed_field`，随产物序列化下发 |
+  | `DimensionCoverage.dimension_label` / `status_label` | ❌ 否 | 见下方约束 |
+
+  **为什么维度标签不能由后端下发**：`DimensionCoverage` 嵌在 `AnalysisDraft` 里，
+  而 `AnalysisDraft.model_json_schema()` 被用作 LLM 结构化输出 schema
+  （`openai_compatible.py`）；加 `computed_field` 会让它变成必填只读属性，
+  导致模型输出校验失败（`analysis_generation_failed`，实测 3 个 A2 测试变红）。
+  改为在阶段数据里补 key 也不行——阶段数据会被 `AnalysisResult.model_validate()`
+  校验回契约，而契约是 `extra="forbid"`，多一个 key 就报 `extra_forbidden`。
+  因此维度与覆盖状态的中文由**前端** `src/api/labels.ts` 负责，
+  取值仍然以本文件为准（前端映射与本文件保持一致）。标识。
 - `schemas/workflow-state.schema.json`：Pipeline 运行状态、阶段结果和产物引用。
 - `schemas/review-action.schema.json`：人工审核命令。
 - `schemas/chapter-writing-result.schema.json`：Agent 4的7章21节结构化结果，供Agent 5、前端和持久化层使用。

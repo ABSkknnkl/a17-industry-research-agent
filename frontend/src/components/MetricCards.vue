@@ -55,23 +55,14 @@ const chapterStats = computed(() => {
   return { chapters: chapters.length, sections: sectionCount, words }
 })
 
-/** report_fusion：产物总大小（manifest 提供 size_bytes） */
+/** report_fusion：交付质量（产物大小改由下方产物列表逐项展示，此处不再重复） */
 const fusionStats = computed(() => {
-  const entries = asArray<Record<string, unknown>>(d.value.artifacts)
-  let totalBytes = 0
-  for (const entry of entries) {
-    const size = entry.size_bytes
-    if (typeof size === 'number') totalBytes += size
-  }
   const quality = d.value.quality as Record<string, unknown> | undefined
-  return { artifactCount: entries.length, totalBytes, quality }
+  return { quality }
 })
 
-function humanSize(bytes: number): string {
-  if (bytes >= 1_048_576) return `${(bytes / 1_048_576).toFixed(1)} MB`
-  if (bytes >= 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${bytes} B`
-}
+/** report_fusion：报告引用的来源条数（evidence_catalog 长度） */
+const evidenceCatalogCount = computed(() => countOf('evidence_catalog'))
 
 function coveragePercent(): string {
   const quality = fusionStats.value.quality
@@ -168,11 +159,19 @@ const metrics = computed<MetricItem[]>(() => {
       ]
     case 'report_fusion': {
       const quality = fusionStats.value.quality as Record<string, unknown> | undefined
+      // 基准由后端下发（quality.expected_*），前端不写死 7 / 21；
+      // 历史 run 缺该字段时不显示「标准 N 章」以免误导。
+      const expectedChapters = quality?.expected_chapter_count
+      const expectedSections = quality?.expected_section_count
+      const structureHint =
+        typeof expectedChapters === 'number' && typeof expectedSections === 'number'
+          ? `报告结构（标准 ${expectedChapters} 章 ${expectedSections} 节）`
+          : '报告结构'
       return [
         {
           label: '章节 / 小节',
           value: `${quality?.chapter_count ?? '—'} / ${quality?.section_count ?? '—'}`,
-          hint: '报告结构（标准 7 章 21 节）',
+          hint: structureHint,
           tone: 'primary',
         },
         {
@@ -182,16 +181,16 @@ const metrics = computed<MetricItem[]>(() => {
           tone: 'primary',
         },
         {
+          label: '引用证据',
+          value: evidenceCatalogCount.value > 0 ? String(evidenceCatalogCount.value) : '—',
+          hint: '报告末尾来源清单条数',
+          tone: 'success',
+        },
+        {
           label: '证据覆盖率',
           value: coveragePercent(),
           hint: '正文证据引用覆盖率',
           tone: 'success',
-        },
-        {
-          label: '交付产物',
-          value: `${fusionStats.value.artifactCount} 个 · ${humanSize(fusionStats.value.totalBytes)}`,
-          hint: '报告文件总大小',
-          tone: 'info',
         },
       ]
     }

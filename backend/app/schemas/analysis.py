@@ -3,8 +3,9 @@
 from datetime import date
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
+from app.schemas import display_labels
 from app.schemas.acquisition import RequirementCoverage
 from app.schemas.evidence import AuditStatus, EvidenceGrade, EvidenceItem
 
@@ -284,6 +285,7 @@ class DimensionCoverage(BaseModel):
     status: Literal["supported", "partial", "insufficient"]
     reason: str = Field(min_length=1, max_length=1_000)
     evidence_ids: list[str] = Field(default_factory=list)
+
 
 
 class AnalysisDraft(BaseModel):

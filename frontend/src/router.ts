@@ -12,6 +12,18 @@ export const router = createRouter({
       // 三栏工作台需要更宽的视口
       meta: { wide: true },
     },
+    {
+      path: '/runs/:runId/report',
+      name: 'report-preview',
+      component: () => import('./views/ReportPreviewView.vue'),
+      meta: { wide: true },
+    },
+    {
+      path: '/runs/:runId/download',
+      name: 'report-download',
+      component: () => import('./views/ReportDownloadView.vue'),
+      meta: { wide: true },
+    },
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
 })

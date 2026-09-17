@@ -6,6 +6,7 @@ from jsonschema import Draft202012Validator
 from pydantic import ValidationError
 import pytest
 
+from app.agents.chapter_writer.outline import REPORT_OUTLINE
 from app.schemas.chart import (
     ChartAnnotation,
     ChartGenerationResult,
@@ -329,6 +330,126 @@ def test_report_fusion_contract_exposes_three_formats_and_manifest() -> None:
         "artifact_manifest"
         in schema["$defs"]["artifactManifestEntry"]["properties"]["kind"]["enum"]
     )
+
+
+def test_report_fusion_contract_exposes_chapters_and_scoring_baseline() -> None:
+    """契约必须暴露章节结构与评分基准，前端据此按后端命名原样渲染。"""
+    schema = load_schema("report-fusion-result.schema.json")
+
+    # 章节结构：数量与本项目固定大纲一致（7 章）
+    assert schema["properties"]["chapters"]["minItems"] == 7
+    assert schema["properties"]["chapters"]["maxItems"] == 7
+    assert "chapters" in schema["required"]
+    assert schema["properties"]["outline_version"]["minLength"] == 1
+    assert "outline_version" in schema["required"]
+
+    # 子定义：只暴露 id/title，不含正文
+    chapter_def = schema["$defs"]["fusionChapterOutline"]
+    assert chapter_def["required"] == ["chapter_id", "title", "sections"]
+    assert chapter_def["additionalProperties"] is False
+    assert chapter_def["properties"]["sections"]["minItems"] == 3
+    assert chapter_def["properties"]["sections"]["maxItems"] == 3
+
+    section_def = schema["$defs"]["fusionSectionOutline"]
+    assert section_def["required"] == ["section_id", "title"]
+    assert section_def["additionalProperties"] is False
+
+    # 评分基准（分母）由后端下发，前端不再写死 7 / 21
+    quality_required = schema["$defs"]["reportQuality"]["required"]
+    assert "expected_chapter_count" in quality_required
+    assert "expected_section_count" in quality_required
+    assert schema["$defs"]["reportQuality"]["properties"]["expected_chapter_count"][
+        "minimum"
+    ] == 1
+
+
+def test_report_fusion_contract_includes_visual_decision() -> None:
+    """契约必须收录 visual_decision。
+
+    该字段 Pydantic 侧必填、实际下发，但契约 properties 里曾长期缺失，
+    而契约是 additionalProperties:false —— 导致合法 payload 整包校验失败。
+    """
+    schema = load_schema("report-fusion-result.schema.json")
+
+    assert "visual_decision" in schema["properties"]
+    assert "visual_decision" in schema["required"]
+    assert schema["properties"]["visual_decision"] == {"$ref": "#/$defs/visualDecision"}
+
+    decision = schema["$defs"]["visualDecision"]
+    assert decision["additionalProperties"] is False
+    # required 只含 Pydantic 无默认值的字段（与契约既有风格一致）
+    assert decision["required"] == [
+        "recommended_style",
+        "effective_style",
+        "selection_source",
+    ]
+    assert decision["properties"]["requested_style"] == {
+        "$ref": "#/$defs/requestedVisualStyle"
+    }
+    assert decision["properties"]["per_chapter_strategy"]["additionalProperties"] == {
+        "$ref": "#/$defs/chapterVisualStrategy"
+    }
+
+    strategy = schema["$defs"]["chapterVisualStrategy"]
+    assert strategy["required"] == ["dominant_content"]
+    assert "industry_chain" in strategy["properties"]["dominant_content"]["enum"]
+
+    assert schema["$defs"]["visualStyle"]["enum"] == [
+        "data_manual",
+        "analysis_note",
+        "deep_research",
+    ]
+    assert schema["$defs"]["requestedVisualStyle"]["enum"] == [
+        "auto",
+        "data_manual",
+        "analysis_note",
+        "deep_research",
+    ]
+
+
+def test_report_fusion_contract_accepts_real_chapter_structure() -> None:
+    """用真实大纲数据校验新子定义，锁住「契约子结构可用」。
+
+    只校验新增的 chapters 子结构，不做整包 payload 校验：
+    顶层契约当前未收录 visual_decision（Pydantic 必填），整包校验会因该既有缺口失败，
+    与本改动无关，另见交付说明。
+    """
+    schema = load_schema("report-fusion-result.schema.json")
+    # 子定义内含 $ref，需连同根 $defs 一起构造校验器才能解析
+    chapter_validator = Draft202012Validator(
+        {"$ref": "#/$defs/fusionChapterOutline", "$defs": schema["$defs"]}
+    )
+    chapters_validator = Draft202012Validator(
+        {
+            "type": "array",
+            "minItems": 7,
+            "maxItems": 7,
+            "items": {"$ref": "#/$defs/fusionChapterOutline"},
+            "$defs": schema["$defs"],
+        }
+    )
+
+    chapters = [
+        {
+            "chapter_id": chapter.chapter_id,
+            "title": chapter.title,
+            "sections": [
+                {"section_id": section.section_id, "title": section.title}
+                for section in chapter.sections
+            ],
+        }
+        for chapter in REPORT_OUTLINE
+    ]
+
+    assert len(chapters) == 7
+    chapters_validator.validate(chapters)
+    for chapter in chapters:
+        chapter_validator.validate(chapter)
+
+    # 契约应接受任意命名的章节标题（前端「后端给什么就显示什么」）
+    renamed = [{**chapters[0], "title": "原神"}, *chapters[1:]]
+    chapter_validator.validate(renamed[0])
+    chapters_validator.validate(renamed)
 
 
 def test_default_human_review_stops_at_both_fact_gate_agents() -> None:

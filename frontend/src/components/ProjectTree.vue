@@ -1,51 +1,24 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { listRuns } from '../api/client'
 import { ApiError } from '../api/http'
-import { STAGE_LABELS, type RunSummary } from '../api/types'
+import type { RunSummary, StageStatus } from '../api/types'
 
-/** 左侧项目导航树：GET /runs 聚合为 项目 → 任务 两级结构，点击任务切换工作台。 */
+/** 左栏研究报告列表：进行中 / 已完成分组，搜索过滤，新建报告跳首页。 */
 const props = defineProps<{ activeRunId: string }>()
 
 const emit = defineEmits<{
   (e: 'navigate'): void
 }>()
 
-const route = useRoute()
 const router = useRouter()
 
 const runs = ref<RunSummary[]>([])
 const loading = ref(false)
-
-interface TreeNode {
-  key: string
-  label: string
-  isProject: boolean
-  run?: RunSummary
-  children?: TreeNode[]
-}
-
-const treeData = computed<TreeNode[]>(() => {
-  const groups = new Map<string, RunSummary[]>()
-  for (const run of runs.value) {
-    const list = groups.get(run.project_id) ?? []
-    list.push(run)
-    groups.set(run.project_id, list)
-  }
-  return Array.from(groups.entries()).map(([projectId, projectRuns]) => ({
-    key: `project:${projectId}`,
-    label: projectId,
-    isProject: true,
-    children: projectRuns.map((run) => ({
-      key: `run:${run.run_id}`,
-      label: run.title || run.run_id,
-      isProject: false,
-      run,
-    })),
-  }))
-})
+const keyword = ref('')
+const expanded = ref<Record<string, boolean>>({ active: true, done: true })
 
 async function load(): Promise<void> {
   loading.value = true
@@ -54,143 +27,286 @@ async function load(): Promise<void> {
     runs.value = data.items
   } catch (e) {
     if (e instanceof ApiError && e.status !== 401) {
-      ElMessage.error(`加载项目导航失败：${e.message}`)
+      ElMessage.error(`加载报告列表失败：${e.message}`)
     }
   } finally {
     loading.value = false
   }
 }
 
-/** 当前激活任务 key，用于高亮 */
-const activeKey = computed(() => `run:${props.activeRunId}`)
+function isActiveStatus(status: StageStatus | string): boolean {
+  return (
+    status === 'running' ||
+    status === 'waiting_review' ||
+    status === 'pending' ||
+    status === 'rejected' ||
+    status === 'failed'
+  )
+}
 
-const currentNodeKey = computed(() => {
-  const keys: string[] = []
-  for (const project of treeData.value) {
-    if (project.children?.some((child) => child.key === activeKey.value)) {
-      keys.push(project.key)
-    }
-  }
-  return keys
+const filtered = computed(() => {
+  const q = keyword.value.trim().toLowerCase()
+  if (!q) return runs.value
+  return runs.value.filter(
+    (r) =>
+      r.title.toLowerCase().includes(q) ||
+      r.run_id.toLowerCase().includes(q) ||
+      r.project_id.toLowerCase().includes(q)
+  )
 })
 
-function handleClick(node: TreeNode): void {
-  if (node.isProject || !node.run) return
-  if (node.run.run_id === props.activeRunId) return
-  void router.push({ name: 'review', params: { runId: node.run.run_id } })
+const activeList = computed(() => filtered.value.filter((r) => isActiveStatus(r.status)))
+const doneList = computed(() => filtered.value.filter((r) => !isActiveStatus(r.status)))
+
+function openRun(run: RunSummary): void {
+  if (run.run_id === props.activeRunId) return
+  void router.push({ name: 'review', params: { runId: run.run_id } })
   emit('navigate')
 }
 
-function statusDotType(status: string): string {
-  if (status === 'running') return 'var(--el-color-primary)'
+function goCreate(): void {
+  void router.push({ name: 'home' })
+}
+
+function statusDot(status: string): string {
+  if (status === 'running') return 'var(--rp-navy)'
+  if (status === 'waiting_review') return 'var(--rp-gold)'
   if (status === 'completed' || status === 'approved') return 'var(--el-color-success)'
   if (status === 'failed' || status === 'rejected') return 'var(--el-color-danger)'
-  if (status === 'waiting_review') return 'var(--el-color-warning)'
   return 'var(--el-color-info-light-5)'
+}
+
+function statusLabel(status: string): string {
+  const map: Record<string, string> = {
+    pending: '待启动',
+    running: '数据处理中',
+    waiting_review: '等待审核',
+    approved: '已通过',
+    completed: '已完成',
+    failed: '执行失败',
+    rejected: '已驳回',
+    cancelled: '已取消',
+  }
+  return map[status] ?? status
+}
+
+function statusType(status: string): 'warning' | 'primary' | 'success' | 'danger' | 'info' {
+  if (status === 'waiting_review') return 'warning'
+  if (status === 'running') return 'primary'
+  if (status === 'completed' || status === 'approved') return 'success'
+  if (status === 'failed' || status === 'rejected') return 'danger'
+  return 'info'
+}
+
+function formatTime(value: string): string {
+  return new Date(value).toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function toggle(key: 'active' | 'done'): void {
+  expanded.value = { ...expanded.value, [key]: !expanded.value[key] }
 }
 
 defineExpose({ reload: load })
 
 onMounted(load)
-
-const stageLabel = (name: string): string => STAGE_LABELS[name as keyof typeof STAGE_LABELS] ?? name
-const isReviewRoute = computed(() => route.name === 'review')
 </script>
 
 <template>
-  <div v-loading="loading" class="project-tree">
-    <div class="tree-header">
-      <span class="tree-title">项目 / 任务</span>
-      <el-button size="small" text :disabled="loading" @click="load">
-        <el-icon><Refresh /></el-icon>
-      </el-button>
-    </div>
-    <el-empty v-if="!loading && treeData.length === 0" description="暂无任务" :image-size="60" />
-    <el-tree
-      v-else
-      :data="treeData"
-      node-key="key"
-      :default-expanded-keys="isReviewRoute ? currentNodeKey : []"
-      :props="{ children: 'children', label: 'label' }"
-      :expand-on-click-node="false"
-      :current-node-key="activeKey"
-      highlight-current
-    >
-      <template #default="{ data }">
+  <div v-loading="loading" class="report-nav" data-testid="report-nav">
+    <h3 class="nav-title">研究报告</h3>
+
+    <el-button class="create-btn" type="primary" data-testid="btn-new-report" @click="goCreate">
+      <el-icon style="margin-right: 4px"><Plus /></el-icon>
+      新建报告
+    </el-button>
+
+    <!-- 进行中 -->
+    <div class="group">
+      <button class="group-head" type="button" data-testid="group-active" @click="toggle('active')">
+        <el-icon class="caret" :class="{ collapsed: !expanded.active }"><ArrowDown /></el-icon>
+        <span>进行中</span>
+        <span class="count">{{ activeList.length }}</span>
+      </button>
+      <div v-if="expanded.active" class="group-body">
         <div
-          class="tree-node"
-          :class="{ active: data.key === activeKey }"
-          @click="handleClick(data as TreeNode)"
+          v-for="run in activeList"
+          :key="run.run_id"
+          class="run-card"
+          :class="{ active: run.run_id === activeRunId }"
+          :data-testid="`run-item-${run.run_id}`"
+          @click="openRun(run)"
         >
-          <template v-if="data.isProject">
-            <el-icon class="node-icon"><Folder /></el-icon>
-            <span class="node-label project-label" :title="data.label">{{ data.label }}</span>
-          </template>
-          <template v-else>
-            <span
-              class="status-dot"
-              :style="{ background: statusDotType(data.run?.status ?? '') }"
-            />
-            <span class="node-label" :title="data.label">{{ data.label }}</span>
-            <span class="node-meta">{{ stageLabel(data.run?.current_stage ?? '') }}</span>
-          </template>
+          <div class="run-row">
+            <span class="status-dot" :style="{ background: statusDot(run.status) }" />
+            <span class="run-title" :title="run.title">{{ run.title || run.run_id }}</span>
+            <el-tag size="small" effect="plain" :type="statusType(run.status)">
+              {{ statusLabel(run.status) }}
+            </el-tag>
+          </div>
+          <div class="run-meta">更新时间：{{ formatTime(run.updated_at) }}</div>
         </div>
-      </template>
-    </el-tree>
+        <div v-if="activeList.length === 0" class="empty-line muted">暂无进行中的报告</div>
+      </div>
+    </div>
+
+    <!-- 已完成 -->
+    <div class="group">
+      <button class="group-head" type="button" data-testid="group-done" @click="toggle('done')">
+        <el-icon class="caret" :class="{ collapsed: !expanded.done }"><ArrowDown /></el-icon>
+        <span>已完成</span>
+        <span class="count">{{ doneList.length }}</span>
+      </button>
+      <div v-if="expanded.done" class="group-body">
+        <div
+          v-for="run in doneList"
+          :key="run.run_id"
+          class="run-card"
+          :class="{ active: run.run_id === activeRunId }"
+          :data-testid="`run-item-${run.run_id}`"
+          @click="openRun(run)"
+        >
+          <div class="run-row">
+            <span class="status-dot" :style="{ background: statusDot(run.status) }" />
+            <span class="run-title" :title="run.title">{{ run.title || run.run_id }}</span>
+            <el-tag size="small" effect="plain" :type="statusType(run.status)">
+              {{ statusLabel(run.status) }}
+            </el-tag>
+          </div>
+          <div class="run-meta">更新时间：{{ formatTime(run.updated_at) }}</div>
+        </div>
+        <div v-if="doneList.length === 0" class="empty-line muted">暂无已完成报告</div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.project-tree {
-  min-height: 200px;
+.report-nav {
+  min-height: 220px;
 }
-.tree-header {
+.nav-title {
+  margin: 0 0 12px;
+  font-family: var(--rp-serif);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--rp-navy);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--rp-navy);
+}
+.create-btn {
+  width: 100%;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+.search-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.search-input {
+  flex: 1;
+}
+.refresh-btn {
+  flex-shrink: 0;
+}
+.group {
+  margin-bottom: 8px;
+}
+.group-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 6px;
-}
-.tree-title {
-  font-size: 13px;
+  gap: 4px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 6px 2px;
+  cursor: pointer;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--el-text-color-regular);
+  letter-spacing: 0.5px;
 }
-.tree-node {
+.group-head:hover {
+  color: var(--rp-navy);
+}
+.caret {
+  font-size: 12px;
+  transition: transform 0.15s;
+}
+.caret.collapsed {
+  transform: rotate(-90deg);
+}
+.count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  font-weight: 400;
+}
+.group-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.run-card {
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 8px 10px;
+  cursor: pointer;
+  background: var(--el-fill-color-lighter);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.run-card:hover {
+  border-color: var(--el-border-color-light);
+  background: var(--el-bg-color);
+}
+.run-card.active {
+  border-color: var(--rp-gold);
+  background: var(--el-bg-color);
+  box-shadow: inset 3px 0 0 var(--rp-gold);
+}
+.run-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 100%;
-  overflow: hidden;
-  padding: 2px 0;
+  min-width: 0;
 }
-.node-icon {
-  color: var(--el-color-primary);
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
-.node-label {
-  font-size: 13px;
+.run-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.project-label {
-  font-weight: 600;
+.run-card.active .run-title {
+  color: var(--rp-navy);
 }
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.node-meta {
-  margin-left: auto;
+.run-meta {
+  margin-top: 3px;
+  margin-left: 13px;
   font-size: 11px;
   color: var(--el-text-color-secondary);
-  flex-shrink: 0;
-  padding-left: 6px;
+  font-variant-numeric: tabular-nums;
 }
-.tree-node.active .node-label {
-  color: var(--el-color-primary);
-  font-weight: 600;
+.empty-line {
+  padding: 10px 4px;
+  font-size: 12px;
 }
 </style>

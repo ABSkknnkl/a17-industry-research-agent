@@ -75,3 +75,47 @@ def test_runtime_prompt_only_exposes_claims_relevant_to_current_chapter(
     ]
     assert "financial_detail" in constraints["visual_semantics.content_type"]
     assert constraints["visual_semantics.preferred_table"].startswith("true")
+
+
+def test_runtime_prompt_exposes_chart_with_partial_evidence_overlap(
+    chapter_analysis_result: AnalysisResult,
+) -> None:
+    """A3→A4 图表引用链路回归（2026-09-17 修复）。
+
+    图表引用跨维度证据（部分证据归属本章、部分归属其他章节）时，旧逻辑要求
+    「图表全部证据 ⊆ 本章可见证据」，会把图整体滤掉，导致 available_charts 恒空、
+    交接契约 H-a3_to_a4 断裂。修复后放宽为「全包含 或 至少 1 条证据与本章交集」。
+    """
+    charts = (
+        ChartReference(
+            chart_id="CHART-cross-evidence",
+            title="跨维度证据图表",
+            chart_type="line",
+            status="ready",
+            evidence_ids=["E-001", "E-002"],  # E-001 属本章，E-002 跨维度
+            artifact_id="artifact-cross",
+            recommended_chapter_id="CH-04",
+        ),
+        ChartReference(
+            chart_id="CHART-no-overlap",
+            title="证据与本章完全无交集的图表",
+            chart_type="bar",
+            status="ready",
+            evidence_ids=["E-999"],
+            artifact_id="artifact-no-overlap",
+            recommended_chapter_id="CH-04",
+        ),
+    )
+    payload = json.loads(
+        build_chapter_runtime_prompt(
+            chapter_analysis_result,
+            REPORT_OUTLINE[3],
+            charts=charts,
+            options=ChapterWritingOptions(),
+            review_feedback=None,
+            rejected_claim_ids=[],
+        )
+    )
+    visible = [chart["chart_id"] for chart in payload["available_charts"]]
+    assert "CHART-cross-evidence" in visible  # 部分证据交集 → 放行
+    assert "CHART-no-overlap" not in visible  # 零交集 → 仍过滤

@@ -18,6 +18,14 @@ HARD_LIMIT_CHARTS_PER_CHAPTER = 10
 HARD_LIMIT_MAX_DATA_POINTS = 100_000
 HARD_LIMIT_MAX_POINTS_PER_CHART = 20_000
 
+# Layout classification: dense charts take a full row (display_size=full),
+# sparse charts are laid out two-per-row (display_size=half).
+DISPLAY_SIZE_FULL_MIN_POINTS = 10
+
+# Category-axis label sampling: cap the visible tick labels so thumbnail,
+# preview dialog and the offline SVG report share the same label set.
+DISPLAY_CATEGORY_MAX_LABELS = 12
+
 # Rendering thresholds and semantic colors.
 DATALABEL_MAX_POINTS = 12
 CONTRAST_MIN_RATIO = 4.5

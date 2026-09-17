@@ -167,6 +167,28 @@ class ReportQualityReport(ReportContract):
     included_chart_count: int = Field(ge=0, le=30)
     evidence_coverage: float = Field(ge=0, le=1)
     issues: list[str] = Field(default_factory=list)
+    # 评分基准（分母）：由后端按大纲下发，前端不再写死 7 / 21
+    expected_chapter_count: int = Field(ge=1)
+    expected_section_count: int = Field(ge=1)
+
+
+class FusionSectionOutline(ReportContract):
+    """轻量小节结构：供前端目录渲染，**不含正文**（paragraphs 体积大）。"""
+
+    section_id: str = Field(pattern=r"^SEC-\d{2}-\d{2}$")
+    title: str = Field(min_length=1)
+
+
+class FusionChapterOutline(ReportContract):
+    """轻量章节结构：只暴露 id 与标题，让前端「后端给什么就显示什么」。
+
+    不含 summary / paragraphs / claim_ids —— 前端目录只需要标题，
+    带上正文会让 API 响应无谓膨胀（正文已在 HTML/PDF 产物里）。
+    """
+
+    chapter_id: str = Field(pattern=r"^CH-\d{2}$")
+    title: str = Field(min_length=1)
+    sections: list[FusionSectionOutline] = Field(min_length=3, max_length=3)
 
 
 class ReportFusionResult(ReportContract):
@@ -189,6 +211,12 @@ class ReportFusionResult(ReportContract):
     acknowledged_risks: list[str] = Field(default_factory=list)
     unresolved_risks: list[str] = Field(default_factory=list)
     visual_decision: VisualDecision
+    # 动态章节结构：让前端目录「后端给什么就显示什么」。
+    # 顺序与 HTML 模板 report.html.j2 的 {% for chapter in report.chapters %} 一致，
+    # 前端锚点 chapter-${idx+1} 因此不会串位。
+    chapters: list[FusionChapterOutline] = Field(min_length=7, max_length=7)
+    # 大纲版本（chapter_writer 的 OUTLINE_VERSION），便于溯源标题命名归属
+    outline_version: str = Field(min_length=1)
 
     @model_validator(mode="after")
     def validate_artifact_formats(self) -> "ReportFusionResult":

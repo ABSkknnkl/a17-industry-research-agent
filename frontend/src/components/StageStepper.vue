@@ -2,7 +2,12 @@
 import { computed } from 'vue'
 import { STAGE_LABELS, STAGE_ORDER, type StageName, type StageResult } from '../api/types'
 
-const props = defineProps<{ stageResults: Partial<Record<string, StageResult>> }>()
+const props = defineProps<{
+  stageResults: Partial<Record<string, StageResult>>
+  selectedStage?: StageName | null
+}>()
+
+const emit = defineEmits<{ (e: 'select', stage: StageName): void }>()
 
 interface StepItem {
   name: StageName
@@ -10,6 +15,7 @@ interface StepItem {
   status: 'wait' | 'process' | 'finish' | 'error' | 'success'
   /** 执行小结：基于阶段已有产出聚合，只读原始字段 */
   description: string
+  clickable: boolean
 }
 
 const d = (result: StageResult): Record<string, unknown> => result.data ?? {}
@@ -66,17 +72,12 @@ function summarize(name: StageName, result: StageResult | undefined): string {
     }
     case 'report_fusion': {
       const formats = asArray<unknown>(data.formats)
-      const delivery = data.delivery_status
-      const parts: string[] = []
-      if (formats.length > 0)
-        parts.push(
-          `已生成 ${formats
-            .map(String)
-            .map((f) => f.toUpperCase())
-            .join(' / ')}`
-        )
-      if (typeof delivery === 'string') parts.push(`交付状态 ${delivery}`)
-      return parts.length > 0 ? parts.join(' · ') : '报告融合完成'
+      if (formats.length === 0) return '报告融合完成'
+      const labels = formats
+        .map(String)
+        .map((f) => f.toUpperCase())
+        .join(' / ')
+      return `已生成 ${labels}`
     }
     default:
       return ''
@@ -106,9 +107,21 @@ const steps = computed<StepItem[]>(() => {
           status = 'wait'
       }
     }
-    return { name, title: STAGE_LABELS[name], status, description: summarize(name, result) }
+    const clickable = Boolean(result) && result?.status !== 'pending'
+    return {
+      name,
+      title: STAGE_LABELS[name],
+      status,
+      description: summarize(name, result),
+      clickable,
+    }
   })
 })
+
+function onStepClick(step: StepItem): void {
+  if (!step.clickable) return
+  emit('select', step.name)
+}
 </script>
 
 <template>
@@ -119,6 +132,32 @@ const steps = computed<StepItem[]>(() => {
       :title="step.title"
       :description="step.description"
       :status="step.status"
+      :class="{
+        'step-clickable': step.clickable,
+        'step-selected': selectedStage === step.name,
+      }"
+      :data-testid="`stage-step-${step.name}`"
+      @click="onStepClick(step)"
     />
   </el-steps>
 </template>
+
+<style scoped>
+.step-clickable {
+  cursor: pointer;
+}
+.step-clickable :deep(.el-step__title) {
+  transition: color 0.15s;
+}
+.step-clickable:hover :deep(.el-step__title) {
+  color: var(--rp-gold);
+}
+.step-selected :deep(.el-step__title) {
+  color: var(--rp-navy);
+  font-weight: 700;
+}
+.step-selected :deep(.el-step__head.is-success .el-step__icon) {
+  background: var(--rp-gold);
+  border-color: var(--rp-gold);
+}
+</style>

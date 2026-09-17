@@ -53,6 +53,13 @@ export interface ArtifactRef {
   revision: number
 }
 
+/**
+ * 产物下载只需的字段子集。
+ * 融合产物清单（ReportArtifactManifestEntry）没有 revision，
+ * 用这个类型可直接复用下载链路，不必伪造 revision。
+ */
+export type DownloadableArtifact = Pick<ArtifactRef, 'artifact_id' | 'uri'>
+
 export interface StageResult {
   stage: StageName
   status: StageStatus
@@ -203,11 +210,17 @@ interface ChartMetadata {
 
 interface ChartSpecBase extends ChartMetadata {
   variant: ChartVariant
+  /** 布局分类（后端 chart_generate 按数据量下发）：full 长图表独占一行，half 小图表每行两个。缺省时前端按数据量兜底估算。 */
+  display_size?: 'full' | 'half'
   option: ChartOption
   panels?: ChartPanel[] | null
   annotations?: ChartAnnotation[] | null
   data_fingerprint: string
   dedupe_key: string
+  /** 卡片展示字段：真实后端 Phase2 前可能缺失，UI 须降级不显示 */
+  unit_revision?: number
+  source_name?: string | null
+  updated_at?: string | null
 }
 
 interface ChartImageMetadata {
@@ -316,8 +329,10 @@ export interface ResearchInput {
   research_as_of: string
   focus_questions: string[]
   data_fetch_options?: DataFetchOptions
-  analysis_depth: AnalysisDepth
-  risk_preference: RiskPreference
+  /** 后端默认 standard，可不传 */
+  analysis_depth?: AnalysisDepth
+  /** 后端默认 balanced，可不传（首页已改用「图表选择」，不再提供风险偏好 UI） */
+  risk_preference?: RiskPreference
   research_brief?: ResearchBrief
   chart_generate_options?: ChartGenerationOptions
 }
@@ -400,6 +415,10 @@ export interface DimensionCoverage {
   dimension?: string
   status?: string
   reason?: string
+  /** 后端下发的中文维度名（contracts/display-labels.json），缺省时前端用本地映射兜底 */
+  dimension_label?: string
+  /** 后端下发的中文状态（contracts/display-labels.json），缺省时前端用本地映射兜底 */
+  status_label?: string
 }
 
 export interface ChartCandidate {
@@ -411,7 +430,7 @@ export interface ChartCandidate {
 
 // ---------- 阶段产出宽松读取（镜像 backend/app/schemas/report.py、chapter.py） ----------
 
-/** report_fusion data.quality（backend ReportQualityReport L162-168） */
+/** report_fusion data.quality（backend ReportQualityReport） */
 export interface ReportQualityReport {
   passed?: boolean
   chapter_count?: number
@@ -420,6 +439,12 @@ export interface ReportQualityReport {
   /** 0-1 */
   evidence_coverage?: number
   issues?: string[]
+  /**
+   * 评分基准（分母），由后端下发。前端不得写死 7 / 21 —— 后端改大纲时前端自动跟随。
+   * 历史 run 无此字段时前端兜底（见 QualityPanel）。
+   */
+  expected_chapter_count?: number
+  expected_section_count?: number
 }
 
 /** report_fusion data.artifacts 条目（backend ReportArtifactManifestEntry L154-159） */
@@ -435,13 +460,95 @@ export type ReportArtifactKind =
 
 export type DeliveryStatus = 'ready' | 'ready_with_limits' | 'blocked'
 
+export type VisualStyle = 'data_manual' | 'analysis_note' | 'deep_research'
+
+/** report_fusion data.visual_decision.per_chapter_strategy 条目 */
+export interface ChapterVisualStrategyLoose {
+  chart_count?: number
+  table_candidate_count?: number
+  dominant_content?:
+    | 'narrative'
+    | 'time_series'
+    | 'comparison'
+    | 'financial_detail'
+    | 'industry_chain'
+    | 'risk'
+    | 'scenario'
+    | 'summary'
+}
+
+/**
+ * report_fusion data.visual_decision（backend VisualDecision）。
+ * 契约要求「后端 Pydantic 模型、前端 TS 类型、Mock 数据保持一致」，故此处完整镜像；
+ * 当前前端不消费该字段（仅报告 HTML 的 body class 体现），保留类型以备后续使用。
+ */
+export interface VisualDecisionLoose {
+  recommended_style?: VisualStyle
+  requested_style?: 'auto' | VisualStyle
+  effective_style?: VisualStyle
+  selection_source?: 'user' | 'agent_recommendation' | 'default'
+  density?: 'compact' | 'balanced' | 'detailed'
+  chart_density?: 'low' | 'medium' | 'high'
+  table_priority?: 'low' | 'medium' | 'high'
+  recommendation_reasons?: string[]
+  override_warnings?: string[]
+  per_chapter_strategy?: Record<string, ChapterVisualStrategyLoose>
+}
+
 /** report_fusion data.source_revisions 条目（backend SourceRevision L149-153） */
 export interface SourceRevision {
   stage?: 'data_interpret' | 'chart_generate' | 'chapter_write'
   revision?: number
 }
 
-/** report_fusion data 顶层（backend ReportFusionResult L171-191，宽松读取） */
+/** report_fusion data.evidence_catalog 条目（报告末尾来源清单，实测字段） */
+export interface EvidenceCatalogEntry {
+  citation_number?: number
+  display_label?: string
+  material_title?: string
+  publishers?: string[]
+  source_levels?: string[]
+  audit_labels?: string[]
+  locators?: string[]
+  metric_names?: string[]
+  reporting_periods?: string[]
+  retrieval_methods?: string[]
+  available_dates?: string[]
+  scopes?: string[]
+  evidence_ids?: string[]
+}
+
+/** report_fusion data.charts 条目：已嵌入报告的图表，svg 为内联矢量图 */
+export interface FusionChartLoose {
+  chart_id?: string
+  title?: string
+  chart_type?: string
+  svg?: string
+  evidence_ids?: string[]
+  footnotes?: string[]
+  insight_goal?: string
+  placement_section_id?: string
+  quality_issue_ids?: string[]
+}
+
+/** report_fusion data.quality_appendix（数据质量 / 维度覆盖 / 财务一致性 / 跳过图表） */
+export interface ReportQualityAppendix {
+  data_quality_issues?: Array<{
+    issue_id?: string
+    issue_type?: string
+    metric?: string
+    description?: string
+    impact_level?: string
+    suggested_handling?: string
+    affected_dimensions?: string[]
+    evidence_ids?: string[]
+  }>
+  dimension_coverage?: DimensionCoverage[]
+  financial_consistency_checks?: Array<Record<string, unknown>>
+  skipped_chart_notes?: Array<Record<string, unknown> | string>
+}
+
+/** report_fusion data 顶层（backend ReportFusionResult，宽松读取） */
 export interface ReportFusionData {
   report_id?: string
   title?: string
@@ -458,6 +565,24 @@ export interface ReportFusionData {
   release_mode?: 'formal' | 'draft_with_warnings'
   unresolved_risks?: string[]
   source_revisions?: SourceRevision[]
+  /**
+   * 融合后的章节结构（后端 FusionChapterOutline：仅 id/title + 小节 id/title）。
+   * 前端目录按此**原样**渲染，不做任何标题改写 —— 后端给什么就显示什么。
+   */
+  chapters?: ChapterDraftLoose[]
+  /** 大纲版本（chapter_writer 的 OUTLINE_VERSION），溯源用 */
+  outline_version?: string
+  /** 视觉编排决策（后端实际下发；前端当前不消费，契约要求类型保持一致） */
+  visual_decision?: VisualDecisionLoose
+  /** 已嵌入报告的图表清单 */
+  charts?: FusionChartLoose[]
+  /** 报告末尾的来源清单：条数即「引用证据」数 */
+  evidence_catalog?: EvidenceCatalogEntry[]
+  /** 质量附录 */
+  quality_appendix?: ReportQualityAppendix
+  /** 免责声明与融合方法说明 */
+  disclaimer?: string
+  methodology_note?: string
 }
 
 /** chapter_write data.chapters 条目（backend ChapterDraft L152-161，宽松读取） */
@@ -470,4 +595,135 @@ export interface ChapterDraftLoose {
     title?: string
     paragraphs?: Array<{ text?: string }>
   }>
+}
+
+// ---------- 原型对象级类型（仅 Mock 演示使用） ----------
+
+export type EvidenceStatus = 'active' | 'excluded' | 'provisional'
+export type EvidenceCategory = 'company' | 'industry' | 'tech' | 'opinion'
+export type ClaimStatus = 'active' | 'provisional' | 'rejected' | 'evidence_insufficient'
+export type ChartStatus = 'active' | 'provisional' | 'deleted' | 'running'
+export type ParagraphStatus = 'active' | 'provisional'
+
+export interface EvidenceItem {
+  evidence_id: string
+  title: string
+  source_type: EvidenceCategory
+  publisher: string
+  as_of_date: string
+  summary: string
+  url_hint: string
+  status: EvidenceStatus
+  exclude_reason?: string | null
+}
+
+export interface ClaimItem {
+  claim_id: string
+  statement: string
+  dimension: string
+  evidence_ids: string[]
+  counter_condition: string
+  status: ClaimStatus
+  reject_reason?: string | null
+}
+
+export interface ChartItem {
+  chart_id: string
+  title: string
+  chart_type: ChartTypeName
+  template: string
+  color_theme: string
+  unit_revision: number
+  in_report: boolean
+  status: ChartStatus
+  render_mode: 'echarts' | 'svg'
+  option?: Record<string, unknown>
+  svg?: string
+  compatible_templates: string[]
+  insight_goal: string
+}
+
+export interface ParagraphItem {
+  paragraph_id: string
+  section_id: string
+  text: string
+  version: number
+  status: ParagraphStatus
+  history: Array<{ version: number; text: string }>
+  diff?: { before: string; after: string; lines: string[] } | null
+}
+
+export interface SectionItem {
+  section_id: string
+  title: string
+  paragraphs: ParagraphItem[]
+}
+
+export interface ChapterItem {
+  chapter_id: string
+  title: string
+  order: number
+  upstream_hint?: string | null
+  sections: SectionItem[]
+}
+
+export interface ArtifactItem {
+  artifact_id: string
+  kind: ReportArtifactKind
+  uri: string
+  revision: number
+  format_label: string
+  generated_at_label: string
+  content: string
+}
+
+export interface RiskItem {
+  risk_code: string
+  title: string
+  description: string
+  requires_ack: boolean
+  stage: StageName
+  acknowledged: boolean
+}
+
+export interface PrototypeOperation {
+  id: string
+  action: string
+  object_id: string
+  summary: string
+  at: string
+}
+
+export interface PrototypeRevision {
+  revision: number
+  status: StageStatus
+  current_stage: StageName
+  updated_at: string
+  note: string
+}
+
+export interface ActionReceipt {
+  action: string
+  object_id: string | null
+  before_revision: number
+  after_revision: number
+  ok: boolean
+  message: string
+  affected: string[]
+}
+
+export type QueueFilter = 'all' | 'pending' | 'done'
+
+export interface PrototypeStage {
+  status: StageStatus
+  revision: number
+  produced: boolean
+}
+
+export type ReportSettings = {
+  tone: 'professional' | 'plain'
+  depth: 'brief' | 'standard' | 'deep'
+  chart_density: 'compact' | 'balanced' | 'rich'
+  formats: Array<'markdown' | 'html' | 'pdf'>
+  summary_length: 'short' | 'standard' | 'long'
 }

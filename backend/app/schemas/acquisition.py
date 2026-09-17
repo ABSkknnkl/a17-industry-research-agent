@@ -4,7 +4,9 @@ from datetime import date, datetime
 from enum import StrEnum
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+
+from app.schemas import display_labels
 
 
 class SkillTier(StrEnum):
@@ -231,6 +233,12 @@ class SourceRecord(AcquisitionModel):
     row_count: int = Field(ge=0)
     license_scope: Literal["authorized_provider", "user_provided", "unknown"]
     storage_scope: Literal["metadata_only", "derived_only", "raw_allowed"]
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def skill_label(self) -> str:
+        """技能标识的中文名，供前端直接展示（来源 contracts/display-labels.json）。"""
+        return display_labels.skill_label(str(self.skill_name))
 
 
 class DataGap(AcquisitionModel):

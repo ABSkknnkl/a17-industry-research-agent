@@ -1,6 +1,7 @@
 """Deterministic pre-export quality gate with risk classification."""
 
 from app.agents.chart_generator.constants import HARD_LIMIT_MAX_CANDIDATES, RECOMMENDED_CHARTS
+from app.agents.chapter_writer.outline import REPORT_OUTLINE
 from app.agents.report_fusion.evidence import resolve_source_name
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
@@ -8,6 +9,11 @@ from app.schemas.chart import ChartGenerationResult
 from app.schemas.report import ReportQualityReport
 
 REPORT_QUALITY_ADVISORY_CODE = "REPORT-QUALITY-ADVISORY"
+
+# 标准结构的单一来源：从大纲常量推导，避免 7 / 21 魔法数散落在判据与契约里。
+# 前端完整度评分也读这两个值（经 ReportQualityReport 下发），不再写死分母。
+EXPECTED_CHAPTER_COUNT = len(REPORT_OUTLINE)
+EXPECTED_SECTION_COUNT = sum(len(chapter.sections) for chapter in REPORT_OUTLINE)
 
 
 def evaluate_report_quality(
@@ -72,9 +78,12 @@ def evaluate_report_quality(
     if unknown_evidence:
         advisory_issues.append(f"章节引用了未知证据：{sorted(unknown_evidence)}")
 
-    # 结构完整性
-    if chapter_count != 7 or section_count != 21:
-        advisory_issues.append("报告未保持7章21节完整结构")
+    # 结构完整性（基准取自大纲常量，非硬编码数字）
+    if chapter_count != EXPECTED_CHAPTER_COUNT or section_count != EXPECTED_SECTION_COUNT:
+        advisory_issues.append(
+            f"报告未保持标准章节结构（实际 {chapter_count} 章 {section_count} 节，"
+            f"预期 {EXPECTED_CHAPTER_COUNT} 章 {EXPECTED_SECTION_COUNT} 节）"
+        )
 
     if ready_ids != spec_ids:
         advisory_issues.append("就绪图表引用与图表规格不一致，已仅嵌入可验证图表")
@@ -133,6 +142,8 @@ def evaluate_report_quality(
             included_chart_count=len(included_chart_ids),
             evidence_coverage=coverage,
             issues=blocking_issues + advisory_issues,
+            expected_chapter_count=EXPECTED_CHAPTER_COUNT,
+            expected_section_count=EXPECTED_SECTION_COUNT,
         ),
         blocking_issues,
         advisory_issues,

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { submitReview } from '../api/client'
+import { isMockDataMode, submitReview } from '../api/client'
 import { ApiError } from '../api/http'
 import type { ReviewAction, StageName, StageStatus, WorkflowState } from '../api/types'
 import { showPipelineOverlay, hidePipelineOverlay } from '../composables/usePipelineOverlay'
+import LimitedIntentDialog from './review/LimitedIntentDialog.vue'
 
 /**
  * 业务动作按钮区（复用已有 POST /reviews 接口，不新增参数）：
@@ -21,11 +22,13 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'submitted', state: WorkflowState): void
+  /** meta 用于判断「是否本次通过的就是最后一个阶段」——只看 state.status 在 mock 下会误判 */
+  (e: 'submitted', state: WorkflowState, meta: { stage: StageName; action: string }): void
   (e: 'conflict'): void
   (e: 'history'): void
 }>()
 
+const mockMode = isMockDataMode()
 const submitting = ref(false)
 const reviseDialogVisible = ref(false)
 const reviseComment = ref('')
@@ -53,7 +56,9 @@ async function run(payload: {
   edited_data?: Record<string, unknown> | null
 }): Promise<void> {
   submitting.value = true
-  showPipelineOverlay(props.stage, payload.action === 'regenerate' ? '重新生成' : '修改指令重跑')
+  if (!mockMode) {
+    showPipelineOverlay(props.stage, payload.action === 'regenerate' ? '重新生成' : '修改指令重跑')
+  }
   try {
     const state = await submitReview({
       run_id: props.runId,
@@ -62,7 +67,7 @@ async function run(payload: {
       ...payload,
     })
     ElMessage.success('操作已提交，流水线开始执行')
-    emit('submitted', state)
+    emit('submitted', state, { stage: props.stage, action: payload.action })
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {
       // 透出后端冲突详情（Revision conflict / Stage conflict）。
@@ -74,6 +79,8 @@ async function run(payload: {
       emit('conflict')
     } else if (e instanceof ApiError) {
       ElMessage.error(`${e.message}${e.code ? `（${e.code}）` : ''}`)
+    } else if (e instanceof Error) {
+      ElMessage.error(e.message)
     } else {
       ElMessage.error('提交失败，请稍后重试')
     }
@@ -84,11 +91,15 @@ async function run(payload: {
 }
 
 async function refusion(): Promise<void> {
-  await ElMessageBox.confirm(
-    '将基于当前章节与图表重新执行报告融合（重新生成产物并更新版本），确认继续？',
-    '重新融合',
-    { confirmButtonText: '重新融合', cancelButtonText: '取消', type: 'warning' }
-  )
+  try {
+    await ElMessageBox.confirm(
+      '将基于当前章节与图表重新执行报告融合（重新生成产物并更新版本），确认继续？',
+      '重新融合',
+      { confirmButtonText: '重新融合', cancelButtonText: '取消', type: 'warning' }
+    )
+  } catch {
+    return
+  }
   await run({ action: 'regenerate' })
 }
 
@@ -98,45 +109,68 @@ function openReviseDialog(): void {
   reviseDialogVisible.value = true
 }
 
-async function submitRevise(): Promise<void> {
-  const questions = reviseQuestions.value
-    .split('\n')
-    .map((q) => q.trim())
-    .filter(Boolean)
-  const comment = reviseComment.value.trim()
-  if (!comment && questions.length === 0) {
-    ElMessage.warning('请填写修改指令或修订后的研究问题')
-    return
-  }
+async function onIntentConfirm(payload: { comment: string; questions: string[] }): Promise<void> {
   const edited: Record<string, unknown> = {}
-  if ((props.stage === 'data_fetch' || props.stage === 'data_interpret') && questions.length > 0) {
-    edited['focus_questions'] = questions
+  if (
+    (props.stage === 'data_fetch' || props.stage === 'data_interpret') &&
+    payload.questions.length > 0
+  ) {
+    edited['focus_questions'] = payload.questions
   }
   await run({
     action: 'revise',
-    comment: comment || null,
+    comment: payload.comment || null,
     edited_data: Object.keys(edited).length > 0 ? edited : null,
   })
   reviseDialogVisible.value = false
+}
+
+async function submitRevise(): Promise<void> {
+  await onIntentConfirm({
+    comment: reviseComment.value.trim(),
+    questions: reviseQuestions.value
+      .split('\n')
+      .map((q) => q.trim())
+      .filter(Boolean),
+  })
 }
 </script>
 
 <template>
   <div class="workbench-actions">
-    <el-button v-if="showRefusion" type="primary" plain :disabled="busy" @click="refusion">
+    <el-button
+      v-if="showRefusion"
+      type="primary"
+      plain
+      :disabled="busy"
+      data-testid="btn-refusion"
+      @click="refusion"
+    >
       <el-icon style="margin-right: 4px"><RefreshRight /></el-icon>
       重新融合
     </el-button>
-    <el-button v-if="showRevise" :disabled="busy" @click="openReviseDialog">
+    <el-button
+      v-if="showRevise"
+      :disabled="busy"
+      data-testid="btn-instruct"
+      @click="openReviseDialog"
+    >
       <el-icon style="margin-right: 4px"><EditPen /></el-icon>
       修改指令提交
     </el-button>
-    <el-button :disabled="status === 'running'" @click="emit('history')">
-      <el-icon style="margin-right: 4px"><Clock /></el-icon>
-      版本历史
-    </el-button>
 
-    <el-dialog v-model="reviseDialogVisible" title="修改指令提交" width="560px">
+    <LimitedIntentDialog
+      v-if="mockMode"
+      v-model="reviseDialogVisible"
+      mode="instruct"
+      :stage-label="stage"
+      :object-label="stage"
+      :object-version="`r${revision}`"
+      :allow-questions="stage === 'data_fetch' || stage === 'data_interpret'"
+      @confirm="onIntentConfirm"
+    />
+
+    <el-dialog v-if="!mockMode" v-model="reviseDialogVisible" title="修改指令提交" width="560px">
       <el-alert
         type="info"
         show-icon

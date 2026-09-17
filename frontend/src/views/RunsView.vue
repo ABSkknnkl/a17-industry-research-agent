@@ -39,6 +39,11 @@ function openRun(row: RunSummary): void {
   void router.push({ name: 'review', params: { runId: row.run_id } })
 }
 
+/** 进入独立报告下载页（门控在下载页判定，列表只负责入口） */
+function openDownload(row: RunSummary): void {
+  void router.push({ name: 'report-download', params: { runId: row.run_id } })
+}
+
 function formatTime(value: string): string {
   return new Date(value).toLocaleString('zh-CN')
 }
@@ -71,9 +76,23 @@ onMounted(load)
       </el-table-column>
       <el-table-column prop="revision" label="版本" width="70" />
       <el-table-column prop="artifact_count" label="产物数" width="80" />
-      <el-table-column label="报告" width="80">
+      <el-table-column label="报告" width="100">
         <template #default="{ row }">
-          <el-tag v-if="row.report_available" type="success" size="small">可下载</el-tag>
+          <!--
+            @click.stop 必须保留：整行 @row-click 会跳工作台，
+            不拦住会让「下载」按钮同时触发行跳转。
+            列表接口没有 stage_results，做不了深门控，具体判定在下载页执行。
+          -->
+          <el-button
+            v-if="row.report_available"
+            link
+            type="primary"
+            size="small"
+            data-testid="run-report-download"
+            @click.stop="openDownload(row)"
+          >
+            下载报告
+          </el-button>
           <span v-else class="muted">—</span>
         </template>
       </el-table-column>

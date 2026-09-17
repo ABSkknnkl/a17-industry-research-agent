@@ -390,7 +390,14 @@ def _render_panel_series(
         f'<path d="M {x:.1f} {PLOT_TOP} V {PLOT_TOP + height} H {x + width:.1f}" '
         'fill="none" stroke="#94a3b8"/>'
     )
-    for position, label in zip(positions, labels, strict=True):
+    # Category-axis labels: honor the sampling interval baked into the option
+    # (uniform_category_axis_labels) so the SVG report matches the frontend
+    # thumbnail and preview dialog instead of always printing every label.
+    category_axis = _axes(option, "yAxis" if horizontal else "xAxis")[0]
+    tick_interval = _number(category_axis.get("axisLabel", {}).get("interval", 0)) or 0
+    for i, (position, label) in enumerate(zip(positions, labels, strict=True)):
+        if tick_interval and i % (int(tick_interval) + 1) != 0:
+            continue
         parts.append(
             _text(
                 x - 12 if horizontal else position,

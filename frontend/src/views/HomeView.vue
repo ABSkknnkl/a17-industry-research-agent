@@ -1,20 +1,22 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { createRun } from '../api/client'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { createRun, isMockDataMode } from '../api/client'
 import { ApiError } from '../api/http'
 import { showPipelineOverlay, hidePipelineOverlay } from '../composables/usePipelineOverlay'
 import {
   STAGE_LABELS,
   type AnalysisDepth,
-  type RiskPreference,
   type RunCreateRequest,
   type StageName,
 } from '../api/types'
+import { DEMO_RUN_ID } from '../mock/fixtures/amdResearchMock'
+import ProjectTree from '../components/ProjectTree.vue'
 
 const router = useRouter()
 const submitting = ref(false)
+const mockMode = isMockDataMode()
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10)
@@ -24,6 +26,9 @@ function randomProjectId(): string {
   return `proj-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
+/** 图表选择（前端本地模式：auto=智能配图 / rich=更多图表 / none=无图表表格优先，后端契约未发布前 none 回退智能配图） */
+type ChartMode = 'auto' | 'rich' | 'none'
+
 const form = reactive({
   industryTopic: '',
   marketScope: ['中国 A 股'],
@@ -32,10 +37,7 @@ const form = reactive({
   researchAsOf: todayIso(),
   focusQuestionsText: '',
   analysisDepth: 'standard' as AnalysisDepth,
-  riskPreference: 'balanced' as RiskPreference,
-  keywordsText: '',
-  metricsText: '',
-  timeRange: '',
+  chartMode: 'auto' as ChartMode,
   reviewStages: ['data_fetch', 'data_interpret'] as StageName[],
 })
 
@@ -45,14 +47,68 @@ const REVIEW_STAGE_OPTIONS = Object.entries(STAGE_LABELS).map(([value, label]) =
   label,
 }))
 
+/** 市场范围选项（value 为提交给后端的纯市场名；label 带可达性备注）。
+ * 可达性依据当前接线（问财 hithink_* + L3 博查联网）实测：
+ * full=结构化完整；partial=部分数据（联网定性/缺口披露补充）；unavailable=暂无结构化数据。
+ */
+interface MarketOption {
+  value: string
+  label: string
+  availability: 'full' | 'partial' | 'unavailable'
+}
+
+const MARKET_OPTIONS: MarketOption[] = [
+  { value: '中国 A 股', label: '中国 A 股（沪深北·人民币）', availability: 'full' },
+  { value: '港股', label: '港股（港交所）', availability: 'partial' },
+  { value: '美股', label: '美股（纽交所/纳斯达克，含中概 ADR）', availability: 'partial' },
+  { value: '中国 B 股', label: '中国 B 股（深港币/沪美元）', availability: 'partial' },
+  { value: '中国台湾', label: '中国台湾（暂无可获取的结构化数据）', availability: 'unavailable' },
+  { value: '日本', label: '日本（暂无可获取的结构化数据）', availability: 'unavailable' },
+  { value: '欧洲', label: '欧洲（暂无可获取的结构化数据）', availability: 'unavailable' },
+]
+
+/** 市场 → 建议报告币种（与 A2 框架「按上市地记账币种」口径一致；仅提示，不自动改值）。 */
+const CURRENCY_BY_MARKET: Record<string, string> = { 港股: 'HKD', 美股: 'USD', '中国 B 股': 'HKD' }
+
+const currencyHints = computed(() =>
+  form.marketScope
+    .filter((market) => CURRENCY_BY_MARKET[market] != null)
+    .map((market) => ({ market, currency: CURRENCY_BY_MARKET[market] })),
+)
+
+function applySuggestedCurrency(): void {
+  const target = [...new Set(currencyHints.value.map((hint) => hint.currency))]
+  if (target.length > 0) {
+    form.reportingCurrency = target[0]
+    ElMessage.success(`已填入报告币种 ${target[0]}`)
+  }
+}
+
+/** 一键通过（全自动）：取消全部人工审核门，流程结束后自动跳转下载页。 */
+async function automateGates(): Promise<void> {
+  if (mockMode) return
+  try {
+    await ElMessageBox.confirm(
+      '将取消全部人工审核门：数据采集、数据解读、图表生成、章节撰写、报告融合均自动通过，无需逐个点击。中、低风险（如数据缺口、质量降级等需确认项）会一并自动放行并写入报告披露；检测到红色高风险会暂停等待人工处理。流程结束后自动跳转到报告下载页。',
+      '一键通过（全自动）',
+      {
+        confirmButtonText: '确认开启全自动',
+        cancelButtonText: '取消',
+        type: 'warning',
+      },
+    )
+  } catch {
+    return
+  }
+  form.reviewStages = []
+  ElMessage.success('已开启全自动：所有阶段自动通过，完成后自动进入下载页')
+}
+
 /** 快捷模板：一键填充示例（仅前端预填，提交字段不变） */
 interface TopicTemplate {
   name: string
   topic: string
   questions: string[]
-  keywords: string[]
-  metrics: string[]
-  timeRange: string
 }
 
 const TEMPLATES: TopicTemplate[] = [
@@ -65,9 +121,6 @@ const TEMPLATES: TopicTemplate[] = [
       '碳酸锂价格2023年以来走势及其对电池成本的影响？',
       '动力电池行业主要企业研发投入规模及占营业收入比重变化？',
     ],
-    keywords: ['动力电池', '储能电池', '碳酸锂'],
-    metrics: ['装机量', '市场占有率', '营业收入', '净利润', '研发费用'],
-    timeRange: '2023-2026',
   },
   {
     name: '新能源汽车整车',
@@ -78,9 +131,6 @@ const TEMPLATES: TopicTemplate[] = [
       '主要整车企业营业收入、净利润及毛利率变化趋势？',
       '新能源汽车海外出口规模及主要出口区域分布？',
     ],
-    keywords: ['新能源汽车', '整车', '出口'],
-    metrics: ['销量', '市场占有率', '营业收入', '净利润', '毛利率'],
-    timeRange: '2023-2026',
   },
   {
     name: '光伏组件行业',
@@ -91,9 +141,6 @@ const TEMPLATES: TopicTemplate[] = [
       '多晶硅料价格2023年以来走势及其对组件成本的影响？',
       '光伏组件行业主要企业营业收入、净利润及毛利率变化趋势？',
     ],
-    keywords: ['光伏组件', '硅料', '装机'],
-    metrics: ['出货量', '产能利用率', '营业收入', '净利润', '毛利率'],
-    timeRange: '2023-2026',
   },
 ]
 
@@ -102,9 +149,6 @@ const activeTemplate = ref('')
 function applyTemplate(tpl: TopicTemplate): void {
   form.industryTopic = tpl.topic
   form.focusQuestionsText = tpl.questions.join('\n')
-  form.keywordsText = tpl.keywords.join('\n')
-  form.metricsText = tpl.metrics.join('\n')
-  form.timeRange = tpl.timeRange
   activeTemplate.value = tpl.name
   ElMessage.success(`已填充「${tpl.name}」模板，可继续调整`)
 }
@@ -133,36 +177,79 @@ function validate(): string | null {
 }
 
 async function submit(): Promise<void> {
-  const problem = validate()
-  if (problem) {
-    ElMessage.warning(problem)
-    return
+  if (!mockMode) {
+    const problem = validate()
+    if (problem) {
+      ElMessage.warning(problem)
+      return
+    }
+  }
+  if (!mockMode && form.chartMode === 'none') {
+    ElMessage.warning(
+      '「无图表」模式的后端支持开发中，本次将按智能配图创建任务；生成后可在图表审核阶段清空图表。'
+    )
+  }
+  if (!mockMode) {
+    const limited = form.marketScope.filter((market) => {
+      const opt = MARKET_OPTIONS.find((item) => item.value === market)
+      return opt != null && opt.availability !== 'full'
+    })
+    if (limited.length > 0) {
+      ElMessage.warning(
+        `以下市场数据获取能力有限，报告将以缺口披露或联网定性补充：${limited.join('、')}`
+      )
+    }
   }
   submitting.value = true
-  showPipelineOverlay('data_fetch', '创建任务')
+  if (!mockMode) showPipelineOverlay('data_fetch', '创建任务')
   try {
     const payload: RunCreateRequest = {
-      project_id: randomProjectId(),
+      project_id: mockMode ? 'proj-battery-demo' : randomProjectId(),
       input_data: {
-        industry_topic: form.industryTopic.trim(),
-        market_scope: form.marketScope,
-        security_types: form.securityTypes,
-        reporting_currency: form.reportingCurrency.trim() || undefined,
-        research_as_of: form.researchAsOf,
-        focus_questions: splitLines(form.focusQuestionsText),
-        analysis_depth: form.analysisDepth,
-        risk_preference: form.riskPreference,
-        data_fetch_options: {
-          keywords: splitLines(form.keywordsText),
-          metrics: splitLines(form.metricsText),
-          time_range: form.timeRange.trim() ? [form.timeRange.trim()] : undefined,
-        },
+        industry_topic: mockMode ? '动力电池行业 2023-2026 发展态势' : form.industryTopic.trim(),
+        market_scope: mockMode ? ['中国 A 股'] : form.marketScope,
+        security_types: mockMode ? ['股票'] : form.securityTypes,
+        reporting_currency: mockMode ? 'CNY' : form.reportingCurrency.trim() || undefined,
+        research_as_of: mockMode ? '2026-01-15' : form.researchAsOf,
+        focus_questions: mockMode
+          ? [
+              '动力电池行业2023年至2026年装机量及增速变化趋势如何？',
+              '宁德时代、比亚迪、中创新航动力电池装机量市场份额对比如何？',
+              '碳酸锂价格2023年以来走势及其对电池成本的影响？',
+              '动力电池行业主要企业研发投入规模及占营业收入比重变化？',
+            ]
+          : splitLines(form.focusQuestionsText),
+        analysis_depth: mockMode ? 'standard' : form.analysisDepth,
+        // 风险偏好改由后端默认（balanced）；UI 已用「图表选择」取代「风险偏好」
+        chart_generate_options:
+          mockMode || form.chartMode !== 'rich'
+            ? undefined
+            : { allow_multiple_charts_per_dataset: true },
       },
-      review_stages: form.reviewStages,
+      review_stages: mockMode
+        ? ([
+            'data_fetch',
+            'data_interpret',
+            'chart_generate',
+            'chapter_write',
+            'report_fusion',
+          ] as StageName[])
+        : form.reviewStages,
     }
     const state = await createRun(payload)
-    ElMessage.success('任务已创建，流水线已启动')
-    await router.push({ name: 'review', params: { runId: state.run_id } })
+    // 全自动任务（未勾选任何审核门）：打标记，工作台据此在完成后自动跳转下载页
+    if (!mockMode && form.reviewStages.length === 0) {
+      try {
+        localStorage.setItem(`autojump:${state.run_id}`, '1')
+      } catch {
+        /* localStorage 不可用时退回手动跳转 */
+      }
+    }
+    ElMessage.success(mockMode ? '演示任务已就绪' : '任务已创建，流水线已启动')
+    await router.push({
+      name: 'review',
+      params: { runId: mockMode ? DEMO_RUN_ID : state.run_id },
+    })
   } catch (e) {
     if (e instanceof ApiError) {
       ElMessage.error(`创建失败：${e.message}${e.code ? `（${e.code}）` : ''}`)
@@ -177,239 +264,286 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <div class="home-page">
-    <!-- 页头：标题 + 一句话说明 -->
-    <header class="home-header">
-      <div>
-        <div class="aside-kicker">INDUSTRY RESEARCH</div>
-        <h2 class="page-title home-title">创建行业研究任务</h2>
-      </div>
-      <p class="home-lead muted">
-        填写研究对象与研究问题，智能体自动完成数据采集、分析、图表与报告融合，全程可逐阶段审核。
-      </p>
-    </header>
+  <div class="home-layout">
+    <!-- 左栏：研究报告列表 -->
+    <aside class="home-left">
+      <el-card class="page-card" shadow="never">
+        <ProjectTree active-run-id="" />
+      </el-card>
+    </aside>
 
-    <!-- 快捷模板 -->
-    <div class="tpl-bar">
-      <span class="tpl-label">快捷模板</span>
-      <el-button
-        v-for="tpl in TEMPLATES"
-        :key="tpl.name"
-        size="small"
-        :type="activeTemplate === tpl.name ? 'primary' : undefined"
-        :plain="activeTemplate === tpl.name"
-        @click="applyTemplate(tpl)"
-      >
-        {{ tpl.name }}
-      </el-button>
-      <span class="muted">一键填充示例，可修改</span>
-    </div>
-
-    <!-- 表单主体 -->
-    <el-card class="page-card" shadow="never">
-      <el-form label-position="top">
-        <!-- 01 研究对象 -->
-        <div class="form-section">
-          <div class="section-head">
-            <span class="section-index">01</span>
-            <span class="section-title">研究对象</span>
-            <span class="section-line" />
+    <!-- 右栏：创建任务表单 -->
+    <div class="home-page">
+      <!-- 页头：标题 + 一句话说明 -->
+      <header class="home-header">
+        <div>
+          <div class="aside-kicker">INDUSTRY RESEARCH</div>
+          <div class="title-row">
+            <h2 class="page-title home-title">创建行业研究任务</h2>
+            <el-tag
+              v-if="mockMode"
+              type="warning"
+              effect="plain"
+              size="small"
+              data-testid="home-demo-tag"
+            >
+              演示模式
+            </el-tag>
           </div>
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="行业主题" required>
-                <el-input
-                  v-model="form.industryTopic"
-                  placeholder="如：新能源汽车 / 动力电池 / 光伏组件（2-100 字）"
-                  maxlength="100"
-                  show-word-limit
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="6">
-              <el-form-item label="研究时点" required>
-                <el-date-picker
-                  v-model="form.researchAsOf"
-                  type="date"
-                  value-format="YYYY-MM-DD"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="6">
-              <el-form-item label="报告币种">
-                <el-input v-model="form.reportingCurrency" placeholder="CNY / USD" maxlength="20" />
-              </el-form-item>
-            </el-col>
-          </el-row>
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="市场范围" required>
-                <el-select
-                  v-model="form.marketScope"
-                  multiple
-                  filterable
-                  allow-create
-                  default-first-option
-                  placeholder="输入后回车，如：中国 A 股"
-                  style="width: 100%"
-                />
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="证券类型" required>
-                <el-select v-model="form.securityTypes" multiple style="width: 100%">
-                  <el-option
-                    v-for="opt in SECURITY_TYPE_OPTIONS"
-                    :key="opt"
-                    :label="opt"
-                    :value="opt"
+        </div>
+        <p class="home-lead muted">
+          填写研究对象与研究问题，智能体自动完成数据采集、分析、图表与报告融合，全程可逐阶段审核。
+        </p>
+      </header>
+
+      <!-- 快捷模板 -->
+      <div class="tpl-bar">
+        <span class="tpl-label">快捷模板</span>
+        <el-button
+          v-for="tpl in TEMPLATES"
+          :key="tpl.name"
+          size="small"
+          :type="activeTemplate === tpl.name ? 'primary' : undefined"
+          :plain="activeTemplate === tpl.name"
+          @click="applyTemplate(tpl)"
+        >
+          {{ tpl.name }}
+        </el-button>
+        <span class="muted">一键填充示例，可修改</span>
+      </div>
+
+      <!-- 表单主体 -->
+      <el-card class="page-card" shadow="never">
+        <el-form label-position="top">
+          <!-- 01 研究对象 -->
+          <div class="form-section">
+            <div class="section-head">
+              <span class="section-index">01</span>
+              <span class="section-title">研究对象</span>
+              <span class="section-line" />
+            </div>
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item label="行业主题" required>
+                  <el-input
+                    v-model="form.industryTopic"
+                    placeholder="如：新能源汽车 / 动力电池 / 光伏组件（2-100 字）"
+                    maxlength="100"
+                    show-word-limit
                   />
-                </el-select>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- 02 研究问题 -->
-        <div class="form-section">
-          <div class="section-head">
-            <span class="section-index">02</span>
-            <span class="section-title">研究问题</span>
-            <span class="section-line" />
-          </div>
-          <el-form-item label="每行一个问题（1-12 个）" required>
-            <el-input
-              v-model="form.focusQuestionsText"
-              type="textarea"
-              :rows="5"
-              maxlength="2000"
-              show-word-limit
-              placeholder="示例：&#10;锂电池行业2024-2025年营业收入与净利润增速如何？&#10;宁德时代、比亚迪、亿纬锂能2024年市占率与毛利率对比？&#10;碳酸锂价格近一年走势如何？"
-            />
-          </el-form-item>
-          <div class="tip-line muted">
-            <el-icon><InfoFilled /></el-icon>
-            问题越具体越容易路由到可执行的数据技能；模糊问题（如「今年收益怎么样」）会触发人工澄清。
-          </div>
-        </div>
-
-        <!-- 03 分析偏好 -->
-        <div class="form-section">
-          <div class="section-head">
-            <span class="section-index">03</span>
-            <span class="section-title">分析偏好</span>
-            <span class="section-line" />
-          </div>
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <el-form-item label="分析深度">
-                <el-radio-group v-model="form.analysisDepth">
-                  <el-radio value="overview">概览</el-radio>
-                  <el-radio value="standard">标准</el-radio>
-                  <el-radio value="deep">深度</el-radio>
-                </el-radio-group>
-              </el-form-item>
-            </el-col>
-            <el-col :span="12">
-              <el-form-item label="风险偏好">
-                <el-radio-group v-model="form.riskPreference">
-                  <el-radio value="conservative">保守</el-radio>
-                  <el-radio value="balanced">均衡</el-radio>
-                  <el-radio value="aggressive">进取</el-radio>
-                </el-radio-group>
-              </el-form-item>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- 04 高级选项 -->
-        <div class="form-section">
-          <div class="section-head">
-            <span class="section-index">04</span>
-            <span class="section-title">数据采集与审核门</span>
-            <span class="muted">可选，默认即可</span>
-          </div>
-          <el-collapse>
-            <el-collapse-item title="检索关键词 / 关注指标 / 时间范围" name="fetch">
-              <el-row :gutter="16">
-                <el-col :span="8">
-                  <el-form-item label="检索关键词（每行一个）">
-                    <el-input
-                      v-model="form.keywordsText"
-                      type="textarea"
-                      :rows="3"
-                      placeholder="如：动力电池&#10;储能"
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="研究时点" required>
+                  <el-date-picker
+                    v-model="form.researchAsOf"
+                    type="date"
+                    value-format="YYYY-MM-DD"
+                    style="width: 100%"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="报告币种">
+                  <el-input
+                    v-model="form.reportingCurrency"
+                    placeholder="CNY / USD"
+                    maxlength="20"
+                  />
+                  <div v-if="currencyHints.length" class="tip-line muted">
+                    <el-icon><InfoFilled /></el-icon>
+                    <template
+                      v-if="currencyHints.some((hint) => hint.currency === form.reportingCurrency.trim().toUpperCase())"
+                    >
+                      当前币种与所选市场建议一致（{{ currencyHints.map((hint) => `${hint.market}→${hint.currency}`).join('，') }}）
+                    </template>
+                    <template v-else>
+                      已选 {{ currencyHints.map((hint) => hint.market).join('、') }}，建议币种
+                      {{ [...new Set(currencyHints.map((hint) => hint.currency))].join('/') }}
+                      <el-link type="primary" :underline="false" @click="applySuggestedCurrency">一键填入</el-link>
+                    </template>
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item label="市场范围" required>
+                  <el-select
+                    v-model="form.marketScope"
+                    multiple
+                    filterable
+                    allow-create
+                    default-first-option
+                    placeholder="选择或输入市场，如：中国 A 股"
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="opt in MARKET_OPTIONS"
+                      :key="opt.value"
+                      :value="opt.value"
+                      :label="opt.label"
                     />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="8">
-                  <el-form-item label="关注指标（每行一个）">
-                    <el-input
-                      v-model="form.metricsText"
-                      type="textarea"
-                      :rows="3"
-                      placeholder="如：营业收入&#10;净利润&#10;毛利率"
-                    />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="8">
-                  <el-form-item label="时间范围">
-                    <el-input
-                      v-model="form.timeRange"
-                      placeholder="如：2023-2026"
-                      maxlength="100"
-                    />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </el-collapse-item>
-            <el-collapse-item title="人工审核阶段（未勾选的阶段自动通过智能体推荐）" name="gates">
-              <el-checkbox-group v-model="form.reviewStages">
-                <el-checkbox
-                  v-for="opt in REVIEW_STAGE_OPTIONS"
-                  :key="opt.value"
-                  :value="opt.value"
-                  :label="opt.label"
-                />
-              </el-checkbox-group>
-            </el-collapse-item>
-          </el-collapse>
-        </div>
+                  </el-select>
+                  <div class="tip-line muted">
+                    <el-icon><InfoFilled /></el-icon>
+                    数据可达性：中国 A 股完整；港股/美股/中国 B 股为部分数据（联网补充+缺口披露）；中国台湾/日本/欧洲暂无结构化数据，也可输入自定义市场。
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
 
-        <div class="submit-row">
-          <el-button type="primary" size="large" :loading="submitting" @click="submit">
-            创建任务并启动流水线
-          </el-button>
-          <span class="muted">创建后自动进入任务工作台，可逐阶段审核。</span>
-        </div>
-      </el-form>
-    </el-card>
+          <!-- 02 研究问题 -->
+          <div class="form-section">
+            <div class="section-head">
+              <span class="section-index">02</span>
+              <span class="section-title">研究问题</span>
+              <span class="section-line" />
+            </div>
+            <el-form-item label="每行一个问题（1-12 个）" required>
+              <el-input
+                v-model="form.focusQuestionsText"
+                type="textarea"
+                :rows="5"
+                maxlength="2000"
+                show-word-limit
+                placeholder="示例：&#10;锂电池行业2024-2025年营业收入与净利润增速如何？&#10;宁德时代、比亚迪、亿纬锂能2024年市占率与毛利率对比？&#10;碳酸锂价格近一年走势如何？"
+              />
+            </el-form-item>
+            <div class="tip-line muted">
+              <el-icon><InfoFilled /></el-icon>
+              问题越具体越容易路由到可执行的数据技能；模糊问题（如「今年收益怎么样」）会触发人工澄清。
+            </div>
+          </div>
 
-    <!-- 底部：参考阅读（指南 / 流程） -->
-    <div class="bottom-grid">
-      <div class="guide-card">
-        <div class="guide-title">研究问题怎么写</div>
-        <ol class="guide-list">
-          <li><b>具体行业/公司</b>——写「动力电池行业」而非「新能源」</li>
-          <li><b>一个问题问一件事</b>——财务、销量份额、价格分开提问</li>
-          <li><b>明确指标与时间</b>——如「2024-2025 年毛利率对比」</li>
-          <li><b>一次 4-6 个问题</b>——过多易超时，模糊问题会触发澄清</li>
-        </ol>
-      </div>
-      <div class="flow-card">
-        <div class="guide-title">任务流程</div>
-        <div class="flow-step"><span>1</span>创建任务，智能体开始执行数据采集与分析</div>
-        <div class="flow-step"><span>2</span>在工作台逐阶段审核结论、图表与章节</div>
-        <div class="flow-step"><span>3</span>融合交付报告（Markdown / HTML / PDF）</div>
+          <!-- 03 分析偏好 -->
+          <div class="form-section">
+            <div class="section-head">
+              <span class="section-index">03</span>
+              <span class="section-title">分析偏好</span>
+              <span class="section-line" />
+            </div>
+            <el-row :gutter="16">
+              <el-col :span="12">
+                <el-form-item label="分析深度">
+                  <el-radio-group v-model="form.analysisDepth">
+                    <el-tooltip content="常规篇幅报告，覆盖核心研究维度，生成速度更快" placement="top">
+                      <el-radio value="standard">标准</el-radio>
+                    </el-tooltip>
+                    <el-tooltip content="全面展开的多章节详析，证据与附录更完整，耗时更长" placement="top">
+                      <el-radio value="deep">深度</el-radio>
+                    </el-tooltip>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="图表选择">
+                  <el-radio-group v-model="form.chartMode">
+                    <el-tooltip content="由系统根据数据情况自动挑选当前指标最适合的图表" placement="top">
+                      <el-radio value="auto">智能配图</el-radio>
+                    </el-tooltip>
+                    <el-tooltip content="多角度配图：同一数据集可生成多张图表，适合对比与趋势观察" placement="top">
+                      <el-radio value="rich">更多图表</el-radio>
+                    </el-tooltip>
+                    <el-tooltip content="报告中不使用图表，侧重表格与文字呈现（后端支持开发中）" placement="top">
+                      <el-radio value="none">无图表</el-radio>
+                    </el-tooltip>
+                  </el-radio-group>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
+          <!-- 04 高级选项 -->
+          <div class="form-section">
+            <div class="section-head">
+              <span class="section-index">04</span>
+              <span class="section-title">审核门</span>
+              <span class="muted">可选，默认即可</span>
+            </div>
+            <el-collapse>
+              <el-collapse-item title="人工审核阶段（未勾选的阶段自动通过智能体推荐）" name="gates">
+                <el-checkbox-group v-model="form.reviewStages">
+                  <el-checkbox
+                    v-for="opt in REVIEW_STAGE_OPTIONS"
+                    :key="opt.value"
+                    :value="opt.value"
+                    :label="opt.label"
+                  />
+                </el-checkbox-group>
+                <div v-if="!mockMode" class="gate-quick-bar">
+                  <el-button
+                    size="small"
+                    type="primary"
+                    plain
+                    data-testid="btn-automate-gates"
+                    @click="automateGates"
+                  >
+                    <el-icon style="margin-right: 4px"><Select /></el-icon>
+                    一键通过（全自动）
+                  </el-button>
+                  <span class="muted">取消全部审核门：各阶段自动通过，中/低风险一并放行并披露，完成后自动进入下载页</span>
+                </div>
+              </el-collapse-item>
+            </el-collapse>
+          </div>
+
+          <div class="submit-row">
+            <el-button type="primary" size="large" :loading="submitting" @click="submit">
+              创建任务并启动流水线
+            </el-button>
+            <span class="muted">创建后自动进入任务工作台，可逐阶段审核。</span>
+          </div>
+        </el-form>
+      </el-card>
+
+      <!-- 底部：参考阅读（指南 / 流程） -->
+      <div class="bottom-grid">
+        <div class="guide-card">
+          <div class="guide-title">研究问题怎么写</div>
+          <ol class="guide-list">
+            <li><b>具体行业/公司</b>——写「动力电池行业」而非「新能源」</li>
+            <li><b>一个问题问一件事</b>——财务、销量份额、价格分开提问</li>
+            <li><b>明确指标与时间</b>——如「2024-2025 年毛利率对比」</li>
+            <li><b>一次 4-6 个问题</b>——过多易超时，模糊问题会触发澄清</li>
+          </ol>
+        </div>
+        <div class="flow-card">
+          <div class="guide-title">任务流程</div>
+          <div class="flow-step"><span>1</span>创建任务，智能体开始执行数据采集与分析</div>
+          <div class="flow-step"><span>2</span>在工作台逐阶段审核结论、图表与章节</div>
+          <div class="flow-step"><span>3</span>融合交付报告（Markdown / HTML / PDF）</div>
+        </div>
       </div>
     </div>
+    <!-- /.home-page -->
   </div>
+  <!-- /.home-layout -->
 </template>
 
 <style scoped>
+.home-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.home-left {
+  position: sticky;
+  top: 16px;
+}
 .home-page {
-  max-width: 1080px;
+  max-width: none;
+  min-width: 0;
+}
+@media (max-width: 1100px) {
+  .home-layout {
+    grid-template-columns: 1fr;
+  }
+  .home-left {
+    position: static;
+  }
 }
 /* 页头：左标题右说明，双线压底 */
 .home-header {
@@ -432,6 +566,11 @@ async function submit(): Promise<void> {
 .home-title {
   font-size: 24px;
   margin: 0;
+}
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .home-lead {
   margin: 0 0 4px;
@@ -486,6 +625,12 @@ async function submit(): Promise<void> {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+.gate-quick-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
 }
 .submit-row {
   margin-top: 16px;

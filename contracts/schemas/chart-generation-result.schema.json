@@ -220,6 +220,7 @@
         },
         "resolution_reason": { "type": ["string", "null"], "minLength": 1, "maxLength": 1000 },
         "variant": { "$ref": "#/$defs/chartVariant" },
+        "display_size": { "enum": ["full", "half"] },
         "option": { "type": "object" },
         "panels": {
           "type": ["array", "null"],

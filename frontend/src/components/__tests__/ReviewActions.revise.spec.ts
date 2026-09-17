@@ -7,6 +7,9 @@ import type { StageName, StageResult } from '../../api/types'
 
 vi.mock('../../api/client', () => ({
   submitReview: vi.fn(),
+  isMockDataMode: () => false,
+  downloadArtifact: vi.fn(),
+  triggerBlobDownload: vi.fn(),
 }))
 
 const submitReviewMock = vi.mocked(submitReview)
@@ -136,5 +139,37 @@ describe('ReviewActions revise payload 契约（后端 ReviewEdits 白名单）'
     await clickSubmit(wrapper)
 
     expect(submitReviewMock).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * submitted 事件契约：第二阶段参数 { stage, action } 供 ReviewView 判断
+ * 「本次通过的是否为最后一个阶段」——只看返回的 run.status 在 mock 下会误判
+ * （mock returnStage 会把 workflowStatus 置为 waiting_review，与未批准同态）。
+ */
+describe('ReviewActions submitted 事件契约', () => {
+  it('通过阶段时 emit 的 meta 携带被审阶段与动作类型', async () => {
+    const wrapper = mountComponent('report_fusion')
+
+    const approve = wrapper.find('[data-testid="btn-approve"]')
+    expect(approve.exists()).toBe(true)
+    await approve.trigger('click')
+    await flushPromises()
+
+    const emitted = wrapper.emitted('submitted') as unknown[][] | undefined
+    expect(emitted).toBeTruthy()
+    expect(emitted![0]![1]).toEqual({ stage: 'report_fusion', action: 'approve' })
+  })
+
+  it('修订动作的 meta 里 action 为 revise（不应触发自动跳转）', async () => {
+    const wrapper = mountComponent('data_interpret')
+    await openReviseDialog(wrapper)
+
+    await wrapper.findAll('textarea')[0].setValue('请补充估值维度')
+    await clickSubmit(wrapper)
+
+    const emitted = wrapper.emitted('submitted') as unknown[][] | undefined
+    expect(emitted).toBeTruthy()
+    expect(emitted![0]![1]).toEqual({ stage: 'data_interpret', action: 'revise' })
   })
 })

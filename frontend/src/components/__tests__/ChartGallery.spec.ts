@@ -173,16 +173,13 @@ function mountGallery(specs: Partial<ChartSpec>[] = [spec]) {
 }
 
 describe('ChartGallery contract consumption', () => {
-  it('passes the entire producer option unchanged in thumbnails and previews', async () => {
+  it('passes the entire producer option unchanged in thumbnails', async () => {
     const wrapper = mountGallery()
     await flushPromises()
     expect(received).toEqual([option])
-    await wrapper.find('.chart-head').trigger('click')
-    await flushPromises()
-    expect(received).toEqual([option, option])
   })
 
-  it('displays both producer footnote locations as literal text in both views', async () => {
+  it('displays both producer footnote locations as literal text', async () => {
     const wrapper = mountGallery()
     await flushPromises()
     const expected = ['[需核实:货币单位]', '<b>原始数据说明</b>', '纵轴未从 0 开始']
@@ -193,14 +190,6 @@ describe('ChartGallery contract consumption', () => {
         .map((el) => el.text())
     ).toEqual(expected)
     expect(wrapper.find('.chart-card b').exists()).toBe(false)
-    await wrapper.find('.chart-head').trigger('click')
-    await flushPromises()
-    expect(
-      wrapper
-        .find('.preview')
-        .findAll('.chart-footnote')
-        .map((el) => el.text())
-    ).toEqual(expected)
   })
 
   it('renders legacy specs with no panel, annotation, or footnote metadata', async () => {

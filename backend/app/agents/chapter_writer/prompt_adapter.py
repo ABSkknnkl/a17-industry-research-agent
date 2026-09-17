@@ -121,7 +121,10 @@ def build_chapter_runtime_prompt(
             for chart in charts
             if chart.status == "ready"
             and chart.artifact_id is not None
-            and set(chart.evidence_ids).issubset(allowed_evidence_ids)
+            and (
+                set(chart.evidence_ids).issubset(allowed_evidence_ids)
+                or bool(set(chart.evidence_ids) & allowed_evidence_ids)
+            )
             and (
                 chart.recommended_chapter_id is None
                 or chart.recommended_chapter_id == chapter.chapter_id

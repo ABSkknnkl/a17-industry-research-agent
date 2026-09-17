@@ -15,7 +15,10 @@
     "source_revisions",
     "included_chart_ids",
     "artifacts",
-    "quality"
+    "quality",
+    "chapters",
+    "outline_version",
+    "visual_decision"
   ],
   "properties": {
     "report_id": { "type": "string", "pattern": "^REPORT-[A-Za-z0-9_-]+$" },
@@ -57,7 +60,15 @@
     "formal_eligible": { "type": "boolean" },
     "draft_eligible": { "type": "boolean" },
     "acknowledged_risks": { "type": "array", "items": { "type": "string" } },
-    "unresolved_risks": { "type": "array", "items": { "type": "string" } }
+    "unresolved_risks": { "type": "array", "items": { "type": "string" } },
+    "chapters": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": { "$ref": "#/$defs/fusionChapterOutline" }
+    },
+    "outline_version": { "type": "string", "minLength": 1 },
+    "visual_decision": { "$ref": "#/$defs/visualDecision" }
   },
   "$defs": {
     "reportFormat": {
@@ -100,7 +111,9 @@
         "section_count",
         "included_chart_count",
         "evidence_coverage",
-        "issues"
+        "issues",
+        "expected_chapter_count",
+        "expected_section_count"
       ],
       "properties": {
         "passed": { "type": "boolean" },
@@ -108,8 +121,96 @@
         "section_count": { "type": "integer", "minimum": 0 },
         "included_chart_count": { "type": "integer", "minimum": 0, "maximum": 30 },
         "evidence_coverage": { "type": "number", "minimum": 0, "maximum": 1 },
-        "issues": { "type": "array", "items": { "type": "string" } }
+        "issues": { "type": "array", "items": { "type": "string" } },
+        "expected_chapter_count": { "type": "integer", "minimum": 1 },
+        "expected_section_count": { "type": "integer", "minimum": 1 }
       }
+    },
+    "fusionSectionOutline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["section_id", "title"],
+      "properties": {
+        "section_id": { "type": "string", "pattern": "^SEC-\\d{2}-\\d{2}$" },
+        "title": { "type": "string", "minLength": 1 }
+      }
+    },
+    "fusionChapterOutline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["chapter_id", "title", "sections"],
+      "properties": {
+        "chapter_id": { "type": "string", "pattern": "^CH-\\d{2}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "sections": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/fusionSectionOutline" }
+        }
+      }
+    },
+    "chapterVisualStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dominant_content"],
+      "properties": {
+        "chart_count": { "type": "integer", "minimum": 0, "maximum": 30 },
+        "table_candidate_count": { "type": "integer", "minimum": 0, "maximum": 21 },
+        "dominant_content": {
+          "type": "string",
+          "enum": [
+            "narrative",
+            "time_series",
+            "comparison",
+            "financial_detail",
+            "industry_chain",
+            "risk",
+            "scenario",
+            "summary"
+          ]
+        }
+      }
+    },
+    "visualDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recommended_style", "effective_style", "selection_source"],
+      "properties": {
+        "recommended_style": { "$ref": "#/$defs/visualStyle" },
+        "requested_style": { "$ref": "#/$defs/requestedVisualStyle" },
+        "effective_style": { "$ref": "#/$defs/visualStyle" },
+        "selection_source": {
+          "type": "string",
+          "enum": ["user", "agent_recommendation", "default"]
+        },
+        "density": { "type": "string", "enum": ["compact", "balanced", "detailed"] },
+        "chart_density": { "type": "string", "enum": ["low", "medium", "high"] },
+        "table_priority": { "type": "string", "enum": ["low", "medium", "high"] },
+        "recommendation_reasons": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string" }
+        },
+        "override_warnings": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string" }
+        },
+        "per_chapter_strategy": {
+          "type": "object",
+          "maxProperties": 7,
+          "additionalProperties": { "$ref": "#/$defs/chapterVisualStrategy" }
+        }
+      }
+    },
+    "visualStyle": {
+      "type": "string",
+      "enum": ["data_manual", "analysis_note", "deep_research"]
+    },
+    "requestedVisualStyle": {
+      "type": "string",
+      "enum": ["auto", "data_manual", "analysis_note", "deep_research"]
     }
   }
 }

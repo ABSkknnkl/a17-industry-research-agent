@@ -1,0 +1,53 @@
+{
+  "version": "1.0",
+  "description": "终端用户可读的中文标签映射。前端展示时优先使用后端下发的 *_label 字段，本文件是这些字段的唯一来源。新增技能/维度时必须在此补一行，否则前端会退回显示英文标识。",
+  "updated_at": "2026-09-15",
+
+  "skills": {
+    "hithink_industry_query": "行业数据",
+    "hithink_finance_query": "财务数据",
+    "hithink_macro_query": "宏观数据",
+    "industry_chain_analysis": "产业链分析",
+    "report_search": "研报检索",
+    "news_search": "新闻检索",
+    "announcement_search": "公告检索",
+    "hithink_event_query": "事件数据",
+    "hithink_business_query": "主营构成",
+    "hithink_sector_selector": "板块选股",
+    "hithink_insresearch_query": "机构调研",
+    "hithink_index_query": "指数数据",
+    "hithink_futures_query": "期货数据",
+    "hithink_stock_selector": "个股选股",
+    "hithink_basicinfo_query": "公司基本信息",
+    "hithink_market_query": "行情数据",
+    "hithink_management_query": "股东与股本",
+    "web_search": "联网搜索"
+  },
+
+  "dimensions": {
+    "competition": "竞争格局",
+    "growth": "成长性",
+    "macro_policy": "宏观政策",
+    "industry_chain": "产业链",
+    "risk": "风险",
+    "industry": "行业概况",
+    "finance": "财务数据",
+    "research": "研报观点",
+    "company": "公司基本面"
+  },
+
+  "coverage_status": {
+    "supported": "数据齐全",
+    "complete": "数据齐全",
+    "partial": "数据不全",
+    "insufficient": "数据不足",
+    "missing": "缺少数据"
+  },
+
+  "evidence_categories": {
+    "company": "公司公告",
+    "industry": "行业资料",
+    "tech": "技术资料",
+    "opinion": "公开观点"
+  }
+}

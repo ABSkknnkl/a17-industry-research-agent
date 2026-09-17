@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { downloadArtifact, triggerBlobDownload } from '../api/client'
+import { artifactKindLabel } from '../api/labels'
 import type { ArtifactRef } from '../api/types'
 
 /**
@@ -10,12 +11,17 @@ import type { ArtifactRef } from '../api/types'
  * - 时间：由父组件传入 revision → 更新时间 映射（GET /revisions 已有输出，前端聚合）
  * - 大小：由父组件传入 artifact_id → size_bytes 映射（report_fusion manifest 已有输出，前端聚合）
  */
-const props = defineProps<{
-  runId: string
-  artifacts: ArtifactRef[]
-  sizeById?: Record<string, number>
-  timeByRevision?: Record<number, string>
-}>()
+const props = withDefaults(
+  defineProps<{
+    runId: string
+    artifacts: ArtifactRef[]
+    sizeById?: Record<string, number>
+    timeByRevision?: Record<number, string>
+    /** 门控未放行时禁止单项下载（下载页 waiting_review 未批准场景） */
+    disabled?: boolean
+  }>(),
+  { disabled: false }
+)
 
 const downloadingId = ref('')
 
@@ -35,17 +41,8 @@ function basename(uri: string): string {
   return uri.split(/[\\/]/).pop() || uri
 }
 
-function kindLabel(kind: string): string {
-  const map: Record<string, string> = {
-    report_markdown: '报告 Markdown',
-    report_html: '报告 HTML',
-    report_pdf: '报告 PDF',
-    artifact_manifest: '产物清单',
-    chart: '图表',
-    data: '数据',
-  }
-  return map[kind] ?? kind
-}
+// 产物类型中文映射已统一到 src/api/labels.ts（artifactKindLabel），
+// 下载页与本组件共用同一套文案，避免两处漂移。
 
 function formatSize(bytes: number | undefined): string {
   if (typeof bytes !== 'number' || bytes <= 0) return '—'
@@ -77,7 +74,7 @@ const sorted = computed(() => [...props.artifacts].sort((a, b) => b.revision - a
     </el-table-column>
     <el-table-column label="类型" width="140">
       <template #default="{ row }">
-        <el-tag size="small" effect="plain" type="info">{{ kindLabel(row.kind) }}</el-tag>
+        <el-tag size="small" effect="plain" type="info">{{ artifactKindLabel(row.kind) }}</el-tag>
       </template>
     </el-table-column>
     <el-table-column label="版本" width="70" align="center">
@@ -95,6 +92,7 @@ const sorted = computed(() => [...props.artifacts].sort((a, b) => b.revision - a
           size="small"
           type="primary"
           link
+          :disabled="disabled"
           :loading="downloadingId === row.artifact_id"
           @click="download(row)"
         >

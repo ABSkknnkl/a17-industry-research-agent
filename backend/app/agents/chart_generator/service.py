@@ -1,6 +1,7 @@
 """Public deterministic StageAgent implementation for audited chart generation."""
 
 import hashlib
+import math
 from datetime import UTC, datetime
 from typing import Any, Literal, cast
 
@@ -40,7 +41,11 @@ from app.agents.chart_generator.planner import (
 )
 from app.agents.chart_generator.audit import bind_run as audit_bind_run
 from app.agents.chart_generator.audit import record_chart_operation
-from app.agents.chart_generator.constants import UNIT_PLACEHOLDERS
+from app.agents.chart_generator.constants import (
+    DISPLAY_CATEGORY_MAX_LABELS,
+    DISPLAY_SIZE_FULL_MIN_POINTS,
+    UNIT_PLACEHOLDERS,
+)
 from app.agents.chart_generator.quality import (
     build_quality_report,
     data_health_check,
@@ -254,6 +259,54 @@ def _calculated_metric_datasets(
 
 def _chart_unit_or_none(unit: str | None) -> str | None:
     return None if unit in UNIT_PLACEHOLDERS else unit
+
+
+def uniform_category_axis_labels(option: dict[str, Any]) -> None:
+    """统一 category 轴的 X 轴标签采样，保证三处视图视觉一致。
+
+    卡片缩略图、预览弹窗（echarts 客户端）与离线报告 SVG 共用同一份
+    option；若不收敛标签数量，echarts 会按容器宽度自动抽样，导致三处
+    显示的 X 轴刻度不一致。此处对 category 轴显式写入 axisLabel.interval：
+    数据点 <= DISPLAY_CATEGORY_MAX_LABELS 全量显示，否则按固定步长采样。
+    """
+    raw_axes = option.get("xAxis", {})
+    axes = raw_axes if isinstance(raw_axes, list) else [raw_axes]
+    for axis in axes:
+        if not isinstance(axis, dict):
+            continue
+        if str(axis.get("type") or "category") != "category":
+            continue
+        data = axis.get("data")
+        if not isinstance(data, list) or not data:
+            continue
+        if len(data) <= DISPLAY_CATEGORY_MAX_LABELS:
+            axis.setdefault("axisLabel", {}).pop("interval", None)
+            continue
+        axis.setdefault("axisLabel", {})["interval"] = (
+            math.ceil(len(data) / DISPLAY_CATEGORY_MAX_LABELS) - 1
+        )
+
+
+def _display_size(
+    dataset: ChartDataset,
+    chart_type: ChartType,
+) -> Literal["full", "half"]:
+    """数据密度驱动的图表布局分类（前端图表区契约）。
+
+    - full：数据点密集（>= DISPLAY_SIZE_FULL_MIN_POINTS）的长图表独占一整行；
+    - half：其余数据量小的图表每行放置 2 个；
+    - 产业链等横向展开的图类型固定为 full。
+    """
+    if chart_type == "industry_chain":
+        return "full"
+    dense = max(
+        len(dataset.points),
+        len(dataset.xy_points),
+        len(dataset.matrix_cells),
+        len(dataset.distribution_samples),
+        len(dataset.hierarchy_nodes),
+    )
+    return "full" if dense >= DISPLAY_SIZE_FULL_MIN_POINTS else "half"
 
 
 def _allow_multiple_views(options: ChartGenerationOptions) -> bool:
@@ -860,6 +913,7 @@ class ChartGeneratorAgent:
                     dataset=dataset,
                     theme=theme,
                 )
+                uniform_category_axis_labels(option)
             except ValueError as exc:
                 suppressed.append(
                     SuppressedChart(
@@ -976,6 +1030,7 @@ class ChartGeneratorAgent:
                 requested_chart_type=requested_type,
                 resolution_reason=resolution_reason,
                 variant=variant,
+                display_size=_display_size(dataset, route.chart_type),
                 option=option,
                 panels=dataset.panels,
                 annotations=dataset.annotations,

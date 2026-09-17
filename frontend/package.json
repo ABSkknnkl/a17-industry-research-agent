@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:prototype": "vite --mode prototype",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "type-check": "vue-tsc --build --force",
@@ -16,6 +17,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run --passWithNoTests",
+    "test:prototype": "vitest run prototype",
+    "test:e2e": "playwright test",
     "verify": "npm run type-check && npm run lint && npm run format:check && npm run test"
   },
   "dependencies": {
@@ -30,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^26.1.1",
     "@vitejs/plugin-vue": "^5.2.0",
     "@vue/test-utils": "^2.4.0",

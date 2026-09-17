@@ -18,6 +18,8 @@ from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
 from app.schemas.chart import ChartGenerationResult
 from app.schemas.report import (
+    FusionChapterOutline,
+    FusionSectionOutline,
     ReportArtifactKind,
     ReportArtifactManifestEntry,
     ReportFormat,
@@ -398,6 +400,20 @@ class ReportFusionAgent:
             acknowledged_risks=accepted_risk_codes,
             unresolved_risks=advisory_issues,
             visual_decision=report.visual_decision,
+            # 轻量章节结构：顺序沿用 report.chapters（与 HTML 模板同序），
+            # 前端目录据此按后端命名原样渲染，锚点 chapter-${idx+1} 不会串位。
+            chapters=[
+                FusionChapterOutline(
+                    chapter_id=chapter.chapter_id,
+                    title=chapter.title,
+                    sections=[
+                        FusionSectionOutline(section_id=section.section_id, title=section.title)
+                        for section in chapter.sections
+                    ],
+                )
+                for chapter in report.chapters
+            ],
+            outline_version=chapters.outline_version,
         )
         stage_artifacts = [
             ArtifactRef(

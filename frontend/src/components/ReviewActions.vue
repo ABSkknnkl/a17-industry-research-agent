@@ -2,10 +2,9 @@
 import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ApiError } from '../api/http'
-import { submitReview } from '../api/client'
+import { isMockDataMode, submitReview } from '../api/client'
 import {
   STAGE_ORDER,
-  type ChartCandidate,
   type DecisionPackage,
   type ReviewAction,
   type ReviewRequest,
@@ -14,18 +13,25 @@ import {
   type WorkflowState,
 } from '../api/types'
 import { showPipelineOverlay, hidePipelineOverlay } from '../composables/usePipelineOverlay'
+import { usePrototypeStore } from '../mock/prototypeRun'
+import LimitedIntentDialog from './review/LimitedIntentDialog.vue'
 
 const props = defineProps<{
   runId: string
   stage: StageName
   result: StageResult
   revision: number
+  selectedObjectId?: string | null
 }>()
 
 const emit = defineEmits<{
-  (e: 'submitted', state: WorkflowState): void
+  /** meta 用于判断「是否本次通过的就是最后一个阶段」——只看 state.status 在 mock 下会误判 */
+  (e: 'submitted', state: WorkflowState, meta: { stage: StageName; action: string }): void
   (e: 'conflict'): void
 }>()
+
+const mockMode = isMockDataMode()
+const prototypeStore = mockMode ? usePrototypeStore() : null
 
 const submitting = ref(false)
 const reviseDialogVisible = ref(false)
@@ -38,9 +44,14 @@ const decisionPackage = computed<DecisionPackage | null>(() => {
   return raw && typeof raw === 'object' ? (raw as DecisionPackage) : null
 })
 
-const ackRequiredCodes = computed<string[]>(
-  () => decisionPackage.value?.acknowledgement_required_codes ?? []
-)
+const ackRequiredCodes = computed<string[]>(() => {
+  if (mockMode && prototypeStore) {
+    return prototypeStore.state.risks
+      .filter((r) => r.stage === props.stage && r.requires_ack && !r.acknowledged)
+      .map((r) => r.risk_code)
+  }
+  return decisionPackage.value?.acknowledgement_required_codes ?? []
+})
 
 const hasError = computed(() => Boolean(props.result.error))
 
@@ -59,6 +70,14 @@ const recoveryBlocked = computed(() => runtimeAlert.value?.recoverable === false
  * 中的 `<string,` 误判为标签，进而隐式闭合 `<li>` 导致 `format:check` 报语法错误。
  */
 function riskText(risk: unknown): string {
+  if (typeof risk === 'string') {
+    // Mock 阶段：用 prototype store 的风险描述；真实模式回退 code 本身
+    if (mockMode && prototypeStore) {
+      const item = prototypeStore.state.risks.find((r) => r.risk_code === risk)
+      if (item) return `${item.title}：${item.description}`
+    }
+    return risk
+  }
   const r = risk as Record<string, unknown>
   return String(r.title || r.description || r.message || JSON.stringify(risk).slice(0, 150))
 }
@@ -89,15 +108,8 @@ const errorGuide = computed(() => {
   )
 })
 
-/** 图表候选（customize 需要） */
-const charts = computed<ChartCandidate[]>(() => {
-  const raw = (props.result.data as Record<string, unknown>).charts
-  return Array.isArray(raw) ? (raw as ChartCandidate[]) : []
-})
-
-const selectedChartIds = ref<string[]>([])
 const releaseMode = ref<'formal' | 'draft_with_warnings'>('formal')
-const acceptedCodes = ref<string[]>([])
+const riskDialogVisible = ref(false)
 
 type ReviewPayload = Omit<ReviewRequest, 'run_id' | 'stage' | 'expected_revision'>
 
@@ -122,7 +134,7 @@ function executingStageFor(action: ReviewAction): StageName {
 async function run(payload: ReviewPayload): Promise<void> {
   submitting.value = true
   const actionLabel = ACTION_LABELS[payload.action]
-  if (actionLabel && payload.action !== 'cancel') {
+  if (actionLabel && payload.action !== 'cancel' && !mockMode) {
     showPipelineOverlay(executingStageFor(payload.action), actionLabel)
   }
   try {
@@ -133,7 +145,7 @@ async function run(payload: ReviewPayload): Promise<void> {
       ...payload,
     })
     ElMessage.success('操作已提交')
-    emit('submitted', state)
+    emit('submitted', state, { stage: props.stage, action: payload.action })
   } catch (e) {
     if (e instanceof ApiError && e.status === 409) {
       // 透出后端冲突详情（Revision conflict / Stage conflict），帮助用户
@@ -146,6 +158,8 @@ async function run(payload: ReviewPayload): Promise<void> {
       emit('conflict')
     } else if (e instanceof ApiError) {
       ElMessage.error(`${e.message}${e.code ? `（${e.code}）` : ''}`)
+    } else if (e instanceof Error) {
+      ElMessage.error(e.message)
     } else {
       ElMessage.error('提交失败，请稍后重试')
     }
@@ -171,49 +185,19 @@ async function approve(): Promise<void> {
   await run({ action: 'approve', ...buildDecisionFields() })
 }
 
+/** 有风险时：打开风险提示，用户点同意后进入下一阶段 */
 async function acceptWithRisks(): Promise<void> {
+  if (mockMode && prototypeStore) {
+    for (const code of ackRequiredCodes.value) {
+      prototypeStore.acknowledgeRisk(code)
+    }
+  }
+  riskDialogVisible.value = false
   await run({
     action: 'accept_with_risks',
     accepted_risk_codes: [...ackRequiredCodes.value],
     ...buildDecisionFields(),
   })
-}
-
-async function customize(): Promise<void> {
-  if (selectedChartIds.value.length === 0) {
-    ElMessage.warning('请至少选择一张图表')
-    return
-  }
-  await run({
-    action: 'customize',
-    selected_chart_ids: [...selectedChartIds.value],
-    ...buildDecisionFields(),
-  })
-}
-
-async function submitRevise(): Promise<void> {
-  const questions = reviseQuestions.value
-    .split('\n')
-    .map((q) => q.trim())
-    .filter(Boolean)
-  const comment = reviseComment.value.trim()
-  if (!comment && questions.length === 0) {
-    ElMessage.warning('请填写修改备注或修订后的研究问题')
-    return
-  }
-  const edited: Record<string, unknown> = {}
-  // data_fetch 与 data_interpret 的修订契约均允许 focus_questions
-  // （2026-09-01 修复：此前 data_fetch 静默丢弃用户修订的研究问题，
-  // advisory 升级门下用户“删除某段问题”的诉求无法送达后端）
-  if ((props.stage === 'data_fetch' || props.stage === 'data_interpret') && questions.length > 0) {
-    edited['focus_questions'] = questions
-  }
-  await run({
-    action: 'revise',
-    comment: comment || null,
-    edited_data: Object.keys(edited).length > 0 ? edited : null,
-  })
-  reviseDialogVisible.value = false
 }
 
 async function regenerate(): Promise<void> {
@@ -250,10 +234,47 @@ function openReviseDialog(): void {
   reviseQuestions.value = ''
   reviseDialogVisible.value = true
 }
+
+const objectLabel = computed(() => props.selectedObjectId || props.stage)
+const objectVersion = computed(() => `r${props.revision}`)
+const stageLabel = computed(() => props.stage)
+
+/**
+ * 阶段五（报告融合）用报告语义的按钮文案，其余阶段沿用通用文案。
+ * 只改展示文案，不动 action 语义——「修改融合内容」提交的仍是 revise。
+ */
+const isFusionStage = computed(() => props.stage === 'report_fusion')
+const approveLabel = computed(() => (isFusionStage.value ? '通过并完成研究' : '通过并继续'))
+const reviseLabel = computed(() => (isFusionStage.value ? '修改融合内容' : '修改条件重跑'))
+const regenerateLabel = computed(() => (isFusionStage.value ? '重新融合' : '原条件重新生成'))
+
+async function onIntentConfirm(payload: { comment: string; questions: string[] }): Promise<void> {
+  const comment = payload.comment.trim()
+  if (!comment && payload.questions.length === 0) {
+    ElMessage.warning('请填写修改备注或修订后的研究问题')
+    return
+  }
+  const edited: Record<string, unknown> = {}
+  if (
+    (props.stage === 'data_fetch' || props.stage === 'data_interpret') &&
+    payload.questions.length > 0
+  ) {
+    edited['focus_questions'] = payload.questions
+  }
+  await run({
+    action: 'revise',
+    comment: comment || null,
+    edited_data: Object.keys(edited).length > 0 ? edited : null,
+  })
+  reviseDialogVisible.value = false
+}
+
+// 兼容旧测试：保留内部表单结构标识
+const showLegacyReviseForm = !mockMode
 </script>
 
 <template>
-  <div class="review-actions">
+  <div class="review-actions" data-testid="review-actions">
     <el-alert
       v-if="hasError"
       type="error"
@@ -264,41 +285,11 @@ function openReviseDialog(): void {
       style="margin-bottom: 16px"
     />
 
-    <!-- 决策包风险提示 -->
-    <template v-if="decisionPackage && (decisionPackage.risk_notices ?? []).length > 0">
-      <el-alert type="warning" show-icon :closable="false" style="margin-bottom: 16px">
-        <template #title>该阶段附带风险提示，请确认后选择处理方式</template>
-        <ul class="risk-list">
-          <li v-for="(risk, idx) in decisionPackage.risk_notices" :key="idx">
-            {{ riskText(risk) }}
-          </li>
-        </ul>
-      </el-alert>
-    </template>
-
-    <!-- customize：图表选择 -->
-    <template v-if="!hasError && stage === 'chart_generate' && charts.length > 0">
-      <h4 class="action-title">图表选择（可选，用于自定义保留哪些图表）</h4>
-      <el-checkbox-group v-model="selectedChartIds">
-        <div v-for="chart in charts" :key="chart.chart_id" class="chart-row">
-          <el-checkbox :value="chart.chart_id">
-            {{ chart.title || chart.chart_id }}（{{ chart.chart_type }}）
-          </el-checkbox>
-        </div>
-      </el-checkbox-group>
-      <div style="margin-top: 8px">
-        <el-button size="small" :disabled="submitting" @click="customize">
-          使用选中的图表继续
-        </el-button>
-      </div>
-    </template>
-
-    <!-- report_fusion：发布模式 -->
+    <!-- report_fusion：发布模式（仅正式报告） -->
     <template v-if="!hasError && stage === 'report_fusion'">
       <h4 class="action-title">发布模式</h4>
       <el-radio-group v-model="releaseMode">
         <el-radio value="formal">正式报告</el-radio>
-        <el-radio value="draft_with_warnings">草稿（附风险警告）</el-radio>
       </el-radio-group>
     </template>
 
@@ -315,52 +306,99 @@ function openReviseDialog(): void {
 
     <!-- 操作按钮区 -->
     <div class="action-bar">
-      <!-- 有决策包（用户裁决门）时即使携带 error 也展示「确认风险并继续」；
-           纯 error（无决策包）仍只有修订/重生成/取消三条路。 -->
-      <template v-if="decisionPackage || !hasError">
+      <template v-if="decisionPackage || !hasError || mockMode">
+        <!-- 无风险：直接通过 -->
         <el-button
           v-if="ackRequiredCodes.length === 0 && !hasError"
           type="primary"
           :loading="submitting"
+          data-testid="btn-approve"
           @click="approve"
         >
-          通过并继续
+          {{ approveLabel }}
         </el-button>
-        <template v-if="ackRequiredCodes.length > 0">
-          <el-alert
-            type="warning"
-            show-icon
-            :closable="false"
-            title="以下风险需要逐项确认后方可通过"
-            style="margin-bottom: 8px"
-          />
-          <el-checkbox-group v-model="acceptedCodes" class="ack-list">
-            <el-checkbox v-for="code in ackRequiredCodes" :key="code" :value="code">
-              {{ code }}
-            </el-checkbox>
-          </el-checkbox-group>
-          <el-button
-            type="primary"
-            :disabled="acceptedCodes.length < ackRequiredCodes.length"
-            :loading="submitting"
-            @click="acceptWithRisks"
-          >
-            {{ hasError ? '确认风险并继续生成' : '确认全部风险并通过' }}
-          </el-button>
-        </template>
+        <!-- 有风险：底部风险提示，用户同意后继续 -->
+        <el-button
+          v-else-if="ackRequiredCodes.length > 0"
+          type="primary"
+          :loading="submitting"
+          data-testid="btn-risk-notice"
+          @click="riskDialogVisible = true"
+        >
+          风险提示（{{ ackRequiredCodes.length }}）
+        </el-button>
       </template>
 
-      <el-button :disabled="submitting || recoveryBlocked" @click="openReviseDialog">
-        修改条件重跑
+      <el-button
+        :disabled="submitting || recoveryBlocked"
+        data-testid="btn-revise"
+        @click="openReviseDialog"
+      >
+        {{ reviseLabel }}
       </el-button>
-      <el-button :disabled="submitting || recoveryBlocked" @click="regenerate">
-        原条件重新生成
+      <el-button
+        :disabled="submitting || recoveryBlocked"
+        data-testid="btn-regenerate"
+        @click="regenerate"
+      >
+        {{ regenerateLabel }}
       </el-button>
-      <el-button type="danger" plain :disabled="submitting" @click="cancelRun">取消任务</el-button>
+      <el-button
+        type="danger"
+        plain
+        :disabled="submitting"
+        data-testid="btn-cancel"
+        @click="cancelRun"
+      >
+        取消任务
+      </el-button>
     </div>
 
-    <!-- 修订对话框 -->
-    <el-dialog v-model="reviseDialogVisible" title="修改条件后重跑" width="560px">
+    <!-- 风险提示确认窗 -->
+    <el-dialog v-model="riskDialogVisible" title="风险提示" width="480px" data-testid="risk-dialog">
+      <el-alert type="warning" show-icon :closable="false" style="margin-bottom: 12px">
+        <template #title
+          >本阶段检测到 {{ ackRequiredCodes.length }} 项风险，同意后进入下一阶段</template
+        >
+      </el-alert>
+      <ul class="risk-list">
+        <li v-for="code in ackRequiredCodes" :key="code" data-testid="risk-item">
+          <el-tag size="small" type="warning" effect="plain">{{ code }}</el-tag>
+          <span class="risk-desc">{{ riskText(code) }}</span>
+        </li>
+      </ul>
+      <template #footer>
+        <el-button data-testid="risk-cancel" @click="riskDialogVisible = false">取消</el-button>
+        <el-button
+          type="primary"
+          :loading="submitting"
+          data-testid="risk-agree"
+          @click="acceptWithRisks"
+        >
+          同意并继续
+        </el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 受限修改对话框（Mock） / 旧修订对话框（真实模式保留） -->
+    <LimitedIntentDialog
+      v-if="mockMode"
+      v-model="reviseDialogVisible"
+      mode="revise"
+      :stage-label="stageLabel"
+      :object-label="objectLabel"
+      :object-version="objectVersion"
+      :allow-questions="stage === 'data_fetch' || stage === 'data_interpret'"
+      @confirm="onIntentConfirm"
+    />
+
+    <!-- 修订对话框（真实模式） -->
+    <el-dialog
+      v-if="showLegacyReviseForm"
+      v-model="reviseDialogVisible"
+      title="修改条件后重跑"
+      width="560px"
+    >
       <el-form label-position="top">
         <el-form-item label="修改备注（反馈给智能体）">
           <el-input
@@ -388,7 +426,19 @@ function openReviseDialog(): void {
       </el-form>
       <template #footer>
         <el-button @click="reviseDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitRevise">
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="
+            onIntentConfirm({
+              comment: reviseComment,
+              questions: reviseQuestions
+                .split('\n')
+                .map((q) => q.trim())
+                .filter(Boolean),
+            })
+          "
+        >
           提交修订并重跑
         </el-button>
       </template>
@@ -402,14 +452,6 @@ function openReviseDialog(): void {
   font-size: 14px;
   font-weight: 600;
 }
-.chart-row {
-  line-height: 1.8;
-}
-.ack-list {
-  margin-bottom: 12px;
-  display: flex;
-  flex-direction: column;
-}
 .action-bar {
   margin-top: 16px;
   display: flex;
@@ -417,7 +459,19 @@ function openReviseDialog(): void {
   gap: 8px;
 }
 .risk-list {
-  margin: 4px 0 0;
-  padding-left: 18px;
+  margin: 0;
+  padding-left: 4px;
+  list-style: none;
+}
+.risk-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.risk-desc {
+  color: var(--el-text-color-regular);
 }
 </style>

@@ -293,6 +293,9 @@ class ChartSpec(BaseModel):
     requested_chart_type: ChartType | None = None
     resolution_reason: str | None = Field(default=None, min_length=1, max_length=1_000)
     variant: ChartVariant
+    # 数据密度驱动的布局分类（前端图表区契约）：
+    # full = 数据点密集的长图表独占一整行；half = 数据量小，每行放置 2 个。
+    display_size: Literal["full", "half"] = "full"
     option: dict[str, Any]
     panels: list[ChartPanel] | None = None
     annotations: list[ChartAnnotation] | None = None

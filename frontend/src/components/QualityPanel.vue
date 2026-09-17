@@ -1,16 +1,23 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  STAGE_LABELS,
-  type DeliveryStatus,
-  type ReportFusionData,
-  type StageName,
-} from '../api/types'
+import { STAGE_LABELS, type ReportFusionData, type StageName } from '../api/types'
 
 /** 融合检查项与交付质量评分，全部基于 report_fusion 阶段已有的 quality 字段聚合。 */
 const props = defineProps<{ fusion: ReportFusionData }>()
 
 const quality = computed(() => props.fusion.quality ?? {})
+
+/**
+ * 评分基准（分母）由后端下发，前端**不写死** 7 / 21 —— 后端调整大纲时前端自动跟随。
+ * 兜底值仅用于历史 run（其 quality 缺基准字段），保证不回归。
+ */
+const BASELINE_FALLBACK = { chapters: 7, sections: 21 }
+const expectedChapters = computed(
+  () => quality.value.expected_chapter_count ?? BASELINE_FALLBACK.chapters
+)
+const expectedSections = computed(
+  () => quality.value.expected_section_count ?? BASELINE_FALLBACK.sections
+)
 
 /** 结构/覆盖率子项评分（0-100），全部来自后端原始数值的前端聚合 */
 const subScores = computed(() => {
@@ -18,13 +25,21 @@ const subScores = computed(() => {
   const sectionCount = quality.value.section_count
   const coverage = quality.value.evidence_coverage
   const chapterScore =
-    typeof chapterCount === 'number' ? Math.min(100, Math.round((chapterCount / 7) * 100)) : null
+    typeof chapterCount === 'number'
+      ? Math.min(100, Math.round((chapterCount / expectedChapters.value) * 100))
+      : null
   const structureScore =
-    typeof sectionCount === 'number' ? Math.min(100, Math.round((sectionCount / 21) * 100)) : null
+    typeof sectionCount === 'number'
+      ? Math.min(100, Math.round((sectionCount / expectedSections.value) * 100))
+      : null
   const coverageScore = typeof coverage === 'number' ? Math.round(coverage * 100) : null
   return [
-    { label: '章节完整度', value: chapterScore, hint: '章节数 / 标准 7 章' },
-    { label: '结构完整度', value: structureScore, hint: '小节数 / 标准 21 节' },
+    { label: '章节完整度', value: chapterScore, hint: `章节数 / 标准 ${expectedChapters.value} 章` },
+    {
+      label: '结构完整度',
+      value: structureScore,
+      hint: `小节数 / 标准 ${expectedSections.value} 节`,
+    },
     { label: '证据覆盖率', value: coverageScore, hint: '正文证据引用覆盖' },
   ]
 })
@@ -56,20 +71,6 @@ const checkItems = computed(() => {
     items.push({ text: issue, level: 'warning' })
   }
   return items
-})
-
-const deliveryMeta = computed(() => {
-  const status: DeliveryStatus | undefined = props.fusion.delivery_status
-  switch (status) {
-    case 'ready':
-      return { label: '可正式交付', type: 'success' as const }
-    case 'ready_with_limits':
-      return { label: '可交付（附限制说明）', type: 'warning' as const }
-    case 'blocked':
-      return { label: '交付受阻', type: 'danger' as const }
-    default:
-      return null
-  }
 })
 
 const sourceRevisions = computed(() =>
@@ -122,9 +123,6 @@ const sourceRevisions = computed(() =>
 
     <div class="quality-right">
       <div class="quality-meta">
-        <el-tag v-if="deliveryMeta" :type="deliveryMeta.type" effect="light">{{
-          deliveryMeta.label
-        }}</el-tag>
         <el-tag v-if="fusion.release_mode === 'draft_with_warnings'" type="warning" effect="plain"
           >草稿模式</el-tag
         >
