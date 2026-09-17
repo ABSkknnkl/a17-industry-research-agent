@@ -87,3 +87,7 @@ data/checkpoints.sqlite-*
 session-log.md
 SESSION_LOG.md
 *-session-log.md
+
+# 会话日志目录（AGENTS.md §2.2 禁提交 session-log 路径）
+# 2026-09-17 取消跟踪；文件仍保留在本地工作区，不再进版本库
+production/session-logs/
