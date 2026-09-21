@@ -1,0 +1,768 @@
+{#
+  行业研究报告样式基座（Deep Research 机构版）
+
+  设计来源：外部参考件「宇树科技行业研究报告」(41 页 A4, Chromium 打印) 反解得到。
+  令牌全部为实测值（PDF 矢量指令 + 文本 span 双路提取），不是目测：
+
+    色板（Tailwind / Untitled UI 体系）
+      #101828 主墨   #344054 次墨   #667085 说明   #98A2B3 页眉/图注
+      #EAECF0 分隔线 #F9FAFB 浅底   #FFFFFF 纸面
+      #155EEF 强调蓝 #175CD3 蓝深   #0F766E 章节刊头青
+      #FFFDF0 研判框底（+3pt 蓝左边条）
+      #FEFBE8 待验证框底 / #FEF08A 边框 / #713F12 文字
+      #DCFCE7 置信度高底 / #027A48 文字
+      #B42318 #D92D20 风险红
+    字号（参考件以 px 设计、打印 ×0.75 → pt；此处按 px 还原）
+      封面主标题 34 / 封面 deck 16 / 页大标题 24 / 大节 22 / 章节 h2 17 /
+      小节 h3 16 / 正文 14 / 次级 12.5 / 来源 12 / KPI 数值 20 /
+      页眉 11.3 / 图注 7–7.6
+    正文字体：PingFang SC（PDF 字体对象残留名证实为苹方）
+#}
+
+:root {
+  --ink: #101828;
+  --ink-2: #344054;
+  --muted: #667085;
+  --faint: #98a2b3;
+  --line: #eaecf0;
+  --line-2: #d0d5dd;
+  --surface: #f9fafb;
+  --paper: #ffffff;
+  --accent: #155eef;
+  --accent-2: #175cd3;
+  --accent-soft: #eff4ff;
+  --teal: #0f766e;
+  --ok-bg: #dcfce7;
+  --ok-fg: #027a48;
+  --warn-bg: #fefbe8;
+  --warn-line: #fef08a;
+  --warn-fg: #713f12;
+  --warn-fg-2: #854d0e;
+  --danger: #b42318;
+  --danger-2: #d92d20;
+  --cream: #fffdf0;
+  --font: "PingFang SC", "PingFang HK", "Hiragino Sans GB", "Noto Sans SC",
+    "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
+  --serif-num: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@page {
+  size: A4;
+  /* 纸张尺寸在此声明；四边留白由 Python 侧（reporting/pdf.py）统一提供，
+     模板不重复定义，避免两处口径漂移。
+     页眉用 position:fixed + top:0 落在 pdf.py 预留的上边距里。 */
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.62;
+  font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 屏幕预览：一张 A4 纸；打印时由 @page 接管边距，纸张阴影去掉 */
+.sheet {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 24px auto;
+  padding: 39.8pt 40.5pt 48pt;
+  background: var(--paper);
+  box-shadow: 0 1px 3px rgb(16 24 40 / 0.08), 0 8px 24px rgb(16 24 40 / 0.06);
+}
+
+@media print {
+  html,
+  body {
+    background: var(--paper);
+  }
+  .sheet {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+}
+
+/* ===== 页眉 / 页码（Chromium 下固定元素逐页重复）===== */
+.page-head {
+  display: flex;
+  justify-content: flex-end;
+  color: var(--faint);
+  font-size: 11.3px;
+  letter-spacing: 0.02em;
+}
+.page-foot {
+  margin-top: 18px;
+  color: var(--faint);
+  font-size: 11.3px;
+  text-align: center;
+}
+@media print {
+  .page-head {
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    padding: 0;
+  }
+  .page-foot {
+    display: none;
+  }
+  /* 参考件封面独占一页（第 1 页只有封面） */
+  .cover {
+    break-after: page;
+  }
+}
+
+/* ===== 封面 ===== */
+.cover {
+  margin-top: 26px;
+}
+.cover-kicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.chip {
+  display: inline-block;
+  padding: 3px 8px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.cover-subtitle {
+  margin-top: 26px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.cover-title {
+  margin: 8px 0 0;
+  color: var(--ink);
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.cover-deck {
+  margin: 18px 0 0;
+  color: var(--ink-2);
+  font-size: 16px;
+  line-height: 1.62;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+.cover-meta {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 26px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.cover-meta > div {
+  padding: 14px 16px 16px 0;
+  border-left: 1px solid var(--line);
+}
+.cover-meta > div:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+.cover-meta dt {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.cover-meta dd {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+.cover-meta dd.is-accent {
+  color: var(--accent);
+}
+.cover-refs {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.cover-rule {
+  margin-top: 30px;
+  height: 3px;
+  background: var(--accent);
+}
+
+/* ===== 章节刊头 ===== */
+.section-mast {
+  margin-top: 30px;
+}
+.kicker {
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.section-title {
+  margin: 8px 0 0;
+  padding-bottom: 10px;
+  /* 参考件：章节大标题下压一条粗深色横线 */
+  border-bottom: 2.5px solid var(--ink);
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+/* ===== 核心研判框 ===== */
+.callout {
+  margin: 18px 0 0;
+  padding: 16px 18px;
+  background: var(--cream);
+  border-left: 3px solid var(--accent);
+}
+.callout-label {
+  color: var(--ink);
+  font-weight: 700;
+}
+.callout p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.62;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
+/* ===== KPI 卡行 ===== */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 20px;
+}
+.kpi {
+  padding: 12px 14px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.kpi-label {
+  color: var(--accent-2);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+.kpi-value {
+  margin-top: 8px;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.kpi-unit {
+  margin-left: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+.kpi-note {
+  margin-top: 8px;
+  color: var(--faint);
+  font-size: 11px;
+}
+
+/* ===== 章节内标题 ===== */
+.rule-head {
+  margin: 30px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.4;
+  /* 标题不允许被孤立在页尾 */
+  break-after: avoid;
+}
+.sub-head {
+  margin: 22px 0 10px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.lead {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+p {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.62;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
+/* ===== 要点列表（蓝方点 + 引用 + 置信度）===== */
+.points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.point {
+  position: relative;
+  margin: 0 0 10px;
+  padding-left: 18px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.62;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+.point::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+}
+.cite {
+  color: var(--accent-2);
+  /* 参考件：引用为等宽小字，成组出现 */
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11.5px;
+  letter-spacing: -0.02em;
+  word-break: break-all;
+  text-decoration: none;
+}
+.cite:hover {
+  text-decoration: underline;
+}
+.conf {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.conf.tone-positive {
+  background: var(--ok-bg);
+  color: var(--ok-fg);
+}
+.conf.tone-warning {
+  background: var(--warn-bg);
+  color: var(--warn-fg-2);
+}
+.conf.tone-negative {
+  background: #fee4e2;
+  color: var(--danger);
+}
+
+/* ===== 数据表 ===== */
+.table-block {
+  margin: 20px 0 0;
+}
+.table-block > caption,
+.table-caption {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+}
+.data-table {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table caption {
+  caption-side: top;
+  margin-bottom: 8px;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+}
+.data-table thead th {
+  padding: 8px 12px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+/* 长表允许跨页：表头逐页重复，但单个数据行不拆开 */
+.data-table thead {
+  display: table-header-group;
+}
+.data-table tr {
+  break-inside: avoid;
+}
+.data-table tbody td {
+  padding: 9px 12px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  vertical-align: top;
+}
+.data-table tbody tr:first-child td {
+  border-top: 1px solid var(--line);
+}
+.data-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.data-table .strong {
+  font-weight: 600;
+}
+.data-table .danger {
+  color: var(--danger);
+}
+.data-table:not(.source-table) tbody td:first-child {
+  white-space: nowrap;
+}
+
+/* ===== 待验证 / 资料边界框 ===== */
+.warn-box {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-line);
+}
+.warn-box-title {
+  margin: 0 0 6px;
+  color: var(--warn-fg);
+  font-size: 14px;
+  font-weight: 700;
+}
+.warn-box ul {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--warn-fg);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.warn-box li {
+  margin: 2px 0;
+}
+
+/* ===== 图框 ===== */
+.figure-box {
+  margin: 22px 0 0;
+  padding: 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.figure-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+}
+.figure-unit {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: right;
+}
+.figure-body {
+  margin-top: 6px;
+}
+.figure-body svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.figure-source {
+  margin-top: 8px;
+  color: var(--faint);
+  font-size: 9.5px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+.figure-caption {
+  margin-top: 10px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+.figure-note {
+  margin: 6px 0 0;
+  color: var(--faint);
+  font-size: 11.5px;
+  line-height: 1.6;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
+/* ===== 来源索引 ===== */
+.source-table {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.source-table thead th {
+  padding: 8px 10px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+}
+.source-table tbody td {
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+  vertical-align: top;
+}
+.source-table .src-id {
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* ===== 附录 / 收尾 ===== */
+.appendix-head {
+  margin: 30px 0 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 700;
+}
+.disclaimer {
+  margin-top: 26px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.disclaimer p {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: left;
+}
+.page-break {
+  break-before: page;
+}
+.avoid-break {
+  break-inside: avoid;
+}
+
+/* ===== 目录（导航结构：章 / 节两级 + 点线引导 + 页码列）=====
+   机制沿外部参考件的实测结论，配色与字号用本项目令牌：
+   - 条目行 flex + baseline 对齐，点线由中间 `flex:1` 的 span 生成；
+   - `.leader` 不得带纵向 margin（否则行高被外边距顶住，line-height 失效），
+     用 transform 上提贴合基线；
+   - `.pg` 预留固定宽度，保证页码回填前后行高完全一致。 */
+.toc-page {
+  break-after: page;
+}
+.toc-title {
+  margin: 0 0 10px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--accent);
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: 700;
+}
+.toc-subtitle {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.toc-head {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+.toc-head .leader {
+  flex: 1;
+}
+.toc {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15.5px;
+  /* 7 章(11 条) + 21 节 + 尾部条目必须压在目录页版心内。
+     实测：1.36 会溢出约 120px（尾部两条被推到次页），收到 1.28 并收紧条目外边距后
+     留约 60px 余量；条目数是定值（大纲固定 7 章 21 节），不会再长。 */
+  line-height: 1.28;
+}
+.toc li {
+  display: flex;
+  align-items: baseline;
+}
+.toc .t {
+  min-width: 0;
+}
+.toc a {
+  color: inherit;
+  text-decoration: none;
+}
+.toc a:hover .t {
+  text-decoration: underline;
+}
+.toc .leader {
+  flex: 1;
+  min-width: 8mm;
+  margin: 0 10px;
+  border-bottom: 1px dotted var(--faint);
+  transform: translateY(-3px);
+}
+.toc .pg {
+  min-width: 9mm;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.toc-chapter {
+  margin: 3px 0 0;
+  padding-top: 3px;
+  border-top: 1px solid var(--line);
+  font-weight: 700;
+}
+.toc-chapter:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.toc-chapter .n {
+  color: var(--accent);
+  font-weight: 700;
+}
+.toc-section {
+  margin: 2px 0;
+  font-size: 13.3px;
+}
+.toc-section .t {
+  color: var(--muted);
+}
+.toc-back {
+  margin-top: 10px;
+}
+.toc-footnote {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+/* ===== 章节摘要面板（参考件：1px 边框 + 青色左条）===== */
+.panel {
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--teal);
+}
+.panel p {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.62;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}
+
+/* 小节灰色副标题（取自 section.purpose） */
+.purpose {
+  margin: 2px 0 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* ===== 要点卡（参考件：每条要点独立边框卡，蓝方点在卡内）===== */
+.point-cards {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.point-card {
+  position: relative;
+  margin: 0 0 8px;
+  padding: 10px 14px 10px 26px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  color: var(--ink);
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.point-card::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 15px;
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+}
+
+/* ===== 风险 callout（参考件：浅红底 + 红字标题，用于 kind="risk" 段落）===== */
+.callout--risk {
+  margin: 16px 0 0;
+  padding: 12px 16px;
+  background: #fef3f2;
+  border: 1px solid #fecdca;
+  border-left: 3px solid var(--danger-2);
+}
+.callout--risk .callout-label {
+  color: var(--danger);
+}
+.callout--risk p {
+  margin: 0;
+  color: #912018;
+  font-size: 13.5px;
+  line-height: 1.6;
+  text-align: justify;
+  text-justify: inter-ideograph;
+}

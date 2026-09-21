@@ -1,0 +1,151 @@
+{
+  "schema_version": "1.0",
+  "skill_name": "report-html-composer",
+  "thresholds": {
+    "side_by_side_max_text_chars": 760,
+    "side_by_side_max_charts": 1,
+    "desktop_two_column_min_viewport_px": 1256,
+    "minimum_text_column_px": 400,
+    "reader_max_content_px": 1080,
+    "reader_narrow_max_content_px": 920,
+    "max_same_layout_run": 2
+  },
+  "run_exempt_layouts": ["coverage_summary", "table_analysis", "risk_sequence", "table_story", "risk_register"],
+  "report_archetypes": {
+    "evidence_led": "引用密集，证据导航与索引是主要阅读路径",
+    "data_led": "图表与量化比较密集，先图后解释",
+    "narrative_led": "长篇逻辑论证为主，图表作为局部证据",
+    "balanced_research": "数据、论证与证据索引相对均衡"
+  },
+  "layouts": {
+    "narrative_focus": {
+      "label": "单栏论证",
+      "requires_chart_count": 0,
+      "screen_columns": 1,
+      "print_fallback": "single_column"
+    },
+    "narrative_emphasis": {
+      "label": "重点论证",
+      "requires_chart_count": 0,
+      "screen_columns": 1,
+      "print_fallback": "single_column"
+    },
+    "chart_story_left": {
+      "label": "左图右文",
+      "requires_chart_count": 1,
+      "screen_columns": 2,
+      "print_fallback": "single_column"
+    },
+    "chart_story_right": {
+      "label": "左文右图",
+      "requires_chart_count": 1,
+      "screen_columns": 2,
+      "print_fallback": "single_column"
+    },
+    "data_lead": {
+      "label": "数据先行",
+      "requires_chart_count": -1,
+      "screen_columns": 1,
+      "print_fallback": "single_column"
+    },
+    "table_analysis": {
+      "label": "结构化对照表",
+      "requires_chart_count": -1,
+      "screen_columns": 1,
+      "print_fallback": "table",
+      "semantic_only": true
+    },
+    "risk_sequence": {
+      "label": "风险序列",
+      "requires_chart_count": -1,
+      "screen_columns": 1,
+      "print_fallback": "single_column",
+      "semantic_only": true
+    },
+    "coverage_summary": {
+      "label": "研究覆盖摘要",
+      "requires_chart_count": -1,
+      "screen_columns": 1,
+      "print_fallback": "table",
+      "semantic_only": true
+    },
+    "prose_flow": {
+      "label": "长文流",
+      "requires_chart_count": 0,
+      "screen_columns": 1,
+      "print_fallback": "single_column"
+    },
+    "evidence_split": {
+      "label": "正文与证据",
+      "requires_chart_count": 0,
+      "screen_columns": 1,
+      "print_fallback": "single_column"
+    },
+    "chart_focus": {
+      "label": "主图叙事",
+      "requires_chart_count": 1,
+      "screen_columns": 1,
+      "print_fallback": "single_column"
+    },
+    "chart_sequence": {
+      "label": "图表序列",
+      "requires_chart_count": 2,
+      "screen_columns": 1,
+      "print_fallback": "single_column"
+    },
+    "small_multiples": {
+      "label": "小多图",
+      "requires_chart_count": 2,
+      "screen_columns": 2,
+      "print_fallback": "single_column"
+    },
+    "metric_strip": {
+      "label": "指标带",
+      "requires_chart_count": -1,
+      "screen_columns": 1,
+      "print_fallback": "single_column"
+    },
+    "comparison_board": {
+      "label": "比较板",
+      "requires_chart_count": -1,
+      "screen_columns": 2,
+      "print_fallback": "single_column"
+    },
+    "table_story": {
+      "label": "表格叙事",
+      "requires_chart_count": -1,
+      "screen_columns": 1,
+      "print_fallback": "table",
+      "semantic_only": true
+    },
+    "diagram_story": {
+      "label": "关系图叙事",
+      "requires_chart_count": 1,
+      "screen_columns": 1,
+      "print_fallback": "single_column"
+    },
+    "risk_register": {
+      "label": "风险台账",
+      "requires_chart_count": -1,
+      "screen_columns": 1,
+      "print_fallback": "single_column",
+      "semantic_only": true
+    }
+  },
+  "evidence_center": {
+    "inline_links_required": true,
+    "search_required": true,
+    "required_fields": [
+      "material",
+      "publisher",
+      "metric",
+      "scope",
+      "available_date",
+      "reporting_period",
+      "locator",
+      "usage",
+      "retrieval_method",
+      "source_level"
+    ]
+  }
+}

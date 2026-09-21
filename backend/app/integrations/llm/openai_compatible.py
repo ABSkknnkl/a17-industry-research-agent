@@ -2,8 +2,9 @@
 
 import json
 import logging
+import base64
 from enum import StrEnum
-from typing import Any, Literal, TypeVar
+from typing import Any, Literal, TypeVar, cast
 
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
@@ -23,6 +24,7 @@ from app.schemas.analysis import (
 )
 from app.schemas.chapter import ChapterDraftLoose
 from app.schemas.readability import ReadabilityReport
+from app.schemas.report import VisualIssue, VisualReviewReport
 
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 logger = logging.getLogger(__name__)
@@ -504,12 +506,108 @@ def _normalize_analysis_aliases(payload: dict[str, Any]) -> None:
         )
 
 
+def _normalize_visual_review(payload: dict[str, Any]) -> dict[str, Any]:
+    """Normalize harmless visual-review envelope drift without touching facts."""
+
+    meta = payload.get("review_meta")
+    meta = meta if isinstance(meta, dict) else {}
+    raw_issues = payload.get("issues")
+    normalized_issues: list[dict[str, Any]] = []
+    if isinstance(raw_issues, list):
+        for raw in raw_issues:
+            if not isinstance(raw, dict):
+                continue
+            issue = dict(raw)
+            severity = str(issue.get("severity", "minor")).lower()
+            issue["severity"] = {
+                "high": "critical",
+                "medium": "major",
+                "low": "minor",
+            }.get(severity, severity)
+            issue["source"] = "vision"
+            if "page" not in issue and "page_number" in issue:
+                issue["page"] = issue.pop("page_number")
+            bbox = issue.get("bbox")
+            if isinstance(bbox, dict):
+                x = bbox.get("x")
+                y = bbox.get("y")
+                width = bbox.get("width", bbox.get("w"))
+                height = bbox.get("height", bbox.get("h"))
+                if all(
+                    isinstance(value, (int, float)) and not isinstance(value, bool)
+                    for value in (x, y, width, height)
+                ):
+                    issue["bbox"] = tuple(
+                        float(cast(int | float, value)) for value in (x, y, width, height)
+                    )
+                else:
+                    issue["bbox"] = None
+            if not issue.get("description"):
+                issue["description"] = str(
+                    issue.pop("problem", None) or issue.pop("finding", None) or "视觉问题"
+                )
+            if not issue.get("fix_action"):
+                issue["fix_action"] = str(
+                    issue.pop("recommendation", None)
+                    or issue.pop("suggestion", None)
+                    or issue.pop("repair", None)
+                    or "按问题描述调整版式后重新渲染。"
+                )
+            allowed = {
+                "issue_code",
+                "severity",
+                "source",
+                "page",
+                "bbox",
+                "description",
+                "evidence",
+                "fix_action",
+                "confidence",
+                "resolved",
+            }
+            normalized_issues.append({key: value for key, value in issue.items() if key in allowed})
+    penalty = sum(
+        (
+            0.35
+            if item.get("severity") == "critical"
+            else 0.12 if item.get("severity") == "major" else 0.04
+        )
+        for item in normalized_issues
+    )
+    score = payload.get("score")
+    if not isinstance(score, (int, float)) or isinstance(score, bool):
+        score = max(0.0, 1.0 - penalty)
+    return {
+        "passed": not any(
+            item.get("severity") == "critical" and not item.get("resolved", False)
+            for item in normalized_issues
+        ),
+        "score": float(score),
+        "review_round": int(payload.get("review_round", meta.get("review_round", 0)) or 0),
+        "page_count": int(payload.get("page_count", meta.get("page_count", 0)) or 0),
+        "layout_pattern_count": int(payload.get("layout_pattern_count", 0) or 0),
+        "reviewer_model": payload.get("reviewer_model"),
+        "degraded": bool(payload.get("degraded", False)),
+        "issues": normalized_issues,
+    }
+
+
 def _normalize_known_schema_aliases(payload: Any, schema: type[Any]) -> Any:
     """Normalize narrowly defined provider aliases before strict validation."""
     if not isinstance(payload, dict):
         return payload
     if schema in {AnalysisDraft, AnalysisCoreDraft, AnalysisSupplementDraft}:
         _normalize_analysis_aliases(payload)
+        return payload
+    if schema is VisualReviewReport:
+        return _normalize_visual_review(payload)
+    if schema is ReadabilityReport:
+        # prompt 与 schema 统一为「通俗度」；兼容历史/模型误写「俗通度」
+        findings = payload.get("findings")
+        if isinstance(findings, list):
+            for finding in findings:
+                if isinstance(finding, dict) and finding.get("dimension") == "俗通度":
+                    finding["dimension"] = "通俗度"
         return payload
     return payload
 
@@ -1142,3 +1240,119 @@ class OpenAICompatibleReadabilityModel:
         ]
         response = await _invoke_structured(self._structured_model, messages)
         return _coerce_structured_response(response, ReadabilityReport)
+
+
+class OpenAICompatibleVisualReviewModel:
+    """Multimodal page reviewer constrained to visual findings only."""
+
+    def __init__(
+        self,
+        *,
+        model_name: str,
+        api_key: str,
+        base_url: str,
+        timeout_seconds: float,
+    ) -> None:
+        self.model_name = model_name
+        chat_model = ChatOpenAI(
+            model=model_name,
+            api_key=api_key,
+            base_url=base_url,
+            temperature=0.1,
+            timeout=timeout_seconds,
+            max_retries=1,
+            extra_body=(
+                {"thinking": {"type": "disabled"}} if _is_deepseek_style(model_name) else None
+            ),
+        )
+        self._structured_model = _structured_output(
+            chat_model,
+            VisualReviewReport,
+            model_name,
+        )
+
+    async def review_report(
+        self,
+        *,
+        report_context: str,
+        page_images: list[bytes],
+        page_numbers: list[int],
+        total_page_count: int,
+        deterministic_findings: list[str],
+        review_round: int,
+    ) -> VisualReviewReport:
+        system_prompt = (
+            "你是证券行业研究报告的视觉质量评审器。你只能检查版式和信息表达，"
+            "不得新增、删除、改写或推断任何金融事实。逐页检查：元素重叠、越界、裁切、"
+            "标题孤悬、图表与图注拆分、来源不可读、单数据点伪装成图表、异常空白、"
+            "无内容但带底色或边框的空网格槽位、奇数卡片造成的不对称空白矩形、"
+            "连续重复构图、色彩对比度和信息层级。issue_code 只能使用："
+            "OUT_OF_BOUNDS、CLIPPED_CONTENT、ELEMENT_OVERLAP、HEADING_ORPHAN、"
+            "CHART_CAPTION_SPLIT、SOURCE_UNREADABLE、SINGLE_POINT_CHART_ENCODING、"
+            "LOW_CONTENT_DENSITY、INTERNAL_WHITESPACE_GAP、EMPTY_LAYOUT_SLOT、"
+            "REPETITIVE_LAYOUT、LOW_CONTRAST、TEXT_TOO_SMALL、"
+            "VISUAL_HIERARCHY_WEAK、COLUMN_IMBALANCE、CHART_LABEL_OUT_OF_BOUNDS、"
+            "TABLE_ROW_SPLIT_RISK、TABLE_HEADER_NOT_REPEATABLE、PAGE_NUMBER_MISSING、"
+            "PRINT_COLOR_ADJUST_MISSING、STRUCTURE_VARIETY_LOW。report_context 中"
+            "display_kind=metric_card 且页面没有"
+            "坐标轴、柱、折线或扇区时属于正确的单指标表达，禁止判为"
+            "SINGLE_POINT_CHART_ENCODING。严重度 critical 仅用于遮挡、裁切、错误视觉"
+            "编码或无法阅读；major 用于显著影响阅读；minor 用于审美优化。bbox 必须使用"
+            "页面归一化数组[x,y,width,height]，无法定位时为null。只返回"
+            "VisualReviewReport JSON。同一页同一issue_code若发生在多个不相交位置，必须按bbox分别返回；附录、来源索引和"
+            "最后一页不因正常留白判为LOW_CONTENT_DENSITY；只有带背景、边框或占位语义却"
+            "没有内容的区域才是EMPTY_LAYOUT_SLOT，普通白色留白不是；折线图包含多个数据点时"
+            "不得判为SINGLE_POINT_CHART_ENCODING。先读取report_context里的review_mode："
+            "普通模式下输入图片是一小批页面，page_numbers按图片顺序给出完整PDF真实页码；"
+            "global_contact_sheet模式下唯一图片是按页码顺序排列的整份报告缩略图，重点比较"
+            "跨页节奏、重复构图、异常空白、密度突变与连贯性。所有issue.page都必须填写"
+            "完整PDF真实页码，不能填写批内序号；全局缩略图无法精确定位时bbox为null。"
+        )
+        context = {
+            "report_context": report_context,
+            "deterministic_findings": deterministic_findings,
+            "review_round": review_round,
+            "page_numbers": page_numbers,
+            "batch_page_count": len(page_images),
+            "total_page_count": total_page_count,
+        }
+        content: list[str | dict[Any, Any]] = [
+            {"type": "text", "text": json.dumps(context, ensure_ascii=False)}
+        ]
+        content.extend(
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": "data:image/png;base64," + base64.b64encode(image).decode("ascii")
+                },
+            }
+            for image in page_images
+        )
+        response = await _invoke_structured(
+            self._structured_model,
+            [SystemMessage(content=system_prompt), HumanMessage(content=content)],
+        )
+        reviewed = _coerce_structured_response(response, VisualReviewReport)
+        issues: list[VisualIssue] = []
+        for issue in reviewed.issues:
+            page = issue.page
+            # Some OpenAI-compatible vision endpoints still return a batch-local
+            # page index.  Map it deterministically instead of attaching the
+            # finding to the wrong PDF page.
+            if page not in page_numbers and page is not None and 1 <= page <= len(page_numbers):
+                page = page_numbers[page - 1]
+            if page is None and len(page_numbers) == 1:
+                page = page_numbers[0]
+            issues.append(issue.model_copy(update={"source": "vision", "page": page}))
+        passed = not any(
+            issue.severity in {"critical", "major"} and not issue.resolved for issue in issues
+        )
+        return reviewed.model_copy(
+            update={
+                "passed": passed,
+                "review_round": review_round,
+                "page_count": total_page_count,
+                "reviewer_model": self.model_name,
+                "issues": issues,
+            }
+        )

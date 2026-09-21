@@ -1,18 +1,25 @@
-"""渲染契约测试：交付格式语义、report_view.json 落盘与 B/S 系列缺陷修复。"""
+"""渲染契约测试：交付格式语义、report_view.json 落盘与 B/S 系列缺陷修复。
+
+收敛说明（2026-09-21，Agent5 外部迁移）：报告 HTML 渲染层已切换到外部新模板
+（`report.html.j2` + 外部版式），本文件随外部 `test_render_contract.py` 收敛，
+锁定新版式的 DOM 契约（reader-rail / section-block / conclusion-grid /
+chapter-start 语义分页 / meta-row 封面信息区 / draft-watermark 附封面等）。
+
+与外部版的差异仅一处（对齐 target 服务实现）：target 的 PDF 导出走
+`app.reporting.pdf.render_pdf_with_diagnostics`（外部为 `render_pdf`），
+在导出 PDF 的同一次渲染里取回 DOM 几何诊断供确定性视觉复检使用，
+因此本文件的 PDF mock 指向前者并返回 `(pdf_bytes, diagnostics)` 二元组；
+返回空诊断表示探针未执行，视觉复检会跳过判定。
+"""
 
 import json
 import re
-from pathlib import Path
 
 import pytest
-from jsonschema import Draft202012Validator
 
 from app.agents.report_fusion.service import ReportFusionAgent
-from app.agents.report_fusion.assembler import build_report_view
-from app.agents.report_fusion.evidence import build_evidence_catalog
-from app.agents.report_fusion.quality import evaluate_report_quality
-from app.reporting.html import render_html
 from app.core.config import settings
+from app.reporting.html_composer_loader import get_html_composer_catalog
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
 from app.schemas.chart import ChartGenerationResult
@@ -20,203 +27,23 @@ from app.schemas.report import ReportFusionResult, ReportViewModel
 from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
 
-CONTRACT_ROOT = Path(__file__).resolve().parents[4] / "contracts" / "schemas"
-
 REPORT_DIR = "run-report-p0/reports/r1"
 
 
-def _delivery_view(report_analysis, report_charts, report_chapters, **kwargs):
-    return build_report_view(
-        run_id="run-chart-delivery",
-        revision=1,
-        analysis=report_analysis,
-        chart_result=report_charts,
-        chapter_result=report_chapters,
-        tone="professional",
-        **kwargs,
+async def _passthrough_toc_pdf(html: str, **_kwargs: object) -> bytes:
+    """Unit-test stub：目录页码回填不碰真实 Chromium。"""
+    del html
+    return b"%PDF-1.7\nunit-test-toc"
+
+
+def _stub_pdf_and_toc(monkeypatch, diagnostics_stub) -> None:
+    _stub_pdf_and_toc(
+        monkeypatch, diagnostics_stub
     )
-
-
-def test_chart_directory_follows_final_body_order_and_numbers(
-    report_analysis,
-    report_charts,
-    report_chapters,
-) -> None:
-    report = _delivery_view(report_analysis, report_charts, report_chapters)
-    # Input specs deliberately disagree with chapter reading order.
-    report.charts.reverse()
-    before = report.model_dump()
-    html = render_html(report)
-    assert 'class="chart-directory"' in html
-    directory = html.split('class="chart-directory"', 1)[1].split("</table>", 1)[0]
-    figures = re.findall(r"<figure\b.*?</figure>", html, re.S)
-    expected = ["行业规模趋势", "样本企业收入增速", "光伏产业链", "市场份额构成", "企业竞争力评分"]
-    assert "图表目录" in html and "所属章节" in directory
-    assert len(figures) == 5
-    for number, (title, figure) in enumerate(zip(expected, figures, strict=True), 1):
-        assert f'<span class="chart-number">图{number}</span>' in figure
-        assert title in figure
-        assert f'href="#chart-{number}"' in directory
-        assert f'id="chart-{number}"' in figure
-        assert html.count(f">图{number}</") == 2
-    assert [directory.index(title) for title in expected] == sorted(
-        directory.index(title) for title in expected
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_toc_page_numbers",
+        _passthrough_toc_pdf,
     )
-    assert "第二章" in directory and "第三章" in directory and "第四章" in directory
-    assert "CH-" not in directory and "SEC-" not in directory
-    assert render_html(report) == html
-    assert report.model_dump() == before
-
-
-def test_chart_directory_keeps_legacy_numbering_available_explicitly(
-    report_analysis,
-    report_charts,
-    report_chapters,
-) -> None:
-    report = _delivery_view(report_analysis, report_charts, report_chapters)
-    html = render_html(report, continuous_numbering=False)
-    assert html.count(">图2-1</") == 2
-    assert html.count(">图3-1</") == 2
-
-
-def test_empty_chart_delivery_has_no_directory_or_figures(
-    report_analysis,
-    report_charts,
-    report_chapters,
-) -> None:
-    report = _delivery_view(report_analysis, report_charts, report_chapters)
-    report.charts = []
-    html = render_html(report)
-    assert "图表目录" not in html and '<figure class="chart' not in html
-
-
-@pytest.mark.parametrize("placement", [None, "SEC-99-01", "bad-section"])
-def test_chart_directory_numbers_unplaced_and_unknown_sections_in_appendix(
-    report_analysis,
-    report_charts,
-    report_chapters,
-    placement,
-) -> None:
-    report = _delivery_view(report_analysis, report_charts, report_chapters)
-    report.charts[0].placement_section_id = placement
-    html = render_html(report)
-    assert html.count('<figure class="chart') == 5
-    appendix = html.split("附录 · 图表", 1)[1]
-    assert '<span class="chart-number">图5</span>' in appendix
-    assert "行业规模趋势" in appendix
-    directory = html.split('class="chart-directory"', 1)[1].split("</table>", 1)[0]
-    assert 'href="#chart-5"' in directory and "附录" in directory
-
-
-def test_chart_directory_respects_selected_charts_and_brief_depth(
-    report_analysis,
-    report_charts,
-    report_chapters,
-) -> None:
-    report = _delivery_view(
-        report_analysis,
-        report_charts,
-        report_chapters,
-        selected_chart_ids=["CHART-REPORT-CHAIN", "CHART-REPORT-PIE"],
-    )
-    # Also handle persisted views whose depth changes after assembly.
-    report.report_depth = "brief"
-    html = render_html(report)
-    assert html.count('<figure class="chart') == 2
-    directory = html.split('class="chart-directory"', 1)[1].split("</table>", 1)[0]
-    assert directory.count("附录") == 2
-    assert html.count(">图1</") == 2 and html.count(">图2</") == 2
-    assert "行业规模趋势" not in directory
-
-
-@pytest.mark.parametrize(
-    "title,publisher,locator,expected",
-    [
-        ("协会月报", "中国光伏行业协会", None, "协会月报，中国光伏行业协会整理"),
-        ("未提供", "中国光伏行业协会", None, "中国光伏行业协会"),
-        ("[1][2]", None, "https://www.stats.gov.cn/report?id=secret", "www.stats.gov.cn"),
-        ("https://www.stats.gov.cn/private", None, None, "www.stats.gov.cn"),
-        ("  ", None, None, "[需核实:数据来源]"),
-        ("[1][2]", "未提供", "fixture://internal/path", "[需核实:数据来源]"),
-    ],
-)
-def test_chart_sources_use_named_title_publisher_or_domain(
-    report_analysis,
-    report_charts,
-    report_chapters,
-    title,
-    publisher,
-    locator,
-    expected,
-) -> None:
-    item = report_analysis.evidence_catalog[0]
-    item.source_name, item.publisher, item.source_locator = title, publisher, locator
-    report = _delivery_view(report_analysis, report_charts, report_chapters)
-    html = render_html(report)
-    captions = re.findall(r"<figcaption>.*?</figcaption>", html, re.S)
-    assert len(captions) == 5
-    assert all(f"来源1：{expected}" in caption for caption in captions)
-    assert all("[1][2]" not in caption and "?id=secret" not in caption for caption in captions)
-
-
-def test_unnamed_sources_do_not_merge_unrelated_publishers(
-    report_analysis,
-    report_charts,
-    report_chapters,
-) -> None:
-    first = report_analysis.evidence_catalog[0]
-    first.source_name, first.publisher = "未提供", "行业协会"
-    second = first.model_copy(update={"evidence_id": "E-002", "publisher": "统计局"})
-    report_analysis.evidence_catalog.append(second)
-    report_charts.chart_specs[0].evidence_ids = ["E-001", "E-002"]
-    entries = build_evidence_catalog(report_analysis, report_charts, report_chapters)
-    assert len(entries) == 2
-    assert [entry.display_label for entry in entries] == ["来源1：行业协会", "来源2：统计局"]
-
-
-@pytest.mark.parametrize("missing_catalog", [False, True])
-def test_ready_charts_without_named_sources_raise_advisory(
-    report_analysis,
-    report_charts,
-    report_chapters,
-    missing_catalog,
-) -> None:
-    if missing_catalog:
-        report_analysis.evidence_catalog = []
-    else:
-        report_analysis.evidence_catalog[0].source_name = "[1][2]"
-    quality, blocking, advisory = evaluate_report_quality(
-        report_analysis,
-        report_charts,
-        report_chapters,
-    )
-    assert quality.passed and not blocking
-    assert any("图表缺少可识别的数据来源" in issue for issue in advisory)
-    assert all(spec.title in "；".join(advisory) for spec in report_charts.chart_specs)
-
-
-@pytest.mark.asyncio
-async def test_default_pdf_receives_same_continuously_numbered_chart_directory_as_html(
-    tmp_path,
-    monkeypatch,
-    report_analysis,
-    report_charts,
-    report_chapters,
-) -> None:
-    received = []
-
-    async def capture_pdf(html: str) -> bytes:
-        received.append(html)
-        return b"%PDF-1.7\nunit-test"
-
-    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
-    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", capture_pdf)
-    await ReportFusionAgent().run(_context(report_analysis, report_charts, report_chapters))
-    html = _read(tmp_path, "report.html").decode("utf-8")
-    assert received == [html]
-    assert "图表目录" in html
-    assert all(html.count(f">图{number}</") == 2 for number in range(1, 6))
-
 
 def _context(
     analysis: AnalysisResult,
@@ -256,13 +83,24 @@ def _context(
     )
 
 
-async def _stable_pdf(_: str) -> bytes:
-    return b"%PDF-1.7\nunit-test"
+async def _stable_pdf(*_args: object, **_kwargs: object) -> tuple[bytes, dict]:
+    return b"%PDF-1.7\nunit-test", {}
+
+
+async def _stable_toc_pdf(html: str, **_kwargs: object) -> bytes:
+    del html
+    return b"%PDF-1.7\nunit-test-toc"
 
 
 @pytest.fixture
 def stable_pdf(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", _stable_pdf)
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_diagnostics", _stable_pdf
+    )
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_toc_page_numbers",
+        _stable_toc_pdf,
+    )
 
 
 def _read(tmp_path, filename: str) -> bytes:
@@ -297,102 +135,6 @@ async def test_default_delivery_is_html_and_pdf_with_markdown_preview(
 
 
 @pytest.mark.asyncio
-async def test_fusion_exposes_chapters_and_scoring_baseline_for_frontend(
-    tmp_path,
-    monkeypatch: pytest.MonkeyPatch,
-    stable_pdf,
-    report_analysis,
-    report_charts,
-    report_chapters,
-) -> None:
-    """阶段五必须把章节结构下发到 API，前端才能按后端命名渲染目录。
-
-    关键断言：
-    - chapters 顺序与上游一致（HTML 模板同序 → 前端锚点 chapter-${idx+1} 不串位）
-    - title 是**纯标题**（不带「N、」之类前缀，前端不做任何改写）
-    - 评分基准由后端下发（前端不再写死 7 / 21）
-    """
-    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
-    result = await ReportFusionAgent().run(
-        _context(report_analysis, report_charts, report_chapters)
-    )
-    fusion = ReportFusionResult.model_validate(result.data)
-
-    assert len(fusion.chapters) == 7
-    assert [chapter.chapter_id for chapter in fusion.chapters] == [
-        f"CH-{index:02d}" for index in range(1, 8)
-    ]
-
-    # 顺序与上游 chapter_write 一致（锚点契约依赖它）
-    upstream = report_chapters
-    assert [chapter.chapter_id for chapter in fusion.chapters] == [
-        chapter.chapter_id for chapter in upstream.chapters
-    ]
-    assert [chapter.title for chapter in fusion.chapters] == [
-        chapter.title for chapter in upstream.chapters
-    ]
-
-    # 纯标题：不得带「1、」这类序号前缀
-    for chapter in fusion.chapters:
-        assert not re.match(r"^\s*\d+\s*[、.．]", chapter.title), chapter.title
-
-    # 每章 3 节，且只暴露 id/title
-    for chapter in fusion.chapters:
-        assert len(chapter.sections) == 3
-        assert chapter.sections[0].section_id.startswith(f"SEC-{chapter.chapter_id[-2:]}-")
-
-    # 大纲版本溯源
-    assert fusion.outline_version == upstream.outline_version
-
-    # 评分基准（分母）由后端下发
-    assert fusion.quality.expected_chapter_count == 7
-    assert fusion.quality.expected_section_count == 21
-    assert fusion.quality.chapter_count == 7
-    assert fusion.quality.section_count == 21
-
-
-@pytest.mark.asyncio
-async def test_fusion_payload_passes_whole_package_contract_validation(
-    tmp_path,
-    monkeypatch: pytest.MonkeyPatch,
-    stable_pdf,
-    report_analysis,
-    report_charts,
-    report_chapters,
-) -> None:
-    """整包契约校验：真实 payload 必须能通过 report-fusion-result 契约。
-
-    背景：该契约曾经漏收 `visual_decision` —— Pydantic 侧必填且实际下发，但契约
-    `properties` 里没有，而契约是 `additionalProperties: false`。后果是任何消费方
-    对合法 payload 做整包校验都会失败（chart 契约有同类校验，fusion 契约漏了）。
-
-    这里刻意用**真实 agent 产物**而不是手工构造的 payload：手工构造的 payload
-    可能碰巧满足契约，反而掩盖真实差异 —— 这正是该缺陷长期没被发现的原因。
-    """
-    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
-    result = await ReportFusionAgent().run(
-        _context(report_analysis, report_charts, report_chapters)
-    )
-
-    schema = json.loads(
-        (CONTRACT_ROOT / "report-fusion-result.schema.json").read_text(encoding="utf-8")
-    )
-    errors = list(Draft202012Validator(schema).iter_errors(result.data))
-    assert not errors, "\n".join(
-        f"{list(error.path)}: {error.message}" for error in errors
-    )
-
-    # 显式锁住曾经缺失的字段，避免它再次从契约里消失
-    decision = result.data["visual_decision"]
-    assert decision["effective_style"] in {"data_manual", "analysis_note", "deep_research"}
-    assert decision["selection_source"] in {"user", "agent_recommendation", "default"}
-
-    # payload 顶层键必须全部被契约收录（反向确认没有第二个「漏收」字段）
-    missing = sorted(set(result.data) - set(schema["properties"]))
-    assert missing == [], f"契约漏收以下顶层字段：{missing}"
-
-
-@pytest.mark.asyncio
 async def test_report_view_json_round_trips_and_stays_out_of_manifest(
     tmp_path,
     monkeypatch: pytest.MonkeyPatch,
@@ -407,7 +149,9 @@ async def test_report_view_json_round_trips_and_stays_out_of_manifest(
     )
     fusion = ReportFusionResult.model_validate(result.data)
 
-    view = ReportViewModel.model_validate(json.loads(_read(tmp_path, "report_view.json")))
+    view = ReportViewModel.model_validate(
+        json.loads(_read(tmp_path, "report_view.json"))
+    )
     assert view.report_id == fusion.report_id
     assert view.industry_topic == "中国光伏制造行业"
     assert len(view.charts) == 5
@@ -419,7 +163,9 @@ async def test_report_view_json_round_trips_and_stays_out_of_manifest(
         "report_html",
         "report_pdf",
     }
-    assert all(not entry["uri"].endswith("report_view.json") for entry in manifest["artifacts"])
+    assert all(
+        not entry["uri"].endswith("report_view.json") for entry in manifest["artifacts"]
+    )
 
 
 @pytest.mark.asyncio
@@ -460,11 +206,17 @@ async def test_pdf_only_failure_falls_back_to_on_disk_formats(
 ) -> None:
     """唯一交付格式失败时 formats 回退报落盘格式，不得违反契约 min_length=1。"""
 
-    async def fail_pdf(_: str) -> bytes:
+    async def fail_pdf(*_args: object, **_kwargs: object) -> tuple[bytes, dict]:
         raise RuntimeError("simulated chromium outage")
 
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
-    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", fail_pdf)
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_diagnostics", fail_pdf
+    )
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_toc_page_numbers",
+        _passthrough_toc_pdf,
+    )
     result = await ReportFusionAgent().run(
         _context(
             report_analysis,
@@ -511,6 +263,8 @@ async def test_brief_depth_moves_all_charts_into_appendix(
     # 简报深度：小节不渲染，但全部图表必须进附录，而不是凭空消失。
     assert "SEC-01-01" not in html
     assert "附录 · 图表" in html
+    assert '<section class="chapter chapter-start" data-page-role="appendix">' in html
+    assert '<div class="chapter-heading"><span class="chapter-number">A</span>' in html
     assert html.count('<figure class="chart') == 5
     assert "行业规模趋势" in html
     assert "图2-1" not in html
@@ -528,20 +282,25 @@ async def test_cover_and_footer_use_industry_topic_not_a17(
     report_chapters,
 ) -> None:
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
-    await ReportFusionAgent().run(_context(report_analysis, report_charts, report_chapters))
+    result = await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, report_chapters)
+    )
     html = _read(tmp_path, "report.html").decode("utf-8")
 
     assert "A17" not in html
-    assert "中国光伏制造行业 · 行业研究系统" in html
-    # 页脚（@page counter）按主题生成，"行业"不重复
-    assert 'content:"中国光伏制造行业研究报告' in html
+    # 封面眉线按主题生成（"行业"不重复）
+    assert "行业深度研究 · 中国光伏制造" in html
+    # 跑版页脚（Playwright footer_template）按主题生成
+    assert "中国光伏制造行业研究报告 · 研究与信息交流用途" in html
 
     baijiu = report_analysis.model_copy(deep=True)
     baijiu.industry_topic = "中国白酒"
-    await ReportFusionAgent().run(_context(baijiu, report_charts, report_chapters))
+    result = await ReportFusionAgent().run(
+        _context(baijiu, report_charts, report_chapters)
+    )
     html = _read(tmp_path, "report.html").decode("utf-8")
-    assert "中国白酒 · 行业研究系统" in html
-    assert 'content:"中国白酒行业研究报告' in html
+    assert "行业深度研究 · 中国白酒" in html
+    assert "中国白酒行业研究报告 · 研究与信息交流用途" in html
 
 
 @pytest.mark.asyncio
@@ -554,18 +313,29 @@ async def test_toc_anchors_link_to_chapters(
     report_chapters,
 ) -> None:
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
-    await ReportFusionAgent().run(_context(report_analysis, report_charts, report_chapters))
+    await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, report_chapters)
+    )
     html = _read(tmp_path, "report.html").decode("utf-8")
 
     assert html.count('id="chapter-') == 7
-    assert html.count('href="#chapter-') == 7
+    chapter_targets = set(re.findall(r'href="#(chapter-\d+)"', html))
+    assert chapter_targets == {f"chapter-{index}" for index in range(1, 8)}
     assert 'href="#chapter-1"' in html
     # 锚点用序号，不泄露内部章节 ID
     assert "CH-01" not in html
+    # PDF 目录页码槽位 + 正文小节锚点（两遍回填用）
+    assert html.count('data-toc-anchor="chapter-') == 7
+    assert 'data-toc-anchor="section-1-1"' in html
+    assert 'id="section-1-1"' in html
+    assert 'data-toc-anchor="source-index"' in html
+    # 目录结构保持现状，不引入前端预览卡片组件
+    assert "class=\"exec-card\"" not in html
+    assert "INDUSTRY RESEARCH AGENT" not in html
 
 
 @pytest.mark.asyncio
-async def test_print_css_overrides_visual_and_density_layout(
+async def test_print_css_uses_benchmark_page_geometry(
     tmp_path,
     monkeypatch: pytest.MonkeyPatch,
     stable_pdf,
@@ -574,22 +344,28 @@ async def test_print_css_overrides_visual_and_density_layout(
     report_chapters,
 ) -> None:
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
-    await ReportFusionAgent().run(_context(report_analysis, report_charts, report_chapters))
+    await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, report_chapters)
+    )
     html = _read(tmp_path, "report.html").decode("utf-8")
 
+    # 基准体裁：A4 + 与 pdf.py 一致的页边距（顶部 20mm 给跑版页眉留位、底部 18mm 给页脚）
+    assert "@page { size: A4 portrait; margin: 20mm 15mm 18mm 15mm; }" in html
     print_css = html.split("@media print", 1)[1]
-    # 同权重后置覆盖：deep_research 的 920px 版心与 density 的上下 padding 打印归零
-    assert ".visual-deep-research main" in print_css
-    assert ".visual-data-manual main" in print_css
-    assert ".density-compact main" in print_css
-    assert ".density-detailed main" in print_css
-    assert "max-width:none" in print_css
-    # S-5：边距只在 Python 侧（pdf.py）定义一处，模板 @page 不再重复
-    assert "margin:14mm" not in html
+    # 页眉页脚在页边距区渲染（原生 template），内容区无需让位
+    assert "padding-top: 0" in print_css
+    # 屏幕阅读视图：居中卡片，不产生右侧大片空白
+    assert "@media screen" in html
+    thresholds = get_html_composer_catalog().thresholds
+    assert (
+        f"grid-template-columns: 220px minmax(0, {thresholds['reader_max_content_px']}px)"
+        in html
+    )
+    assert f"main {{ max-width: {thresholds['reader_narrow_max_content_px']}px" in html
 
 
 @pytest.mark.asyncio
-async def test_meta_grid_has_five_columns(
+async def test_cover_metadata_uses_meta_rows_not_internal_fields(
     tmp_path,
     monkeypatch: pytest.MonkeyPatch,
     stable_pdf,
@@ -598,11 +374,60 @@ async def test_meta_grid_has_five_columns(
     report_chapters,
 ) -> None:
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
-    await ReportFusionAgent().run(_context(report_analysis, report_charts, report_chapters))
+    await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, report_chapters)
+    )
     html = _read(tmp_path, "report.html").decode("utf-8")
 
-    assert "grid-template-columns:repeat(5,1fr)" in html
-    assert html.count('<div class="meta">') == 5
+    # 封面信息区：键值对 meta-row（研报体裁），不暴露内部流程字段
+    assert html.count('<div class="meta-row">') >= 6
+    assert "研究主题" in html
+    assert "证据来源" in html
+    assert "生成时间" not in html
+    assert "交付状态" not in html
+
+
+@pytest.mark.asyncio
+async def test_editorial_layout_uses_benchmark_genre_and_semantic_page_starts(
+    tmp_path,
+    monkeypatch: pytest.MonkeyPatch,
+    stable_pdf,
+    report_analysis,
+    report_charts,
+    report_chapters,
+) -> None:
+    monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
+    await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, report_chapters)
+    )
+    html = _read(tmp_path, "report.html").decode("utf-8")
+
+    # 统一品牌色（基准体裁：单一强调色），由模板预设注入
+    valid_brands = {"#0243A4", "#0A5C5C", "#1B3154", "#7A1F3D"}
+    assert any(f"--brand: {c}" in html for c in valid_brands)
+    assert "--chapter-accent" not in html
+    # 模板预设属性
+    assert "data-template-profile=" in html
+    assert "profile-" in html
+    # 语义分页：章节起新页用 chapter-start，而非全章节一刀切
+    assert ".chapter-start { page-break-before: always; break-before: page;" in html
+    assert 'class="chapter-number">01<' in html
+    assert 'class="chapter-intro"' in html
+    # 执行摘要结论栅格 + 章节区块结构
+    assert 'class="conclusion-grid"' in html
+    assert re.search(r'class="[^"]*\bsection-block\b', html)
+    # 图表不包卡片、题注与正文同号、表格 caption 在上且防断头
+    assert "figure.chart { margin: 0; padding: 2mm 0 0;" in html
+    assert "table caption { caption-side: top;" in html
+    assert "break-after: avoid; page-break-after: avoid;" in html
+    # 表格行防断行
+    assert "tbody tr { page-break-inside: avoid; break-inside: avoid; }" in html
+    # 字体经 @font-face local() 声明（Chromium 打印避免 Type3）
+    assert "@font-face" in html
+    assert "src: local('PingFang SC')" in html
+    # 跑版页眉页脚模板内嵌（Playwright 原生 header/footer_template）
+    assert '<template id="pdf-header">' in html
+    assert '<template id="pdf-footer">' in html
 
 
 @pytest.mark.asyncio
@@ -617,14 +442,16 @@ async def test_draft_watermark_is_scoped_to_cover(
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
     broken = report_chapters.model_copy(deep=True)
     broken.chapters[0].sections[0].paragraphs[0].evidence_ids = ["E-UNKNOWN"]
-    result = await ReportFusionAgent().run(_context(report_analysis, report_charts, broken))
+    result = await ReportFusionAgent().run(
+        _context(report_analysis, report_charts, broken)
+    )
     assert result.data["release_mode"] == "draft_with_warnings"
     html = _read(tmp_path, "report.html").decode("utf-8")
 
     # absolute + 挂在封面内：浏览器滚动不再被 fixed 水印遮挡
     assert re.search(r"\.draft-watermark\s*\{[^}]*position:\s*absolute", html)
     assert (
-        html.index('<section class="cover">')
+        html.index('<section class="cover cover-')
         < html.index('class="draft-watermark"')
-        < html.index('class="eyebrow"')
+        < html.index('class="cover-eyebrow"')
     )

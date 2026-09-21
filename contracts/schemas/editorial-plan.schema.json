@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skillhub.local/schemas/editorial-plan.schema.json",
+  "title": "EditorialPlan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "enabled",
+    "source",
+    "recommended_style",
+    "recommended_density",
+    "chapter_decisions",
+    "findings",
+    "warnings",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "enabled": { "type": "boolean" },
+    "source": { "type": "string", "enum": ["deterministic", "model", "fallback"] },
+    "model_name": { "type": ["string", "null"], "maxLength": 200 },
+    "recommended_style": {
+      "type": "string",
+      "enum": ["data_manual", "analysis_note", "deep_research"]
+    },
+    "recommended_density": {
+      "type": "string",
+      "enum": ["compact", "balanced", "detailed"]
+    },
+    "chapter_decisions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 7,
+      "items": { "$ref": "#/$defs/chapterDecision" }
+    },
+    "findings": {
+      "type": "array",
+      "maxItems": 30,
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "warnings": {
+      "type": "array",
+      "maxItems": 20,
+      "items": { "type": "string" }
+    },
+    "fingerprint": { "type": "string", "pattern": "^$|^[a-f0-9]{64}$" }
+  },
+  "$defs": {
+    "layoutPattern": {
+      "type": "string",
+      "enum": [
+        "hero_metric",
+        "chart_led",
+        "comparison",
+        "narrative",
+        "table_led",
+        "risk_matrix"
+      ]
+    },
+    "chapterDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapter_id",
+        "layout_pattern",
+        "emphasis",
+        "featured_chart_ids",
+        "featured_paragraph_ids",
+        "rationale"
+      ],
+      "properties": {
+        "chapter_id": { "type": "string", "pattern": "^CH-\\d{2}$" },
+        "layout_pattern": { "$ref": "#/$defs/layoutPattern" },
+        "emphasis": {
+          "type": "string",
+          "enum": ["balanced", "metric", "comparison", "risk", "evidence"]
+        },
+        "featured_chart_ids": {
+          "type": "array",
+          "maxItems": 6,
+          "items": { "type": "string" }
+        },
+        "featured_paragraph_ids": {
+          "type": "array",
+          "maxItems": 6,
+          "items": { "type": "string" }
+        },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issue_code",
+        "severity",
+        "chapter_ids",
+        "section_ids",
+        "explanation",
+        "recommendation"
+      ],
+      "properties": {
+        "issue_code": {
+          "type": "string",
+          "enum": [
+            "TITLE_DATA_MISMATCH",
+            "DUPLICATE_CONTENT",
+            "INSUFFICIENT_EVIDENCE",
+            "CHART_NOT_NEEDED",
+            "CHART_SEMANTIC_MISMATCH",
+            "WEAK_HIERARCHY"
+          ]
+        },
+        "severity": { "type": "string", "enum": ["major", "minor"] },
+        "chapter_ids": {
+          "type": "array",
+          "maxItems": 7,
+          "items": { "type": "string" }
+        },
+        "section_ids": {
+          "type": "array",
+          "maxItems": 21,
+          "items": { "type": "string" }
+        },
+        "explanation": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "recommendation": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    }
+  }
+}

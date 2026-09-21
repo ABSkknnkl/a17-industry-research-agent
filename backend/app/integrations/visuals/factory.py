@@ -2,11 +2,9 @@
 
 from app.core.config import Settings
 from app.integrations.visuals.mock import MockImageGenerator, MockPromptCompiler
-from app.integrations.visuals.openai_compatible import (
-    OpenAICompatiblePromptCompiler,
-    OpenAIImageGenerator,
-)
+from app.integrations.visuals.openai_compatible import OpenAICompatiblePromptCompiler
 from app.integrations.visuals.protocol import ImageGenerator, PromptCompiler
+from app.integrations.visuals.shengsuanyun import ShengsuanyunImageGenerator
 
 
 def create_prompt_compiler(settings: Settings) -> PromptCompiler:
@@ -31,10 +29,11 @@ def create_image_generator(settings: Settings) -> ImageGenerator:
         return MockImageGenerator()
     if settings.IMAGE_API_KEY is None or not settings.IMAGE_BASE_URL:
         raise RuntimeError("live_image_configuration_missing")
-    return OpenAIImageGenerator(
+    return ShengsuanyunImageGenerator(
         model_name=settings.IMAGE_MODEL,
         api_key=settings.IMAGE_API_KEY.get_secret_value(),
         base_url=settings.IMAGE_BASE_URL,
         timeout_seconds=settings.IMAGE_TIMEOUT_SECONDS,
         size=settings.IMAGE_SIZE,
+        extra_body=settings.IMAGE_EXTRA_FIELDS,
     )

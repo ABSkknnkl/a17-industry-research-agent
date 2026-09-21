@@ -547,11 +547,30 @@ export default { name: 'ReviewView' }
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 .wb-left {
   position: sticky;
   top: 16px;
+  align-self: stretch;
+  min-height: 0;
+}
+.wb-left .page-card {
+  height: 100%;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+.wb-left :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 14px 12px;
+}
+.wb-left :deep(.report-nav) {
+  width: 100%;
+  flex: 1;
 }
 .workbench-header {
   display: flex;

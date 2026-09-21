@@ -375,17 +375,76 @@ export function buildWorkflowState(input: {
         uri: a.uri,
         size_bytes: a.content.length,
       })),
-      quality: {
-        passed: true,
-        chapter_count: chapters.length,
-        section_count: chapters.reduce((n, c) => n + c.sections.length, 0),
-        included_chart_count: included.length,
-        evidence_coverage: 0.72,
-        issues: ['装机量结构化序列缺口（REQUESTED-DATA-UNAVAILABLE）', DEMO_BANNER],
-        // 评分基准（分母）由后端下发，前端不写死 7 / 21（与 REPORT_OUTLINE 对齐）
-        expected_chapter_count: 7,
-        expected_section_count: 21,
-      },
+      quality: (() => {
+        const chapterCount = chapters.length
+        const sectionCount = chapters.reduce((n, c) => n + c.sections.length, 0)
+        const expectedChapters = 7
+        const expectedSections = 21
+        const coverage = 0.72
+        // 与后端 evaluate_report_quality 同构的确定性 100 分制（演示数据固定值）
+        // 5 维（2026-09-19 移除图表嵌入/表达质量后均衡重分配）。
+        const score_breakdown = [
+          {
+            dimension: 'structure',
+            // 与后端一致：对合计再 round，避免奇数权重 25 下 half=12.5 被压成 24
+            score: Math.max(
+              0,
+              Math.min(
+                25,
+                Math.round(
+                  12.5 * Math.min(1, chapterCount / expectedChapters) +
+                    12.5 * Math.min(1, sectionCount / expectedSections)
+                )
+              )
+            ),
+            weight: 25,
+            max_score: 25,
+            reason: `章节 ${chapterCount}/${expectedChapters}，小节 ${sectionCount}/${expectedSections}`,
+          },
+          {
+            dimension: 'evidence_coverage',
+            score: Math.round(30 * coverage),
+            weight: 30,
+            max_score: 30,
+            reason: `证据覆盖率 ${Math.round(coverage * 100)}%`,
+          },
+          {
+            dimension: 'citation_consistency',
+            score: 15,
+            weight: 15,
+            max_score: 15,
+            reason: '引用全部可追溯',
+          },
+          {
+            dimension: 'dimension_coverage',
+            score: 12,
+            weight: 20,
+            max_score: 20,
+            reason: '维度覆盖均值 0.60（5 个维度）',
+          },
+          {
+            dimension: 'risk_disclosure',
+            score: 10,
+            weight: 10,
+            max_score: 10,
+            reason: '风险全部披露',
+          },
+        ]
+        const total_score = score_breakdown.reduce((sum, item) => sum + item.score, 0)
+        return {
+          passed: true,
+          chapter_count: chapterCount,
+          section_count: sectionCount,
+          included_chart_count: included.length,
+          evidence_coverage: coverage,
+          issues: ['装机量结构化序列缺口（REQUESTED-DATA-UNAVAILABLE）', DEMO_BANNER],
+          expected_chapter_count: expectedChapters,
+          expected_section_count: expectedSections,
+          total_score,
+          score_breakdown,
+          thresholds: { good: 90, warn: 70 },
+        }
+      })(),
       release_mode: 'draft_with_warnings',
       /*
        * 对齐真实后端 ReportFusionResult：

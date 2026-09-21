@@ -90,10 +90,13 @@ def test_html_uses_effective_visual_style_and_exposes_decision(
     )
 
     html = render_html(report)
+    body = html.split("</head>", 1)[1]
 
     assert report.visual_decision.effective_style == "data_manual"
     assert report.visual_decision.selection_source == "user"
-    assert 'class="visual-data-manual density-compact' in html
-    assert "数据手册型" in html
-    assert '<span class="chart-number">图1</span>' in html
-    assert "表附-1 · 来源与证据索引" in html
+    # 视觉风格/密度经 body class 暴露（后端决策可追溯）
+    assert 'class="visual-data-manual density-compact' in body
+    # 新版式契约（外部新模板）：图表编号用「图2-1」，来源索引标题为 <h2>，
+    # 不再有旧模板的 chip / figure-caption「图1：」/ .section-title 结构。
+    assert "图2-1" in body
+    assert "<h2>来源与证据索引</h2>" in body

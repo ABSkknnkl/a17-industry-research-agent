@@ -87,4 +87,21 @@ describe('report_fusion 阶段数据字段对齐', () => {
     expect(quality.expected_section_count).toBe(21)
     expect(quality.chapter_count).toBe(7)
   })
+
+  it('quality 带后端确定性 100 分制字段（total_score / score_breakdown / thresholds）', () => {
+    const quality = fusionData().quality as Record<string, unknown>
+    const breakdown = quality.score_breakdown as Array<{ score: number; max_score: number }>
+
+    expect(typeof quality.total_score).toBe('number')
+    expect(Array.isArray(breakdown)).toBe(true)
+    expect(breakdown.length).toBe(5)
+    expect(quality.total_score).toBe(
+      breakdown.reduce((sum, item) => sum + item.score, 0)
+    )
+    for (const item of breakdown) {
+      expect(item.score).toBeGreaterThanOrEqual(0)
+      expect(item.score).toBeLessThanOrEqual(item.max_score)
+    }
+    expect(quality.thresholds).toEqual({ good: 90, warn: 70 })
+  })
 })

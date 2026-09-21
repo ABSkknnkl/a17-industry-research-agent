@@ -175,6 +175,11 @@
         },
         "artifact_id": { "type": ["string", "null"] },
         "recommended_chapter_id": { "type": ["string", "null"], "pattern": "^CH-\\d{2}$" },
+        "display_kind": {
+          "type": "string",
+          "enum": ["chart", "metric_card", "table", "diagram"],
+          "default": "chart"
+        },
         "candidate_status": {
           "enum": ["valid", "recommended", "not_recommended", "selected", "excluded_by_user", "hard_blocked", "needs_reassignment", null]
         }
@@ -255,7 +260,16 @@
           "items": { "type": "string" }
         },
         "data_fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
-        "dedupe_key": { "type": "string", "minLength": 1 }
+        "dedupe_key": { "type": "string", "minLength": 1 },
+        "display_kind": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["chart", "metric_card", "table", "diagram"]
+            },
+            { "type": "null" }
+          ]
+        }
       }
     },
     "suppressedChart": {

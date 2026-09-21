@@ -8,7 +8,10 @@ from app.agents.data_fetcher.factory import (
 from app.agents.chapter_writer.service import ChapterWriterAgent
 from app.agents.chart_generator.service import ChartGeneratorAgent
 from app.agents.report_fusion.service import ReportFusionAgent
-from app.integrations.llm.factory import create_readability_model
+from app.integrations.llm.factory import (
+    create_readability_model,
+    create_visual_review_model,
+)
 from app.integrations.llm.protocol import AnalysisModel, ChapterWritingModel
 from app.integrations.visuals.factory import create_image_generator, create_prompt_compiler
 from app.core.config import settings
@@ -63,6 +66,18 @@ def create_stage_registry(
                     readability_max_rewrites=settings.READABILITY_MAX_REWRITES,
                 )
             ),
-            ReportFusionAgent(),
+            ReportFusionAgent(
+                visual_review_model=(
+                    create_visual_review_model(settings)
+                    if settings.REPORT_VISUAL_REVIEW_ENABLED
+                    else None
+                ),
+                visual_review_enabled=settings.REPORT_VISUAL_REVIEW_ENABLED,
+                visual_review_threshold=settings.REPORT_VISUAL_REVIEW_THRESHOLD,
+                visual_review_max_repairs=settings.REPORT_VISUAL_REVIEW_MAX_REPAIRS,
+                visual_review_max_pages=settings.REPORT_VISUAL_REVIEW_MAX_PAGES,
+                visual_review_batch_size=settings.REPORT_VISUAL_REVIEW_BATCH_SIZE,
+                visual_review_dpi=settings.REPORT_VISUAL_REVIEW_DPI,
+            ),
         ]
     )

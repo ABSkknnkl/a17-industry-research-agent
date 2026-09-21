@@ -1,0 +1,332 @@
+{#
+  行业研究报告正文模板（Deep Research 机构版）
+
+  与 report.html.j2（旧版）的关系：并存的另一套版式，不改旧版任何行为。
+  设计目标 = 与外部参考件「宇树科技行业研究报告」的排版/风格/颜色一致，
+  因此只用 report-style-industry.css.j2 的令牌与组件类，不引旧版任何 class。
+
+  上游文字落位（全部来自既有 ReportViewModel，不改上游契约）：
+    封面       title / industry_topic / research_as_of / generated_at / report_id
+               / delivery_status / executive_summary.headline
+    章节刊头    chapters[].chapter_id + title        →  PAGE n · CH-nn
+    核心研判    chapters[].summary
+    覆盖快照    证据条数 / 章节·小节 / 图表数 / 数据质量问题数（真实计数，非编造业务指标）
+    核心结论    executive_summary.conclusions       →  蓝方点 + [来源n] + 置信度 chip
+    正文        chapters[].sections[].title / paragraphs[]
+    待验证      chapters[].sections[].uncertainties →  黄色框
+    图表        report.charts（按 placement_section_id 落位）→ 图框 + 图注 + 解读
+    情景风险    executive_summary.scenarios / risks / research_boundaries
+    附录        quality_appendix.*
+    来源索引    evidence_catalog → source_rows
+#}
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ report.title }}</title>
+  <style>
+{{ report_css }}
+  </style>
+</head>
+<body class="visual-{{ report.visual_decision.effective_style|replace('_', '-') }} density-{{ report.visual_decision.density }}">
+<div class="sheet">
+  <div class="page-head">{{ report.industry_topic.removesuffix('行业') }}行业研究报告</div>
+
+  <header class="cover">
+    <div class="cover-kicker">
+      <span>深度行业专题研究 · 机构版</span>
+      <span class="chip">{{ report.visual_decision.effective_style|upper }}</span>
+    </div>
+    <p class="cover-subtitle">{{ report.industry_topic }} · 深度产业与财务全景透视</p>
+    <h1 class="cover-title">{{ report.title }}</h1>
+    <p class="cover-deck">{{ display_html(report.executive_summary.headline) }}</p>
+    <dl class="cover-meta">
+      <div>
+        <dt>研究时点</dt>
+        <dd>{{ report.research_as_of }}</dd>
+      </div>
+      <div>
+        <dt>数据覆盖</dt>
+        <dd>{{ source_rows|length }} 条证据</dd>
+      </div>
+      <div>
+        <dt>覆盖核心章节</dt>
+        <dd>{{ report.chapters|length }} 章 {{ section_total }} 节</dd>
+      </div>
+      <div>
+        <dt>交付状态</dt>
+        <dd class="is-accent">{{ report.delivery_status }}</dd>
+      </div>
+    </dl>
+    <div class="cover-refs">
+      {# 只放生成时间：报告编号（REPORT-…）属内部标识，契约禁止写入成品 #}
+      <span>生成时间：{{ report.generated_at.strftime('%Y-%m-%d %H:%M') }} UTC</span>
+    </div>
+    <div class="cover-rule"></div>
+  </header>
+
+  <main>
+    {% if report.release_mode == 'draft_with_warnings' %}
+    <div class="warn-box avoid-break">
+      <p class="warn-box-title">内部审核草稿</p>
+      <ul><li>本件部分内容尚未通过完整证据校验，不得作为正式交付件对外分发。</li></ul>
+    </div>
+    {% endif %}
+
+    {# 目录：条目与层级对齐外部参考件（章 / 节两级 + 尾部附录条目），
+       每个条目都链到页内对应区块；锚点用序号（chapter-N / section-N-M），
+       不使用 chapter_id / section_id —— 契约禁止内部标识进成品。 #}
+    <section class="toc-page">
+      <h2 class="toc-title">目　录</h2>
+      <p class="toc-subtitle">共 {{ report.chapters|length }} 章 {{ section_total }} 节　·　收录图表 {{ report.charts|length }} 张　·　研究基准日 {{ report.research_as_of }}</p>
+      <div class="toc-head"><span>章节</span><span class="leader"></span><span class="pg">页码</span></div>
+      <ol class="toc">
+        {% for chapter in report.chapters %}
+        {% set chapter_index = loop.index %}
+        <li class="toc-chapter">
+          <a href="#chapter-{{ chapter_index }}"><span class="t"><span class="n">{{ chapter_label(chapter.chapter_id) }}</span>　{{ display_text(chapter.title) }}</span></a>
+          <span class="leader"></span><span class="pg"></span>
+        </li>
+        {# 简报深度不渲染小节 → 目录不得列出小节条目，否则全是死链 #}
+        {% if report.report_depth != 'brief' %}
+        {% for section in chapter.sections %}
+        <li class="toc-section">
+          <a href="#section-{{ chapter_index }}-{{ loop.index }}"><span class="t">{{ display_text(section.title) }}</span></a>
+          <span class="leader"></span><span class="pg"></span>
+        </li>
+        {% endfor %}
+        {% endif %}
+        {% endfor %}
+        {% if unplaced_charts %}
+        <li class="toc-chapter toc-back">
+          <a href="#appendix-charts"><span class="t">附录 · 图表</span></a>
+          <span class="leader"></span><span class="pg"></span>
+        </li>
+        {% endif %}
+        {% if report.quality_appendix.data_quality_issues or report.quality_appendix.financial_consistency_checks or report.quality_appendix.dimension_coverage %}
+        <li class="toc-chapter toc-back">
+          <a href="#appendix-quality"><span class="t">附录 · 数据质量与研究边界</span></a>
+          <span class="leader"></span><span class="pg"></span>
+        </li>
+        {% endif %}
+        {% if report.release_mode == 'draft_with_warnings' and report.unresolved_risks %}
+        <li class="toc-chapter toc-back">
+          <a href="#open-issues"><span class="t">未解决问题清单</span></a>
+          <span class="leader"></span><span class="pg"></span>
+        </li>
+        {% endif %}
+        <li class="toc-chapter toc-back">
+          <a href="#source-index"><span class="t">来源与证据索引</span></a>
+          <span class="leader"></span><span class="pg"></span>
+        </li>
+        <li class="toc-chapter toc-back">
+          <a href="#disclaimer"><span class="t">研究口径与免责声明</span></a>
+          <span class="leader"></span><span class="pg"></span>
+        </li>
+      </ol>
+      <p class="toc-footnote">目录条目均可点击跳转至页内对应区块；页码为 PDF 物理页码，HTML 预览中该列留空。</p>
+    </section>
+
+    <section class="section-mast avoid-break">
+      <div class="kicker">REPORT 1 · EXECUTIVE SUMMARY</div>
+      <h2 class="section-title">核心结论与覆盖快照</h2>
+    </section>
+
+    <div class="callout">
+      <p><span class="callout-label">核心研判：</span>{{ display_html(report.executive_summary.headline) }}</p>
+    </div>
+
+    <div class="kpi-row avoid-break">
+      <div class="kpi">
+        <div class="kpi-label">证据条目</div>
+        <div class="kpi-value">{{ source_rows|length }}<span class="kpi-unit">条</span></div>
+        <div class="kpi-note">已进入来源索引并逐条标注</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">章节规模</div>
+        <div class="kpi-value">{{ report.chapters|length }}<span class="kpi-unit">章</span></div>
+        <div class="kpi-note">共 {{ section_total }} 个小节</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">图表数量</div>
+        <div class="kpi-value">{{ report.charts|length }}<span class="kpi-unit">张</span></div>
+        <div class="kpi-note">仅纳入通过校验的图表</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">数据质量问题</div>
+        <div class="kpi-value">{{ quality_issue_count }}<span class="kpi-unit">项</span></div>
+        <div class="kpi-note">见文末「数据质量与研究边界」</div>
+      </div>
+    </div>
+
+    <h3 class="rule-head">核心结论与驱动逻辑</h3>
+    <ol class="points">
+      {% for item in report.executive_summary.conclusions %}
+      <li class="point">{{ display_html(item.text) }}{% for source in evidence_entries(item.evidence_ids) %} <a class="cite" href="#source-{{ source.citation_number }}">[来源{{ source.citation_number }}]</a>{% endfor %}<span class="conf {{ tone_class(item.confidence) }}">置信度：{{ confidence_labels[item.confidence] }}</span></li>
+      {% endfor %}
+    </ol>
+
+    {% if report.executive_summary.scenarios %}
+    <h3 class="rule-head">情景与风险边界</h3>
+    <div class="table-block">
+      <table class="data-table">
+        <caption>三种情景、核心风险与研究边界</caption>
+        <thead><tr><th>类别</th><th>内容</th></tr></thead>
+        <tbody>
+          {% for item in report.executive_summary.scenarios %}<tr><td>情景</td><td>{{ display_html(item) }}</td></tr>{% endfor %}
+          {% for item in report.executive_summary.risks %}<tr><td>风险</td><td>{{ display_html(item) }}</td></tr>{% endfor %}
+          {% for item in report.executive_summary.research_boundaries %}<tr><td>边界</td><td>{{ display_html(item) }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% for chapter in report.chapters %}
+    {# 刊头第二个字段取 visual_decision 的主导内容类型（英文 token），
+       不使用 chapter_id —— 契约禁止把内部 ID（CH-01 之类）写入成品。 #}
+    {% set chapter_index = loop.index %}
+    {% set strategy = report.visual_decision.per_chapter_strategy.get(chapter.chapter_id) %}
+    <section class="section-mast page-break" id="chapter-{{ chapter_index }}">
+      <div class="kicker">PAGE {{ chapter_index }}{% if strategy %} · {{ strategy.dominant_content|upper|replace('_', ' ') }}{% endif %}</div>
+      <h2 class="section-title">{{ chapter_label(chapter.chapter_id) }} · {{ display_text(chapter.title) }}</h2>
+    </section>
+
+    <div class="panel">
+      <p>{{ display_html(chapter.summary) }}</p>
+    </div>
+
+    {% if report.report_depth != 'brief' %}
+    {% for section in chapter.sections %}
+    <section class="section-block" id="section-{{ chapter_index }}-{{ loop.index }}">
+    <h3 class="rule-head">{{ section_label(section.section_id) }} · {{ display_text(section.title) }}</h3>
+    {% if section.purpose %}<p class="purpose">{{ display_text(section.purpose) }}</p>{% endif %}
+    {% if section.key_points %}
+    <ul class="point-cards">
+      {% for item in section.key_points %}<li class="point-card">{{ display_html(item) }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% for paragraph in section.paragraphs %}
+    {% if paragraph.kind == 'risk' %}
+    <div class="callout--risk avoid-break">
+      <p><span class="callout-label">风险提示：</span>{{ display_html(paragraph.text) }}{% for source in evidence_entries(paragraph.evidence_ids) %} <a class="cite" href="#source-{{ source.citation_number }}">[来源{{ source.citation_number }}]</a>{% endfor %}</p>
+    </div>
+    {% else %}
+    <p>{{ display_html(paragraph.text) }}{% for source in evidence_entries(paragraph.evidence_ids) %} <a class="cite" href="#source-{{ source.citation_number }}">[来源{{ source.citation_number }}]</a>{% endfor %}</p>
+    {% endif %}
+    {% endfor %}
+    {% for chart in charts_by_section.get(section.section_id, []) %}
+    <figure class="figure-box avoid-break" id="{{ chart.anchor }}">
+      <p class="figure-title">{{ display_text(chart.title) }}</p>
+      <div class="figure-unit">{{ chart_type_labels[chart.chart_type] }}</div>
+      <div class="figure-body">{{ chart.svg }}</div>
+      <div class="figure-source">数据来源：{% for source in evidence_entries(chart.evidence_ids) %}{{ source.display_label }}{% if not loop.last %}；{% endif %}{% else %}来源信息待补充{% endfor %}{% for note in chart.footnotes %} · {{ display_text(note) }}{% endfor %}</div>
+      <figcaption class="figure-caption">{{ chart.display_number }}：{{ display_text(chart.title) }}</figcaption>
+      {% if chart.insight_goal %}<p class="figure-note">{{ display_text(chart.insight_goal) }}</p>{% endif %}
+    </figure>
+    {% endfor %}
+    {% if section.uncertainties %}
+    <div class="warn-box avoid-break">
+      <p class="warn-box-title">待验证事项与资料边界</p>
+      <ul>{% for item in section.uncertainties %}<li>{{ display_html(item) }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+    </section>
+    {% endfor %}
+    {% endif %}
+    {% endfor %}
+
+    {% if unplaced_charts %}
+    <section class="section-mast page-break" id="appendix-charts">
+      <div class="kicker">APPENDIX · CHARTS</div>
+      <h2 class="section-title">附录 · 图表</h2>
+    </section>
+    {% for chart in unplaced_charts %}
+    <figure class="figure-box avoid-break" id="{{ chart.anchor }}">
+      <p class="figure-title">{{ display_text(chart.title) }}</p>
+      <div class="figure-unit">{{ chart_type_labels[chart.chart_type] }}</div>
+      <div class="figure-body">{{ chart.svg }}</div>
+      <div class="figure-source">数据来源：{% for source in evidence_entries(chart.evidence_ids) %}来源{{ source.citation_number }}（{{ source.display_label }}）{% else %}来源信息待补充{% endfor %}</div>
+      <figcaption class="figure-caption">{{ chart.display_number }}：{{ display_text(chart.title) }}</figcaption>
+    </figure>
+    {% endfor %}
+    {% endif %}
+
+    {% set appendix = report.quality_appendix %}
+    {% if appendix.data_quality_issues or appendix.financial_consistency_checks or appendix.dimension_coverage %}
+    <section class="section-mast page-break" id="appendix-quality">
+      <div class="kicker">APPENDIX A · QUALITY &amp; BOUNDARIES</div>
+      <h2 class="section-title">数据质量与研究边界</h2>
+    </section>
+
+    {% if appendix.dimension_coverage %}
+    <div class="table-block avoid-break">
+      <table class="data-table">
+        <caption>研究维度覆盖</caption>
+        <thead><tr><th>维度</th><th>状态</th><th>说明</th></tr></thead>
+        <tbody>{% for item in appendix.dimension_coverage %}<tr><td class="strong">{{ dimension_labels[item.dimension] }}</td><td>{{ coverage_status_labels[item.status] }}</td><td>{{ display_text(item.reason) }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if appendix.data_quality_issues %}
+    <div class="table-block avoid-break">
+      <table class="data-table">
+        <caption>数据质量问题</caption>
+        <thead><tr><th>序号</th><th>指标</th><th>影响</th><th>说明与处理</th></tr></thead>
+        <tbody>{% for item in appendix.data_quality_issues %}<tr><td>问题{{ loop.index }}</td><td class="strong">{{ display_text(item.metric) }}</td><td>{{ impact_labels[item.impact_level] }}</td><td>{{ display_text(item.description) }}<br>处理：{{ display_text(item.suggested_handling) }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if appendix.financial_consistency_checks %}
+    <div class="table-block avoid-break">
+      <table class="data-table">
+        <caption>财务一致性检查</caption>
+        <thead><tr><th>序号</th><th>状态</th><th>结论</th><th>影响</th></tr></thead>
+        <tbody>{% for item in appendix.financial_consistency_checks %}<tr><td>检查{{ loop.index }}</td><td>{{ check_status_labels[item.status] }}</td><td>{{ display_text(item.conclusion) }}</td><td>{{ display_text(item.impact) }}</td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    {% if appendix.skipped_chart_notes %}
+    <div class="warn-box avoid-break">
+      <p class="warn-box-title">未生成图表</p>
+      <ul>{% for item in appendix.skipped_chart_notes %}<li>{{ display_html(item) }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if report.release_mode == 'draft_with_warnings' and report.unresolved_risks %}
+    <div class="warn-box avoid-break" id="open-issues">
+      <p class="warn-box-title">未解决问题清单</p>
+      <ul>{% for risk in report.unresolved_risks %}<li>{{ display_html(risk) }}</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
+    <section class="section-mast page-break" id="source-index">
+      <div class="kicker">APPENDIX B · SOURCE INDEX</div>
+      <h2 class="section-title">来源与证据索引</h2>
+    </section>
+    <div class="table-block">
+      <table class="source-table">
+        <thead><tr><th>序号</th><th>材料</th><th>发布主体</th><th>日期</th><th>报告期</th><th>页码/章节</th><th>获取方式/层级</th></tr></thead>
+        <tbody>
+        {% for source in source_rows %}
+        <tr id="source-{{ source.citation_number }}"><td class="src-id">来源{{ source.citation_number }}</td><td>{{ source.material }}</td><td>{{ source.publisher }}</td><td>{{ source.available_date }}</td><td>{{ source.reporting_period }}</td><td>{{ source.locator }}</td><td>{{ source.method_level }}</td></tr>
+        {% else %}
+        <tr><td colspan="7">当前报告未提供可展示的来源元数据。</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <footer class="disclaimer" id="disclaimer">
+      <p>{{ display_html(report.methodology_note) }}</p>
+      <p>{{ display_html(report.disclaimer) }}</p>
+      <p>数据截止：{{ report.research_as_of }}　·　行业研究系统</p>
+    </footer>
+  </main>
+</div>
+</body>
+</html>

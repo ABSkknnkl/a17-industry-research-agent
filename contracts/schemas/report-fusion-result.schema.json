@@ -11,6 +11,7 @@
     "research_as_of",
     "generated_at",
     "tone",
+    "decision_brief",
     "formats",
     "source_revisions",
     "included_chart_ids",
@@ -32,6 +33,7 @@
       "type": "string",
       "enum": ["ready", "ready_with_limits", "blocked"]
     },
+    "decision_brief": { "$ref": "#/$defs/reportDecisionBrief" },
     "formats": {
       "type": "array",
       "minItems": 1,
@@ -61,6 +63,30 @@
     "draft_eligible": { "type": "boolean" },
     "acknowledged_risks": { "type": "array", "items": { "type": "string" } },
     "unresolved_risks": { "type": "array", "items": { "type": "string" } },
+    "visual_review": {
+      "anyOf": [
+        { "$ref": "#/$defs/visualReviewSummary" },
+        { "type": "null" }
+      ]
+    },
+    "editorial_plan": {
+      "anyOf": [
+        { "$ref": "#/$defs/editorialPlan" },
+        { "type": "null" }
+      ]
+    },
+    "report_blueprint": {
+      "anyOf": [
+        { "$ref": "#/$defs/reportBlueprint" },
+        { "type": "null" }
+      ]
+    },
+    "page_composition_plan": {
+      "anyOf": [
+        { "$ref": "#/$defs/pageCompositionPlan" },
+        { "type": "null" }
+      ]
+    },
     "chapters": {
       "type": "array",
       "minItems": 7,
@@ -71,6 +97,35 @@
     "visual_decision": { "$ref": "#/$defs/visualDecision" }
   },
   "$defs": {
+    "reportDecisionBrief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["focus_questions", "included_topics", "excluded_topics", "focus_companies", "editorial_instruction"],
+      "properties": {
+        "focus_questions": { "type": "array", "maxItems": 12, "items": { "type": "string" } },
+        "included_topics": { "type": "array", "maxItems": 12, "items": { "type": "string" } },
+        "excluded_topics": { "type": "array", "maxItems": 12, "items": { "type": "string" } },
+        "focus_companies": { "type": "array", "maxItems": 20, "items": { "type": "string" } },
+        "editorial_instruction": { "type": ["string", "null"], "maxLength": 2500 }
+      }
+    },
+    "visualReviewSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passed", "score", "critical_count", "major_count", "minor_count", "review_rounds", "degraded"],
+      "properties": {
+        "passed": { "type": "boolean" },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "critical_count": { "type": "integer", "minimum": 0 },
+        "major_count": { "type": "integer", "minimum": 0 },
+        "minor_count": { "type": "integer", "minimum": 0 },
+        "review_rounds": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "degraded": { "type": "boolean" }
+      }
+    },
+    "editorialPlan": { "$ref": "editorial-plan.schema.json" },
+    "reportBlueprint": { "$ref": "report-blueprint.schema.json" },
+    "pageCompositionPlan": { "$ref": "report-blueprint.schema.json#/$defs/pageCompositionPlan" },
     "reportFormat": {
       "type": "string",
       "enum": ["markdown", "html", "pdf"]
@@ -123,7 +178,34 @@
         "evidence_coverage": { "type": "number", "minimum": 0, "maximum": 1 },
         "issues": { "type": "array", "items": { "type": "string" } },
         "expected_chapter_count": { "type": "integer", "minimum": 1 },
-        "expected_section_count": { "type": "integer", "minimum": 1 }
+        "expected_section_count": { "type": "integer", "minimum": 1 },
+        "total_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "score_breakdown": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/scoreBreakdownItem" }
+        },
+        "thresholds": { "$ref": "#/$defs/qualityThresholds" }
+      }
+    },
+    "scoreBreakdownItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["dimension", "score", "weight", "max_score", "reason"],
+      "properties": {
+        "dimension": { "type": "string", "minLength": 1 },
+        "score": { "type": "integer", "minimum": 0 },
+        "weight": { "type": "integer", "minimum": 0 },
+        "max_score": { "type": "integer", "minimum": 0 },
+        "reason": { "type": "string" }
+      }
+    },
+    "qualityThresholds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["good", "warn"],
+      "properties": {
+        "good": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "warn": { "type": "integer", "minimum": 0, "maximum": 100 }
       }
     },
     "fusionSectionOutline": {
@@ -182,7 +264,7 @@
         "effective_style": { "$ref": "#/$defs/visualStyle" },
         "selection_source": {
           "type": "string",
-          "enum": ["user", "agent_recommendation", "default"]
+          "enum": ["user", "agent_recommendation", "editorial_model", "default"]
         },
         "density": { "type": "string", "enum": ["compact", "balanced", "detailed"] },
         "chart_density": { "type": "string", "enum": ["low", "medium", "high"] },

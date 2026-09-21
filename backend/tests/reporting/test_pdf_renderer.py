@@ -142,11 +142,12 @@ async def test_browser_launched_once_and_reused_across_calls(
     assert browser.new_page_calls == 3
 
     # S-5：页边距只在 Python 侧定义一处，且以 A4 输出。
+    # 顶部 20mm / 底部 18mm 为跑版页眉页脚留位（原生 header/footer_template）。
     assert browser.pdf_kwargs == {
         "format": "A4",
         "print_background": True,
         "prefer_css_page_size": True,
-        "margin": {"top": "14mm", "right": "12mm", "bottom": "16mm", "left": "12mm"},
+        "margin": {"top": "20mm", "right": "15mm", "bottom": "18mm", "left": "15mm"},
     }
 
 

@@ -12,7 +12,7 @@ class ReadabilityContract(BaseModel):
 class ReadabilityFinding(ReadabilityContract):
     rule_id: str | None = None      # Linter 命中时填写（如 R5_BARE_LABEL）
     locator: str = ""               # 定位：P-04-01-01 或 SEC-04-01（graph 层回填）
-    dimension: Literal["通顺度", "俗通度", "连贯性", "客观性"]
+    dimension: Literal["通顺度", "通俗度", "连贯性", "客观性"]
     severity: Literal["must_fix", "suggest"]
     reason: str                     # 具体哪里读不懂
     rewrite_hint: str               # 建议修改方向（供 Agent 4 / 人工参考）

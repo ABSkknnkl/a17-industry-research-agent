@@ -183,6 +183,7 @@ class ChapterReviewEdits(ContractModel):
 
 
 class ReportFusionOptions(ContractModel):
+    beautify_mode: Literal["off", "on"] = "off"
     summary_direction: str | None = Field(default=None, min_length=1, max_length=500)
     chapter_order: list[str] = Field(default_factory=list, max_length=7)
     tone: Literal["professional", "plain_language"] | None = None
@@ -199,6 +200,13 @@ class ReportFusionOptions(ContractModel):
         "deep_research",
     ] = "auto"
     visual_density: Literal["compact", "balanced", "detailed"] = "balanced"
+    template_profile: Literal[
+        "auto",
+        "classic_research",
+        "modern_analysis",
+        "data_intensive",
+        "narrative_flow",
+    ] = "auto"
 
 
 class ReportFusionReviewEdits(ContractModel):

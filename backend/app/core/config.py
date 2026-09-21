@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str | None = None
     LLM_MODEL: str = "deepseek-v4-flash"
     LLM_USE_MOCK: bool = False
-    LLM_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3600)
+    LLM_TIMEOUT_SECONDS: float = Field(default=240, gt=0, le=3600)
     LLM_MAX_OUTPUT_TOKENS: int = Field(default=8_192, ge=1_024, le=32_768)
     LLM_SEGMENTED_THRESHOLD_CHARS: int = Field(default=10_000, ge=5_000, le=500_000)
     # 可读性评审器（独立配置位；为将来换供应商留口）
@@ -48,6 +48,33 @@ class Settings(BaseSettings):
     READABILITY_REVIEW_ENABLED: bool = False  # 评审器默认不启用，需要时再开
     READABILITY_THRESHOLD: float = Field(default=0.6, ge=0, le=1)
     READABILITY_MAX_REWRITES: int = Field(default=2, ge=0, le=5)
+    # ---- Agent 5 视觉审核（第一轮迁移，默认关闭；确定性复检不受此开关影响）----
+    # 关闭时不得实例化/调用视觉审核模型（factory 返回 None，workflow 也不注入
+    # 实例）。配置开启但凭据缺失时走现有 runtime/readiness 策略温和降级
+    # （live_llm_configuration_missing, fail-closed 不绕过）。
+    #
+    # 注意：页内几何复检（app.reporting.visual_review.deterministic_visual_review）
+    # 是纯确定性检查，不需要任何模型与凭据，始终随 PDF 导出执行。
+    # 2026-09-21 删除 REPORT_EDITORIAL_* 五项配置：模型版编辑计划的目标是让版式
+    # 逐份变化，与固定版式交付对冲，消费路径已移除。
+    REPORT_VISUAL_REVIEW_ENABLED: bool = False
+    # 正式 PDF 交付采取严格策略：逐批小图高分辨率审核，任何未解决的重大视觉
+    # 问题都不得放行（字段名以外部 agent-chart-mvp-sync 为准；此处只加字段）。
+    REPORT_VISUAL_REVIEW_THRESHOLD: float = Field(default=0.95, ge=0, le=1)
+    REPORT_VISUAL_REVIEW_MAX_REPAIRS: int = Field(default=2, ge=0, le=2)
+    REPORT_VISUAL_REVIEW_MAX_PAGES: int = Field(default=200, ge=1, le=500)
+    REPORT_VISUAL_REVIEW_BATCH_SIZE: int = Field(default=4, ge=1, le=6)
+    REPORT_VISUAL_REVIEW_DPI: int = Field(default=144, ge=96, le=200)
+    # ---- Agent 4 章节写作并发（2026-09-18 方案）----
+    # 灰度开关：关闭后回退到串行逐章状态机（回滚安全）。
+    CHAPTER_WRITE_CONCURRENCY_ENABLED: bool = True
+    # 并发度上限（Semaphore）；默认 7 = 全量并发（当前大纲恰好 7 章）。
+    # 保留旋钮的意义：① 大纲扩容时兜底 ② 故障态抑制重试风暴。
+    CHAPTER_WRITE_CONCURRENCY: int = Field(default=7, ge=1, le=16)
+    # Agent 4 单次模型调用超时（独立于全局 LLM_TIMEOUT_SECONDS）。
+    # 全局值被 .env 钉在 600 以兼容 Agent 2 慢调用；Agent 4 用更短的
+    # 超时确保单章挂死不拖垮 600s 阶段预算（超时→该章走兜底，阶段仍 COMPLETED）。
+    CHAPTER_WRITE_LLM_TIMEOUT_SECONDS: float = Field(default=240, gt=0, le=600)
     AGENT1_SEMANTIC_ROUTER_ENABLED: bool = False
     AGENT1_SEMANTIC_ROUTER_CONFIDENCE: float = Field(default=0.9, ge=0.5, le=1)
     AGENT1_INTENT_DECOMPOSER_ENABLED: bool = False
@@ -103,9 +130,21 @@ class Settings(BaseSettings):
     INDUSTRY_CHAIN_IMAGE_ENABLED: bool = False
     IMAGE_USE_MOCK: bool = False
     IMAGE_API_KEY: SecretStr | None = None
-    IMAGE_BASE_URL: str = "https://api.openai.com/v1"
-    IMAGE_MODEL: str = "gpt-image-1"
-    IMAGE_SIZE: Literal["1536x1024", "1024x1024"] = "1536x1024"
+    IMAGE_BASE_URL: str = "https://router.shengsuanyun.com/api/v1"
+    IMAGE_MODEL: str = "openai/gpt-image-2"
+    IMAGE_SIZE: Literal["1536x1024", "1024x1024", "2048x2048", "auto"] = "2048x2048"
+    #: 昇算云模型专属请求体字段（如 gpt-image-2 的 size/quality/background/moderation=auto）。
+    #: 非空时按配置原样下发（仅注入 model/prompt）；置空则回落 seedream 默认体。
+    IMAGE_EXTRA_FIELDS: dict[str, object] | None = Field(
+        default_factory=lambda: {
+            "background": "auto",
+            "moderation": "auto",
+            "n": 1,
+            "output_compression": 100,
+            "quality": "auto",
+            "size": "auto",
+        }
+    )
     IMAGE_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3600)
     SKILLHUB_API_KEY: SecretStr | None = None
     IWENCAI_API_KEY: SecretStr | None = None
@@ -124,6 +163,18 @@ class Settings(BaseSettings):
     MAX_TOOL_CALLS_PER_RUN: int = Field(default=48, ge=1, le=1_000)
     MAX_TOOL_RESULT_CHARS: int = Field(default=20_000, ge=20, le=1_000_000)
     MAX_RUNTIME_EVENTS: int = Field(default=100, ge=10, le=2_000)
+
+    # ---- 报告质量评分器（总分 100，2026-09-19 方案）----
+    # 5 维权重，和必须 == 100（单测守护）。全 L1 确定性维度
+    # （图表嵌入 / 表达质量两维已于 2026-09-19 移除，释放的 15 分均衡重分配）。
+    REPORT_QUALITY_WEIGHT_STRUCTURE: int = Field(default=25, ge=0, le=100)
+    REPORT_QUALITY_WEIGHT_EVIDENCE: int = Field(default=30, ge=0, le=100)
+    REPORT_QUALITY_WEIGHT_CITATION: int = Field(default=15, ge=0, le=100)
+    REPORT_QUALITY_WEIGHT_DIMENSION: int = Field(default=20, ge=0, le=100)
+    REPORT_QUALITY_WEIGHT_RISK: int = Field(default=10, ge=0, le=100)
+    # 分数档阈值：good ≥90 绿、warn ≥70 黄、其余红。
+    REPORT_QUALITY_THRESHOLD_GOOD: int = Field(default=90, ge=0, le=100)
+    REPORT_QUALITY_THRESHOLD_WARN: int = Field(default=70, ge=0, le=100)
 
 
 @lru_cache

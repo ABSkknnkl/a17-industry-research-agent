@@ -1,6 +1,8 @@
 """SQLite-backed chapter persistence for incremental writing and recovery."""
 
 import json
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -31,8 +33,16 @@ class ChapterRepository:
         self._db_path = str(db_path or settings.CHECKPOINT_DATABASE_PATH)
         Path(self._db_path).parent.mkdir(parents=True, exist_ok=True)
 
-    async def initialize(self) -> None:
+    @asynccontextmanager
+    async def _connect(self) -> AsyncIterator[aiosqlite.Connection]:
+        """Open a connection with WAL mode and busy_timeout for concurrent writes."""
         async with aiosqlite.connect(self._db_path) as db:
+            await db.execute("PRAGMA journal_mode=WAL")
+            await db.execute("PRAGMA busy_timeout=5000")
+            yield db
+
+    async def initialize(self) -> None:
+        async with self._connect() as db:
             await db.execute(CHAPTER_TABLE_SQL)
             await db.commit()
 
@@ -49,7 +59,7 @@ class ChapterRepository:
         prompt_version: str | None = None,
     ) -> None:
         now = datetime.now(UTC).isoformat()
-        async with aiosqlite.connect(self._db_path) as db:
+        async with self._connect() as db:
             await db.execute(
                 """INSERT OR REPLACE INTO chapter_checkpoints
                    (run_id, chapter_id, revision, status, content_json, quality_json,
@@ -71,7 +81,7 @@ class ChapterRepository:
             await db.commit()
 
     async def get_completed_chapters(self, run_id: str, revision: int) -> list[str]:
-        async with aiosqlite.connect(self._db_path) as db:
+        async with self._connect() as db:
             cursor = await db.execute(
                 """SELECT chapter_id FROM chapter_checkpoints
                    WHERE run_id = ? AND revision = ? AND status = 'quality_passed'""",
@@ -83,7 +93,7 @@ class ChapterRepository:
     async def get_chapter(
         self, run_id: str, chapter_id: str, revision: int
     ) -> dict[str, Any] | None:
-        async with aiosqlite.connect(self._db_path) as db:
+        async with self._connect() as db:
             cursor = await db.execute(
                 """SELECT content_json, status FROM chapter_checkpoints
                    WHERE run_id = ? AND chapter_id = ? AND revision = ?""",

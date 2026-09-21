@@ -1,0 +1,4 @@
+interface:
+  display_name: "报告页面编排"
+  short_description: "压缩冗余，优化续表、中文排版、图表与分页"
+  default_prompt: "使用 $report-page-composer 为当前研究报告建立编辑层级和逐页蓝图，优化图表编码与组合，渲染复检并修正冗余、续表、中文竖排和异常留白，不改变任何金融事实。"

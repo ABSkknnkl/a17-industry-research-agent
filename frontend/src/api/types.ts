@@ -225,7 +225,7 @@ interface ChartSpecBase extends ChartMetadata {
 
 interface ChartImageMetadata {
   image_uri?: string | null
-  image_mime_type?: 'image/png' | 'image/webp' | null
+  image_mime_type?: 'image/png' | 'image/webp' | 'image/jpeg' | null
   generation_prompt?: string | null
   generation_prompt_model?: string | null
   generation_image_model?: string | null
@@ -430,6 +430,22 @@ export interface ChartCandidate {
 
 // ---------- 阶段产出宽松读取（镜像 backend/app/schemas/report.py、chapter.py） ----------
 
+/** 单维度评分明细（backend ScoreBreakdownItem） */
+export interface ScoreBreakdownItem {
+  /** 稳定英文标识：structure/evidence_coverage/citation_consistency/dimension_coverage/risk_disclosure */
+  dimension?: string
+  score?: number
+  weight?: number
+  max_score?: number
+  reason?: string
+}
+
+/** 分数档阈值（backend QualityThresholds）：total_score ≥ good 优、≥ warn 警示 */
+export interface QualityThresholds {
+  good?: number
+  warn?: number
+}
+
 /** report_fusion data.quality（backend ReportQualityReport） */
 export interface ReportQualityReport {
   passed?: boolean
@@ -445,6 +461,13 @@ export interface ReportQualityReport {
    */
   expected_chapter_count?: number
   expected_section_count?: number
+  /**
+   * 总分 100 评分模型（2026-09-19 方案）：后端确定性产出，前端只渲染、不再自行平均。
+   * 历史 run 无这些字段时前端兜底（见 QualityPanel）。
+   */
+  total_score?: number
+  score_breakdown?: ScoreBreakdownItem[]
+  thresholds?: QualityThresholds
 }
 
 /** report_fusion data.artifacts 条目（backend ReportArtifactManifestEntry L154-159） */
@@ -574,6 +597,30 @@ export interface ReportFusionData {
   outline_version?: string
   /** 视觉编排决策（后端实际下发；前端当前不消费，契约要求类型保持一致） */
   visual_decision?: VisualDecisionLoose
+  /** 研究意图（后端 ReportDecisionBrief：focus_questions/聚焦公司等） */
+  decision_brief?: {
+    focus_questions?: string[]
+    included_topics?: string[]
+    excluded_topics?: string[]
+    focus_companies?: string[]
+    editorial_instruction?: string | null
+  }
+  /** 编辑计划（Agent5 可选编辑模型输出；关闭时为 null/缺省） */
+  editorial_plan?: unknown
+  /** 页面组合计划（确定性派生，缺省为 null） */
+  page_composition_plan?: unknown
+  /** 视觉复检摘要（Agent5 可选视觉模型/确定性检查输出） */
+  visual_review?: {
+    passed?: boolean
+    score?: number
+    critical_count?: number
+    major_count?: number
+    minor_count?: number
+    review_rounds?: number
+    degraded?: boolean
+  } | null
+  /** 报告蓝图（编辑→渲染交接对象，缺省为 null） */
+  report_blueprint?: unknown
   /** 已嵌入报告的图表清单 */
   charts?: FusionChartLoose[]
   /** 报告末尾的来源清单：条数即「引用证据」数 */

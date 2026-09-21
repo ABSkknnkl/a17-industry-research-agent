@@ -1,15 +1,37 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { STAGE_LABELS, type ReportFusionData, type StageName } from '../api/types'
+import {
+  STAGE_LABELS,
+  type ReportFusionData,
+  type ScoreBreakdownItem,
+  type StageName,
+} from '../api/types'
 
-/** 融合检查项与交付质量评分，全部基于 report_fusion 阶段已有的 quality 字段聚合。 */
+/** 交付质量评分：优先渲染后端确定性 100 分制；历史 run 缺字段时前端聚合兜底。 */
 const props = defineProps<{ fusion: ReportFusionData }>()
 
 const quality = computed(() => props.fusion.quality ?? {})
 
+/** 后端维度稳定标识 → 界面中文（与 backend quality.py DIM_* 一致） */
+const DIMENSION_LABELS: Record<string, string> = {
+  structure: '结构完整度',
+  evidence_coverage: '证据覆盖率',
+  citation_consistency: '引用一致性',
+  dimension_coverage: '维度覆盖',
+  risk_disclosure: '风险披露',
+}
+
+const DIMENSION_ORDER = [
+  'structure',
+  'evidence_coverage',
+  'citation_consistency',
+  'dimension_coverage',
+  'risk_disclosure',
+]
+
 /**
- * 评分基准（分母）由后端下发，前端**不写死** 7 / 21 —— 后端调整大纲时前端自动跟随。
- * 兜底值仅用于历史 run（其 quality 缺基准字段），保证不回归。
+ * 评分基准（分母）由后端下发，前端**不写死** 7 / 21。
+ * 兜底值仅用于历史 run（其 quality 缺基准字段）。
  */
 const BASELINE_FALLBACK = { chapters: 7, sections: 21 }
 const expectedChapters = computed(
@@ -19,8 +41,55 @@ const expectedSections = computed(
   () => quality.value.expected_section_count ?? BASELINE_FALLBACK.sections
 )
 
-/** 结构/覆盖率子项评分（0-100），全部来自后端原始数值的前端聚合 */
-const subScores = computed(() => {
+/** 是否采用后端确定性总分（有 total_score 且为数字） */
+const useBackendScore = computed(
+  () => typeof quality.value.total_score === 'number' && !Number.isNaN(quality.value.total_score)
+)
+
+const backendThresholds = computed(() => quality.value.thresholds ?? {})
+const goodThreshold = computed(
+  () => (backendThresholds.value.good as number | undefined) ?? 90
+)
+const warnThreshold = computed(
+  () => (backendThresholds.value.warn as number | undefined) ?? 70
+)
+
+/** 后端 score_breakdown → 界面行（按固定维度顺序，缺维不补假数据） */
+const backendRows = computed(() => {
+  const items = (quality.value.score_breakdown ?? []).filter(
+    (item): item is ScoreBreakdownItem =>
+      !!item && typeof item.dimension === 'string' && typeof item.score === 'number'
+  )
+  const byDim = new Map(items.map((item) => [item.dimension as string, item]))
+  const ordered: typeof items = []
+  for (const dim of DIMENSION_ORDER) {
+    const hit = byDim.get(dim)
+    if (hit) ordered.push(hit)
+  }
+  // 合约外维度放在末尾，避免静默丢分
+  for (const item of items) {
+    if (!DIMENSION_ORDER.includes(item.dimension as string)) ordered.push(item)
+  }
+  return ordered.map((item) => {
+    const max = item.max_score ?? item.weight ?? 0
+    const score = item.score ?? 0
+    const pct = max > 0 ? Math.min(100, Math.round((score / max) * 100)) : null
+    return {
+      key: item.dimension as string,
+      label: DIMENSION_LABELS[item.dimension as string] ?? (item.dimension as string),
+      score,
+      max,
+      pct,
+      reason: item.reason ?? '',
+      hint:
+        item.reason ||
+        (max > 0 ? `后端评分 ${score} / ${max}` : `后端评分 ${score}`),
+    }
+  })
+})
+
+/** 历史 run 兜底：章节/小节/覆盖率三项（前端聚合，与旧版一致） */
+const legacySubScores = computed(() => {
   const chapterCount = quality.value.chapter_count
   const sectionCount = quality.value.section_count
   const coverage = quality.value.evidence_coverage
@@ -44,18 +113,55 @@ const subScores = computed(() => {
   ]
 })
 
-/** 总评分 = 可用子项的简单平均（前端聚合口径，非后端字段） */
-const overallScore = computed<number | null>(() => {
-  const available = subScores.value.filter(
+const legacyOverall = computed<number | null>(() => {
+  const available = legacySubScores.value.filter(
     (item): item is { label: string; value: number; hint: string } => item.value !== null
   )
   if (available.length === 0) return null
   return Math.round(available.reduce((sum, item) => sum + item.value, 0) / available.length)
 })
 
+/** 环上总分：后端 total_score，否则前端均值兜底 */
+const overallScore = computed<number | null>(() => {
+  if (useBackendScore.value) return quality.value.total_score ?? null
+  return legacyOverall.value
+})
+
+/** 分项：有 breakdown 用后端七维，否则用旧三项 */
+const displayRows = computed(() =>
+  useBackendScore.value && backendRows.value.length > 0
+    ? backendRows.value.map((row) => ({
+        label: row.label,
+        // 进度条用相对满分比例；数值展示分数/满分
+        value: row.pct,
+        display: row.max > 0 ? `${row.score}/${row.max}` : String(row.score),
+        hint: row.hint,
+      }))
+    : legacySubScores.value.map((item) => ({
+        label: item.label,
+        value: item.value,
+        display: item.value === null ? '—' : `${item.value}%`,
+        hint: item.hint,
+      }))
+)
+
+const scoreSourceNote = computed(() =>
+  useBackendScore.value
+    ? `后端确定性评分 · 优≥${goodThreshold.value} 警≥${warnThreshold.value}`
+    : '历史数据前端聚合口径：章节/结构/覆盖率均值'
+)
+
 const scoreColor = (value: number): string => {
-  if (value >= 90) return 'var(--el-color-success)'
-  if (value >= 70) return 'var(--el-color-warning)'
+  if (value >= goodThreshold.value) return 'var(--rp-navy)'
+  if (value >= warnThreshold.value) return 'var(--rp-gold)'
+  return 'var(--el-color-danger)'
+}
+
+const barColor = (value: number | null): string => {
+  if (value === null) return 'var(--el-color-info-light-5)'
+  // 分项条：满分红用藏青、合格用金、不足用警示色
+  if (value >= 100) return 'var(--rp-navy)'
+  if (value >= warnThreshold.value) return 'var(--rp-gold)'
   return 'var(--el-color-danger)'
 }
 
@@ -99,22 +205,22 @@ const sourceRevisions = computed(() =>
             <div class="score-caption">交付质量评分</div>
           </template>
         </el-progress>
-        <div class="score-note muted">前端聚合口径：章节/结构/覆盖率均值</div>
+        <div class="score-note muted">{{ scoreSourceNote }}</div>
       </div>
       <div class="score-bars">
-        <div v-for="sub in subScores" :key="sub.label" class="score-bar-row">
-          <span class="bar-label">{{ sub.label }}</span>
+        <div v-for="row in displayRows" :key="row.label" class="score-bar-row">
+          <span class="bar-label">{{ row.label }}</span>
           <el-progress
             class="bar-track"
-            :percentage="sub.value ?? 0"
+            :percentage="row.value ?? 0"
             :stroke-width="8"
             :show-text="false"
-            :color="sub.value === null ? 'var(--el-color-info-light-5)' : scoreColor(sub.value)"
+            :color="barColor(row.value)"
           />
-          <span class="bar-value" :class="{ muted: sub.value === null }">
-            {{ sub.value === null ? '—' : `${sub.value}%` }}
+          <span class="bar-value" :class="{ muted: row.value === null }">
+            {{ row.display }}
           </span>
-          <el-tooltip :content="sub.hint" placement="top">
+          <el-tooltip :content="row.hint" placement="top">
             <el-icon class="bar-help"><QuestionFilled /></el-icon>
           </el-tooltip>
         </div>
@@ -182,7 +288,7 @@ const sourceRevisions = computed(() =>
 <style scoped>
 .quality-panel {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 280px 1fr;
   gap: 18px;
   align-items: start;
 }
@@ -197,9 +303,11 @@ const sourceRevisions = computed(() =>
   align-items: center;
 }
 .score-value {
+  font-family: var(--rp-serif);
   font-size: 23px;
   font-weight: 700;
   line-height: 1.2;
+  color: var(--rp-navy);
 }
 .score-caption {
   font-size: 11px;
@@ -208,6 +316,9 @@ const sourceRevisions = computed(() =>
 .score-note {
   margin-top: 2px;
   font-size: 10.5px;
+  text-align: center;
+  max-width: 240px;
+  line-height: 1.45;
 }
 .score-bars {
   display: flex;
@@ -220,7 +331,7 @@ const sourceRevisions = computed(() =>
   gap: 8px;
 }
 .bar-label {
-  width: 70px;
+  width: 72px;
   font-size: 12px;
   color: var(--el-text-color-regular);
   flex-shrink: 0;
@@ -229,10 +340,16 @@ const sourceRevisions = computed(() =>
   flex: 1;
 }
 .bar-value {
-  width: 40px;
+  width: 48px;
   text-align: right;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+  font-family: var(--rp-serif);
+  color: var(--rp-navy);
+}
+.bar-value.muted {
+  font-family: inherit;
+  color: var(--el-text-color-secondary);
 }
 .bar-help {
   color: var(--el-text-color-placeholder);
@@ -246,8 +363,11 @@ const sourceRevisions = computed(() =>
 }
 .check-title {
   margin: 12px 0 6px;
+  font-family: var(--rp-serif);
   font-size: 13px;
   font-weight: 600;
+  color: var(--rp-navy);
+  letter-spacing: 0.5px;
 }
 .check-list {
   margin: 0;
@@ -262,11 +382,11 @@ const sourceRevisions = computed(() =>
   line-height: 1.7;
 }
 .icon-success {
-  color: var(--el-color-success);
+  color: var(--rp-navy);
   margin-top: 4px;
 }
 .icon-warning {
-  color: var(--el-color-warning);
+  color: var(--rp-gold);
   margin-top: 4px;
 }
 .icon-danger {

@@ -5,6 +5,7 @@ from typing import Protocol
 from app.schemas.analysis import AnalysisDraft
 from app.schemas.chapter import ChapterDraftLoose
 from app.schemas.readability import ReadabilityReport
+from app.schemas.report import VisualReviewReport
 
 
 class AnalysisModel(Protocol):
@@ -41,3 +42,19 @@ class ReadabilityReviewModel(Protocol):
         kind: str,
     ) -> ReadabilityReport:
         """Review one paragraph's readability; input-isolated (text + kind only)."""
+
+
+class VisualReviewModel(Protocol):
+    model_name: str
+
+    async def review_report(
+        self,
+        *,
+        report_context: str,
+        page_images: list[bytes],
+        page_numbers: list[int],
+        total_page_count: int,
+        deterministic_findings: list[str],
+        review_round: int,
+    ) -> VisualReviewReport:
+        """Review rendered pages without permission to change report facts."""

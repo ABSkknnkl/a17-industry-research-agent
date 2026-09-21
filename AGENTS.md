@@ -59,7 +59,7 @@ MUST allow（禁止因此 fail）：
 MUST reject path 命中：
 
 ```
-\.pytest_tmp/|\.workbuddy/|\.workbuddy-ai/|\.trae/|\.trae-html-share-packages/
+\.pytest_tmp/|\.pytest-tmp|\.pt-|\.workbuddy/|\.workbuddy-ai/|\.trae/|\.trae-html-share-packages/
 \.claude/|\.cursor/|\.aider|node_modules/|__pycache__/|\.venv/|venv/
 ^logs/|^dist/|^build/|^coverage/|^htmlcov/|/artifacts/|^output/|session-log
 \.(log|pids?|pid|sqlite|sqlite3|html\.zip|pyc|pyo|egg-info)$

@@ -31,6 +31,9 @@ ChartType = Literal[
     "treemap",
 ]
 BarVariant = Literal["vertical", "horizontal", "grouped", "stacked"]
+# 语义化展示形态（前端图表区 / HTML 排版使用）：metric_card=单值指标卡，
+# diagram=关系图，table=结构化表格，chart=常规图表。
+DisplayKind = Literal["chart", "metric_card", "table", "diagram"]
 ChartVariant = Literal[
     "line",
     "vertical",
@@ -248,6 +251,7 @@ class ChartReference(BaseModel):
     chart_id: str = Field(pattern=r"^CHART-[A-Za-z0-9_-]+$")
     title: str = Field(min_length=1, max_length=200)
     chart_type: ChartType
+    display_kind: DisplayKind = "chart"
     requested_chart_type: ChartType | None = None
     resolution_reason: str | None = Field(default=None, min_length=1, max_length=1_000)
     status: Literal["planned", "ready"]
@@ -290,6 +294,8 @@ class ChartSpec(BaseModel):
     chart_id: str = Field(pattern=r"^CHART-[A-Za-z0-9_-]+$")
     title: str = Field(min_length=1, max_length=200)
     chart_type: ChartType
+    # 旧存档没有该字段，validator 按数据形态推导，重导出旧 run 时自动获得新行为。
+    display_kind: DisplayKind | None = None
     requested_chart_type: ChartType | None = None
     resolution_reason: str | None = Field(default=None, min_length=1, max_length=1_000)
     variant: ChartVariant
@@ -301,7 +307,7 @@ class ChartSpec(BaseModel):
     annotations: list[ChartAnnotation] | None = None
     render_mode: Literal["echarts", "generated_image"] = "echarts"
     image_uri: str | None = Field(default=None, min_length=1, max_length=1_000)
-    image_mime_type: Literal["image/png", "image/webp"] | None = None
+    image_mime_type: Literal["image/png", "image/webp", "image/jpeg"] | None = None
     generation_prompt: str | None = Field(default=None, min_length=1, max_length=30_000)
     generation_prompt_model: str | None = Field(default=None, min_length=1, max_length=200)
     generation_image_model: str | None = Field(default=None, min_length=1, max_length=200)
@@ -330,6 +336,22 @@ class ChartSpec(BaseModel):
                 raise ValueError("generated image charts require generation metadata")
             if self.chart_type != "industry_chain":
                 raise ValueError("generated image rendering is limited to industry_chain charts")
+        inferred_kind: DisplayKind = "chart"
+        if self.chart_type == "industry_chain":
+            inferred_kind = "diagram"
+        elif self.chart_type in {"line", "bar", "pie", "area"}:
+            values: list[float] = []
+            for series in self.option.get("series", []):
+                if not isinstance(series, dict):
+                    continue
+                for item in series.get("data", []):
+                    value = item.get("value") if isinstance(item, dict) else item
+                    if isinstance(value, bool):
+                        continue
+                    if isinstance(value, (int, float)):
+                        values.append(float(value))
+            inferred_kind = "metric_card" if len(values) == 1 else "chart"
+        self.display_kind = inferred_kind
         return self
 
 

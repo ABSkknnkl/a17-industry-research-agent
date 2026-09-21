@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://skillhub.local/schemas/report-blueprint.schema.json",
+  "title": "ReportBlueprint",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "renderer_contract",
+    "immutable_fact_sha256",
+    "editorial_plan",
+    "visual_decision",
+    "page_composition_plan",
+    "fingerprint"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "report_id": { "type": "string", "pattern": "^REPORT-[A-Za-z0-9_-]+$" },
+    "renderer_contract": { "const": "html-svg-playwright-v1" },
+    "immutable_fact_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "editorial_plan": { "$ref": "editorial-plan.schema.json" },
+    "visual_decision": { "$ref": "#/$defs/visualDecision" },
+    "page_composition_plan": { "$ref": "#/$defs/pageCompositionPlan" },
+    "fingerprint": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  },
+  "$defs": {
+    "visualStyle": {
+      "type": "string",
+      "enum": ["data_manual", "analysis_note", "deep_research"]
+    },
+    "layoutPattern": {
+      "type": "string",
+      "enum": [
+        "hero_metric",
+        "chart_led",
+        "comparison",
+        "narrative",
+        "table_led",
+        "risk_matrix"
+      ]
+    },
+    "chapterVisualStrategy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chart_count",
+        "table_candidate_count",
+        "dominant_content",
+        "layout_pattern"
+      ],
+      "properties": {
+        "chart_count": { "type": "integer", "minimum": 0, "maximum": 30 },
+        "table_candidate_count": { "type": "integer", "minimum": 0, "maximum": 21 },
+        "dominant_content": {
+          "type": "string",
+          "enum": [
+            "narrative",
+            "time_series",
+            "comparison",
+            "financial_detail",
+            "industry_chain",
+            "risk",
+            "scenario",
+            "summary"
+          ]
+        },
+        "layout_pattern": { "$ref": "#/$defs/layoutPattern" }
+      }
+    },
+    "visualDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recommended_style",
+        "requested_style",
+        "effective_style",
+        "selection_source",
+        "density",
+        "chart_density",
+        "table_priority",
+        "recommendation_reasons",
+        "override_warnings",
+        "per_chapter_strategy"
+      ],
+      "properties": {
+        "recommended_style": { "$ref": "#/$defs/visualStyle" },
+        "requested_style": {
+          "type": "string",
+          "enum": ["auto", "data_manual", "analysis_note", "deep_research"]
+        },
+        "effective_style": { "$ref": "#/$defs/visualStyle" },
+        "selection_source": {
+          "type": "string",
+          "enum": ["user", "agent_recommendation", "editorial_model", "default"]
+        },
+        "density": { "type": "string", "enum": ["compact", "balanced", "detailed"] },
+        "chart_density": { "type": "string", "enum": ["low", "medium", "high"] },
+        "table_priority": { "type": "string", "enum": ["low", "medium", "high"] },
+        "recommendation_reasons": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string" }
+        },
+        "override_warnings": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string" }
+        },
+        "per_chapter_strategy": {
+          "type": "object",
+          "maxProperties": 7,
+          "additionalProperties": { "$ref": "#/$defs/chapterVisualStrategy" }
+        },
+        "requested_template_profile": { "$ref": "#/$defs/templateProfileName" },
+        "template_profile": {
+          "anyOf": [
+            { "$ref": "#/$defs/templateProfile" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "templateProfileName": {
+      "description": "Requested profile; `auto` means \"let the pipeline choose\".",
+      "type": "string",
+      "enum": [
+        "auto",
+        "classic_research",
+        "modern_analysis",
+        "data_intensive",
+        "narrative_flow"
+      ]
+    },
+    "templateProfilePreset": {
+      "description": "Resolved preset. Narrower than `templateProfileName` — `auto` is never resolved to itself.",
+      "type": "string",
+      "enum": [
+        "classic_research",
+        "modern_analysis",
+        "data_intensive",
+        "narrative_flow"
+      ]
+    },
+    "templateProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "brand_color",
+        "semantic_red",
+        "semantic_green",
+        "neutral_grey",
+        "heading_h2_pt",
+        "heading_h3_pt",
+        "body_size_pt",
+        "line_height",
+        "cover_style",
+        "chart_preference",
+        "spacing",
+        "table_header_style"
+      ],
+      "properties": {
+        "name": { "$ref": "#/$defs/templateProfilePreset" },
+        "brand_color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "semantic_red": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "semantic_green": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "neutral_grey": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "heading_h2_pt": { "type": "number", "minimum": 14.0, "maximum": 18.0 },
+        "heading_h3_pt": { "type": "number", "minimum": 11.0, "maximum": 14.0 },
+        "body_size_pt": { "type": "number", "minimum": 9.0, "maximum": 11.0 },
+        "line_height": { "type": "number", "minimum": 1.28, "maximum": 1.50 },
+        "cover_style": {
+          "type": "string",
+          "enum": [
+            "two_column_dense",
+            "two_column_headline",
+            "meta_row_dense",
+            "headline_wide"
+          ]
+        },
+        "chart_preference": {
+          "type": "string",
+          "enum": ["balanced", "prefer_pairs", "prefer_hero", "prefer_hero_with_text"]
+        },
+        "spacing": { "type": "string", "enum": ["compact", "balanced", "generous"] },
+        "table_header_style": { "type": "string", "enum": ["solid", "minimal"] }
+      }
+    },
+    "chapterPageDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "chapter_id",
+        "page_role",
+        "grid",
+        "start_new_page",
+        "chart_arrangement",
+        "chart_slots",
+        "compact_empty_state",
+        "rationale"
+      ],
+      "properties": {
+        "chapter_id": { "type": "string", "pattern": "^CH-\\d{2}$" },
+        "page_role": {
+          "type": "string",
+          "enum": [
+            "narrative",
+            "chart_page",
+            "comparison_page",
+            "table_page",
+            "risk_matrix",
+            "research_coverage"
+          ]
+        },
+        "grid": {
+          "type": "string",
+          "enum": [
+            "single_column",
+            "single_hero",
+            "two_up",
+            "hero_plus_two",
+            "two_by_two",
+            "full_table",
+            "risk_matrix"
+          ]
+        },
+        "start_new_page": { "type": "boolean" },
+        "chart_arrangement": {
+          "type": "string",
+          "enum": ["none", "single_hero", "two_up", "hero_plus_two", "two_by_two"]
+        },
+        "chart_slots": {
+          "type": "object",
+          "maxProperties": 30,
+          "additionalProperties": { "type": "string", "enum": ["hero", "half"] }
+        },
+        "compact_empty_state": { "type": "boolean" },
+        "rationale": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
+    "pageCompositionPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "document_profile",
+        "publication_chrome",
+        "front_matter_mode",
+        "appendix_mode",
+        "chapter_decisions",
+        "condensed_chapter_ids",
+        "warnings",
+        "fingerprint"
+      ],
+      "properties": {
+        "schema_version": { "const": "1.0" },
+        "document_profile": {
+          "type": "string",
+          "enum": ["brief_note", "research_report", "data_dashboard"]
+        },
+        "publication_chrome": { "type": "boolean" },
+        "front_matter_mode": { "type": "string", "enum": ["compact", "standard"] },
+        "appendix_mode": {
+          "type": "string",
+          "enum": ["public_compact", "internal_full"]
+        },
+        "chapter_decisions": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": { "$ref": "#/$defs/chapterPageDecision" }
+        },
+        "condensed_chapter_ids": {
+          "type": "array",
+          "maxItems": 7,
+          "items": { "type": "string", "pattern": "^CH-\\d{2}$" }
+        },
+        "warnings": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string" }
+        },
+        "fingerprint": { "type": "string", "pattern": "^$|^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}

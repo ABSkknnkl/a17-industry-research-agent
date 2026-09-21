@@ -407,13 +407,19 @@ def registered_check_ids() -> frozenset[str]:
     """Return every check id owned by the complete evaluator stack.
 
     I1-I8 are evaluated by ``scorers.intent``, M1-M3 by the semantic
-    methodology scorer, and ARB1-ARB4 by ``scorers.arbitration``
-    (2026-09-01 方案 §4.3).  Keeping the global declaration here lets the
-    case schema fail closed before a run starts without pretending that
-    these checks are handled by the L1 rule registry.
+    methodology scorer, ARB1-ARB4 by ``scorers.arbitration``
+    (2026-09-01 方案 §4.3), and Q1-Q5 by ``scorers.report_quality``
+    (2026-09-19 报告质量评分器方案 §3; Q6/Q7 随表达维移除).  Keeping the global
+    declaration here lets the case schema fail closed before a run starts
+    without pretending that these checks are handled by the L1 rule registry.
     """
     return frozenset(_CHECK_REGISTRY) | frozenset(
-        {*(f"I{i}" for i in range(1, 9)), "M1", "M2", "M3", *(f"ARB{i}" for i in range(1, 5))}
+        {
+            *(f"I{i}" for i in range(1, 9)),
+            "M1", "M2", "M3",
+            *(f"ARB{i}" for i in range(1, 5)),
+            *(f"Q{i}" for i in range(1, 6)),
+        }
     )
 
 

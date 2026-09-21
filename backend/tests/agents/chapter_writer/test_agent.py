@@ -11,16 +11,30 @@ from app.workflow.stages import StageContext
 
 
 class RepairingChapterModel(MockChapterWritingModel):
+    """First attempt for CH-01 injects a forbidden phrase; revision produces clean output.
+
+    Uses content-based chapter identification (not call order) so behaviour is
+    deterministic under concurrent execution.
+    """
+
     def __init__(self) -> None:
         self.calls = 0
+        self._chapter_attempts: dict[str, int] = {}
 
     async def generate_chapter(self, *, system_prompt: str, runtime_prompt: str):
+        import json
+
         self.calls += 1
+        payload = json.loads(runtime_prompt)
+        chapter_id = payload["chapter_config"]["chapter_id"]
+        self._chapter_attempts[chapter_id] = self._chapter_attempts.get(chapter_id, 0) + 1
+
         chapter = await super().generate_chapter(
             system_prompt=system_prompt,
             runtime_prompt=runtime_prompt,
         )
-        if self.calls == 1:
+        # Only CH-01 first attempt produces a red-line phrase → triggers revision
+        if chapter_id == "CH-01" and self._chapter_attempts[chapter_id] == 1:
             chapter.sections[0].paragraphs[0].text = "建议买入该行业。"
         return chapter
 
@@ -140,7 +154,8 @@ async def test_agent_uses_complete_deterministic_fallback_when_model_fails(
     assert len(writing.chapters) == 7
     assert sum(len(chapter.sections) for chapter in writing.chapters) == 21
     assert writing.quality.passed is False
-    assert any("chapter_fallback_used" in issue for issue in writing.quality.issues)
+    # Under concurrency, each chapter individually falls back (per-chapter degradation)
+    assert any("chapter_single_fallback" in issue for issue in writing.quality.issues)
     assert writing.collaboration_requests
     assert "super-secret" not in str(result.data)
     assert "RuntimeError" in writing.quality.issues[0]

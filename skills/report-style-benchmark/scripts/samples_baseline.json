@@ -1,0 +1,794 @@
+{
+  "version": "2026-09-18",
+  "description": "6 份纵向真实研报在 collect_metrics.py 口径下的实测快照；用于 style_benchmark_audit.py --baseline 的回归基线。横版样本不入基线。",
+  "sample_files": {
+    "R1": "H3_AP202608131827943479_1.pdf",
+    "R2": "H3_AP202608141827990611_1.pdf",
+    "R3": "H3_AP202512191803847754_1.pdf",
+    "R4": "H3_AP202608111827866990_1.pdf",
+    "R5": "H3_AP202512301811201512_1.pdf",
+    "R6": "H3_AP202602091819837765_1.pdf"
+  },
+  "thresholds_with_baseline": {
+    "TYPE3_FONT_OBJECTS_MAX": {
+      "real_samples": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "min": 0,
+      "max": 0,
+      "median": 0,
+      "script_threshold": "TYPE3_MAX = 0",
+      "caliber": "audit_collect"
+    },
+    "NAMED_FONT_OBJECTS_MIN": {
+      "real_samples": [
+        40,
+        14,
+        81,
+        113,
+        228,
+        64
+      ],
+      "min": 14,
+      "max": 228,
+      "median": 81,
+      "script_threshold": ">=1 by inspection",
+      "caliber": "audit_collect"
+    },
+    "BODY_SIZE_DISTINCT_AT_LEAST_2PAGES_MAX": {
+      "real_samples": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "min": 2,
+      "max": 2,
+      "median": 2,
+      "script_threshold": "BODY_SIZE_DISTINCT_MAX = 2",
+      "caliber": "audit_collect"
+    },
+    "BODY_SIZE_TOP_PT": {
+      "real_samples": [
+        9.9,
+        10.4,
+        10.6,
+        10.6,
+        9.0,
+        9.0
+      ],
+      "min": 9.0,
+      "max": 10.6,
+      "median": 10.4,
+      "script_threshold": "see SKILL.md"
+    },
+    "CAPTION_SIZE_MINUS_BODY_PT_ABS_MAX": {
+      "real_samples": [
+        0.0,
+        0.0,
+        0.6,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "min": 0.0,
+      "max": 0.6,
+      "median": 0.0,
+      "script_threshold": "CAPTION_SIZE_TOL_PT = 0.8",
+      "provenance": "manual_inspection",
+      "provenance_note": "题注与正文字号偏差需逐页比对题注行，collect_metrics.py 尚未固化该字段，故无法由 samples 复算。取值来自对 R1–R6 的人工复核，与 style_benchmark_audit.py 的 CAPTION_SIZE_TOL_PT 注释一致。补采集字段后应改为数据派生并移除本标注。"
+    },
+    "LINEHEIGHT_MED": {
+      "real_samples": [
+        1.82,
+        1.35,
+        1.51,
+        1.47,
+        1.8,
+        1.73
+      ],
+      "min": 1.35,
+      "max": 1.82,
+      "median": 1.73,
+      "script_threshold": "see SKILL.md"
+    },
+    "ACCENT_COLOR_COUNT_MAX": {
+      "real_samples": [
+        1,
+        1,
+        1,
+        0,
+        1,
+        1
+      ],
+      "min": 0,
+      "max": 1,
+      "median": 1,
+      "script_threshold": "ACCENT_COUNT_MAX = 2"
+    },
+    "FOOTER_DIST_MM_MED_MIN": {
+      "real_samples": [
+        10.63882090250651,
+        17.7256837632921,
+        15.137125142415362,
+        8.601800537109375,
+        10.63882090250651,
+        10.63882090250651
+      ],
+      "min": 8.601800537109375,
+      "max": 17.7256837632921,
+      "median": 10.63882090250651,
+      "script_threshold": "FOOTER_GAP_MAJOR_MM = 8.5",
+      "caliber": "audit_collect"
+    },
+    "COVER_WHITE_RATIO_MIN": {
+      "real_samples": [
+        0.7566064887493459,
+        0.7152014652014652,
+        0.6980903711672942,
+        0.5875850340136054,
+        0.7138932496075353,
+        0.7194531658817374
+      ],
+      "min": 0.5875850340136054,
+      "max": 0.7566064887493459,
+      "median": 0.7152014652014652,
+      "script_threshold": "COVER_WHITE_MIN = 0.50",
+      "caliber": "audit_collect"
+    },
+    "COVER_LINES_NONEMPTY_MIN": {
+      "real_samples": [
+        78,
+        110,
+        57,
+        83,
+        81,
+        80
+      ],
+      "min": 57,
+      "max": 110,
+      "median": 81,
+      "script_threshold": "COVER_LINES_MIN = 50",
+      "caliber": "audit_collect"
+    },
+    "COVER_MAX_SIZE_PT_MAX": {
+      "real_samples": [
+        20.1,
+        22.0,
+        16.0,
+        18.0,
+        22.0,
+        22.0
+      ],
+      "min": 16.0,
+      "max": 22.0,
+      "median": 22.0,
+      "script_threshold": "see SKILL.md"
+    },
+    "HEADER_MARK_H_MM_MIN": {
+      "real_samples": [
+        9.5,
+        8.4,
+        14.0,
+        16.1,
+        9.5,
+        9.5
+      ],
+      "min": 8.4,
+      "max": 16.1,
+      "median": 9.5,
+      "script_threshold": "HEADER_MARK_MIN_H_MM = 6.0",
+      "caliber": "audit_collect"
+    },
+    "LEFT_MARGIN_MM_MODE": {
+      "real_samples": [
+        15.9,
+        19.0,
+        15.2,
+        15.5,
+        15.9,
+        15.9
+      ],
+      "min": 15.2,
+      "max": 19.0,
+      "median": 15.9,
+      "script_threshold": "see SKILL.md"
+    },
+    "BOLD_SHARE_MIN": {
+      "real_samples": [
+        0.111,
+        0.0,
+        0.273,
+        0.026,
+        0.117,
+        0.124
+      ],
+      "min": 0.0,
+      "max": 0.273,
+      "median": 0.117,
+      "script_threshold": "see SKILL.md"
+    },
+    "TOC_LEADER_DOTS_MIN_LINES": {
+      "real_samples": [
+        0,
+        32,
+        14,
+        33,
+        174,
+        33
+      ],
+      "min": 0,
+      "max": 174,
+      "median": 33,
+      "script_threshold": "see SKILL.md"
+    },
+    "CHART_HEIGHT_RATIO_MED": {
+      "real_samples": [
+        0.179,
+        0.145,
+        0.206,
+        0.197,
+        0.188,
+        0.23
+      ],
+      "min": 0.145,
+      "max": 0.23,
+      "median": 0.197,
+      "script_threshold": "see SKILL.md"
+    },
+    "PARAGRAPH_ALIGN_HAS_LEFT_OR_INDENT": {
+      "real_samples": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "min": true,
+      "max": true,
+      "median": true,
+      "script_threshold": "see SKILL.md"
+    }
+  },
+  "samples": {
+    "R1": {
+      "basic": {
+        "page_count": 8,
+        "page_size_mm": {
+          "w": 210.0,
+          "h": 297.0
+        },
+        "is_landscape": false,
+        "left_margin_mm_mode": 15.9,
+        "left_margin_mm_med": 15.9,
+        "footer_dist_mm": 10.6,
+        "footer_dist_min_mm": 3.7,
+        "body_size_top": 9.9,
+        "body_size_count_at_least_2pages": 2,
+        "body_size_per_page": {
+          "9.0": 2,
+          "9.9": 6
+        },
+        "lineheight_med": 1.82,
+        "cover_white_ratio": 0.727,
+        "cover_lines_nonempty": 78,
+        "cover_max_size_pt": 20.1,
+        "header_mark_h_mm": 9.5,
+        "top_body_color": "#292929",
+        "top_body_color_share": 0.979,
+        "accent_colors_top": [
+          [
+            "#0243A4",
+            10
+          ]
+        ],
+        "type3_font_objects": 0,
+        "named_font_objects": 40
+      },
+      "extended": {
+        "paragraph_align_distribution": {
+          "left": 10,
+          "justify": 10,
+          "indent": 23
+        },
+        "paragraph_align_dominant": "indent",
+        "paragraph_gap_med": 3.1,
+        "bold_char_share": 0.111,
+        "decimal_places_distribution": {
+          "2": 66,
+          "1": 11
+        },
+        "decimal_places_top": 2,
+        "caption_styles": {
+          "图表N": 7
+        },
+        "toc_leader_styles": {},
+        "continued_table_hits": 0,
+        "continued_table_samples": [],
+        "h1_new_page_ratio": 1.0,
+        "h1_total_count": 3,
+        "header_line_colors": {
+          "#0243A3": 6,
+          "#000000": 3
+        },
+        "chart_height_ratio_med": 0.179,
+        "appendix_section_pages": [
+          [
+            1,
+            9.0
+          ]
+        ],
+        "cn_top_font": "MicrosoftYaHei",
+        "en_top_font": "MicrosoftYaHei",
+        "mixed_font_switch": false,
+        "internal_process_phrases": []
+      }
+    },
+    "R2": {
+      "basic": {
+        "page_count": 14,
+        "page_size_mm": {
+          "w": 210.0,
+          "h": 297.0
+        },
+        "is_landscape": false,
+        "left_margin_mm_mode": 19.0,
+        "left_margin_mm_med": 19.0,
+        "footer_dist_mm": 17.7,
+        "footer_dist_min_mm": 15.7,
+        "body_size_top": 10.4,
+        "body_size_count_at_least_2pages": 2,
+        "body_size_per_page": {
+          "10.4": 8,
+          "7.5": 4,
+          "9.9": 1,
+          "11.1": 1
+        },
+        "lineheight_med": 1.35,
+        "cover_white_ratio": 0.683,
+        "cover_lines_nonempty": 110,
+        "cover_max_size_pt": 22.0,
+        "header_mark_h_mm": 8.4,
+        "top_body_color": "#000000",
+        "top_body_color_share": 0.933,
+        "accent_colors_top": [
+          [
+            "#004477",
+            9
+          ]
+        ],
+        "type3_font_objects": 0,
+        "named_font_objects": 14
+      },
+      "extended": {
+        "paragraph_align_distribution": {
+          "justify": 14,
+          "left": 28,
+          "indent": 14
+        },
+        "paragraph_align_dominant": "left",
+        "paragraph_gap_med": 3.01,
+        "bold_char_share": 0.0,
+        "decimal_places_distribution": {
+          "2": 254,
+          "1": 5,
+          "4": 16,
+          "3": 1
+        },
+        "decimal_places_top": 2,
+        "caption_styles": {
+          "图表N": 1,
+          "图N": 38,
+          "表N": 8
+        },
+        "toc_leader_styles": {
+          "dots": 32
+        },
+        "continued_table_hits": 0,
+        "continued_table_samples": [],
+        "h1_new_page_ratio": 1.0,
+        "h1_total_count": 4,
+        "header_line_colors": {
+          "#044477": 13,
+          "#000000": 5
+        },
+        "chart_height_ratio_med": 0.145,
+        "appendix_section_pages": [
+          [
+            1,
+            6.5
+          ]
+        ],
+        "cn_top_font": "SimHei",
+        "en_top_font": "SimHei",
+        "mixed_font_switch": false,
+        "internal_process_phrases": []
+      }
+    },
+    "R3": {
+      "basic": {
+        "page_count": 9,
+        "page_size_mm": {
+          "w": 210.0,
+          "h": 290.0
+        },
+        "is_landscape": false,
+        "left_margin_mm_mode": 15.2,
+        "left_margin_mm_med": 15.2,
+        "footer_dist_mm": 15.1,
+        "footer_dist_min_mm": 15.1,
+        "body_size_top": 10.6,
+        "body_size_count_at_least_2pages": 2,
+        "body_size_per_page": {
+          "11.0": 1,
+          "10.0": 2,
+          "10.6": 5,
+          "7.0": 1
+        },
+        "lineheight_med": 1.51,
+        "cover_white_ratio": 0.679,
+        "cover_lines_nonempty": 57,
+        "cover_max_size_pt": 16.0,
+        "header_mark_h_mm": 14.0,
+        "top_body_color": "#000000",
+        "top_body_color_share": 0.995,
+        "accent_colors_top": [
+          [
+            "#E8390D",
+            5
+          ]
+        ],
+        "type3_font_objects": 0,
+        "named_font_objects": 81
+      },
+      "extended": {
+        "paragraph_align_distribution": {
+          "left": 23,
+          "indent": 3,
+          "justify": 13
+        },
+        "paragraph_align_dominant": "left",
+        "paragraph_gap_med": 1.97,
+        "bold_char_share": 0.273,
+        "decimal_places_distribution": {
+          "2": 133,
+          "1": 4
+        },
+        "decimal_places_top": 2,
+        "caption_styles": {
+          "图表N": 21
+        },
+        "toc_leader_styles": {
+          "dots": 14
+        },
+        "continued_table_hits": 0,
+        "continued_table_samples": [],
+        "h1_new_page_ratio": 1.0,
+        "h1_total_count": 3,
+        "header_line_colors": {},
+        "chart_height_ratio_med": 0.206,
+        "appendix_section_pages": [
+          [
+            1,
+            4.4
+          ]
+        ],
+        "cn_top_font": "KaiTi",
+        "en_top_font": null,
+        "mixed_font_switch": false,
+        "internal_process_phrases": []
+      }
+    },
+    "R4": {
+      "basic": {
+        "page_count": 13,
+        "page_size_mm": {
+          "w": 210.0,
+          "h": 297.0
+        },
+        "is_landscape": false,
+        "left_margin_mm_mode": 15.5,
+        "left_margin_mm_med": 15.5,
+        "footer_dist_mm": 8.6,
+        "footer_dist_min_mm": 8.6,
+        "body_size_top": 10.6,
+        "body_size_count_at_least_2pages": 1,
+        "body_size_per_page": {
+          "10.6": 12,
+          "8.0": 1
+        },
+        "lineheight_med": 1.47,
+        "cover_white_ratio": 0.557,
+        "cover_lines_nonempty": 83,
+        "cover_max_size_pt": 18.0,
+        "header_mark_h_mm": 16.1,
+        "top_body_color": "#000000",
+        "top_body_color_share": 0.993,
+        "accent_colors_top": [],
+        "type3_font_objects": 0,
+        "named_font_objects": 113
+      },
+      "extended": {
+        "paragraph_align_distribution": {
+          "justify": 23,
+          "left": 32,
+          "indent": 27
+        },
+        "paragraph_align_dominant": "left",
+        "paragraph_gap_med": 2.46,
+        "bold_char_share": 0.026,
+        "decimal_places_distribution": {
+          "2": 106,
+          "1": 430,
+          "4": 12
+        },
+        "decimal_places_top": 1,
+        "caption_styles": {
+          "图表N": 46
+        },
+        "toc_leader_styles": {
+          "dots": 33
+        },
+        "continued_table_hits": 0,
+        "continued_table_samples": [],
+        "h1_new_page_ratio": 1.0,
+        "h1_total_count": 2,
+        "header_line_colors": {
+          "#933634": 24,
+          "#7E7F7E": 18,
+          "#000000": 7,
+          "#B42F2B": 2,
+          "#E7E6E6": 2
+        },
+        "chart_height_ratio_med": 0.197,
+        "appendix_section_pages": [
+          [
+            2,
+            10.6
+          ]
+        ],
+        "cn_top_font": "KaiTi_GB2312",
+        "en_top_font": "KaiTi_GB2312",
+        "mixed_font_switch": false,
+        "internal_process_phrases": []
+      }
+    },
+    "R5": {
+      "basic": {
+        "page_count": 70,
+        "page_size_mm": {
+          "w": 210.0,
+          "h": 297.0
+        },
+        "is_landscape": false,
+        "left_margin_mm_mode": 15.9,
+        "left_margin_mm_med": 15.9,
+        "footer_dist_mm": 10.6,
+        "footer_dist_min_mm": 3.7,
+        "body_size_top": 9.0,
+        "body_size_count_at_least_2pages": 2,
+        "body_size_per_page": {
+          "9.0": 36,
+          "9.9": 34
+        },
+        "lineheight_med": 1.8,
+        "cover_white_ratio": 0.674,
+        "cover_lines_nonempty": 81,
+        "cover_max_size_pt": 22.0,
+        "header_mark_h_mm": 9.5,
+        "top_body_color": "#292929",
+        "top_body_color_share": 0.978,
+        "accent_colors_top": [
+          [
+            "#0243A4",
+            10
+          ]
+        ],
+        "type3_font_objects": 0,
+        "named_font_objects": 228
+      },
+      "extended": {
+        "paragraph_align_distribution": {
+          "justify": 86,
+          "indent": 196,
+          "left": 126
+        },
+        "paragraph_align_dominant": "indent",
+        "paragraph_gap_med": 2.63,
+        "bold_char_share": 0.117,
+        "decimal_places_distribution": {
+          "1": 126,
+          "2": 1040
+        },
+        "decimal_places_top": 2,
+        "caption_styles": {
+          "图表N": 285
+        },
+        "toc_leader_styles": {
+          "dots": 174
+        },
+        "continued_table_hits": 0,
+        "continued_table_samples": [],
+        "h1_new_page_ratio": 1.0,
+        "h1_total_count": 7,
+        "header_line_colors": {
+          "#000000": 83,
+          "#0243A3": 68
+        },
+        "chart_height_ratio_med": 0.188,
+        "appendix_section_pages": [
+          [
+            1,
+            9.0
+          ]
+        ],
+        "cn_top_font": "MicrosoftYaHei",
+        "en_top_font": "MicrosoftYaHei",
+        "mixed_font_switch": false,
+        "internal_process_phrases": []
+      }
+    },
+    "R6": {
+      "basic": {
+        "page_count": 15,
+        "page_size_mm": {
+          "w": 210.0,
+          "h": 297.0
+        },
+        "is_landscape": false,
+        "left_margin_mm_mode": 15.9,
+        "left_margin_mm_med": 15.9,
+        "footer_dist_mm": 10.6,
+        "footer_dist_min_mm": 3.7,
+        "body_size_top": 9.0,
+        "body_size_count_at_least_2pages": 2,
+        "body_size_per_page": {
+          "9.0": 8,
+          "9.9": 7
+        },
+        "lineheight_med": 1.73,
+        "cover_white_ratio": 0.683,
+        "cover_lines_nonempty": 80,
+        "cover_max_size_pt": 22.0,
+        "header_mark_h_mm": 9.5,
+        "top_body_color": "#292929",
+        "top_body_color_share": 0.978,
+        "accent_colors_top": [
+          [
+            "#0243A4",
+            10
+          ]
+        ],
+        "type3_font_objects": 0,
+        "named_font_objects": 64
+      },
+      "extended": {
+        "paragraph_align_distribution": {
+          "justify": 18,
+          "indent": 29,
+          "left": 13
+        },
+        "paragraph_align_dominant": "indent",
+        "paragraph_gap_med": 2.47,
+        "bold_char_share": 0.124,
+        "decimal_places_distribution": {
+          "2": 9,
+          "1": 28
+        },
+        "decimal_places_top": 1,
+        "caption_styles": {
+          "图表N": 39
+        },
+        "toc_leader_styles": {
+          "dots": 33
+        },
+        "continued_table_hits": 0,
+        "continued_table_samples": [],
+        "h1_new_page_ratio": 1.0,
+        "h1_total_count": 6,
+        "header_line_colors": {
+          "#0243A3": 13,
+          "#000000": 4
+        },
+        "chart_height_ratio_med": 0.23,
+        "appendix_section_pages": [
+          [
+            1,
+            9.0
+          ]
+        ],
+        "cn_top_font": "MicrosoftYaHei",
+        "en_top_font": "MicrosoftYaHei",
+        "mixed_font_switch": false,
+        "internal_process_phrases": []
+      }
+    }
+  },
+  "provenance": {
+    "converged_at": "2026-09-18",
+    "single_source_of_truth": "report-style-benchmark/scripts/samples_baseline.json",
+    "converged_from": [
+      "report-style-benchmark/scripts/samples_baseline.json",
+      "report-page-composer/scripts/samples_baseline.json"
+    ],
+    "retired": {
+      "report-page-composer/scripts/samples_baseline.json": "2026-09-18 收敛：该文件的 samples 来自 collect_extended.py 的全文档扫描口径，而 thresholds.real_samples 用的是 audit 的 p2 单页口径，同一文件内两套口径互相矛盾。经 baseline_selfcheck 交叉复算暴露 2 处 mismatch：HEADER_MARK_H_MM_MIN（thresholds [8.4,16.1] vs samples 复算 [16.1,33.4]）、ACCENT_COLOR_COUNT_MAX（thresholds 手写 [1,1] vs samples 复算 [0,1]）。保留其 sample_files 真实文件名与 CAPTION_SIZE_MINUS_BODY_PT_ABS_MAX 人工复核值，其余以本文件为准。report-page-composer/scripts/style_benchmark_audit.py 已改为 shim。"
+    },
+    "discipline": "thresholds_with_baseline[X].real_samples 必须能由 samples 用 baseline_schema.THRESHOLD_EXTRACTORS 原样复算；不能复算的条目必须显式标注 provenance=manual_inspection。门禁：style_benchmark_audit.py --baseline-only --baseline <本文件> 必须 fail=0 且 mismatch=0。",
+    "caliber_correction_2026_09_18": {
+      "reason": "baseline_diff 的 7 个维度用的是 style_benchmark_audit.py::collect() 的实测值，但这些维度的 min/max 原先是 collect_metrics.py::analyze_basics() 的口径。跨口径比较违反 §阈值校准纪律 #3。现改用 audit 自身口径，取值由 `--verify-samples <样本目录>` 从真实 PDF 重新推导，存于 audit_samples 块。",
+      "corrected_dimensions": [
+        "BODY_SIZE_DISTINCT_AT_LEAST_2PAGES_MAX",
+        "COVER_WHITE_RATIO_MIN",
+        "FOOTER_DIST_MM_MED_MIN"
+      ],
+      "sample_dir": "/Users/thomas/Downloads/未命名文件夹",
+      "note": "样本 PDF 不在仓库内，故 audit_samples 无法由仓库内容复算；验证方式：style_benchmark_audit.py --verify-samples <样本目录> --baseline <本文件>。COVER_WHITE_RATIO_MIN 是唯一有门禁影响的修正：collect_metrics 口径下界 0.557 → audit 口径下界 0.5876，原先偏宽松约 5%。",
+      "precision_note": "audit_samples 存全精度、不舍入。舍入会制造边界假失败：R4 的 cover_white_ratio 真实值 0.5875850340136054 若存成 0.5876，baseline_diff 的 observed >= rmin 立刻判 fail。精度只在展示层处理。"
+    }
+  },
+  "audit_samples": {
+    "R1": {
+      "TYPE3_FONT_OBJECTS_MAX": 0,
+      "NAMED_FONT_OBJECTS_MIN": 40,
+      "BODY_SIZE_DISTINCT_AT_LEAST_2PAGES_MAX": 2,
+      "COVER_WHITE_RATIO_MIN": 0.7566064887493459,
+      "COVER_LINES_NONEMPTY_MIN": 78,
+      "HEADER_MARK_H_MM_MIN": 9.5,
+      "FOOTER_DIST_MM_MED_MIN": 10.63882090250651
+    },
+    "R2": {
+      "TYPE3_FONT_OBJECTS_MAX": 0,
+      "NAMED_FONT_OBJECTS_MIN": 14,
+      "BODY_SIZE_DISTINCT_AT_LEAST_2PAGES_MAX": 2,
+      "COVER_WHITE_RATIO_MIN": 0.7152014652014652,
+      "COVER_LINES_NONEMPTY_MIN": 110,
+      "HEADER_MARK_H_MM_MIN": 8.4,
+      "FOOTER_DIST_MM_MED_MIN": 17.7256837632921
+    },
+    "R3": {
+      "TYPE3_FONT_OBJECTS_MAX": 0,
+      "NAMED_FONT_OBJECTS_MIN": 81,
+      "BODY_SIZE_DISTINCT_AT_LEAST_2PAGES_MAX": 2,
+      "COVER_WHITE_RATIO_MIN": 0.6980903711672942,
+      "COVER_LINES_NONEMPTY_MIN": 57,
+      "HEADER_MARK_H_MM_MIN": 14.0,
+      "FOOTER_DIST_MM_MED_MIN": 15.137125142415362
+    },
+    "R4": {
+      "TYPE3_FONT_OBJECTS_MAX": 0,
+      "NAMED_FONT_OBJECTS_MIN": 113,
+      "BODY_SIZE_DISTINCT_AT_LEAST_2PAGES_MAX": 2,
+      "COVER_WHITE_RATIO_MIN": 0.5875850340136054,
+      "COVER_LINES_NONEMPTY_MIN": 83,
+      "HEADER_MARK_H_MM_MIN": 16.1,
+      "FOOTER_DIST_MM_MED_MIN": 8.601800537109375
+    },
+    "R5": {
+      "TYPE3_FONT_OBJECTS_MAX": 0,
+      "NAMED_FONT_OBJECTS_MIN": 228,
+      "BODY_SIZE_DISTINCT_AT_LEAST_2PAGES_MAX": 2,
+      "COVER_WHITE_RATIO_MIN": 0.7138932496075353,
+      "COVER_LINES_NONEMPTY_MIN": 81,
+      "HEADER_MARK_H_MM_MIN": 9.5,
+      "FOOTER_DIST_MM_MED_MIN": 10.63882090250651
+    },
+    "R6": {
+      "TYPE3_FONT_OBJECTS_MAX": 0,
+      "NAMED_FONT_OBJECTS_MIN": 64,
+      "BODY_SIZE_DISTINCT_AT_LEAST_2PAGES_MAX": 2,
+      "COVER_WHITE_RATIO_MIN": 0.7194531658817374,
+      "COVER_LINES_NONEMPTY_MIN": 80,
+      "HEADER_MARK_H_MM_MIN": 9.5,
+      "FOOTER_DIST_MM_MED_MIN": 10.63882090250651
+    }
+  }
+}

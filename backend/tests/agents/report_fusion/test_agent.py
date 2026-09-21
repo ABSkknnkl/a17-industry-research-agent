@@ -15,6 +15,21 @@ from app.schemas.workflow import StageName, StageResult, StageStatus
 from app.workflow.stages import StageContext
 
 
+async def _passthrough_toc_pdf(html: str, **_kwargs: object) -> bytes:
+    """Unit-test stub：目录页码回填不碰真实 Chromium。"""
+    del html
+    return b"%PDF-1.7\nunit-test-toc"
+
+
+def _stub_pdf_and_toc(monkeypatch, diagnostics_stub) -> None:
+    _stub_pdf_and_toc(
+        monkeypatch, diagnostics_stub
+    )
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_toc_page_numbers",
+        _passthrough_toc_pdf,
+    )
+
 def _context(
     analysis: AnalysisResult,
     charts: ChartGenerationResult,
@@ -97,11 +112,23 @@ async def test_agent_exports_self_contained_markdown_html_pdf_and_manifest(
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
     pdf_html: list[str] = []
 
-    async def stable_pdf(html: str) -> bytes:
+    async def stable_pdf(html: str) -> tuple[bytes, dict]:
         pdf_html.append(html)
-        return b"%PDF-1.7\nunit-test"
+        # 空诊断 = 探针未执行（假渲染器），视觉复检据此跳过判定，
+        # 因此这里不会触发修复重排，PDF 仍只渲染一次。
+        return b"%PDF-1.7\nunit-test", {}
 
-    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", stable_pdf)
+    async def stable_toc_pdf(html: str, **_kwargs: object) -> bytes:
+        del html
+        return b"%PDF-1.7\nunit-test-toc"
+
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_diagnostics", stable_pdf
+    )
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_toc_page_numbers",
+        stable_toc_pdf,
+    )
     result = await ReportFusionAgent().run(
         _context(report_analysis, report_charts, report_chapters)
     )
@@ -127,11 +154,16 @@ async def test_agent_exports_self_contained_markdown_html_pdf_and_manifest(
     html = (tmp_path / html_artifact.uri).read_text(encoding="utf-8")
     markdown_artifact = next(item for item in result.artifacts if item.kind == "report_markdown")
     markdown = (tmp_path / markdown_artifact.uri).read_text(encoding="utf-8")
-    assert "&lt;script&gt;alert" in html
+    # 新模板净化直接剥离注入脚本内容（XSS 不进入任何交付格式）
+    assert "alert('x')" not in html
     assert "<script>alert" not in html
     assert "<svg" in html
     assert "cdn.jsdelivr" not in html
     assert pdf_html == [html]
+    # 页码由模板内嵌的 <template id="pdf-footer"> 驱动（Chromium 不支持 CSS @page
+    # margin box，python 侧 kwargs 回填方案已废弃），所以断言落在交付 HTML 上。
+    assert '<template id="pdf-footer">' in html
+    assert '<span class="pageNumber"></span>' in html
     for formal_output in (markdown, html, pdf_html[0]):
         assert "E-001" not in formal_output
         assert "C-001" not in formal_output
@@ -168,10 +200,20 @@ async def test_agent_truncates_oversized_source_titles_in_formal_catalog(
 ) -> None:
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
 
-    async def stable_pdf(html: str) -> bytes:
-        return b"%PDF-1.7\nunit-test"
+    async def stable_pdf(html: str) -> tuple[bytes, dict]:
+        return b"%PDF-1.7\nunit-test", {}
 
-    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", stable_pdf)
+    async def stable_toc_pdf(html: str, **_kwargs: object) -> bytes:
+        del html
+        return b"%PDF-1.7\nunit-test-toc"
+
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_diagnostics", stable_pdf
+    )
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_toc_page_numbers",
+        stable_toc_pdf,
+    )
     oversized = "源" * 500
     report_analysis.evidence_catalog[0].source_name = oversized
     report_analysis.evidence_catalog[0].source_locator = "fixture://E-001/internal/raw/path"
@@ -275,7 +317,7 @@ async def test_agent_exports_quality_appendix_and_ready_with_limits(
 
     assert fusion.delivery_status == "ready_with_limits"
     assert fusion.report_depth == "deep"
-    assert "数据质量与研究边界附录" in html
+    assert "数据质量与研究边界" in html
     assert "部分企业财年不一致" in html
     assert "经营现金流与利润方向不一致" in html
 
@@ -351,10 +393,16 @@ async def test_agent_keeps_formal_release_when_single_format_export_fails(
     """导出失败是交付层限制，不得把内容合格的正式报告降级为草稿。"""
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
 
-    async def broken_pdf(html: str) -> bytes:
+    async def broken_pdf(html: str) -> tuple[bytes, dict]:
         raise RuntimeError("playwright browser unavailable")
 
-    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", broken_pdf)
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_diagnostics", broken_pdf
+    )
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_toc_page_numbers",
+        _passthrough_toc_pdf,
+    )
     result = await ReportFusionAgent().run(
         _context(report_analysis, report_charts, report_chapters)
     )
@@ -451,10 +499,16 @@ async def test_agent_keeps_markdown_and_html_when_pdf_export_fails(
 ) -> None:
     monkeypatch.setattr(settings, "ARTIFACT_ROOT", tmp_path)
 
-    async def fail_pdf(_: str) -> bytes:
+    async def fail_pdf(_: str) -> tuple[bytes, dict]:
         raise RuntimeError("simulated chromium outage")
 
-    monkeypatch.setattr("app.agents.report_fusion.service.render_pdf", fail_pdf)
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_diagnostics", fail_pdf
+    )
+    monkeypatch.setattr(
+        "app.agents.report_fusion.service.render_pdf_with_toc_page_numbers",
+        _passthrough_toc_pdf,
+    )
     result = await ReportFusionAgent().run(
         _context(report_analysis, report_charts, report_chapters)
     )

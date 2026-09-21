@@ -960,7 +960,7 @@ class ChartGeneratorAgent:
                 chart_quality_issue_ids.append("data_health_min_rows")
             render_mode: Literal["echarts", "generated_image"] = "echarts"
             image_uri: str | None = None
-            image_mime_type: Literal["image/png", "image/webp"] | None = None
+            image_mime_type: Literal["image/png", "image/webp", "image/jpeg"] | None = None
             generation_prompt: str | None = None
             generation_prompt_model: str | None = None
             generation_image_model: str | None = None

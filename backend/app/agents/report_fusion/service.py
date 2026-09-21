@@ -13,7 +13,16 @@ from app.agents.report_fusion.quality import (
 from app.infrastructure.storage.local import save_report_bytes
 from app.reporting.html import render_html
 from app.reporting.markdown import render_markdown
-from app.reporting.pdf import render_pdf
+from app.reporting.pdf import (
+    render_pdf_with_diagnostics,
+    render_pdf_with_toc_page_numbers,
+)
+from app.reporting.visual_review import (
+    deterministic_visual_review,
+    repair_classes_for,
+    summarize_visual_review,
+    visual_gate_passes,
+)
 from app.schemas.analysis import AnalysisResult
 from app.schemas.chapter import ChapterWritingResult
 from app.schemas.chart import ChartGenerationResult
@@ -24,7 +33,11 @@ from app.schemas.report import (
     ReportArtifactManifestEntry,
     ReportFormat,
     ReportFusionResult,
+    ReportViewModel,
     SourceRevision,
+    VisualIssue,
+    VisualReviewReport,
+    VisualReviewSummary,
 )
 from app.schemas.workflow import (
     ArtifactRef,
@@ -37,6 +50,16 @@ from app.workflow.stages import StageContext
 
 CANONICAL_CHAPTER_ORDER = [f"CH-{index:02d}" for index in range(1, 8)]
 CANONICAL_FORMAT_ORDER: tuple[ReportFormat, ...] = ("markdown", "html", "pdf")
+# 页眉与页脚页码由模板内嵌的 <template id="pdf-header"/pdf-footer"> 驱动，
+# 由 app.reporting.pdf 的 _pdf_options 在导出时提取（Chromium 不支持 CSS @page
+# 的 margin box，python 侧回填页码的方案已废弃）。
+
+# 视觉复检轮次上限：VisualReviewReport.review_round 本身限定 <= 2，即"首轮 + 一次
+# 修复重排"。max_repairs 只会把轮次往下压（设 0 = 只诊断不修复），不会顶破 schema。
+_MAX_VISUAL_REVIEW_ROUNDS = 2
+# 视觉问题进入 unresolved_risks 的条数上限：完整清单落在 visual_review.json，
+# 风险台账只保留足以解释"报告被标了什么问题"的头部条目。
+_VISUAL_ADVISORY_LIMIT = 12
 DELIVERY_ONLY_ADVISORY_PREFIXES = (
     "就绪图表引用与图表规格不一致",
     "章节引用了未就绪图表",
@@ -96,10 +119,106 @@ def _artifact_entry(
     )
 
 
+async def _run_visual_gate(
+    report: ReportViewModel,
+    html: str,
+    *,
+    threshold: float,
+    max_repairs: int,
+) -> tuple[bytes, str, VisualReviewReport | None, str | None]:
+    """导出交付 PDF，并在同一次渲染里跑确定性视觉复检。
+
+    复检只做两件事：发现问题、以及在问题可由模板里那组 ``visual-repair-*``
+    版式钩子修复时重排一轮。它不调用任何模型、不改变任何事实，也不参与
+    内容质量门。
+
+    Args:
+        report: 已装配的报告视图；修复重排时用它重新渲染 HTML。
+        html: 首轮 HTML。
+        threshold: 视觉评分阈值，用于判断是否需要触发修复重排。
+        max_repairs: 允许的修复轮数；受 ``VisualReviewReport.review_round``
+            的 schema 上限（2）夹取，设 0 表示只诊断不修复。
+
+    Returns:
+        ``(pdf 字节, 最终交付用 HTML, 视觉复检报告, 复检错误)``。
+        报告为 ``None`` 且错误为空 = 没拿到几何诊断（探针未执行），跳过判定——
+        用空诊断去跑检查会凭空造出 ``LAYOUT_VARIETY_LOW`` 之类的假问题；
+        报告为 ``None`` 且错误非空 = 复检自身失败，已退回最近一次成功的渲染结果。
+
+    Raises:
+        TimeoutError: 由 ``app.reporting.pdf`` 透出，调用方按导出失败处理。
+    """
+
+    pdf_bytes, diagnostics = await render_pdf_with_diagnostics(html)
+    if not diagnostics:
+        return pdf_bytes, html, None, None
+
+    # 只有"生成 PDF"本身失败才算导出失败；复检失败必须退回已成功的渲染结果，
+    # 否则复检的一个校验异常就能打断整份报告（2026-09-18 事故）。
+    delivery_pdf, delivery_html = pdf_bytes, html
+    try:
+        rounds = 1
+        review = deterministic_visual_review(
+            report, diagnostics, pdf_bytes=pdf_bytes, review_round=rounds
+        )
+        repair_classes = repair_classes_for(review)
+        round_budget = min(max(max_repairs, 0) + 1, _MAX_VISUAL_REVIEW_ROUNDS)
+        while (
+            rounds < round_budget
+            and repair_classes
+            and not visual_gate_passes(review, threshold=threshold)
+        ):
+            html = render_html(report, repair_classes=repair_classes)
+            pdf_bytes, diagnostics = await render_pdf_with_diagnostics(html)
+            delivery_pdf, delivery_html = pdf_bytes, html
+            rounds += 1
+            review = deterministic_visual_review(
+                report, diagnostics, pdf_bytes=pdf_bytes, review_round=rounds
+            )
+            repair_classes = repair_classes_for(review)
+    except Exception as exc:
+        return delivery_pdf, delivery_html, None, f"{type(exc).__name__}: {exc}"
+    return delivery_pdf, delivery_html, review, None
+
+
 class ReportFusionAgent:
-    """P0 report assembler; it never calls an LLM or introduces new financial facts."""
+    """P0 report assembler; it never calls an LLM or introduces new financial facts.
+
+    PDF export runs the deterministic visual gate (``app.reporting.visual_review``)
+    inside the same render pass that captures DOM geometry: it inspects the
+    rendered document and, when it finds defects a bounded set of
+    ``visual-repair-*`` classes can fix, re-renders once with those classes
+    applied.  The gate never blocks delivery — findings are reported, and a
+    failing gate degrades to "no review" instead of interrupting the export.
+
+    The only remaining optional Agent 5 model is the multimodal visual
+    reviewer; the workflow constructs it solely when
+    ``REPORT_VISUAL_REVIEW_ENABLED`` is on (default off), so no model is
+    instantiated or called out of the box.  The report *editor* model was
+    removed on 2026-09-21: it optimised for per-report layout variety, which
+    works against a fixed-layout deliverable.
+    """
 
     stage: StageName = StageName.REPORT_FUSION
+
+    def __init__(
+        self,
+        *,
+        visual_review_model: "VisualReviewModel | None" = None,
+        visual_review_enabled: bool = False,
+        visual_review_threshold: float = 0.95,
+        visual_review_max_repairs: int = 2,
+        visual_review_max_pages: int = 200,
+        visual_review_batch_size: int = 4,
+        visual_review_dpi: int = 144,
+    ) -> None:
+        self.visual_review_model = visual_review_model
+        self.visual_review_enabled = visual_review_enabled
+        self.visual_review_threshold = visual_review_threshold
+        self.visual_review_max_repairs = visual_review_max_repairs
+        self.visual_review_max_pages = visual_review_max_pages
+        self.visual_review_batch_size = visual_review_batch_size
+        self.visual_review_dpi = visual_review_dpi
 
     async def run(self, context: StageContext) -> StageResult:
         interpretation = context.previous_results.get(StageName.DATA_INTERPRET)
@@ -272,19 +391,72 @@ class ReportFusionAgent:
         if "html" in delivery_formats or "pdf" in delivery_formats:
             try:
                 html = render_html(report)
-                if "html" in delivery_formats:
-                    generated["html"] = html.encode("utf-8")
             except Exception as exc:
                 export_issues.append(f"HTML导出失败：{type(exc).__name__}: {exc}")
 
+        visual_review: VisualReviewSummary | None = None
+        visual_review_report: VisualReviewReport | None = None
+        visual_issues: list[VisualIssue] = []
         if "pdf" in delivery_formats:
             if html is None:
                 export_issues.append("PDF导出失败：缺少可用HTML中间产物")
             else:
                 try:
-                    generated["pdf"] = await render_pdf(html)
+                    pdf_bytes, html, review_report, review_error = await _run_visual_gate(
+                        report,
+                        html,
+                        threshold=self.visual_review_threshold,
+                        max_repairs=self.visual_review_max_repairs,
+                    )
+                    generated["pdf"] = pdf_bytes
+                    # 目录页码：在视觉门选定的最终 HTML 上做两遍导出回填。
+                    # 失败时保留视觉门产出的 PDF，不让页码回填打断交付。
+                    try:
+                        filled_pdf = await render_pdf_with_toc_page_numbers(html)
+                        if filled_pdf.startswith(b"%PDF"):
+                            generated["pdf"] = filled_pdf
+                    except Exception as toc_exc:
+                        export_issues.append(
+                            f"目录页码回填失败：{type(toc_exc).__name__}: {toc_exc}"
+                        )
+                    if review_error is not None:
+                        export_issues.append(f"视觉复检未执行：{review_error}")
+                    elif review_report is not None:
+                        visual_review_report = review_report
+                        visual_review = summarize_visual_review(
+                            review_report,
+                            review_rounds=max(review_report.review_round, 1),
+                        )
+                        visual_issues = [
+                            item for item in review_report.issues if not item.resolved
+                        ]
                 except Exception as exc:
                     export_issues.append(f"PDF导出失败：{type(exc).__name__}: {exc}")
+
+        if "html" in delivery_formats and html is not None:
+            generated["html"] = html.encode("utf-8")
+
+        # 视觉复检的职责是"报告问题"，不是"让报告生成不了"（见 visual_review.py
+        # 顶部 2026-09-18 的事故注释）。因此这里只把问题写进风险台账，不改
+        # delivery_status：交付状态在渲染前就已固化进 HTML/PDF，事后改它会让
+        # 产物与结果字段彼此不一致。
+        if visual_review is not None and visual_issues:
+            advisory_issues.append(
+                f"视觉复检 · {visual_review.critical_count} 严重 / "
+                f"{visual_review.major_count} 重要 / {visual_review.minor_count} 轻微"
+                f"（视觉评分 {visual_review.score:.2f}，"
+                f"共 {visual_review.review_rounds} 轮）"
+            )
+            advisory_issues.extend(
+                f"视觉复检 · {item.issue_code}（{item.severity}）：{item.description}"
+                for item in visual_issues[:_VISUAL_ADVISORY_LIMIT]
+            )
+            if len(visual_issues) > _VISUAL_ADVISORY_LIMIT:
+                advisory_issues.append(
+                    f"视觉复检 · 另有 {len(visual_issues) - _VISUAL_ADVISORY_LIMIT} 项未列出，"
+                    "完整清单见 visual_review.json"
+                )
+            advisory_issues[:] = list(dict.fromkeys(advisory_issues))
 
         if not generated:
             return StageResult(
@@ -313,6 +485,24 @@ class ReportFusionAgent:
             )
         except Exception as exc:
             export_issues.append(f"ReportView模型落盘失败：{type(exc).__name__}: {exc}")
+
+        # 视觉复检清单落盘：风险台账只保留头部条目，完整问题清单在这里可查。
+        # 与 report_view.json 一样属于内部产物，不进 manifest。
+        if visual_review_report is not None:
+            try:
+                save_report_bytes(
+                    context.run_id,
+                    context.revision,
+                    "visual_review.json",
+                    json.dumps(
+                        visual_review_report.model_dump(mode="json"),
+                        ensure_ascii=False,
+                        indent=2,
+                        sort_keys=True,
+                    ).encode("utf-8"),
+                )
+            except Exception as exc:
+                export_issues.append(f"视觉复检清单落盘失败：{type(exc).__name__}: {exc}")
 
         advisory_issues.extend(export_issues)
         if export_issues:
@@ -400,6 +590,7 @@ class ReportFusionAgent:
             acknowledged_risks=accepted_risk_codes,
             unresolved_risks=advisory_issues,
             visual_decision=report.visual_decision,
+            visual_review=visual_review,
             # 轻量章节结构：顺序沿用 report.chapters（与 HTML 模板同序），
             # 前端目录据此按后端命名原样渲染，锚点 chapter-${idx+1} 不会串位。
             chapters=[

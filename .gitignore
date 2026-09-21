@@ -60,6 +60,10 @@ coverage/
 
 # pytest 临时运行目录（basetemp 产物，非测试源码）
 .pytest_tmp/
+# 本机沙箱下 pytest 无法写系统 /tmp，改用工作区内目录并显式指定 --basetemp，
+# 两种分隔符都出现过，统一忽略，避免临时产物混进提交。
+.pytest-tmp/
+.pytest-tmp*/
 
 # Trae 导出的临时 HTML 分享压缩包
 .trae-html-share-packages/

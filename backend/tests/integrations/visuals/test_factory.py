@@ -3,6 +3,7 @@ import pytest
 from app.core.config import Settings
 from app.integrations.visuals.factory import create_image_generator, create_prompt_compiler
 from app.integrations.visuals.mock import MockImageGenerator, MockPromptCompiler
+from app.integrations.visuals.shengsuanyun import ShengsuanyunImageGenerator
 
 
 def test_test_environment_can_create_deterministic_visual_models() -> None:
@@ -27,6 +28,19 @@ def test_live_image_generator_requires_separate_credentials() -> None:
 
     with pytest.raises(RuntimeError, match="live_image_configuration_missing"):
         create_image_generator(configured)
+
+
+def test_live_image_generator_builds_shengsuanyun_provider() -> None:
+    configured = Settings(
+        ENVIRONMENT="production",
+        IMAGE_USE_MOCK=False,
+        IMAGE_API_KEY="sk-live",
+        IMAGE_BASE_URL="https://router.shengsuanyun.com/api/v1",
+    )
+
+    generator = create_image_generator(configured)
+    assert isinstance(generator, ShengsuanyunImageGenerator)
+    assert generator.model_name == "openai/gpt-image-2"
 
 
 def test_non_test_environment_rejects_mock_image_provider() -> None:

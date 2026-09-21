@@ -1,5 +1,6 @@
 """Markdown renderer fed by the canonical report view model."""
 
+from app.reporting.text_rules_loader import sanitize_for_render
 from app.reporting.presentation import (
     CHART_TYPE_LABELS,
     CHECK_STATUS_LABELS,
@@ -12,7 +13,6 @@ from app.reporting.presentation import (
     chapter_label,
     citation_lookup,
     citation_text,
-    humanize_internal_ids,
     section_label,
     source_table_rows,
 )
@@ -20,7 +20,15 @@ from app.schemas.report import EmbeddedChart, ReportViewModel
 
 
 def _safe(value: str) -> str:
-    return humanize_internal_ids(value).replace("<", "&lt;").replace(">", "&gt;")
+    """对外文本净化 + HTML 转义。
+
+    2026-09-18 之前这里只做 `humanize_internal_ids`，不走唯一词表，
+    于是 MD 与 HTML 对同一份 ReportViewModel 产出不同的对外文本
+    （MD 会漏出管线语言、内部状态码与超精度数值）。现与 HTML 共用
+    `text_rules_loader.sanitize_for_render`。
+    """
+
+    return sanitize_for_render(value).replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _cell(value: str) -> str:
@@ -62,6 +70,14 @@ def render_markdown(report: ReportViewModel) -> str:
             f"{citation_text(conclusion.evidence_ids, citations, detailed=True)}"
         )
         lines.append(f"  - 不确定性：{_safe(conclusion.uncertainty)}")
+    if not report.executive_summary.conclusions:
+        lines.append("- 当前没有通过数据质量门、可安全进入摘要的核心结论。")
+    if report.decision_brief.focus_questions:
+        lines.extend(["", "### 本报告优先回答", ""])
+        lines.extend(
+            f"{index}. {_safe(question)}"
+            for index, question in enumerate(report.decision_brief.focus_questions, start=1)
+        )
     lines.extend(["", "### 情景与风险", ""])
     lines.extend(f"- {_safe(item)}" for item in report.executive_summary.scenarios)
     lines.extend(f"- 风险：{_safe(item)}" for item in report.executive_summary.risks)
@@ -84,6 +100,15 @@ def render_markdown(report: ReportViewModel) -> str:
                 _safe(chapter.summary),
             ]
         )
+        if report.report_depth != "brief" and chapter.missing_inputs:
+            lines.extend(["", "**本章证据缺口**", ""])
+            lines.append(
+                "现有材料不足以支持以下三个研究小节的事实性结论，"
+                "因此保留完整研究位置，不重复铺陈占位文字。"
+            )
+            lines.extend(f"- {_safe(section.title)}" for section in chapter.sections)
+            lines.append(f"- 待补充：{'；'.join(_safe(item) for item in chapter.missing_inputs)}")
+            continue
         for section in chapter.sections:
             if report.report_depth == "brief":
                 continue

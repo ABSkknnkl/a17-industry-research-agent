@@ -76,7 +76,7 @@ def save_chart_image(
 
     if not content:
         raise ValueError("chart image must not be empty")
-    extension_by_type = {"image/png": "png", "image/webp": "webp"}
+    extension_by_type = {"image/png": "png", "image/webp": "webp", "image/jpeg": "jpg"}
     extension = extension_by_type.get(mime_type)
     if extension is None:
         raise ValueError("unsupported chart image mime type")
@@ -122,6 +122,8 @@ def save_report_bytes(
         "report.pdf",
         "manifest.json",
         "report_view.json",
+        # 视觉复检的完整问题清单：风险台账只留头部条目，人工复核靠这份文件。
+        "visual_review.json",
     }
     if filename not in allowed:
         raise ValueError("unsupported report artifact filename")

@@ -1,8 +1,11 @@
 """Model decorators that account for calls without changing business protocols."""
 
-from app.integrations.llm.protocol import AnalysisModel, ChapterWritingModel
+import time
+
+from app.integrations.llm.protocol import AnalysisModel, ChapterWritingModel, ReadabilityReviewModel
 from app.schemas.analysis import AnalysisDraft
 from app.schemas.chapter import ChapterDraftLoose
+from app.schemas.readability import ReadabilityReport
 from app.runtime.guard import get_runtime_session
 
 
@@ -48,6 +51,7 @@ class RuntimeAwareChapterWritingModel:
         if session is not None:
             session.before_model_call(self.model_name)
         succeeded = False
+        t0 = time.monotonic()
         try:
             result = await self._model.generate_chapter(
                 system_prompt=system_prompt,
@@ -56,5 +60,41 @@ class RuntimeAwareChapterWritingModel:
             succeeded = True
             return result
         finally:
+            duration_ms = (time.monotonic() - t0) * 1000
             if session is not None:
-                session.after_model_call(self.model_name, succeeded=succeeded)
+                session.after_model_call(
+                    self.model_name, succeeded=succeeded, duration_ms=duration_ms
+                )
+
+
+class RuntimeAwareReadabilityModel:
+    """Wraps ReadabilityReviewModel so soft-gate calls enter the runtime budget and emit events."""
+
+    def __init__(self, model: ReadabilityReviewModel) -> None:
+        self._model = model
+        self.model_name = model.model_name
+
+    async def review_paragraph(
+        self,
+        *,
+        paragraph_text: str,
+        kind: str,
+    ) -> ReadabilityReport:
+        session = get_runtime_session()
+        if session is not None:
+            session.before_model_call(self.model_name)
+        succeeded = False
+        t0 = time.monotonic()
+        try:
+            result = await self._model.review_paragraph(
+                paragraph_text=paragraph_text,
+                kind=kind,
+            )
+            succeeded = True
+            return result
+        finally:
+            duration_ms = (time.monotonic() - t0) * 1000
+            if session is not None:
+                session.after_model_call(
+                    self.model_name, succeeded=succeeded, duration_ms=duration_ms
+                )

@@ -4,6 +4,8 @@ import re
 from collections.abc import Iterable
 from datetime import date
 
+from markupsafe import Markup, escape
+
 from app.schemas.report import EvidenceSourceEntry
 
 CONFIDENCE_LABELS = {"high": "高", "medium": "中", "low": "低"}
@@ -85,6 +87,61 @@ def humanize_internal_ids(value: str) -> str:
     for pattern, replacement in replacements:
         result = re.sub(pattern, replacement, result)
     return result
+
+
+# 与 earnings-interpretation 插件 render-report.mjs 的 emphasizeNumbers 同源正则：
+# 数字后面必须紧跟财务/统计单位才高亮，避免把「图1」「来源2」等编号误伤。
+_EMPHASIS_PATTERN = re.compile(
+    r"[+-]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?\s*"
+    r"(?:%|pct|个百分点|倍|亿元|万元|元|亿|万|人|家|吨|股)",
+    re.IGNORECASE,
+)
+
+
+def emphasize_numbers(text: str) -> Markup:
+    """Wrap numbers that carry a unit in `<strong class="inline-number">`.
+
+    Deterministic port of the earnings plugin's emphasizeNumbers().  Non-number
+    segments are HTML-escaped; the returned value is Markup so Jinja2
+    autoescaping does not re-escape the injected tags.
+    """
+
+    if not text:
+        return Markup("")
+    result: list[str] = []
+    cursor = 0
+    for match in _EMPHASIS_PATTERN.finditer(text):
+        result.append(escape(text[cursor : match.start()]))
+        result.append(f'<strong class="inline-number">{escape(match.group(0))}</strong>')
+        cursor = match.end()
+    result.append(escape(text[cursor:]))
+    return Markup("".join(result))
+
+
+TONE_POSITIVE = "tone-positive"
+TONE_NEGATIVE = "tone-negative"
+TONE_WARNING = "tone-warning"
+TONE_NEUTRAL = "tone-neutral"
+
+
+def tone_class(confidence: str | None = None, impact: str | None = None) -> str:
+    """Map report semantics onto the earnings style's tone classes.
+
+    ReportViewModel has no sentiment tone; confidence and impact levels are the
+    closest signals.  high-confidence evidence reads positive, medium/low and
+    unknown fall through to warning/neutral; a high-impact quality issue reads
+    negative.
+    """
+
+    if impact == "high":
+        return TONE_NEGATIVE
+    if impact == "medium":
+        return TONE_WARNING
+    if confidence == "high":
+        return TONE_POSITIVE
+    if confidence == "medium":
+        return TONE_WARNING
+    return TONE_NEUTRAL
 
 
 def citation_lookup(entries: Iterable[EvidenceSourceEntry]) -> dict[str, EvidenceSourceEntry]:

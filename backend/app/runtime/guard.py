@@ -101,7 +101,12 @@ class RuntimeSession:
             metadata={"call_number": self.state.model_calls},
         )
 
-    def after_model_call(self, model_name: str, *, succeeded: bool) -> None:
+    def after_model_call(
+        self, model_name: str, *, succeeded: bool, duration_ms: float | None = None
+    ) -> None:
+        metadata: dict[str, Any] = {}
+        if duration_ms is not None:
+            metadata["duration_ms"] = round(duration_ms, 1)
         self._emit(
             (
                 RuntimeEventType.MODEL_CALL_COMPLETED
@@ -110,6 +115,7 @@ class RuntimeSession:
             ),
             outcome="completed" if succeeded else "failed",
             name=model_name,
+            metadata=metadata,
         )
 
     def before_tool_call(self, tool_name: str) -> None:

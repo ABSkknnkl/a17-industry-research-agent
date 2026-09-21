@@ -3,258 +3,1136 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{ report.title }}</title>
+  <title>{{ display_text(report.title) }}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%230243A4'/%3E%3C/svg%3E">
   <style>
-    :root { --ink:#0f172a; --muted:#64748b; --line:#dbe4ef; --blue:#1d4ed8; --paper:#fff; --soft:#f4f7fb; --accent-soft:#eff6ff; }
-    * { box-sizing:border-box; }
-    html { background:#e9eef5; }
-    body { margin:0; color:var(--ink); background:var(--paper); font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif; line-height:1.75; font-size:15px; }
-    main { max-width:1040px; margin:0 auto; padding:56px 64px 80px; }
-    .cover { min-height:760px; display:flex; flex-direction:column; justify-content:center; border-top:8px solid var(--blue); position:relative; page-break-after:always; }
-    .eyebrow { color:var(--blue); font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
-    h1 { font-size:44px; line-height:1.22; margin:18px 0; letter-spacing:-.02em; }
-    .subtitle { font-size:19px; color:var(--muted); max-width:720px; }
-    .meta-grid { margin-top:56px; display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
-    .meta { border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
-    .meta span { display:block; color:var(--muted); font-size:12px; }
-    .meta strong { display:block; margin-top:4px; overflow-wrap:anywhere; }
-    h2 { margin:48px 0 20px; padding-bottom:10px; border-bottom:2px solid var(--ink); font-size:28px; page-break-after:avoid; }
-    h3 { margin:30px 0 12px; font-size:20px; color:#162b4d; page-break-after:avoid; }
-    p { margin:10px 0; text-align:justify; }
-    .summary { background:var(--accent-soft); border:1px solid #bfdbfe; border-radius:14px; padding:26px 30px; }
-    .headline { font-size:21px; font-weight:700; line-height:1.55; }
-    .conclusion { border-left:4px solid var(--blue); padding:8px 14px; margin:14px 0; background:#fff; }
-    .chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
-    .chip { color:#334155; background:#e2e8f0; border-radius:999px; padding:2px 9px; font-size:11px; }
-    .toc { columns:2; column-gap:36px; padding:0; list-style:none; }
-    .toc li { break-inside:avoid; padding:5px 0; border-bottom:1px dotted var(--line); }
-    .toc a { color:inherit; text-decoration:none; }
-    .chapter { page-break-before:always; }
-    .chapter-summary { color:#334155; font-size:16px; background:var(--soft); padding:12px 16px; border-radius:8px; }
-    .reference { color:var(--muted); font-size:12px; margin-top:5px; }
-    .citation { color:var(--blue); text-decoration:none; border-bottom:1px dotted #93c5fd; margin-right:6px; }
-    .citation:hover { color:#1e40af; border-bottom-style:solid; }
-    .chart { margin:22px 0 28px; border:1px solid var(--line); border-radius:14px; padding:14px; break-inside:avoid; background:#fff; }
-    .chart svg { width:100%; height:auto; display:block; }
-    .chart figcaption { margin:8px 8px 2px; color:var(--muted); font-size:12px; }
-    .chart-number { color:var(--ink); font-weight:700; }
-    .chart-pie,.chart-radar { width:64%; margin-left:auto; margin-right:auto; }
-    .uncertainty { border:1px solid #fcd34d; background:#fffbeb; border-radius:8px; padding:10px 14px; margin:14px 0; break-inside:avoid; page-break-inside:avoid; }
-    .uncertainty strong { color:#92400e; }
-    .risk-list li, .boundary-list li { margin:6px 0; }
-    .footer-note { margin-top:48px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:12px; }
-    .draft-watermark { position:absolute; inset:0; pointer-events:none; z-index:5; display:flex; align-items:center; justify-content:center; opacity:0.08; font-size:72px; font-weight:900; color:#dc2626; transform:rotate(-20deg); letter-spacing:0.3em; }
-    .draft-banner { background:#fef2f2; border:2px solid #dc2626; border-radius:10px; padding:14px 20px; margin-bottom:24px; color:#991b1b; }
-    .draft-banner strong { color:#dc2626; }
-    .risk-appendix { page-break-before:always; }
-    .quality-appendix { page-break-before:always; }
-    .quality-table { width:100%; border-collapse:collapse; margin:12px 0 22px; font-size:13px; }
-    .quality-table th,.quality-table td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
-    .quality-table th { background:var(--soft); }
-    .source-index { page-break-before:always; }
-    .source-index tbody tr { scroll-margin-top:20px; }
-    .source-table { table-layout:fixed; font-size:11px; font-variant-numeric:tabular-nums; }
-    .source-table th,.source-table td { overflow-wrap:anywhere; line-height:1.45; padding:7px 8px; }
-    .source-table th:first-child,.source-table td:first-child { width:5%; text-align:center; }
-    .source-table th:nth-child(2),.source-table td:nth-child(2) { width:20%; }
-    .source-table th:nth-child(3),.source-table td:nth-child(3) { width:15%; }
-    .source-table th:nth-child(4),.source-table td:nth-child(4) { width:12%; white-space:nowrap; }
-    .source-table th:nth-child(5),.source-table td:nth-child(5) { width:13%; white-space:nowrap; }
-    .source-table th:nth-child(6),.source-table td:nth-child(6) { width:15%; }
-    .source-table th:nth-child(7),.source-table td:nth-child(7) { width:20%; }
-    table caption { caption-side:top; text-align:left; color:var(--ink); font-weight:700; margin:0 0 8px; }
-    thead { display:table-header-group; }
-    .visual-note { border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin:18px 0 0; color:var(--muted); font-size:12px; background:var(--soft); }
-    .visual-note strong { color:var(--ink); }
+    /* =====================================================================
+       券商研报版式基准（对齐 skills/report-style-benchmark 实测校准）：
+       - A4 纵向，版心 14/15/16/15mm，正文恒定 10.4pt、纯黑、左对齐
+       - 唯一品牌色 + 语义红 + 中性灰（由 template_profile 动态注入）
+       - 图表不包卡片、题注与正文同号、表格品牌色表头 + 全网格细线
+       - 封面白底信息密集；页眉机构标识 ≥6mm；页脚距底 ≥12mm
+       HTML（屏幕阅读）与 PDF（A4 打印）双格式同源：
+       - 屏幕：阅读器视图（居中、灰底、阴影）
+       - 打印：Playwright 原生 header/footer_template 跑版页眉页脚（页边距区、每页重复）
+       模板预设（template profiles）通过 CSS 自定义属性注入品牌色、字号、间距，
+       不改变 HTML 结构，保持体裁一致性。
+       ===================================================================== */
+    {% set tp = report.visual_decision.template_profile %}
+    :root {
+      --brand: {{ tp.brand_color if tp else '#0243A4' }};
+      --red: {{ tp.semantic_red if tp else '#D33333' }};
+      --green: {{ tp.semantic_green if tp and tp.semantic_green else '#1B7F4B' }};
+      --muted: {{ tp.neutral_grey if tp else '#595959' }};
+      --grid: #dfe3e8;
+      --rule: {{ tp.neutral_grey if tp else '#595959' }};
+      --h2-size: {{ tp.heading_h2_pt if tp else 15.9 }}pt;
+      --h3-size: {{ tp.heading_h3_pt if tp else 12.5 }}pt;
+      --body-lh: {{ tp.line_height if tp else 1.34 }};
+      --section-margin: {% if tp and tp.spacing == 'compact' %}3mm{% elif tp and tp.spacing == 'generous' %}5mm{% else %}4mm{% endif %};
+      /* 目录行距独立于正文行距：目录恒 30 行，若继承 `--body-lh`（1.32–1.40），
+         narrative_flow / modern_analysis 的目录会实测涨到 259.3–259.5mm 而溢出
+         一页（版心 259mm）。这里按 spacing 收窄到 1.30–1.36，保留节奏差异但保证
+         四个 profile 都落在版心内。 */
+      --toc-lh: {% if tp and tp.spacing == 'compact' %}1.36{% elif tp and tp.spacing == 'generous' %}1.42{% else %}1.41{% endif %};
+      --toc-gap: {% if tp and tp.spacing == 'compact' %}1.4mm{% else %}1.6mm{% endif %};
+      --chart-margin: {% if tp and tp.spacing == 'compact' %}4mm{% elif tp and tp.spacing == 'generous' %}6mm{% else %}5mm{% endif %};
+    }
+    @page { size: A4 portrait; margin: 20mm 15mm 18mm 15mm; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-    /* 数据手册型：高密度、数值优先、表格与证据索引更突出。 */
-    .visual-data-manual { --blue:#17365d; --accent-soft:#f2f6fa; }
-    .visual-data-manual main { max-width:1120px; }
-    .visual-data-manual .cover { border-top-width:12px; }
-    .visual-data-manual h2 { color:#17365d; border-bottom-color:#17365d; }
-    .visual-data-manual .chapter-summary { border-left:4px solid #17365d; border-radius:0; }
-    .visual-data-manual .chart { border-radius:4px; }
-    .visual-data-manual .quality-table { font-size:12px; }
+    /* 字体必须经 @font-face local() 声明后引用：Chromium 打印对直接引用的
+       系统字体（font-family: "PingFang SC"）会把 CJK 文本嵌成 Type3 轮廓字体；
+       经 local() 声明则正常嵌入为可命名的 Type0 子集（实测 0 Type3）。 */
+    @font-face {
+      font-family: 'ReportCJK';
+      src: local('PingFang SC'), local('Microsoft YaHei'), local('Noto Sans CJK SC'), local('Source Han Sans SC'), local('SimHei');
+      font-weight: 400; font-style: normal;
+      unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF;
+    }
+    @font-face {
+      font-family: 'ReportCJK';
+      src: local('PingFang SC Bold'), local('Microsoft YaHei Bold'), local('Noto Sans CJK SC Bold'), local('Source Han Sans SC Bold');
+      font-weight: 700; font-style: normal;
+      unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF;
+    }
 
-    /* 分析笔记型：图、表、正文均衡，是系统默认外壳。 */
-    .visual-analysis-note { --blue:#1d4ed8; --accent-soft:#eff6ff; }
-    .visual-analysis-note .conclusion { border-radius:0 8px 8px 0; }
+    html { background: #fff; }
+    body {
+      margin: 0;
+      background: #fff;
+      color: #000000;
+      font-family: 'ReportCJK', 'Times New Roman', serif;
+      font-size: 10.4pt;
+      line-height: var(--body-lh);
+      font-variant-numeric: tabular-nums;
+    }
+    main { display: block; }
 
-    /* 深度研究型：收窄版心、提升行距，强调连续论证。 */
-    .visual-deep-research { --blue:#7c2d12; --accent-soft:#fff7ed; }
-    .visual-deep-research body,.visual-deep-research { font-family:"Songti SC","STSong","Noto Serif CJK SC",serif; }
-    .visual-deep-research main { max-width:920px; padding-left:76px; padding-right:76px; }
-    .visual-deep-research h1 { font-weight:600; letter-spacing:.01em; }
-    .visual-deep-research h2 { color:#451a03; border-bottom:1px solid #9a3412; }
-    .visual-deep-research h3 { color:#7c2d12; }
-    .visual-deep-research .chapter-summary { background:transparent; border-left:3px solid #9a3412; border-radius:0; padding-left:18px; }
-    .visual-deep-research .chart { border-width:1px 0; border-radius:0; padding:18px 0; }
+    .reader-rail, .source-search, .screen-source-table-title { display: none; }
 
-    .density-compact { font-size:14px; line-height:1.62; }
-    .density-compact main { padding-top:42px; padding-bottom:60px; }
-    .density-compact h2 { margin-top:38px; }
-    .density-compact .chart { margin:16px 0 20px; }
-    .density-detailed { font-size:15.5px; line-height:1.85; }
-    .density-detailed main { padding-top:64px; padding-bottom:96px; }
-    .density-detailed .chapter-summary { padding-top:16px; padding-bottom:16px; }
-    @page { size:A4; @bottom-center { content:"{{ report.industry_topic.removesuffix('行业') }}行业研究报告  ·  " counter(page); color:#64748b; font-size:9pt; } }
+    /* === 屏幕阅读模式：独立报告阅读器 ===
+       宽屏使用导航侧栏 + 宽正文；小节级图文布局仅在足够宽的屏幕启用。
+       所有打印规则保持原基线，HTML 多样性不会反向改变 PDF 分页。 */
+    @media screen {
+      html { background: #e9edf2; }
+      body {
+        background: #e9edf2; padding: 28px 24px 48px;
+        display: grid; grid-template-columns: 220px minmax(0, {{ html_composition_plan.thresholds.reader_max_content_px }}px);
+        gap: 24px; align-items: start; justify-content: center;
+      }
+      main {
+        width: 100%; min-width: 0; margin: 0;
+        background: #fff;
+        box-shadow: 0 2px 18px rgba(20, 32, 51, .16);
+        padding: 52px 64px 64px;
+        line-height: 1.55;
+      }
+      .reader-rail {
+        display: block; position: sticky; top: 24px;
+        max-height: calc(100vh - 48px); overflow: auto;
+        padding: 18px 16px; background: #fff;
+        border-top: 3px solid var(--brand);
+        box-shadow: 0 2px 12px rgba(20, 32, 51, .10);
+        font-family: 'ReportCJK', sans-serif;
+      }
+      .reader-rail-title { margin: 0 0 12px; color: var(--brand); font-weight: 700; font-size: 14px; }
+      .reader-rail-meta { margin: 0 0 14px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+      .reader-rail a { display: block; padding: 7px 0; border-top: 1px solid var(--grid); text-decoration: none; font-size: 13px; line-height: 1.45; }
+      .reader-rail a:hover, .reader-rail a:focus-visible { color: var(--brand); }
+      .reader-rail-direction {
+        margin: 0 0 14px; padding: 10px 0 12px;
+        border-top: 1px solid var(--grid); color: var(--muted);
+        font-size: 11px; line-height: 1.55;
+      }
+      .reader-rail-direction strong { display: block; color: var(--brand); font-size: 12px; }
+      .cover { min-height: min(800px, calc(100vh - 104px)); }
+      .cover-info { margin-top: clamp(48px, 8vh, 96px); }
+      .html-section-body { min-width: 0; }
+      .html-section-copy, .html-section-visual { min-width: 0; writing-mode: horizontal-tb; }
+      .html-section-copy p { word-break: normal; overflow-wrap: break-word; }
+      .html-section-visual .chart-grid { grid-template-columns: minmax(0, 1fr); margin: 0; }
+      .html-layout-data-lead .html-section-body { display: flex; flex-direction: column; }
+      .html-layout-data-lead .html-section-visual { order: -1; margin: 0 0 18px; }
+      .html-width-prose .html-section-body { max-width: 760px; margin-left: auto; margin-right: auto; }
+      .html-layout-prose-flow .html-section-copy { max-width: 760px; }
+      .html-layout-chart-focus .html-section-body,
+      .html-layout-chart-sequence .html-section-body,
+      .html-layout-small-multiples .html-section-body,
+      .html-layout-metric-strip .html-section-body { display: flex; flex-direction: column; }
+      .html-layout-chart-focus .html-section-visual,
+      .html-layout-chart-sequence .html-section-visual,
+      .html-layout-small-multiples .html-section-visual,
+      .html-layout-metric-strip .html-section-visual,
+      .html-reading-data-first .html-section-visual { order: -1; margin: 0 0 18px; }
+      .html-layout-chart-sequence .chart-grid { grid-template-columns: minmax(0, 1fr); }
+      .html-layout-metric-strip .chart-grid { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+      .html-layout-risk-register { border-left: 3px solid var(--red); padding-left: 22px; }
+      .layout-table-led .research-unit {
+        padding: 18px 20px; border: 1px solid var(--grid);
+        border-left: 3px solid var(--brand); background: #fff;
+      }
+      .layout-risk-matrix .risk-item {
+        padding: 16px 0 16px 22px;
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+      body.report-mode-chart-led .section-block { margin-bottom: 28px; }
+      body.report-mode-chart-led .html-section-visual { width: 100%; }
+      body.report-mode-narrative-led .html-width-prose .html-section-copy { max-width: 760px; }
+      body.archetype-evidence-led .reference { color: #3f5066; }
+      .html-layout-narrative-emphasis .html-section-copy > p:first-child {
+        border-left: 3px solid var(--brand); padding-left: 18px;
+        font-size: 1.08em; line-height: 1.65;
+      }
+      .source-search { display: block; margin: 16px 0 18px; }
+      .source-search label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
+      .source-search input {
+        width: 100%; min-height: 42px; border: 1px solid var(--grid);
+        border-radius: 4px; padding: 8px 12px; color: #000; background: #fff;
+        font: inherit;
+      }
+      .source-search input:focus { outline: 2px solid var(--brand); outline-offset: 2px; }
+    }
+    @media screen and (min-width: {{ html_composition_plan.thresholds.desktop_two_column_min_viewport_px }}px) {
+      .html-layout-chart-story-left .html-section-body,
+      .html-layout-chart-story-right .html-section-body {
+        display: grid; grid-template-columns: minmax({{ html_composition_plan.thresholds.minimum_text_column_px }}px, .96fr) minmax({{ html_composition_plan.thresholds.minimum_text_column_px }}px, 1.04fr);
+        gap: 36px; align-items: start;
+      }
+      .html-layout-chart-story-left .html-section-visual { grid-column: 1; grid-row: 1; }
+      .html-layout-chart-story-left .html-section-copy { grid-column: 2; grid-row: 1; }
+      .html-layout-chart-story-right .html-section-copy { grid-column: 1; grid-row: 1; }
+      .html-layout-chart-story-right .html-section-visual { grid-column: 2; grid-row: 1; }
+      .html-layout-small-multiples .html-section-visual .chart-grid,
+      .html-layout-comparison-board .html-section-visual .chart-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px;
+      }
+      .html-layout-evidence-split .html-section-copy {
+        display: grid; grid-template-columns: minmax(0, 1fr) 240px; column-gap: 30px;
+        align-items: start;
+      }
+      .html-layout-evidence-split .html-section-copy > p:not(.reference) { grid-column: 1; }
+      .html-layout-evidence-split .html-section-copy > .reference { grid-column: 2; }
+      .html-layout-diagram-story .html-section-body {
+        display: grid; grid-template-columns: minmax(400px, 1.15fr) minmax(320px, .85fr);
+        gap: 36px; align-items: start;
+      }
+      .html-layout-diagram-story .html-section-visual { grid-column: 1; grid-row: 1; }
+      .html-layout-diagram-story .html-section-copy { grid-column: 2; grid-row: 1; }
+    }
+    @media screen and (max-width: {{ html_composition_plan.thresholds.desktop_two_column_min_viewport_px - 1 }}px) {
+      body { display: block; padding: 18px 12px 36px; }
+      .reader-rail { display: none; }
+      main { max-width: {{ html_composition_plan.thresholds.reader_narrow_max_content_px }}px; margin: 0 auto; padding: 40px 42px 52px; }
+      .html-layout-chart-story-left .html-section-body,
+      .html-layout-chart-story-right .html-section-body { display: flex; flex-direction: column; }
+      .html-layout-chart-story-left .html-section-visual { order: -1; margin-bottom: 18px; }
+      .html-layout-evidence-split .html-section-copy,
+      .html-layout-diagram-story .html-section-body { display: block; }
+    }
+    @media screen and (max-width: 700px) {
+      body { padding: 0; }
+      main { box-shadow: none; padding: 28px 20px 40px; }
+      .front-columns, .conclusion-grid, .scenario-grid, .chart-grid,
+      .chapter-feature-grid, .cover-info-grid, .cover-hero-band { display: block; }
+      table.data-sheet { display: block; overflow-x: auto; white-space: normal; }
+      .cover { min-height: auto; }
+      .cover-info { margin-top: 32px; }
+      .chapter-start { break-before: auto; page-break-before: auto; }
+    }
     @media print {
-      html,body { background:#fff; }
-      body { font-size:13.5px; line-height:1.62; }
-      /* 与 .visual-*/.density-* 屏幕规则同权重且后置，确保打印版心归零 */
-      .visual-data-manual main, .visual-analysis-note main, .visual-deep-research main, main { max-width:none; padding:0; }
-      .density-compact main, .density-detailed main { padding-top:0; padding-bottom:0; }
-      .cover { min-height:245mm; }
-      h1 { font-size:32pt; }
-      h2 { margin:32px 0 14px; }
-      h3 { margin:20px 0 8px; }
-      p { margin:7px 0; }
-      .summary { padding:18px 22px; }
-      .conclusion { margin:9px 0; padding:6px 12px; }
-      .chapter-summary { padding:9px 14px; }
-      .chart { margin:16px 0 18px; padding:10px; box-shadow:none; }
-      .chart svg { max-height:78mm; }
-      .uncertainty { margin:10px 0; padding:7px 12px; }
-      .footer-note { margin-top:18px; padding-top:12px; font-size:10.5px; line-height:1.45; }
+      /* 页眉/页脚在页边距区（Playwright 原生模板），内容区无需让位 */
+      body { padding-top: 0; padding-bottom: 0; }
+      .source-usage-details > summary { display: none; }
+      .source-usage-details > .source-usage-list { display: block !important; }
+    }
+
+    p { margin: 0 0 3mm 0; text-align: left; orphans: 3; widows: 3; }
+    a { color: inherit; }
+
+    /* === 标题体系 === */
+    h2 { font-size: var(--h2-size); font-weight: 700; color: var(--brand); margin: 9mm 0 5mm 0; padding-bottom: 2mm; border-bottom: .5pt solid var(--brand); page-break-after: avoid; break-after: avoid; }
+    h3 { font-size: var(--h3-size); font-weight: 700; color: var(--brand); margin: 5mm 0 2.5mm 0; page-break-after: avoid; break-after: avoid; }
+    .kicker { font-size: 9pt; font-weight: 700; color: var(--muted); letter-spacing: .14em; margin-bottom: 2mm; }
+
+    /* === 封面：标题页 ===
+       2026-09-18 重做。旧封面是「两栏信息网格」，实测 `.cover-body-grid` 占
+       0.68 页 = 177mm 的密集文字 —— 交付反馈是「你现在前几页很不好看」
+       「第一页字数太多，像'核心结论'、'风险提示'，你一定要放在后面」。
+
+       重做原则：**封面只做标题页，不做内容页**。
+       核心结论 / 风险提示 / 研究方法 / 研究边界 / 本报告优先回答全部下移，
+       它们在「执行摘要」里本就完整渲染（.conclusion-grid / .front-columns /
+       .footer-note / .decision-brief），读者不丢任何信息。
+
+       封面现在只有五件东西，自上而下：
+         ① 通栏品牌带  ② 栏目带 + 标题 + 副标题
+         ③ 关键数据带（`cover_facts`：从单指标事实卡回读的自述性读数）
+         ④ 报告信息三列网格  ⑤ 免责声明
+       `min-height` 撑满版心（259mm 减去 16mm 余量），使封面恰好一页且底部留白。 */
+    .cover {
+      page-break-after: always; break-after: page; position: relative;
+      display: flex; flex-direction: column;
+      min-height: 243mm;
+    }
+    /* 通栏品牌带：给封面一个明确的视觉起点，也把封面与正文的品牌色绑在一起 */
+    .cover::before {
+      content: ""; display: block; height: 3.5mm; background: var(--brand);
+      margin-bottom: 7mm; flex: 0 0 auto;
+    }
+    /* 草稿水印：absolute 挂在封面内（屏幕滚动与打印分页都不被 fixed 遮挡） */
+    .draft-watermark {
+      position: absolute; top: 60mm; right: 6mm;
+      transform: rotate(-24deg);
+      font-size: 26pt; font-weight: 700; letter-spacing: .18em;
+      color: rgba(211, 51, 51, .16);
+      border: 2.5pt solid rgba(211, 51, 51, .22);
+      padding: 2mm 8mm;
+      pointer-events: none; user-select: none;
+      z-index: 1;
+    }
+    .cover-eyebrow { font-size: 10.5pt; color: var(--muted); letter-spacing: .2em; margin-bottom: 3.5mm; }
+    .cover-meta-band {
+      display: flex; justify-content: space-between;
+      font-size: 9.8pt; color: var(--muted);
+      border-bottom: .5pt solid var(--grid);
+      padding-bottom: 2.5mm; margin-bottom: 14mm;
+    }
+    .cover-meta-band .left { font-weight: 700; color: var(--brand); }
+    .cover-title { font-size: 26pt; font-weight: 700; line-height: 1.24; color: #000; margin: 0 0 4mm 0; }
+    .cover-subtitle {
+      font-size: 11.5pt; color: var(--muted); margin: 0 0 22mm 0;
+      border-bottom: 1.5pt solid var(--brand); padding-bottom: 4mm; line-height: 1.5;
+    }
+
+    /* 关键数据带：封面唯一的数字锚点。值 19pt、口径 9.6pt —— 层级差 2 倍，
+       视线先落到数字再落到口径，不会读成「一串密密麻麻的文字」。 */
+    .cover-hero-band { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6mm; margin: 0 0 4mm 0; }
+    .cover-hero-band.count-1 { grid-template-columns: minmax(0, 1fr); }
+    .cover-hero-band.count-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .cover-hero-band.count-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .hero-fact { border-top: 2pt solid var(--brand); padding-top: 2.5mm; min-width: 0; }
+    .hero-fact .hf-value { display: block; font-size: 19pt; font-weight: 700; line-height: 1.12; color: var(--brand); }
+    /* 长读数（≥10 字符）降一档，否则四列栅格里会顶破 42mm 的列宽 */
+    .hero-fact .hf-value-long { font-size: 15pt; }
+    .hero-fact .hf-name { display: block; font-size: 9.6pt; font-weight: 700; color: #000; margin-top: 1.8mm; }
+    .hero-fact .hf-entity { display: block; font-size: 8.6pt; color: var(--muted); margin-top: .7mm; }
+
+    /* 报告信息：三列紧凑网格（`margin-top: auto` 把整块推到版心底部） */
+    .cover-info { margin-top: auto; }
+    .cover-info h3 { font-size: 9.6pt; font-weight: 700; color: var(--brand); letter-spacing: .14em; margin: 0 0 3mm 0; }
+    .cover-info-grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 3mm 6mm; border-top: .5pt solid var(--grid); padding-top: 3.5mm;
+    }
+    .meta-row { display: flex; flex-direction: column; font-size: 9.4pt; margin: 0; }
+    .meta-row .k { color: var(--muted); font-size: 8.4pt; margin-bottom: .5mm; }
+    .meta-row .v { color: #000; }
+    .cover-disclosure { margin-top: 7mm; padding-top: 3mm; border-top: .5pt solid var(--grid); font-size: 7.8pt; color: var(--muted); line-height: 1.45; }
+    .conf { display: inline-block; font-size: 8pt; font-weight: 700; padding: 0 2mm; margin-right: 2mm; border: .5pt solid var(--muted); color: var(--muted); }
+    .conf.hi { border-color: var(--brand); color: var(--brand); }
+    .conf.lo { border-color: var(--red); color: var(--red); }
+
+    /* === 目录：点线引导 ===
+       2026-09-18 重做。旧版目录只有 9 行、字号 10.4pt、行距 2mm，实测只占
+       259mm 版心的约 35%，页面下方三分之二全是留白 —— 交付反馈是"页面那么大，
+       目录缩的那么小，行距那么小"。三处改动：
+         1. 层级化：章条目 11.6pt/加粗，节条目 10pt/次级色缩进，共 9 + 21 = 30 行；
+         2. 行距按 30 行 × 版心高度反算，把版面吃满而不是留一大片空；
+         3. `.pg` 预留固定宽度 —— 页码由导出阶段二次渲染回填，预留宽度保证
+            回填前后**行高完全一致**，页码不会把分页挤歪。 */
+    .toc-page { page-break-after: always; break-after: page; }
+    .toc-title { font-size: 20pt; font-weight: 700; color: var(--brand); margin: 0 0 3mm 0; border-bottom: 2pt solid var(--brand); padding-bottom: 3mm; }
+    .toc-subtitle { margin: 0 0 4.5mm 0; font-size: 9.8pt; color: var(--muted); }
+    /* 表头行：与条目共用同一套 flex + leader，列位天然对齐 */
+    .toc-head { display: flex; align-items: baseline; font-size: 7.8pt; font-weight: 700; letter-spacing: .16em; color: var(--muted); border-bottom: .5pt solid var(--grid); padding-bottom: 1mm; margin-bottom: 1mm; }
+    .toc-head .leader { flex: 1; }
+    .toc { list-style: none; padding: 0; margin: 0; font-size: 11.6pt; line-height: var(--toc-lh); }
+    .toc li { display: flex; align-items: baseline; }
+    .toc .t { white-space: nowrap; }
+    /* 点线引导。2026-09-18：原先 `.leader` 带 `margin-bottom: 2mm`，
+       而 `align-items: baseline` 下空 span 的基线就是它的**外边距底边** ——
+       于是每行高度被这 2mm 顶住，`line-height` 完全失去作用（实测把
+       `--toc-lh` 从 1.40 调到 1.36 行高纹丝不动，只有 1.20 才降）。
+       去掉纵向外边距后行高重新由 `--toc-lh` 决定，四个 profile 才能各自
+       精确落位；点线用 transform 上提 1mm，保持视觉上贴合基线。 */
+    .toc .leader { flex: 1; border-bottom: 1.2pt dotted var(--muted); margin: 0 3mm; min-width: 8mm; transform: translateY(-1mm); }
+    .toc .pg { min-width: 9mm; text-align: right; font-variant-numeric: tabular-nums; }
+    /* 章条目：品牌色编号 + 加粗标题 + 上分隔线，与节条目拉开层级 */
+    .toc-chapter { margin: calc(var(--toc-gap) + 0.2mm) 0 0; font-weight: 700; border-top: .5pt solid var(--grid); padding-top: 1.2mm; }
+    .toc-chapter:first-child { border-top: 0; padding-top: 0; }
+    .toc-chapter .t { font-weight: 700; }
+    .toc-chapter .n { color: var(--brand); font-weight: 700; }
+    .toc-section { margin: var(--toc-gap) 0; font-size: 10pt; }
+    .toc-section .t { color: var(--muted); }
+    .toc-back { margin-top: 3mm; }
+    .toc-footnote { margin: 4mm 0 0; font-size: 8.4pt; color: var(--muted); }
+
+    /* === 执行摘要 === */
+    .executive-page { page-break-after: always; break-after: page; }
+    .summary .headline { font-size: 12.5pt; font-weight: 700; line-height: 1.5; margin: 0 0 4mm 0; }
+    .finding { margin: 0 0 3mm 0; page-break-inside: avoid; break-inside: avoid; }
+    .finding .fbody { line-height: 1.38; }
+    /* 核心结论：双栏。
+       2026-09-18：单栏 8 条实测 241mm（0.93 页），把执行摘要整体顶到 3 页。
+       双栏后同一批结论约占 0.5 页，腾出的空间正好容纳重做后的情景卡。
+       两栏各自成流、列间距 8mm，`.finding` 不跨栏断开。 */
+    .conclusion-grid { column-count: 2; column-gap: 8mm; }
+    .conclusion-grid .finding { break-inside: avoid; }
+    /* 结论条数为奇数时，双栏流的最后一格只剩半格宽，右边留下一个"带底色、
+       无内容"的空槽位 —— 视觉门报 EMPTY_LAYOUT_SLOT（major）。
+       只在奇数条数时切成两列网格，并让最后一条跨满整行；偶数条数仍是上面的
+       双栏流，分页逐字不变。用 :has() 限定，偶数报告零影响。 */
+    .conclusion-grid:has(> :last-child:nth-child(odd)) {
+        display: grid; grid-template-columns: 1fr 1fr; column-gap: 8mm; row-gap: 3mm;
+    }
+    .conclusion-grid:has(> :last-child:nth-child(odd)) > :last-child { grid-column: 1 / -1; }
+    /* === 三种情景：结构化情景卡 ===
+       2026-09-18 重做。旧版是一条 `<ul>`，把 345–507 字的情景整段倒出来 ——
+       交付反馈是「'三种场景'字数都比较多，密密麻麻的，感觉很杂，所以我建议
+       扒数字专门放大，加点颜色，突出一下」。
+
+       新版一张卡 = 头部（语气色情景名 + 语气签 + 关键读数）+ 分段正文。
+       语气色：基准=品牌色、乐观=语义绿、悲观=语义红（三个语义色都来自
+       `template_profile`，与图表配色同源）。
+       关键读数与正文里的数字都由 `reporting/scenario.py` 从原文**就地抽取**，
+       数字始终带着它的口径短语（`归母净利润 7.03亿元`），不脱离语境。 */
+    .scenario-section { margin: 4mm 0 0; }
+    .scenario-grid { display: flex; flex-direction: column; gap: 3mm; }
+    .scenario-card {
+      border: .5pt solid var(--grid); border-left: 3pt solid var(--brand);
+      padding: 2mm 3mm 2.5mm; background: #fff;
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .scenario-card.tone-positive { border-left-color: var(--green); }
+    .scenario-card.tone-negative { border-left-color: var(--red); }
+    .scenario-head { display: flex; align-items: baseline; gap: 2.5mm; margin-bottom: 2mm; }
+    .scenario-name { font-size: 12.5pt; font-weight: 700; color: var(--brand); }
+    .tone-positive .scenario-name { color: var(--green); }
+    .tone-negative .scenario-name { color: var(--red); }
+    .scenario-tone {
+      font-size: 7.8pt; font-weight: 700; letter-spacing: .08em;
+      color: var(--muted); border: .5pt solid var(--muted); padding: 0 1.6mm;
+    }
+    .tone-positive .scenario-tone { color: var(--green); border-color: var(--green); }
+    .tone-negative .scenario-tone { color: var(--red); border-color: var(--red); }
+    /* 关键读数：与情景名同一行、右对齐；值与口径同一基线并排（`7.03亿元 归母净利润`），
+       比上下堆叠省约 7mm/卡 —— 三张卡就是 21mm，够放一整段正文。 */
+    .scenario-readings { margin-left: auto; display: flex; gap: 7mm; align-items: baseline; }
+    .reading { display: flex; flex-direction: row; align-items: baseline; gap: 1.5mm; }
+    .reading-value { font-size: 14pt; font-weight: 700; line-height: 1.1; color: var(--brand); white-space: nowrap; }
+    .tone-positive .reading-value { color: var(--green); }
+    .tone-negative .reading-value { color: var(--red); }
+    .reading-label { font-size: 8pt; color: var(--muted); white-space: nowrap; }
+    .scenario-body { border-top: .5pt solid var(--grid); padding-top: 1.5mm; }
+    .scenario-seg { margin: 0 0 0.6mm; line-height: 1.34; }
+    .scenario-seg:last-child { margin-bottom: 0; }
+    .seg-label { display: inline-block; min-width: 15mm; font-size: 8.4pt; font-weight: 700; color: var(--muted); }
+    /* 就地放大的数值：留在原句里，因此放大后仍然带着口径 */
+    .seg-num { font-weight: 700; font-size: 11pt; color: var(--brand); }
+    .tone-positive .seg-num { color: var(--green); }
+    .tone-negative .seg-num { color: var(--red); }
+    .decision-brief { margin: 3.5mm 0; border-left: 3pt solid var(--brand); padding: 1mm 0 1mm 5mm; page-break-inside: avoid; break-inside: avoid; }
+    .decision-brief ol { margin: 1mm 0 0; padding-left: 6mm; }
+    .front-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
+    .front-columns ul { margin: 1mm 0 0; padding-left: 6mm; }
+    /* 2026-09-18：执行摘要整体偏长，这里从 1.4/1.2mm 收到 1.34/0.8mm —— 15 条
+       风险与边界条目合计省约 14mm，且与正文行距（--body-lh）对齐后不再显得松散。 */
+    .front-columns li { margin: 0.8mm 0; line-height: 1.34; }
+    /* 执行摘要双栏的**长清单回退**。
+       2026-09-18 实测：某份报告「核心风险」8 条 +「置信边界」37 条，双栏块高约 3 页。
+       左栏在第 5 页就用完，第 6、7 页只剩右栏内容、左半边整片空白 —— 视觉门连报两条
+       major 栏失衡（26 页、0.76、未通过）。加 `break-inside: avoid` 救不了：块本身
+       比一页还高，浏览器只能忽略它。所以按**数据**决定栏数：清单短时保留双栏，
+       长到会跨页就改单栏。阈值 24 取自实测分布 —— 其余报告合计 6–18 条，全部落在
+       双栏且通过；唯一超标的那份合计 45 条。 */
+    .front-columns.front-columns-stacked { display: block; }
+    .front-columns.front-columns-stacked > div + div { margin-top: 4mm; }
+    .footer-note { margin-top: 5mm; border-top: 1pt solid var(--rule); padding-top: 3mm; color: var(--muted); font-size: 8.5pt; line-height: 1.45; }
+
+    /* === 章节 === */
+    .chapter { margin-top: 8mm; }
+    .chapter-start { page-break-before: always; break-before: page; margin-top: 0; }
+    .chapter-heading { display: flex; align-items: baseline; gap: 5mm; padding-bottom: 2mm; border-bottom: .5pt solid var(--brand); break-after: avoid; page-break-after: avoid; }
+    .chapter-number { color: var(--brand); font-size: var(--h2-size); font-weight: 700; }
+    .chapter-heading h2 { margin: 0; padding: 0; border: 0; }
+    .chapter-summary { font-weight: 700; margin: var(--section-margin) 0 3mm; }
+    .section-block { margin: var(--section-margin) 0 calc(var(--section-margin) + 2mm); }
+    .section-heading { display: flex; gap: 4mm; align-items: baseline; }
+    .section-mark { color: var(--brand); font-size: 9pt; font-weight: 700; flex: 0 0 auto; }
+    .uncertainty { border-left: 3pt solid var(--brand); padding: 1mm 0 1mm 4mm; margin: 3mm 0; color: var(--muted); page-break-inside: avoid; break-inside: avoid; }
+    .uncertainty ul { margin: 1mm 0 0; padding-left: 5mm; }
+    .reference { color: var(--muted); font-size: 8.5pt; margin: 1mm 0 2mm; }
+    .citation { color: var(--brand); text-decoration: none; border-bottom: 1px dotted var(--brand); margin-right: 4px; }
+    .editorial-featured-paragraph { border-left: 3pt solid var(--brand); padding: 1mm 0 1mm 4mm; }
+    .chapter-boundary-note { border-left: 3pt solid var(--red); padding: 1mm 0 1mm 4mm; margin: 3mm 0; color: var(--muted); page-break-inside: avoid; break-inside: avoid; }
+    .chapter-boundary-note strong { color: var(--red); }
+
+    /* === 图表：无卡片直排，题注与正文同号 === */
+    .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6mm 8mm; align-items: start; margin: var(--chart-margin) 0 calc(var(--chart-margin) + 1mm); }
+    .chart-size-hero, .chart-industry_chain, .chart-heatmap, .chart-treemap, .chart-scatter, .chart-bubble { grid-column: 1 / -1; }
+    .chapter-feature-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6mm 8mm; margin: var(--chart-margin) 0 calc(var(--chart-margin) + 1mm); }
+    .chapter-feature-grid .chart { min-width: 0; }
+    .chart-grid-arrangement-single-hero .chart,
+    .chart-grid-arrangement-hero-plus-two .chart-size-hero,
+    .chart-grid-arrangement-two-by-two .chart-size-hero { grid-column: 1 / -1; }
+    figure.chart { margin: 0; padding: 2mm 0 0; border-top: 1pt solid var(--rule); page-break-inside: avoid; break-inside: avoid; background: #fff; }
+    .figure-heading { font-size: 10.4pt; font-weight: 700; line-height: 1.34; margin: 0 0 1.5mm 0; }
+    .chart-svg-wrap { position: relative; container-type: inline-size; }
+    .chart-svg-wrap svg { display: block; width: 100%; height: auto; }
+    .svg-label { position: absolute; line-height: 1; white-space: nowrap; pointer-events: none; }
+    figure.chart figcaption { margin: 1.5mm 0 0; color: var(--muted); font-size: 8.5pt; line-height: 1.4; }
+    .chart-editorial-featured { border-top-width: 2pt; }
+
+    /* 满宽（hero）图组的垂直间距单独收紧，其余图组不动。
+       2026-09-18 实测：第 2 章末尾的满宽折线图需要约 110mm，而第 3 章开篇
+       所在的同一页只剩约 104mm —— 差约 6mm 装不下，图被整体推到下一页，
+       该页留下约 104mm 空白（整页填充率只有 0.60，gate 报 LOW_CONTENT_DENSITY）。
+       只收 hero 图组这一处间距就能让图回到本页，而且**不缩小任何图表**
+       （保持满宽与原始长宽比，只压标题与题注的外边距）。
+
+       ⚠️ 收紧量必须够大。第一版只收到「margin 1mm / padding .5mm / 标题 1mm /
+       题注 .8mm」，四个 profile 里只有 classic 与 data_intensive 让图回到了本页；
+       modern 与 narrative 仍差约 0.1–2mm —— 因为各 profile 字体栈不同，同样的
+       段落行高差 1.5–2mm，章首引言结束位置就跟着差。现在的取值再往下压约 2.5mm，
+       四个 profile 才一致：第 10 页空白 102–105mm → 0，页数 22 → 21，
+       空白总量 modern 370 → 141mm、narrative 240 → 136mm。
+       再往下压（margin 0）无额外收益，四个 profile 结果与当前取值逐字节相同。
+
+       注意不要改成全篇收紧：实测把 chart-margin / padding / 题注边距全部收紧
+       后空白总量反而从 184mm 升到 243mm，稀疏页从 2 页变 3 页 —— 别的章节
+       尾页被推得更空。所以改动范围必须限制在 hero 图组。 */
+    .chart-grid-arrangement-single-hero { margin: .5mm 0 1mm; }
+    .chart-grid-arrangement-single-hero .chart { padding-top: 0; }
+    .chart-grid-arrangement-single-hero .figure-heading { margin-bottom: .6mm; }
+    .chart-grid-arrangement-single-hero .chart figcaption { margin-top: .4mm; }
+
+    /* === 表格：品牌色表头 + 全网格细线 === */
+    table.data-sheet { width: 100%; border-collapse: collapse; font-size: 10.4pt; margin: 3mm 0; }
+    table.data-sheet th, table.data-sheet td { border: .5pt solid var(--rule); padding: 1.8mm 2.5mm; text-align: left; vertical-align: top; line-height: 1.34; }
+    table.data-sheet th { background: var(--brand); color: #fff; font-weight: 700; }
+    table.data-sheet tbody tr { page-break-inside: avoid; break-inside: avoid; }
+    thead { display: table-header-group; }
+    table caption { caption-side: top; text-align: left; font-weight: 700; font-size: 10.4pt; margin: 0 0 1.5mm; break-after: avoid; page-break-after: avoid; }
+    .table-section-title { display: block; font-size: 10.4pt; }
+    .table-number { display: block; font-size: 8.5pt; color: var(--muted); font-weight: 400; }
+    .table-block { margin: 0 0 6mm; }
+
+    /* === 附录 / 索引 === */
+    .quality-appendix, .source-index, .research-coverage, .risk-appendix { page-break-before: always; break-before: page; }
+    {#
+      文末附录块顺排：只有附录区的**第一个**块另起一页，相邻附录块之间不再强制分页。
+
+      2026-09-18：此前每个附录块都 `break-before: page`，于是"未解决问题清单"(0.23 页)
+      和"来源与证据索引"(0.60 页)各占一整页，两页都大片留白 —— 交付反馈里
+      "专门在页面左侧留下一大片空白"是同一类毛病。顺排后两者合并为 0.83 页。
+    #}
+    .research-coverage + .risk-appendix,
+    .research-coverage + .quality-appendix,
+    .research-coverage + .source-index,
+    .risk-appendix + .quality-appendix,
+    .risk-appendix + .source-index,
+    .quality-appendix + .source-index { page-break-before: auto; break-before: auto; }
+    /* 未解决问题清单：全文最后一页，列表左缩进与正文一致 */
+    .risk-appendix ul { margin: 2mm 0 0; padding-left: 6mm; }
+    .risk-appendix li { margin: 1.4mm 0; line-height: 1.45; }
+    .source-table { table-layout: fixed; font-size: 8.5pt; }
+    .source-table th, .source-table td { overflow-wrap: normal; word-break: normal; line-height: 1.4; padding: 1.5mm 2mm; }
+    .source-table th:nth-child(2), .source-table td:nth-child(2),
+    .source-table th:nth-child(4), .source-table td:nth-child(4),
+    .source-table th:nth-child(5), .source-table td:nth-child(5) { overflow-wrap: anywhere; }
+    .source-table .source-date, .source-table .source-period { white-space: nowrap; }
+    .source-table th:first-child, .source-table td:first-child { width: 8%; text-align: center; }
+    @media screen {
+      table.source-table, .source-table tbody { display: block; width: 100% !important; }
+      table.source-table { overflow: visible; table-layout: auto; }
+      table.source-table caption { display: none; }
+      .screen-source-table-title {
+        display: block; margin: 0 0 10px; color: #000;
+        font-size: 14px; font-weight: 700;
+      }
+      .source-table thead { display: none; }
+      .source-table tr[data-source-row] {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px 28px; width: 100% !important;
+        margin: 0 0 20px; padding: 16px 18px;
+        border: 1px solid var(--grid); border-left: 3px solid var(--brand);
+      }
+      .source-table tr[data-source-row][hidden] { display: none !important; }
+      table.source-table td, table.source-table td:first-child {
+        display: block; width: 100% !important;
+        border: 0; padding: 6px 0; text-align: left;
+        overflow-wrap: normal; word-break: normal;
+      }
+      .source-table td:first-child,
+      .source-table td:nth-child(6) { grid-column: 1 / -1; }
+      .source-table td::before {
+        content: attr(data-label); display: block; margin-bottom: 2px;
+        color: var(--muted); font-size: 11px; font-weight: 700;
+      }
+      .source-table td:nth-child(2), .source-table td:nth-child(4),
+      .source-table td:nth-child(5) { overflow-wrap: anywhere; }
+      .source-table tr:not([data-source-row]) td { border: 1px solid var(--grid); padding: 12px; }
+      .source-table tr:not([data-source-row]) td::before { content: none; }
+      .source-usage-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 4px 16px; }
+      .source-usage-item { display: block; padding: 3px 0; border-bottom: 1px dotted var(--grid); }
+      .source-usage-details > summary {
+        cursor: pointer; color: var(--brand); font-weight: 700;
+        list-style-position: outside;
+      }
+      .source-usage-details[open] > summary { margin-bottom: 8px; }
+    }
+    @media screen and (max-width: 700px) {
+      .source-table tr[data-source-row] { display: block; }
+      .source-usage-list { display: block; }
+    }
+
+    /* === 草稿水印（release_mode=draft_with_warnings） === */
+    .draft-banner { border-left: 4pt solid var(--red); padding: 2mm 0 2mm 5mm; margin-bottom: 5mm; color: var(--red); font-weight: 600; }
+
+    /* === 布局策略：风格收敛但保留结构语义 === */
+    /* 风险条目保持原子（`break-inside: avoid`）。
+       2026-09-18 试过放开：把第 7 章的风险条目改成可断页后，空白并没有消失，
+       只是从第 19 页挪到第 20 页（classic 0.643 → 0.637），modern 还多出一个
+       0.651 的临界页。原因是这段空白来自**附录首个块 `break-before: page`**
+       把第 7 章的尾巴截断，与条目原子性无关。已回退，不要再试第二次。
+       ⚠️ 这条注释会随 HTML 一起交付（style 标签内的注释不会被剥离），所以只能写
+       「第 7 章」不能写机器编号 —— 机器编号只允许出现在 Jinja 注释里（渲染时会被
+       剥掉，见本文件下方的图表落位说明）。
+       ⚠️ 另外：**注释正文里绝对不能出现注释的闭合符号**。实测踩过：描述「注释
+       会随 HTML 交付」时把闭合符号原样写进了注释，于是它提前闭合了本条注释，
+       后面那段说明变成裸 CSS，浏览器按错误恢复跳过了后续规则 —— 分页随之改变
+       （第 19 页的留白挪到了第 20 页）。要描述它就用「闭合符号」这样的措辞。 */
+    .layout-risk-matrix .risk-item { border-left: 3pt solid var(--brand); padding: 1mm 0 1mm 5mm; margin: 3mm 0; page-break-inside: avoid; break-inside: avoid; }
+    .layout-comparison .section-block { border-top: 1px solid var(--grid); padding-top: 3mm; }
+
+    /* 章级版式图案：图表主导与指标主导此前**一条规则都没有**，渲染结果与叙述型
+       完全一致 —— 六个图案里实际只有三种观感，这正是"排版死板"的来源。
+       这里只补这两个缺失的图案；叙述型是基线，刻意不动，避免全篇分页位移。
+         * 图表主导：图组加品牌色左边条，图表成为视觉锚点，正文段落同步收紧；
+         * 指标主导：小节块加品牌色顶线，形成卡片式节奏。
+       两者都不改栏数、不用绝对定位，也不改任何字体度量。 */
+    .layout-chart-led .chart-grid { border-left: 2.5pt solid var(--brand); padding-left: 3.5mm; }
+    .layout-chart-led .section-block > p { margin-bottom: 2.4mm; }
+    .layout-hero-metric .section-block { border-top: 2pt solid var(--brand); padding-top: 2.5mm; }
+
+    /* 视觉风格/密度/修复类：保留类名（诊断与测试依赖），样式收敛到基准 */
+    .visual-data-manual, .visual-analysis-note, .visual-deep-research,
+    .density-compact, .density-detailed, .density-balanced { }
+    .visual-repair-safe .chart-grid, .visual-repair-safe .front-columns { display: block; }
+    .visual-repair-safe .chart, .visual-repair-safe .front-columns > * { width: 100%; min-width: 0; margin-bottom: 4mm; }
+    /* visual-repair-compact：密度类修复（空槽位、低密度等）。
+       2026-09-18 实测：`repair_classes_for()` 确实会返回这个类名，但模板此前
+       **一条规则都没有** —— 修复轮把类名写进 HTML 却什么也没改，下一轮复核
+       与上一轮逐字相同，循环当场卡死（24 页、0.84、空槽位仍是 major 未解决）。
+       这里补上真正的修复：结论条数为奇数时让最后一条跨满整行，消除空槽位。
+       与上面的基线规则同源，作为修复轮的安全网重复声明一次。 */
+    .visual-repair-compact .conclusion-grid:has(> :last-child:nth-child(odd)) {
+        display: grid; grid-template-columns: 1fr 1fr; column-gap: 8mm; row-gap: 3mm;
+    }
+    .visual-repair-compact .conclusion-grid:has(> :last-child:nth-child(odd)) > :last-child {
+        grid-column: 1 / -1;
+    }
+    /* visual-repair-legible：可读性类修复（来源不可读 / 字号过小 / 对比度不足）。
+       全文最小的几类字是来源、图表题注、表号、页脚、目录脚注与封面声明，
+       这里统一抬到 9pt；被 --muted 冲淡的说明文字改成近黑。
+       只动这几类，不动正文与标题的字号，避免整页重排。 */
+    .visual-repair-legible .reference,
+    .visual-repair-legible figure.chart figcaption,
+    .visual-repair-legible .table-number,
+    .visual-repair-legible .footer-note,
+    .visual-repair-legible .toc-footnote,
+    .visual-repair-legible .cover-disclosure,
+    .visual-repair-legible .toc-head { font-size: 9pt; color: #1a1a1a; }
+    .visual-repair-legible .uncertainty,
+    .visual-repair-legible .chapter-boundary-note,
+    .visual-repair-legible .kicker,
+    .visual-repair-legible .seg-label,
+    .visual-repair-legible .toc-section .t,
+    .visual-repair-legible .hname .dt { color: #1a1a1a; }
+    /* visual-repair-pagination：分页类修复（标题孤行 / 题注与图分离 /
+       表格行被拆 / 表头不重复 / 页角色冲突）。
+       把"跟着上一块走"的规则在修复轮再声明一遍并补齐表号与表格块，
+       让长表表头每页重复、行与题注都不跨页。 */
+    .visual-repair-pagination h2,
+    .visual-repair-pagination h3,
+    .visual-repair-pagination .chapter-heading,
+    .visual-repair-pagination .section-mark,
+    .visual-repair-pagination table caption { break-after: avoid; page-break-after: avoid; }
+    .visual-repair-pagination figure.chart,
+    .visual-repair-pagination figure.chart figcaption,
+    .visual-repair-pagination .figure-heading,
+    .visual-repair-pagination .table-block { break-inside: avoid; page-break-inside: avoid; }
+    .visual-repair-pagination table.data-sheet thead { display: table-header-group; }
+    .visual-repair-pagination table.data-sheet tr { break-inside: avoid; page-break-inside: avoid; }
+
+    /* === 模板预设：封面变体 ===
+       2026-09-18：封面改成标题页后，四个 cover_style 改为**版式节奏**的差异
+       （标题字号 / 关键数据带列数 / 信息网格列数 / 留白），不再改信息预算。
+       旧的 `.cover-body-grid` 变体规则随两栏信息网格一并删除。 */
+    /* classic_research: 稳健的默认 —— 大标题 + 四列数据带 + 三列信息 */
+    .cover-two_column_dense .cover-title { font-size: 26pt; }
+    /* modern_analysis: 标题优先，更大的留白与字号 */
+    .cover-two_column_headline .cover-title { font-size: 30pt; margin-bottom: 5mm; }
+    .cover-two_column_headline .cover-subtitle { font-size: 12.5pt; margin-bottom: 16mm; }
+    .cover-two_column_headline .cover-meta-band { margin-bottom: 18mm; }
+    .cover-two_column_headline .hero-fact .hf-value { font-size: 21pt; }
+    /* data_intensive: 信息密度优先 —— 四列信息网格 + 更紧的行距 */
+    .cover-meta_row_dense .cover-title { font-size: 24pt; }
+    .cover-meta_row_dense .cover-meta-band { margin-bottom: 10mm; }
+    .cover-meta_row_dense .cover-subtitle { margin-bottom: 9mm; }
+    .cover-meta_row_dense .cover-info-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2.5mm 5mm; }
+    .cover-meta_row_dense .hero-fact .hf-value { font-size: 17pt; }
+    /* narrative_flow: 宽标题 + 两列数据带（数字更大、呼吸更足） */
+    .cover-headline_wide .cover-title { font-size: 28pt; line-height: 1.3; }
+    .cover-headline_wide .cover-subtitle { font-size: 12pt; margin-bottom: 14mm; line-height: 1.55; }
+    .cover-headline_wide .cover-hero-band { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7mm; }
+    .cover-headline_wide .hero-fact .hf-value { font-size: 22pt; }
+
+    /* === 模板预设：表格表头风格变体 === */
+    /* solid（默认）：品牌色底白字，所有预设共用基准 */
+    /* minimal：浅灰底加粗黑字，不使用品牌色填充（narrative_flow 专用） */
+    .table-header-minimal table.data-sheet th {
+      background: #f0f0f0;
+      color: #000;
+      font-weight: 700;
+      border-bottom: 1pt solid var(--brand);
+    }
+    .table-header-minimal table.data-sheet caption {
+      border-bottom: 1pt solid var(--brand);
+      padding-bottom: 1.5mm;
     }
   </style>
 </head>
-<body class="visual-{{ report.visual_decision.effective_style|replace('_', '-') }} density-{{ report.visual_decision.density }}">
-<main>
-  <section class="cover">
-    {% if report.release_mode == 'draft_with_warnings' %}
-    <div class="draft-watermark">内部审核草稿</div>
-    {% endif %}
-    <div class="eyebrow">{{ report.industry_topic }} · 行业研究系统</div>
-    <h1>{{ report.title }}</h1>
-    <p class="subtitle">{{ display_text(report.executive_summary.headline) }}</p>
-    <div class="meta-grid">
-      <div class="meta"><span>研究时点</span><strong>{{ report.research_as_of }}</strong></div>
-      <div class="meta"><span>生成时间</span><strong>{{ report.generated_at.strftime('%Y-%m-%d %H:%M') }}（协调世界时）</strong></div>
-      <div class="meta"><span>报告深度</span><strong>{{ report_depth_labels[report.report_depth] }}</strong></div>
-      <div class="meta"><span>交付状态</span><strong>{{ delivery_status_labels[report.delivery_status] }}</strong></div>
-      <div class="meta"><span>视觉风格</span><strong>{{ visual_style_labels[report.visual_decision.effective_style] }}</strong></div>
+<body class="visual-{{ report.visual_decision.effective_style|replace('_', '-') }} density-{{ report.visual_decision.density }} profile-{{ tp.name if tp else 'classic_research' }} cover-{{ tp.cover_style if tp else 'two_column_dense' }} table-header-{{ tp.table_header_style if tp else 'solid' }} report-mode-{{ html_composition_plan.report_mode|replace('_', '-') }} archetype-{{ html_composition_plan.report_archetype|replace('_', '-') }} {{ repair_classes|join(' ') }}" data-editorial-source="{{ report.editorial_plan.source if report.editorial_plan else 'deterministic' }}" data-template-profile="{{ tp.name if tp else 'classic_research' }}" data-html-archetype="{{ html_composition_plan.report_archetype }}" data-html-report-mode="{{ html_composition_plan.report_mode }}" data-html-composer-source="{{ html_composition_plan.catalog_source }}">
+
+{# === 跑版页眉 / 页脚模板 ===
+   Chromium/Playwright 原生 header_template / footer_template：独立文档渲染在
+   @page 页边距区内，天然每页重复、与正文零重叠（position:fixed 方案在 Chromium
+   print 下负偏移不可靠，已弃用）。pdf.py 渲染时提取 innerHTML 传给 page.pdf()。
+   模板文档与主文档样式隔离：必须内联 <style>，且 CJK 字体同样要走
+   @font-face local() 声明，否则页眉页脚中文会被嵌成 Type3。 #}
+<template id="pdf-header">
+  <style>
+    @font-face { font-family: 'ReportCJK'; src: local('PingFang SC'), local('Microsoft YaHei'), local('Noto Sans CJK SC'); font-weight: 400; unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF; }
+    @font-face { font-family: 'ReportCJK'; src: local('PingFang SC Bold'), local('Microsoft YaHei Bold'), local('Noto Sans CJK SC Bold'); font-weight: 700; unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .hwrap { width: 100%; padding: 2.5mm 15mm 0; font-family: 'ReportCJK', 'Times New Roman', serif; }
+    .hrow { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: .5pt solid {{ tp.brand_color if tp else '#0243A4' }}; padding-bottom: 1mm; }
+    .hlogo { width: 36mm; height: 9mm; background: {{ tp.brand_color if tp else '#0243A4' }}; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; letter-spacing: .04em; font-size: 9pt; }
+    .hname { text-align: right; line-height: 1.25; font-size: 9pt; color: #000; }
+    .hname .dt { color: #595959; }
+  </style>
+  <div class="hwrap">
+    <div class="hrow">
+      <div class="hlogo">INDUSTRY RESEARCH</div>
+      <div class="hname">
+        <div class="dt">{{ report_depth_labels[report.report_depth] }} · 行业研究报告</div>
+        <div>{{ report.research_as_of }}</div>
+      </div>
     </div>
-    <div class="visual-note">
-      <strong>视觉编排：</strong>{{ visual_style_labels[report.visual_decision.effective_style] }}
-      · {% if report.visual_decision.selection_source == 'user' %}用户指定{% else %}Agent 5根据Agent 4内容推荐{% endif %}
-      {% if report.visual_decision.override_warnings %}<br>{{ report.visual_decision.override_warnings|join('；') }}{% endif %}
+  </div>
+</template>
+<template id="pdf-footer">
+  <style>
+    @font-face { font-family: 'ReportCJK'; src: local('PingFang SC'), local('Microsoft YaHei'), local('Noto Sans CJK SC'); font-weight: 400; unicode-range: U+4E00-9FFF, U+3000-303F, U+FF00-FFEF; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .fwrap { width: 100%; padding: 0 15mm 7mm; font-family: 'ReportCJK', 'Times New Roman', serif; }
+    .frow { display: flex; justify-content: space-between; align-items: flex-start; border-top: .5pt solid {{ tp.brand_color if tp else '#0243A4' }}; padding-top: 1.5mm; font-size: 7.5pt; color: #000; }
+  </style>
+  <div class="fwrap">
+    <div class="frow">
+      <span>{{ report.industry_topic.removesuffix('行业') }}行业研究报告 · 研究与信息交流用途，不构成投资建议</span>
+      <span class="pageNumber"></span>
+    </div>
+  </div>
+</template>
+
+<nav class="reader-rail" aria-label="报告目录">
+  <p class="reader-rail-title">{{ display_text(report.title) }}</p>
+  <p class="reader-rail-meta">{{ report.chapters|length }} 章 · {{ report.chapters|map(attribute='sections')|map('length')|sum }} 节 · {{ report.evidence_catalog|length }} 项来源</p>
+  <p class="reader-rail-direction"><strong>{{ '图表型阅读' if html_composition_plan.report_mode == 'chart_led' else '文字型阅读' }}</strong>{{ display_text(html_composition_plan.design_direction) }}</p>
+  <a href="#executive-summary">执行摘要</a>
+  {% for chapter in report.chapters %}<a href="#chapter-{{ loop.index }}">{{ '%02d'|format(loop.index) }}　{{ display_text(chapter.title) }}</a>{% endfor %}
+  <a href="#source-index">来源与证据索引</a>
+</nav>
+
+<main>
+  {% macro chart_figure(chart, chapter_number=None, figure_number=None) -%}
+  {% set is_single_metric = chart.display_kind == 'metric_card' %}
+  {% set chart_slot = chart_slots.get(chart.chart_id, 'hero') %}
+  {#
+    编号由调用方传入：章内图表可能落在章首 hero 图组、小节内联图组或章尾图组，
+    三者的先后就是读者的阅读顺序。只有"在真正输出图的那一刻发号"才能保证
+    正文里编号单调递增（详见下方 figure_counter 的说明）。
+    未传编号时回退到 html.py 预先发好的 `附图-N` / `附录指标-N`（附录用）。
+  #}
+  {% if figure_number %}
+  {% set figure_label = '%s%d-%d'|format('指标' if is_single_metric else '图', chapter_number, figure_number) %}
+  {% else %}
+  {% set figure_label = chart.display_number %}
+  {% endif %}
+  <figure class="chart chart-{{ chart.chart_type }} chart-size-{{ chart_slot }}{% if is_single_metric %} chart-single-metric{% endif %}{% if chart.chart_id in featured_chart_ids %} chart-editorial-featured{% endif %}" data-chart-id="{{ figure_label }}" data-display-kind="{{ chart.display_kind }}" data-chart-slot="{{ chart_slot }}">{% if not is_single_metric %}<div class="figure-heading">{{ figure_label }}　{{ display_text(chart.title) }}</div>{% endif %}{{ chart.svg }}<figcaption>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}{% if not loop.first %}、{% endif %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}{% if chart.footnotes %}<span> · {{ display_text(chart.footnotes[0]) }}</span>{% endif %}</figcaption></figure>
+  {%- endmacro %}
+
+  {# ============ 封面 ============ #}
+  <section class="cover cover-{{ tp.cover_style if tp else 'two_column_dense' }}" data-page-role="cover">
+    {% if report.release_mode == 'draft_with_warnings' %}<div class="draft-watermark">内部审核草稿</div>{% endif %}
+    <div class="cover-eyebrow">行业深度研究 · {{ display_text(report.industry_topic).removesuffix('行业') }}</div>
+    <div class="cover-meta-band">
+      <span class="left">{{ report_depth_labels[report.report_depth] }}</span>
+      <span class="right">研究基准日 {{ report.research_as_of }}</span>
+    </div>
+    {#
+      封面 = 标题页，不是内容页（2026-09-18 重做；版式理由见 CSS「封面：标题页」段）。
+
+      被移出封面的每一块都在「执行摘要」里完整渲染，读者不丢任何信息：
+        * 核心结论   → 执行摘要 `.conclusion-grid`（全部 8 条，不再截前 5 条）
+        * 风险提示   → 执行摘要 `.front-columns` 的「核心风险」
+        * 研究方法   → 执行摘要 `.footer-note`
+        * 研究边界   → 执行摘要 `.front-columns` 的「研究边界」
+        * 本报告优先回答 → 执行摘要 `.decision-brief`
+      因此封面不再需要任何 `*_limit` 截断 —— 这里没有列表可截。
+    #}
+    <h1 class="cover-title">{{ display_text(report.title) }}</h1>
+    <div class="cover-subtitle">{{ display_text(report.executive_summary.headline) }}</div>
+
+    {# 关键数据带：`cover_facts` 由 html.py 从单指标事实卡回读（只收自述性读数）。 #}
+    {% if cover_facts %}
+    <div class="cover-hero-band count-{{ cover_facts|length }}">
+      {% for fact in cover_facts %}
+      <div class="hero-fact">
+        <span class="hf-value{% if fact.value|length > 9 %} hf-value-long{% endif %}">{{ fact.value }}</span>
+        <span class="hf-name">{{ fact.name }}</span>
+        {% if fact.entity %}<span class="hf-entity">{{ fact.entity }}</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="cover-info">
+      <h3>报告信息</h3>
+      <div class="cover-info-grid">
+        <div class="meta-row"><span class="k">研究主题</span><span class="v">{{ display_text(report.industry_topic) }}</span></div>
+        <div class="meta-row"><span class="k">研究时点</span><span class="v">{{ report.research_as_of }}</span></div>
+        <div class="meta-row"><span class="k">报告深度</span><span class="v">{{ report_depth_labels[report.report_depth] }}</span></div>
+        {% if report.decision_brief.focus_companies %}
+        <div class="meta-row"><span class="k">重点企业</span><span class="v">{% for item in report.decision_brief.focus_companies %}{{ display_text(item) }}{% if not loop.last %}、{% endif %}{% endfor %}</span></div>
+        {% endif %}
+        <div class="meta-row"><span class="k">章节构成</span><span class="v">正文 {{ report.chapters|length }} 章 {{ report.chapters|map(attribute='sections')|map('length')|sum }} 节 · 图表 {{ report.charts|length }} 项</span></div>
+        <div class="meta-row"><span class="k">证据来源</span><span class="v">{{ source_rows|length }} 组公开数据源</span></div>
+        <div class="meta-row"><span class="k">发布状态</span><span class="v">{{ delivery_status_labels[report.delivery_status] }}</span></div>
+      </div>
+      <p class="cover-disclosure">本报告基于公开数据与证据台账编制，仅用于研究与信息交流，不构成任何投资建议。报告口径与适用范围见正文「研究边界」与文末免责声明。</p>
     </div>
   </section>
 
   {% if report.release_mode == 'draft_with_warnings' %}
-  <div class="draft-banner">
-    <strong>内部审核草稿</strong> — 部分内容尚未通过完整证据校验
-  </div>
+  <div class="draft-banner"><strong>内部审核草稿</strong> — 部分内容尚未通过完整证据校验（封面带草稿水印）</div>
   {% endif %}
 
-  <h2>目录</h2>
-  <ol class="toc">
-  {% for chapter in report.chapters %}<li><a href="#chapter-{{ loop.index }}">{{ chapter_label(chapter.chapter_id) }} · {{ display_text(chapter.title) }}</a></li>{% endfor %}
-  </ol>
+  {# ============ 目录（第 2 页） ============ #}
+  {#
+    目录分两层：章条目（11.6pt、加粗、品牌色编号、上分隔线）+ 节条目
+    （10pt、次级色、缩进）。
 
-  {% if chart_directory %}
-  <section class="chart-directory">
-    <h2>图表目录</h2>
-    <table class="quality-table">
-      <thead><tr><th>图号</th><th>图表标题</th><th>所属章节</th></tr></thead>
-      <tbody>{% for chart in chart_directory %}<tr><td><a href="#{{ chart.anchor }}">{{ chart.display_number }}</a></td><td>{{ display_text(chart.title) }}</td><td>{{ display_text(chart.chapter) }}</td></tr>{% endfor %}</tbody>
-    </table>
-  </section>
-  {% endif %}
+    节条目取自 ChapterDraft.sections；schema 把章节数固定为 7、每章节数固定为 3
+    （见 app/schemas/chapter.py），所以目录行数恒为 9 + 21 = 30 行，行距可以按版心
+    高度精确反算，不依赖运行时才知道的条目数。
 
-  <h2>执行摘要</h2>
-  <section class="summary">
-    <p class="headline">{{ display_text(report.executive_summary.headline) }}</p>
-    {% for item in report.executive_summary.conclusions %}
-    <div class="conclusion">
-      <strong>核心结论{{ loop.index }}</strong> · {{ display_text(item.text) }}
-      <div class="chips">
-        <span class="chip">置信度 {{ confidence_labels[item.confidence] }}</span>
-        {% for source in evidence_entries(item.evidence_ids) %}<a class="chip citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}<span class="chip">来源信息待补充</span>{% endfor %}
-      </div>
-      <p class="reference">不确定性：{{ display_text(item.uncertainty) }}</p>
-    </div>
+    页码槽位 `.pg` 在这里留空，由导出阶段（reporting/pdf.py）二次渲染回填 ——
+    CSS 已给 `.pg` 预留固定宽度，因此回填前后行高完全一致，页码不会改变分页。
+  #}
+  <section class="toc-page" data-page-role="toc">
+    <h2 class="toc-title">目　录</h2>
+    <p class="toc-subtitle">共 {{ report.chapters|length }} 章 {{ report.chapters|map(attribute='sections')|map('length')|sum }} 节　·　收录图表 {{ report.charts|length }} 张　·　研究基准日 {{ report.research_as_of }}</p>
+    <div class="toc-head"><span>章节</span><span class="leader"></span><span class="pg">页码</span></div>
+    <ol class="toc">
+    {% for chapter in report.chapters %}
+      {% set chapter_index = loop.index %}
+      <li class="toc-chapter">
+        <a href="#chapter-{{ chapter_index }}" style="text-decoration:none;color:inherit"><span class="t"><span class="n">{{ chapter_label(chapter.chapter_id) }}</span>　{{ display_text(chapter.title) }}</span></a>
+        <span class="leader"></span><span class="pg" data-toc-anchor="chapter-{{ chapter_index }}" data-toc-chapter="{{ chapter_index }}"></span>
+      </li>
+      {% if report.report_depth != 'brief' %}
+      {% for section in chapter.sections %}
+      <li class="toc-section">
+        <a href="#section-{{ chapter_index }}-{{ loop.index }}" style="text-decoration:none;color:inherit"><span class="t">{{ display_text(section.title) }}</span></a>
+        <span class="leader"></span><span class="pg" data-toc-anchor="section-{{ chapter_index }}-{{ loop.index }}"></span>
+      </li>
+      {% endfor %}
+      {% endif %}
     {% endfor %}
+      <li class="toc-chapter toc-back"><a href="#report-risk-boundary" style="text-decoration:none;color:inherit"><span class="t">研究边界、风险与免责声明</span></a><span class="leader"></span><span class="pg" data-toc-anchor="report-risk-boundary"></span></li>
+      <li class="toc-chapter"><a href="#source-index" style="text-decoration:none;color:inherit"><span class="t">附录 · 数据质量与来源索引</span></a><span class="leader"></span><span class="pg" data-toc-anchor="source-index"></span></li>
+    </ol>
+    {% if unplaced_charts %}
+    <p class="toc-footnote">目录条目可点击跳转至页内区块；页码为 PDF 物理页码，HTML 预览中该列留空。</p>
+    {% endif %}
   </section>
-  <h3>三种情景</h3><ul>{% for item in report.executive_summary.scenarios %}<li>{{ display_text(item) }}</li>{% endfor %}</ul>
-  <h3>核心风险</h3><ul class="risk-list">{% for item in report.executive_summary.risks %}<li>{{ display_text(item) }}</li>{% endfor %}</ul>
-  <h3>研究边界</h3><ul class="boundary-list">{% for item in report.executive_summary.research_boundaries %}<li>{{ display_text(item) }}</li>{% endfor %}</ul>
-  <div class="footer-note"><p>{{ display_text(report.methodology_note) }}</p><p><strong>免责声明：</strong>{{ display_text(report.disclaimer) }}</p></div>
 
+  {# ============ 执行摘要 ============ #}
+  <section class="executive-page" id="executive-summary" data-page-role="executive_summary">
+    <div class="kicker">EXECUTIVE SUMMARY</div>
+    <h2>执行摘要</h2>
+    <section class="summary">
+      <p class="headline">{{ display_text(report.executive_summary.headline) }}</p>
+      <div class="conclusion-grid">
+      {% for item in report.executive_summary.conclusions %}
+        <div class="finding">
+          <span class="conf {{ 'hi' if item.confidence == 'high' else ('lo' if item.confidence == 'low' else '') }}">{{ confidence_labels[item.confidence] }}置信</span>
+          <div class="fbody">{{ display_text(item.text) }}</div>
+          <p class="reference">不确定性：{{ display_text(item.uncertainty) }}</p>
+        </div>
+      {% else %}
+        <div class="finding">当前没有通过质量校验、可安全进入摘要的核心结论。</div>
+      {% endfor %}
+      </div>
+    </section>
+
+    {% if scenario_cards %}
+    {#
+      三种情景：结构化情景卡（2026-09-18 重做）。
+
+      每条情景由 `reporting/scenario.py` 拆成「情景名 + 语气 + 关键读数 + 分段正文」：
+        * 关键读数取自原文「前提 / 触发条件」里带单位的数值，连同它的前导短语
+          一起放大 —— 放大后的数字仍然带着口径（`归母净利润 7.03亿元`）；
+        * 分段正文里的数字就地放大加色，不搬位置，因此不会出现
+          「数字脱离原本应该存在的位置」；
+        * 语气色由情景名判定（基准=品牌色 / 乐观=语义绿 / 悲观=语义红）。
+      读数与分段的正文都已由 Python 侧净化 + 转义，此处直接输出（不得再过
+      `display_text`，否则会对已转义的 `&amp;` 二次处理）。
+    #}
+    <section class="scenario-section" data-block-id="scenarios">
+      <h3 style="margin-top:0">三种情景</h3>
+      <div class="scenario-grid">
+        {% for card in scenario_cards %}
+        <article class="scenario-card tone-{{ card.tone }}" data-scenario-tone="{{ card.tone }}">
+          <header class="scenario-head">
+            <span class="scenario-name">{{ card.name }}</span>
+            <span class="scenario-tone">{{ card.tone_label }}</span>
+            {% if card.readings %}
+            <span class="scenario-readings">
+              {% for reading in card.readings %}
+              <span class="reading"><span class="reading-value">{{ reading.value }}</span><span class="reading-label">{{ reading.label }}</span></span>
+              {% endfor %}
+            </span>
+            {% endif %}
+          </header>
+          <div class="scenario-body">
+            {% for segment in card.segments %}
+            <p class="scenario-seg">{% if segment.label %}<span class="seg-label">{{ segment.label }}</span>{% endif %}{{ segment.text }}</p>
+            {% endfor %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if report.decision_brief.focus_questions %}
+    <section class="decision-brief" data-block-id="decision-brief">
+      <h3 style="margin-top:0">本报告优先回答</h3>
+      <ol>{% for question in report.decision_brief.focus_questions %}<li>{{ display_text(question) }}</li>{% endfor %}</ol>
+      {% if report.decision_brief.included_topics or report.decision_brief.focus_companies %}<p class="reference" style="margin-top:2mm">重点范围：{% for item in report.decision_brief.included_topics %}{{ display_text(item) }}{% if not loop.last or report.decision_brief.focus_companies %}；{% endif %}{% endfor %}{% for item in report.decision_brief.focus_companies %}{{ display_text(item) }}{% if not loop.last %}；{% endif %}{% endfor %}</p>{% endif %}
+    </section>
+    {% endif %}
+
+    {#
+      双栏清单合计超过 24 条时改单栏，避免长清单跨页后只剩单边内容。
+      理由与阈值来源见 CSS「执行摘要双栏的**长清单回退**」段。
+      decision_brief 是可选字段，取值前必须判空，否则空值上做 length 会抛异常。
+    #}
+    {% set front_left_count = report.executive_summary.risks | length %}
+    {% set front_right_count = report.executive_summary.research_boundaries | length %}
+    {% set front_excluded_count = report.decision_brief.excluded_topics | length if report.decision_brief and report.decision_brief.excluded_topics else 0 %}
+    {% set front_total_count = front_left_count + front_right_count + front_excluded_count %}
+    <div class="front-columns{% if front_total_count > 24 %} front-columns-stacked{% endif %}">
+      <div><h3>核心风险</h3><ul>{% for item in report.executive_summary.risks %}<li>{{ display_text(item) }}</li>{% endfor %}</ul></div>
+      <div>
+        {#
+          2026-09-18：此前这里把 research_boundaries 标成「研究边界」，
+          与封面把 excluded_topics 标成「研究边界」的口径冲突。
+          现按语义分开：excluded_topics = 研究边界（范围外）；
+          research_boundaries = 置信边界（证据能支撑到哪里）。
+        #}
+        {% if report.decision_brief.excluded_topics %}
+        <h3>研究边界</h3>
+        <ul>{% for item in report.decision_brief.excluded_topics %}<li>{{ display_text(item) }}</li>{% endfor %}</ul>
+        {% endif %}
+        <h3>置信边界</h3>
+        <ul>{% for item in report.executive_summary.research_boundaries %}<li>{{ display_text(item) }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+
+
+    <div class="footer-note">
+      <p>{{ display_text(report.methodology_note) }}</p>
+      <p><strong>免责声明：</strong>{{ display_text(report.disclaimer) }}</p>
+    </div>
+  </section>
+
+  {# ============ 正文章节 ============ #}
   {% for chapter in report.chapters %}
-  <section class="chapter" id="chapter-{{ loop.index }}">
-    <h2>{{ chapter_label(chapter.chapter_id) }} · {{ display_text(chapter.title) }}</h2>
-    <p class="chapter-summary">{{ display_text(chapter.summary) }}</p>
+  {% set chapter_strategy = report.visual_decision.per_chapter_strategy.get(chapter.chapter_id) %}
+  {% set editorial_decision = editorial_decisions.get(chapter.chapter_id) %}
+  {% set page_decision = page_decisions.get(chapter.chapter_id) %}
+  {% set layout_pattern = chapter_strategy.layout_pattern if chapter_strategy else 'narrative' %}
+  {% set chapter_number = loop.index %}
+  {% if chapter.chapter_id not in condensed_chapter_ids %}
+  {#
+    章内图表落位（2026-09-18 重构：由"整章图组"改为"一篇一张首图 + 其余随小节内联"）
+
+    旧行为把整章图表一次性塞进章首（chart_led/hero_metric）或章尾
+    （table_led/risk_matrix/comparison）的一个图组里，于是正文与图表完全分离 ——
+    实测 CH-01 的 6 张图挤在一页、CH-05 的 7 张图挤在相邻两页。
+
+    新行为：
+      * chart_led / hero_metric：只在章首放**第一张**图作为本章主图（hero），
+        其余图表回到各自小节内联；
+      * risk_matrix / table_led / comparison / narrative 都使用同一小节构图骨架，
+        图表始终能紧邻其证明的段落；章级语义只改变装饰和节奏，不覆盖小节构图。
+    章内图表的具体小节落点由 assembler._spread_chapter_chart_placements 摊开，
+    避免整章图表堆在同一个小节。
+  #}
+  {% set chapter_chart_list = charts_by_chapter.get(chapter_number, []) %}
+  {% set hero_charts = chapter_chart_list[:1] if (not has_section_editorial_plan and layout_pattern in ['chart_led', 'hero_metric']) else [] %}
+  {% set hero_chart_ids = hero_charts|map(attribute='chart_id')|list %}
+  {% set chapter_charts_consumed = false %}
+  {#
+    章内图表编号计数器。编号必须按**实际输出顺序**发放，不能预先按落点算好 ——
+    一张图可能出现在章首 hero 图组、某个小节的内联图组、或章尾图组，
+    三种位置都会改变它在正文里的先后。2026-09-18 实测缺陷：编号原先按
+    `report.charts` 存储顺序预发，摊开落点后 CH-01 渲染成
+    `指标1-7, 图1-1 … 图1-6`、CH-03 渲染成 `图3-3, 指标3-1, 指标3-2, 指标3-4`，
+    编号在正文里来回跳。计数器写在章循环内部，每章归零，章内图与指标卡连续编号。
+  #}
+  {% set figure_counter = namespace(value=0) %}
+  <section class="chapter{% if page_decision and page_decision.start_new_page %} chapter-start{% endif %} layout-{{ layout_pattern|replace('_', '-') }}{% if editorial_decision %} editorial-emphasis-{{ editorial_decision.emphasis }}{% endif %}" id="chapter-{{ loop.index }}" data-layout-pattern="{{ layout_pattern }}" data-page-role="{{ page_decision.page_role if page_decision else 'narrative' }}" data-page-grid="{{ page_decision.grid if page_decision else 'single_column' }}">
+    <div class="chapter-intro" data-block-kind="chapter-intro">
+      <header class="chapter-heading">
+        <span class="chapter-number">{{ '%02d'|format(loop.index) }}</span>
+        <h2>{{ chapter_label(chapter.chapter_id) }}　{{ display_text(chapter.title) }}</h2>
+      </header>
+      <p class="chapter-summary">{{ display_text(chapter.summary) }}</p>
+    </div>
+
+    {% if hero_charts %}
+    <div class="chapter-feature-grid chart-grid-arrangement-single-hero" data-block-id="feature-{{ chapter_number }}" data-block-kind="chapter-feature-grid">
+      {% for chart in hero_charts %}{% set figure_counter.value = figure_counter.value + 1 %}{{ chart_figure(chart, chapter_number, figure_counter.value) }}{% endfor %}
+    </div>
+    {% endif %}
+
     {% if report.report_depth != 'brief' %}
+    {% if chapter.missing_inputs %}
+      <div class="chapter-boundary-note" data-block-kind="chapter-boundary-note"><strong>研究边界</strong><span>：{% for item in chapter.missing_inputs[:3] %}{{ display_text(item) }}{% if not loop.last %}；{% endif %}{% endfor %}{% if chapter.missing_inputs|length > 3 %}；其余 {{ chapter.missing_inputs|length - 3 }} 项见质量附录{% endif %}</span></div>
+    {% endif %}
+
     {% for section in chapter.sections %}
-      <h3>{{ section_label(section.section_id) }} · {{ display_text(section.title) }}</h3>
+      {% set html_section_layout = html_section_layouts.get(section.section_id) %}
+      <article class="section-block{% if layout_pattern == 'comparison' %} comparison-block{% endif %}{% if layout_pattern == 'table_led' %} research-unit{% endif %}{% if layout_pattern == 'risk_matrix' %} risk-item{% endif %} html-layout-{{ (html_section_layout.layout_id if html_section_layout else 'narrative_focus')|replace('_', '-') }} html-width-{{ html_section_layout.content_width if html_section_layout else 'wide' }} html-reading-{{ html_section_layout.reading_order if html_section_layout else 'balanced' }}" id="section-{{ chapter_number }}-{{ loop.index }}" data-section-key="{{ html_section_layout.section_key if html_section_layout else '' }}" data-section-label="{{ section_label(section.section_id) }}" data-block-kind="section-composition" data-layout-structure="section-body-copy-v1" data-chapter-layout="{{ layout_pattern }}" data-html-layout="{{ html_section_layout.layout_id if html_section_layout else 'narrative_focus' }}" data-layout-source="{{ html_section_layout.decision_source if html_section_layout else 'deterministic' }}">
+      <div class="section-heading"><span class="section-mark">{{ section_label(section.section_id) }}</span><h3>{{ display_text(section.title) }}</h3></div>
+      <div class="html-section-body">
+      <div class="html-section-copy">
       {% for paragraph in section.paragraphs %}
-        <p>{{ display_text(paragraph.text) }}</p>
+        <p{% if paragraph.paragraph_id in featured_paragraph_ids %} class="editorial-featured-paragraph"{% endif %}>{{ display_text(paragraph.text) }}</p>
         {% if paragraph.evidence_ids %}<p class="reference">资料依据：{% for source in evidence_entries(paragraph.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">来源{{ source.citation_number }}</a>{% else %}来源信息待补充{% endfor %}</p>{% endif %}
       {% endfor %}
-      {% for chart in charts_by_section.get(section.section_id, []) %}
-      <figure class="chart chart-{{ chart.chart_type }}" id="{{ chart.anchor }}">{{ chart.svg }}<figcaption><span class="chart-number">{{ chart.display_number }}</span> · {{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}{% if chart.insight_goal %}<br>分析目的：{{ display_text(chart.insight_goal) }}{% endif %}{% for note in chart.footnotes %}<br>数据说明：{{ display_text(note) }}{% endfor %}</figcaption></figure>
-      {% endfor %}
+      </div>
+      {% set section_charts = charts_by_section.get(section.section_id, [])|rejectattr('chart_id', 'in', hero_chart_ids)|list %}
+      {% if not chapter_charts_consumed and section_charts %}
+      <div class="html-section-visual">
+      <div class="chart-grid chart-grid-arrangement-{{ (page_decision.chart_arrangement if page_decision else 'single_hero')|replace('_', '-') }}">
+        {% for chart in section_charts %}
+        {% set figure_counter.value = figure_counter.value + 1 %}
+        {{ chart_figure(chart, chapter_number, figure_counter.value) }}
+        {% endfor %}
+      </div>
+      </div>
+      {% endif %}
+      </div>
       {% if section.uncertainties %}<div class="uncertainty"><strong>待验证事项</strong><ul>{% for item in section.uncertainties %}<li>{{ display_text(item) }}</li>{% endfor %}</ul></div>{% endif %}
+      </article>
     {% endfor %}
     {% endif %}
   </section>
+  {% endif %}
   {% endfor %}
 
-  {% if unplaced_charts %}
-  <section class="chapter"><h2>附录 · 图表</h2>{% for chart in unplaced_charts %}<figure class="chart chart-{{ chart.chart_type }}" id="{{ chart.anchor }}">{{ chart.svg }}<figcaption><span class="chart-number">{{ chart.display_number }}</span> · {{ display_text(chart.title) }} · {{ chart_type_labels[chart.chart_type] }}<br>数据来源：{% for source in evidence_entries(chart.evidence_ids) %}<a class="citation" href="#source-{{ source.citation_number }}">{{ source.display_label }}</a>{% else %}来源信息待补充{% endfor %}</figcaption></figure>{% endfor %}</section>
-  {% endif %}
-
-  {% set appendix = report.quality_appendix %}
-  {% set appendix_table = namespace(number=0) %}
-  {% if appendix.data_quality_issues or appendix.financial_consistency_checks or appendix.dimension_coverage or appendix.skipped_chart_notes %}
-  <section class="quality-appendix chapter">
-    <h2>数据质量与研究边界附录</h2>
-    {% if appendix.dimension_coverage %}
-    {% set appendix_table.number = appendix_table.number + 1 %}
-    <h3>研究维度覆盖</h3>
-    <table class="quality-table"><caption>表附-{{ appendix_table.number }} · 研究维度覆盖</caption><thead><tr><th>维度</th><th>状态</th><th>说明</th></tr></thead><tbody>{% for item in appendix.dimension_coverage %}<tr><td>{{ dimension_labels[item.dimension] }}</td><td>{{ coverage_status_labels[item.status] }}</td><td>{{ display_text(item.reason) }}</td></tr>{% endfor %}</tbody></table>
-    {% endif %}
-    {% if appendix.data_quality_issues %}
-    {% set appendix_table.number = appendix_table.number + 1 %}
-    <h3>数据质量问题</h3>
-    <table class="quality-table"><caption>表附-{{ appendix_table.number }} · 数据质量问题</caption><thead><tr><th>序号</th><th>指标</th><th>影响</th><th>说明与处理</th></tr></thead><tbody>{% for item in appendix.data_quality_issues %}<tr><td>问题{{ loop.index }}</td><td>{{ display_text(item.metric) }}</td><td>{{ impact_labels[item.impact_level] }}</td><td>{{ display_text(item.description) }}<br>处理：{{ display_text(item.suggested_handling) }}</td></tr>{% endfor %}</tbody></table>
-    {% endif %}
-    {% if appendix.financial_consistency_checks %}
-    {% set appendix_table.number = appendix_table.number + 1 %}
-    <h3>财务一致性检查</h3>
-    <table class="quality-table"><caption>表附-{{ appendix_table.number }} · 财务一致性检查</caption><thead><tr><th>序号</th><th>状态</th><th>结论</th><th>影响</th></tr></thead><tbody>{% for item in appendix.financial_consistency_checks %}<tr><td>检查{{ loop.index }}</td><td>{{ check_status_labels[item.status] }}</td><td>{{ display_text(item.conclusion) }}</td><td>{{ display_text(item.impact) }}</td></tr>{% endfor %}</tbody></table>
-    {% endif %}
-    {% if appendix.skipped_chart_notes %}<h3>未生成图表</h3><ul>{% for item in appendix.skipped_chart_notes %}<li>{{ display_text(item) }}</li>{% endfor %}</ul>{% endif %}
-  </section>
-  {% endif %}
-
-  <section class="source-index chapter" id="source-index">
-    <h2>来源与证据索引</h2>
-    {% set appendix_table.number = appendix_table.number + 1 %}
-    <table class="quality-table source-table">
-      <caption>表附-{{ appendix_table.number }} · 来源与证据索引</caption>
-      <thead><tr><th>序号</th><th>材料</th><th>发布主体</th><th>日期</th><th>报告期</th><th>页码/章节</th><th>获取方式/层级</th></tr></thead>
+  {# ============ 压缩章节（缺证据） ============ #}
+  {% if condensed_chapter_ids %}
+  <section class="research-coverage chapter chapter-start" data-page-role="research_coverage" data-layout-pattern="table_led">
+    <div class="chapter-heading"><span class="chapter-number">R</span><h2>研究覆盖与待补充</h2></div>
+    <p>以下章节缺少能够支撑事实性结论的直接证据，集中列示其研究边界，待数据补齐后再行评估；不使用大面积空卡片重复放大缺失状态。</p>
+    <table class="data-sheet coverage-table">
+      <caption><span class="table-section-title">研究覆盖与数据限制</span></caption>
+      <thead><tr><th style="width:22%">章节</th><th>研究单元</th><th style="width:36%">待补充内容</th></tr></thead>
       <tbody>
-      {% for source in source_rows %}
-        <tr id="source-{{ source.citation_number }}"><td>{{ source.citation_number }}</td><td>{{ source.material }}</td><td>{{ source.publisher }}</td><td>{{ source.available_date }}</td><td>{{ source.reporting_period }}</td><td>{{ source.locator }}</td><td>{{ source.method_level }}</td></tr>
-      {% else %}
-        <tr><td colspan="7">当前报告未提供可展示的来源元数据。</td></tr>
+      {% for chapter in report.chapters if chapter.chapter_id in condensed_chapter_ids %}
+        <tr id="coverage-chapter-{{ chapter.chapter_id.rsplit('-', 1)[-1]|int }}"><td><strong>{{ chapter_label(chapter.chapter_id) }}</strong><br>{{ display_text(chapter.title) }}</td><td>{% for section in chapter.sections %}{% set html_section_layout = html_section_layouts.get(section.section_id) %}<span class="coverage-section html-layout-{{ (html_section_layout.layout_id if html_section_layout else 'coverage_summary')|replace('_', '-') }}" data-section-key="{{ html_section_layout.section_key if html_section_layout else '' }}" data-section-label="{{ section_label(section.section_id) }}" data-html-layout="{{ html_section_layout.layout_id if html_section_layout else 'coverage_summary' }}">{{ section_label(section.section_id) }} · {{ display_text(section.title) }}</span>{% if not loop.last %}<br>{% endif %}{% endfor %}</td><td>{% for item in chapter.missing_inputs %}{{ display_text(item) }}{% if not loop.last %}；{% endif %}{% else %}缺少本章直接证据{% endfor %}</td></tr>
       {% endfor %}
       </tbody>
     </table>
-    <p class="reference">注：来源层级表示材料性质和核验状态，不构成对信息质量的机械排序；模型估算、情景假设与已披露事实应分别理解。</p>
   </section>
+  {% endif %}
 
-  {% if report.release_mode == 'draft_with_warnings' and report.unresolved_risks %}
-  <section class="risk-appendix chapter">
-    <h2>未解决问题清单</h2>
+  {% if unplaced_charts %}
+  <section class="chapter chapter-start" data-page-role="appendix">
+    <div class="chapter-heading"><span class="chapter-number">A</span><h2>附录 · 图表</h2></div>
+    <div class="chart-grid">{% for chart in unplaced_charts %}{{ chart_figure(chart) }}{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {# ============ 未解决问题清单 ============ #}
+  {#
+    交付层面的限制（图表数量、章节质量校验、数据质量计数等）集中放在文末附录区，
+    不占封面、不占摘要、不打断正文阅读节奏。
+
+    2026-09-18 两次调整：
+      1. 先把它从封面的「待解决风险」里挪出来 —— 那块内容曾把封面撑到 2.57 页，
+         并让第 2、3 页出现空栏（COLUMN_IMBALANCE）。
+      2. 再把它从"全文最后一个块"提到来源索引**之前**。因为「来源与证据索引」
+         结尾挂着免责声明，免责声明必须留在全文最末；而这块如果排在索引之后，
+         就会把免责声明挤到倒数第二页。
+    位置定在附录区之首，紧接着的质量附录正是它正文里承诺的「完整明细」。
+  #}
+  {% if report.unresolved_risks %}
+  <section class="risk-appendix chapter" id="report-risk-boundary" data-page-role="risk_appendix">
+    <div class="chapter-heading"><span class="chapter-number">Q</span><h2>未解决问题清单</h2></div>
+    <p>以下事项在本次交付中未完全解决，列示以供读者判断结论的适用范围；完整明细见质量附录。</p>
     <ul>
     {% for risk in report.unresolved_risks %}<li>{{ display_text(risk) }}</li>{% endfor %}
     </ul>
   </section>
   {% endif %}
+
+  {# ============ 质量附录 ============ #}
+  {% set appendix = report.quality_appendix %}
+  {% set appendix_table = namespace(number=0) %}
+  {% if page_plan.appendix_mode == 'internal_full' and (appendix.data_quality_issues or appendix.financial_consistency_checks or appendix.dimension_coverage or appendix.skipped_chart_notes) %}
+  <section class="quality-appendix chapter" {% if not report.unresolved_risks %}id="report-risk-boundary"{% endif %}>
+    <div class="chapter-heading"><span class="chapter-number">B</span><h2>数据质量与研究边界附录</h2></div>
+    {% if appendix.dimension_coverage %}
+    {% set appendix_table.number = appendix_table.number + 1 %}
+    <div class="table-block">
+    <table class="data-sheet"><caption><span class="table-section-title">研究维度覆盖</span><span class="table-number">表附-{{ appendix_table.number }}</span></caption><thead><tr><th style="width:18%">维度</th><th style="width:18%">状态</th><th>说明</th></tr></thead><tbody>{% for item in appendix.dimension_coverage %}<tr><td>{{ dimension_labels[item.dimension] }}</td><td>{{ coverage_status_labels[item.status] }}</td><td>{{ display_text(item.reason) }}</td></tr>{% endfor %}</tbody></table></div>
+    {% endif %}
+    {% if appendix.data_quality_issues %}
+    {% set appendix_table.number = appendix_table.number + 1 %}
+    <div class="table-block">
+    <table class="data-sheet"><caption><span class="table-section-title">数据质量事项</span><span class="table-number">表附-{{ appendix_table.number }}</span></caption><thead><tr><th style="width:12%">序号</th><th style="width:24%">指标</th><th style="width:10%">影响</th><th>说明与处理</th></tr></thead><tbody>{% for item in appendix.data_quality_issues %}<tr><td>{{ loop.index }}</td><td>{{ display_text(item.metric) }}</td><td>{{ impact_labels[item.impact_level] }}</td><td>{{ display_text(item.description) }}<br>处理：{{ display_text(item.suggested_handling) }}</td></tr>{% endfor %}</tbody></table></div>
+    {% endif %}
+    {% if appendix.financial_consistency_checks %}
+    {% set appendix_table.number = appendix_table.number + 1 %}
+    <div class="table-block">
+    <table class="data-sheet"><caption><span class="table-section-title">财务一致性核验</span><span class="table-number">表附-{{ appendix_table.number }}</span></caption><thead><tr><th style="width:12%">序号</th><th style="width:18%">状态</th><th>结论</th><th style="width:26%">影响</th></tr></thead><tbody>{% for item in appendix.financial_consistency_checks %}<tr><td>{{ loop.index }}</td><td>{{ check_status_labels[item.status] }}</td><td>{{ display_text(item.conclusion) }}</td><td>{{ display_text(item.impact) }}</td></tr>{% endfor %}</tbody></table></div>
+    {% endif %}
+    {% if appendix.skipped_chart_notes %}
+    <h3>图表呈现说明</h3>
+    <ul>{% for item in appendix.skipped_chart_notes %}<li>{{ display_text(item) }}</li>{% endfor %}</ul>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {# ============ 来源索引 ============ #}
+  <section class="source-index chapter" id="source-index" {% if not report.unresolved_risks and not (page_plan.appendix_mode == 'internal_full' and (appendix.data_quality_issues or appendix.financial_consistency_checks or appendix.dimension_coverage or appendix.skipped_chart_notes)) %}data-toc-fallback="report-risk-boundary"{% endif %}>
+    <div class="chapter-heading"><span class="chapter-number">S</span><h2>来源与证据索引</h2></div>
+    <div class="source-search">
+      <label for="source-filter">筛选来源、发布主体、指标、口径、日期、报告期、定位或引用位置</label>
+      <input id="source-filter" type="search" placeholder="输入关键词筛选来源" autocomplete="off">
+    </div>
+    {% set appendix_table.number = appendix_table.number + 1 %}
+    <div class="table-block"><div class="screen-source-table-title">表附-{{ appendix_table.number }} · 来源与证据索引</div><table class="data-sheet source-table">
+      <caption><span class="table-section-title">表附-{{ appendix_table.number }} · 来源与证据索引</span></caption>
+      <thead><tr><th>序号</th><th data-fields="material publisher" style="width:21%">材料与发布主体</th><th data-fields="metric scope" style="width:18%">指标与口径</th><th data-fields="available_date reporting_period" style="width:16%">日期与报告期</th><th data-fields="locator" style="width:16%">原文定位（页码/章节）</th><th data-fields="usage" style="width:20%">报告引用位置</th><th data-fields="retrieval_method source_level" style="width:9%">获取/层级</th></tr></thead>
+      <tbody>
+      {% for source in source_rows %}
+        <tr id="source-{{ source.citation_number }}" data-source-row><td data-label="序号">{{ source.citation_number }}</td><td data-label="材料与发布主体" data-fields="material publisher">{{ source.material }}<br><span class="reference">{{ source.publisher }}</span></td><td data-label="指标与口径" data-fields="metric scope">{{ source.metrics }}<br><span class="reference">范围：{{ source.scope }}</span></td><td data-label="日期与报告期" data-fields="available_date reporting_period"><span class="source-date">{{ source.available_date }}</span><br><span class="reference source-period">报告期：{{ source.reporting_period }}</span></td><td data-label="原文定位（页码/章节）" data-fields="locator">{% if source.locator_href %}<a href="{{ source.locator_href }}" target="_blank" rel="noopener noreferrer">{{ source.locator }}</a>{% else %}{{ source.locator }}{% endif %}</td><td data-label="报告引用位置" data-fields="usage"><details class="source-usage-details"><summary>{{ source.usage|length }} 处引用</summary><div class="source-usage-list">{% for usage in source.usage %}<span class="source-usage-item">{{ display_text(usage) }}</span>{% endfor %}</div></details></td><td data-label="获取方式/层级" data-fields="retrieval_method source_level">{{ source.method_level }}</td></tr>
+      {% else %}
+        <tr><td colspan="7">当前报告未提供可展示的来源元数据。</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    <p class="reference">注：来源层级表示材料性质和核验状态，不构成对信息质量的机械排序；模型估算、情景假设与已披露事实应分别理解。</p>
+    <p class="reference">{{ display_text(report.disclaimer) }}</p>
+  </section>
 </main>
+<script type="application/json" id="html-composition-plan">{{ html_composition_plan|tojson }}</script>
+<script>
+  (() => {
+    const input = document.getElementById('source-filter');
+    if (!input) return;
+    const rows = Array.from(document.querySelectorAll('[data-source-row]'));
+    input.addEventListener('input', () => {
+      const query = input.value.trim().toLocaleLowerCase('zh-CN');
+      for (const row of rows) {
+        const hidden = Boolean(query) && !row.textContent.toLocaleLowerCase('zh-CN').includes(query);
+        row.hidden = hidden;
+        row.style.display = hidden ? 'none' : '';
+      }
+    });
+  })();
+</script>
 </body>
 </html>

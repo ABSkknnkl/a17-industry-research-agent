@@ -7,7 +7,7 @@ from typing import Literal, Protocol
 @dataclass(frozen=True, slots=True)
 class GeneratedImage:
     content: bytes
-    mime_type: Literal["image/png", "image/webp"]
+    mime_type: Literal["image/png", "image/webp", "image/jpeg"]
 
 
 class PromptCompiler(Protocol):

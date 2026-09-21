@@ -29,3 +29,5 @@ pywencai>=0.12.0,<1.0.0
 pyecharts>=2.0.0,<3.0.0
 playwright>=1.61.0,<2.0.0
 jinja2>=3.1.0,<4.0.0
+# 目录页码回填：读取 Chromium 导出 PDF 的链接注释（nameddest）反查锚点所在页
+pymupdf>=1.28.0,<2.0.0

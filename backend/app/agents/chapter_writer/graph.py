@@ -284,108 +284,38 @@ def build_chapter_writer_graph(
     ChapterWriterGraphState,
     ChapterWriterGraphState,
 ]:
+    import asyncio
+
+    from app.core.config import settings
+    from app.infrastructure.repositories.chapter_repository import ChapterRepository
+
     builder = StateGraph(ChapterWriterGraphState)
 
-    async def generate(state: ChapterWriterGraphState) -> dict[str, object]:
-        analysis = AnalysisResult.model_validate(state["analysis"])
-        charts = tuple(ChartReference.model_validate(chart) for chart in state["charts"])
-        options = ChapterWritingOptions.model_validate(state["options"])
-        chapter_id = state["chapter_ids"][state["current_index"]]
-        chapter = _OUTLINE_BY_ID[chapter_id]
-        allowed_claims = select_chapter_claims(
-            analysis, chapter_id, set(state["rejected_claim_ids"])
-        )
-        try:
-            loose = await model.generate_chapter(
-                system_prompt=prompt.content,
-                runtime_prompt=build_chapter_runtime_prompt(
-                    analysis,
-                    chapter,
-                    charts=charts,
-                    options=options,
-                    review_feedback=state["review_feedback"],
-                    rejected_claim_ids=state["rejected_claim_ids"],
-                    audit_feedback=[
-                        *state["current_issues"],
-                        *state["readability_feedback"],
-                    ],
-                    revision=state["workflow_revision"],
-                ),
-            )
-            draft = normalize_loose_chapter(
-                loose,
-                outline=chapter,
-                allowed_claims=allowed_claims,
-                revision=state["workflow_revision"],
-            )
-        except (StructuredOutputError, ChapterNormalizationError) as exc:
-            # Per-chapter degradation: only this chapter falls back to the
-            # deterministic draft so one failure cannot void the whole report.
-            draft = build_single_chapter_fallback(
-                outline=chapter,
-                claims=allowed_claims,
-                revision=state["workflow_revision"],
-            )
-            quality_issues = list(state["quality_issues"])
-            quality_issues.append(
-                f"{chapter_id}:chapter_single_fallback:{_single_fallback_reason(exc)}"
-            )
-            return {
-                "draft": draft.model_dump(mode="json"),
-                "quality_issues": quality_issues,
-                "readability_feedback": [],
-                "readability_rewrite_pids": [],
-            }
-        return {
-            "draft": draft.model_dump(mode="json"),
-            "readability_feedback": [],
-            "readability_rewrite_pids": [],
-        }
+    # ------------------------------------------------------------------
+    # Per-chapter readability review helper
+    # ------------------------------------------------------------------
 
-    def audit(state: ChapterWriterGraphState) -> dict[str, object]:
-        analysis = AnalysisResult.model_validate(state["analysis"])
-        charts = tuple(ChartReference.model_validate(chart) for chart in state["charts"])
-        chapter = ChapterDraft.model_validate(state["draft"])
-        issues = _audit_chapter(
-            chapter,
-            analysis=analysis,
-            charts=charts,
-            rejected_claim_ids=set(state["rejected_claim_ids"]),
-        )
-        return {"current_issues": issues}
+    async def _review_chapter_readability(
+        draft: ChapterDraft,
+        *,
+        chapter_id: str,
+        readability_reports: list[dict[str, Any]],
+        readability_rewrites: dict[str, int],
+    ) -> tuple[list[str], list[str], list[dict[str, Any]], list[dict[str, Any]], dict[str, int]]:
+        """Run per-paragraph readability review.
 
-    def route_after_audit(state: ChapterWriterGraphState) -> str:
-        if not state["current_issues"]:
-            # 软门只在硬门干净后运行：评审器未启用时直接接受。
-            return "review" if readability_model is not None else "accept"
-        chapter_id = state["chapter_ids"][state["current_index"]]
-        if state["attempts"].get(chapter_id, 0) < _MAX_REVISIONS_PER_CHAPTER:
-            return "revise"
-        return "accept"
-
-    def revise(state: ChapterWriterGraphState) -> dict[str, object]:
-        chapter_id = state["chapter_ids"][state["current_index"]]
-        attempts = dict(state["attempts"])
-        attempts[chapter_id] = attempts.get(chapter_id, 0) + 1
-        return {"attempts": attempts, "revision_count": state["revision_count"] + 1}
-
-    async def review(state: ChapterWriterGraphState) -> dict[str, object]:
-        # 软门：逐段可读性评审（linter 确定性锚 + LLM 软分）。
-        # 只产出 findings / reports / 人工请求，绝不触碰 current_issues 与
-        # quality_issues（软硬门分离原则：可读性结果不影响
-        # quality.passed 与阶段状态）。输入隔离：评审器只收到
-        # paragraph.text 与 kind，不喂 summary、标题或人工 comment。
-        chapter = ChapterDraft.model_validate(state["draft"])
-        chapter_id = state["chapter_ids"][state["current_index"]]
+        Returns (feedback, rewrite_pids, reports, collaborations, rewrites).
+        """
+        assert readability_model is not None
         reports_by_pid = {
-            report["paragraph_id"]: report
-            for report in state["readability_reports"]
+            report["paragraph_id"]: report for report in readability_reports
         }
-        feedback = list(state["readability_feedback"])
-        rewrite_pids = list(state["readability_rewrite_pids"])
-        rewrites = dict(state["readability_rewrites"])
-        collaborations = list(state["readability_collaborations"])
-        for section in chapter.sections:
+        feedback: list[str] = []
+        rewrite_pids: list[str] = []
+        rewrites = dict(readability_rewrites)
+        collaborations: list[dict[str, Any]] = []
+
+        for section in draft.sections:
             for paragraph in section.paragraphs:
                 if paragraph.kind != "analysis":
                     continue
@@ -426,6 +356,7 @@ def build_chapter_writer_graph(
                         + "；".join(must_fix_reasons)
                     )
                     rewrite_pids.append(paragraph.paragraph_id)
+                    rewrites[paragraph.paragraph_id] = rewrite_count + 1
                 if needs_human:
                     report = report.model_copy(update={"needs_human_review": True})
                     collaborations.append(
@@ -438,73 +369,281 @@ def build_chapter_writer_graph(
                         }
                     )
                 reports_by_pid[paragraph.paragraph_id] = report.model_dump(mode="json")
-        return {
-            "readability_reports": list(reports_by_pid.values()),
-            "readability_feedback": feedback,
-            "readability_rewrite_pids": rewrite_pids,
-            "readability_rewrites": rewrites,
-            "readability_collaborations": collaborations,
-        }
 
-    def route_after_review(state: ChapterWriterGraphState) -> str:
-        return "revise_readability" if state["readability_feedback"] else "accept"
+        return feedback, rewrite_pids, list(reports_by_pid.values()), collaborations, rewrites
 
-    def revise_readability(state: ChapterWriterGraphState) -> dict[str, object]:
-        # 软门改写计数：与硬门 attempts 完全独立，达到上限后由 review 转人工。
-        rewrites = dict(state["readability_rewrites"])
-        for paragraph_id in state["readability_rewrite_pids"]:
-            rewrites[paragraph_id] = rewrites.get(paragraph_id, 0) + 1
-        return {"readability_rewrites": rewrites}
+    # ------------------------------------------------------------------
+    # Per-chapter pipeline: generate → audit → revise → review → persist
+    # ------------------------------------------------------------------
 
-    async def accept(state: ChapterWriterGraphState) -> dict[str, object]:
-        chapter_id = state["chapter_ids"][state["current_index"]]
-        chapters = dict(state["chapters"])
-        draft = ChapterDraft.model_validate(state["draft"])
-        options = ChapterWritingOptions.model_validate(state["options"])
+    async def _write_one_chapter(
+        chapter_id: str,
+        *,
+        analysis: AnalysisResult,
+        charts: tuple[ChartReference, ...],
+        options: ChapterWritingOptions,
+        review_feedback: str | None,
+        rejected_claim_ids: list[str],
+        workflow_revision: int,
+        run_id: str,
+        base_chapters: dict[str, dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Run the full per-chapter state machine. Returns a result dict."""
+        chapter_outline = _OUTLINE_BY_ID[chapter_id]
+        allowed_claims = select_chapter_claims(
+            analysis, chapter_id, set(rejected_claim_ids)
+        )
+        attempts = 0
+        revision_count = 0
+        audit_feedback: list[str] = []
+        readability_feedback: list[str] = []
+        readability_reports: list[dict[str, Any]] = []
+        readability_rewrites: dict[str, int] = {}
+        readability_collaborations: list[dict[str, Any]] = []
+        quality_issues: list[str] = []
+        draft: ChapterDraft | None = None
+        current_issues: list[str] = []
+
+        while True:
+            # --- generate ---
+            try:
+                async with asyncio.timeout(settings.CHAPTER_WRITE_LLM_TIMEOUT_SECONDS):
+                    loose = await model.generate_chapter(
+                        system_prompt=prompt.content,
+                        runtime_prompt=build_chapter_runtime_prompt(
+                            analysis,
+                            chapter_outline,
+                            charts=charts,
+                            options=options,
+                            review_feedback=review_feedback,
+                            rejected_claim_ids=rejected_claim_ids,
+                            audit_feedback=[*audit_feedback, *readability_feedback],
+                            revision=workflow_revision,
+                        ),
+                    )
+                draft = normalize_loose_chapter(
+                    loose,
+                    outline=chapter_outline,
+                    allowed_claims=allowed_claims,
+                    revision=workflow_revision,
+                )
+            except (StructuredOutputError, ChapterNormalizationError, TimeoutError) as exc:
+                # Per-chapter degradation: only this chapter falls back.
+                draft = build_single_chapter_fallback(
+                    outline=chapter_outline,
+                    claims=allowed_claims,
+                    revision=workflow_revision,
+                )
+                quality_issues.append(
+                    f"{chapter_id}:chapter_single_fallback:{_single_fallback_reason(exc)}"
+                )
+                current_issues = []
+                break
+
+            # --- audit ---
+            current_issues = _audit_chapter(
+                draft,
+                analysis=analysis,
+                charts=charts,
+                rejected_claim_ids=set(rejected_claim_ids),
+            )
+
+            if current_issues:
+                if attempts < _MAX_REVISIONS_PER_CHAPTER:
+                    attempts += 1
+                    revision_count += 1
+                    audit_feedback = current_issues
+                    readability_feedback = []
+                    continue
+                # Exhausted revisions → accept with issues
+                break
+
+            # --- readability review (soft gate, only when hard gate clean) ---
+            audit_feedback = []
+            if readability_model is not None:
+                (
+                    readability_feedback,
+                    _rewrite_pids,
+                    readability_reports,
+                    readability_collaborations,
+                    readability_rewrites,
+                ) = await _review_chapter_readability(
+                    draft,
+                    chapter_id=chapter_id,
+                    readability_reports=readability_reports,
+                    readability_rewrites=readability_rewrites,
+                )
+                if readability_feedback:
+                    revision_count += 1
+                    continue
+            break
+
+        # --- accept: merge target sections & persist ---
+        assert draft is not None
         target_section_ids = {
             section_id
             for section_id in options.target_section_ids
             if section_id.startswith(f"SEC-{chapter_id.removeprefix('CH-')}-")
         }
-        if target_section_ids and chapter_id in chapters:
+        if target_section_ids and chapter_id in base_chapters:
             draft = _merge_target_sections(
-                ChapterDraft.model_validate(chapters[chapter_id]),
+                ChapterDraft.model_validate(base_chapters[chapter_id]),
                 draft,
                 target_section_ids,
             )
 
-        # 自动汇总章节级引用
         from app.agents.chapter_writer.provenance import aggregate_chapter_references
 
         draft = aggregate_chapter_references(draft)
+        draft_dict = draft.model_dump(mode="json")
 
-        chapters[chapter_id] = draft.model_dump(mode="json")
-        quality_issues = list(state["quality_issues"])
-        quality_issues.extend(f"{chapter_id}:{issue}" for issue in state["current_issues"])
+        # Extend quality_issues with remaining audit issues
+        quality_issues.extend(f"{chapter_id}:{issue}" for issue in current_issues)
 
-        # 持久化是接受章节的一部分：写入失败必须使阶段失败，不得静默跳过。
-        from app.infrastructure.repositories.chapter_repository import ChapterRepository
-
+        # Persist with retry — save_chapter is idempotent (INSERT OR REPLACE),
+        # so retrying on transient lock errors is safe. If all retries fail we
+        # still return the generated content (never discard good output due to a
+        # persistence hiccup) but record the failure in quality_issues.
         repo = ChapterRepository()
-        await repo.save_chapter(
-            run_id=state["run_id"],
-            chapter_id=chapter_id,
-            revision=state["workflow_revision"],
-            status="quality_passed" if not state["current_issues"] else "needs_review",
-            content_json=draft.model_dump(mode="json"),
-            quality_json={"issues": state["current_issues"]},
-        )
+        persist_status = "quality_passed" if not current_issues else "needs_review"
+        _PERSIST_RETRIES = 3
+        last_persist_error: Exception | None = None
+        for _attempt in range(_PERSIST_RETRIES):
+            try:
+                await repo.save_chapter(
+                    run_id=run_id,
+                    chapter_id=chapter_id,
+                    revision=workflow_revision,
+                    status=persist_status,
+                    content_json=draft_dict,
+                    quality_json={"issues": current_issues},
+                )
+                last_persist_error = None
+                break
+            except Exception as persist_exc:  # noqa: BLE001
+                last_persist_error = persist_exc
+                if _attempt < _PERSIST_RETRIES - 1:
+                    await asyncio.sleep(0.1 * (_attempt + 1))
+        if last_persist_error is not None:
+            quality_issues.append(
+                f"{chapter_id}:persist_failed:{type(last_persist_error).__name__}"
+            )
+
+        return {
+            "chapter_id": chapter_id,
+            "draft": draft_dict,
+            "quality_issues": quality_issues,
+            "revision_count": revision_count,
+            "readability_reports": readability_reports,
+            "readability_collaborations": readability_collaborations,
+        }
+
+    # ------------------------------------------------------------------
+    # generate_all: concurrent chapter writing
+    # ------------------------------------------------------------------
+
+    async def generate_all(state: ChapterWriterGraphState) -> dict[str, object]:
+        analysis = AnalysisResult.model_validate(state["analysis"])
+        charts = tuple(ChartReference.model_validate(c) for c in state["charts"])
+        options = ChapterWritingOptions.model_validate(state["options"])
+        chapter_ids = state["chapter_ids"]
+
+        concurrency_enabled = settings.CHAPTER_WRITE_CONCURRENCY_ENABLED
+        max_concurrency = settings.CHAPTER_WRITE_CONCURRENCY
+
+        common_kwargs: dict[str, Any] = {
+            "analysis": analysis,
+            "charts": charts,
+            "options": options,
+            "review_feedback": state["review_feedback"],
+            "rejected_claim_ids": state["rejected_claim_ids"],
+            "workflow_revision": state["workflow_revision"],
+            "run_id": state["run_id"],
+            "base_chapters": state["chapters"],
+        }
+
+        if concurrency_enabled and len(chapter_ids) > 1:
+            sem = asyncio.Semaphore(max_concurrency)
+
+            async def _guarded_write(cid: str) -> dict[str, Any]:
+                async with sem:
+                    return await _write_one_chapter(cid, **common_kwargs)
+
+            results: list[Any] = list(
+                await asyncio.gather(
+                    *(_guarded_write(cid) for cid in chapter_ids),
+                    return_exceptions=True,
+                )
+            )
+        else:
+            # Serial fallback (kill switch or single chapter)
+            results = []
+            for cid in chapter_ids:
+                try:
+                    results.append(await _write_one_chapter(cid, **common_kwargs))
+                except Exception as exc:  # noqa: BLE001
+                    results.append(exc)
+
+        # --- Merge results in chapter_ids order (deterministic) ---
+        chapters = dict(state["chapters"])
+        all_quality_issues: list[str] = []
+        total_revision_count = state["revision_count"]
+        all_readability_reports: list[dict[str, Any]] = []
+        all_readability_collaborations: list[dict[str, Any]] = []
+
+        for chapter_id, result in zip(chapter_ids, results):
+            if isinstance(result, BaseException):
+                # Per-chapter failure → deterministic fallback, never cancel siblings
+                chapter_outline = _OUTLINE_BY_ID[chapter_id]
+                allowed_claims = select_chapter_claims(
+                    analysis, chapter_id, set(state["rejected_claim_ids"])
+                )
+                fallback_draft = build_single_chapter_fallback(
+                    outline=chapter_outline,
+                    claims=allowed_claims,
+                    revision=state["workflow_revision"],
+                )
+                # Preserve untargeted sections during partial regeneration
+                target_section_ids = {
+                    sid
+                    for sid in options.target_section_ids
+                    if sid.startswith(f"SEC-{chapter_id.removeprefix('CH-')}-")
+                }
+                if target_section_ids and chapter_id in state["chapters"]:
+                    fallback_draft = _merge_target_sections(
+                        ChapterDraft.model_validate(state["chapters"][chapter_id]),
+                        fallback_draft,
+                        target_section_ids,
+                    )
+                from app.agents.chapter_writer.provenance import aggregate_chapter_references
+
+                fallback_draft = aggregate_chapter_references(fallback_draft)
+                chapters[chapter_id] = fallback_draft.model_dump(mode="json")
+                all_quality_issues.append(
+                    f"{chapter_id}:chapter_single_fallback:{type(result).__name__}"
+                )
+            else:
+                chapters[result["chapter_id"]] = result["draft"]
+                all_quality_issues.extend(result["quality_issues"])
+                total_revision_count += result["revision_count"]
+                # Collect readability artefacts per chapter (accumulate, not overwrite)
+                all_readability_reports.extend(result.get("readability_reports", []))
+                all_readability_collaborations.extend(
+                    result.get("readability_collaborations", [])
+                )
 
         return {
             "chapters": chapters,
-            "quality_issues": quality_issues,
-            "current_index": state["current_index"] + 1,
-            "current_issues": [],
-            "draft": None,
+            "quality_issues": all_quality_issues,
+            "revision_count": total_revision_count,
+            "current_index": len(chapter_ids),
+            "readability_reports": all_readability_reports,
+            "readability_collaborations": all_readability_collaborations,
         }
 
-    def route_after_accept(state: ChapterWriterGraphState) -> str:
-        return "finalize" if state["current_index"] >= len(state["chapter_ids"]) else "generate"
+    # ------------------------------------------------------------------
+    # finalize: unchanged — reads chapters by REPORT_OUTLINE order
+    # ------------------------------------------------------------------
 
     def finalize(state: ChapterWriterGraphState) -> dict[str, object]:
         analysis = AnalysisResult.model_validate(state["analysis"])
@@ -512,6 +651,7 @@ def build_chapter_writer_graph(
         chapters = [
             ChapterDraft.model_validate(state["chapters"][outline.chapter_id])
             for outline in REPORT_OUTLINE
+            if outline.chapter_id in state["chapters"]
         ]
         referenced_evidence = {
             evidence_id for chapter in chapters for evidence_id in chapter.evidence_ids
@@ -576,39 +716,13 @@ def build_chapter_writer_graph(
         )
         return {"result": result.model_dump(mode="json")}
 
-    builder.add_node("generate", generate)
-    builder.add_node("audit", audit)
-    builder.add_node("revise", revise)
-    builder.add_node("accept", accept)
+    # ------------------------------------------------------------------
+    # Graph topology: START → generate_all → finalize → END
+    # ------------------------------------------------------------------
+
+    builder.add_node("generate_all", generate_all)
     builder.add_node("finalize", finalize)
-    if readability_model is not None:
-        builder.add_node("review", review)
-        builder.add_node("revise_readability", revise_readability)
-    builder.add_edge(START, "generate")
-    builder.add_edge("generate", "audit")
-    if readability_model is not None:
-        builder.add_conditional_edges(
-            "audit",
-            route_after_audit,
-            {"revise": "revise", "review": "review", "accept": "accept"},
-        )
-        builder.add_conditional_edges(
-            "review",
-            route_after_review,
-            {"revise_readability": "revise_readability", "accept": "accept"},
-        )
-        builder.add_edge("revise_readability", "generate")
-    else:
-        builder.add_conditional_edges(
-            "audit",
-            route_after_audit,
-            {"revise": "revise", "accept": "accept"},
-        )
-    builder.add_edge("revise", "generate")
-    builder.add_conditional_edges(
-        "accept",
-        route_after_accept,
-        {"generate": "generate", "finalize": "finalize"},
-    )
+    builder.add_edge(START, "generate_all")
+    builder.add_edge("generate_all", "finalize")
     builder.add_edge("finalize", END)
     return builder.compile()

@@ -1,6 +1,16 @@
 """评分器包（EVALUATION_PLAN §4/§5.0/§7）。"""
 
 from eval.scorers.intent import evaluate_intent_case
+from eval.scorers.report_quality import (
+    QUALITY_CHECK_IDS,
+    QUALITY_VETO_CHECKS,
+    check_q1,
+    check_q2,
+    check_q3,
+    check_q4,
+    check_q5,
+    run_quality_checks,
+)
 from eval.scorers.rules import (
     CheckResult,
     check_c1,
@@ -44,4 +54,8 @@ __all__ = [
     "check_p1", "check_p2", "check_p3", "check_p4",
     "check_t1", "check_t2", "check_t3", "check_t4",
     "check_t5", "check_t6", "check_t7", "check_t8",
+    # Q 类：报告质量评分器（2026-09-19 方案 §3）
+    "QUALITY_CHECK_IDS", "QUALITY_VETO_CHECKS", "run_quality_checks",
+    "check_q1", "check_q2", "check_q3", "check_q4",
+    "check_q5",
 ]

@@ -5,8 +5,12 @@ re-reading raw financial data.  HTML and PDF therefore show the same values as
 the browser chart contract without requiring a CDN or JavaScript at export time.
 """
 
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass
 from html import escape
-from math import cos, isfinite, pi, sin
+from math import ceil, cos, floor, isfinite, log10, pi, sin
 from typing import Any
 from zlib import crc32
 
@@ -19,6 +23,145 @@ PLOT_RIGHT = 36
 PLOT_TOP = 86
 PLOT_BOTTOM = 72
 DEFAULT_COLORS = ["#2563eb", "#0f766e", "#d97706", "#7c3aed", "#dc2626"]
+
+_HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+
+# 无 profile 时的兜底品牌色（= classic_research 的品牌色，也是历史默认值）。
+DEFAULT_BRAND = "#0243A4"
+
+
+@dataclass(frozen=True, slots=True)
+class ChartInk:
+    """与 profile **无关**的结构色：画布、坐标轴、网格、标注、箭头。
+
+    这些色全篇恒定，是体裁硬约束的一部分（"字号、边距、行距全篇恒定"，
+    强调色只允许 1 个品牌色），所以不随 profile 变化。
+
+    之所以要把它们收进来而不是散落在各 render 函数里：HTML 叠加层
+    （`app.reporting.html::chart_svg_to_overlay`）需要知道**全部**可能的文字色
+    才能正确归一。散落的字面量一旦漏登记，就会静默落到中性灰兜底 ——
+    2026-09-18 实测：行业链节点文字 `#fff`（品牌色底上的白字）被静默改成
+    `#595959`，变成灰字压品牌色块。
+    """
+
+    surface: str = "#ffffff"  # 画布 / 图表底
+    tint: str = "#f3f6f9"  # 指标卡浅底（HTML 叠加层会按"图表不包卡片"归白）
+    ink: str = "#142033"  # 主文字
+    label: str = "#34445a"  # 说明文字
+    muted: str = "#607087"  # 次级文字 / 刻度
+    on_brand: str = "#ffffff"  # 品牌色块上的文字
+    axis: str = "#94a3b8"  # 主轴
+    axis_soft: str = "#aab8c7"  # 折线图轴（历史取值，保留以维持既有观感）
+    grid: str = "#e7edf3"  # 网格线
+    spoke: str = "#cbd5e1"  # 雷达轴 / 辐条
+    whisker: str = "#475569"  # 箱线图须
+    arrow: str = "#64748b"  # 行业链箭头
+    divider: str = "#cad5e2"  # 指标卡内的分隔线
+    plot_fill: str = "#f8fafc"  # 雷达底多边形（刻意不列入 HTML 归白名单）
+
+
+INK = ChartInk()
+
+# 分类色板的固定尾段。5 个色必须互相可辨 —— 彩印与灰度打印都要能区分，
+# 所以不随品牌色重新生成，只把首位让给品牌色。
+_SERIES_TAIL = ("#0b78b8", "#0da9d6", "#d59a20", "#9a4d55")
+
+# Agent 3 的 `research_blue` 主题里，分类色板首位的历史品牌蓝。
+# 渲染层把它重指到当前 profile 的品牌色，见 `_series_colors`。
+_SPEC_LEGACY_BRAND = "#0b4fa3"
+
+
+@dataclass(frozen=True, slots=True)
+class ChartPalette:
+    """图表配色：品牌色 + 分类色板 + 语义色。
+
+    由 `TemplateProfile` 派生（见 `from_profile`），因此正文装饰与图表用的是
+    同一个品牌色。2026-09-18 之前 `svg.py` 硬编码 `#0b4fa3` 一族，
+    HTML 叠加层再把它们强制映射到 `#0243A4` —— 结果无论选哪个 profile，
+    图表永远是经典研报蓝：`modern_analysis`（#0A5C5C）与 `narrative_flow`
+    （#7A1F3D）的正文是墨绿/酒红，图表却是蓝的。
+    """
+
+    brand: str
+    series: tuple[str, ...]
+    semantic_red: str = "#D33333"
+    semantic_green: str = "#1B7F4B"
+    neutral_grey: str = "#595959"
+
+    @classmethod
+    def default(cls) -> ChartPalette:
+        return cls(brand=DEFAULT_BRAND, series=(DEFAULT_BRAND, *_SERIES_TAIL))
+
+    @classmethod
+    def from_profile(cls, profile: object | None) -> ChartPalette:
+        """从 `TemplateProfile` 派生配色。
+
+        取不到或取值非法时**回退默认**而不是抛异常 —— Agent 5 硬约束 #3：
+        渲染层任何失败都必须静默降级，不得阻断导出。旧存档的
+        `visual_decision.template_profile` 为 `None`，属于正常输入。
+        """
+
+        brand = getattr(profile, "brand_color", None)
+        if not isinstance(brand, str) or not _HEX_COLOR_RE.match(brand):
+            return cls.default()
+        red = getattr(profile, "semantic_red", None)
+        green = getattr(profile, "semantic_green", None)
+        grey = getattr(profile, "neutral_grey", None)
+        return cls(
+            brand=brand,
+            series=(brand, *_SERIES_TAIL),
+            semantic_red=(red if isinstance(red, str) and _HEX_COLOR_RE.match(red) else "#D33333"),
+            semantic_green=(
+                green if isinstance(green, str) and _HEX_COLOR_RE.match(green) else "#1B7F4B"
+            ),
+            neutral_grey=(
+                grey if isinstance(grey, str) and _HEX_COLOR_RE.match(grey) else "#595959"
+            ),
+        )
+
+
+def _series_colors(spec: ChartSpec, palette: ChartPalette) -> tuple[str, ...]:
+    """分类色板：以 spec 自带的 ramp 为准，仅把历史品牌蓝重指到当前品牌色。
+
+    Agent 3 在 `ChartSpec.option["color"]` 里烤进了分类色板
+    （`chart_generator.builders.THEMES`），其中 `research_blue` 的首位就是
+    当时的品牌蓝 `#0b4fa3`。渲染层必须把这一位重指到当前 profile 的品牌色，
+    否则无论选哪个 profile，柱/饼/折线的颜色永远是经典研报蓝。
+
+    只重指 `#0b4fa3` 这一个值，而不是整条 ramp：
+
+    - 尾段（`#0b78b8`/`#0da9d6`/`#d59a20`/`#9a4d55`）是刻意的固定分类色，
+      彩印与灰度打印都要能互相区分，不该随品牌色重算；
+    - `colorblind_safe` 主题的 ramp 里没有 `#0b4fa3`，色盲友好性不受影响。
+    """
+
+    raw = spec.option.get("color")
+    if not isinstance(raw, (list, tuple)) or not raw:
+        return palette.series
+    return tuple(
+        palette.brand if str(item).lower() == _SPEC_LEGACY_BRAND else str(item) for item in raw
+    )
+
+
+def _format_value(value: float) -> str:
+    """Human-friendly magnitude label; never emits scientific notation.
+
+    Large amounts collapse to 万/亿 so fact cards and axis ticks stay readable
+    (e.g. 12635703740.21 -> "126.36亿").  Small values keep thousands
+    separators and trim trailing zeros.
+    """
+
+    sign = "-" if value < 0 else ""
+    magnitude = abs(value)
+    if magnitude >= 1e8:
+        collapsed = f"{magnitude / 1e8:,.2f}".rstrip("0").rstrip(".")
+        return f"{sign}{collapsed}亿"
+    if magnitude >= 1e4:
+        collapsed = f"{magnitude / 1e4:,.2f}".rstrip("0").rstrip(".")
+        return f"{sign}{collapsed}万"
+    if magnitude == int(magnitude):
+        return f"{sign}{int(magnitude):,}"
+    return f"{sign}{magnitude:,.2f}".rstrip("0").rstrip(".")
 
 
 def _number(value: Any) -> float | None:
@@ -55,8 +198,9 @@ def _shell(spec: ChartSpec, body: str) -> str:
         for index, note in enumerate(footnotes)
     )
     # The formal HTML/PDF must not expose Agent 3's machine chart identifier.
-    # A title-derived numeric DOM id keeps aria-labelledby unique and readable.
-    title_dom_id = f"图表标题-{crc32(spec.title.encode('utf-8'))}"
+    # A chart-id-derived numeric DOM id remains unique even when two charts
+    # intentionally share the same visible title (same page multi-chart).
+    title_dom_id = f"图表标题-{crc32(spec.chart_id.encode('utf-8'))}"
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {canvas_height}" '
         f'role="img" aria-labelledby="{title_dom_id}">'
@@ -83,6 +227,77 @@ def _scale(values: list[float], axis: dict[str, Any] | None = None) -> tuple[flo
         low if low is not None else lower - padding,
         high if high is not None else upper + padding,
     )
+
+
+def _nice_step(span: float, target: int) -> float:
+    """把区间跨度折成人眼友好的刻度步长（1 / 2 / 2.5 / 5 × 10ⁿ）。
+
+    数值轴的刻度必须落在"整"数上，否则会出现 `657.3亿`、`480.8亿`、`304.2亿`
+    这种一看就是机器算出来的读数。取 1/2/2.5/5 这几个倍数是因为它们既能整除，
+    又不会让刻度密到互相压字。
+    """
+
+    if not isfinite(span) or span <= 0 or target < 1:
+        return 1.0
+    rough = span / target
+    magnitude = 10.0 ** floor(log10(rough))
+    for factor in (1.0, 2.0, 2.5, 5.0, 10.0):
+        if rough <= factor * magnitude:
+            return factor * magnitude
+    return 10.0 * magnitude
+
+
+def _value_ticks(low: float, high: float, *, target: int = 4) -> list[float]:
+    """列出 ``[low, high]`` 区间内的整刻度值，供数值轴打网格线与刻度标签。"""
+
+    if not (isfinite(low) and isfinite(high)) or high <= low:
+        return []
+    step = _nice_step(high - low, target)
+    if step <= 0:
+        return []
+    ticks: list[float] = []
+    value = ceil(low / step) * step
+    # 用 1e-6 的相对容差兜住浮点误差，避免最后一个整刻度因 1e-16 的偏差被丢掉。
+    tolerance = step * 1e-6
+    while value <= high + tolerance:
+        # 归一化 -0.0，否则会打出 "-0" 这种刻度标签。
+        ticks.append(value + 0.0)
+        value += step
+    return ticks
+
+
+def _value_axis(
+    low: float,
+    high: float,
+    *,
+    left: float,
+    right: float,
+    top: float,
+    height: float,
+) -> list[str]:
+    """竖向数值轴：轴线 + 水平网格线 + 刻度标签。
+
+    折线图与柱状图共用同一实现：数值轴被收敛成单一函数后，任何图表族都不会
+    再静默地少一根轴。
+    """
+
+    if not (isfinite(low) and isfinite(high)) or high <= low:
+        return []
+    parts = [
+        f'<line x1="{left:.1f}" y1="{top:.1f}" x2="{left:.1f}" '
+        f'y2="{top + height:.1f}" stroke="{INK.axis_soft}"/>'
+    ]
+    for tick in _value_ticks(low, high):
+        ratio = (high - tick) / (high - low)
+        if ratio < -1e-6 or ratio > 1 + 1e-6:
+            continue
+        y = top + height * ratio
+        parts.append(
+            f'<line x1="{left:.1f}" y1="{y:.1f}" x2="{right:.1f}" '
+            f'y2="{y:.1f}" stroke="{INK.grid}"/>'
+        )
+        parts.append(_text(left - 10, y + 4, _format_value(tick), anchor="end", size=11))
+    return parts
 
 
 def _color(item: Any, fallback: str, *, line: bool = False) -> str:
@@ -369,14 +584,14 @@ def _render_panel_series(
             value = low + (high - low) * ratio
             if horizontal:
                 tx, ty = x + ratio * width, float(PLOT_TOP + height)
-                parts.append(_text(tx, ty + 18, f"{value:g}", size=10))
+                parts.append(_text(tx, ty + 18, _format_value(value), size=10))
             else:
                 tx, ty = axis_x, PLOT_TOP + height * (1 - ratio)
                 parts.append(
                     _text(
                         tx + (8 if axis_x > x else -8),
                         ty + 4,
-                        f"{value:g}",
+                        _format_value(value),
                         anchor="start" if axis_x > x else "end",
                         size=10,
                     )
@@ -911,8 +1126,9 @@ def _render_chain(spec: ChartSpec) -> str:
         for index, node in enumerate(items):
             y = 150 + index * 100 + stage_y_offset.get(category, 0)
             positions[str(node.get("id"))] = (stage_x.get(category, 480), y)
+    marker_id = f"图表箭头-{crc32(spec.chart_id.encode('utf-8'))}"
     parts = [
-        '<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" '
+        f'<defs><marker id="{marker_id}" viewBox="0 0 10 10" refX="9" refY="5" '
         'markerWidth="7" markerHeight="7" orient="auto-start-reverse">'
         f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{escape(edge_color)}"/></marker></defs>'
     ]
@@ -924,7 +1140,7 @@ def _render_chain(spec: ChartSpec) -> str:
                 f'<line x1="{source[0]+65:.1f}" y1="{source[1]:.1f}" '
                 f'x2="{target[0]-65:.1f}" y2="{target[1]:.1f}" '
                 f'stroke="{escape(edge_color)}" stroke-width="{edge_width:g}" '
-                'marker-end="url(#arrow)"/>'
+                f'marker-end="url(#{marker_id})"/>'
             )
     stage_names = {0: "上游", 1: "中游", 2: "下游", 3: "支撑"}
     for category, items in grouped.items():
@@ -966,7 +1182,107 @@ def _render_chain(spec: ChartSpec) -> str:
     return _shell(spec, "".join(parts))
 
 
-def render_chart_svg(spec: ChartSpec) -> str:
+def _render_single_metric(
+    spec: ChartSpec,
+    label: object,
+    value: float,
+    unit: str,
+    *,
+    palette: ChartPalette,
+) -> str:
+    """Render one disclosed value as a fact card instead of a meaningless one-bar chart."""
+
+    title = escape(spec.title)
+    safe_label = escape(str(label))
+    # Placeholder unit tokens from upstream evidence ("未提供" etc.) must not
+    # print; real tokens such as currency codes are preserved.
+    cleaned = " ".join(
+        token for token in unit.split() if token not in {"未提供", "未知", "None", "null"}
+    )
+    safe_unit = escape(cleaned)
+    unit_line = (
+        f'<text x="632" y="168" font-size="14" fill="{INK.muted}">单位：{safe_unit}</text>'
+        if safe_unit
+        else ""
+    )
+    display_value = _format_value(value)
+    value_font_size = 72 if len(display_value) <= 8 else 56
+    title_dom_id = f"图表标题-{crc32(spec.chart_id.encode('utf-8'))}"
+    # 关键事实的机器可读副本：封面要放一条"关键数据"带，但 `ReportViewModel.charts`
+    # 里只有渲染好的 SVG，数值已经被排版成 `<text>` 了。把事实写成 data-* 属性后，
+    # 封面就能按契约取值（`metric_card_fact`）。属性值同样进 HTML，因此照旧 escape。
+    fact_attrs = (
+        f' data-metric-value="{escape(display_value, quote=True)}"'
+        f' data-metric-name="{escape(spec.title, quote=True)}"'
+        f' data-metric-entity="{escape(str(label), quote=True)}"'
+        f' data-metric-unit="{escape(cleaned, quote=True)}"'
+    )
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 280" '
+        f'role="img" aria-labelledby="{title_dom_id}" data-visual-kind="single-metric">'
+        # 底与左侧强调条都用品牌色/画布色：体裁硬约束"图表不包卡片，白底直排"，
+        # 因此这里直接画白底，不再依赖 HTML 叠加层事后把浅色底刷白。
+        f'<rect width="960" height="280" fill="{INK.surface}"/>'
+        f'<rect width="12" height="280" fill="{palette.brand}"/>'
+        f'<title id="{title_dom_id}">{title}</title>'
+        f'<text x="60" y="54" font-size="13" font-weight="700" fill="{palette.brand}" '
+        'letter-spacing="2">关键指标</text>'
+        f'<text x="60" y="145" font-size="{value_font_size}" font-weight="700" '
+        f'fill="{INK.ink}"{fact_attrs}>{display_value}</text>'
+        f'<text x="62" y="234" font-size="17" fill="{INK.label}">{safe_label}</text>'
+        f'<line x1="590" y1="52" x2="590" y2="226" stroke="{INK.divider}"/>'
+        f'<text x="632" y="92" font-size="20" font-weight="700" fill="{INK.ink}">{title}</text>'
+        f'<text x="632" y="135" font-size="14" fill="{INK.muted}">单点披露</text>'
+        f"{unit_line}"
+        f'<text x="632" y="194" font-size="14" fill="{INK.muted}">不构成趋势或横向比较</text>'
+        f'<line x1="632" y1="218" x2="884" y2="218" stroke="{palette.brand}" stroke-width="3"/>'
+        "</svg>"
+    )
+
+
+def _single_metric_payload(spec: ChartSpec) -> tuple[object, float, str] | None:
+    option = spec.option
+    labels = list(option.get("xAxis", {}).get("data", []))
+    unit = str(option.get("yAxis", {}).get("name", ""))
+    values: list[tuple[object, float]] = []
+    for series in option.get("series", []):
+        if not isinstance(series, dict):
+            continue
+        for index, item in enumerate(series.get("data", [])):
+            raw = item.get("value") if isinstance(item, dict) else item
+            number = _number(raw)
+            if number is None:
+                continue
+            label: object = labels[index] if index < len(labels) else series.get("name", spec.title)
+            if isinstance(item, dict) and item.get("name"):
+                label = item["name"]
+            values.append((label, number))
+    if len(values) != 1:
+        return None
+    label, value = values[0]
+    return label, value, unit
+
+
+def render_chart_svg(spec: ChartSpec, *, palette: ChartPalette | None = None) -> str:
+    """渲染单张图表 SVG。
+
+    `palette` 缺省时用经典研报品牌色 —— 调用方会传入由
+    `visual_decision.template_profile` 派生的配色，使图表与正文装饰共用
+    同一个品牌色。目标项目独有的 `comparison_bar` 与 `dual_panel` 等路由
+    保持不变。
+    """
+
+    palette = palette or ChartPalette.default()
+    # 单值指标卡只替换"无意义的一根柱"（外部语义）；饼图/矩形树图等单点图型
+    # 仍走各自确定性渲染，不回退目标项目既有能力。
+    if spec.chart_type == "bar" and getattr(spec, "display_kind", None) == "metric_card":
+        payload = _single_metric_payload(spec)
+        if payload is not None:
+            return _render_single_metric(spec, *payload, palette=palette)
+    if isinstance(spec.option.get("color"), (list, tuple)) and spec.option["color"]:
+        spec = spec.model_copy(
+            update={"option": {**spec.option, "color": list(_series_colors(spec, palette))}}
+        )
     if spec.variant == "dual_panel":
         return _render_dual_panel(spec)
     if spec.chart_type in {"line", "area", "bar", "comparison_bar", "combo"}:
@@ -986,3 +1302,37 @@ def render_chart_svg(spec: ChartSpec) -> str:
     if spec.chart_type == "industry_chain":
         return _render_chain(spec)
     raise ValueError(f"unsupported chart type: {spec.chart_type}")
+
+
+# ---------------------------------------------------------------------------
+# 单指标事实卡的机器可读回读（封面「关键数据」带用）
+# ---------------------------------------------------------------------------
+_METRIC_FACT_ATTR_RES = {
+    key: re.compile(rf'\bdata-metric-{key}="([^"]*)"')
+    for key in ("value", "name", "entity", "unit")
+}
+# 自述性数值：`_format_value()` 把大额数字折成「亿 / 万」，单位已经长在数值里，
+# 因此脱离指标名也不会被误读（`10,602.62亿` 就是十亿量级的营业收入）。
+# 纯比率（`11.35`）不带单位，封面放大后会变成没有口径的数字 —— 直接排除。
+_SELF_DESCRIBING_VALUE_RE = re.compile(r"^-?[\d,]+(?:\.\d+)?[亿万]$")
+
+
+def metric_card_fact(svg: str) -> dict[str, str] | None:
+    """从单指标事实卡 SVG 里回读 `(值, 指标名, 主体, 单位)`。
+
+    只对**自述性数值**返回结果：封面把数字放大到 16pt 之后，任何脱离口径的
+    数字都会变成误读源，所以比率类读数（缺单位）一律不上海报位。
+    取不到或数值不自述时返回 `None`（Agent 5 硬约束 #3：静默降级）。
+    """
+
+    if "single-metric" not in svg:
+        return None
+    fact = {
+        key: (match.group(1).strip() if (match := pattern.search(svg)) else "")
+        for key, pattern in _METRIC_FACT_ATTR_RES.items()
+    }
+    if not _SELF_DESCRIBING_VALUE_RE.match(fact["value"]):
+        return None
+    if not fact["name"]:
+        return None
+    return fact

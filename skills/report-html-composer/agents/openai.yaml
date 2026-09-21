@@ -1,0 +1,4 @@
+interface:
+  display_name: "HTML 研究报告编排"
+  short_description: "生成响应式、可追溯、内容驱动的长篇 HTML 报告"
+  default_prompt: "使用 $report-html-composer 将当前研究内容编排成 HTML 主报告：先选择文字型或图表型方向，再依据每个小节的文字、图表与证据信号选择构图，建立可检索且包含引用位置的完整证据中心，检查中文横排、窄列、异常留白和响应式回退；不得新增或修改任何金融事实。"

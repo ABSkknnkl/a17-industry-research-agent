@@ -26,8 +26,8 @@ function randomProjectId(): string {
   return `proj-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-/** 图表选择（前端本地模式：auto=智能配图 / rich=更多图表 / none=无图表表格优先，后端契约未发布前 none 回退智能配图） */
-type ChartMode = 'auto' | 'rich' | 'none'
+/** 图表选择（auto=智能配图：系统按数据自动挑选；rich=更多图表：同一数据集可多角度配图） */
+type ChartMode = 'auto' | 'rich'
 
 const form = reactive({
   industryTopic: '',
@@ -46,6 +46,7 @@ const REVIEW_STAGE_OPTIONS = Object.entries(STAGE_LABELS).map(([value, label]) =
   value: value as StageName,
   label,
 }))
+void SECURITY_TYPE_OPTIONS
 
 /** 市场范围选项（value 为提交给后端的纯市场名；label 带可达性备注）。
  * 可达性依据当前接线（问财 hithink_* + L3 博查联网）实测：
@@ -172,7 +173,6 @@ function validate(): string | null {
   if (questions.length < 1) return '请至少填写一个研究问题'
   if (questions.length > 12) return '研究问题最多 12 个'
   if (questions.some((q) => q.length > 1000)) return '单个研究问题不能超过 1000 字'
-  if (form.reviewStages.length === 0) return '请至少选择一个审核门'
   return null
 }
 
@@ -183,11 +183,6 @@ async function submit(): Promise<void> {
       ElMessage.warning(problem)
       return
     }
-  }
-  if (!mockMode && form.chartMode === 'none') {
-    ElMessage.warning(
-      '「无图表」模式的后端支持开发中，本次将按智能配图创建任务；生成后可在图表审核阶段清空图表。'
-    )
   }
   if (!mockMode) {
     const limited = form.marketScope.filter((market) => {
@@ -245,11 +240,24 @@ async function submit(): Promise<void> {
         /* localStorage 不可用时退回手动跳转 */
       }
     }
-    ElMessage.success(mockMode ? '演示任务已就绪' : '任务已创建，流水线已启动')
-    await router.push({
-      name: 'review',
-      params: { runId: mockMode ? DEMO_RUN_ID : state.run_id },
-    })
+    ElMessage.success(
+      mockMode
+        ? '演示任务已就绪'
+        : form.reviewStages.length === 0
+          ? '任务已创建，全自动模式：各阶段自动通过，仅高风险时暂停，完成后进入下载页'
+          : '任务已创建，流水线已启动'
+    )
+    if (!mockMode && form.reviewStages.length === 0) {
+      await router.push({
+        name: 'report-download',
+        params: { runId: state.run_id },
+      })
+    } else {
+      await router.push({
+        name: 'review',
+        params: { runId: mockMode ? DEMO_RUN_ID : state.run_id },
+      })
+    }
   } catch (e) {
     if (e instanceof ApiError) {
       ElMessage.error(`创建失败：${e.message}${e.code ? `（${e.code}）` : ''}`)
@@ -272,7 +280,7 @@ async function submit(): Promise<void> {
       </el-card>
     </aside>
 
-    <!-- 右栏：创建任务表单 -->
+    <!-- 中栏：创建任务表单 -->
     <div class="home-page">
       <!-- 页头：标题 + 一句话说明 -->
       <header class="home-header">
@@ -446,9 +454,6 @@ async function submit(): Promise<void> {
                     <el-tooltip content="多角度配图：同一数据集可生成多张图表，适合对比与趋势观察" placement="top">
                       <el-radio value="rich">更多图表</el-radio>
                     </el-tooltip>
-                    <el-tooltip content="报告中不使用图表，侧重表格与文字呈现（后端支持开发中）" placement="top">
-                      <el-radio value="none">无图表</el-radio>
-                    </el-tooltip>
                   </el-radio-group>
                 </el-form-item>
               </el-col>
@@ -463,7 +468,10 @@ async function submit(): Promise<void> {
               <span class="muted">可选，默认即可</span>
             </div>
             <el-collapse>
-              <el-collapse-item title="人工审核阶段（未勾选的阶段自动通过智能体推荐）" name="gates">
+              <el-collapse-item title="人工审核阶段（默认不勾选 = 全自动）" name="gates">
+                <p class="gate-hint">
+                  不勾选任何阶段时，各阶段自动通过智能体推荐，完成后直接进入下载页；仅检测到<span class="risk-red">红色高风险</span>时才会暂停等待人工处理。勾选后，对应阶段需人工审核才能继续。
+                </p>
                 <el-checkbox-group v-model="form.reviewStages">
                   <el-checkbox
                     v-for="opt in REVIEW_STAGE_OPTIONS"
@@ -523,15 +531,46 @@ async function submit(): Promise<void> {
 </template>
 
 <style scoped>
+.gate-hint {
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.risk-red {
+  color: var(--el-color-danger);
+  font-weight: 600;
+}
 .home-layout {
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
+  /* .app-main 已水平居中，左右外边距一致 */
+  justify-content: center;
 }
 .home-left {
   position: sticky;
   top: 16px;
+  align-self: stretch;
+  min-height: 0;
+}
+.home-left .page-card {
+  height: 100%;
+  margin-bottom: 0;
+  display: flex;
+  flex-direction: column;
+}
+.home-left :deep(.el-card__body) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 14px 12px;
+}
+.home-left :deep(.report-nav) {
+  width: 100%;
+  flex: 1;
 }
 .home-page {
   max-width: none;

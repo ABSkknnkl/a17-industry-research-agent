@@ -174,7 +174,7 @@ function mountGallery(specs: Partial<ChartSpec>[] = [spec]) {
 
 describe('ChartGallery contract consumption', () => {
   it('passes the entire producer option unchanged in thumbnails', async () => {
-    const wrapper = mountGallery()
+    mountGallery()
     await flushPromises()
     expect(received).toEqual([option])
   })

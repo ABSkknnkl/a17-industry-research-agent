@@ -12,6 +12,7 @@ from app.schemas.analysis import (
 )
 from app.schemas.chapter import ChapterDraftLoose, LooseParagraph, LooseSection
 from app.schemas.readability import ReadabilityFinding, ReadabilityReport
+from app.schemas.report import VisualReviewReport
 
 
 class MockAnalysisModel:
@@ -207,4 +208,31 @@ class MockReadabilityModel:
             score=self._score,
             findings=[finding.model_copy() for finding in self._findings],
             needs_human_review=self._score < 0.6,
+        )
+
+
+class MockVisualReviewModel:
+    model_name = "mock-visual-reviewer"
+
+    def __init__(self, report: VisualReviewReport | None = None) -> None:
+        self._report = report
+
+    async def review_report(
+        self,
+        *,
+        report_context: str,
+        page_images: list[bytes],
+        page_numbers: list[int],
+        total_page_count: int,
+        deterministic_findings: list[str],
+        review_round: int,
+    ) -> VisualReviewReport:
+        del report_context, page_images, page_numbers, total_page_count, deterministic_findings
+        if self._report is not None:
+            return self._report.model_copy(update={"review_round": review_round})
+        return VisualReviewReport(
+            passed=True,
+            score=1.0,
+            review_round=review_round,
+            reviewer_model=self.model_name,
         )
