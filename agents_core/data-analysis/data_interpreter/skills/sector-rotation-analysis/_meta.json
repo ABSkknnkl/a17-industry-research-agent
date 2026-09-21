@@ -1,0 +1,1 @@
+{"domains":["industry","macro","companies"],"keywords":["行业轮动","景气度","行业动量","板块比较","资金流","行业排名","产业传导"],"requires_signal":true,"source":"skills包/行业轮动分析/sector-rotation/SKILL.md","adaptation":"保留多维行业比较和产业传导；移除超配、低配与机会推荐。"}

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { listRuns } from '../api/client'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { listRuns, deleteRun } from '../api/client'
 import { ApiError } from '../api/http'
 import { STAGE_LABELS, type RunSummary } from '../api/types'
 import StatusTag from '../components/StatusTag.vue'
@@ -44,6 +44,32 @@ function openDownload(row: RunSummary): void {
   void router.push({ name: 'report-download', params: { runId: row.run_id } })
 }
 
+async function handleDelete(row: RunSummary): Promise<void> {
+  try {
+    await ElMessageBox.confirm(
+      `确定要彻底删除任务「${row.title || row.run_id}」及其所有产物文件吗？该操作无法恢复。`,
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    await deleteRun(row.run_id)
+    ElMessage.success('任务已成功删除')
+    await load()
+  } catch (e) {
+    if (e instanceof ApiError) {
+      ElMessage.error(`删除失败：${e.message}`)
+    }
+  }
+}
+
 function formatTime(value: string): string {
   return new Date(value).toLocaleString('zh-CN')
 }
@@ -78,11 +104,6 @@ onMounted(load)
       <el-table-column prop="artifact_count" label="产物数" width="80" />
       <el-table-column label="报告" width="100">
         <template #default="{ row }">
-          <!--
-            @click.stop 必须保留：整行 @row-click 会跳工作台，
-            不拦住会让「下载」按钮同时触发行跳转。
-            列表接口没有 stage_results，做不了深门控，具体判定在下载页执行。
-          -->
           <el-button
             v-if="row.report_available"
             link
@@ -98,6 +119,18 @@ onMounted(load)
       </el-table-column>
       <el-table-column label="更新时间" width="170">
         <template #default="{ row }">{{ formatTime(row.updated_at) }}</template>
+      </el-table-column>
+      <el-table-column label="操作" width="90" fixed="right">
+        <template #default="{ row }">
+          <el-button
+            link
+            type="danger"
+            size="small"
+            @click.stop="handleDelete(row)"
+          >
+            删除
+          </el-button>
+        </template>
       </el-table-column>
     </el-table>
     <div class="pager">

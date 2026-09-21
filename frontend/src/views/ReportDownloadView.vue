@@ -46,7 +46,7 @@ const fusion = computed<ReportFusionData | null>(() => {
 
 const title = computed(() => fusion.value?.title ?? '报告下载')
 
-/** 固定下载/展示顺序：正文 → 网页 → PDF → 产物清单（真实 4 份；mock 只有前 3 份） */
+/** 固定下载/展示顺序：正文 → 网页 → PDF → 产物清单 */
 const KIND_ORDER = ['report_markdown', 'report_html', 'report_pdf', 'artifact_manifest']
 
 /**
@@ -84,7 +84,9 @@ const total = computed(() => items.value.length)
 const progressPercent = computed(() =>
   total.value === 0 ? 0 : Math.round((completedCount.value / total.value) * 100)
 )
-const currentItem = computed(() => items.value.find((item) => item.status === 'downloading') ?? null)
+const currentItem = computed(
+  () => items.value.find((item) => item.status === 'downloading') ?? null
+)
 
 const INTER_DOWNLOAD_MS = 400
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -250,7 +252,11 @@ onBeforeUnmount(() => {
       >
         重试失败项
       </el-button>
-      <span v-if="phase === 'downloading' && total > 0" class="muted" data-testid="report-download-progress">
+      <span
+        v-if="phase === 'downloading' && total > 0"
+        class="muted"
+        data-testid="report-download-progress"
+      >
         正在下载 {{ Math.min(completedCount + 1, total) }}/{{ total }}：{{
           currentItem?.label ?? ''
         }}
@@ -258,10 +264,18 @@ onBeforeUnmount(() => {
       <span v-else-if="phase === 'done'" class="download-done" data-testid="report-download-result">
         已下载全部 {{ total }} 份产物
       </span>
-      <span v-else-if="phase === 'partial'" class="download-warn" data-testid="report-download-result">
+      <span
+        v-else-if="phase === 'partial'"
+        class="download-warn"
+        data-testid="report-download-result"
+      >
         部分成功：{{ completedCount }} 份已下载，{{ failedItems.length }} 份失败
       </span>
-      <span v-else-if="phase === 'error'" class="download-warn" data-testid="report-download-result">
+      <span
+        v-else-if="phase === 'error'"
+        class="download-warn"
+        data-testid="report-download-result"
+      >
         下载失败，请重试
       </span>
     </div>

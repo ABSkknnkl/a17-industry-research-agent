@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
-import { listRuns } from '../api/client'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { listRuns, deleteRun } from '../api/client'
 import { ApiError } from '../api/http'
 import type { RunSummary, StageStatus } from '../api/types'
 
@@ -56,10 +56,7 @@ const filtered = computed(() => {
 })
 
 const activeList = computed(() => filtered.value.filter((r) => isActiveStatus(r.status)))
-/** 已完成区最多展示 10 条，避免侧栏过长 */
-const doneList = computed(() =>
-  filtered.value.filter((r) => !isActiveStatus(r.status)).slice(0, 10)
-)
+const doneList = computed(() => filtered.value.filter((r) => !isActiveStatus(r.status)))
 
 function openRun(run: RunSummary): void {
   if (run.run_id === props.activeRunId) return
@@ -68,7 +65,40 @@ function openRun(run: RunSummary): void {
 }
 
 function goCreate(): void {
-  void router.push({ name: 'home' })
+  void router.push({ name: 'create' })
+}
+
+async function handleDelete(run: RunSummary): Promise<void> {
+  try {
+    await ElMessageBox.confirm(
+      `确定要彻底删除任务「${run.title || run.run_id}」及其所有产物文件吗？该操作无法恢复。`,
+      '删除确认',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    await deleteRun(run.run_id)
+    ElMessage.success('任务已成功删除')
+    await load()
+    if (run.run_id === props.activeRunId) {
+      if (runs.value.length > 0) {
+        void router.push({ name: 'review', params: { runId: runs.value[0].run_id } })
+      } else {
+        void router.push({ name: 'create' })
+      }
+    }
+  } catch (e) {
+    if (e instanceof ApiError) {
+      ElMessage.error(`删除失败：${e.message}`)
+    }
+  }
 }
 
 function statusDot(status: string): string {
@@ -114,21 +144,6 @@ function toggle(key: 'active' | 'done'): void {
   expanded.value = { ...expanded.value, [key]: !expanded.value[key] }
 }
 
-const groups = computed(() => [
-  {
-    key: 'active' as const,
-    label: '进行中',
-    list: activeList.value,
-    empty: '暂无进行中的报告',
-  },
-  {
-    key: 'done' as const,
-    label: '已完成',
-    list: doneList.value,
-    empty: '暂无已完成报告',
-  },
-])
-
 defineExpose({ reload: load })
 
 onMounted(load)
@@ -143,43 +158,81 @@ onMounted(load)
       新建报告
     </el-button>
 
-    <div class="nav-lists">
-      <!-- 进行中 / 已完成：同一套 run-card 结构 -->
-      <div v-for="group in groups" :key="group.key" class="group">
-        <button
-          class="group-head"
-          type="button"
-          :data-testid="`group-${group.key}`"
-          @click="toggle(group.key)"
+    <!-- 进行中 -->
+    <div class="group">
+      <button class="group-head" type="button" data-testid="group-active" @click="toggle('active')">
+        <el-icon class="caret" :class="{ collapsed: !expanded.active }"><ArrowDown /></el-icon>
+        <span>进行中</span>
+        <span class="count">{{ activeList.length }}</span>
+      </button>
+      <div v-if="expanded.active" class="group-body">
+        <div
+          v-for="run in activeList"
+          :key="run.run_id"
+          class="run-card"
+          :class="{ active: run.run_id === activeRunId }"
+          :data-testid="`run-item-${run.run_id}`"
+          @click="openRun(run)"
         >
-          <el-icon class="caret" :class="{ collapsed: !expanded[group.key] }"><ArrowDown /></el-icon>
-          <span>{{ group.label }}</span>
-          <span class="count">{{ group.list.length }}</span>
-        </button>
-        <div v-if="expanded[group.key]" class="group-body">
-          <div
-            v-for="run in group.list"
-            :key="run.run_id"
-            class="run-card"
-            :class="{ active: run.run_id === activeRunId }"
-            :data-testid="`run-item-${run.run_id}`"
-            @click="openRun(run)"
-          >
-            <div class="run-title-row">
-              <span class="status-dot" :style="{ background: statusDot(run.status) }" />
-              <span class="run-title" :title="run.title || run.run_id">
-                {{ run.title || run.run_id }}
-              </span>
-            </div>
-            <div class="run-meta-row">
-              <el-tag size="small" effect="plain" :type="statusType(run.status)">
-                {{ statusLabel(run.status) }}
-              </el-tag>
-              <span class="run-meta">更新时间：{{ formatTime(run.updated_at) }}</span>
-            </div>
+          <div class="run-row">
+            <span class="status-dot" :style="{ background: statusDot(run.status) }" />
+            <span class="run-title" :title="run.title">{{ run.title || run.run_id }}</span>
+            <el-tag size="small" effect="plain" :type="statusType(run.status)">
+              {{ statusLabel(run.status) }}
+            </el-tag>
+            <el-button
+              class="delete-btn"
+              link
+              type="danger"
+              size="small"
+              title="删除任务"
+              @click.stop="handleDelete(run)"
+            >
+              <el-icon><Delete /></el-icon>
+            </el-button>
           </div>
-          <div v-if="group.list.length === 0" class="empty-line muted">{{ group.empty }}</div>
+          <div class="run-meta">更新时间：{{ formatTime(run.updated_at) }}</div>
         </div>
+        <div v-if="activeList.length === 0" class="empty-line muted">暂无进行中的报告</div>
+      </div>
+    </div>
+
+    <!-- 已完成 -->
+    <div class="group">
+      <button class="group-head" type="button" data-testid="group-done" @click="toggle('done')">
+        <el-icon class="caret" :class="{ collapsed: !expanded.done }"><ArrowDown /></el-icon>
+        <span>已完成</span>
+        <span class="count">{{ doneList.length }}</span>
+      </button>
+      <div v-if="expanded.done" class="group-body">
+        <div
+          v-for="run in doneList"
+          :key="run.run_id"
+          class="run-card"
+          :class="{ active: run.run_id === activeRunId }"
+          :data-testid="`run-item-${run.run_id}`"
+          @click="openRun(run)"
+        >
+          <div class="run-row">
+            <span class="status-dot" :style="{ background: statusDot(run.status) }" />
+            <span class="run-title" :title="run.title">{{ run.title || run.run_id }}</span>
+            <el-tag size="small" effect="plain" :type="statusType(run.status)">
+              {{ statusLabel(run.status) }}
+            </el-tag>
+            <el-button
+              class="delete-btn"
+              link
+              type="danger"
+              size="small"
+              title="删除任务"
+              @click.stop="handleDelete(run)"
+            >
+              <el-icon><Delete /></el-icon>
+            </el-button>
+          </div>
+          <div class="run-meta">更新时间：{{ formatTime(run.updated_at) }}</div>
+        </div>
+        <div v-if="doneList.length === 0" class="empty-line muted">暂无已完成报告</div>
       </div>
     </div>
   </div>
@@ -187,11 +240,7 @@ onMounted(load)
 
 <style scoped>
 .report-nav {
-  min-height: calc(100vh - 96px);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 4px;
+  min-height: 220px;
 }
 .nav-title {
   margin: 0 0 12px;
@@ -219,6 +268,9 @@ onMounted(load)
 }
 .refresh-btn {
   flex-shrink: 0;
+}
+.group {
+  margin-bottom: 8px;
 }
 .group-head {
   display: flex;
@@ -250,34 +302,17 @@ onMounted(load)
   color: var(--el-text-color-secondary);
   font-weight: 400;
 }
-.nav-lists {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 2px;
-  min-height: 0;
-}
-.group {
-  margin-bottom: 8px;
-}
 .group-body {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
-/* 进行中 / 已完成共用同一套卡片规格 */
 .run-card {
   border: 1px solid transparent;
   border-radius: 3px;
-  min-height: 64px;
-  padding: 12px 12px 10px;
+  padding: 8px 10px;
   cursor: pointer;
   background: var(--el-fill-color-lighter);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 8px;
   transition:
     border-color 0.15s,
     background 0.15s;
@@ -291,9 +326,9 @@ onMounted(load)
   background: var(--el-bg-color);
   box-shadow: inset 3px 0 0 var(--rp-gold);
 }
-.run-title-row {
+.run-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
   min-width: 0;
 }
@@ -302,40 +337,38 @@ onMounted(load)
   height: 7px;
   border-radius: 50%;
   flex-shrink: 0;
-  margin-top: 5px;
 }
 .run-title {
   flex: 1;
   min-width: 0;
   font-size: 12.5px;
   font-weight: 600;
-  line-height: 1.45;
   color: var(--el-text-color-primary);
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
-  text-overflow: clip;
-  overflow: visible;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .run-card.active .run-title {
   color: var(--rp-navy);
 }
-.run-meta-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding-left: 13px;
-  min-width: 0;
-}
 .run-meta {
+  margin-top: 3px;
+  margin-left: 13px;
   font-size: 11px;
   color: var(--el-text-color-secondary);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 .empty-line {
   padding: 10px 4px;
   font-size: 12px;
+}
+.delete-btn {
+  display: none;
+  padding: 0 2px;
+  margin-left: 2px;
+  font-size: 13px;
+}
+.run-card:hover .delete-btn {
+  display: inline-flex;
 }
 </style>

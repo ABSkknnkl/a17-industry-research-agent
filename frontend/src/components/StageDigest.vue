@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { computed } from 'vue'
 import {
   type CollaborationRequest,
   type DimensionCoverage,
@@ -8,13 +7,11 @@ import {
   type ReportFusionData,
   type StageName,
 } from '../api/types'
-import { isMockDataMode } from '../api/client'
-import { chapterNumber, dimensionLabel, fieldLabel, skillLabel } from '../api/labels'
-import { usePrototypeStore } from '../mock/prototypeRun'
-import EvidenceReviewTable from './review/EvidenceReviewTable.vue'
-import ClaimReviewList from './review/ClaimReviewList.vue'
+import { dimensionLabel, fieldLabel, skillLabel } from '../api/labels'
 import ChartGallery from './ChartGallery.vue'
 import ReportPreview from './ReportPreview.vue'
+import InterpretationDigest from './InterpretationDigest.vue'
+import DataFetchDigest from './DataFetchDigest.vue'
 
 const props = defineProps<{
   stage: StageName
@@ -26,13 +23,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'inspect', objectId: string, focus?: 'sources' | 'citations' | null): void
-  (e: 'object-receipt', action: string, objectIds: string[]): void
   /** anchor：点目录结构里某一章时带上锚点，预览页打开后直接跳到该章 */
   (e: 'preview-report', anchor?: string): void
+  (e: 'annotate', payload: { stage: StageName; annotations: any[] }): void
 }>()
-
-const mockMode = isMockDataMode()
 
 const d = computed(() => props.data as Record<string, unknown>)
 
@@ -43,6 +37,41 @@ const sourceList = computed<Record<string, unknown>[]>(
 
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
+}
+
+function formatRecordId(id: unknown, index: number): string {
+  if (typeof id === 'string' && id.trim().length > 0) {
+    const trimmed = id.trim()
+    return trimmed.length > 14 ? `${trimmed.slice(0, 12)}…` : trimmed
+  }
+  return `#${index + 1}`
+}
+
+function formatDomain(domain: unknown): string {
+  if (domain === 'industry') return '行业'
+  if (domain === 'companies') return '公司'
+  if (domain === 'macro') return '宏观'
+  if (domain === 'industry_chain') return '产业链'
+  if (domain === 'financials') return '财务'
+  return String(domain || '—')
+}
+
+function formatSourceValue(row: Record<string, unknown>): string {
+  const val = row.value
+  const unit = row.unit ? ` ${row.unit}` : ''
+  if (val === null || val === undefined || val === '') {
+    if (typeof row.row_count === 'number') {
+      return `${row.row_count} 行`
+    }
+    return '—'
+  }
+  if (Array.isArray(val)) {
+    return val.map(String).join('、')
+  }
+  if (typeof val === 'number') {
+    return `${val.toLocaleString('zh-CN')}${unit}`
+  }
+  return `${String(val)}${unit}`
 }
 
 /** data_fetch：意图路由计划 */
@@ -70,7 +99,7 @@ const dimensionCoverage = computed<DimensionCoverage[]>(() =>
 /** data_interpret：风险 */
 const risks = computed<Record<string, unknown>[]>(() => asArray(d.value.risks))
 
-/** chart_specs：交给 ChartGallery 渲染（真实与 mock 同源） */
+/** chart_specs：交给 ChartGallery 渲染 */
 const chartSpecs = computed<Record<string, unknown>[]>(() =>
   asArray<Record<string, unknown>>(d.value.chart_specs)
 )
@@ -95,86 +124,103 @@ const fusionData = computed<ReportFusionData | null>(() => {
  * 它们没有 report_id/title。若不加判据，专属分支会把错误信息整个藏掉。
  * 判据用契约必填字段：真实融合结果必有 report_id 与 title。
  */
-const hasFusionReport = computed(
-  () => Boolean(d.value.report_id) || Boolean(d.value.title)
-)
+const hasFusionReport = computed(() => Boolean(d.value.report_id) || Boolean(d.value.title))
 const showFusionReport = computed(() => props.stage === 'report_fusion' && hasFusionReport.value)
 
 /** report_fusion：证据目录条数（= 报告引用的来源数） */
 const evidenceCatalogCount = computed(() => asArray<unknown>(d.value.evidence_catalog).length)
 
+export interface ParsedParagraph {
+  id: string
+  kind?: string
+  text: string
+  evidenceIds: string[]
+  assumptionNote?: string | null
+}
+
+function parseParagraph(raw: unknown, fallbackId = ''): ParsedParagraph {
+  if (!raw) return { id: fallbackId, text: '', evidenceIds: [] }
+
+  let target: Record<string, unknown> = {}
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim()
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(trimmed)
+        if (parsed && typeof parsed === 'object') {
+          target = parsed as Record<string, unknown>
+        } else {
+          return { id: fallbackId, text: trimmed, evidenceIds: [] }
+        }
+      } catch {
+        return { id: fallbackId, text: trimmed, evidenceIds: [] }
+      }
+    } else {
+      return { id: fallbackId, text: trimmed, evidenceIds: [] }
+    }
+  } else if (typeof raw === 'object') {
+    target = { ...(raw as Record<string, unknown>) }
+  }
+
+  // 解包后端可能出现的嵌套结构：如 { text: { paragraph_id, text, kind, ... } }
+  while (target.text && typeof target.text === 'object') {
+    const inner = target.text as Record<string, unknown>
+    target = { ...target, ...inner }
+  }
+
+  // 提取正文文本
+  let text = ''
+  if (typeof target.text === 'string') {
+    text = target.text
+  } else if (typeof target.content === 'string') {
+    text = target.content
+  } else if (typeof target.body === 'string') {
+    text = target.body
+  }
+
+  // 二次容错：如果 text 碰巧是 JSON 字符串，二次提取其内部纯文本
+  if (text.startsWith('{') && text.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(text)
+      if (parsed && typeof parsed === 'object') {
+        if (typeof parsed.text === 'string') text = parsed.text
+        if (parsed.paragraph_id && !target.paragraph_id) target.paragraph_id = parsed.paragraph_id
+        if (parsed.kind && !target.kind) target.kind = parsed.kind
+      }
+    } catch {
+      // 保持原始 text
+    }
+  }
+
+  const id = String(target.paragraph_id || target.id || fallbackId)
+  const kind = typeof target.kind === 'string' ? target.kind : undefined
+  const evidenceIds = asArray<unknown>(target.evidence_ids).map(String)
+  const assumptionNote = typeof target.assumption_note === 'string' ? target.assumption_note : null
+
+  return { id, kind, text, evidenceIds, assumptionNote }
+}
+
 /** chapter_write 文章视图辅助：小节列表 / 字数 / 小节数 / 总字数 */
 const chapterSections = (ch: Record<string, unknown>): Record<string, unknown>[] =>
   asArray<Record<string, unknown>>(ch.sections)
 
-const chapterParagraphs = (ch: Record<string, unknown>): Record<string, unknown>[] =>
-  chapterSections(ch).flatMap((s) => asArray<Record<string, unknown>>(s.paragraphs))
+const sectionParagraphs = (sec: Record<string, unknown>): ParsedParagraph[] => {
+  const rawList = asArray<unknown>(sec.paragraphs)
+  return rawList.map((item, idx) => parseParagraph(item, `${sec.section_id || 'sec'}-p${idx + 1}`))
+}
 
-const sectionParagraphs = (sec: Record<string, unknown>): Record<string, unknown>[] =>
-  asArray<Record<string, unknown>>(sec.paragraphs)
+const chapterParagraphs = (ch: Record<string, unknown>): ParsedParagraph[] =>
+  chapterSections(ch).flatMap(sectionParagraphs)
 
 const chapterWordCount = (ch: Record<string, unknown>): number =>
-  chapterParagraphs(ch).reduce((n, p) => n + String(p.text ?? '').length, 0)
+  chapterParagraphs(ch).reduce((n, p) => n + p.text.length, 0)
 
 const chapterSectionCount = (ch: Record<string, unknown>): number => chapterSections(ch).length
 
 const totalChapterWordCount = computed(() =>
   chapters.value.reduce((n, ch) => n + chapterWordCount(ch), 0)
 )
-
-// ---- 章节级操作（重新生成需先询问修改诉求 / 删除）----
-const regenDialog = ref<{
-  visible: boolean
-  chapterId: string
-  title: string
-  instruction: string
-}>({ visible: false, chapterId: '', title: '', instruction: '' })
-const regenSubmitting = ref(false)
-
-function openRegenChapter(ch: Record<string, unknown>): void {
-  const chapterId = String(ch.chapter_id ?? '')
-  regenDialog.value = {
-    visible: true,
-    chapterId,
-    // 编号从 chapter_id 反推（后端标题是纯文本，不含序号）
-    title: `第${chapterNumber(chapterId)}章 · ${ch.title ?? ''}`,
-    instruction: '',
-  }
-}
-
-async function confirmRegenChapter(): Promise<void> {
-  const { chapterId, instruction } = regenDialog.value
-  regenDialog.value.visible = false
-  if (!mockMode) {
-    ElMessage.info('演示环境可用单章重新生成；真实 API 将在后续版本接入')
-    return
-  }
-  const store = usePrototypeStore()
-  regenSubmitting.value = true
-  const rec = await store.regenerateChapter(chapterId, instruction)
-  regenSubmitting.value = false
-  if (!rec.ok) {
-    ElMessage.error(rec.message)
-    return
-  }
-  ElMessage.success(rec.message)
-  emit('object-receipt', rec.action, [chapterId])
-}
-
-function onDeleteChapter(ch: Record<string, unknown>): void {
-  const chapterId = String(ch.chapter_id ?? '')
-  if (!mockMode) {
-    ElMessage.info('演示环境可用单章删除；真实 API 将在后续版本接入')
-    return
-  }
-  const rec = usePrototypeStore().deleteChapter(chapterId)
-  if (!rec.ok) {
-    ElMessage.error(rec.message)
-    return
-  }
-  ElMessage.success(rec.message)
-  emit('object-receipt', rec.action, [chapterId])
-}
 
 /** 报告融合 / 兜底：展示顶层标量键值 */
 const scalarEntries = computed(() => {
@@ -292,80 +338,92 @@ const coverageLabel = (status?: string) => {
         </el-table>
       </template>
 
-      <template v-if="sourceList.length > 0">
-        <h4 class="digest-title">采集来源（{{ sourceList.length }} 条）</h4>
-        <el-table :data="sourceList.slice(0, 10)" size="small" border>
-          <el-table-column prop="source_name" label="来源" min-width="200" show-overflow-tooltip />
-          <el-table-column label="数据来源" width="200" show-overflow-tooltip>
-            <template #default="{ row }">{{
-              row.skill_label || skillLabel(String(row.skill_name ?? ''))
-            }}</template>
-          </el-table-column>
-          <el-table-column prop="as_of_date" label="数据日期" width="110" />
-          <el-table-column prop="row_count" label="行数" width="80" />
-        </el-table>
-        <p v-if="sourceList.length > 10" class="muted">
-          仅显示前 10 条，共 {{ sourceList.length }} 条
-        </p>
+      <template v-if="sourceList.length > 0 || intentPlanEntries.length > 0">
+        <DataFetchDigest
+          :data="data"
+          :source-records="sourceRecords"
+          :run-id="runId"
+          @annotate="(annots) => emit('annotate', { stage: 'data_fetch', annotations: annots })"
+        />
       </template>
 
-      <!-- Mock：对象级证据审核 -->
-      <EvidenceReviewTable
-        v-if="mockMode"
-        class="object-area"
-        @inspect="emit('inspect', $event)"
-        @receipt="(a, ids) => emit('object-receipt', a, ids)"
-      />
+      <template v-else>
+        <div class="stage-pending-box">
+          <div class="pending-lead">
+            <span class="spinner-dot" />
+            <span class="pending-title">数据获取智能体正在执行闭环采集</span>
+          </div>
+          <p class="pending-desc">
+            底层智能体正在基于投研需求分解 7 大维度，并并发调度问财金融技能抓取实体与财务指标。采集完成后将自动在此渲染结构化指标列表与意图路由明细。
+          </p>
+          <div class="pending-steps">
+            <div class="pstep is-done">✓ 投研意图分解与 7 大分析领域激活</div>
+            <div class="pstep is-active">● 问财金融数据多轮闭环抽取中...</div>
+            <div class="pstep">○ 多源数据实体对齐与冲突消解</div>
+            <div class="pstep">○ 结构化事实总库入库交付</div>
+          </div>
+        </div>
+      </template>
     </template>
 
     <!-- data_interpret -->
     <template v-else-if="stage === 'data_interpret'">
-      <template v-if="dimensionCoverage.length > 0">
-        <h4 class="digest-title">各维度数据覆盖情况</h4>
-        <div class="coverage-row">
-          <el-tooltip
-            v-for="(cov, idx) in dimensionCoverage"
-            :key="idx"
-            :content="cov.reason || cov.dimension || ''"
-            placement="top"
-          >
-            <el-tag :type="coverageTagType(cov.status)" effect="plain">
-              {{ cov.dimension_label || dimensionLabel(cov.dimension) }}：{{
-                cov.status_label || coverageLabel(cov.status)
-              }}
-            </el-tag>
-          </el-tooltip>
+      <template
+        v-if="
+          Boolean(d.executive_summary || d.summary) ||
+          asArray(d.insights).length > 0 ||
+          asArray(d.knowledge_facts).length > 0 ||
+          dimensionCoverage.length > 0
+        "
+      >
+        <InterpretationDigest
+          :data="data"
+          :run-id="runId"
+          @annotate="(annots) => emit('annotate', { stage: 'data_interpret', annotations: annots })"
+        />
+      </template>
+      <template v-else>
+        <div class="stage-pending-box">
+          <div class="pending-lead">
+            <span class="spinner-dot" />
+            <span class="pending-title">数据解读智能体正在深入量化推演</span>
+          </div>
+          <p class="pending-desc">
+            正在基于阶段一全量数据集执行确定性复合增速 CAGR 测算、稳健 Z 分数离群异常检测、三表勾稽验证与 6 维投研方法论洞察提炼。
+          </p>
+          <div class="pending-steps">
+            <div class="pstep is-done">✓ 阶段一数据集已成功挂载</div>
+            <div class="pstep is-active">● 底层量化计算与同行对标矩阵构建中...</div>
+            <div class="pstep">○ 投研方法论自主规划与深度语义洞察</div>
+            <div class="pstep">○ 维度覆盖矩阵与风险提示生成</div>
+          </div>
         </div>
       </template>
-      <template v-if="risks.length > 0">
-        <h4 class="digest-title">风险提示（{{ risks.length }} 条）</h4>
-        <ul class="risk-list">
-          <li v-for="(risk, idx) in risks.slice(0, 10)" :key="idx" class="muted">
-            {{
-              risk.description ||
-              risk.message ||
-              risk.risk_code ||
-              JSON.stringify(risk).slice(0, 120)
-            }}
-          </li>
-        </ul>
-      </template>
-      <ClaimReviewList
-        v-if="mockMode"
-        class="object-area"
-        @inspect="(id, focus) => emit('inspect', id, focus)"
-        @receipt="(a, ids) => emit('object-receipt', a, ids)"
-      />
     </template>
 
     <!-- chart_generate：内嵌图表卡片（替代候选表） -->
     <template v-else-if="stage === 'chart_generate'">
-      <h4 class="digest-title">生成的图表（{{ chartSpecs.length }} 张）</h4>
-      <ChartGallery
-        :specs="chartSpecs"
-        @inspect="(id) => emit('inspect', id)"
-        @object-receipt="(a, ids) => emit('object-receipt', a, ids)"
-      />
+      <template v-if="chartSpecs.length > 0">
+        <h4 class="digest-title">生成的图表（{{ chartSpecs.length }} 张）</h4>
+        <ChartGallery :specs="chartSpecs" />
+      </template>
+      <template v-else>
+        <div class="stage-pending-box">
+          <div class="pending-lead">
+            <span class="spinner-dot" />
+            <span class="pending-title">出版级图表生成智能体正在规划绘制</span>
+          </div>
+          <p class="pending-desc">
+            正在分析数据形态规划出版级图表矩阵，结合 ECharts 引擎渲染 960x520 矢量图表并进行排版自愈与审美校验。
+          </p>
+          <div class="pending-steps">
+            <div class="pstep is-done">✓ 解读数据特征与量化指标就绪</div>
+            <div class="pstep is-active">● 出版级图表选型规划与 ECharts 渲染中...</div>
+            <div class="pstep">○ 图表排版自愈与合规审查</div>
+            <div class="pstep">○ 960x520 矢量图表交付</div>
+          </div>
+        </div>
+      </template>
     </template>
 
     <!-- chapter_write -->
@@ -401,97 +459,32 @@ const coverageLabel = (status?: string) => {
             </h6>
             <p
               v-for="p in sectionParagraphs(sec)"
-              :key="String(p.paragraph_id)"
+              :key="p.id"
               class="article-para"
             >
               {{ p.text }}
             </p>
           </section>
-          <div class="article-ops">
-            <el-tooltip
-              :disabled="mockMode"
-              content="演示环境可用；真实单章重生成 API 将在后续版本接入"
-              placement="top"
-            >
-              <span>
-                <el-button
-                  size="small"
-                  round
-                  plain
-                  type="primary"
-                  data-testid="chapter-regen"
-                  @click="openRegenChapter(ch)"
-                >
-                  重新生成
-                </el-button>
-              </span>
-            </el-tooltip>
-            <el-tooltip
-              :disabled="mockMode"
-              content="演示环境可用；真实单章删除 API 将在后续版本接入"
-              placement="top"
-            >
-              <span>
-                <el-popconfirm
-                  :title="`确认删除「第${chapterNumber(String(ch.chapter_id ?? ''))}章 · ${ch.title ?? ''}」？删除后将移出报告。`"
-                  width="280"
-                  @confirm="onDeleteChapter(ch)"
-                >
-                  <template #reference>
-                    <el-button
-                      size="small"
-                      round
-                      plain
-                      type="danger"
-                      data-testid="chapter-delete"
-                      :disabled="!mockMode"
-                    >
-                      删除
-                    </el-button>
-                  </template>
-                </el-popconfirm>
-              </span>
-            </el-tooltip>
-          </div>
         </article>
       </template>
       <template v-else>
-        <p class="muted" style="margin: 0">章节撰写完成后展示正文。</p>
+        <div class="stage-pending-box">
+          <div class="pending-lead">
+            <span class="spinner-dot" />
+            <span class="pending-title">章节撰写智能体正在全并发撰写</span>
+          </div>
+          <p class="pending-desc">
+            7 章 21 节券商深度专题骨架已激活，正在并发组织写作方法论技能调度，并穿透关联客观证据与矢量图表。
+          </p>
+          <div class="pending-steps">
+            <div class="pstep is-done">✓ 7 章 21 节大纲与动态证据检索就绪</div>
+            <div class="pstep is-active">● 各章节写作方法论技能全并发撰写中...</div>
+            <div class="pstep">○ 证据引用与学术规范 Linting 质检</div>
+            <div class="pstep">○ 深度连贯研报正文就绪</div>
+          </div>
+        </div>
       </template>
     </template>
-
-    <!-- 章节重新生成：先询问用户具体要修改什么东西 -->
-    <el-dialog
-      v-model="regenDialog.visible"
-      :title="`重新生成章节：${regenDialog.title}`"
-      width="480px"
-      data-testid="chapter-regen-dialog"
-    >
-      <p class="muted" style="margin: 0 0 8px">
-        请描述希望如何修改这个章节（例如：补充 XX 数据、调整结论表述、精简本节篇幅…）：
-      </p>
-      <el-input
-        v-model="regenDialog.instruction"
-        type="textarea"
-        :rows="4"
-        placeholder="填写具体的修改诉求…"
-        data-testid="chapter-regen-instruction"
-      />
-      <p class="muted" style="margin: 8px 0 0; font-size: 11.5px">
-        该指令将作为本章节重新生成的条件提交。
-      </p>
-      <template #footer>
-        <el-button @click="regenDialog.visible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="regenSubmitting"
-          data-testid="chapter-regen-confirm"
-          @click="confirmRegenChapter"
-        >
-          确认重新生成
-        </el-button>
-      </template>
-    </el-dialog>
 
     <!-- report_fusion：最终报告预览（仅真正产出报告时） -->
     <template v-if="showFusionReport">
@@ -508,6 +501,23 @@ const coverageLabel = (status?: string) => {
           @preview="(anchor) => emit('preview-report', anchor)"
         />
       </template>
+    </template>
+    <template v-else-if="stage === 'report_fusion'">
+      <div class="stage-pending-box">
+        <div class="pending-lead">
+          <span class="spinner-dot" />
+          <span class="pending-title">研报融合智能体正在出版级审校与编译</span>
+        </div>
+        <p class="pending-desc">
+          正在组织 4 大总编审校技能协同审计，统合数据口径、编纂证据穿透目录并编译导出 Markdown / HTML / PDF 多格式报告。
+        </p>
+        <div class="pending-steps">
+          <div class="pstep is-done">✓ 汇聚全阶段资产（数据、图表、正文）</div>
+          <div class="pstep is-active">● 首席产业研判提炼与 4 维一致性审计中...</div>
+          <div class="pstep">○ 100% 证据穿透溯源目录编纂</div>
+          <div class="pstep">○ 多格式出版级报告定稿生成</div>
+        </div>
+      </div>
     </template>
 
     <!-- 其余情况（含阶段五失败时的标量错误信息）：展示顶层标量键值 -->
@@ -642,13 +652,107 @@ const coverageLabel = (status?: string) => {
   color: var(--el-text-color-primary);
   text-align: justify;
 }
-.article-ops {
+.source-list-header {
   display: flex;
-  justify-content: flex-start;
+  align-items: baseline;
   gap: 8px;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--el-border-color-lighter);
-  flex-wrap: wrap;
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+.source-list-subtitle {
+  font-size: 11px;
+}
+.record-id-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 11px;
+  background: var(--el-fill-color-light);
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: var(--rp-navy);
+}
+.entity-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.entity-name {
+  color: var(--rp-navy);
+}
+.entity-code {
+  font-size: 10.5px;
+}
+.metric-name {
+  font-weight: 500;
+}
+.value-highlight {
+  color: var(--el-text-color-primary);
+}
+.table-subtext {
+  margin-top: 6px;
+  font-size: 11.5px;
+}
+
+/* 阶段执行中动态骨架与进度提示 */
+.stage-pending-box {
+  background: #f8fafc;
+  border: 1px dashed var(--el-border-color);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 10px 0;
+}
+.pending-lead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.spinner-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--el-color-primary, #409eff);
+  box-shadow: 0 0 8px var(--el-color-primary, #409eff);
+  animation: spinner-pulse 1.4s infinite ease-in-out;
+}
+@keyframes spinner-pulse {
+  0%, 100% { transform: scale(0.8); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+}
+.pending-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--rp-navy, #1e3a5c);
+}
+.pending-desc {
+  font-size: 12.5px;
+  color: var(--el-text-color-secondary, #64748b);
+  line-height: 1.6;
+  margin: 4px 0 12px;
+}
+.pending-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid var(--el-border-color-lighter, #ebeef5);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+.pstep {
+  font-size: 12px;
+  color: #94a3b8;
+}
+.pstep.is-done {
+  color: #10b981;
+  font-weight: 500;
+}
+.pstep.is-active {
+  color: #1e40af;
+  font-weight: 600;
+  animation: pstep-glow 1.5s infinite alternate;
+}
+@keyframes pstep-glow {
+  0% { color: #1e40af; }
+  100% { color: #2563eb; }
 }
 </style>

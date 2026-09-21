@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { isMockDataMode, submitReview } from '../api/client'
+import { submitReview } from '../api/client'
 import { ApiError } from '../api/http'
 import type { ReviewAction, StageName, StageStatus, WorkflowState } from '../api/types'
 import { showPipelineOverlay, hidePipelineOverlay } from '../composables/usePipelineOverlay'
-import LimitedIntentDialog from './review/LimitedIntentDialog.vue'
 
 /**
  * 业务动作按钮区（复用已有 POST /reviews 接口，不新增参数）：
@@ -22,13 +21,12 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  /** meta 用于判断「是否本次通过的就是最后一个阶段」——只看 state.status 在 mock 下会误判 */
+  /** meta 用于传递本次提交的阶段与动作 */
   (e: 'submitted', state: WorkflowState, meta: { stage: StageName; action: string }): void
   (e: 'conflict'): void
   (e: 'history'): void
 }>()
 
-const mockMode = isMockDataMode()
 const submitting = ref(false)
 const reviseDialogVisible = ref(false)
 const reviseComment = ref('')
@@ -56,9 +54,7 @@ async function run(payload: {
   edited_data?: Record<string, unknown> | null
 }): Promise<void> {
   submitting.value = true
-  if (!mockMode) {
-    showPipelineOverlay(props.stage, payload.action === 'regenerate' ? '重新生成' : '修改指令重跑')
-  }
+  showPipelineOverlay(props.stage, payload.action === 'regenerate' ? '重新生成' : '修改指令重跑')
   try {
     const state = await submitReview({
       run_id: props.runId,
@@ -159,18 +155,7 @@ async function submitRevise(): Promise<void> {
       修改指令提交
     </el-button>
 
-    <LimitedIntentDialog
-      v-if="mockMode"
-      v-model="reviseDialogVisible"
-      mode="instruct"
-      :stage-label="stage"
-      :object-label="stage"
-      :object-version="`r${revision}`"
-      :allow-questions="stage === 'data_fetch' || stage === 'data_interpret'"
-      @confirm="onIntentConfirm"
-    />
-
-    <el-dialog v-if="!mockMode" v-model="reviseDialogVisible" title="修改指令提交" width="560px">
+    <el-dialog v-model="reviseDialogVisible" title="修改指令提交" width="560px">
       <el-alert
         type="info"
         show-icon

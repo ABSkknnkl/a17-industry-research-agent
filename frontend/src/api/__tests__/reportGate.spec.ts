@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  classifyReportDownload,
-  isDecisionAction,
-  shouldAutoJumpToDownload,
-} from '../reportGate'
+import { classifyReportDownload, isDecisionAction, shouldAutoJumpToDownload } from '../reportGate'
 import type { ArtifactRef, StageResult, StageStatus, WorkflowState } from '../types'
 
 /**
@@ -141,7 +137,7 @@ describe('isDecisionAction / shouldAutoJumpToDownload', () => {
     expect(shouldAutoJumpToDownload('report_fusion', 'customize')).toBe(true)
   })
 
-  it('最终阶段 + 非决策类动作 → 不跳转（mock 下 revise 会变成 waiting_review，只判状态会误跳）', () => {
+  it('最终阶段 + 非决策类动作 → 不跳转', () => {
     expect(shouldAutoJumpToDownload('report_fusion', 'revise')).toBe(false)
     expect(shouldAutoJumpToDownload('report_fusion', 'regenerate')).toBe(false)
     expect(shouldAutoJumpToDownload('report_fusion', 'cancel')).toBe(false)

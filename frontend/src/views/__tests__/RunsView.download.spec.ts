@@ -47,7 +47,11 @@ async function mountView(items: RunSummary[]) {
       { path: '/', name: 'home', component: { template: '<div />' } },
       { path: '/runs', name: 'runs', component: RunsView },
       { path: '/runs/:runId', name: 'review', component: { template: '<div />' } },
-      { path: '/runs/:runId/download', name: 'report-download', component: { template: '<div />' } },
+      {
+        path: '/runs/:runId/download',
+        name: 'report-download',
+        component: { template: '<div />' },
+      },
     ],
   })
   await router.push('/runs')

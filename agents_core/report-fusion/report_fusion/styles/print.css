@@ -1,0 +1,101 @@
+/* A4 Print and PDF Layout Rules */
+@page {
+  size: A4 portrait;
+  margin: 14mm 14mm 16mm 14mm;
+  @top-left {
+    content: "同花顺投研 · 深度专题研究报告";
+    font-size: 8pt;
+    font-weight: 600;
+    color: #64748b;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  }
+  @top-right {
+    content: "机构专供 · 绝密";
+    font-size: 8pt;
+    font-weight: 700;
+    color: #d97706;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  }
+  @bottom-left {
+    content: "本报告基于公开数据与事实证据构建，不构成投资建议";
+    font-size: 7.5pt;
+    color: #94a3b8;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  }
+  @bottom-center {
+    content: "— " counter(page) " —";
+    font-size: 8.5pt;
+    color: #64748b;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+  }
+}
+
+@page :first {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @bottom-left { content: none; }
+  @bottom-center { content: none; }
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    font-size: 10pt !important;
+    line-height: 1.55 !important;
+  }
+  .report-container {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+  .brand-ribbon {
+    margin: 0 0 24px 0 !important;
+    height: 4px !important;
+  }
+  .cover-page {
+    page-break-after: always;
+    min-height: 245mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding-bottom: 24px !important;
+    margin-bottom: 0 !important;
+  }
+  .chapter-article {
+    page-break-before: always;
+  }
+  .executive-summary-page {
+    page-break-after: always;
+  }
+  .citations-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+  }
+  .citation-pill {
+    white-space: nowrap !important;
+  }
+  .takeaway-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .chart-figure, .comparison-table-wrapper, .callout-box {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  h2, h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  table {
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  thead {
+    display: table-header-group;
+  }
+}

@@ -62,6 +62,18 @@ export default { name: 'PipelineOverlay' }
             正在执行：<b>{{ currentLabel }}</b>
           </div>
 
+          <!-- 智能体微观动线与工具调度实时反馈 -->
+          <div v-if="overlay.currentTool || overlay.currentMessage" class="po-live-box">
+            <div v-if="overlay.currentTool" class="po-live-tool">
+              <span class="po-live-pulse" />
+              <span class="po-live-tool-label">调度工具 / 技能：</span>
+              <span class="po-live-tool-name">{{ overlay.currentTool }}</span>
+            </div>
+            <div v-if="overlay.currentMessage" class="po-live-msg">
+              {{ overlay.currentMessage }}
+            </div>
+          </div>
+
           <!-- 五阶段点阵 -->
           <div class="po-dots">
             <template v-for="(stage, idx) in STAGE_ORDER" :key="stage">
@@ -277,5 +289,62 @@ export default { name: 'PipelineOverlay' }
 .po-hint {
   margin-top: 6px;
   font-size: 12px;
+}
+/* ---- 实时微观动线反馈 ---- */
+.po-live-box {
+  margin: 16px auto 0;
+  max-width: 460px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(169, 133, 63, 0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 12px rgba(30, 58, 92, 0.06);
+  text-align: left;
+}
+.po-live-tool {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--rp-navy);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.po-live-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  animation: po-pulse-emerald 1.5s infinite;
+}
+@keyframes po-pulse-emerald {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+.po-live-tool-label {
+  color: var(--el-text-color-secondary);
+  font-size: 11px;
+}
+.po-live-tool-name {
+  color: var(--rp-gold);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.po-live-msg {
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

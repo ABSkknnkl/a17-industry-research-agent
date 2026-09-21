@@ -14,6 +14,10 @@ interface PipelineOverlayState {
   /** 触发动作文案（创建任务 / 审核通过 / 重新融合 / 修改指令重跑） */
   action: string
   startedAt: number
+  /** 当前智能体正在进行的微观动作描述 */
+  currentMessage?: string
+  /** 当前智能体调用的具体工具或模型 */
+  currentTool?: string
 }
 
 const state = reactive<PipelineOverlayState>({
@@ -21,13 +25,22 @@ const state = reactive<PipelineOverlayState>({
   stage: null,
   action: '',
   startedAt: 0,
+  currentMessage: '',
+  currentTool: '',
 })
 
 let openCount = 0
 
+export function updatePipelineOverlayTrace(message?: string, tool?: string): void {
+  if (message !== undefined) state.currentMessage = message
+  if (tool !== undefined) state.currentTool = tool
+}
+
 export function showPipelineOverlay(stage: StageName | null, action: string): void {
   if (openCount === 0) {
     state.startedAt = Date.now()
+    state.currentMessage = ''
+    state.currentTool = ''
   }
   openCount += 1
   state.visible = true
@@ -41,6 +54,8 @@ export function hidePipelineOverlay(): void {
     state.visible = false
     state.stage = null
     state.action = ''
+    state.currentMessage = ''
+    state.currentTool = ''
   }
 }
 

@@ -26,11 +26,11 @@ export interface ReportDownloadGate {
   /** 面向用户的解释，blocked / exception 必填 */
   reason: string
   alertType: 'success' | 'warning' | 'error' | 'info'
-  /** 报告融合阶段的产物条数（mock 3 份 / 真实 4 份，不可硬编码 kind 数） */
+  /** 报告融合阶段的产物条数 */
   artifactCount: number
 }
 
-/** 报告融合阶段的产物（遍历实际数组，mock 3 份 / 真实 4 份自动适配） */
+/** 报告融合阶段的产物（遍历实际数组） */
 export function reportArtifacts(run: WorkflowState): ArtifactRef[] {
   return run.stage_results.report_fusion?.artifacts ?? []
 }
@@ -138,11 +138,7 @@ export const isDecisionAction = (action?: string | null): boolean =>
 
 /**
  * 是否在本次审核提交后自动跳到下载页。
- *
- * 必须同时看「被审阶段」和「动作类型」，不能只看 run 状态：
- * mock 的 returnStage 会把 workflowStatus 置为 waiting_review
- * （frontend/src/mock/prototypeRun.ts:838），与"未批准"同态——
- * 只看 status 会导致在 mock 下点「修改融合内容」也误跳转。
+ * 必须同时看「被审阶段」和「动作类型」：只有 report_fusion 阶段且通过决策动作才跳转。
  */
 export function shouldAutoJumpToDownload(
   reviewedStage: StageName | null,

@@ -47,8 +47,16 @@ const chapterStats = computed(() => {
     sectionCount += sections.length
     for (const section of sections) {
       for (const paragraph of asArray<Record<string, unknown>>(section.paragraphs)) {
-        const text = paragraph.text
-        if (typeof text === 'string') words += text.length
+        let pText = ''
+        if (typeof paragraph.text === 'string') {
+          pText = paragraph.text
+        } else if (typeof paragraph.text === 'object' && paragraph.text !== null) {
+          const pt = paragraph.text as Record<string, unknown>
+          if (typeof pt.text === 'string') pText = pt.text
+        } else if (typeof paragraph.content === 'string') {
+          pText = paragraph.content
+        }
+        words += pText.length
       }
     }
   }

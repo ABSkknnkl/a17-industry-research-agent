@@ -1,337 +1,396 @@
-"""Versioned route aggregator, maintained by backend C."""
+from __future__ import annotations
+import asyncio
+import json
+import logging
+import os
+import mimetypes
+from pathlib import Path
+from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 
-from typing import Annotated
+logger = logging.getLogger("api_routes")
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import FileResponse
-
-from app.core.config import settings
-from app.schemas.common import PingResponse
-from app.schemas.run import RunCreateRequest
-from app.schemas.workflow import (
-    ReviewAction,
-    ReviewRequest,
+from backend.app.core.event_hub import event_hub
+from backend.app.core.storage import storage
+from backend.app.engine.state_machine import engine
+from backend.app.schemas.workflow import (
+    AgentTraceEvent,
     RevisionListResponse,
+    ReviewRequest,
+    RunCreateRequest,
     RunListResponse,
     WorkflowState,
 )
-from app.security.audit import SecurityEventType, security_audit_log
-from app.security.auth import SecurityPrincipal, require_principal
-from app.security.policy import detect_prompt_injection
-from app.security.rate_limit import api_rate_limiter
-from app.workflow.runner import WorkflowRunner
 
-router = APIRouter(prefix="/api/v1", tags=["API v1"])
+router = APIRouter(prefix="/api/v1")
 
 
-def get_workflow_runner(request: Request) -> WorkflowRunner:
-    """Resolve the lifespan-owned runner for the current application instance."""
-
-    runner = getattr(request.app.state, "workflow_runner", None)
-    if not isinstance(runner, WorkflowRunner):
-        raise RuntimeError("Workflow runner is not initialized")
-    return runner
-
-
-def _enforce_rate_limit(
-    *,
-    principal: SecurityPrincipal,
-    operation: str,
-    limit: int,
-    run_id: str | None = None,
-    stage: str | None = None,
-) -> None:
-    retry_after = api_rate_limiter.check(
-        f"{principal.owner_id}:{operation}",
-        limit=limit,
-        window_seconds=settings.RATE_LIMIT_WINDOW_SECONDS,
-    )
-    if retry_after is None:
-        return
-    event = security_audit_log.record(
-        SecurityEventType.RATE_LIMITED,
-        owner_id=principal.owner_id,
-        run_id=run_id,
-        stage=stage,
-        risk_level="medium",
-        reason_code=f"{operation}_rate_limit",
-        outcome="request_blocked",
-    )
-    raise HTTPException(
-        status_code=429,
-        detail={"code": "RATE_LIMITED", "trace_id": event.trace_id},
-        headers={"Retry-After": str(retry_after)},
-    )
-
-
-@router.get("/ping", response_model=PingResponse)
-async def ping() -> PingResponse:
-    """API连通性测试"""
-    return PingResponse(message="pong")
-
-
-@router.post(
-    "/runs",
-    response_model=WorkflowState,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_run(
-    request: RunCreateRequest,
-    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
-    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
-) -> WorkflowState:
-    """Start the current real Agent 2/3/4/5 workflow with placeholder Agent 1."""
-
-    _enforce_rate_limit(
-        principal=principal,
-        operation="create_run",
-        limit=settings.CREATE_RUN_RATE_LIMIT,
-    )
-    findings = detect_prompt_injection(request.input_data.model_dump(mode="json"))
-    if findings:
-        event = security_audit_log.record(
-            SecurityEventType.PROMPT_INJECTION_SUSPECTED,
-            owner_id=principal.owner_id,
-            risk_level="high",
-            reason_code=",".join(sorted({finding.rule_id for finding in findings})),
-            outcome="request_blocked",
-            content=request.input_data.model_dump(mode="json"),
-        )
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "PROMPT_INJECTION_SUSPECTED",
-                "trace_id": event.trace_id,
-                "rules": sorted({finding.rule_id for finding in findings}),
-            },
-        )
-    return await workflow_runner.start(request, owner_id=principal.owner_id)
+@router.post("/runs", response_model=WorkflowState, status_code=status.HTTP_201_CREATED)
+async def create_run_endpoint(req: RunCreateRequest) -> WorkflowState:
+    """创建并启动研报任务（首阶段异步推进，返回初始状态）"""
+    return await engine.create_run(req)
 
 
 @router.get("/runs", response_model=RunListResponse)
-async def list_runs(
-    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
-    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
-    offset: Annotated[int, Query(ge=0)] = 0,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+async def list_runs_endpoint(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
 ) -> RunListResponse:
-    """List runs owned by the authenticated principal, newest first."""
-
-    return await workflow_runner.list_runs(
-        owner_id=principal.owner_id,
-        offset=offset,
-        limit=limit,
-    )
+    """分页获取历史任务列表"""
+    return storage.list_runs(offset=offset, limit=limit)
 
 
 @router.get("/runs/{run_id}", response_model=WorkflowState)
-async def get_run(
-    run_id: str,
-    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
-    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
-) -> WorkflowState:
-    """Return the latest persisted LangGraph snapshot for frontend polling."""
-
-    try:
-        return await workflow_runner.get(run_id, owner_id=principal.owner_id)
-    except PermissionError as exc:
-        security_audit_log.record(
-            SecurityEventType.RUN_ACCESS_DENIED,
-            owner_id=principal.owner_id,
-            run_id=run_id,
-            risk_level="high",
-            reason_code="owner_mismatch",
-            outcome="request_blocked",
+async def get_run_endpoint(run_id: str) -> WorkflowState:
+    """获取指定任务的最新完整状态"""
+    state = storage.load_state(run_id)
+    if not state:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"未找到研报任务: {run_id}",
         )
-        raise HTTPException(status_code=404, detail="Workflow run not found") from exc
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return state
 
 
 @router.get("/runs/{run_id}/revisions", response_model=RevisionListResponse)
-async def list_run_revisions(
-    run_id: str,
-    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
-    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
-) -> RevisionListResponse:
-    """List persisted revisions of one run, newest revision first."""
-
-    try:
-        return await workflow_runner.list_revisions(run_id, owner_id=principal.owner_id)
-    except PermissionError as exc:
-        security_audit_log.record(
-            SecurityEventType.RUN_ACCESS_DENIED,
-            owner_id=principal.owner_id,
-            run_id=run_id,
-            risk_level="high",
-            reason_code="owner_mismatch",
-            outcome="request_blocked",
-        )
-        raise HTTPException(status_code=404, detail="Workflow run not found") from exc
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+async def list_revisions_endpoint(run_id: str) -> RevisionListResponse:
+    """获取指定任务的所有历史修订版本快照索引"""
+    return storage.list_revisions(run_id)
 
 
 @router.get("/runs/{run_id}/revisions/{revision}", response_model=WorkflowState)
-async def get_run_revision(
-    run_id: str,
-    revision: int,
-    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
-    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
-) -> WorkflowState:
-    """Return the read-only snapshot of one historical revision."""
-
-    if revision < 1:
-        raise HTTPException(status_code=404, detail="Workflow revision not found")
+async def get_revision_endpoint(run_id: str, revision: int) -> WorkflowState:
+    """获取指定任务的某个历史版本快照详情"""
+    state = storage.load_revision(run_id, revision)
+    if not state:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"未找到版本快照: run_id={run_id}, revision={revision}",
+        )
+@router.get("/runs/{run_id}/feedback-history")
+async def get_feedback_history_endpoint(run_id: str):
+    """获取指定任务的人机协同反馈与优化历史记录"""
+    history_file = storage.get_run_dir(run_id) / "feedback_history.json"
+    if not history_file.exists():
+        return []
     try:
-        return await workflow_runner.get_revision(
-            run_id,
-            revision,
-            owner_id=principal.owner_id,
-        )
-    except PermissionError as exc:
-        security_audit_log.record(
-            SecurityEventType.RUN_ACCESS_DENIED,
-            owner_id=principal.owner_id,
-            run_id=run_id,
-            risk_level="high",
-            reason_code="owner_mismatch",
-            outcome="request_blocked",
-        )
-        raise HTTPException(status_code=404, detail="Workflow run not found") from exc
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-
-@router.get("/runs/{run_id}/artifacts/{artifact_id}", response_class=FileResponse)
-async def download_artifact(
-    run_id: str,
-    artifact_id: str,
-    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
-    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
-) -> FileResponse:
-    """Download an artifact only after verifying ownership through workflow state."""
-
-    try:
-        workflow = await workflow_runner.get(run_id, owner_id=principal.owner_id)
-    except (PermissionError, LookupError) as exc:
-        security_audit_log.record(
-            SecurityEventType.RUN_ACCESS_DENIED,
-            owner_id=principal.owner_id,
-            run_id=run_id,
-            risk_level="high",
-            reason_code="artifact_owner_mismatch_or_missing",
-            outcome="artifact_download_blocked",
-        )
-        raise HTTPException(status_code=404, detail="Artifact not found") from exc
-    artifact = next(
-        (
-            item
-            for result in workflow.stage_results.values()
-            for item in result.artifacts
-            if item.artifact_id == artifact_id
-        ),
-        None,
-    )
-    if artifact is None:
-        raise HTTPException(status_code=404, detail="Artifact not found")
-    root = settings.ARTIFACT_ROOT.resolve()
-    path = (root / artifact.uri).resolve()
-    if not path.is_relative_to(root) or not path.is_file():
-        raise HTTPException(status_code=404, detail="Artifact not found")
-    media_types = {
-        ".md": "text/markdown; charset=utf-8",
-        ".html": "text/html; charset=utf-8",
-        ".pdf": "application/pdf",
-        ".json": "application/json",
-    }
-    return FileResponse(
-        path,
-        media_type=media_types.get(path.suffix, "application/octet-stream"),
-        filename=path.name,
-    )
+        return json.loads(history_file.read_text(encoding="utf-8"))
+    except Exception:
+        return []
 
 
 @router.post("/runs/{run_id}/reviews", response_model=WorkflowState)
-async def review_run(
-    run_id: str,
-    request: ReviewRequest,
-    principal: Annotated[SecurityPrincipal, Depends(require_principal)],
-    workflow_runner: Annotated[WorkflowRunner, Depends(get_workflow_runner)],
-) -> WorkflowState:
-    """Resume an interrupted stage after an optimistic-revision review."""
-
-    if run_id != request.run_id:
-        raise HTTPException(status_code=400, detail="Path run_id does not match body")
-    _enforce_rate_limit(
-        principal=principal,
-        operation="review",
-        limit=settings.REVIEW_RATE_LIMIT,
-        run_id=run_id,
-        stage=request.stage.value,
-    )
-    findings = detect_prompt_injection(
-        {
-            "comment": request.comment,
-            "edited_data": request.edited_data,
-        }
-    )
-    if findings:
-        event = security_audit_log.record(
-            SecurityEventType.PROMPT_INJECTION_SUSPECTED,
-            owner_id=principal.owner_id,
-            run_id=run_id,
-            stage=request.stage.value,
-            risk_level="high",
-            reason_code=",".join(sorted({finding.rule_id for finding in findings})),
-            outcome="review_blocked",
-            content={"comment": request.comment, "edited_data": request.edited_data},
-        )
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "PROMPT_INJECTION_SUSPECTED",
-                "trace_id": event.trace_id,
-                "rules": sorted({finding.rule_id for finding in findings}),
-            },
-        )
-
-    # accept_with_risks 必须提供 accepted_risk_codes
-    if request.action == ReviewAction.ACCEPT_WITH_RISKS:
-        if not request.accepted_risk_codes:
-            raise HTTPException(
-                status_code=422,
-                detail={
-                    "code": "MISSING_RISK_CODES",
-                    "message": "accept_with_risks requires accepted_risk_codes",
-                },
-            )
-
-    # customize 必须提供 selected_chart_ids
-    if request.action == ReviewAction.CUSTOMIZE:
-        if not request.selected_chart_ids:
-            raise HTTPException(
-                status_code=422,
-                detail={
-                    "code": "MISSING_CHART_IDS",
-                    "message": "customize requires selected_chart_ids",
-                },
-            )
-
+async def submit_review_endpoint(run_id: str, req: ReviewRequest) -> WorkflowState:
+    """提交人工协同审核意见（批准通过、修改重跑、原条件重跑或风险放行）"""
+    if req.run_id != run_id:
+        req.run_id = run_id
     try:
-        return await workflow_runner.review(request, owner_id=principal.owner_id)
-    except PermissionError as exc:
-        security_audit_log.record(
-            SecurityEventType.REVIEW_ACCESS_DENIED,
-            owner_id=principal.owner_id,
-            run_id=run_id,
-            stage=request.stage.value,
-            risk_level="high",
-            reason_code="owner_mismatch",
-            outcome="request_blocked",
+        return await engine.handle_review(req)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+
+@router.post("/runs/{run_id}/cancel", response_model=WorkflowState)
+async def cancel_run_endpoint(run_id: str) -> WorkflowState:
+    """中途强行中断并取消运行中或等待审核的任务"""
+    try:
+        return await engine.cancel_run(run_id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except Exception as e:
+        logger.exception(f"取消任务失败: {run_id} - {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
         )
-        raise HTTPException(status_code=404, detail="Workflow run not found") from exc
-    except LookupError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.get("/runs/{run_id}/events", response_model=list[AgentTraceEvent])
+async def get_run_events_endpoint(
+    run_id: str, limit: int = Query(default=150, ge=1, le=500)
+) -> list[AgentTraceEvent]:
+    """获取指定任务的智能体微观执行动线与工具调用事件列表（在做什么、用了什么工具）"""
+    return event_hub.get_events(run_id, limit=limit)
+
+
+@router.get("/runs/{run_id}/events/stream")
+async def stream_run_events_endpoint(run_id: str):
+    """基于 SSE (Server-Sent Events) 实时流式下发智能体执行动线与工具调用事件"""
+    async def sse_generator():
+        try:
+            async for event in event_hub.subscribe(run_id):
+                payload = json.dumps(event.model_dump(mode="json"), ensure_ascii=False)
+                yield f"data: {payload}\n\n"
+        except asyncio.CancelledError:
+            pass
+
+    return StreamingResponse(
+        sse_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@router.delete("/runs/{run_id}")
+async def delete_run_endpoint(run_id: str):
+    """删除历史任务及其所有本地产物"""
+    run_dir = storage.get_run_dir(run_id)
+    if not run_dir.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"任务不存在: {run_id}",
+        )
+    storage.delete_run(run_id)
+    return {"status": "ok", "message": f"任务 {run_id} 已成功删除"}
+
+
+@router.get("/runs/{run_id}/artifacts/{artifact_id}")
+async def download_artifact_endpoint(run_id: str, artifact_id: str):
+    """下载研报产物文件流（Markdown / HTML / PDF / 结构化 JSON 数据）"""
+    run_dir = storage.get_run_dir(run_id)
+    artifacts_dir = run_dir / "artifacts"
+
+    # 1. 常见固定 ID 映射
+    id_map = {
+        "report_markdown": "report.md",
+        "report_html": "report.html",
+        "report_pdf": "report.pdf",
+        "dataset_json": "dataset.json",
+        "interpretation_report_json": "interpretation_report.json",
+        "chart_result_json": "chart_result.json",
+        "chapter_result_json": "chapter_result.json",
+    }
+    file_name = id_map.get(artifact_id, artifact_id)
+    target_path = artifacts_dir / file_name
+
+    # 2. 尝试精确或模糊查找
+    if not target_path.exists():
+        found = storage.get_artifact_path(run_id, artifact_id)
+        if found and found.exists():
+            target_path = found
+
+    if not target_path.exists() or not target_path.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"产物文件不存在: run_id={run_id}, artifact_id={artifact_id}",
+        )
+
+    mime_type, _ = mimetypes.guess_type(str(target_path))
+    if not mime_type:
+        if target_path.suffix == ".md":
+            mime_type = "text/markdown"
+        elif target_path.suffix == ".html":
+            mime_type = "text/html"
+        elif target_path.suffix == ".pdf":
+            mime_type = "application/pdf"
+        elif target_path.suffix == ".json":
+            mime_type = "application/json"
+        elif target_path.suffix == ".svg":
+            mime_type = "image/svg+xml"
+        else:
+            mime_type = "application/octet-stream"
+
+    return FileResponse(
+        path=str(target_path),
+        media_type=mime_type,
+        filename=target_path.name,
+    )
+
+
+# ── 系统与模型 Key 设置端点 ──────────────────────────────────────────
+from pydantic import BaseModel
+import httpx
+import time
+from backend.app.core.config import settings
+
+
+class SettingsConfigRequest(BaseModel):
+    llm_api_key: str | None = None
+    llm_base_url: str | None = None
+    llm_model: str | None = None
+    iwencai_api_key: str | None = None
+
+
+class TestLlmRequest(BaseModel):
+    llm_api_key: str | None = None
+    llm_base_url: str | None = None
+    llm_model: str | None = None
+
+
+class TestIwencaiRequest(BaseModel):
+    iwencai_api_key: str | None = None
+
+
+@router.get("/settings/config")
+async def get_settings_config():
+    """获取当前大模型与问财 Key 配置"""
+    return {
+        "llm_api_key": settings.LLM_API_KEY,
+        "llm_base_url": settings.LLM_BASE_URL,
+        "llm_model": settings.LLM_MODEL,
+        "iwencai_api_key": settings.IWENCAI_API_KEY,
+        "has_custom_settings": settings.user_settings_file.exists(),
+    }
+
+
+@router.post("/settings/config")
+async def update_settings_config(req: SettingsConfigRequest):
+    """更新并持久化配置，热更新环境变量"""
+    update_data = {}
+    if req.llm_api_key is not None:
+        update_data["LLM_API_KEY"] = req.llm_api_key.strip()
+    if req.llm_base_url is not None:
+        update_data["LLM_BASE_URL"] = req.llm_base_url.strip().rstrip("/")
+    if req.llm_model is not None:
+        update_data["LLM_MODEL"] = req.llm_model.strip()
+    if req.iwencai_api_key is not None:
+        update_data["IWENCAI_API_KEY"] = req.iwencai_api_key.strip()
+
+    settings.save_user_settings(update_data)
+    logger.info("用户成功更新系统模型与接口配置")
+    return {
+        "status": "ok",
+        "message": "配置保存成功并已实时生效",
+        "data": {
+            "llm_api_key": settings.LLM_API_KEY,
+            "llm_base_url": settings.LLM_BASE_URL,
+            "llm_model": settings.LLM_MODEL,
+            "iwencai_api_key": settings.IWENCAI_API_KEY,
+            "has_custom_settings": settings.user_settings_file.exists(),
+        },
+    }
+
+
+@router.post("/settings/reset")
+async def reset_settings_config():
+    """恢复系统预置默认配置"""
+    if settings.user_settings_file.exists():
+        try:
+            settings.user_settings_file.unlink()
+        except Exception:
+            pass
+
+    settings.LLM_API_KEY = os.getenv("DEFAULT_LLM_API_KEY", "")
+    settings.LLM_BASE_URL = "https://ark.cn-beijing.volces.com/api/plan/v3"
+    settings.LLM_MODEL = "deepseek-v4-flash"
+    settings.IWENCAI_API_KEY = os.getenv("DEFAULT_IWENCAI_API_KEY", "")
+    settings.apply_to_env()
+    return {
+        "status": "ok",
+        "message": "已恢复系统预置默认配置",
+        "data": {
+            "llm_api_key": settings.LLM_API_KEY,
+            "llm_base_url": settings.LLM_BASE_URL,
+            "llm_model": settings.LLM_MODEL,
+            "iwencai_api_key": settings.IWENCAI_API_KEY,
+            "has_custom_settings": False,
+        },
+    }
+
+
+@router.post("/settings/test-llm")
+async def test_llm_connectivity(req: TestLlmRequest):
+    """测试大模型基座接口连通性"""
+    api_key = (req.llm_api_key or settings.LLM_API_KEY).strip()
+    base_url = (req.llm_base_url or settings.LLM_BASE_URL).strip().rstrip("/")
+    model = (req.llm_model or settings.LLM_MODEL).strip()
+
+    if not api_key:
+        return {"success": False, "message": "API Key 不能为空"}
+    if not base_url:
+        return {"success": False, "message": "Base URL 不能为空"}
+
+    endpoint = f"{base_url}/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": "ping"}],
+        "max_tokens": 5,
+    }
+
+    start_t = time.time()
+    try:
+        async with httpx.AsyncClient(timeout=12.0) as client:
+            resp = await client.post(endpoint, headers=headers, json=payload)
+            elapsed_ms = int((time.time() - start_t) * 1000)
+            if resp.status_code == 200:
+                return {
+                    "success": True,
+                    "message": f"连接成功！模型响应正常（耗时 {elapsed_ms}ms）",
+                    "latency_ms": elapsed_ms,
+                    "model": model,
+                }
+            else:
+                return {
+                    "success": False,
+                    "message": f"接口返回异常 (HTTP {resp.status_code}): {resp.text[:200]}",
+                    "latency_ms": elapsed_ms,
+                }
+    except Exception as e:
+        elapsed_ms = int((time.time() - start_t) * 1000)
+        return {
+            "success": False,
+            "message": f"连通测试失败: {str(e)}",
+            "latency_ms": elapsed_ms,
+        }
+
+
+@router.post("/settings/test-iwencai")
+async def test_iwencai_connectivity(req: TestIwencaiRequest):
+    """测试问财金融数据接口连通性"""
+    api_key = (req.iwencai_api_key or settings.IWENCAI_API_KEY).strip()
+    if not api_key:
+        return {"success": False, "message": "问财 API Key 不能为空"}
+
+    start_t = time.time()
+    try:
+        url = "https://openapi.iwencai.com/v1/semantic/query"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "X-Claw-Call-Type": "health_check",
+            "X-Claw-Skill-Id": "hithink-basicinfo-query",
+            "X-Claw-Skill-Version": "1.0.0",
+        }
+        payload = {
+            "query": "平安银行",
+            "page": "1",
+            "limit": "1",
+        }
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.post(url, headers=headers, json=payload)
+            elapsed_ms = int((time.time() - start_t) * 1000)
+            if resp.status_code == 200:
+                return {
+                    "success": True,
+                    "message": f"问财官方 SkillHub 接口验证通过！（耗时 {elapsed_ms}ms）",
+                    "latency_ms": elapsed_ms,
+                }
+            elif resp.status_code in (401, 403):
+                return {
+                    "success": False,
+                    "message": f"问财 Token 鉴权失败 (HTTP {resp.status_code})，请检查 Key 是否有效",
+                    "latency_ms": elapsed_ms,
+                }
+            else:
+                return {
+                    "success": True,
+                    "message": f"问财接口鉴权通过（响应码 {resp.status_code}，耗时 {elapsed_ms}ms）",
+                    "latency_ms": elapsed_ms,
+                }
+    except Exception as e:
+        elapsed_ms = int((time.time() - start_t) * 1000)
+        return {
+            "success": False,
+            "message": f"网络连通异常: {str(e)}",
+            "latency_ms": elapsed_ms,
+        }
+

@@ -1,185 +1,135 @@
-"""Typed application settings loaded from environment variables."""
-
-from functools import lru_cache
+import os
 from pathlib import Path
-from typing import Literal
-
-from pydantic import Field, SecretStr
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BaseModel, Field
 
 
-class Settings(BaseSettings):
-    """Configuration shared by API, workflow, and infrastructure adapters."""
+def _load_env_files() -> None:
+    """自动寻找并加载 .env 文件，若无则依赖外部环境变量"""
+    candidates = [
+        Path(__file__).resolve().parent.parent.parent.parent / ".env",
+        Path(__file__).resolve().parent.parent.parent / ".env",
+    ]
+    for env_path in candidates:
+        if env_path.is_file():
+            try:
+                for line in env_path.read_text(encoding="utf-8").splitlines():
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+            except Exception:
+                pass
+            break
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        case_sensitive=True,
-        extra="ignore",
+
+_load_env_files()
+
+
+class Settings(BaseModel):
+    # 路径配置
+    PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent.parent.parent
+    DATA_DIR: Path = PROJECT_ROOT / "data" / "runs"
+    AGENTS_CORE_DIR: Path = PROJECT_ROOT / "agents_core"
+
+    # 服务端配置
+    HOST: str = "0.0.0.0"
+    PORT: int = 8000
+    CORS_ORIGINS: list[str] = ["*"]
+
+    # 模型基座配置 (默认使用火山引擎 Volcano Ark deepseek-v4-flash)
+    LLM_API_KEY: str = Field(
+        default_factory=lambda: os.getenv("LLM_API_KEY", "")
+    )
+    LLM_BASE_URL: str = Field(
+        default_factory=lambda: os.getenv(
+            "LLM_BASE_URL", "https://ark.cn-beijing.volces.com/api/plan/v3"
+        )
+    )
+    LLM_MODEL: str = Field(
+        default_factory=lambda: os.getenv("LLM_MODEL", "deepseek-v4-flash")
+    )
+    LLM_REASONING_EFFORT: str = Field(
+        default_factory=lambda: os.getenv("LLM_REASONING_EFFORT", "low")
+    )
+    LLM_TIMEOUT_SECONDS: int = Field(
+        default_factory=lambda: int(os.getenv("LLM_TIMEOUT_SECONDS", "180"))
+    )
+    LLM_MAX_TOKENS: int = Field(
+        default_factory=lambda: int(os.getenv("LLM_MAX_TOKENS", "16384"))
     )
 
-    APP_NAME: str = "同花顺问财SkillHub"
-    APP_VERSION: str = "0.1.0"
-    ENVIRONMENT: str = "development"
-    DEBUG: bool = False
-    LOG_LEVEL: str = "INFO"
+    # 问财官方 SkillHub 凭证
+    IWENCAI_API_KEY: str = Field(
+        default_factory=lambda: os.getenv("IWENCAI_API_KEY", "")
+    )
+    IWENCAI_API_KEY_BACKUP: str = Field(
+        default_factory=lambda: os.getenv("IWENCAI_API_KEY_BACKUP", "")
+    )
 
-    CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
-    API_BEARER_TOKENS: dict[str, SecretStr] = Field(default_factory=dict)
-    MAX_REQUEST_BODY_BYTES: int = Field(default=1_048_576, ge=1, le=10_485_760)
-    RATE_LIMIT_WINDOW_SECONDS: float = Field(default=60, gt=0, le=3_600)
-    CREATE_RUN_RATE_LIMIT: int = Field(default=5, ge=1, le=1_000)
-    REVIEW_RATE_LIMIT: int = Field(default=20, ge=1, le=5_000)
-    DATABASE_URL: str = "sqlite+aiosqlite:///./data/app.db"
-    CHECKPOINT_DATABASE_PATH: Path = Path("./data/checkpoints.sqlite")
-    ARTIFACT_ROOT: Path = Path("./artifacts")
+    # 并发度控制
+    SKILL_CONCURRENCY_LIMIT: int = Field(
+        default_factory=lambda: int(os.getenv("SKILL_CONCURRENCY_LIMIT", "7"))
+    )
+    CHAPTER_CONCURRENCY: int = Field(
+        default_factory=lambda: int(os.getenv("CHAPTER_CONCURRENCY", "7"))
+    )
 
-    LLM_API_KEY: SecretStr | None = None
-    LLM_BASE_URL: str | None = None
-    LLM_MODEL: str = "deepseek-v4-flash"
-    LLM_USE_MOCK: bool = False
-    LLM_TIMEOUT_SECONDS: float = Field(default=240, gt=0, le=3600)
-    LLM_MAX_OUTPUT_TOKENS: int = Field(default=8_192, ge=1_024, le=32_768)
-    LLM_SEGMENTED_THRESHOLD_CHARS: int = Field(default=10_000, ge=5_000, le=500_000)
-    # 可读性评审器（独立配置位；为将来换供应商留口）
-    LLM_JUDGE_MODEL: str = ""  # 为空时回落到 LLM_MODEL
-    LLM_JUDGE_BASE_URL: str | None = None
-    LLM_JUDGE_API_KEY: SecretStr | None = None
-    READABILITY_REVIEW_ENABLED: bool = False  # 评审器默认不启用，需要时再开
-    READABILITY_THRESHOLD: float = Field(default=0.6, ge=0, le=1)
-    READABILITY_MAX_REWRITES: int = Field(default=2, ge=0, le=5)
-    # ---- Agent 5 视觉审核（第一轮迁移，默认关闭；确定性复检不受此开关影响）----
-    # 关闭时不得实例化/调用视觉审核模型（factory 返回 None，workflow 也不注入
-    # 实例）。配置开启但凭据缺失时走现有 runtime/readiness 策略温和降级
-    # （live_llm_configuration_missing, fail-closed 不绕过）。
-    #
-    # 注意：页内几何复检（app.reporting.visual_review.deterministic_visual_review）
-    # 是纯确定性检查，不需要任何模型与凭据，始终随 PDF 导出执行。
-    # 2026-09-21 删除 REPORT_EDITORIAL_* 五项配置：模型版编辑计划的目标是让版式
-    # 逐份变化，与固定版式交付对冲，消费路径已移除。
-    REPORT_VISUAL_REVIEW_ENABLED: bool = False
-    # 正式 PDF 交付采取严格策略：逐批小图高分辨率审核，任何未解决的重大视觉
-    # 问题都不得放行（字段名以外部 agent-chart-mvp-sync 为准；此处只加字段）。
-    REPORT_VISUAL_REVIEW_THRESHOLD: float = Field(default=0.95, ge=0, le=1)
-    REPORT_VISUAL_REVIEW_MAX_REPAIRS: int = Field(default=2, ge=0, le=2)
-    REPORT_VISUAL_REVIEW_MAX_PAGES: int = Field(default=200, ge=1, le=500)
-    REPORT_VISUAL_REVIEW_BATCH_SIZE: int = Field(default=4, ge=1, le=6)
-    REPORT_VISUAL_REVIEW_DPI: int = Field(default=144, ge=96, le=200)
-    # ---- Agent 4 章节写作并发（2026-09-18 方案）----
-    # 灰度开关：关闭后回退到串行逐章状态机（回滚安全）。
-    CHAPTER_WRITE_CONCURRENCY_ENABLED: bool = True
-    # 并发度上限（Semaphore）；默认 7 = 全量并发（当前大纲恰好 7 章）。
-    # 保留旋钮的意义：① 大纲扩容时兜底 ② 故障态抑制重试风暴。
-    CHAPTER_WRITE_CONCURRENCY: int = Field(default=7, ge=1, le=16)
-    # Agent 4 单次模型调用超时（独立于全局 LLM_TIMEOUT_SECONDS）。
-    # 全局值被 .env 钉在 600 以兼容 Agent 2 慢调用；Agent 4 用更短的
-    # 超时确保单章挂死不拖垮 600s 阶段预算（超时→该章走兜底，阶段仍 COMPLETED）。
-    CHAPTER_WRITE_LLM_TIMEOUT_SECONDS: float = Field(default=240, gt=0, le=600)
-    AGENT1_SEMANTIC_ROUTER_ENABLED: bool = False
-    AGENT1_SEMANTIC_ROUTER_CONFIDENCE: float = Field(default=0.9, ge=0.5, le=1)
-    AGENT1_INTENT_DECOMPOSER_ENABLED: bool = False
-    AGENT1_INTENT_CONFIDENCE_ACCEPT: float = Field(default=0.90, ge=0.5, le=1)
-    AGENT1_INTENT_CONFIDENCE_REVIEW: float = Field(default=0.75, ge=0.3, le=1)
-    # 层间仲裁（2026-09-01 方案第一刀）：LLM 显式否决通道与澄清门
-    # advisory 放行默认开启；出问题时按方案 §6 风险表独立关闭回滚。
-    AGENT1_LLM_VETO_ENABLED: bool = True
-    AGENT1_ADVISORY_PASS_ENABLED: bool = True
-    # 语义优先并行仲裁（2026-09-01 最终方案）：严格合并能力护栏、公司口径
-    # 护栏、关键词锁披露型降级与 R4 豁免的总开关；关闭即回退四刀后状态。
-    AGENT1_SEMANTIC_FIRST_ENABLED: bool = True
-    # 文档通道降级链（2026-09-04）：结构化取数失败时按映射表串行回补
-    # 研报/公告/新闻。默认关闭（回滚安全），打开后行为受深度与全局预算护栏约束。
-    AGENT1_FALLBACK_CHAIN: bool = False
-    AGENT1_FALLBACK_MAX_DEPTH: int = Field(default=2, ge=0, le=2)
-    AGENT1_FALLBACK_CALL_BUDGET: int = Field(default=15, ge=0, le=50)
-    # ---- L2 结构化替代（2026-09-06 方案 §3.1/§10）----
-    # 2a：同花顺域内换技能取同一指标（如 BUSINESS 缺出货量 → INDUSTRY）。
-    # 关闭后 L2 只剩 2b 文档通道，等价于 2026-09-04 的行为。
-    AGENT1_L2_STRUCTURED_ALTERNATES: bool = True
-    # 2a ≤2 + 2b ≤2 取前 N；上限 3 与 SkillQueryTask.fallback_skills 同宽。
-    AGENT1_L2_MAX_CANDIDATES: int = Field(default=3, ge=0, le=3)
-    # ---- L3 联网插件层（2026-09-06 方案 §4/§10）----
-    # 默认关闭：关闭即完全不调外部搜索，行为与现状一致（回滚安全）。
-    AGENT1_WEB_FALLBACK_ENABLED: bool = False
-    # 本版仅实现博查；tavily 只留配置位（中文财经弱 + 数据出境合规风险）。
-    AGENT1_WEB_PROVIDER: Literal["bocha", "tavily"] = "bocha"
-    # 留空即禁用 L3——密钥只存 backend/.env（gitignored），日志绝不落盘。
-    AGENT1_BOCHA_API_KEY: SecretStr | None = None
-    # 博查真实端点是 api.bochaai.com（方案 §4.2 误写为 api.bocha.ai，DNS 不解析，
-    # 2026-09-06 真实冒烟发现并修正）。
-    AGENT1_WEB_BASE_URL: str = "https://api.bochaai.com"
-    # 单轮 L3 调用预算；单 task 只调 1 次不重试（硬编码，防额度翻倍）。
-    AGENT1_WEB_CALL_BUDGET: int = Field(default=20, ge=0, le=100)
-    # 硬超时 8s：超时即判 L3 失败，不重试（§8.1）。
-    AGENT1_WEB_TIMEOUT_SECONDS: float = Field(default=8, gt=0, le=60)
-    # 逗号分隔域名白名单；留空用内置财经权威源白名单（§4.4）。
-    AGENT1_WEB_DOMAIN_ALLOWLIST: str = ""
-    # 单 task 降级总时间盒：超出即停止后续层级直接兜底（§8.1）。
-    # 2026-09-06 L3 根因修复：20s → 360s——L2 一次慢调用（TOOL_TIMEOUT_
-    # SECONDS=600）就能把 20s 吃光，L3 永远轮不到出场；360s 给 L3 留足
-    # 执行窗口（博查单次 8s 硬超时）。
-    AGENT1_DEGRADATION_TIME_BUDGET: float = Field(default=360, gt=0, le=600)
-    # ---- L3 数值参与计算（2026-09-06 阶段一，用户授权开关）----
-    # 默认 False = 红线语义不变：web_unverified 证据恒 qualitative_only，
-    # 被计算链排除。用户显式同意（backend/.env 置 true）后，联网证据在
-    # 标注来源（url/站点/检索方式）前提下抽取数值参与 C1 计算。
-    AGENT2_WEB_NUMERIC_ENABLED: bool = False
-    FEEDBACK_INTERPRETER_ENABLED: bool = False
-    FEEDBACK_CONFIDENCE_ACCEPT: float = Field(default=0.90, ge=0.5, le=1)
-    FEEDBACK_CONFIDENCE_REVIEW: float = Field(default=0.75, ge=0.3, le=1)
-    INDUSTRY_CHAIN_IMAGE_ENABLED: bool = False
-    IMAGE_USE_MOCK: bool = False
-    IMAGE_API_KEY: SecretStr | None = None
-    IMAGE_BASE_URL: str = "https://router.shengsuanyun.com/api/v1"
-    IMAGE_MODEL: str = "openai/gpt-image-2"
-    IMAGE_SIZE: Literal["1536x1024", "1024x1024", "2048x2048", "auto"] = "2048x2048"
-    #: 昇算云模型专属请求体字段（如 gpt-image-2 的 size/quality/background/moderation=auto）。
-    #: 非空时按配置原样下发（仅注入 model/prompt）；置空则回落 seedream 默认体。
-    IMAGE_EXTRA_FIELDS: dict[str, object] | None = Field(
-        default_factory=lambda: {
-            "background": "auto",
-            "moderation": "auto",
-            "n": 1,
-            "output_compression": 100,
-            "quality": "auto",
-            "size": "auto",
+    @property
+    def user_settings_file(self) -> Path:
+        return self.PROJECT_ROOT / "data" / "user_settings.json"
+
+    def apply_to_env(self) -> None:
+        """将设置同步到当前进程环境变量，确保被五智能体直接使用"""
+        os.environ["LLM_API_KEY"] = self.LLM_API_KEY
+        os.environ["LLM_BASE_URL"] = self.LLM_BASE_URL
+        os.environ["LLM_MODEL"] = self.LLM_MODEL
+        os.environ["LLM_REASONING_EFFORT"] = self.LLM_REASONING_EFFORT
+        os.environ["LLM_TIMEOUT_SECONDS"] = str(self.LLM_TIMEOUT_SECONDS)
+        os.environ["LLM_MAX_TOKENS"] = str(self.LLM_MAX_TOKENS)
+        os.environ["IWENCAI_API_KEY"] = self.IWENCAI_API_KEY
+        os.environ["IWENCAI_API_KEY_BACKUP"] = self.IWENCAI_API_KEY_BACKUP
+        os.environ["SKILL_CONCURRENCY_LIMIT"] = str(self.SKILL_CONCURRENCY_LIMIT)
+        os.environ["CHAPTER_CONCURRENCY"] = str(self.CHAPTER_CONCURRENCY)
+
+    def load_user_settings(self) -> None:
+        """从持久化文件加载用户自定义设置"""
+        import json
+        f = self.user_settings_file
+        if f.exists():
+            try:
+                data = json.loads(f.read_text(encoding="utf-8"))
+                for k, v in data.items():
+                    if hasattr(self, k) and v is not None:
+                        setattr(self, k, v)
+                self.apply_to_env()
+            except Exception as e:
+                import logging
+                logging.getLogger("config").warning(f"加载用户自定义配置失败: {e}")
+
+    def save_user_settings(self, new_data: dict) -> None:
+        """保存用户设置并应用"""
+        import json
+        for k, v in new_data.items():
+            if hasattr(self, k) and v is not None:
+                setattr(self, k, v)
+        self.apply_to_env()
+        f = self.user_settings_file
+        f.parent.mkdir(parents=True, exist_ok=True)
+        to_save = {
+            "LLM_API_KEY": self.LLM_API_KEY,
+            "LLM_BASE_URL": self.LLM_BASE_URL,
+            "LLM_MODEL": self.LLM_MODEL,
+            "IWENCAI_API_KEY": self.IWENCAI_API_KEY,
         }
-    )
-    IMAGE_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3600)
-    SKILLHUB_API_KEY: SecretStr | None = None
-    IWENCAI_API_KEY: SecretStr | None = None
-    IWENCAI_BASE_URL: str = "https://openapi.iwencai.com"
-    SKILLHUB_USE_MOCK: bool = False
-    SKILLHUB_MAX_RETRIES: int = Field(default=2, ge=0, le=5)
-    SKILLHUB_MAX_PAGES: int = Field(default=2, ge=1, le=5)
-    SKILLHUB_PAGE_SIZE: int = Field(default=20, ge=1, le=100)
-
-    WORKFLOW_TIMEOUT_SECONDS: float = Field(default=2400, gt=0, le=86_400)
-    STAGE_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3_600)
-    TOOL_TIMEOUT_SECONDS: float = Field(default=600, gt=0, le=3_600)
-    MAX_TOTAL_STAGE_RUNS: int = Field(default=15, ge=5, le=100)
-    MAX_STAGE_ATTEMPTS: int = Field(default=3, ge=1, le=10)
-    MAX_MODEL_CALLS_PER_RUN: int = Field(default=64, ge=1, le=1_000)
-    MAX_TOOL_CALLS_PER_RUN: int = Field(default=48, ge=1, le=1_000)
-    MAX_TOOL_RESULT_CHARS: int = Field(default=20_000, ge=20, le=1_000_000)
-    MAX_RUNTIME_EVENTS: int = Field(default=100, ge=10, le=2_000)
-
-    # ---- 报告质量评分器（总分 100，2026-09-19 方案）----
-    # 5 维权重，和必须 == 100（单测守护）。全 L1 确定性维度
-    # （图表嵌入 / 表达质量两维已于 2026-09-19 移除，释放的 15 分均衡重分配）。
-    REPORT_QUALITY_WEIGHT_STRUCTURE: int = Field(default=25, ge=0, le=100)
-    REPORT_QUALITY_WEIGHT_EVIDENCE: int = Field(default=30, ge=0, le=100)
-    REPORT_QUALITY_WEIGHT_CITATION: int = Field(default=15, ge=0, le=100)
-    REPORT_QUALITY_WEIGHT_DIMENSION: int = Field(default=20, ge=0, le=100)
-    REPORT_QUALITY_WEIGHT_RISK: int = Field(default=10, ge=0, le=100)
-    # 分数档阈值：good ≥90 绿、warn ≥70 黄、其余红。
-    REPORT_QUALITY_THRESHOLD_GOOD: int = Field(default=90, ge=0, le=100)
-    REPORT_QUALITY_THRESHOLD_WARN: int = Field(default=70, ge=0, le=100)
+        f.write_text(json.dumps(to_save, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-@lru_cache
-def get_settings() -> Settings:
-    return Settings()
+settings = Settings()
+settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
+settings.load_user_settings()
+settings.apply_to_env()
 
-
-settings = get_settings()

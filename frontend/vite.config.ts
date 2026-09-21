@@ -20,6 +20,10 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
+      host: '0.0.0.0',
+      hmr: {
+        overlay: false,
+      },
       proxy: {
         '/api': {
           target: proxyTarget,

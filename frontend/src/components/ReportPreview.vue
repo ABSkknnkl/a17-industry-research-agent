@@ -28,8 +28,13 @@ const emit = defineEmits<{ (e: 'preview', anchor?: string): void }>()
 /** 融合产物清单里的 HTML 产物（清单无 revision，故用 DownloadableArtifact） */
 const htmlArtifact = computed<DownloadableArtifact | null>(() => {
   const entry = (props.fusion?.artifacts ?? []).find((item) => item.kind === 'report_html')
-  if (!entry?.artifact_id || !entry.uri) return null
-  return { artifact_id: entry.artifact_id, uri: entry.uri }
+  if (entry?.artifact_id && entry.uri) {
+    return { artifact_id: entry.artifact_id, uri: entry.uri }
+  }
+  if (props.runId) {
+    return { artifact_id: 'report_html', uri: 'report.html' }
+  }
+  return null
 })
 
 const hasHtmlReport = computed(() => htmlArtifact.value !== null)

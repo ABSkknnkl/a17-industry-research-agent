@@ -1,66 +1,110 @@
-# 同花顺问财 SkillHub — 行业研究报告智能生成系统
+# 基于同花顺问财 SkillHub 的五智能体全链路行业研报生成系统
 
-基于五阶段 Pipeline 的行业研究报告生成与人机协同审核系统，对应 2026 移动应用创新赛 A17 赛题。
+面向证券投资研究领域，基于**同花顺问财 SkillHub 金融数据技能生态**构建的**分阶段多智能体流水线协同与全流程人机协作系统**。
 
-## 当前阶段
+本系统彻底重构并替代了早期依赖复杂 Shell 脚本粘合的模式，采用现代化的 **FastAPI 状态机调度引擎**，无缝连接底层五大独立智能体算法与高颜值“精品研报风”前端协同工作台。
 
-- **框架基线已完成**：前后端骨架、LangGraph五阶段Workflow、通用人工审核、公共契约和质量门。
-- **Agent 1 P0/P1已完成**：Router + Skill 查询规划、6类P0与5类P1能力、ToolGateway、并发分页、标准证据、冲突保留、质量门和采集范围审核。
-- **Agent 2已完成**：多市场金融数据解读、Router + 辅助Skills、证据校验和有界修订。
-- **Agent 3 P0已完成**：确定性生成折线图、柱状图、饼图、雷达图与产业链图，包含条件降级、互斥去重、数量预算和质量门；P1扩展图表已有条件路由。
-- **Agent 4已完成**：固定7章21节撰写、章节/小节定向修订、图表降级兼容和内容质量门。
-- **Agent 5 P0已完成**：确定性融合上游结果，输出 Markdown、单文件 HTML、Playwright PDF 和 SHA-256 产物清单。
-- Agent 1 已强制使用真实 SkillHub 数据；Mock 仅存在于自动化测试进程，开发、演示和部署运行不会回退到测试数据。真实联调需在后端安全配置赛事授权密钥。前端报告预览和审核工作台待开发。
+---
 
-## 仓库结构
+## 🌟 核心技术亮点与赛题契合度
+
+1. **五智能体流水线协同**：
+   - **阶段 1：数据获取智能体 (Data Fetcher)**：精准拆解投研意图，自主编排并调用问财 SkillHub 6 大类官方核心技能（行业数据、A股选股、三表财务、宏观数据、主营业务、研报/新闻检索），具备覆盖度审计与动态查询松弛（Query Relaxation）能力。
+   - **阶段 2：数据解读智能体 (Data Interpreter)**：确定性金融量化引擎（CAGR、稳健 Z 分数异常检测、多源交叉验证容差 <1%）+ 7 大投行分析技能并发语义提炼，输出结构化解读结论。
+   - **阶段 3：图表生成智能体 (Chart Generator)**：8 大出版级图表家族全覆盖（双轴组合图、产业链拓扑图、四象限散点图、发散条形图、雷达图、树图等），“轻量 Spec 决策 + 本地确定性高保真 ECharts 合成引擎”，杜绝模型长 JSON 超时，集成零轴防截断等投行合规校验。
+   - **阶段 4：章节撰写智能体 (Chapter Writer)**：严格遵循国内头部券商专题研究的 **7 章 21 节标准体系**，动态语义检索注入上下文，全并发撰写，具备防御性类型自愈机制，实现 0 Fallback 高质量生成。
+   - **阶段 5：研报融合智能体 (Report Fusion)**：4 项投行主编审校技能（结构审计、证据链审计、质量控制、图表一致性校验），自动提炼执行快照与核心研判，生成多通道出版级产物（Markdown / HTML / 矢量分页 PDF）。
+2. **全程人机协同闭环 (Human-in-the-Loop)**：
+   - 在每个阶段设置人类审核节点；
+   - 支持 **一键批准流转 (Approve)**、**输入补充意见修改重跑 (Revise/Customize)**、**原条件重新生成 (Regenerate)** 与 **中低风险放行 (Accept with Risks)**；
+   - 具备版本追溯机制（Revision Control），每次修改自动保留历史快照；
+   - 同时支持“全自动（一键通过）”模式，一键从数据抓取直达终稿。
+3. **真实无幻觉证据链 (100% Grounding)**：
+   - 抓取到的每条数据赋予全局唯一 `record_id`，所有图表与段落必须显式引用，实现从底层原始财报到最终报告文本的 100% 溯源。
+
+---
+
+## 📁 项目目录结构
 
 ```text
-.
-├── backend/       # FastAPI、Pipeline、Agent 与外部集成
-├── frontend/      # Vue 3、审核流程、报告展示
-├── contracts/     # 跨端唯一 JSON Schema 契约源
-├── docs/          # 架构、开发规范、计划和职责
-├── scripts/       # 统一验证脚本
-└── README.md
+行业研究智能体-全链路系统/
+├── backend/                      # [重做] FastAPI 后端服务与状态机引擎
+│   ├── app/
+│   │   ├── api/routes.py         # 7 个标准 RESTful 端点 + 健康检查
+│   │   ├── core/
+│   │   │   ├── config.py         # 模型基座、问财凭证与并发配置
+│   │   │   ├── storage.py        # 任务快照、版本控制与产物文件管理
+│   │   │   └── setup_env.py      # 五智能体模块动态注册
+│   │   ├── schemas/workflow.py   # 与前端契约 100% 对齐的 Pydantic 模型
+│   │   ├── engine/state_machine.py # 核心流水线调度与人机协同状态机
+│   │   ├── agents/adapters.py    # 五智能体标准适配层
+│   │   └── main.py               # FastAPI 实例、生命周期与 CORS
+│   └── run_server.py             # 后端快捷启动入口 (端口 8000)
+├── frontend/                     # [保持原风格] Vue 3 + Vite + ECharts 前端
+│   ├── src/views/                # 首页任务创建、三栏审核工作台、报告预览与下载
+│   ├── src/components/           # ECharts 图表画廊、大纲导航、证据链溯源
+│   ├── src/style.css             # 精品研报风设计令牌 (藏青+金铜+米白纸面底)
+│   └── vite.config.ts            # 反向代理配置
+├── agents_core/                  # 五智能体独立算法核心
+│   ├── data-fetcher/             # 数据获取智能体
+│   ├── data-analysis/            # 数据解读智能体
+│   ├── chart-generator/          # 图表生成智能体
+│   ├── chapter-writer/           # 7章21节章节撰写智能体
+│   └── report-fusion/            # 研报融合与审校智能体
+├── data/runs/                    # 运行时任务快照与研报产物存储目录
+├── start_system.sh               # 一键全栈启动前后端服务脚本
+└── README.md                     # 本说明文档
 ```
 
-## 快速开始
+---
 
-完整环境说明见 [开发环境搭建](docs/development/setup.md)。
+## ⚡️ 快速启动与运行
+
+### 方式一：一键全栈启动（推荐）
+
+直接在终端执行根目录的一键启动脚本：
 
 ```bash
-# 后端
-cd backend
-python3.12 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
-uvicorn app.main:app --reload --port 8000
+# 进入项目根目录并运行启动脚本
+./start_system.sh
+```
 
-# 前端（另一个终端）
+脚本将自动：
+1. 检查 Python 运行环境；
+2. 启动 FastAPI 后端服务（`http://localhost:8000`），并等待 `/health` 健康检查就绪；
+3. 启动 Vue 3 前端工作台（`http://localhost:5173`）；
+4. 按 `Ctrl+C` 可一键安全停止所有服务。
+
+### 方式二：分步独立启动（适合调试）
+
+#### 1. 启动后端
+```bash
+python3 backend/run_server.py
+```
+- 后端服务地址：`http://localhost:8000`
+- 交互式 Swagger API 文档：`http://localhost:8000/docs`
+
+#### 2. 启动前端
+```bash
 cd frontend
-npm ci
 npm run dev
 ```
+- 浏览器访问：`http://localhost:5173`
 
-验证地址：
+---
 
-- 前端：http://localhost:5173
-- 后端健康检查：http://localhost:8000/health
-- OpenAPI：http://localhost:8000/docs
+## 🖥️ 人机协同操作指引
 
-任务创建、查询和审核接口已启用Bearer Token与任务归属校验，Token配置见[backend/.env.example](backend/.env.example)。当前按开发计划只完成后端安全层，前端Token交互尚未接入。
-
-## 开发入口
-
-- [文档索引](docs/README.md)
-- [架构总览](docs/architecture/overview.md)
-- [成员职责与交接](docs/ownership.md)
-- [Week 1 技术验证计划](docs/plans/week-1-technical-validation.md)
-- [开发规范](docs/development/conventions.md)
-- [公共契约](contracts/README.md)
-
-提交前运行：
-
-```bash
-./scripts/verify.sh
-```
+1. **发起研究任务**：
+   - 打开首页，输入研究行业（如“低空经济”、“商业航天”或“黄金”）；
+   - 选择市场范围（如“中国 A 股”）、报告币种与关注重点；
+   - **全自动模式**：点击“一键通过（全自动）”，各阶段无停顿自动推进直至产物交付；
+   - **分步协同模式**：保留人工审核门，系统将在各阶段完成后暂停，进入三栏审核工作台。
+2. **人机协同工作台**：
+   - **阶段 1 数据采集**：审核问财抓取记录条数与覆盖领域，可随时穿透查看原始财报指标；
+   - **阶段 2 数据解读**：查看趋势单调性、离群异常提示与交叉验证对，确认行业关键假设；
+   - **阶段 3 图表生成**：在 ECharts 画廊中交互式预览图表，支持选择心仪图表；
+   - **阶段 4 章节撰写**：查看 7 章 21 节骨架、小节核心研判要点与对比表格，可提交修改指令重新润色特定章节；
+   - **阶段 5 研报融合**：预览出版级全篇大纲与综合研判。
+3. **成果交付与多格式导出**：
+   - 进入下载中心，一键获取 **Markdown (.md)**、**交互式 HTML (.html)** 与 **出版级矢量 PDF (.pdf)**。

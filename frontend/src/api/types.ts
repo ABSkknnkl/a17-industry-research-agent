@@ -225,7 +225,7 @@ interface ChartSpecBase extends ChartMetadata {
 
 interface ChartImageMetadata {
   image_uri?: string | null
-  image_mime_type?: 'image/png' | 'image/webp' | 'image/jpeg' | null
+  image_mime_type?: 'image/png' | 'image/webp' | null
   generation_prompt?: string | null
   generation_prompt_model?: string | null
   generation_image_model?: string | null
@@ -430,22 +430,6 @@ export interface ChartCandidate {
 
 // ---------- 阶段产出宽松读取（镜像 backend/app/schemas/report.py、chapter.py） ----------
 
-/** 单维度评分明细（backend ScoreBreakdownItem） */
-export interface ScoreBreakdownItem {
-  /** 稳定英文标识：structure/evidence_coverage/citation_consistency/dimension_coverage/risk_disclosure */
-  dimension?: string
-  score?: number
-  weight?: number
-  max_score?: number
-  reason?: string
-}
-
-/** 分数档阈值（backend QualityThresholds）：total_score ≥ good 优、≥ warn 警示 */
-export interface QualityThresholds {
-  good?: number
-  warn?: number
-}
-
 /** report_fusion data.quality（backend ReportQualityReport） */
 export interface ReportQualityReport {
   passed?: boolean
@@ -461,13 +445,6 @@ export interface ReportQualityReport {
    */
   expected_chapter_count?: number
   expected_section_count?: number
-  /**
-   * 总分 100 评分模型（2026-09-19 方案）：后端确定性产出，前端只渲染、不再自行平均。
-   * 历史 run 无这些字段时前端兜底（见 QualityPanel）。
-   */
-  total_score?: number
-  score_breakdown?: ScoreBreakdownItem[]
-  thresholds?: QualityThresholds
 }
 
 /** report_fusion data.artifacts 条目（backend ReportArtifactManifestEntry L154-159） */
@@ -597,30 +574,6 @@ export interface ReportFusionData {
   outline_version?: string
   /** 视觉编排决策（后端实际下发；前端当前不消费，契约要求类型保持一致） */
   visual_decision?: VisualDecisionLoose
-  /** 研究意图（后端 ReportDecisionBrief：focus_questions/聚焦公司等） */
-  decision_brief?: {
-    focus_questions?: string[]
-    included_topics?: string[]
-    excluded_topics?: string[]
-    focus_companies?: string[]
-    editorial_instruction?: string | null
-  }
-  /** 编辑计划（Agent5 可选编辑模型输出；关闭时为 null/缺省） */
-  editorial_plan?: unknown
-  /** 页面组合计划（确定性派生，缺省为 null） */
-  page_composition_plan?: unknown
-  /** 视觉复检摘要（Agent5 可选视觉模型/确定性检查输出） */
-  visual_review?: {
-    passed?: boolean
-    score?: number
-    critical_count?: number
-    major_count?: number
-    minor_count?: number
-    review_rounds?: number
-    degraded?: boolean
-  } | null
-  /** 报告蓝图（编辑→渲染交接对象，缺省为 null） */
-  report_blueprint?: unknown
   /** 已嵌入报告的图表清单 */
   charts?: FusionChartLoose[]
   /** 报告末尾的来源清单：条数即「引用证据」数 */
@@ -644,133 +597,46 @@ export interface ChapterDraftLoose {
   }>
 }
 
-// ---------- 原型对象级类型（仅 Mock 演示使用） ----------
+// ---------- 智能体微观执行动线与工具调用事件（event_hub） ----------
 
-export type EvidenceStatus = 'active' | 'excluded' | 'provisional'
-export type EvidenceCategory = 'company' | 'industry' | 'tech' | 'opinion'
-export type ClaimStatus = 'active' | 'provisional' | 'rejected' | 'evidence_insufficient'
-export type ChartStatus = 'active' | 'provisional' | 'deleted' | 'running'
-export type ParagraphStatus = 'active' | 'provisional'
+export type AgentEventType =
+  | 'agent_start'
+  | 'stage_start'
+  | 'stage_end'
+  | 'tool_call'
+  | 'tool_result'
+  | 'agent_thought'
+  | 'info'
+  | 'warning'
+  | 'error'
+  | 'artifact_created'
 
-export interface EvidenceItem {
-  evidence_id: string
-  title: string
-  source_type: EvidenceCategory
-  publisher: string
-  as_of_date: string
-  summary: string
-  url_hint: string
-  status: EvidenceStatus
-  exclude_reason?: string | null
-}
-
-export interface ClaimItem {
-  claim_id: string
-  statement: string
-  dimension: string
-  evidence_ids: string[]
-  counter_condition: string
-  status: ClaimStatus
-  reject_reason?: string | null
-}
-
-export interface ChartItem {
-  chart_id: string
-  title: string
-  chart_type: ChartTypeName
-  template: string
-  color_theme: string
-  unit_revision: number
-  in_report: boolean
-  status: ChartStatus
-  render_mode: 'echarts' | 'svg'
-  option?: Record<string, unknown>
-  svg?: string
-  compatible_templates: string[]
-  insight_goal: string
-}
-
-export interface ParagraphItem {
-  paragraph_id: string
-  section_id: string
-  text: string
-  version: number
-  status: ParagraphStatus
-  history: Array<{ version: number; text: string }>
-  diff?: { before: string; after: string; lines: string[] } | null
-}
-
-export interface SectionItem {
-  section_id: string
-  title: string
-  paragraphs: ParagraphItem[]
-}
-
-export interface ChapterItem {
-  chapter_id: string
-  title: string
-  order: number
-  upstream_hint?: string | null
-  sections: SectionItem[]
-}
-
-export interface ArtifactItem {
-  artifact_id: string
-  kind: ReportArtifactKind
-  uri: string
-  revision: number
-  format_label: string
-  generated_at_label: string
-  content: string
-}
-
-export interface RiskItem {
-  risk_code: string
-  title: string
-  description: string
-  requires_ack: boolean
-  stage: StageName
-  acknowledged: boolean
-}
-
-export interface PrototypeOperation {
+export interface AgentTraceEvent {
   id: string
-  action: string
-  object_id: string
-  summary: string
-  at: string
-}
-
-export interface PrototypeRevision {
-  revision: number
-  status: StageStatus
-  current_stage: StageName
-  updated_at: string
-  note: string
-}
-
-export interface ActionReceipt {
-  action: string
-  object_id: string | null
-  before_revision: number
-  after_revision: number
-  ok: boolean
+  timestamp: string
+  stage: StageName
+  stage_label?: string
+  event_type: AgentEventType | string
   message: string
-  affected: string[]
+  tool?: string | null
+  details?: Record<string, unknown> | null
 }
 
-export type QueueFilter = 'all' | 'pending' | 'done'
+// ---------- 系统大模型与数据接口配置（Settings） ----------
 
-export interface PrototypeStage {
-  status: StageStatus
-  revision: number
-  produced: boolean
+export interface SystemSettingsConfig {
+  llm_api_key: string
+  llm_base_url: string
+  llm_model: string
+  iwencai_api_key: string
+  has_custom_settings?: boolean
 }
 
-export type ReportSettings = {
-  tone: 'professional' | 'plain'
-  depth: 'brief' | 'standard' | 'deep'
-  chart_density: 'compact' | 'balanced' | 'rich'
-  formats: Array<'markdown' | 'html' | 'pdf'>
-  summary_length: 'short' | 'standard' | 'long'
+export interface TestConnectivityResult {
+  success: boolean
+  message: string
+  latency_ms?: number
+  model?: string
 }
+
+

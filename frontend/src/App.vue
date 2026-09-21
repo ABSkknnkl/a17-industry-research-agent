@@ -1,22 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Setting } from '@element-plus/icons-vue'
 import { AUTH_REQUIRED_EVENT } from './api/http'
-import { isMockDataMode } from './api/client'
 import { useAuthStore } from './stores/auth'
 import TokenDialog from './components/TokenDialog.vue'
 import PipelineOverlay from './components/PipelineOverlay.vue'
+import SettingsModal from './components/SettingsModal.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
-const mockMode = isMockDataMode()
-
-const showAuthChip = computed(() => !mockMode)
+const settingsModalVisible = ref(false)
 
 onMounted(() => {
-  if (mockMode) return
-  if (!auth.isAuthenticated) auth.requireAuth()
   window.addEventListener(AUTH_REQUIRED_EVENT, () => {
     ElMessage.warning('登录状态已失效，请重新输入 Token')
     auth.requireAuth()
@@ -33,25 +30,21 @@ onMounted(() => {
         <span class="brand-sub">INDUSTRY RESEARCH</span>
       </div>
       <nav class="nav">
-        <a href="/home.html" class="nav-link">首页</a>
-        <RouterLink to="/" class="nav-link">创建任务</RouterLink>
+        <RouterLink to="/" class="nav-link">首页</RouterLink>
+        <RouterLink to="/create" class="nav-link">创建任务</RouterLink>
         <RouterLink to="/runs" class="nav-link">历史任务</RouterLink>
       </nav>
       <div class="header-right">
-        <el-tag v-if="mockMode" type="warning" effect="plain" data-testid="demo-mode-badge">
-          演示模式
-        </el-tag>
-        <template v-else-if="showAuthChip">
-          <el-tag v-if="auth.isAuthenticated" type="success" effect="plain">已登录</el-tag>
-          <el-button v-else size="small" @click="auth.requireAuth()">登录</el-button>
-        </template>
+        <el-tag type="success" effect="plain" style="margin-right: 10px">五智能体引擎就绪</el-tag>
+        <el-button size="small" :icon="Setting" @click="settingsModalVisible = true">模型与接口配置</el-button>
       </div>
     </el-header>
     <el-main class="app-main" :class="{ 'app-main-wide': route.meta.wide }">
       <RouterView />
     </el-main>
   </el-container>
-  <TokenDialog v-if="!mockMode" v-model="auth.authDialogVisible" />
+  <TokenDialog v-model="auth.authDialogVisible" />
+  <SettingsModal v-model="settingsModalVisible" />
   <PipelineOverlay />
 </template>
 

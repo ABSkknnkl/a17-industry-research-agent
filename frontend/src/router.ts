@@ -3,7 +3,17 @@ import { createRouter, createWebHistory } from 'vue-router'
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', name: 'home', component: () => import('./views/HomeView.vue') },
+    {
+      path: '/',
+      name: 'home',
+      component: () => import('./views/LandingView.vue'),
+      meta: { wide: true },
+    },
+    {
+      path: '/create',
+      name: 'create',
+      component: () => import('./views/CreateRunView.vue'),
+    },
     { path: '/runs', name: 'runs', component: () => import('./views/RunsView.vue') },
     {
       path: '/runs/:runId',

@@ -1,255 +1,184 @@
-"""Runtime models mirroring the versioned JSON Schemas in ``/contracts``."""
-
+from __future__ import annotations
 from datetime import datetime
-from enum import StrEnum
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+StageName = Literal[
+    "data_fetch",
+    "data_interpret",
+    "chart_generate",
+    "chapter_write",
+    "report_fusion",
+]
 
-from app.schemas.analysis import ResearchBrief
-from app.schemas.chapter import ChapterWritingOptions
+STAGE_ORDER: list[StageName] = [
+    "data_fetch",
+    "data_interpret",
+    "chart_generate",
+    "chapter_write",
+    "report_fusion",
+]
+
+StageStatus = Literal[
+    "pending",
+    "running",
+    "waiting_review",
+    "approved",
+    "rejected",
+    "completed",
+    "failed",
+    "cancelled",
+]
+
+ReviewAction = Literal[
+    "approve",
+    "accept_recommendation",
+    "accept_with_risks",
+    "customize",
+    "revise",
+    "regenerate",
+    "cancel",
+]
+
+AnalysisDepth = Literal["overview", "standard", "deep"]
+RiskPreference = Literal["conservative", "balanced", "aggressive"]
+ReleaseMode = Literal["formal", "draft_with_warnings"]
 
 
-class StageName(StrEnum):
-    DATA_FETCH = "data_fetch"
-    DATA_INTERPRET = "data_interpret"
-    CHART_GENERATE = "chart_generate"
-    CHAPTER_WRITE = "chapter_write"
-    REPORT_FUSION = "report_fusion"
-
-
-class StageStatus(StrEnum):
-    PENDING = "pending"
-    RUNNING = "running"
-    WAITING_REVIEW = "waiting_review"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-
-
-class ReviewAction(StrEnum):
-    APPROVE = "approve"  # 兼容旧接口，无风险时等价于 accept_recommendation
-    ACCEPT_RECOMMENDATION = "accept_recommendation"
-    ACCEPT_WITH_RISKS = "accept_with_risks"
-    CUSTOMIZE = "customize"
-    REVISE = "revise"
-    REGENERATE = "regenerate"
-    CANCEL = "cancel"
-
-
-class ContractModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-
-class ArtifactRef(ContractModel):
-    artifact_id: str = Field(min_length=1)
-    kind: str = Field(min_length=1)
-    uri: str = Field(min_length=1)
+class ArtifactRef(BaseModel):
+    artifact_id: str
+    kind: str
+    uri: str
     checksum: str | None = None
-    revision: int = Field(default=1, ge=1)
+    revision: int = 1
 
 
-class StageResult(ContractModel):
+class StageResult(BaseModel):
     stage: StageName
-    status: StageStatus
-    revision: int = Field(default=1, ge=1)
+    status: StageStatus = "pending"
+    revision: int = 1
     data: dict[str, Any] = Field(default_factory=dict)
     artifacts: list[ArtifactRef] = Field(default_factory=list)
     evidence_sources: list[str] = Field(default_factory=list)
     error: str | None = None
 
 
-class WorkflowState(ContractModel):
-    project_id: str = Field(min_length=1)
-    run_id: str = Field(min_length=1)
-    current_stage: StageName
-    status: StageStatus = StageStatus.PENDING
-    revision: int = Field(default=1, ge=1)
+class AgentTraceEvent(BaseModel):
+    id: str
+    timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
+    stage: StageName
+    stage_label: str
+    event_type: str = "info"  # agent_start | tool_call | llm_thought | artifact_created | stage_completed | error | info
+    message: str
+    tool: str | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class WorkflowState(BaseModel):
+    project_id: str
+    run_id: str
+    current_stage: StageName = "data_fetch"
+    status: StageStatus = "pending"
+    revision: int = 1
     stage_results: dict[StageName, StageResult] = Field(default_factory=dict)
-    created_at: datetime
-    updated_at: datetime
+    created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now().isoformat())
 
 
-class RunSummary(ContractModel):
-    """Read-only listing entry for one run, derived from the latest snapshot."""
-
-    run_id: str = Field(min_length=1)
-    project_id: str = Field(min_length=1)
-    title: str = Field(min_length=1, max_length=100)
+class RunSummary(BaseModel):
+    run_id: str
+    project_id: str
+    title: str
     current_stage: StageName
     status: StageStatus
-    revision: int = Field(ge=1)
-    created_at: datetime
-    updated_at: datetime
-    artifact_count: int = Field(default=0, ge=0)
+    revision: int
+    created_at: str
+    updated_at: str
+    artifact_count: int = 0
     report_available: bool = False
 
 
-class RunListResponse(ContractModel):
-    total: int = Field(default=0, ge=0)
-    offset: int = Field(default=0, ge=0)
-    limit: int = Field(default=20, ge=1)
-    items: list[RunSummary] = Field(default_factory=list)
+class RunListResponse(BaseModel):
+    total: int
+    offset: int
+    limit: int
+    items: list[RunSummary]
 
 
-class RevisionSummary(ContractModel):
-    """One persisted revision of a run, newest snapshot within that revision."""
-
-    revision: int = Field(ge=1)
+class RevisionSummary(BaseModel):
+    revision: int
     status: StageStatus
     current_stage: StageName
-    updated_at: datetime
+    updated_at: str
 
 
-class RevisionListResponse(ContractModel):
-    run_id: str = Field(min_length=1)
-    current_revision: int = Field(ge=1)
-    revisions: list[RevisionSummary] = Field(default_factory=list)
+class RevisionListResponse(BaseModel):
+    run_id: str
+    current_revision: int
+    revisions: list[RevisionSummary]
 
 
-ShortReviewText = Annotated[str, Field(min_length=1, max_length=200)]
-LabelText = Annotated[str, Field(min_length=1, max_length=100)]
-RejectedClaimId = Annotated[str, Field(pattern=r"^C-[A-Za-z0-9_-]+$")]
-ChartTypeName = Literal[
-    "line",
-    "bar",
-    "comparison_bar",
-    "pie",
-    "radar",
-    "industry_chain",
-    "combo",
-    "area",
-    "scatter",
-    "bubble",
-    "heatmap",
-    "boxplot",
-    "treemap",
-]
+class DataFetchOptions(BaseModel):
+    keywords: list[str] | None = None
+    industry_scope: list[str] | None = None
+    time_range: list[str] | None = None
+    data_sources: list[str] | None = None
+    metrics: list[str] | None = None
 
 
-class DataFetchOptions(ContractModel):
-    keywords: list[ShortReviewText] = Field(default_factory=list, max_length=20)
-    industry_scope: list[LabelText] = Field(default_factory=list, max_length=10)
-    time_range: list[LabelText] = Field(default_factory=list, max_length=2)
-    data_sources: list[LabelText] = Field(default_factory=list, max_length=20)
-    metrics: list[ShortReviewText] = Field(default_factory=list, max_length=50)
-
-
-class DataFetchReviewEdits(ContractModel):
-    # 2026-09-01 修复：advisory 升级门停在 data_fetch 阶段，用户“删除
-    # 某个研究问题”的修订诉求此前无合法通道（白名单只收
-    # data_fetch_options），revise 改不掉问题 → 升级门反复触发死循环。
-    # focus_questions 与 ResearchInput 同口径（1~12 条，每条 ≤200 字）。
-    focus_questions: list[ShortReviewText] | None = Field(default=None, min_length=1, max_length=12)
-    # 可选：仅修订研究问题时不必携带（exclude_none dump 不会覆盖原值）。
-    data_fetch_options: DataFetchOptions | None = None
-
-
-class DataInterpretReviewEdits(ContractModel):
-    # 证据所有权（2026-09-04 修复）：Agent 1 是证据唯一所有者（Single
-    # Writer），A2/A3 均为纯消费者。此前允许在 A2 审核时编辑 evidence_items，
-    # 而 A3 只认 A1 证据包，导致三类缺陷：①修正数值后 A3 图表仍渲染旧值
-    # （静默不一致）；②新增证据后 A3 数据集无此 ID 只能抑制图表；③非空
-    # 种子证据在修订重跑时覆盖 A1 完整证据包。数据修正一律回到
-    # data_fetch 阶段修订后重采；越权提交由 extra="forbid" 硬拒绝。
-    focus_questions: list[ShortReviewText] | None = Field(default=None, max_length=3)
-    analysis_depth: Literal["overview", "standard", "deep"] | None = None
-    risk_preference: Literal["conservative", "balanced", "aggressive"] | None = None
-    rejected_claim_ids: list[RejectedClaimId] | None = Field(default=None, max_length=100)
-    research_brief: ResearchBrief | None = None
-
-
-class ChartGenerationOptions(ContractModel):
-    chart_type: ChartTypeName | None = None
-    requested_chart_count: int | None = Field(default=None, ge=1, le=30)
-    requested_chart_types: list[ChartTypeName] = Field(default_factory=list, max_length=13)
-    user_priority: bool = False
-    allow_multiple_charts_per_dataset: bool = False
-    bar_variant: Literal["vertical", "horizontal", "grouped", "stacked"] | None = None
-    metric_ids: list[LabelText] = Field(default_factory=list, max_length=20)
-    title: str | None = Field(default=None, min_length=1, max_length=200)
-    color_theme: str | None = Field(default=None, min_length=1, max_length=100)
-    emphasis: str | None = Field(default=None, min_length=1, max_length=500)
-
-
-class ChartReviewEdits(ContractModel):
-    chart_generate_options: ChartGenerationOptions
-
-
-class ChapterReviewEdits(ContractModel):
-    chapter_write_options: ChapterWritingOptions
-
-
-class ReportFusionOptions(ContractModel):
-    beautify_mode: Literal["off", "on"] = "off"
-    summary_direction: str | None = Field(default=None, min_length=1, max_length=500)
-    chapter_order: list[str] = Field(default_factory=list, max_length=7)
-    tone: Literal["professional", "plain_language"] | None = None
+class ResearchBrief(BaseModel):
+    geography: str | None = None
+    time_range: str | None = None
+    included_topics: list[str] | None = None
+    excluded_topics: list[str] | None = None
+    focus_companies: list[str] | None = None
     report_depth: Literal["brief", "standard", "deep"] | None = None
-    output_formats: list[Literal["markdown", "html", "pdf"]] = Field(
-        default_factory=list,
-        max_length=3,
+
+
+class ChartGenerationOptions(BaseModel):
+    chart_type: str | None = None
+    requested_chart_count: int | None = None
+    requested_chart_types: list[str] | None = None
+    user_priority: bool | None = None
+    allow_multiple_charts_per_dataset: bool | None = None
+    bar_variant: Literal["vertical", "horizontal", "grouped", "stacked"] | None = None
+    metric_ids: list[str] | None = None
+    title: str | None = None
+    color_theme: str | None = None
+    emphasis: str | None = None
+
+
+class ResearchInput(BaseModel):
+    industry_topic: str
+    market_scope: list[str] = Field(default_factory=lambda: ["中国 A 股"])
+    security_types: list[str] = Field(default_factory=lambda: ["股票"])
+    reporting_currency: str = "CNY"
+    research_as_of: str = Field(default_factory=lambda: datetime.now().strftime("%Y-%m-%d"))
+    focus_questions: list[str] = Field(default_factory=list)
+    data_fetch_options: DataFetchOptions | None = None
+    analysis_depth: AnalysisDepth = "standard"
+    risk_preference: RiskPreference = "balanced"
+    research_brief: ResearchBrief | None = None
+    chart_generate_options: ChartGenerationOptions | None = None
+
+
+class RunCreateRequest(BaseModel):
+    project_id: str
+    input_data: ResearchInput
+    review_stages: list[StageName] = Field(
+        default_factory=lambda: ["data_fetch", "data_interpret"]
     )
-    final_instruction: str | None = Field(default=None, min_length=1, max_length=2_000)
-    visual_style: Literal[
-        "auto",
-        "data_manual",
-        "analysis_note",
-        "deep_research",
-    ] = "auto"
-    visual_density: Literal["compact", "balanced", "detailed"] = "balanced"
-    template_profile: Literal[
-        "auto",
-        "classic_research",
-        "modern_analysis",
-        "data_intensive",
-        "narrative_flow",
-    ] = "auto"
 
 
-class ReportFusionReviewEdits(ContractModel):
-    report_fusion_options: ReportFusionOptions
-
-
-class ReviewRequest(ContractModel):
-    run_id: str = Field(min_length=1, max_length=100)
+class ReviewRequest(BaseModel):
+    run_id: str
     stage: StageName
     action: ReviewAction
-    expected_revision: int = Field(ge=1)
-    comment: str | None = Field(default=None, max_length=2_000)
+    expected_revision: int
+    comment: str | None = None
     edited_data: dict[str, Any] | None = None
-    accepted_risk_codes: list[str] = Field(default_factory=list)
-    release_mode: Literal["formal", "draft_with_warnings"] = "formal"
+    accepted_risk_codes: list[str] | None = None
+    release_mode: ReleaseMode | None = None
     selected_chart_ids: list[str] | None = None
-    placement_overrides: dict[str, str] | None = None
-    decision_id: str | None = Field(default=None, min_length=1, max_length=100)
-    risk_snapshot_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
-
-    @model_validator(mode="after")
-    def validate_stage_edit_whitelist(self) -> "ReviewRequest":
-        if self.edited_data is None:
-            return self
-        if self.action not in {ReviewAction.REVISE, ReviewAction.REGENERATE}:
-            raise ValueError("edited_data is only allowed for revise or regenerate")
-        edit_models: dict[StageName, type[ContractModel]] = {
-            StageName.DATA_FETCH: DataFetchReviewEdits,
-            StageName.DATA_INTERPRET: DataInterpretReviewEdits,
-            StageName.CHART_GENERATE: ChartReviewEdits,
-            StageName.CHAPTER_WRITE: ChapterReviewEdits,
-            StageName.REPORT_FUSION: ReportFusionReviewEdits,
-        }
-        try:
-            validated = edit_models[self.stage].model_validate(self.edited_data)
-        except ValidationError as exc:
-            # 越权编辑必须点名字段（如在 data_interpret 提交 evidence_items），
-            # 用户/前端才知道被拒原因、该去哪个阶段改；这也是未来「审核门
-            # LLM 意图判别」之前的确定性第一道闸：白名单拦字段，LLM 拦意图。
-            rejected = sorted(
-                {".".join(str(part) for part in error["loc"]) for error in exc.errors()}
-            )
-            hint = f"；被拒字段：{'、'.join(rejected)}" if rejected else ""
-            raise ValueError(f"edited_data is not allowed for {self.stage.value}{hint}") from exc
-        self.edited_data = validated.model_dump(mode="json", exclude_none=True)
-        return self
+    decision_id: str | None = None
+    risk_snapshot_sha256: str | None = None

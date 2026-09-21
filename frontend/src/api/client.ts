@@ -1,10 +1,14 @@
+import { http, API_BASE_URL } from './http'
 import type {
+  AgentTraceEvent,
   DownloadableArtifact,
   RevisionListResponse,
   ReviewRequest,
   RunCreateRequest,
   RunListResponse,
   WorkflowState,
+  SystemSettingsConfig,
+  TestConnectivityResult,
 } from './types'
 
 /**
@@ -16,43 +20,17 @@ import type {
  * - GET    /api/v1/runs/{run_id}/revisions/{r}   指定版本 → WorkflowState
  * - POST   /api/v1/runs/{run_id}/reviews         提交审核（同步执行下一阶段，可能耗时数分钟）
  * - GET    /api/v1/runs/{run_id}/artifacts/{aid} 下载产物文件
- *
- * VITE_DATA_MODE=mock 时全部委托到 mock/client.ts，真实模式保持原实现不变。
  */
-
-export function isMockDataMode(): boolean {
-  return import.meta.env.VITE_DATA_MODE === 'mock'
-}
-
-type MockClient = typeof import('../mock/client')
-
-let mockClientPromise: Promise<MockClient> | null = null
-
-async function mock(): Promise<MockClient> {
-  if (!mockClientPromise) {
-    mockClientPromise = import('../mock/client')
-  }
-  return mockClientPromise
-}
 
 /** 创建与审核是同步执行阶段的接口，放宽超时到 5 分钟 */
 const LONG_TIMEOUT = { timeout: 300_000 }
 
-async function realHttp() {
-  // 惰性加载 axios 封装，避免 mock 模式初始化真实 http 拦截器依赖
-  return import('./http')
-}
-
 export async function createRun(payload: RunCreateRequest): Promise<WorkflowState> {
-  if (isMockDataMode()) return (await mock()).createRun(payload)
-  const { http } = await realHttp()
   const { data } = await http.post<WorkflowState>('/runs', payload, LONG_TIMEOUT)
   return data
 }
 
 export async function listRuns(offset = 0, limit = 20): Promise<RunListResponse> {
-  if (isMockDataMode()) return (await mock()).listRuns(offset, limit)
-  const { http } = await realHttp()
   const { data } = await http.get<RunListResponse>('/runs', {
     params: { offset, limit },
   })
@@ -60,29 +38,36 @@ export async function listRuns(offset = 0, limit = 20): Promise<RunListResponse>
 }
 
 export async function getRun(runId: string): Promise<WorkflowState> {
-  if (isMockDataMode()) return (await mock()).getRun(runId)
-  const { http } = await realHttp()
   const { data } = await http.get<WorkflowState>(`/runs/${runId}`)
   return data
 }
 
 export async function listRevisions(runId: string): Promise<RevisionListResponse> {
-  if (isMockDataMode()) return (await mock()).listRevisions(runId)
-  const { http } = await realHttp()
   const { data } = await http.get<RevisionListResponse>(`/runs/${runId}/revisions`)
   return data
 }
 
 export async function getRevision(runId: string, revision: number): Promise<WorkflowState> {
-  if (isMockDataMode()) return (await mock()).getRevision(runId, revision)
-  const { http } = await realHttp()
   const { data } = await http.get<WorkflowState>(`/runs/${runId}/revisions/${revision}`)
   return data
 }
 
+export interface FeedbackHistoryItem {
+  from_revision: number
+  to_revision: number
+  stage: string
+  comment: string | null
+  edited_data: Record<string, unknown> | null
+  combined_feedback: string
+  timestamp: string
+}
+
+export async function getFeedbackHistory(runId: string): Promise<FeedbackHistoryItem[]> {
+  const { data } = await http.get<FeedbackHistoryItem[]>(`/runs/${runId}/feedback-history`)
+  return data
+}
+
 export async function submitReview(payload: ReviewRequest): Promise<WorkflowState> {
-  if (isMockDataMode()) return (await mock()).submitReview(payload)
-  const { http } = await realHttp()
   const { data } = await http.post<WorkflowState>(
     `/runs/${payload.run_id}/reviews`,
     payload,
@@ -100,8 +85,6 @@ export async function downloadArtifact(
   runId: string,
   artifact: DownloadableArtifact
 ): Promise<{ blob: Blob; filename: string }> {
-  if (isMockDataMode()) return (await mock()).downloadArtifact(runId, artifact)
-  const { http } = await realHttp()
   const { data } = await http.get<Blob>(`/runs/${runId}/artifacts/${artifact.artifact_id}`, {
     responseType: 'blob',
     timeout: 300_000,
@@ -120,3 +103,97 @@ export function triggerBlobDownload(blob: Blob, filename: string): void {
   anchor.remove()
   URL.revokeObjectURL(url)
 }
+
+export async function deleteRun(runId: string): Promise<void> {
+  await http.delete(`/runs/${runId}`)
+}
+
+export async function cancelRun(runId: string): Promise<WorkflowState> {
+  const { data } = await http.post<WorkflowState>(`/runs/${runId}/cancel`)
+  return data
+}
+
+export async function getRunEvents(runId: string, limit = 150): Promise<AgentTraceEvent[]> {
+  const { data } = await http.get<AgentTraceEvent[]>(`/runs/${runId}/events`, {
+    params: { limit },
+  })
+  return data
+}
+
+export function subscribeRunEvents(
+  runId: string,
+  onEvent: (event: AgentTraceEvent) => void,
+  onError?: (err: Event) => void
+): () => void {
+  const url = `${API_BASE_URL}/runs/${runId}/events/stream`
+  const es = new EventSource(url)
+
+  es.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data) as AgentTraceEvent
+      onEvent(data)
+    } catch {
+      // ignore JSON parse error
+    }
+  }
+
+  if (onError) {
+    es.onerror = onError
+  }
+
+  return () => {
+    es.close()
+  }
+}
+
+// ---------- 系统配置（Settings）端点 ----------
+
+export async function getSettingsConfig(): Promise<SystemSettingsConfig> {
+  const { data } = await http.get<SystemSettingsConfig>('/settings/config')
+  return data
+}
+
+export async function updateSettingsConfig(
+  payload: Partial<SystemSettingsConfig>
+): Promise<{ status: string; message: string; data: SystemSettingsConfig }> {
+  const { data } = await http.post<{ status: string; message: string; data: SystemSettingsConfig }>(
+    '/settings/config',
+    payload
+  )
+  return data
+}
+
+export async function resetSettingsConfig(): Promise<{
+  status: string
+  message: string
+  data: SystemSettingsConfig
+}> {
+  const { data } = await http.post<{
+    status: string
+    message: string
+    data: SystemSettingsConfig
+  }>('/settings/reset')
+  return data
+}
+
+export async function testLlmConnectivity(payload: {
+  llm_api_key?: string
+  llm_base_url?: string
+  llm_model?: string
+}): Promise<TestConnectivityResult> {
+  const { data } = await http.post<TestConnectivityResult>('/settings/test-llm', payload, {
+    timeout: 15_000,
+  })
+  return data
+}
+
+export async function testIwencaiConnectivity(payload: {
+  iwencai_api_key?: string
+}): Promise<TestConnectivityResult> {
+  const { data } = await http.post<TestConnectivityResult>('/settings/test-iwencai', payload, {
+    timeout: 15_000,
+  })
+  return data
+}
+
+

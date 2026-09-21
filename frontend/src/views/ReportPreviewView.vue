@@ -36,9 +36,7 @@ const fusion = computed<ReportFusionData | null>(() => {
 
 const artifacts = computed<ArtifactRef[]>(() => fusionResult.value?.artifacts ?? [])
 
-const htmlArtifact = computed(
-  () => artifacts.value.find((a) => a.kind === 'report_html') ?? null
-)
+const htmlArtifact = computed(() => artifacts.value.find((a) => a.kind === 'report_html') ?? null)
 
 const title = computed(() => fusion.value?.title ?? '报告预览')
 

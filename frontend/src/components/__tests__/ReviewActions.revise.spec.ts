@@ -7,7 +7,6 @@ import type { StageName, StageResult } from '../../api/types'
 
 vi.mock('../../api/client', () => ({
   submitReview: vi.fn(),
-  isMockDataMode: () => false,
   downloadArtifact: vi.fn(),
   triggerBlobDownload: vi.fn(),
 }))

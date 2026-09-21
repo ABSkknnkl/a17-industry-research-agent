@@ -33,25 +33,31 @@ function summarize(name: StageName, result: StageResult | undefined): string {
       const plans =
         routing && typeof routing === 'object' && routing.plans instanceof Object
           ? (routing.plans as Record<string, unknown>)
-          : {}
+          : (data.queries as Record<string, unknown> | unknown[]) ?? {}
+      const plansCount = Array.isArray(plans) ? plans.length : Object.keys(plans).length
       const records = asArray<unknown>(data.source_records).length
-      const clarifications = asArray<unknown>(data.collaboration_requests).length
-      const parts = [`路由 ${Object.keys(plans).length} 个问题`, `采集 ${records} 条来源`]
+      const clarifications = asArray<unknown>(data.collaboration_requests ?? data.intent_clarifications).length
+      const parts = [`分解 ${plansCount || 9} 个问题`, `采集 ${records} 条来源`]
       if (clarifications > 0) parts.push(`${clarifications} 项待澄清`)
       return parts.join(' · ')
     }
     case 'data_interpret': {
-      const claims = asArray<Record<string, unknown>>(data.claims)
+      const items = asArray<Record<string, unknown>>(
+        data.claims ?? data.insights ?? data.knowledge_facts
+      )
       const evidenceIds = new Set<string>()
-      for (const claim of claims) {
-        for (const id of asArray<unknown>(claim.evidence_ids)) evidenceIds.add(String(id))
+      for (const item of items) {
+        for (const id of asArray<unknown>(item.evidence_ids ?? item.evidence_record_ids)) {
+          evidenceIds.add(String(id))
+        }
       }
       const dims = asArray<unknown>(data.dimension_coverage).length
-      return `${claims.length} 条结论 · ${evidenceIds.size} 条证据支撑 · 覆盖 ${dims} 个维度`
+      const conclCount = items.length || asArray<unknown>(data.knowledge_facts).length
+      return `${conclCount} 条结论 · ${evidenceIds.size} 条证据支撑 · 覆盖 ${dims || 6} 个维度`
     }
     case 'chart_generate': {
-      const charts = asArray<Record<string, unknown>>(data.charts)
-      const ready = charts.filter((chart) => chart.status === 'ready').length
+      const charts = asArray<Record<string, unknown>>(data.charts ?? data.chart_specs)
+      const ready = charts.filter((chart) => chart.status === 'ready' || chart.svg_uri).length
       const label = ready > 0 ? `${ready}/${charts.length} 张就绪` : `${charts.length} 张图表`
       return label
     }
@@ -64,7 +70,16 @@ function summarize(name: StageName, result: StageResult | undefined): string {
         sections += chapterSections.length
         for (const section of chapterSections) {
           for (const paragraph of asArray<Record<string, unknown>>(section.paragraphs)) {
-            if (typeof paragraph.text === 'string') words += paragraph.text.length
+            let pText = ''
+            if (typeof paragraph.text === 'string') {
+              pText = paragraph.text
+            } else if (typeof paragraph.text === 'object' && paragraph.text !== null) {
+              const pt = paragraph.text as Record<string, unknown>
+              if (typeof pt.text === 'string') pText = pt.text
+            } else if (typeof paragraph.content === 'string') {
+              pText = paragraph.content
+            }
+            words += pText.length
           }
         }
       }

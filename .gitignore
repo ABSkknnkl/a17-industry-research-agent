@@ -1,97 +1,68 @@
-# Python
+# ── 隐私与凭证 (绝不上云) ─────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+user_settings.json
+
+# ── Python 虚拟环境与依赖 ────────────────────────────────
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+build/
+dist/
 __pycache__/
 *.py[cod]
 *$py.class
-*.egg-info/
-dist/
-build/
-*.egg
+*.so
 
-# Virtual Environment
-.venv/
-venv/
-env/
-
-# Node
+# ── Node.js 前端依赖与打包 ───────────────────────────────
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 *.tsbuildinfo
 
-# IDE
+# ── 运行时日志与测试缓存 ──────────────────────────────────
+*.log
+backend.log
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── 研报运行产物与用户数据 (保留空目录占位) ───────────────
+data/runs/*
+!data/runs/.gitkeep
+output/runs/*
+!output/runs/.gitkeep
+agents_core/*/output/*
+!agents_core/*/output/.gitkeep
+
+# ── 系统与 IDE 杂项 ───────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
 
-# Environment
-.env
-.env.local
-.env.*.local
+# ── 本地打包文件 ──────────────────────────────────────────
+*.zip
+*.tar.gz
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-npm-debug.log*
-
-# Runtime data and generated artifacts
-backend/data/
-backend/artifacts/
-/artifacts/
-/output/
-backups/
-
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.cache/
-coverage/
-.ace-tool/
-
-# ---------------------------------------------------------
-# 2026-09-09 补充：缓存 / 临时产物 / 运行时状态
-# ---------------------------------------------------------
-
-# pytest 临时运行目录（basetemp 产物，非测试源码）
-.pytest_tmp/
-# 本机沙箱下 pytest 无法写系统 /tmp，改用工作区内目录并显式指定 --basetemp，
-# 两种分隔符都出现过，统一忽略，避免临时产物混进提交。
-.pytest-tmp/
-.pytest-tmp*/
-
-# Trae 导出的临时 HTML 分享压缩包
-.trae-html-share-packages/
-*.html.zip
-
-# 运行时日志与进程 pid
-logs/
-*.pid
-*.pids
-
-# 运行时状态数据库（LangGraph checkpoint，20MB，每次运行重新生成）
-/data/
-data/checkpoints.sqlite
-data/checkpoints.sqlite-*
-
-# AI / 编辑器工具状态目录
-.workbuddy/
-.workbuddy-ai/
-.trae/
-.aider*
-.claude/
-.cursor/
-
-# 会话日志（不进主干）
-session-log.md
-SESSION_LOG.md
-*-session-log.md
-
-# 会话日志目录（AGENTS.md §2.2 禁提交 session-log 路径）
-# 2026-09-17 取消跟踪；文件仍保留在本地工作区，不再进版本库
-production/session-logs/
+# ── 评估运行转储 (不上传) ─────────────────────────────────
+eval/transcript/
+eval/cache/

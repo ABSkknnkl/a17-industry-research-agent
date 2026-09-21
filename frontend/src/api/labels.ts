@@ -36,19 +36,25 @@ const SKILL_LABELS: Record<string, string> = {
   hithink_index_query: '指数数据',
   hithink_futures_query: '期货数据',
   hithink_stock_selector: '个股选股',
+  hithink_astock_selector: 'A股选股',
   hithink_basicinfo_query: '公司基本信息',
   hithink_market_query: '行情数据',
   hithink_management_query: '股东与股本',
   web_search: '联网搜索',
 
-  // 证据来源类型（EvidenceCategory）——mock 模式下会填进 skill_name 字段
+  // 证据来源类型（EvidenceCategory）
   company: '公司公告',
   industry: '行业资料',
   tech: '技术资料',
   opinion: '公开观点',
 }
 
-export const skillLabel = (skill: string): string => SKILL_LABELS[skill] ?? skill
+export const skillLabel = (skill: string): string => {
+  if (!skill) return ''
+  const trimmed = skill.trim()
+  const normalized = trimmed.replace(/-/g, '_')
+  return SKILL_LABELS[normalized] ?? SKILL_LABELS[trimmed] ?? trimmed
+}
 
 // ------------------------------------------------------------------
 // 分析维度（research_dimension）
@@ -200,7 +206,7 @@ export const artifactKindLabel = (kind?: string): string =>
  *
  * 为什么从 ID 推而不是从标题：后端给的是**纯标题**（无「N、」前缀），
  * 编号属于结构信息而非命名内容。弹窗、确认文案需要「第 N 章」时用这个，
- * 不去改写标题、也不依赖 mock 曾加的前缀。
+ * 不去改写标题。
  */
 export function chapterNumber(chapterId?: string): string {
   const matched = /^CH-(\d{2})$/.exec(chapterId ?? '')

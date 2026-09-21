@@ -42,7 +42,7 @@ function extractDetail(data: unknown): { message: string; code?: string } {
  *   VITE_API_BASE_URL=http://10.0.0.7:8000/api/v1
  * 该后端需开启 CORS 并放行 Authorization 头。
  */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim() || '/api/v1'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.trim() || '/api/v1'
 
 export const http = axios.create({
   baseURL: API_BASE_URL,

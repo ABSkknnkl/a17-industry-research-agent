@@ -2,22 +2,11 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as echarts from 'echarts'
 import type { ChartOption, ChartSpec } from '../api/types'
-import { isMockDataMode } from '../api/client'
-import { usePrototypeStore } from '../mock/prototypeRun'
-import ChartControlMenu from './review/ChartControlMenu.vue'
 
 /** chart_generate 阶段 data.chart_specs 的宽松类型（与后端 ChartSpec 对齐，仅取渲染所需字段） */
 type ChartSpecLoose = Partial<ChartSpec>
 
 const props = defineProps<{ specs: ChartSpecLoose[] }>()
-
-const emit = defineEmits<{
-  (e: 'inspect', objectId: string): void
-  (e: 'object-receipt', action: string, objectIds: string[]): void
-}>()
-
-const mockMode = isMockDataMode()
-const store = mockMode ? usePrototypeStore() : null
 
 /** 与后端 presentation.CHART_TYPE_LABELS 对齐 */
 const CHART_TYPE_LABELS: Record<string, string> = {
@@ -94,7 +83,116 @@ function sanitizedOption(spec: ChartSpecLoose): ChartOption | null {
   const option =
     textGraphics.length === 0 ? (spec.option as ChartOption) : stripTextGraphics(spec.option)
   uniformCategoryAxisLabels(option)
+  sanitizeAxes(option)
   return option
+}
+
+/** 常见英文字段名 -> 中文规范业务标签字典 */
+const TECHNICAL_NAME_MAP: Record<string, string> = {
+  close_price: '收盘价',
+  change_pct: '涨跌幅',
+  trade_volume: '成交量',
+  volume: '成交量',
+  turnover: '成交额',
+  open_price: '开盘价',
+  high_price: '最高价',
+  low_price: '最低价',
+  debt_ratio: '资产负债率',
+  parent_net_profit: '归母净利润',
+  revenue: '营业收入',
+  net_profit: '净利润',
+  operating_cash_flow: '经营活动现金流',
+  gross_margin: '毛利率',
+  net_margin: '净利率',
+}
+
+function hasLargeOrDecimalValues(option: ChartOption): boolean {
+  const series = Array.isArray(option.series) ? option.series : option.series ? [option.series] : []
+  for (const s of series) {
+    if (!s || !Array.isArray(s.data)) continue
+    for (const val of s.data) {
+      const num = typeof val === 'number' ? val : Array.isArray(val) ? Number(val[1]) : Number(val)
+      if (!Number.isNaN(num) && (Math.abs(num) >= 10000 || (Math.abs(num) > 0 && Math.abs(num) < 0.01))) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+function formatAxisValue(val: number | string): string {
+  const num = Number(val)
+  if (Number.isNaN(num)) return String(val)
+  const abs = Math.abs(num)
+  if (abs >= 1e8) return `${Number((num / 1e8).toFixed(1))}亿`
+  if (abs >= 1e4) return `${Number((num / 1e4).toFixed(1))}万`
+  if (abs >= 1000) return `${Math.round(num)}`
+  if (abs >= 1) return `${Number(num.toFixed(2))}`
+  if (abs > 0) return `${Number(num.toFixed(3))}`
+  return '0'
+}
+
+function sanitizeAxes(option: ChartOption): void {
+  const needsScaleDefense = hasLargeOrDecimalValues(option)
+  const allAxes = [
+    ...(Array.isArray(option.xAxis) ? option.xAxis : option.xAxis ? [option.xAxis] : []),
+    ...(Array.isArray(option.yAxis) ? option.yAxis : option.yAxis ? [option.yAxis] : []),
+  ] as Record<string, unknown>[]
+
+  for (const axis of allAxes) {
+    if (!axis || typeof axis !== 'object') continue
+    const isCategory = axis.type === 'category' || (!axis.type && Array.isArray(axis.data))
+    if (isCategory && Array.isArray(axis.data)) {
+      let changed = false
+      const mapped = axis.data.map((item) => {
+        if (typeof item === 'string') {
+          const trimmed = item.trim()
+          const clean = TECHNICAL_NAME_MAP[trimmed] ?? TECHNICAL_NAME_MAP[trimmed.toLowerCase()]
+          if (clean && clean !== trimmed) {
+            changed = true
+            return clean
+          }
+        }
+        return item
+      })
+      const nonNull = mapped.filter((x) => x !== null && x !== undefined && x !== '')
+      if (mapped.length > 1 && nonNull.length === mapped.length && new Set(nonNull).size === 1) {
+        axis.data = mapped.map((val, idx) => `${val} #${idx + 1}`)
+      } else if (changed) {
+        axis.data = mapped
+      }
+    } else if (needsScaleDefense && (!axis.type || axis.type === 'value')) {
+      const axisLabel = (axis.axisLabel ??= {}) as Record<string, unknown>
+      if (!axisLabel.formatter) {
+        axisLabel.formatter = formatAxisValue
+      }
+      if (axis.splitNumber === undefined) {
+        axis.splitNumber = 4
+      }
+    }
+  }
+
+  const seriesList = (Array.isArray(option.series) ? option.series : option.series ? [option.series] : []) as Record<string, unknown>[]
+  for (const s of seriesList) {
+    if (s && typeof s.name === 'string') {
+      const trimmed = s.name.trim()
+      const clean = TECHNICAL_NAME_MAP[trimmed] ?? TECHNICAL_NAME_MAP[trimmed.toLowerCase()]
+      if (clean) s.name = clean
+    }
+  }
+
+  if (option.legend && typeof option.legend === 'object') {
+    const leg = option.legend as Record<string, unknown>
+    if (Array.isArray(leg.data)) {
+      leg.data = leg.data.map((item) => {
+        if (typeof item === 'string') {
+          const trimmed = item.trim()
+          return TECHNICAL_NAME_MAP[trimmed] ?? TECHNICAL_NAME_MAP[trimmed.toLowerCase()] ?? trimmed
+        }
+        return item
+      })
+    }
+  }
 }
 
 /** 移除绘图区内的纯文本注释，保留参考线/遮蔽等非文字 graphic。 */
@@ -234,10 +332,8 @@ function chartPreviewLabel(spec: ChartSpecLoose): string {
   return `查看“${spec.title ?? '未命名图表'}”大图`
 }
 
-/** 版本号：mock 用 store，spec 上有 unit_revision 时优先 */
+/** 版本号：spec 上有 unit_revision 时读取 */
 function unitRevision(spec: ChartSpecLoose): number | null {
-  const meta = chartMeta(spec.chart_id)
-  if (meta) return meta.unit_revision
   return typeof spec.unit_revision === 'number' ? spec.unit_revision : null
 }
 
@@ -260,16 +356,6 @@ function updatedAtLabel(spec: ChartSpecLoose): string | null {
   } catch {
     return null
   }
-}
-
-// ---- Mock 状态元数据（徽章/副信息行）----
-const mockCharts = computed(() =>
-  mockMode && store ? store.getCharts().filter((c) => c.status !== 'deleted') : []
-)
-
-function chartMeta(chartId: string | undefined) {
-  if (!chartId) return null
-  return mockCharts.value.find((c) => c.chart_id === chartId) ?? null
 }
 
 onMounted(renderThumbs)
@@ -331,27 +417,6 @@ export default { name: 'ChartGallery' }
             <span v-if="sourceLabel(spec)">来源：{{ sourceLabel(spec) }}</span>
             <span v-if="updatedAtLabel(spec)" class="meta-sep">·</span>
             <span v-if="updatedAtLabel(spec)">{{ updatedAtLabel(spec) }}</span>
-            <span v-if="mockMode && chartMeta(spec.chart_id)?.status === 'running'" class="meta-sep"
-              >·</span
-            >
-            <span v-if="mockMode && chartMeta(spec.chart_id)?.status === 'running'">
-              <el-tag size="small" type="warning">生成中</el-tag>
-            </span>
-            <span
-              v-else-if="mockMode && chartMeta(spec.chart_id)?.status === 'provisional'"
-              class="meta-sep"
-            >
-              ·
-            </span>
-            <span v-if="mockMode && chartMeta(spec.chart_id)?.status === 'provisional'">
-              <el-tag size="small" type="warning">待复核</el-tag>
-            </span>
-            <span
-              v-if="mockMode && chartMeta(spec.chart_id) && !chartMeta(spec.chart_id)!.in_report"
-            >
-              <span class="meta-sep">·</span>
-              <el-tag size="small" type="info">未纳入报告</el-tag>
-            </span>
           </div>
         </div>
         <!-- echarts 渲染 -->
@@ -389,11 +454,6 @@ export default { name: 'ChartGallery' }
             {{ note }}
           </p>
         </div>
-        <ChartControlMenu
-          v-if="mockMode && chartMeta(spec.chart_id)"
-          :chart="chartMeta(spec.chart_id)!"
-          @receipt="(a, ids) => emit('object-receipt', a, ids)"
-        />
       </article>
     </div>
 
@@ -505,12 +565,12 @@ export default { name: 'ChartGallery' }
 }
 .chart-thumb {
   width: 100%;
-  height: 240px;
+  height: 260px;
   background: var(--rp-paper);
 }
-/* 小图表数据量少，降低高度避免占用过大空间 */
+/* 小图表保持充裕刻度空间，避免坐标轴与图例挤压重叠 */
 .chart-half .chart-thumb {
-  height: 200px;
+  height: 240px;
 }
 .chart-img {
   display: flex;

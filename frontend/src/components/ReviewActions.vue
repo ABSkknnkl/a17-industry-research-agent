@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ApiError } from '../api/http'
-import { isMockDataMode, submitReview } from '../api/client'
+import { submitReview } from '../api/client'
 import {
   STAGE_ORDER,
   type DecisionPackage,
@@ -13,8 +13,7 @@ import {
   type WorkflowState,
 } from '../api/types'
 import { showPipelineOverlay, hidePipelineOverlay } from '../composables/usePipelineOverlay'
-import { usePrototypeStore } from '../mock/prototypeRun'
-import LimitedIntentDialog from './review/LimitedIntentDialog.vue'
+import FeedbackWorkbench from './FeedbackWorkbench.vue'
 
 const props = defineProps<{
   runId: string
@@ -22,16 +21,13 @@ const props = defineProps<{
   result: StageResult
   revision: number
   selectedObjectId?: string | null
+  annotations?: any[]
 }>()
 
 const emit = defineEmits<{
-  /** meta 用于判断「是否本次通过的就是最后一个阶段」——只看 state.status 在 mock 下会误判 */
   (e: 'submitted', state: WorkflowState, meta: { stage: StageName; action: string }): void
   (e: 'conflict'): void
 }>()
-
-const mockMode = isMockDataMode()
-const prototypeStore = mockMode ? usePrototypeStore() : null
 
 const submitting = ref(false)
 const reviseDialogVisible = ref(false)
@@ -45,11 +41,6 @@ const decisionPackage = computed<DecisionPackage | null>(() => {
 })
 
 const ackRequiredCodes = computed<string[]>(() => {
-  if (mockMode && prototypeStore) {
-    return prototypeStore.state.risks
-      .filter((r) => r.stage === props.stage && r.requires_ack && !r.acknowledged)
-      .map((r) => r.risk_code)
-  }
   return decisionPackage.value?.acknowledgement_required_codes ?? []
 })
 
@@ -64,20 +55,8 @@ const runtimeAlert = computed<{ code?: string; recoverable?: boolean } | null>((
 /** 不可恢复（如重试上限耗尽）：重跑类按钮全部禁用，只留取消 */
 const recoveryBlocked = computed(() => runtimeAlert.value?.recoverable === false)
 
-/**
- * 渲染单条风险提示。
- * 类型断言刻意放在 script 内：Prettier 的 HTML 解析器会把 `Record<string, unknown>`
- * 中的 `<string,` 误判为标签，进而隐式闭合 `<li>` 导致 `format:check` 报语法错误。
- */
 function riskText(risk: unknown): string {
-  if (typeof risk === 'string') {
-    // Mock 阶段：用 prototype store 的风险描述；真实模式回退 code 本身
-    if (mockMode && prototypeStore) {
-      const item = prototypeStore.state.risks.find((r) => r.risk_code === risk)
-      if (item) return `${item.title}：${item.description}`
-    }
-    return risk
-  }
+  if (typeof risk === 'string') return risk
   const r = risk as Record<string, unknown>
   return String(r.title || r.description || r.message || JSON.stringify(risk).slice(0, 150))
 }
@@ -134,7 +113,7 @@ function executingStageFor(action: ReviewAction): StageName {
 async function run(payload: ReviewPayload): Promise<void> {
   submitting.value = true
   const actionLabel = ACTION_LABELS[payload.action]
-  if (actionLabel && payload.action !== 'cancel' && !mockMode) {
+  if (actionLabel && payload.action !== 'cancel') {
     showPipelineOverlay(executingStageFor(payload.action), actionLabel)
   }
   try {
@@ -187,11 +166,6 @@ async function approve(): Promise<void> {
 
 /** 有风险时：打开风险提示，用户点同意后进入下一阶段 */
 async function acceptWithRisks(): Promise<void> {
-  if (mockMode && prototypeStore) {
-    for (const code of ackRequiredCodes.value) {
-      prototypeStore.acknowledgeRisk(code)
-    }
-  }
   riskDialogVisible.value = false
   await run({
     action: 'accept_with_risks',
@@ -235,26 +209,29 @@ function openReviseDialog(): void {
   reviseDialogVisible.value = true
 }
 
-const objectLabel = computed(() => props.selectedObjectId || props.stage)
-const objectVersion = computed(() => `r${props.revision}`)
-const stageLabel = computed(() => props.stage)
-
 /**
  * 阶段五（报告融合）用报告语义的按钮文案，其余阶段沿用通用文案。
  * 只改展示文案，不动 action 语义——「修改融合内容」提交的仍是 revise。
  */
 const isFusionStage = computed(() => props.stage === 'report_fusion')
 const approveLabel = computed(() => (isFusionStage.value ? '通过并完成研究' : '通过并继续'))
-const reviseLabel = computed(() => (isFusionStage.value ? '修改融合内容' : '修改条件重跑'))
+const reviseLabel = computed(() => {
+  const cnt = props.annotations?.length || 0
+  if (cnt > 0) return `修改条件重跑（协同优化 ${cnt}）`
+  return isFusionStage.value ? '修改融合内容' : '修改条件重跑'
+})
 const regenerateLabel = computed(() => (isFusionStage.value ? '重新融合' : '原条件重新生成'))
 
-async function onIntentConfirm(payload: { comment: string; questions: string[] }): Promise<void> {
+async function onWorkbenchSubmit(payload: { comment: string; annotations: any[]; questions: string[] }): Promise<void> {
   const comment = payload.comment.trim()
-  if (!comment && payload.questions.length === 0) {
-    ElMessage.warning('请填写修改备注或修订后的研究问题')
+  if (!comment && (!payload.annotations || payload.annotations.length === 0) && payload.questions.length === 0) {
+    ElMessage.warning('请填写修改意见、快捷指令或选择标注项')
     return
   }
   const edited: Record<string, unknown> = {}
+  if (payload.annotations && payload.annotations.length > 0) {
+    edited['annotations'] = payload.annotations
+  }
   if (
     (props.stage === 'data_fetch' || props.stage === 'data_interpret') &&
     payload.questions.length > 0
@@ -268,9 +245,6 @@ async function onIntentConfirm(payload: { comment: string; questions: string[] }
   })
   reviseDialogVisible.value = false
 }
-
-// 兼容旧测试：保留内部表单结构标识
-const showLegacyReviseForm = !mockMode
 </script>
 
 <template>
@@ -306,7 +280,7 @@ const showLegacyReviseForm = !mockMode
 
     <!-- 操作按钮区 -->
     <div class="action-bar">
-      <template v-if="decisionPackage || !hasError || mockMode">
+      <template v-if="decisionPackage || !hasError">
         <!-- 无风险：直接通过 -->
         <el-button
           v-if="ackRequiredCodes.length === 0 && !hasError"
@@ -380,69 +354,15 @@ const showLegacyReviseForm = !mockMode
       </template>
     </el-dialog>
 
-    <!-- 受限修改对话框（Mock） / 旧修订对话框（真实模式保留） -->
-    <LimitedIntentDialog
-      v-if="mockMode"
-      v-model="reviseDialogVisible"
-      mode="revise"
-      :stage-label="stageLabel"
-      :object-label="objectLabel"
-      :object-version="objectVersion"
-      :allow-questions="stage === 'data_fetch' || stage === 'data_interpret'"
-      @confirm="onIntentConfirm"
+    <!-- 人机协同反馈与定向优化工作台 -->
+    <FeedbackWorkbench
+      v-model:visible="reviseDialogVisible"
+      :stage="stage"
+      :revision="revision"
+      :annotations="annotations"
+      :submitting="submitting"
+      @submit="onWorkbenchSubmit"
     />
-
-    <!-- 修订对话框（真实模式） -->
-    <el-dialog
-      v-if="showLegacyReviseForm"
-      v-model="reviseDialogVisible"
-      title="修改条件后重跑"
-      width="560px"
-    >
-      <el-form label-position="top">
-        <el-form-item label="修改备注（反馈给智能体）">
-          <el-input
-            v-model="reviseComment"
-            type="textarea"
-            :rows="3"
-            maxlength="2000"
-            show-word-limit
-            placeholder="如：请额外关注宁德时代的毛利率变化；时间范围扩大到近 5 年"
-          />
-        </el-form-item>
-        <el-form-item
-          v-if="stage === 'data_fetch' || stage === 'data_interpret'"
-          label="修订后的研究问题（每行一个，将替换原研究问题）"
-        >
-          <el-input
-            v-model="reviseQuestions"
-            type="textarea"
-            :rows="4"
-            maxlength="2000"
-            show-word-limit
-            placeholder="请写明具体行业/公司、指标与时间范围，例如：&#10;锂电池行业2024-2025年营业收入与净利润增速如何？&#10;宁德时代、比亚迪、亿纬锂能2024年市占率与毛利率对比？"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="reviseDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="submitting"
-          @click="
-            onIntentConfirm({
-              comment: reviseComment,
-              questions: reviseQuestions
-                .split('\n')
-                .map((q) => q.trim())
-                .filter(Boolean),
-            })
-          "
-        >
-          提交修订并重跑
-        </el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 

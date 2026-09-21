@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getRun, isMockDataMode, listRevisions, submitReview } from '../api/client'
+import { getRun, listRevisions, submitReview, cancelRun } from '../api/client'
 import { ApiError } from '../api/http'
 import {
   STAGE_LABELS,
@@ -23,15 +23,13 @@ import QualityPanel from '../components/QualityPanel.vue'
 import ReviewActions from '../components/ReviewActions.vue'
 import WorkbenchActions from '../components/WorkbenchActions.vue'
 import ProjectTree from '../components/ProjectTree.vue'
-import ReviewInspectorDrawer from '../components/review/ReviewInspectorDrawer.vue'
+import AgentLiveTrace from '../components/AgentLiveTrace.vue'
+import RevisionDiffViewer from '../components/RevisionDiffViewer.vue'
 import { shouldAutoJumpToDownload } from '../api/reportGate'
-import { usePrototypeStore } from '../mock/prototypeRun'
 
 const route = useRoute()
 const router = useRouter()
 const runId = computed(() => String(route.params.runId ?? ''))
-const mockMode = isMockDataMode()
-const prototypeStore = mockMode ? usePrototypeStore() : null
 
 const workflow = ref<WorkflowState | null>(null)
 const loading = ref(false)
@@ -40,10 +38,12 @@ const revisionsVisible = ref(false)
 const timeByRevision = ref<Record<number, string>>({})
 const projectTreeRef = ref<InstanceType<typeof ProjectTree> | null>(null)
 const selectedStageOverride = ref<StageName | null>(null)
-const inspectorVisible = ref(false)
-const inspectorObjectId = ref<string | null>(null)
-const inspectorFocus = ref<'sources' | 'citations' | null>(null)
-const simulating = ref(false)
+const traceDrawerVisible = ref(false)
+const currentAnnotations = ref<any[]>([])
+
+function onStageAnnotate(payload: { stage: StageName; annotations: any[] }): void {
+  currentAnnotations.value = payload.annotations
+}
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null
 const POLL_INTERVAL_MS = 3_000
@@ -60,6 +60,62 @@ const currentStageResult = computed<StageResult | null>(() => {
 })
 
 const isRunning = computed(() => workflow.value?.status === 'running')
+
+const currentStageLabel = computed(() => {
+  const s = currentStageName.value || workflow.value?.current_stage
+  return s ? STAGE_LABELS[s] || s : '全链路分析'
+})
+
+// ------------------------------------------------------------------
+// 主屏实时执行计时器 (用于轻量状态条与动线按钮徽标)
+// ------------------------------------------------------------------
+const liveElapsedSeconds = ref(0)
+let liveTimerId: ReturnType<typeof setInterval> | null = null
+
+function updateLiveTimer(): void {
+  if (workflow.value?.created_at) {
+    try {
+      const start = new Date(workflow.value.created_at).getTime()
+      const now = Date.now()
+      liveElapsedSeconds.value = Math.max(0, Math.floor((now - start) / 1000))
+      return
+    } catch {
+      // 容错
+    }
+  }
+  liveElapsedSeconds.value += 1
+}
+
+function stopLiveTimer(): void {
+  if (liveTimerId) {
+    clearInterval(liveTimerId)
+    liveTimerId = null
+  }
+}
+
+const formattedLiveElapsed = computed(() => {
+  const s = liveElapsedSeconds.value
+  const mm = String(Math.floor(s / 60)).padStart(2, '0')
+  const ss = String(s % 60).padStart(2, '0')
+  return `${mm}:${ss}`
+})
+
+watch(
+  isRunning,
+  (running) => {
+    if (running) {
+      updateLiveTimer()
+      if (!liveTimerId) {
+        liveTimerId = setInterval(updateLiveTimer, 1000)
+      }
+      schedulePoll()
+    } else {
+      stopLiveTimer()
+      stopPoll()
+    }
+  },
+  { immediate: true }
+)
 
 /** report_fusion 产出（宽松读取，字段与后端 ReportFusionResult 一致） */
 const fusionData = computed<ReportFusionData | null>(() => {
@@ -78,7 +134,12 @@ const sourceRecords = computed<Record<string, unknown>[]>(() => {
 
 async function reload(): Promise<void> {
   try {
+    const prevStatus = workflow.value?.status
+    const prevStage = workflow.value?.current_stage
     workflow.value = await getRun(runId.value)
+    if (prevStatus !== workflow.value?.status || prevStage !== workflow.value?.current_stage) {
+      projectTreeRef.value?.reload()
+    }
   } catch (e) {
     if (e instanceof ApiError && e.status !== 401) {
       ElMessage.error(`加载任务失败：${e.message}`)
@@ -89,7 +150,6 @@ async function reload(): Promise<void> {
 
 /** 全自动任务的完成后自动跳转：首页「一键通过」创建的任务在 run 终态时直达下载页。 */
 async function checkAutoJump(): Promise<void> {
-  if (mockMode) return
   const key = `autojump:${runId.value}`
   let flagged = false
   try {
@@ -161,8 +221,7 @@ function detectHighRisk(state: WorkflowState): string | null {
     if (!result) continue
     if (result.error) return `${result.error}（${result.stage}）`
     const dp = (result.data as Record<string, unknown> | null)?.decision_package as
-      | DecisionPackage
-      | undefined
+      DecisionPackage | undefined
     if (dp?.blocking_risk_codes?.length) {
       return `存在阻断风险：${dp.blocking_risk_codes.join('、')}（${result.stage}）`
     }
@@ -171,14 +230,10 @@ function detectHighRisk(state: WorkflowState): string | null {
 }
 
 /** 自动提交单个待审核阶段（有需确认风险→accept_with_risks，否则 approve）。 */
-async function submitPendingStage(
-  stage: StageName,
-  state: WorkflowState
-): Promise<void> {
+async function submitPendingStage(stage: StageName, state: WorkflowState): Promise<void> {
   const result = state.stage_results[stage]
   const dp = (result?.data as Record<string, unknown> | null)?.decision_package as
-    | DecisionPackage
-    | undefined
+    DecisionPackage | undefined
   const ackCodes = dp?.acknowledgement_required_codes ?? []
   await submitReview({
     run_id: runId.value,
@@ -192,13 +247,13 @@ async function submitPendingStage(
 }
 
 async function quickApproveAll(): Promise<void> {
-  if (mockMode || quickApproveBusy.value || !workflow.value) return
+  if (quickApproveBusy.value || !workflow.value) return
   const risk = detectHighRisk(workflow.value)
   if (risk) {
     await ElMessageBox.alert(
       `检测到红色高风险（${risk}）。为安全起见，请逐阶段人工审核处理，一键通过已停用。`,
       '存在高风险，请人工审核',
-      { type: 'error', confirmButtonText: '知道了' },
+      { type: 'error', confirmButtonText: '知道了' }
     )
     return
   }
@@ -210,7 +265,7 @@ async function quickApproveAll(): Promise<void> {
         confirmButtonText: '确认，一键通过',
         cancelButtonText: '取消',
         type: 'warning',
-      },
+      }
     )
   } catch {
     return
@@ -228,12 +283,12 @@ async function quickApproveAll(): Promise<void> {
         await ElMessageBox.alert(
           `执行过程中出现红色高风险（${blocked}），已停止自动通过，请人工审核。`,
           '已停止，请人工处理',
-          { type: 'error', confirmButtonText: '知道了' },
+          { type: 'error', confirmButtonText: '知道了' }
         )
         return
       }
       const pending = STAGE_ORDER.find(
-        (stage) => state.stage_results[stage]?.status === 'waiting_review',
+        (stage) => state.stage_results[stage]?.status === 'waiting_review'
       )
       if (pending) {
         await submitPendingStage(pending, state)
@@ -243,7 +298,11 @@ async function quickApproveAll(): Promise<void> {
         await router.push({ name: 'report-download', params: { runId: runId.value } })
         return
       }
-      if (state.status === 'cancelled' || state.status === 'rejected' || state.status === 'failed') {
+      if (
+        state.status === 'cancelled' ||
+        state.status === 'rejected' ||
+        state.status === 'failed'
+      ) {
         await ElMessageBox.alert(`任务状态已变为「${state.status}」，自动通过停止。`, '已停止', {
           type: 'warning',
           confirmButtonText: '知道了',
@@ -282,6 +341,45 @@ async function openRevisions(): Promise<void> {
 async function refreshAll(): Promise<void> {
   await Promise.all([reloadWithSpinner(), loadRevisions()])
   projectTreeRef.value?.reload()
+  if (isRunning.value) {
+    schedulePoll()
+  }
+}
+
+const cancelling = ref(false)
+
+async function handleCancelInFlight(): Promise<void> {
+  if (cancelling.value || !workflow.value) return
+  try {
+    await ElMessageBox.confirm(
+      '确定要强行中断当前正在执行的智能体流水线吗？正在进行的分析与生成将被立即终止。',
+      '中断任务确认',
+      {
+        confirmButtonText: '立即中断',
+        cancelButtonText: '继续执行',
+        type: 'warning',
+      }
+    )
+  } catch {
+    return
+  }
+
+  cancelling.value = true
+  try {
+    const updated = await cancelRun(runId.value)
+    workflow.value = updated
+    stopPoll()
+    ElMessage.warning('任务已成功中途终止')
+    projectTreeRef.value?.reload()
+  } catch (e) {
+    if (e instanceof ApiError) {
+      ElMessage.error(`中断任务失败：${e.message}`)
+    } else {
+      ElMessage.error('中断任务失败')
+    }
+  } finally {
+    cancelling.value = false
+  }
 }
 
 function formatTime(value: string): string {
@@ -292,16 +390,8 @@ function onSelectStage(stage: StageName): void {
   const result = workflow.value?.stage_results[stage]
   if (!result) return
   selectedStageOverride.value = stage
-  if (mockMode && prototypeStore) prototypeStore.selectStage(stage)
 }
 
-function openInspector(objectId: string, focus: 'sources' | 'citations' | null = null): void {
-  inspectorObjectId.value = objectId
-  inspectorFocus.value = focus
-  inspectorVisible.value = true
-}
-
-/** 跳转独立报告预览页（阶段五「预览完整报告」入口） */
 /** 跳转独立报告预览页（阶段五「预览完整报告」入口）；anchor 用于直达某一章 */
 function openReportPreview(anchor?: string): void {
   router.push({
@@ -309,22 +399,6 @@ function openReportPreview(anchor?: string): void {
     params: { runId: runId.value },
     query: anchor ? { anchor } : {},
   })
-}
-
-async function onResetDemo(): Promise<void> {
-  prototypeStore?.resetPrototype()
-  selectedStageOverride.value = null
-  await refreshAll()
-  ElMessage.success('演示已重置为初始状态')
-}
-
-async function onStartSimulation(): Promise<void> {
-  if (!prototypeStore) return
-  simulating.value = true
-  const rec = await prototypeStore.startSimulation()
-  ElMessage[rec.ok ? 'success' : 'error'](rec.message)
-  simulating.value = false
-  await refreshAll()
 }
 
 onMounted(refreshAll)
@@ -337,7 +411,10 @@ watch(runId, async (next, prev) => {
   }
 })
 
-onBeforeUnmount(stopPoll)
+onBeforeUnmount(() => {
+  stopPoll()
+  stopLiveTimer()
+})
 </script>
 
 <script lang="ts">
@@ -359,19 +436,21 @@ export default { name: 'ReviewView' }
         <div class="header-main">
           <h2 class="page-title" style="margin: 0">任务工作台</h2>
           <StatusTag v-if="workflow" :status="workflow.status" />
-          <el-tag
-            v-if="mockMode"
-            type="warning"
-            effect="plain"
-            size="small"
-            data-testid="workbench-demo-tag"
-          >
-            演示数据
-          </el-tag>
         </div>
         <div class="header-actions">
           <el-button
-            v-if="!mockMode && workflow"
+            v-if="isRunning"
+            type="danger"
+            plain
+            :loading="cancelling"
+            data-testid="btn-in-flight-cancel"
+            @click="handleCancelInFlight"
+          >
+            <el-icon style="margin-right: 4px"><CloseBold /></el-icon>
+            中断任务
+          </el-button>
+          <el-button
+            v-if="workflow && workflow.status === 'waiting_review'"
             type="primary"
             :loading="quickApproveBusy"
             data-testid="btn-quick-approve"
@@ -379,6 +458,17 @@ export default { name: 'ReviewView' }
           >
             <el-icon style="margin-right: 4px"><Select /></el-icon>
             一键通过
+          </el-button>
+          <el-button
+            class="btn-trace-trigger"
+            :class="{ 'is-live': isRunning }"
+            data-testid="btn-open-trace-drawer"
+            @click="traceDrawerVisible = true"
+          >
+            <span v-if="isRunning" class="live-pulse-dot" />
+            <span class="btn-icon">⚡</span>
+            <span>智能体动线</span>
+            <span v-if="isRunning" class="btn-live-badge">{{ formattedLiveElapsed }}</span>
           </el-button>
           <WorkbenchActions
             v-if="workflow"
@@ -391,23 +481,6 @@ export default { name: 'ReviewView' }
             @conflict="reloadWithSpinner"
             @history="openRevisions"
           />
-          <template v-if="mockMode">
-            <el-popconfirm title="将清除演示进度并恢复初始 fixture" @confirm="onResetDemo">
-              <template #reference>
-                <el-button size="small" data-testid="btn-reset-demo">重置演示</el-button>
-              </template>
-            </el-popconfirm>
-            <el-button
-              size="small"
-              type="primary"
-              plain
-              :loading="simulating"
-              data-testid="btn-simulate"
-              @click="onStartSimulation"
-            >
-              模拟生成
-            </el-button>
-          </template>
         </div>
       </div>
 
@@ -416,21 +489,35 @@ export default { name: 'ReviewView' }
         {{ formatTime(workflow.created_at) }}
       </div>
 
+      <!-- 智能体实时执行提示条（经典研报风，不割裂主屏，提供实时进度与动线抽屉入口） -->
+      <div v-if="isRunning" class="live-running-strip" data-testid="live-running-strip">
+        <div class="strip-left">
+          <span class="strip-pulse-dot" />
+          <span class="strip-lead">全链路智能体执行中：</span>
+          <span class="strip-stage">{{ currentStageLabel }}</span>
+          <span class="strip-divider">·</span>
+          <span class="strip-hint">实时调度金融量化与问财技能链</span>
+        </div>
+        <div class="strip-right">
+          <span class="strip-timer">⏱️ 已执行 {{ formattedLiveElapsed }}</span>
+          <el-button
+            link
+            type="primary"
+            class="strip-drawer-link"
+            data-testid="strip-open-drawer"
+            @click="traceDrawerVisible = true"
+          >
+            查看微观动线与调度 ↗
+          </el-button>
+        </div>
+      </div>
+
       <el-alert
-        v-if="mockMode && simulating"
-        type="info"
+        v-if="workflow?.status === 'cancelled'"
+        type="warning"
         show-icon
         :closable="false"
-        title="演示模拟执行中，可切换已产出阶段查看内容"
-        style="margin-bottom: 10px"
-        data-testid="sim-progress"
-      />
-      <el-alert
-        v-else-if="isRunning"
-        type="info"
-        show-icon
-        :closable="false"
-        title="流水线执行中，页面每 3 秒自动刷新……"
+        title="该任务已被中途终止。您可以重新发起新任务或查看已产出的中间数据。"
         style="margin-bottom: 10px"
       />
 
@@ -441,6 +528,18 @@ export default { name: 'ReviewView' }
           :selected-stage="currentStageName"
           @select="onSelectStage"
         />
+      </el-card>
+
+      <!-- 人机协同版本演进对比 (Revision Diff) -->
+      <RevisionDiffViewer
+        v-if="workflow"
+        :run-id="runId"
+        :current-revision="workflow.revision"
+      />
+
+      <!-- 未加载到任务时的空状态 -->
+      <el-card v-if="!loading && !workflow" class="page-card" shadow="never">
+        <el-empty description="未找到任务数据，请在首页创建新任务或在左侧选择历史任务" />
       </el-card>
 
       <!-- 融合质量：仅在阶段五（report_fusion）时展示 -->
@@ -476,9 +575,8 @@ export default { name: 'ReviewView' }
           :data="currentStageResult.data"
           :source-records="sourceRecords"
           :run-id="runId"
-          @inspect="(id, focus) => openInspector(id, focus)"
-          @object-receipt="() => refreshAll()"
           @preview-report="(anchor) => openReportPreview(anchor)"
+          @annotate="onStageAnnotate"
         />
 
         <el-divider />
@@ -494,18 +592,20 @@ export default { name: 'ReviewView' }
             :stage="currentStageResult.stage"
             :result="currentStageResult"
             :revision="workflow!.revision"
-            :selected-object-id="prototypeStore?.state.selectedObjectId ?? null"
+            :annotations="currentAnnotations"
             @submitted="onSubmitted"
             @conflict="reloadWithSpinner"
           />
         </template>
         <p v-else class="muted" style="margin: 0">
           {{
-            currentStageResult.status === 'running' || workflow?.status === 'running'
-              ? '该阶段正在执行，完成后将进入人工审核（若配置了审核门）。'
-              : currentStageName !== workflow?.current_stage
-                ? '正在查看已产出阶段内容；阶段级操作请回到当前等待审核的阶段。'
-                : '该阶段当前无需人工操作。'
+            workflow?.status === 'cancelled'
+              ? '该任务已被中途终止，未继续执行后续阶段。'
+              : currentStageResult.status === 'running' || workflow?.status === 'running'
+                ? '该阶段正在执行，完成后将进入人工审核（若配置了审核门）。'
+                : currentStageName !== workflow?.current_stage
+                  ? '正在查看已产出阶段内容；阶段级操作请回到当前等待审核的阶段。'
+                  : '该阶段当前无需人工操作。'
           }}
         </p>
       </el-card>
@@ -534,43 +634,191 @@ export default { name: 'ReviewView' }
     </el-table>
   </el-dialog>
 
-  <ReviewInspectorDrawer
-    v-model="inspectorVisible"
-    :object-id="inspectorObjectId"
-    :source-records="sourceRecords"
-    :focus="inspectorFocus"
-  />
+  <!-- 智能体微观执行动线抽屉（右侧滑出抽屉） -->
+  <el-drawer
+    v-model="traceDrawerVisible"
+    direction="rtl"
+    size="720px"
+    :destroy-on-close="false"
+    class="agent-trace-drawer"
+  >
+    <template #header>
+      <div class="trace-drawer-header-title">
+        <span class="drawer-icon">⚡</span>
+        <span class="drawer-title-text">智能体微观执行动线与协同面板</span>
+        <el-tag
+          v-if="isRunning"
+          type="success"
+          size="small"
+          effect="plain"
+          class="drawer-live-pill"
+        >
+          ● 实时推流中 ({{ formattedLiveElapsed }})
+        </el-tag>
+      </div>
+    </template>
+    <AgentLiveTrace
+      v-if="runId"
+      :run-id="runId"
+      :is-running="isRunning"
+      :active-stage="currentStageName"
+      :workflow="workflow"
+      mode="drawer"
+      @cancel="handleCancelInFlight"
+      @stage-change="reload"
+    />
+  </el-drawer>
 </template>
 
 <style scoped>
+/* 智能体动线呼出按钮 */
+.btn-trace-trigger {
+  border-color: var(--rp-line, #dcdfe6);
+  background: var(--rp-card, #ffffff);
+  color: var(--rp-navy, #1e3a5c);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.25s ease;
+}
+.btn-trace-trigger:hover {
+  border-color: var(--rp-gold, #c5a059);
+  color: var(--rp-gold, #c5a059);
+  box-shadow: 0 2px 8px rgba(197, 160, 89, 0.15);
+}
+.btn-trace-trigger.is-live {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #15803d;
+}
+.btn-live-badge {
+  font-family: var(--rp-serif, serif);
+  font-weight: 700;
+  font-size: 11px;
+  background: rgba(22, 163, 74, 0.12);
+  color: #15803d;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(22, 163, 74, 0.25);
+  margin-left: 2px;
+}
+/* 实时运行轻量提示条 (精品研报风) */
+.live-running-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: var(--rp-card, #fffefb);
+  border: 1px solid var(--rp-line, #e3ddcd);
+  border-left: 3px solid var(--rp-gold, #a9853f);
+  border-radius: 3px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(30, 58, 92, 0.03);
+}
+.strip-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+}
+.strip-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+  animation: btn-pulse 1.6s infinite;
+}
+.strip-lead {
+  font-weight: 600;
+  color: var(--rp-navy, #1e3a5c);
+}
+.strip-stage {
+  color: var(--rp-gold, #a9853f);
+  font-weight: 700;
+}
+.strip-divider {
+  color: var(--el-text-color-secondary, #8f8a7a);
+}
+.strip-hint {
+  color: var(--el-text-color-secondary, #8f8a7a);
+  font-size: 12px;
+}
+.strip-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.strip-timer {
+  font-family: var(--rp-serif, serif);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--rp-gold, #a9853f);
+  letter-spacing: 0.5px;
+}
+.strip-drawer-link {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rp-navy, #1e3a5c);
+  padding: 0;
+}
+.strip-drawer-link:hover {
+  color: var(--rp-gold, #a9853f);
+}
+.live-pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+  animation: btn-pulse 1.6s infinite;
+}
+@keyframes btn-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(22, 163, 74, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0);
+  }
+}
+.trace-drawer-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.drawer-icon {
+  font-size: 16px;
+}
+.drawer-title-text {
+  font-family: var(--rp-serif, serif);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--rp-navy, #1e3a5c);
+}
+.drawer-live-pill {
+  background-color: #059669 !important;
+  border-color: #059669 !important;
+  font-size: 11px;
+}
+
 .workbench {
   display: grid;
   grid-template-columns: 250px minmax(0, 1fr);
   gap: 16px;
-  align-items: stretch;
+  align-items: start;
 }
 .wb-left {
   position: sticky;
   top: 16px;
-  align-self: stretch;
-  min-height: 0;
-}
-.wb-left .page-card {
-  height: 100%;
-  margin-bottom: 0;
-  display: flex;
-  flex-direction: column;
-}
-.wb-left :deep(.el-card__body) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding: 14px 12px;
-}
-.wb-left :deep(.report-nav) {
-  width: 100%;
-  flex: 1;
 }
 .workbench-header {
   display: flex;
