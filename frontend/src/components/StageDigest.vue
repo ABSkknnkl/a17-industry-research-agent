@@ -45,6 +45,37 @@ function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : []
 }
 
+function formatRecordId(id: unknown, index: number): string {
+  if (typeof id === 'string' && id.trim()) {
+    const trimmed = id.trim()
+    return trimmed.length > 14 ? `${trimmed.slice(0, 12)}…` : trimmed
+  }
+  return `#${index + 1}`
+}
+
+function formatDomain(domain: unknown): string {
+  const labels: Record<string, string> = {
+    industry: '行业',
+    companies: '公司',
+    macro: '宏观',
+    industry_chain: '产业链',
+    financials: '财务',
+    news: '新闻',
+  }
+  return labels[String(domain ?? '')] ?? String(domain || '—')
+}
+
+function formatSourceValue(row: Record<string, unknown>): string {
+  const value = row.value
+  const unit = row.unit ? ` ${row.unit}` : ''
+  if (value === null || value === undefined || value === '') {
+    return typeof row.row_count === 'number' ? `${row.row_count} 行` : '—'
+  }
+  if (Array.isArray(value)) return value.map(String).join('、')
+  if (typeof value === 'number') return `${value.toLocaleString('zh-CN')}${unit}`
+  return `${String(value)}${unit}`
+}
+
 /** data_fetch：意图路由计划 */
 const intentRouting = computed<IntentRouting | null>(() => {
   const raw = d.value.intent_routing
@@ -103,18 +134,58 @@ const showFusionReport = computed(() => props.stage === 'report_fusion' && hasFu
 /** report_fusion：证据目录条数（= 报告引用的来源数） */
 const evidenceCatalogCount = computed(() => asArray<unknown>(d.value.evidence_catalog).length)
 
+interface ParsedParagraph {
+  id: string
+  text: string
+}
+
+function parseParagraph(raw: unknown, fallbackId: string): ParsedParagraph {
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim()
+    if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+      return { id: fallbackId, text: trimmed }
+    }
+    try {
+      return parseParagraph(JSON.parse(trimmed), fallbackId)
+    } catch {
+      return { id: fallbackId, text: trimmed }
+    }
+  }
+  if (!raw || typeof raw !== 'object') return { id: fallbackId, text: '' }
+
+  let target = { ...(raw as Record<string, unknown>) }
+  while (target.text && typeof target.text === 'object') {
+    target = { ...target, ...(target.text as Record<string, unknown>) }
+  }
+
+  const textValue = target.text ?? target.content ?? target.body ?? ''
+  if (typeof textValue === 'string' && textValue.trim().startsWith('{')) {
+    try {
+      return parseParagraph(textValue, String(target.paragraph_id ?? target.id ?? fallbackId))
+    } catch {
+      // Keep the plain string below.
+    }
+  }
+  return {
+    id: String(target.paragraph_id ?? target.id ?? fallbackId),
+    text: typeof textValue === 'string' ? textValue : '',
+  }
+}
+
 /** chapter_write 文章视图辅助：小节列表 / 字数 / 小节数 / 总字数 */
 const chapterSections = (ch: Record<string, unknown>): Record<string, unknown>[] =>
   asArray<Record<string, unknown>>(ch.sections)
 
-const chapterParagraphs = (ch: Record<string, unknown>): Record<string, unknown>[] =>
-  chapterSections(ch).flatMap((s) => asArray<Record<string, unknown>>(s.paragraphs))
+const sectionParagraphs = (sec: Record<string, unknown>): ParsedParagraph[] =>
+  asArray<unknown>(sec.paragraphs).map((paragraph, index) =>
+    parseParagraph(paragraph, `${String(sec.section_id ?? 'section')}-p${index + 1}`)
+  )
 
-const sectionParagraphs = (sec: Record<string, unknown>): Record<string, unknown>[] =>
-  asArray<Record<string, unknown>>(sec.paragraphs)
+const chapterParagraphs = (ch: Record<string, unknown>): ParsedParagraph[] =>
+  chapterSections(ch).flatMap(sectionParagraphs)
 
 const chapterWordCount = (ch: Record<string, unknown>): number =>
-  chapterParagraphs(ch).reduce((n, p) => n + String(p.text ?? '').length, 0)
+  chapterParagraphs(ch).reduce((n, p) => n + p.text.length, 0)
 
 const chapterSectionCount = (ch: Record<string, unknown>): number => chapterSections(ch).length
 
@@ -293,16 +364,33 @@ const coverageLabel = (status?: string) => {
       </template>
 
       <template v-if="sourceList.length > 0">
-        <h4 class="digest-title">采集来源（{{ sourceList.length }} 条）</h4>
+        <h4 class="digest-title">采集来源明细（{{ sourceList.length }} 条）</h4>
         <el-table :data="sourceList.slice(0, 10)" size="small" border>
-          <el-table-column prop="source_name" label="来源" min-width="200" show-overflow-tooltip />
-          <el-table-column label="数据来源" width="200" show-overflow-tooltip>
+          <el-table-column label="记录" width="120" show-overflow-tooltip>
+            <template #default="{ row, $index }">{{ formatRecordId(row.record_id, $index) }}</template>
+          </el-table-column>
+          <el-table-column label="主体 / 领域" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">
+              <template v-if="row.entity_name">
+                {{ row.entity_name }}<span v-if="row.entity_code" class="muted">（{{ row.entity_code }}）</span>
+              </template>
+              <template v-else>{{ formatDomain(row.domain) }}</template>
+            </template>
+          </el-table-column>
+          <el-table-column label="采集指标" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">{{ row.metric || row.source_name || '—' }}</template>
+          </el-table-column>
+          <el-table-column label="采集数值" min-width="180" show-overflow-tooltip>
+            <template #default="{ row }">{{ formatSourceValue(row) }}</template>
+          </el-table-column>
+          <el-table-column label="数据来源" width="140" show-overflow-tooltip>
             <template #default="{ row }">{{
               row.skill_label || skillLabel(String(row.skill_name ?? ''))
             }}</template>
           </el-table-column>
-          <el-table-column prop="as_of_date" label="数据日期" width="110" />
-          <el-table-column prop="row_count" label="行数" width="80" />
+          <el-table-column label="数据日期" width="110">
+            <template #default="{ row }">{{ row.period || row.as_of_date || '最新' }}</template>
+          </el-table-column>
         </el-table>
         <p v-if="sourceList.length > 10" class="muted">
           仅显示前 10 条，共 {{ sourceList.length }} 条
@@ -401,7 +489,7 @@ const coverageLabel = (status?: string) => {
             </h6>
             <p
               v-for="p in sectionParagraphs(sec)"
-              :key="String(p.paragraph_id)"
+              :key="p.id"
               class="article-para"
             >
               {{ p.text }}

@@ -23,7 +23,9 @@
 // ------------------------------------------------------------------
 const SKILL_LABELS: Record<string, string> = {
   hithink_industry_query: '行业数据',
+  'hithink-industry-query': '行业数据',
   hithink_finance_query: '财务数据',
+  'hithink-finance-query': '财务数据',
   hithink_macro_query: '宏观数据',
   industry_chain_analysis: '产业链分析',
   report_search: '研报检索',
@@ -36,6 +38,7 @@ const SKILL_LABELS: Record<string, string> = {
   hithink_index_query: '指数数据',
   hithink_futures_query: '期货数据',
   hithink_stock_selector: '个股选股',
+  'hithink-astock-selector': 'A股选股',
   hithink_basicinfo_query: '公司基本信息',
   hithink_market_query: '行情数据',
   hithink_management_query: '股东与股本',
