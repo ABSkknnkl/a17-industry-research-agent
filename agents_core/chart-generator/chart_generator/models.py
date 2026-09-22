@@ -12,6 +12,28 @@ ChartType = Literal[
     "combo", "area", "scatter", "bubble", "heatmap", "boxplot", "treemap",
 ]
 
+# Agent 3's production generation palette.  The wider ChartType contract remains
+# readable so previously generated reports can still be loaded and rendered.
+ActiveChartType = Literal["line", "bar", "combo", "area", "pie", "radar"]
+ACTIVE_CHART_TYPES: frozenset[str] = frozenset(
+    {"line", "bar", "combo", "area", "pie", "radar"}
+)
+
+# These are presentation aliases of an approved style, not additional styles.
+ACTIVE_CHART_TYPE_ALIASES: dict[str, ActiveChartType] = {
+    "horizontal_bar": "bar",
+    "comparison_bar": "bar",
+    "diverging_bar": "bar",
+    "donut": "pie",
+}
+
+
+def normalize_active_chart_type(value: object) -> ActiveChartType | None:
+    """Return the canonical six-style chart type, or None when unsupported."""
+    raw = str(value or "").strip().lower()
+    canonical = ACTIVE_CHART_TYPE_ALIASES.get(raw, raw)
+    return canonical if canonical in ACTIVE_CHART_TYPES else None  # type: ignore[return-value]
+
 
 class EvidenceRef(BaseModel):
     model_config = ConfigDict(extra="ignore")

@@ -74,6 +74,7 @@ from app.schemas.chart import (
     ChartSpec,
     ChartType,
     SuppressedChart,
+    normalize_active_chart_type,
 )
 from app.schemas.decision import (
     ChartCandidateResult,
@@ -110,11 +111,6 @@ HARD_LIMIT_MAX_POINTS_PER_CHART = 20_000  # 单张图表最大数据点
 P1_CHART_TYPES: set[ChartType] = {
     "combo",
     "area",
-    "scatter",
-    "bubble",
-    "heatmap",
-    "boxplot",
-    "treemap",
 }
 
 
@@ -677,6 +673,21 @@ class ChartGeneratorAgent:
         family_counts: dict[str, int] = {}
 
         for candidate in candidates:
+            canonical_type = normalize_active_chart_type(candidate.chart_type)
+            if canonical_type is None:
+                suppressed.append(
+                    SuppressedChart(
+                        title=candidate.title,
+                        reason_code="chart_type_not_enabled",
+                        reason=(
+                            "Agent 3 当前只生成折线图、柱状图、双轴组合图、"
+                            "面积图、环形饼图和雷达图"
+                        ),
+                        evidence_ids=candidate.evidence_ids,
+                    )
+                )
+                continue
+            candidate.chart_type = canonical_type
             candidate_datasets = datasets
             if candidate.chart_type == "industry_chain" and not any(
                 set(candidate.evidence_ids).issubset(set(dataset.evidence_ids))

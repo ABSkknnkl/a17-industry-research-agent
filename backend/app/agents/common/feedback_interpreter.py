@@ -29,7 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
 from app.agents.data_fetcher.deterministic_intent_parser import _segment_time
 from app.agents.data_fetcher.metric_registry import get_metric_spec
 from app.agents.data_fetcher.planner import deterministic_metric_skill
-from app.schemas.chart import BarVariant, ChartType
+from app.schemas.chart import ActiveChartType, BarVariant
 from app.schemas.workflow import ChartGenerationOptions, DataFetchOptions
 from app.security.policy import detect_prompt_injection
 
@@ -62,7 +62,7 @@ _ALLOWED_OPS_BY_STAGE: dict[str, frozenset[str]] = {
     "chart_generate": CHART_GENERATE_OPS,
 }
 
-_CHART_TYPE_VALUES: frozenset[str] = frozenset(ChartType.__args__)  # type: ignore[attr-defined]
+_CHART_TYPE_VALUES: frozenset[str] = frozenset(ActiveChartType.__args__)  # type: ignore[attr-defined]
 _BAR_VARIANT_VALUES: frozenset[str] = frozenset(BarVariant.__args__)  # type: ignore[attr-defined]
 
 _AMBIGUOUS_ENTITY_TOKENS: tuple[str, ...] = (
@@ -706,7 +706,7 @@ def apply_chart_edits(
     return options.model_copy(
         update={
             "metric_ids": metric_ids[:20],
-            "requested_chart_types": chart_types[:12],
+            "requested_chart_types": chart_types[:6],
             "requested_chart_count": chart_count,
             "bar_variant": bar_variant,
             "emphasis": emphasis,

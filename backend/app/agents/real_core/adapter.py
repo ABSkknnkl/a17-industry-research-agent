@@ -767,12 +767,13 @@ class FiveAgentsAdapter:
             for t_name, t_val in [
                 ("折线", "line"),
                 ("柱状", "bar"),
-                ("对比", "comparison_bar"),
-                ("条形", "horizontal_bar"),
+                ("对比", "bar"),
+                ("条形", "bar"),
                 ("饼图", "pie"),
+                ("环形", "pie"),
                 ("雷达", "radar"),
                 ("面积", "area"),
-                ("散点", "scatter"),
+                ("组合", "combo"),
             ]:
                 if t_name in feedback:
                     user_types.append(t_val)

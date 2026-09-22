@@ -153,10 +153,10 @@ export const paragraphStatusLabel = (status?: string): string =>
 const CHART_TYPE_LABELS: Record<string, string> = {
   line: '折线图',
   bar: '柱状图',
-  pie: '饼图',
+  pie: '环形饼图',
   radar: '雷达图',
   industry_chain: '产业链图',
-  combo: '组合图',
+  combo: '双轴组合图',
   area: '面积图',
   scatter: '散点图',
   bubble: '气泡图',

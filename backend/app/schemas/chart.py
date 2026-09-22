@@ -30,6 +30,20 @@ ChartType = Literal[
     "boxplot",
     "treemap",
 ]
+ActiveChartType = Literal["line", "bar", "combo", "area", "pie", "radar"]
+ACTIVE_CHART_TYPES: frozenset[str] = frozenset(
+    {"line", "bar", "combo", "area", "pie", "radar"}
+)
+ACTIVE_CHART_TYPE_ALIASES: dict[str, ActiveChartType] = {
+    "comparison_bar": "bar",
+}
+
+
+def normalize_active_chart_type(value: object) -> ActiveChartType | None:
+    """Canonicalize approved style aliases while rejecting disabled styles."""
+    raw = str(value or "").strip().lower()
+    canonical = ACTIVE_CHART_TYPE_ALIASES.get(raw, raw)
+    return canonical if canonical in ACTIVE_CHART_TYPES else None  # type: ignore[return-value]
 BarVariant = Literal["vertical", "horizontal", "grouped", "stacked"]
 # 语义化展示形态（前端图表区 / HTML 排版使用）：metric_card=单值指标卡，
 # diagram=关系图，table=结构化表格，chart=常规图表。

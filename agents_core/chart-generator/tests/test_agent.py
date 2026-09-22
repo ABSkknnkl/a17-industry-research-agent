@@ -4,7 +4,7 @@ from datetime import date
 import pytest
 
 from chart_generator import ChartGenerationRequest, ChartGeneratorAgent
-from chart_generator.models import InterpretationReport
+from chart_generator.models import ACTIVE_CHART_TYPES, InterpretationReport
 
 
 def report_payload():
@@ -21,8 +21,9 @@ def test_selects_signed_bar_and_time_series(tmp_path):
     agent.settings=type(agent.settings)(output_dir=tmp_path)
     result=asyncio.run(agent.run(ChartGenerationRequest(report=report_payload())))
     types={item.chart_type for item in result.charts}
-    assert "comparison_bar" in types
+    assert "bar" in types
     assert "line" in types
+    assert types <= ACTIVE_CHART_TYPES
     assert (tmp_path/"runs"/result.run_id/"preview.html").is_file()
     assert all(item.evidence_ids for item in result.charts)
     assert {item.name for item in result.applied_skills} >= {"chart-selection","chart-readability","financial-charting"}
@@ -36,7 +37,7 @@ def test_empty_evidence_does_not_fabricate_chart():
     assert result.suppressed_charts[0].reason_code == "no_numeric_evidence"
 
 
-def test_supports_composition_radar_chain_and_advanced_families():
+def test_only_generates_the_six_approved_chart_styles():
     evidence={}
     counter=1
     for entity,share in (("甲",40),("乙",25),("丙",15),("丁",12),("戊",8)):
@@ -52,11 +53,13 @@ def test_supports_composition_radar_chain_and_advanced_families():
         rid=f"R{counter}";counter+=1
         evidence[rid]={"record_id":rid,"domain":"industry_chain","entity":label,"metric":label,"value":value}
     report=InterpretationReport.model_validate({"report_id":"ADV","subject":"先进制造","as_of":"2026-09-01","status":"completed","evidence_index":evidence})
-    requested=["pie","radar","industry_chain","area","combo","bubble","heatmap","boxplot","treemap"]
+    requested=["pie","radar","industry_chain","area","combo","bubble","heatmap","boxplot","treemap","comparison_bar"]
     result=asyncio.run(ChartGeneratorAgent().run(ChartGenerationRequest(report=report,preferences={"max_charts":30,"requested_types":requested}),save_artifacts=False))
     types={chart.chart_type for chart in result.charts}
-    assert {"pie","radar","industry_chain","area","combo","bubble","heatmap","boxplot","treemap"} <= types
-    assert "industry-chain-visualization" in {item.name for item in result.applied_skills}
+    assert types <= ACTIVE_CHART_TYPES
+    assert {"pie", "radar", "area", "combo"} <= types
+    assert not ({"industry_chain", "bubble", "heatmap", "boxplot", "treemap", "comparison_bar"} & types)
+    assert "industry-chain-visualization" not in {item.name for item in result.applied_skills}
 
 
 class MockLLM:
@@ -114,7 +117,7 @@ def test_llm_driven_chart_generation_with_tool_calling(tmp_path):
     assert len(result.charts) == 1
     chart = result.charts[0]
     assert chart.title == "测试行业企业利润增长率对比"
-    assert chart.chart_type == "comparison_bar"
+    assert chart.chart_type == "bar"
     assert chart.recommended_chapter_id == "CH-05"
     assert set(chart.evidence_ids) == {"R1", "R2", "R3"}
     assert (tmp_path / "runs" / result.run_id / "charts" / f"{chart.chart_id}.svg").is_file()
@@ -308,7 +311,8 @@ def test_self_healing_reflection_loop_on_linter_violation(tmp_path):
     types = {c.chart_type for c in result.charts}
     assert len(types) >= 3
     assert "combo" in types
-    assert "donut" in types
+    assert "pie" in types
+    assert "bar" in types
     assert "radar" in types
 
 
@@ -512,6 +516,3 @@ def test_scatter_radar_combo_donut_compiler_diversity():
     donut_opt = EChartsCompiler.compile(donut_table, "donut", "龙头市值构成")
     assert donut_opt["series"][0]["type"] == "pie"
     assert donut_opt["series"][0]["radius"] == ["36%", "68%"]
-
-
-

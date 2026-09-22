@@ -54,9 +54,9 @@ def build_runtime_prompt(
         "缺失信息写入collaboration_requests",
         "逐项读取requirement_coverage；partial或missing只能形成数据缺口/不确定性说明，不得补造用户要求的指标、政策或机构观点",
         "三种情景必须共享同一事实底座",
-        "P0图表候选仅优先使用line、bar、pie、radar、industry_chain",
-        "line用于时间趋势，bar用于类别对比或排名，pie仅用于单时点且类别不超过5的正值互斥占比",
-        "radar仅用于3至8个已标准化且同尺度指标，industry_chain仅用于有来源的上下游节点关系",
+        "图表候选只允许使用line、bar、combo、area、pie、radar六种类型",
+        "line用于时间趋势，bar用于类别对比或排名，combo用于规模与比率双轴联动，area用于连续趋势轮廓",
+        "pie使用环形布局且仅用于单时点、不超过5类的正值互斥占比；radar仅用于3至8个已标准化且同尺度指标",
         "每个图表候选必须填写analysis_purpose、insight_goal、priority和chapter_hint，避免同一结论重复制图",
         "用data_quality_issues标记missing、stale、conflict、estimated或"
         "not_comparable；不得把数据缺口改写成事实",

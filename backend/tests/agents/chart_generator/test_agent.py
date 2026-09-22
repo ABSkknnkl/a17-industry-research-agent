@@ -59,7 +59,7 @@ async def test_agent_preserves_annotation_metadata_in_result_and_artifact(
 
 
 @pytest.mark.asyncio
-async def test_agent_generates_industry_chain_image_with_ds_compiled_prompt(
+async def test_agent_suppresses_disabled_industry_chain_style(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     chain_dataset: ChartDataset,
@@ -107,19 +107,9 @@ async def test_agent_generates_industry_chain_image_with_ds_compiled_prompt(
     result = await agent.run(context)
 
     assert result.status == StageStatus.COMPLETED
-    spec = result.data["chart_specs"][0]
-    assert spec["render_mode"] == "generated_image"
-    assert spec["chain_template"] == "product_decomposition"
-    assert spec["chain_graph"]["core_product_name"] == "英伟达显卡"
-    assert spec["generation_prompt_model"] == "mock-deepseek-prompt-compiler"
-    assert {artifact.kind for artifact in result.artifacts} == {
-        "generated_chart_image",
-        "chart_spec_json",
-    }
-    image_artifact = next(
-        artifact for artifact in result.artifacts if artifact.kind == "generated_chart_image"
-    )
-    assert (tmp_path / image_artifact.uri).read_bytes().startswith(b"\x89PNG")
+    assert result.data["chart_specs"] == []
+    assert result.artifacts == []
+    assert result.data["suppressed_candidates"][0]["reason_code"] == "chart_type_not_enabled"
 
 
 @pytest.mark.asyncio
@@ -618,7 +608,7 @@ async def test_agent1_evidence_is_not_overwritten_by_empty_request_placeholder(
 
 
 @pytest.mark.asyncio
-async def test_agent_generates_all_five_p0_chart_families(
+async def test_agent_generates_only_approved_p0_chart_families(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     time_series_dataset: ChartDataset,
@@ -689,14 +679,17 @@ async def test_agent_generates_all_five_p0_chart_families(
         "bar",
         "pie",
         "radar",
-        "industry_chain",
     }
+    assert any(
+        item["reason_code"] == "chart_type_not_enabled"
+        for item in result.data["suppressed_candidates"]
+    )
     assert all(
         spec["option"]["color"][:3] == ["#3473EA", "#69B2ED", "#F3AC28"]
         for spec in result.data["chart_specs"]
     )
     assert all(spec["option"]["title"]["show"] is False for spec in result.data["chart_specs"])
-    assert len(result.artifacts) == 5
+    assert len(result.artifacts) == 4
 
 
 @pytest.mark.asyncio
@@ -777,7 +770,7 @@ async def test_agent_keeps_only_best_chart_in_same_family_and_data_scope(
 
 
 @pytest.mark.asyncio
-async def test_agent_limits_repeated_advanced_chart_family_without_forcing_minimum(
+async def test_agent_suppresses_disabled_scatter_candidates(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -838,20 +831,15 @@ async def test_agent_limits_repeated_advanced_chart_family_without_forcing_minim
     result = await ChartGeneratorAgent().run(context)
 
     assert result.status == StageStatus.COMPLETED
-    # With risk-based approach, all technically valid scatter candidates are generated
-    assert len(result.data["chart_specs"]) == 4
-    # Risk notices are generated instead of suppression
-    assert (
-        any(
-            "chart_family_budget_exceeded" in item.get("reason_code", "")
-            for item in result.data.get("suppressed_candidates", [])
-        )
-        or len(result.data["chart_specs"]) == 4
-    )
+    assert result.data["chart_specs"] == []
+    assert len(result.data["suppressed_candidates"]) == 4
+    assert {
+        item["reason_code"] for item in result.data["suppressed_candidates"]
+    } == {"chart_type_not_enabled"}
 
 
 @pytest.mark.asyncio
-async def test_agent_audits_p1_downgrade_instead_of_silently_dropping_candidate(
+async def test_agent_suppresses_disabled_bubble_candidate(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -905,8 +893,8 @@ async def test_agent_audits_p1_downgrade_instead_of_silently_dropping_candidate(
     result = await ChartGeneratorAgent().run(context)
 
     assert result.status == StageStatus.COMPLETED
-    assert result.data["chart_specs"][0]["chart_type"] == "scatter"
-    assert result.data["suppressed_candidates"][0]["reason_code"] == "chart_downgraded"
+    assert result.data["chart_specs"] == []
+    assert result.data["suppressed_candidates"][0]["reason_code"] == "chart_type_not_enabled"
 
 
 @pytest.mark.asyncio

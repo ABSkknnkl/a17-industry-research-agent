@@ -192,7 +192,7 @@ class ChartSkillLinter:
                     code="bar_chart_ratio_exceeded",
                     message=(
                         f"柱状图占比超标: 柱状/条形图共 {bar_count}/{n} 张 ({bar_ratio:.1%})，"
-                        f"超过 {self.max_bar_ratio:.0%} 上限。在数据支持的维度下，应优先挖掘 combo、scatter、radar 等多维表达"
+                        f"超过 {self.max_bar_ratio:.0%} 上限。在数据支持的维度下，应优先挖掘 combo、line、area、pie、radar 等启用表达"
                     ),
                     severity="error",
                 ))

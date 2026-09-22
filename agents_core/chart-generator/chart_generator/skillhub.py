@@ -5,8 +5,12 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
+from typing import Any
 
 from chart_generator.models import ChartGenerationRequest
+
+
+ACTIVE_SKILLS = frozenset({"chart-selection", "chart-readability", "financial-charting"})
 
 
 @dataclass(frozen=True)
@@ -43,7 +47,12 @@ class ChartSkillHub:
             metadata = json.loads(meta_file.read_text(encoding="utf-8"))
             name = self._frontmatter(text, "name")
             description = self._frontmatter(text, "description")
-            if not name or name != skill_file.parent.name or not description:
+            if (
+                not name
+                or name != skill_file.parent.name
+                or not description
+                or name not in ACTIVE_SKILLS
+            ):
                 continue
             catalog[name] = ChartSkill(
                 name=name, description=description,
@@ -105,4 +114,3 @@ class ChartSkillHub:
                 },
             }
         ]
-

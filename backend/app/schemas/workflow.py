@@ -127,6 +127,7 @@ ChartTypeName = Literal[
     "boxplot",
     "treemap",
 ]
+ActiveChartTypeName = Literal["line", "bar", "combo", "area", "pie", "radar"]
 
 
 class DataFetchOptions(ContractModel):
@@ -162,9 +163,9 @@ class DataInterpretReviewEdits(ContractModel):
 
 
 class ChartGenerationOptions(ContractModel):
-    chart_type: ChartTypeName | None = None
+    chart_type: ActiveChartTypeName | None = None
     requested_chart_count: int | None = Field(default=None, ge=1, le=30)
-    requested_chart_types: list[ChartTypeName] = Field(default_factory=list, max_length=13)
+    requested_chart_types: list[ActiveChartTypeName] = Field(default_factory=list, max_length=6)
     user_priority: bool = False
     allow_multiple_charts_per_dataset: bool = False
     bar_variant: Literal["vertical", "horizontal", "grouped", "stacked"] | None = None

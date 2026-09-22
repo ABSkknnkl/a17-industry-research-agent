@@ -140,7 +140,7 @@ class OpenAICompatibleLLM:
                         '  "charts": [\n'
                         '    {\n'
                         '      "title": "图表学术标题",\n'
-                        '      "chart_type": "bar|horizontal_bar|comparison_bar|line|area|donut|radar|combo|industry_chain",\n'
+                        '      "chart_type": "line|bar|combo|area|pie|radar",\n'
                         '      "insight_goal": "核心分析目的",\n'
                         '      "recommended_chapter_id": "CH-04",\n'
                         '      "evidence_ids": ["真实引用的R-xxx证据ID"],\n'

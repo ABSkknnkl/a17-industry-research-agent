@@ -153,6 +153,9 @@ export type ChartTypeName =
   | 'boxplot'
   | 'treemap'
 
+/** Agent 3 目前允许新生成的六种图表风格。 */
+export type ActiveChartTypeName = 'line' | 'bar' | 'combo' | 'area' | 'pie' | 'radar'
+
 // ---------- 图表公开契约（contracts/schemas/chart-generation-result.schema.json） ----------
 
 export type ChartVariant =
@@ -308,9 +311,9 @@ export interface ChartFeedbackInterpretation {
 
 /** ChartGenerationOptions（workflow.py L158-169），全部字段可选 */
 export interface ChartGenerationOptions {
-  chart_type?: ChartTypeName
+  chart_type?: ActiveChartTypeName
   requested_chart_count?: number
-  requested_chart_types?: ChartTypeName[]
+  requested_chart_types?: ActiveChartTypeName[]
   user_priority?: boolean
   allow_multiple_charts_per_dataset?: boolean
   bar_variant?: 'vertical' | 'horizontal' | 'grouped' | 'stacked'

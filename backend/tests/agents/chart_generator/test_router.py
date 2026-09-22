@@ -145,10 +145,10 @@ def test_comparison_bar_requires_two_complete_aligned_series() -> None:
         assert rejected.reason_code == "comparison_bar_series_not_aligned"
 
 
-def test_comparison_bar_is_known_to_planner_and_can_downgrade_to_plain_bar(
+def test_comparison_bar_is_legacy_only_and_can_downgrade_to_plain_bar(
     categorical_dataset: ChartDataset,
 ) -> None:
-    assert _to_chart_type("comparison_bar") == "comparison_bar"
+    assert _to_chart_type("comparison_bar") is None
     fallback = downgrade_chart("comparison_bar", categorical_dataset)
     assert fallback is not None
     assert fallback[0] == "bar"

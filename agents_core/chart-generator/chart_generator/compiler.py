@@ -94,7 +94,7 @@ class EChartsCompiler:
 
         # 6. Donut / Pie
         if t_str in ("pie", "donut", "structure_donut"):
-            return EChartsCompiler._compile_pie_donut(table, title, donut=(t_str in ("donut", "structure_donut")))
+            return EChartsCompiler._compile_pie_donut(table, title, donut=True)
 
         # 7. Radar
         if t_str == "radar":

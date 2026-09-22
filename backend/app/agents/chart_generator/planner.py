@@ -24,12 +24,6 @@ RECOMMENDED_CHAIN = 1
 P1_CHART_TYPES = {
     "combo",
     "area",
-    "scatter",
-    "bubble",
-    "heatmap",
-    "boxplot",
-    "treemap",
-    "comparison_bar",
 }
 
 
@@ -164,7 +158,7 @@ def _score_candidate(candidate: ChartCandidateResult) -> float:
 
     # Chart type diversity bonus (lower for common types)
     chart_type = _to_chart_type(candidate.chart_type)
-    if chart_type in {"industry_chain", "radar", "heatmap"}:
+    if chart_type in {"radar", "combo"}:
         score += 0.1
 
     return min(score, 1.5)
@@ -174,17 +168,10 @@ _VALID_CHART_TYPES = frozenset(
     {
         "line",
         "bar",
-        "comparison_bar",
         "pie",
         "radar",
-        "industry_chain",
         "combo",
         "area",
-        "scatter",
-        "bubble",
-        "heatmap",
-        "boxplot",
-        "treemap",
     }
 )
 
@@ -203,7 +190,7 @@ def _candidate_fingerprint(candidate: ChartCandidateResult) -> str:
 def _pick_recommended(group: list[ChartCandidateResult]) -> ChartCandidateResult:
     """Pick the best candidate from a conflict group."""
     # Sort by: combo > line > area, then priority
-    type_order = {"combo": 0, "line": 1, "area": 2, "scatter": 1, "bubble": 0}
+    type_order = {"combo": 0, "line": 1, "area": 2, "radar": 3, "pie": 4, "bar": 5}
     group.sort(
         key=lambda c: (
             type_order.get(c.chart_type, 3),
