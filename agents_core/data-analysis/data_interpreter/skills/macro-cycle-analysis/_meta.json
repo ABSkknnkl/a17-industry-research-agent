@@ -1,0 +1,6 @@
+{
+  "domains": ["macro", "industry", "news"],
+  "keywords": ["宏观", "周期", "政策", "CPI", "PPI", "PMI", "利率", "流动性", "工业增加值"],
+  "source": "skills包/宏观周期分析/macro-analysis/SKILL.md",
+  "adaptation": "保留指标体系和多维周期验证；移除固定阈值、外部取数与资产配置倾向。"
+}

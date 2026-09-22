@@ -1,0 +1,6 @@
+{
+  "domains": ["companies", "financials", "industry"],
+  "keywords": ["竞争", "格局", "同行", "对标", "龙头", "份额", "排名", "集中度"],
+  "source": "skills包/竞争格局分析/SKILL.md",
+  "adaptation": "保留可比口径、竞争者映射与相对指标分析；移除问询、研究、PPT 和战略建议流程。"
+}

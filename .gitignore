@@ -42,6 +42,7 @@ backend/data/
 backend/artifacts/
 /artifacts/
 /output/
+/agents_core/**/output/
 backups/
 
 # Testing
