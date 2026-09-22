@@ -14,6 +14,12 @@ class ProductionReadinessError(RuntimeError):
         super().__init__("production_readiness_failed:" + ",".join(self.issue_codes))
 
 
+def selected_agent_engine(settings: Settings) -> str:
+    """Return a public, credential-free identifier for the active stage engine."""
+
+    return "vendored_five_agents" if settings.REAL_AGENTS_ENABLED else "repository_native"
+
+
 def runtime_configuration_issues(settings: Settings) -> list[str]:
     """Return safe issue codes without exposing provider credentials."""
 

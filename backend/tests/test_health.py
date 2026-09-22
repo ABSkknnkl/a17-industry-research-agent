@@ -18,6 +18,7 @@ def test_readiness_reports_test_adapters_without_exposing_secrets(
     payload = response.json()
     assert payload["ready"] is True
     assert payload["environment"] == "test"
+    assert payload["agent_engine"] == "repository_native"
     assert payload["mock_components"] == ["agent_1", "agent_2", "agent_4"]
     assert "api_key" not in str(payload).lower()
     assert "bearer" not in str(payload).lower()

@@ -16,6 +16,7 @@ class HealthResponse(ResponseModel):
 class ReadinessResponse(ResponseModel):
     ready: bool
     environment: str
+    agent_engine: str
     llm_provider: str
     llm_model: str
     skillhub_provider: str

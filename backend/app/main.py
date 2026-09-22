@@ -9,7 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router
 from app.core.config import settings
-from app.core.readiness import assert_runtime_configuration, verify_writable_directory
+from app.core.readiness import (
+    assert_runtime_configuration,
+    selected_agent_engine,
+    verify_writable_directory,
+)
 from app.infrastructure.checkpoint import open_sqlite_checkpointer
 from app.integrations.llm.factory import create_analysis_model, create_chapter_writing_model
 from app.reporting.html_composer_loader import html_composer_issue_codes
@@ -55,6 +59,7 @@ def create_app(*, checkpoint_database_path: Path | None = None) -> FastAPI:
             application.state.readiness = ReadinessResponse(
                 ready=True,
                 environment=settings.ENVIRONMENT,
+                agent_engine=selected_agent_engine(settings),
                 llm_provider=("mock" if settings.LLM_USE_MOCK else "openai_compatible"),
                 llm_model=settings.LLM_MODEL,
                 skillhub_provider=("mock" if settings.SKILLHUB_USE_MOCK else "iwencai"),
@@ -116,6 +121,7 @@ def create_app(*, checkpoint_database_path: Path | None = None) -> FastAPI:
             return ReadinessResponse(
                 ready=False,
                 environment=settings.ENVIRONMENT,
+                agent_engine=selected_agent_engine(settings),
                 llm_provider="unknown",
                 llm_model=settings.LLM_MODEL,
                 skillhub_provider="unknown",
