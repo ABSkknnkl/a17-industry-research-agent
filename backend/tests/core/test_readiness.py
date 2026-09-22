@@ -48,6 +48,20 @@ def test_production_configuration_rejects_mock_and_missing_credentials() -> None
     }
 
 
+def test_real_agent_readiness_reports_codes_without_secret_values() -> None:
+    configured = _production_settings(
+        REAL_AGENTS_ENABLED=True,
+        LLM_API_KEY=SecretStr("do-not-leak-llm-secret"),
+        IWENCAI_API_KEY=None,
+        SKILLHUB_API_KEY=None,
+    )
+
+    issues = runtime_configuration_issues(configured)
+
+    assert issues == ["skillhub_api_key_missing"]
+    assert "do-not-leak-llm-secret" not in repr(issues)
+
+
 def test_test_environment_explicitly_permits_deterministic_mocks() -> None:
     configured = _production_settings(
         ENVIRONMENT="test",

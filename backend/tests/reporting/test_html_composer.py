@@ -3,6 +3,7 @@ import json
 import re
 
 from app.agents.report_fusion.assembler import build_report_view
+from app.agents.report_fusion.composition import ensure_page_composition_plan
 from app.agents.report_fusion.editorial import report_editor_context, standard_editorial_plan
 from app.agents.report_fusion.html_composition import build_html_composition_plan
 from app.reporting.html import render_html
@@ -37,12 +38,32 @@ def test_catalog_is_loaded_from_the_project_skill() -> None:
     assert html_composer_issue_codes() == []
 
 
+def test_condensed_chapter_keeps_the_canonical_toc_anchor(
+    report_analysis,
+    report_charts,
+    report_chapters,
+) -> None:
+    """Condensing an evidence-poor chapter must not create a dead TOC link."""
+
+    report = _report(report_analysis, report_charts, report_chapters)
+    plan = ensure_page_composition_plan(report).model_copy(
+        update={"condensed_chapter_ids": [report.chapters[0].chapter_id]}
+    )
+
+    rendered = render_html(report.model_copy(update={"page_composition_plan": plan}))
+
+    assert 'href="#chapter-1"' in rendered
+    assert 'id="chapter-1"' in rendered
+
+
 def test_editor_context_contains_runtime_skill_brief(
     report_analysis,
     report_charts,
     report_chapters,
 ) -> None:
-    payload = json.loads(report_editor_context(_report(report_analysis, report_charts, report_chapters)))
+    payload = json.loads(
+        report_editor_context(_report(report_analysis, report_charts, report_chapters))
+    )
 
     skill = payload["html_composer_skill"]
     assert skill["source"] == "skill"
@@ -80,7 +101,9 @@ def test_valid_model_section_decision_controls_html_composition(
     composed = report.model_copy(update={"editorial_plan": editorial_plan})
     plan = build_html_composition_plan(composed, condensed_chapter_ids=set())
     target = next(
-        item for item in plan.section_decisions if item.section_id == target_chart.placement_section_id
+        item
+        for item in plan.section_decisions
+        if item.section_id == target_chart.placement_section_id
     )
 
     assert plan.report_mode == "chart_led"
@@ -156,7 +179,9 @@ def test_invalid_model_chart_layout_degrades_without_losing_section(
         }
     )
     plan = build_html_composition_plan(report.model_copy(update={"editorial_plan": proposed}))
-    target = next(item for item in plan.section_decisions if item.section_id == no_chart_section.section_id)
+    target = next(
+        item for item in plan.section_decisions if item.section_id == no_chart_section.section_id
+    )
 
     assert target.layout_id != "small_multiples"
     assert target.decision_source == "deterministic"
@@ -236,9 +261,7 @@ def test_data_dense_input_overrides_an_incompatible_narrative_mode(
     expanded = []
     for index in range(12):
         source = report.charts[index % len(report.charts)]
-        expanded.append(
-            source.model_copy(update={"chart_id": f"CHART-DENSE-{index + 1:02d}"})
-        )
+        expanded.append(source.model_copy(update={"chart_id": f"CHART-DENSE-{index + 1:02d}"}))
     proposed = standard_editorial_plan(report, enabled=True).model_copy(
         update={"source": "model", "html_report_mode": "narrative_led"}
     )

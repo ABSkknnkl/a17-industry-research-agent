@@ -8,6 +8,8 @@ from app.agents.data_fetcher.factory import (
 from app.agents.chapter_writer.service import ChapterWriterAgent
 from app.agents.chart_generator.service import ChartGeneratorAgent
 from app.agents.report_fusion.service import ReportFusionAgent
+from app.agents.real_core import RealFiveAgentAdapter, create_real_stages
+from app.agents.real_core.artifacts import RealAgentArtifactStore
 from app.integrations.llm.factory import (
     create_readability_model,
     create_visual_review_model,
@@ -20,6 +22,7 @@ from app.runtime.model_gateway import (
     RuntimeAwareChapterWritingModel,
 )
 from app.security.agent_guard import SecuredStageAgent
+from app.schemas.workflow import StageName
 from app.workflow.stages import StageRegistry
 
 
@@ -28,6 +31,22 @@ def create_stage_registry(
     chapter_model: ChapterWritingModel,
 ) -> StageRegistry:
     """Compose all five production stages without an implicit Mock fallback."""
+
+    if settings.REAL_AGENTS_ENABLED:
+        real_stages = create_real_stages(
+            RealFiveAgentAdapter(),
+            RealAgentArtifactStore(settings.ARTIFACT_ROOT),
+        )
+        return StageRegistry(
+            [
+                (
+                    stage
+                    if stage.stage not in {StageName.DATA_INTERPRET, StageName.CHAPTER_WRITE}
+                    else SecuredStageAgent(stage)
+                )
+                for stage in real_stages
+            ]
+        )
 
     writer_model = RuntimeAwareChapterWritingModel(chapter_model)
     analysis_model = RuntimeAwareAnalysisModel(model)

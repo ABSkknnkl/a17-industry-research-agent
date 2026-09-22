@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     CHECKPOINT_DATABASE_PATH: Path = Path("./data/checkpoints.sqlite")
     ARTIFACT_ROOT: Path = Path("./artifacts")
 
+    # Use the five standalone agent implementations vendored at repository root.
+    # Tests explicitly disable this switch unless they exercise the bridge.
+    REAL_AGENTS_ENABLED: bool = True
+
     LLM_API_KEY: SecretStr | None = None
     LLM_BASE_URL: str | None = None
     LLM_MODEL: str = "deepseek-v4-flash"

@@ -18,6 +18,7 @@ def isolate_test_security_state(
 ) -> None:
     # Never spend a developer's real model quota during the deterministic test suite.
     monkeypatch.setattr(settings, "ENVIRONMENT", "test")
+    monkeypatch.setattr(settings, "REAL_AGENTS_ENABLED", False)
     monkeypatch.setattr(settings, "LLM_USE_MOCK", True)
     monkeypatch.setattr(settings, "INDUSTRY_CHAIN_IMAGE_ENABLED", False)
     monkeypatch.setattr(settings, "IMAGE_USE_MOCK", True)

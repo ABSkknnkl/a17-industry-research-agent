@@ -9,6 +9,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Checkpointer, interrupt
 
+from app.core.config import settings
 from app.schemas.analysis import AnalysisResult
 from app.schemas.decision import compute_risk_snapshot_sha256
 from app.schemas.workflow import StageName, StageResult, StageStatus
@@ -260,7 +261,7 @@ def _stage_node(
                     "updated_at": datetime.now(UTC).isoformat(),
                 }
 
-            if stage == StageName.DATA_INTERPRET:
+            if stage == StageName.DATA_INTERPRET and not settings.REAL_AGENTS_ENABLED:
                 # Agent 2 的信封字段（决策包/协作请求）只服务审核决策；
                 # 自动放行路径同样必须剥离，维持纯 AnalysisResult 契约
                 # （下游 Agent 3/4/5 直接 model_validate，extra=forbid）。

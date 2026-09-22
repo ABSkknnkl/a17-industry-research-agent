@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 from pathlib import Path
 from typing import Any
@@ -33,6 +34,25 @@ logger = logging.getLogger("agent_adapters")
 
 class AgentExecutionError(Exception):
     pass
+
+
+def _sync_standalone_environment() -> None:
+    """Provide the standalone packages with the validated application settings."""
+
+    values = {
+        "LLM_API_KEY": (settings.LLM_API_KEY.get_secret_value() if settings.LLM_API_KEY else ""),
+        "LLM_BASE_URL": settings.LLM_BASE_URL or "",
+        "LLM_MODEL": settings.LLM_MODEL,
+        "LLM_TIMEOUT_SECONDS": str(settings.LLM_TIMEOUT_SECONDS),
+        "LLM_MAX_TOKENS": str(settings.LLM_MAX_OUTPUT_TOKENS),
+        "IWENCAI_API_KEY": (
+            settings.IWENCAI_API_KEY.get_secret_value()
+            if settings.IWENCAI_API_KEY
+            else (settings.SKILLHUB_API_KEY.get_secret_value() if settings.SKILLHUB_API_KEY else "")
+        ),
+        "CHAPTER_CONCURRENCY": str(settings.CHAPTER_WRITE_CONCURRENCY),
+    }
+    os.environ.update(values)
 
 
 class FiveAgentsAdapter:
@@ -1392,6 +1412,7 @@ class RealFiveAgentAdapter:
     }
 
     async def invoke(self, stage: StageName, **kwargs: Any) -> StageResult:
+        _sync_standalone_environment()
         try:
             method = self._METHODS[stage]
         except KeyError as exc:
