@@ -1,0 +1,200 @@
+/* ===================================================================
+   精品研报风设计令牌 —— 覆盖 Element Plus 默认主题
+   藏青主色 + 金铜点缀 + 米白纸面底 + 衬线标题 + 高密度紧凑排版
+   =================================================================== */
+
+:root {
+  /* 研报色板 */
+  --rp-navy: #1e3a5c;
+  --rp-navy-dark: #162b45;
+  --rp-gold: #a9853f;
+  --rp-paper: #f6f4ef;
+  --rp-card: #fffefb;
+  --rp-ink: #26251f;
+  --rp-line: #e3ddcd;
+  --rp-serif: Georgia, 'Times New Roman', 'Songti SC', 'STZhongsong', SimSun, serif;
+
+  /* Element Plus 主色 → 藏青 */
+  --el-color-primary: #1e3a5c;
+  --el-color-primary-light-3: #4a6584;
+  --el-color-primary-light-5: #76899f;
+  --el-color-primary-light-7: #a3b1c2;
+  --el-color-primary-light-8: #bec8d5;
+  --el-color-primary-light-9: #e4e8ee;
+  --el-color-primary-dark-2: #18304e;
+
+  /* 语义色 → 研报柔和调（warning 即金铜色） */
+  --el-color-success: #3d7a50;
+  --el-color-success-light-3: #6f9a7c;
+  --el-color-success-light-5: #93b39c;
+  --el-color-success-light-7: #b8ccbd;
+  --el-color-success-light-8: #cdddd1;
+  --el-color-success-light-9: #e6efe4;
+  --el-color-warning: #a9853f;
+  --el-color-warning-light-3: #bfa472;
+  --el-color-warning-light-5: #d0bc94;
+  --el-color-warning-light-7: #e2d5b7;
+  --el-color-warning-light-8: #eae0cb;
+  --el-color-warning-light-9: #f4ecdc;
+  --el-color-danger: #a8402f;
+  --el-color-danger-light-3: #bd6d60;
+  --el-color-danger-light-5: #d08e81;
+  --el-color-danger-light-7: #e2b1a8;
+  --el-color-danger-light-8: #ecc6c0;
+  --el-color-danger-light-9: #f4e3df;
+  --el-color-error: #a8402f;
+  --el-color-error-light-3: #bd6d60;
+  --el-color-error-light-5: #d08e81;
+  --el-color-error-light-7: #e2b1a8;
+  --el-color-error-light-8: #ecc6c0;
+  --el-color-error-light-9: #f4e3df;
+  --el-color-info: #6b675c;
+  --el-color-info-light-3: #8f8b80;
+  --el-color-info-light-5: #aaa69c;
+  --el-color-info-light-7: #c5c2b9;
+  --el-color-info-light-8: #d4d1c9;
+  --el-color-info-light-9: #e8e6df;
+
+  /* 纸面底色 / 边框 / 文字 */
+  --el-bg-color-page: #f6f4ef;
+  --el-bg-color: #fffefb;
+  --el-bg-color-overlay: #fffefb;
+  --el-fill-color-light: #f4f1e9;
+  --el-fill-color-lighter: #f9f7f1;
+  --el-fill-color-blank: #fffefb;
+  --el-border-color: #d5cdb8;
+  --el-border-color-light: #e3ddcd;
+  --el-border-color-lighter: #ebe6d9;
+  --el-border-color-extra-light: #f2eee4;
+  --el-text-color-primary: #26251f;
+  --el-text-color-regular: #46433a;
+  --el-text-color-secondary: #8f8a7a;
+  --el-text-color-placeholder: #b5b0a0;
+
+  /* 印刷感：小圆角 */
+  --el-border-radius-base: 3px;
+  --el-border-radius-small: 2px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--el-bg-color-page);
+  color: var(--el-text-color-primary);
+}
+
+/* ===== 排版 ===== */
+
+.page-title {
+  font-family: var(--rp-serif);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--rp-navy);
+}
+
+.page-card {
+  margin-bottom: 12px;
+  border-radius: 4px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-title {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.3px;
+  color: var(--rp-navy);
+}
+
+.muted {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.pre-line {
+  white-space: pre-line;
+}
+
+/* 数字展示：衬线 + 等宽数字（报表质感） */
+.metric-value,
+.score-value,
+.toc-index {
+  font-family: var(--rp-serif);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ===== Element Plus 高密度紧凑化 ===== */
+
+.el-card {
+  --el-card-border-color: var(--el-border-color-light);
+  --el-card-border-radius: 4px;
+}
+
+.el-card__body {
+  padding: 14px 16px;
+}
+
+.el-card__header {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--el-border-color-light);
+}
+
+.el-dialog {
+  border-radius: 4px;
+}
+
+.el-dialog__header {
+  border-bottom: 1px solid var(--el-border-color-light);
+  margin-right: 0;
+  padding-bottom: 12px;
+}
+
+.el-dialog__title {
+  font-family: var(--rp-serif);
+  font-weight: 700;
+  color: var(--rp-navy);
+}
+
+.el-table {
+  --el-table-border-color: var(--el-border-color-lighter);
+  --el-table-header-bg-color: #f4f1e9;
+  --el-table-header-text-color: var(--rp-navy);
+  font-size: 12px;
+}
+
+.el-table th.el-table__cell {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.el-tag {
+  border-radius: 2px;
+}
+
+.el-button {
+  border-radius: 3px;
+}
+
+.el-descriptions__label {
+  color: var(--el-text-color-secondary);
+}
+
+/* 步骤条：小结文字紧凑 */
+.el-step__description {
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+/* 树节点紧凑 */
+.el-tree-node__label {
+  font-size: 12.5px;
+}

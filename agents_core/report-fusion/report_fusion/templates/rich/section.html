@@ -1,0 +1,133 @@
+<!-- Section Component -->
+{% macro render_section(section, charts_by_section, lookup, subject="") %}
+<section id="{{ section.section_id }}" class="report-section layout-{{ section.layout_hint }}">
+  <div class="section-header-wrap">
+    <div class="section-accent-pill"></div>
+    <div class="section-header-content">
+      <h3 class="section-heading">{{ section.title }}</h3>
+    </div>
+  </div>
+
+  <!-- Section Key Points Cards -->
+  {% if section.key_points %}
+  <div class="section-key-points">
+    {% for kp in section.key_points %}
+    <div class="key-point-chip">
+      <span class="chip-dot">●</span>
+      <span>{{ kp }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Metric Cards if Present -->
+  {% if section.metric_cards %}
+  <div class="section-metrics-row">
+    {% for mc in section.metric_cards %}
+    <div class="mini-metric-card">
+      <span class="mini-label">{{ mc.label }}:</span>
+      {% set val_str = mc.value | string %}
+      {% set unit_str = mc.unit or "" %}
+      <span class="mini-val">{{ val_str }}{% if unit_str and not val_str.endswith(unit_str) %}{{ unit_str }}{% endif %}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Layout Container: Text and Optional Adjacent Chart -->
+  {% set sec_charts = charts_by_section.get(section.section_id, []) %}
+  <div class="section-body {% if sec_charts and section.layout_hint == chart_right %}split-body{% endif %}">
+    
+    <div class="text-column">
+      {% for para in section.paragraphs %}
+      <div class="paragraph-wrap kind-{{ para.kind }}">
+        <p class="para-text">
+          {{ para.text }}
+          {% if para.evidence_ids %}
+          <span class="citations">
+            {% for eid in para.evidence_ids %}
+              {% if eid in lookup %}<a href="#src-{{ lookup[eid] }}" class="cite-ref">[来源{{ lookup[eid] }}]</a>{% endif %}
+            {% endfor %}
+          </span>
+          {% endif %}
+        </p>
+        {% if para.assumption_note %}
+        <div class="para-note">测算假设：{{ para.assumption_note }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <!-- Comparison Table if Present -->
+      {% if section.comparison_table and section.comparison_table.columns %}
+      <div class="comparison-table-wrapper">
+        {% if section.comparison_table.title %}<div class="table-title">{{ section.comparison_table.title }}</div>{% endif %}
+        <table class="report-table">
+          <thead>
+            <tr>
+              {% for col in section.comparison_table.columns %}
+              <th>{{ col }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in section.comparison_table.rows %}
+            {% set row_str = row | join(" ") %}
+            {% set target_subj = subject or (view.subject if view is defined and view else "") %}
+            <tr class="{% if target_subj and target_subj in row_str %}target-company-row{% endif %}">
+              {% for cell in row %}
+              <td>{{ cell }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% endif %}
+
+      <!-- Callout Boxes if Present -->
+      {% for callout in section.callouts %}
+      <div class="callout-box callout-{{ callout.type }}">
+        <div class="callout-header">{{ callout.title }}</div>
+        <div class="callout-content">{{ callout.text }}</div>
+      </div>
+      {% endfor %}
+
+      <!-- Uncertainties / Verification Checkpoints -->
+      {% if section.uncertainties %}
+      <div class="uncertainties-box">
+        <div class="uncertainties-title">待验证事项与资料边界</div>
+        <ul>
+          {% for unc in section.uncertainties %}
+          <li>{{ unc }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Chart Column（rich=更多图表：多图网格） -->
+    {% if sec_charts %}
+    <div class="chart-column rich-chart-grid">
+      {% for chart in sec_charts %}
+      <figure class="chart-figure chart-block">
+        <div class="chart-figure-header">
+          <span class="figure-num-badge">{{ chart.figure_number or "图表" }}</span>
+          <span class="figure-title-text">{{ chart.title }}</span>
+        </div>
+        <div class="chart-svg-container">
+          {{ chart.svg | safe }}
+        </div>
+        <figcaption class="chart-caption">
+          {% if chart.insight_goal %}
+          <div class="chart-goal"><span class="goal-tag">研判焦点</span>{{ chart.insight_goal }}</div>
+          {% endif %}
+        </figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+
+  </div>
+</section>
+{% endmacro %}

@@ -1,0 +1,107 @@
+<!-- Page 1: Investment Update & Executive Snapshot -->
+<section class="executive-summary-page">
+  <div class="exec-top-bar">
+    <div class="section-badge">PAGE 1 · EXECUTIVE BRIEFING & STRATEGY UPDATE</div>
+    <div class="exec-stamp">INSTITUTIONAL GRADE</div>
+  </div>
+  <h2 class="exec-title">核心投资逻辑与产业执行快照</h2>
+  <div class="exec-subtitle">全面穿透{{ view.subject }}核心业务壁垒、财务质量指标与产业链价值分配格局</div>
+  
+  <!-- Core Thesis Editorial Banner -->
+  <div class="exec-headline-banner">
+    <div class="quote-mark">“</div>
+    <div class="exec-headline-content">
+      <div class="headline-tag">【首席产业研判 · 核心逻辑】</div>
+      <div class="exec-headline-text">{{ view.executive_summary.headline }}</div>
+    </div>
+  </div>
+
+  <!-- Hero Metric Cards Grid -->
+  {% if view.executive_summary.metric_cards %}
+  <div class="metric-cards-grid">
+    {% for mc in view.executive_summary.metric_cards[:4] %}
+    {% set c_class = "card-accent-blue" if loop.index == 1 else ("card-accent-teal" if loop.index == 2 else ("card-accent-gold" if loop.index == 3 else "card-accent-purple")) %}
+    <div class="metric-card {{ c_class }}">
+      <div class="metric-card-top">
+        <span class="metric-label">{{ mc.label }}</span>
+        <span class="metric-index-dot">●</span>
+      </div>
+      <div class="metric-val-row">
+        <span class="metric-value">{{ mc.value }}</span>
+        {% if mc.unit %}<span class="metric-unit">{{ mc.unit }}</span>{% endif %}
+      </div>
+      <div class="metric-card-bottom">
+        {% if mc.period %}<span class="metric-period">{{ mc.period }}</span>{% endif %}
+        <span class="metric-trend-pill">已核实</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Core Takeaways with Numbered Step Badges -->
+  <div class="takeaways-container">
+    <div class="takeaways-header">
+      <span class="header-icon">✦</span>
+      <h3 class="subsection-title">核心研判结论与产业链驱动要素</h3>
+    </div>
+    <div class="takeaway-list">
+      {% for item in view.executive_summary.conclusions %}
+      <div class="takeaway-card">
+        <div class="takeaway-pill-badge">0{{ loop.index }}</div>
+        <div class="takeaway-content">
+          <div class="takeaway-text">
+            <strong>{{ item.text }}</strong>
+          </div>
+          <div class="takeaway-meta">
+            {% if item.evidence_ids %}
+            <span class="citations-group">
+              {% for eid in item.evidence_ids %}
+              {% if eid in lookup %}
+              <a href="#src-{{ lookup[eid] }}" class="citation-pill">来源{{ lookup[eid] }}</a>
+              {% endif %}
+              {% endfor %}
+            </span>
+            {% endif %}
+            <span class="confidence-tag confidence-{{ item.confidence }}">
+              <span class="conf-dot">●</span> 置信度：{{ item.confidence | upper }}
+            </span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Risks & Research Boundaries Dual Column -->
+  <div class="boundary-grid">
+    {% if view.executive_summary.risks %}
+    <div class="boundary-card risk-card">
+      <div class="boundary-card-header">
+        <span class="boundary-icon">⚠️</span>
+        <span class="boundary-title">核心投资风险与敏感性提示</span>
+      </div>
+      <ul class="boundary-list">
+        {% for risk in view.executive_summary.risks %}
+        <li>{{ risk.text if risk is mapping else risk }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if view.executive_summary.research_boundaries %}
+    <div class="boundary-card note-card">
+      <div class="boundary-card-header">
+        <span class="boundary-icon">🔍</span>
+        <span class="boundary-title">研究边界与数据口径说明</span>
+      </div>
+      <ul class="boundary-list">
+        {% for bound in view.executive_summary.research_boundaries %}
+        <li>{{ bound.text if bound is mapping else bound }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</section>
+

@@ -1,0 +1,1 @@
+{"domains":["industry","companies","financials","macro"],"keywords":["风险","压力测试","VaR","CVaR","回撤","尾部","波动率","情景"],"requires_signal":true,"source":"skills包/风险分析与压力测试/risk-analysis/SKILL.md","adaptation":"保留风险度量、压力场景和模型限制；移除风险控制与配置建议。"}

@@ -1,0 +1,51 @@
+/* Publication-Grade Design Tokens for Institutional Research Reports */
+:root {
+  --ink-primary: #0f172a;
+  --ink-secondary: #334155;
+  --ink-muted: #64748b;
+  --ink-light: #94a3b8;
+
+  /* Institutional Banking Brand Colors */
+  --brand-navy: #0a2540;
+  --brand-navy-dark: #071426;
+  --brand-navy-light: #1e3a8a;
+  --brand-gold: #d97706;
+  --brand-gold-light: #fef3c7;
+  --brand-gold-text: #92400e;
+  
+  --accent-primary: #155eef;
+  --accent-primary-hover: #124ec7;
+  --accent-primary-light: #eff8ff;
+  --accent-secondary: #0f766e;
+  --accent-secondary-light: #f0fdf4;
+  --accent-purple: #6941c6;
+  --accent-purple-light: #f9f5ff;
+  
+  --line-subtle: #eaecf0;
+  --line-border: #d0d5dd;
+  --line-dark: #334155;
+
+  --bg-page: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-muted: #f8fafc;
+  --bg-highlight: #fffdf0;
+
+  /* Gradients & Shadows */
+  --accent-ribbon: linear-gradient(90deg, #0a2540 0%, #155eef 45%, #0f766e 75%, #d97706 100%);
+  --navy-hero-gradient: linear-gradient(135deg, #0a2540 0%, #1e3a5f 100%);
+  --card-bg-gradient: linear-gradient(145deg, #ffffff 0%, #f9fbfd 100%);
+  --card-shadow: 0 4px 20px -2px rgba(16, 24, 40, 0.05), 0 2px 6px -1px rgba(16, 24, 40, 0.03);
+  --card-shadow-hover: 0 8px 24px -4px rgba(16, 24, 40, 0.08);
+
+  --callout-risk-border: #f04438;
+  --callout-risk-bg: #fef3f2;
+  --callout-risk-text: #b42318;
+
+  --callout-note-border: #155eef;
+  --callout-note-bg: #eff8ff;
+  --callout-note-text: #175cd3;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
+}
+

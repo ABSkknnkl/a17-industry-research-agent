@@ -1,0 +1,7 @@
+{
+  "domains": ["industry", "companies", "financials", "macro", "industry_chain"],
+  "keywords": ["图表", "坐标轴", "单位", "图例", "脚注", "可读性"],
+  "always": true,
+  "source": "skills包/投行材料质检/SKILL.md; skills包/竞争格局分析/SKILL.md",
+  "adaptation": "保留数据叙事一致、图表标注和版面可读性规则；移除演示文稿审批、字体硬编码和人工确认。"
+}

@@ -1,0 +1,80 @@
+[
+  {
+    "chart_type": "line",
+    "title": "财务诊断评分趋势",
+    "status": "ok",
+    "source": "real",
+    "svg": "line.svg",
+    "svg_bytes": 12395,
+    "series": 6,
+    "points": 84,
+    "point_evidence_ids": 84,
+    "axis_type": "AxisType.TIME_SERIES",
+    "note": "指标「财务诊断评分」，126 条证据"
+  },
+  {
+    "chart_type": "bar",
+    "title": "营业收入横向比较",
+    "status": "ok",
+    "source": "real",
+    "svg": "bar.svg",
+    "svg_bytes": 4516,
+    "series": 6,
+    "points": 84,
+    "point_evidence_ids": 84,
+    "axis_type": "AxisType.TIME_SERIES",
+    "note": "指标「财务诊断评分」，126 条证据"
+  },
+  {
+    "chart_type": "combo",
+    "title": "研发费用同比增长率与归母净利润",
+    "status": "ok",
+    "source": "real",
+    "svg": "combo.svg",
+    "svg_bytes": 6873,
+    "series": 6,
+    "points": 84,
+    "point_evidence_ids": 84,
+    "axis_type": "AxisType.TIME_SERIES",
+    "note": "指标「财务诊断评分」，126 条证据"
+  },
+  {
+    "chart_type": "area",
+    "title": "归母净利润趋势（面积）",
+    "status": "ok",
+    "source": "real",
+    "svg": "area.svg",
+    "svg_bytes": 13880,
+    "series": 6,
+    "points": 84,
+    "point_evidence_ids": 84,
+    "axis_type": "AxisType.TIME_SERIES",
+    "note": "指标「财务诊断评分」，126 条证据"
+  },
+  {
+    "chart_type": "radar",
+    "title": "单实体多指标雷达",
+    "status": "ok",
+    "source": "real",
+    "svg": "radar.svg",
+    "svg_bytes": 3776,
+    "series": 1,
+    "points": 8,
+    "point_evidence_ids": 8,
+    "axis_type": "AxisType.TIME_SERIES",
+    "note": "科力远 的 8 项指标"
+  },
+  {
+    "chart_type": "pie",
+    "title": "动力电池装机份额构成（演示数据）",
+    "status": "ok",
+    "source": "demo",
+    "svg": "pie.svg",
+    "svg_bytes": 3618,
+    "series": 1,
+    "points": 8,
+    "point_evidence_ids": 8,
+    "axis_type": "AxisType.STRUCTURE",
+    "note": "指标「财务诊断评分」，126 条证据"
+  }
+]

@@ -1,0 +1,30 @@
+{
+  "report_id": "REPORT-58F406F772A4",
+  "generated_at": "2026-09-23T00:05:28.132594+08:00",
+  "artifacts": [
+    {
+      "kind": "html",
+      "uri": "/Users/Zhuanz1/Downloads/行业研究智能体-全链路系统 3/output/runs/report-20260923000518-36b3ef17/report.html",
+      "sha256": "16d9656d0ccbb98d21640d74b4efc4cfb6d814d0bee6afa4efb434b3fa094a5c",
+      "size_bytes": 2223302
+    },
+    {
+      "kind": "markdown",
+      "uri": "/Users/Zhuanz1/Downloads/行业研究智能体-全链路系统 3/output/runs/report-20260923000518-36b3ef17/report.md",
+      "sha256": "28ec27929538a3447194dcbb96fae4a6405d8fe1b086b1613a78e9677d8bb232",
+      "size_bytes": 127599
+    },
+    {
+      "kind": "json",
+      "uri": "/Users/Zhuanz1/Downloads/行业研究智能体-全链路系统 3/output/runs/report-20260923000518-36b3ef17/report_view.json",
+      "sha256": "28f5b2104b9b4a41bf5e1fbcab3ea8777ecd4f2f2fece0a4181e2aaa31dcea27",
+      "size_bytes": 2206897
+    },
+    {
+      "kind": "json",
+      "uri": "/Users/Zhuanz1/Downloads/行业研究智能体-全链路系统 3/output/runs/report-20260923000518-36b3ef17/consistency_report.json",
+      "sha256": "dbaeda3f7bb9ea220101628041a80f9ce0c1e22c79f7d85fbbd4d51e8ae83cfa",
+      "size_bytes": 126
+    }
+  ]
+}

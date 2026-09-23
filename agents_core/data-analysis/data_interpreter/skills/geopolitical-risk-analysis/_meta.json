@@ -1,0 +1,7 @@
+{
+  "domains": ["macro", "industry", "news", "reports"],
+  "keywords": ["地缘", "关税", "制裁", "出口管制", "脱钩", "供应链", "卡脖子", "海外", "出海", "国产替代", "贸易战"],
+  "requires_signal": true,
+  "source": "skills包/地缘政治风险分析/geopolitical-risk/SKILL.md",
+  "adaptation": "量化出海关税、供应链关键卡脖子环节及极端制裁情景下的断链与替代成本；移除资产套期保值与大类对冲仓位操作。"
+}

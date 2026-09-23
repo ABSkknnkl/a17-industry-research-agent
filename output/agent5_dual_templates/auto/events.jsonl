@@ -1,0 +1,8 @@
+{"timestamp": "2026-09-22T23:31:14.776437+08:00", "event": "fusion_started", "details": {"source_chapters": "chapters-20260922203034-133e18c1"}}
+{"timestamp": "2026-09-22T23:33:48.289195+08:00", "event": "skill_routed_by_policy", "details": {"skills": ["evidence-catalog", "executive-summary-synthesis", "report-consistency-audit", "report-visual-quality", "thesis-scorecard-synthesis"], "route_type": "fast_skill_router", "reason": "总编审校标准四维规范快速路由"}}
+{"timestamp": "2026-09-22T23:33:48.289276+08:00", "event": "skills_applied", "details": {"skills": ["evidence-catalog", "executive-summary-synthesis", "report-consistency-audit", "report-visual-quality", "thesis-scorecard-synthesis"]}}
+{"timestamp": "2026-09-22T23:33:48.290745+08:00", "event": "skill_linter_checked", "details": {"passed": true, "issues": []}}
+{"timestamp": "2026-09-22T23:33:48.328776+08:00", "event": "format_exported", "details": {"format": "markdown", "size": 127599}}
+{"timestamp": "2026-09-22T23:33:48.331970+08:00", "event": "format_exported", "details": {"format": "html", "size": 2208951}}
+{"timestamp": "2026-09-22T23:33:48.684159+08:00", "event": "format_failed", "details": {"format": "pdf", "error": "BrowserType.launch: Executable doesn't exist at /Users/Zhuanz1/Library/Caches/ms-playwright/chromium_headless_shell-1234/chrome-headless-shell-mac-arm64/chrome-headless-shell\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║"}}
+{"timestamp": "2026-09-22T23:33:48.690520+08:00", "event": "fusion_completed", "details": {"status": "partial", "formats": ["markdown", "html"]}}

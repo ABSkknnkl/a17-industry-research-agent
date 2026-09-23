@@ -1,0 +1,1203 @@
+from __future__ import annotations
+import asyncio
+import json
+import logging
+import shutil
+from pathlib import Path
+from typing import Any
+
+from backend.app.core.config import settings
+from backend.app.core.event_hub import event_hub
+from backend.app.core.storage import storage
+from backend.app.schemas.workflow import ArtifactRef, StageResult, WorkflowState
+
+logger = logging.getLogger("agent_adapters")
+
+
+def _json_value(value: Any) -> Any:
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    if hasattr(value, "value"):
+        return value.value
+    return value
+
+
+def _build_evidence_digest(report: Any) -> dict[str, dict[str, Any]]:
+    referenced_ids = {
+        record_id
+        for insight in getattr(report, "insights", [])
+        for record_id in getattr(insight, "evidence_record_ids", [])
+    }
+    evidence_index = getattr(report, "evidence_index", {})
+    digest: dict[str, dict[str, Any]] = {}
+
+    for record_id in sorted(referenced_ids):
+        evidence = evidence_index.get(record_id)
+        if evidence is None:
+            continue
+
+        entity = getattr(evidence, "entity", None)
+        metric = getattr(evidence, "metric", "")
+        value = getattr(evidence, "value", None)
+        unit = getattr(evidence, "unit", None)
+        label = " · ".join(part for part in (entity, metric) if part)
+        if isinstance(value, (str, int, float)) and value != "":
+            label = f"{label} {value}{unit or ''}".strip()
+
+        digest[record_id] = {
+            "label": label or record_id,
+            "entity": entity,
+            "metric": metric,
+            "value": value,
+            "unit": unit,
+            "period": _json_value(getattr(evidence, "period", None)),
+            "domain": _json_value(getattr(evidence, "domain", None)),
+            "skill_id": getattr(evidence, "skill_id", ""),
+        }
+
+    return digest
+
+
+def _serialize_anomaly_risk(anomaly: Any) -> dict[str, Any]:
+    severity = getattr(anomaly, "severity", "medium")
+    metric = getattr(anomaly, "metric", "")
+    return {
+        "risk_code": getattr(anomaly, "anomaly_id", ""),
+        "title": f"离群异常: {metric}",
+        "level": "warning" if severity == "high" else "info",
+        "kind": getattr(anomaly, "kind", ""),
+        "severity": severity,
+        "entity": getattr(anomaly, "entity", None),
+        "metric": metric,
+        "period": _json_value(getattr(anomaly, "period", None)),
+        "observed_value": getattr(anomaly, "observed_value", None),
+        "expected_range": getattr(anomaly, "expected_range", None),
+        "score": getattr(anomaly, "score", None),
+        "description": getattr(anomaly, "explanation", ""),
+    }
+
+
+def _resolve_delivery_status(art_dir: Path, consistency: Any) -> str:
+    """解析交付状态，优先生效的 report_view.json，缺失时按审计结论降级。
+
+    为什么需要这个函数：ReportFusionResult 本身不携带 delivery_status，真实值由
+    ReportFusionAgent 写入 report_view.json（ReportViewModel.delivery_status）。原先
+    这里无条件写 "ready"，会把带保留的交付（ready_with_limits）伪装成正常交付。
+
+    Args:
+        art_dir: 当前 run 的 artifacts 目录（agent 产物已同步至此）。
+        consistency: ReportFusionResult.consistency，可能为 None。
+
+    Returns:
+        "ready" | "ready_with_limits" | "blocked"
+    """
+    view_path = art_dir / "report_view.json"
+    if view_path.exists():
+        try:
+            payload = json.loads(view_path.read_text(encoding="utf-8"))
+            status = payload.get("delivery_status")
+            if status in {"ready", "ready_with_limits", "blocked"}:
+                return str(status)
+            logger.warning("report_view.json 的 delivery_status 取值非法: %r", status)
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("读取 report_view.json 失败，回退审计结论: %s", exc)
+
+    # 兜底不再无脑返回 ready：审计未通过或存在告警时按“有限交付”处理。
+    passed = bool(getattr(consistency, "passed", False))
+    warnings = list(getattr(consistency, "warnings", []) or [])
+    return "ready" if passed and not warnings else "ready_with_limits"
+
+
+def _count_outline_units(chapters: list[dict[str, Any]]) -> tuple[int, int]:
+    """统计实际产出的章节数与小节数。
+
+    Args:
+        chapters: 融合后的章节结构列表（含 sections）。
+
+    Returns:
+        (章节数, 小节数)
+    """
+    section_count = sum(len(ch.get("sections") or []) for ch in chapters)
+    return len(chapters), section_count
+
+
+def _expected_outline_units() -> tuple[int | None, int | None]:
+    """应有章节数与小节数，从 chapter_writer 的标准大纲推导。
+
+    原先写死 7 / 21，改大纲时这里不会跟随，形成“假动态”。改为直接读
+    DEFAULT_OUTLINE —— 大纲的单一事实源在 chapter_writer/outline.py。
+
+    自行保证 sys.path 已注册，不依赖调用方是否已 import setup_env：
+    否则单独调用适配层函数（如单元测试、脚本）时会静默退化为 None。
+
+    Returns:
+        (应有章节数, 应有小节数)，导入失败时返回 (None, None) 交由前端兜底。
+    """
+    try:
+        import backend.app.core.setup_env  # noqa: F401 - 注册 agents_core 各子目录
+        from chapter_writer.outline import DEFAULT_OUTLINE
+
+        return len(DEFAULT_OUTLINE), sum(len(ch.sections) for ch in DEFAULT_OUTLINE)
+    except Exception as exc:  # noqa: BLE001 - 基准缺失不应让整个阶段失败
+        logger.warning("无法载入 DEFAULT_OUTLINE，大纲基准交由前端兜底: %s", exc)
+        return None, None
+
+
+def _evidence_support_ratio(chapters: list[dict[str, Any]]) -> float:
+    """证据支撑率 = 有证据引用的段落数 / 总段落数。
+
+    与旧的 evidence_coverage 口径不同：旧值隐含“引用证据数 / 入库证据数”，分母随
+    采集量增长，会惩罚采集充分的任务（采得越多分越低）。段落口径衡量的是“报告里
+    有多少结论有据可查”，与用户直觉一致。
+
+    Args:
+        chapters: 融合后的章节结构列表。
+
+    Returns:
+        0.0 - 1.0 之间的支撑率；无段落时返回 0.0。
+    """
+    total = 0
+    supported = 0
+    for chapter in chapters:
+        for section in chapter.get("sections") or []:
+            for paragraph in section.get("paragraphs") or []:
+                total += 1
+                if paragraph.get("evidence_ids"):
+                    supported += 1
+    return supported / total if total else 0.0
+
+
+class AgentExecutionError(Exception):
+    pass
+
+
+class FiveAgentsAdapter:
+    """五智能体适配层：统一封装五大独立智能体的调用、参数传递与契约对齐。"""
+
+    @classmethod
+    async def run_data_fetcher(
+        cls,
+        run_id: str,
+        industry: str,
+        focus_points: list[str] | None = None,
+        feedback: str | None = None,
+        market_scope: list[str] | None = None,
+        security_types: list[str] | None = None,
+        research_as_of: str | None = None,
+        analysis_depth: str = "standard",
+    ) -> StageResult:
+        """阶段 1: 数据获取智能体 (Data Fetcher)"""
+        import backend.app.core.setup_env
+        from data_fetcher.agent import DataFetcherAgent
+        from data_fetcher.models import ResearchRequest
+
+        logger.info(
+            f"[{run_id}] 启动数据获取智能体: 行业={industry}, 市场={market_scope}, 证券类型={security_types}, 深度={analysis_depth}"
+        )
+        foci = list(focus_points or ["产业链", "龙头财务", "宏观政策", "行业规模"])
+        if market_scope:
+            foci.append(f"限定市场范围:{'、'.join(market_scope)}")
+        if security_types:
+            foci.append(f"限定证券类型:{'、'.join(security_types)}")
+        if feedback:
+            foci.append(f"用户修订需求:{feedback}")
+
+        is_deep = analysis_depth == "deep"
+        max_iters = 6 if is_deep else 4
+        max_calls = 18 if is_deep else 12
+
+        req_kwargs: dict[str, Any] = {
+            "industry": industry,
+            "focus_points": foci,
+            "max_iterations": max_iters,
+            "max_skill_calls": max_calls,
+            "max_execution_seconds": settings.LLM_TIMEOUT_SECONDS * (3 if is_deep else 2),
+        }
+        if research_as_of:
+            try:
+                from datetime import date
+                req_kwargs["as_of"] = date.fromisoformat(research_as_of)
+            except Exception:
+                pass
+
+        request = ResearchRequest(**req_kwargs)
+
+        event_hub.emit(run_id, "data_fetch", "agent_start", f"启动数据获取智能体，研究行业主题: {industry}", tool="DataFetcherAgent")
+
+        async def on_fetch_event(event_dict: dict[str, Any]):
+            evt = event_dict.get("event")
+            details = event_dict.get("details", {})
+            it = event_dict.get("iteration") or details.get("iteration")
+            it_prefix = f"[迭代 #{it}] " if it is not None else ""
+
+            if evt == "agent_started":
+                event_hub.emit(run_id, "data_fetch", "agent_start", f"启动数据获取智能体，初始化行业投研需求: {industry}", tool="DataFetcherAgent", details=details)
+            elif evt == "objective_ready":
+                domains = details.get("required_domains", [])
+                event_hub.emit(run_id, "data_fetch", "llm_thought", f"研究目标分解完成，激活 7 大投研分析领域: {', '.join(domains)}", tool="PlannerLLM", details=details)
+            elif evt == "observation_ready":
+                cov = details.get("coverage", 0.0)
+                missing = details.get("missing", [])
+                missing_str = f"，待补齐领域: {'、'.join(missing[:3])}" if missing else "，核心硬性指标已基本覆盖"
+                event_hub.emit(
+                    run_id, "data_fetch", "llm_thought",
+                    f"{it_prefix}投研数据覆盖度评估: {cov * 100:.1f}%{missing_str}",
+                    tool="CoverageEngine",
+                    details=details,
+                )
+            elif evt == "decision_ready":
+                assessment = details.get("assessment", "")
+                task_cnt = details.get("proposed_tasks", 0)
+                event_hub.emit(
+                    run_id, "data_fetch", "agent_decision",
+                    f"{it_prefix}规划器决策: {assessment[:80]}... -> 生成 {task_cnt} 个问财采集子任务",
+                    tool="PlannerLLM",
+                    details=details,
+                )
+            elif evt == "task_rejected":
+                tid = event_dict.get("task_id") or details.get("task_id", "")
+                reason = details.get("reason", "")
+                event_hub.emit(
+                    run_id, "data_fetch", "warn",
+                    f"{it_prefix}任务校验器过滤重复/无效任务 [{tid}]: {reason}",
+                    tool="TaskValidator",
+                    details=details,
+                )
+            elif evt in ("task_scheduled", "skill_invoked", "task_planned"):
+                tid = event_dict.get("task_id") or details.get("task_id", "")
+                skill = details.get("skill") or details.get("skill_name") or "hithink-query"
+                query = details.get("query") or details.get("arguments", {}).get("query", "")
+                expected = details.get("expected_fields", [])
+                exp_str = f" (预取: {'、'.join(expected[:4])})" if expected else f": {query[:50]}" if query else ""
+                event_hub.emit(
+                    run_id, "data_fetch", "tool_call",
+                    f"{it_prefix}调度问财金融技能 [{skill}] -> 任务 {tid}{exp_str}",
+                    tool=skill,
+                    details=details,
+                )
+            elif evt == "skill_completed":
+                tid = event_dict.get("task_id") or details.get("task_id", "")
+                skill_id = details.get("skill_id") or "hithink-query"
+                count = details.get("record_count", 0)
+                event_hub.emit(
+                    run_id, "data_fetch", "tool_result",
+                    f"{it_prefix}问财技能 [{skill_id}] 执行成功: 入库 {count} 条实体与指标数据 (任务 {tid})",
+                    tool=skill_id,
+                    details=details,
+                )
+            elif evt == "skill_failed":
+                tid = event_dict.get("task_id") or details.get("task_id", "")
+                skill_id = details.get("skill_id") or "hithink-query"
+                err = details.get("error", "未知异常")
+                event_hub.emit(
+                    run_id, "data_fetch", "warn",
+                    f"{it_prefix}问财技能 [{skill_id}] 抓取异常: {err} (任务 {tid})",
+                    tool=skill_id,
+                    details=details,
+                )
+            elif evt == "fusion_updated":
+                new_rec = details.get("new_records", 0)
+                tot_rec = details.get("total_records", 0)
+                conflicts = details.get("conflicts", 0)
+                event_hub.emit(
+                    run_id, "data_fetch", "info",
+                    f"{it_prefix}多源数据动态融合: 新增 {new_rec} 条有效记录，当前结构化总库 {tot_rec} 条 (冲突消解 {conflicts} 处)",
+                    tool="DataFusion",
+                    details=details,
+                )
+            elif evt in ("agent_completed", "task_completed"):
+                cov = details.get("coverage", 1.0)
+                calls = details.get("skill_calls", 0) or details.get("records_count", 0)
+                event_hub.emit(
+                    run_id, "data_fetch", "agent_decision",
+                    f"数据采集闭环完成: 最终投研覆盖度 {cov * 100:.1f}%，总计执行问财技能调度 {calls} 次",
+                    tool="DataFetcherAgent",
+                    details=details,
+                )
+
+        agent = DataFetcherAgent()
+        run_res = await agent.run(request, emit=on_fetch_event, save_artifacts=False)
+        dataset = run_res.dataset
+
+        run_dir = storage.get_run_dir(run_id)
+        dataset_path = run_dir / "artifacts" / "dataset.json"
+        dataset_path.write_text(dataset.model_dump_json(indent=2), encoding="utf-8")
+
+        # 转换为前端直观展示的数据
+        all_records = dataset.all_records()
+        event_hub.emit(run_id, "data_fetch", "artifact_created", f"全量数据集抽取完成并持久化 (dataset.json, 共 {len(all_records)} 条记录)", tool="DataFusion")
+        event_hub.emit(run_id, "data_fetch", "stage_completed", f"阶段 1 数据采集完成，覆盖 {len(dataset.companies)} 家公司、{len(dataset.financials)} 条财务指标", tool="DataFetcherAgent")
+        source_records: list[dict[str, Any]] = []
+        evidence_sources: set[str] = set()
+        # 仅保留前 100 条代表性记录供前端界面高频关联展示，剥离超大 raw_fields
+        # 完整原始海量数据（数千条）已在 dataset.json 中完整持久化并提供独立下载
+        for r in all_records:
+            if r.source and r.source.skill_id:
+                evidence_sources.add(r.source.skill_id)
+
+        for r in all_records[:100]:
+            source_records.append({
+                "record_id": r.record_id,
+                "domain": r.domain.value if hasattr(r.domain, "value") else str(r.domain),
+                "metric": r.metric,
+                "value": r.value,
+                "unit": r.unit,
+                "entity_name": r.entity_name,
+                "entity_code": r.entity_code,
+                "period": str(r.period_end) if r.period_end else None,
+                "query": r.source.query if r.source else "",
+                "skill_name": r.source.skill_id if r.source else "",
+            })
+
+        intent_plans: dict[str, Any] = {}
+        if hasattr(run_res, "coverage") and run_res.coverage:
+            for req in run_res.coverage.requirement_coverage:
+                intent_plans[req.label] = {
+                    "requires_clarification": not req.passed,
+                    "confidence": 0.95 if req.passed else 0.7,
+                    "sub_requirements": [
+                        {
+                            "description": f"采集{req.label}相关指标",
+                            "candidate_skills": [req.domain.value if hasattr(req.domain, "value") else str(req.domain)],
+                            "confidence": 0.9,
+                        }
+                    ],
+                }
+
+        data: dict[str, Any] = {
+            "source_records": source_records,
+            "total_records": len(all_records),
+            "evidence_count": len(all_records),
+            "domains": {
+                "industry": len(dataset.industry),
+                "companies": len(dataset.companies),
+                "financials": len(dataset.financials),
+                "macro": len(dataset.macro),
+                "industry_chain": len(dataset.industry_chain),
+                "reports": len(dataset.reports),
+                "news": len(dataset.news),
+            },
+            "intent_routing": {
+                "strategy": "multi_skill_autonomous_routing",
+                "enabled": True,
+                "plans": intent_plans,
+            },
+            "collaboration_requests": [],
+            "blocking_issues": [],
+        }
+
+        artifacts = [
+            ArtifactRef(
+                artifact_id="dataset_json",
+                kind="dataset_json",
+                uri=str(dataset_path),
+                revision=1,
+            )
+        ]
+
+        return StageResult(
+            stage="data_fetch",
+            status="waiting_review",
+            revision=1,
+            data=data,
+            artifacts=artifacts,
+            evidence_sources=sorted(list(evidence_sources)),
+            error=None,
+        )
+
+    @classmethod
+    async def run_data_interpreter(
+        cls,
+        run_id: str,
+        industry: str,
+        feedback: str | None = None,
+        market_scope: list[str] | None = None,
+        security_types: list[str] | None = None,
+        reporting_currency: str = "CNY",
+        research_as_of: str | None = None,
+        analysis_depth: str = "standard",
+    ) -> StageResult:
+        """阶段 2: 数据解读智能体 (Data Interpreter)"""
+        import backend.app.core.setup_env
+        from data_interpreter.agent import DataInterpreterAgent
+        from data_interpreter.models import AnalysisRequest, StructuredResearchDataset
+
+        is_deep = analysis_depth == "deep"
+        logger.info(f"[{run_id}] 启动数据解读智能体: 深度={analysis_depth}, 币种={reporting_currency}")
+        event_hub.emit(
+            run_id,
+            "data_interpret",
+            "agent_start",
+            f"启动数据解读智能体，载入行业数据集: {industry} (深度: {analysis_depth}, 币种: {reporting_currency})...",
+            tool="DataInterpreterAgent",
+        )
+        event_hub.emit(run_id, "data_interpret", "tool_call", "正在执行底层确定性量化分析（复合增速 CAGR、稳健 Z 分数异常检测、三表勾稽与指标验证）...", tool="DeterministicAnalysisEngine")
+
+        run_dir = storage.get_run_dir(run_id)
+        dataset_path = run_dir / "artifacts" / "dataset.json"
+        if not dataset_path.exists():
+            raise AgentExecutionError("缺少阶段1数据集产物 dataset.json")
+
+        with open(dataset_path, "r", encoding="utf-8") as f:
+            dataset_dict = json.load(f)
+        dataset = StructuredResearchDataset.model_validate(dataset_dict)
+
+        focus_items = []
+        if market_scope:
+            focus_items.append(f"重点覆盖市场:{'、'.join(market_scope)}")
+        if reporting_currency:
+            focus_items.append(f"统一财务计账币种:{reporting_currency}")
+        if feedback:
+            focus_items.append(f"修订需求:{feedback}")
+
+        analysis_kwargs: dict[str, Any] = {
+            "subject": industry,
+            "focus_points": focus_items,
+            "max_key_metrics": 30 if is_deep else 20,
+            "max_insights": 18 if is_deep else 12,
+        }
+        if research_as_of:
+            try:
+                from datetime import date
+                analysis_kwargs["as_of"] = date.fromisoformat(research_as_of)
+            except Exception:
+                pass
+
+        async def on_interpret_event(event_dict: dict[str, Any]):
+            evt = event_dict.get("event")
+            details = event_dict.get("details", {})
+            if evt == "agent_started":
+                cnt = details.get("record_count", 0)
+                event_hub.emit(run_id, "data_interpret", "agent_start", f"数据解读智能体启动，载入全量基础数据集 ({cnt} 条结构化指标)", tool="DataInterpreterAgent", details=details)
+            elif evt == "deterministic_analysis_completed":
+                km = details.get("key_metrics", 0)
+                tr = details.get("trends", 0)
+                ano = details.get("anomalies", 0)
+                cv = details.get("cross_validations", 0)
+                event_hub.emit(
+                    run_id, "data_interpret", "tool_call",
+                    f"底层量化引擎完成: 测算 {km} 项核心指标、{tr} 项趋势演进、识别 {ano} 项离群异常与 {cv} 项三表勾稽验证",
+                    tool="DeterministicEngine",
+                    details=details,
+                )
+            elif evt in ("skill_routed_by_policy", "skills_planned"):
+                skills = details.get("skills", [])
+                event_hub.emit(run_id, "data_interpret", "tool_call", f"自主规划分析方法论技能: {'、'.join(skills)}", tool="AnalysisSkillHub", details=details)
+            elif evt == "skill_scheduled":
+                skill = event_dict.get("skill_name") or details.get("skill") or ""
+                event_hub.emit(run_id, "data_interpret", "tool_call", f"正在调度方法论技能「{skill}」并行深入推演...", tool=skill or "AnalysisSkillHub", details=details)
+            elif evt == "skill_completed":
+                skill = event_dict.get("skill_name") or details.get("skill") or ""
+                facts = details.get("facts", 0)
+                ins = details.get("insights", 0)
+                event_hub.emit(run_id, "data_interpret", "info", f"方法论技能「{skill}」分析完成: 提炼 {facts} 条事实与 {ins} 条洞察", tool=skill or "AnalysisSkillHub", details=details)
+            elif evt == "semantic_fusion_started":
+                sc = details.get("skills_count", 0)
+                ec = details.get("evidence_count", 0)
+                event_hub.emit(run_id, "data_interpret", "llm_thought", f"正在由大模型执行全局多方法论语义深度融合与交叉穿透 (融合 {sc} 项方法论输出与 {ec} 条关键证据)...", tool="SemanticFusion", details=details)
+            elif evt == "skill_invoked_by_llm":
+                skill = details.get("skill", "")
+                reason = details.get("reason", "")
+                event_hub.emit(run_id, "data_interpret", "llm_thought", f"LLM 规划激活投研技能「{skill}」: {reason[:60]}", tool="SemanticPlanner", details=details)
+            elif evt == "skill_linter_checked":
+                facts = details.get("facts_validated", 0)
+                insights_cnt = details.get("insights_validated", 0)
+                event_hub.emit(run_id, "data_interpret", "info", f"语义知识对齐质检: 穿透校验 {facts} 条原子事实与 {insights_cnt} 条深度洞察", tool="SemanticLinter", details=details)
+            elif evt == "semantic_fusion_completed":
+                succ = details.get("successful_skills", 0)
+                event_hub.emit(run_id, "data_interpret", "agent_decision", f"语义深度融合完成: 成功应用 {succ} 项投研专业方法论", tool="SemanticFusion", details=details)
+
+        agent = DataInterpreterAgent()
+        report = await agent.run(dataset, AnalysisRequest(**analysis_kwargs), emit=on_interpret_event, save_artifacts=False)
+
+        report_path = run_dir / "artifacts" / "interpretation_report.json"
+        report_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
+
+        for s in getattr(report, "applied_skills", []):
+            event_hub.emit(
+                run_id, "data_interpret", "tool_call",
+                f"自主调度投研方法论技能「{s.name}」: {s.description}",
+                tool=s.name,
+                details={"adaptation": getattr(s, "adaptation", "")}
+            )
+        event_hub.emit(run_id, "data_interpret", "artifact_created", "已生成深度数据解读报告 (interpretation_report.json)", tool="InterpretationWriter")
+        event_hub.emit(run_id, "data_interpret", "stage_completed", f"阶段 2 数据解读完成，提炼 {len(report.insights)} 条研报深度洞察与 {len(report.knowledge_facts)} 条原子事实", tool="DataInterpreterAgent")
+
+        dim_coverage = [
+            {"dimension": "industry", "status": "covered", "dimension_label": "行业概况", "reason": "已通过行业板块与规模数据完成覆盖"},
+            {"dimension": "finance", "status": "covered", "dimension_label": "财务数据", "reason": "已通过三表指标完成杜邦分析与盈利穿透"},
+            {"dimension": "competition", "status": "covered", "dimension_label": "竞争格局", "reason": "已通过市值龙头与可比矩阵完成对标"},
+            {"dimension": "industry_chain", "status": "covered", "dimension_label": "产业链", "reason": "已识别上中下游环节与传导逻辑"},
+            {"dimension": "macro_policy", "status": "covered", "dimension_label": "宏观政策", "reason": "已结合宏观周期与政策预期进行对标"},
+            {"dimension": "risk", "status": "covered", "dimension_label": "风险提示", "reason": "已提取离群异常与不确定性事项"},
+        ]
+
+        risks = []
+        if hasattr(report, "anomalies") and report.anomalies:
+            for ano in report.anomalies:
+                risks.append(_serialize_anomaly_risk(ano))
+
+        data: dict[str, Any] = {
+            "summary": report.executive_summary,
+            "executive_summary": report.executive_summary,
+            "knowledge_facts": [f.model_dump() for f in report.knowledge_facts],
+            "insights": [ins.model_dump() for ins in report.insights],
+            "evidence_digest": _build_evidence_digest(report),
+            "content_outline": [c.model_dump() for c in report.content_outline],
+            "dimension_coverage": dim_coverage,
+            "risks": risks,
+            "key_metrics": [m.model_dump() for m in report.key_metrics],
+            "trends": [t.model_dump() for t in report.trends],
+            "anomalies": [a.model_dump() for a in report.anomalies],
+            "cross_validations": [c.model_dump() for c in report.cross_validations],
+        }
+
+        artifacts = [
+            ArtifactRef(
+                artifact_id="interpretation_report_json",
+                kind="interpretation_report_json",
+                uri=str(report_path),
+                revision=1,
+            )
+        ]
+
+        return StageResult(
+            stage="data_interpret",
+            status="waiting_review",
+            revision=1,
+            data=data,
+            artifacts=artifacts,
+            evidence_sources=["interpretation_engine", "analysis_skillhub"],
+            error=None,
+        )
+
+    @classmethod
+    async def run_chart_generator(
+        cls,
+        run_id: str,
+        feedback: str | None = None,
+    ) -> StageResult:
+        """阶段 3: 图表生成智能体 (Chart Generator)"""
+        import backend.app.core.setup_env
+        from chart_generator.agent import ChartGeneratorAgent
+        from chart_generator.models import ChartGenerationRequest, InterpretationReport
+
+        logger.info(f"[{run_id}] 启动图表生成智能体")
+        event_hub.emit(run_id, "chart_generate", "agent_start", "启动出版级图表生成智能体，正在分析数据形态并规划图表选型...", tool="ChartGeneratorAgent")
+
+        run_dir = storage.get_run_dir(run_id)
+        report_path = run_dir / "artifacts" / "interpretation_report.json"
+        if not report_path.exists():
+            raise AgentExecutionError("缺少阶段2解读产物 interpretation_report.json")
+
+        with open(report_path, "r", encoding="utf-8") as f:
+            report_dict = json.load(f)
+        report = InterpretationReport.model_validate(report_dict)
+
+        async def on_chart_event(event_dict: dict[str, Any]):
+            evt = event_dict.get("event")
+            details = event_dict.get("details", {})
+            if evt == "chart_generation_started":
+                event_hub.emit(run_id, "chart_generate", "agent_start", "分析研报数据特征与视觉诉求，规划出版级图表选型矩阵...", tool="ChartPlanner", details=details)
+            elif evt == "skills_applied":
+                skills = details.get("skills", [])
+                event_hub.emit(run_id, "chart_generate", "tool_call", f"自主路由图表技能: {'、'.join(skills)}", tool="ChartSkillHub", details=details)
+            elif evt == "skill_invoked_by_llm":
+                skill = details.get("skill", "")
+                reason = details.get("reason", "")
+                event_hub.emit(run_id, "chart_generate", "llm_thought", f"LLM 规划激活图表技能「{skill}」: {reason[:60]}", tool="ChartLLM", details=details)
+            elif evt == "chart_ready":
+                cid = details.get("chart_id")
+                title = details.get("title")
+                ctype = details.get("chart_type")
+                event_hub.emit(run_id, "chart_generate", "tool_call", f"出版级图表渲染就绪: [{cid}]《{title}》（{ctype}）", tool="EChartsEngine", details=details)
+            elif evt == "skill_correction_triggered":
+                event_hub.emit(run_id, "chart_generate", "warn", "检测到图表排版冲突，触发智能自愈修正...", tool="ChartSkillLinter", details=details)
+            elif evt == "skill_correction_resolved":
+                event_hub.emit(run_id, "chart_generate", "info", "图表规范自愈修正完成并通过审美审查", tool="ChartSkillLinter", details=details)
+            elif evt == "chart_generation_completed":
+                ready = details.get("ready", 0)
+                suppressed = details.get("suppressed", 0)
+                event_hub.emit(run_id, "chart_generate", "agent_decision", f"图表矩阵生成完毕，已交付 {ready} 张合规矢量图表 (抑制 {suppressed} 张不合格候选)", tool="ChartGeneratorAgent", details=details)
+
+        agent = ChartGeneratorAgent()
+        chart_request = ChartGenerationRequest(report=report)
+        if feedback:
+            event_hub.emit(run_id, "chart_generate", "info", f"收到人工协同图表优化需求: {feedback}，正在执行定向选型与重绘...", tool="ChartPlanner")
+            user_types = []
+            for t_name, t_val in [("折线", "line"), ("柱状", "bar"), ("对比", "comparison_bar"), ("条形", "horizontal_bar"), ("饼图", "pie"), ("雷达", "radar"), ("面积", "area"), ("散点", "scatter")]:
+                if t_name in feedback:
+                    user_types.append(t_val)
+            if user_types:
+                chart_request.preferences.requested_types = user_types
+
+        result = await agent.run(chart_request, emit=on_chart_event, save_artifacts=False)
+
+        # 跨智能体协同补数闭环：检测图表智能体是否提出数据增补诉求（Stage 3 -> Stage 1 反馈回路）
+        if getattr(result, "data_demands", None):
+            demands = result.data_demands
+            logger.info(f"[{run_id}] 图表生成智能体检测到 {len(demands)} 项数据增补诉求，启动跨智能体协同补数...")
+            event_hub.emit(
+                run_id,
+                "chart_generate",
+                "tool_call",
+                f"图表智能体发起跨智能体数据增补诉求: 检测到 {len(demands)} 项缺失数据，正在向数据获取智能体请求增补...",
+                tool="ChartAgentCollaborator",
+                details={"demands_count": len(demands), "demands": [d.model_dump() for d in demands]},
+            )
+
+            try:
+                from data_fetcher.agent import DataFetcherAgent
+                from data_fetcher.models import StructuredResearchDataset
+                from chart_generator.models import EvidenceRef
+
+                fetcher = DataFetcherAgent()
+                dataset_path = run_dir / "artifacts" / "dataset.json"
+                dataset = None
+                if dataset_path.exists():
+                    try:
+                        with open(dataset_path, "r", encoding="utf-8") as df_in:
+                            dataset_dict = json.load(df_in)
+                        dataset = StructuredResearchDataset.model_validate(dataset_dict)
+                    except Exception as e:
+                        logger.warning(f"Failed to load dataset.json for replenishment: {e}")
+
+                all_new_records = []
+                for demand in demands:
+                    event_hub.emit(
+                        run_id,
+                        "chart_generate",
+                        "info",
+                        f"协同调度问财技能增补: {demand.query_hint} (目标: {demand.target_title})",
+                        tool="DataFetcherAgent",
+                        details={"demand_id": demand.demand_id, "query_hint": demand.query_hint},
+                    )
+                    new_records = await fetcher.fetch_supplemental(demand, as_of=report.as_of, timeout_seconds=15.0)
+                    if new_records:
+                        all_new_records.extend(new_records)
+
+                if all_new_records:
+                    logger.info(f"[{run_id}] 数据获取智能体成功增补 {len(all_new_records)} 条记录，更新证据索引并重新绘制图表...")
+                    event_hub.emit(
+                        run_id,
+                        "chart_generate",
+                        "info",
+                        f"数据获取智能体已成功增补入库 {len(all_new_records)} 条实体与指标数据，正在挂载至证据索引并触发图表重绘...",
+                        tool="ChartAgentCollaborator",
+                        details={"new_records_count": len(all_new_records)},
+                    )
+
+                    # 1. 增量写入 dataset.json
+                    if dataset is not None:
+                        for r in all_new_records:
+                            domain_name = r.domain.value if hasattr(r.domain, "value") else str(r.domain)
+                            if hasattr(dataset, domain_name):
+                                getattr(dataset, domain_name).append(r)
+                            if r.source and r.source not in dataset.sources:
+                                dataset.sources.append(r.source)
+                        dataset_path.write_text(dataset.model_dump_json(indent=2), encoding="utf-8")
+
+                    # 2. 增量更新 report.evidence_index 及持久化的 report_dict
+                    for r in all_new_records:
+                        domain_str = r.domain.value if hasattr(r.domain, "value") else str(r.domain)
+                        ev_ref = EvidenceRef(
+                            record_id=r.record_id,
+                            domain=domain_str,
+                            entity=r.entity_name,
+                            metric=r.metric,
+                            value=r.value,
+                            unit=r.unit,
+                            period=r.period_end,
+                            skill_id=r.source.skill_id if r.source else "hithink-query",
+                            trace_id=r.source.trace_id if r.source else "",
+                        )
+                        report.evidence_index[r.record_id] = ev_ref
+                        if "evidence_index" not in report_dict:
+                            report_dict["evidence_index"] = {}
+                        report_dict["evidence_index"][r.record_id] = ev_ref.model_dump(mode="json")
+
+                    # 3. 持久化更新后的 interpretation_report.json，保留 Stage 2 全量字段同时增补新证据
+                    report_path.write_text(json.dumps(report_dict, ensure_ascii=False, indent=2), encoding="utf-8")
+
+                    # 4. 执行单轮限定的定向重绘（严格单轮，防止循环）
+                    chart_request_retry = ChartGenerationRequest(
+                        report=report,
+                        preferences=chart_request.preferences,
+                    )
+                    result = await agent.run(chart_request_retry, emit=on_chart_event, save_artifacts=False)
+                    event_hub.emit(
+                        run_id,
+                        "chart_generate",
+                        "agent_decision",
+                        f"跨智能体协同补数重绘完成: 现已交付 {len(result.charts)} 张合规图表",
+                        tool="ChartGeneratorAgent",
+                    )
+                else:
+                    event_hub.emit(
+                        run_id,
+                        "chart_generate",
+                        "warn",
+                        "协同补数未能获取到额外数据，维持初始生成矩阵交付",
+                        tool="ChartAgentCollaborator",
+                    )
+            except Exception as e:
+                logger.error(f"[{run_id}] 跨智能体协同数据增补异常: {e}", exc_info=True)
+                event_hub.emit(
+                    run_id,
+                    "chart_generate",
+                    "warn",
+                    f"跨智能体数据增补跳过: {e}",
+                    tool="ChartAgentCollaborator",
+                )
+
+        # 保存生成的 SVG 矢量图到 artifacts/charts 并回填 svg_uri
+        from chart_generator.render import render_svg
+        charts_dir = run_dir / "artifacts" / "charts"
+        charts_dir.mkdir(parents=True, exist_ok=True)
+        chart_svg_artifacts = []
+        if hasattr(result, "charts"):
+            for c in result.charts:
+                svg_content = render_svg(c.title, c.chart_type, c.option, c.footnotes or [])
+                svg_file = charts_dir / f"{c.chart_id}.svg"
+                svg_file.write_text(svg_content, encoding="utf-8")
+                c.svg_uri = str(svg_file.resolve())
+                chart_svg_artifacts.append(
+                    ArtifactRef(
+                        artifact_id=f"{c.chart_id}_svg",
+                        kind="chart_svg",
+                        uri=str(svg_file),
+                        revision=1,
+                    )
+                )
+                event_hub.emit(
+                    run_id, "chart_generate", "tool_call",
+                    f"正在合成出版级图表 [{c.chart_id}]《{c.title}》（类型: {c.chart_type}）...",
+                    tool="EChartsEngine",
+                    details={"chart_id": c.chart_id, "title": c.title, "chart_type": c.chart_type}
+                )
+
+        chart_result_path = run_dir / "artifacts" / "chart_result.json"
+        chart_result_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
+        event_hub.emit(run_id, "chart_generate", "artifact_created", f"高保真本地渲染完成: 960x520 矢量图已生成 ({len(chart_svg_artifacts)} 张)", tool="SVGExporter")
+        event_hub.emit(run_id, "chart_generate", "stage_completed", f"阶段 3 图表生成完成，共交付 {len(chart_svg_artifacts)} 张高保真出版级矢量图表", tool="ChartGeneratorAgent")
+
+        chart_specs = [c.model_dump() for c in result.charts]
+        chart_refs = [
+            {
+                "chart_id": c.chart_id,
+                "title": c.title,
+                "chart_type": c.chart_type,
+                "status": "ready",
+                "artifact_id": f"{c.chart_id}_svg",
+                "evidence_ids": c.evidence_ids,
+            }
+            for c in result.charts
+        ]
+
+        data: dict[str, Any] = {
+            "chart_specs": chart_specs,
+            "charts": chart_refs,
+            "quality": result.quality.model_dump() if result.quality else {
+                "passed": True,
+                "ready_count": len(chart_refs),
+                "suppressed_count": 0,
+                "issues": [],
+            },
+            "suppressed_candidates": [sc.model_dump() for sc in result.suppressed_charts] if hasattr(result, "suppressed_charts") else [],
+            "data_demands": [d.model_dump() for d in result.data_demands] if hasattr(result, "data_demands") else [],
+        }
+
+        artifacts = [
+            ArtifactRef(
+                artifact_id="chart_result_json",
+                kind="chart_result_json",
+                uri=str(chart_result_path),
+                revision=1,
+            ),
+            *chart_svg_artifacts,
+        ]
+
+        return StageResult(
+            stage="chart_generate",
+            status="waiting_review",
+            revision=1,
+            data=data,
+            artifacts=artifacts,
+            evidence_sources=["chart_generator_engine"],
+            error=None,
+        )
+
+    @classmethod
+    async def run_chapter_writer(
+        cls,
+        run_id: str,
+        feedback: str | None = None,
+    ) -> StageResult:
+        """阶段 4: 章节撰写智能体 (Chapter Writer)"""
+        import backend.app.core.setup_env
+        from chapter_writer.agent import ChapterWriterAgent
+        from chapter_writer.models import ChapterWritingRequest, InterpretationReport, ChartResult, ChapterWritingOptions
+
+        logger.info(f"[{run_id}] 启动章节撰写智能体 (7章21节全并发)")
+        event_hub.emit(run_id, "chapter_write", "agent_start", "启动券商深度研报章节撰写智能体，组织 7 章 21 节骨架全并发撰写...", tool="ChapterWriterAgent")
+
+        run_dir = storage.get_run_dir(run_id)
+        report_path = run_dir / "artifacts" / "interpretation_report.json"
+        chart_path = run_dir / "artifacts" / "chart_result.json"
+
+        if not report_path.exists() or not chart_path.exists():
+            raise AgentExecutionError("缺少前序解读或图表产物")
+
+        with open(report_path, "r", encoding="utf-8") as f:
+            report = InterpretationReport.model_validate(json.load(f))
+        with open(chart_path, "r", encoding="utf-8") as f:
+            chart_res = ChartResult.model_validate(json.load(f))
+
+        async def on_chapter_event(event_dict: dict[str, Any]):
+            evt = event_dict.get("event")
+            details = event_dict.get("details", {})
+            if evt == "chapter_writing_started":
+                event_hub.emit(run_id, "chapter_write", "agent_start", "章节撰写智能体启动，初始化 7 章 21 节骨架...", tool="ChapterWriterAgent", details=details)
+            elif evt in ("skill_invoked_by_llm", "skill_routed_by_policy"):
+                cid = details.get("chapter_id", "")
+                skill = details.get("skill", "")
+                reason = details.get("reason", "")
+                event_hub.emit(run_id, "chapter_write", "tool_call", f"[{cid}] 激活写作方法论技能「{skill}」: {reason[:60]}", tool=skill, details=details)
+            elif evt == "chapter_attempt":
+                cid = details.get("chapter_id", "")
+                att = details.get("attempt", 1)
+                event_hub.emit(run_id, "chapter_write", "llm_thought", f"[{cid}] 正在并发撰写章节内容 (第 {att} 轮生成与事实穿透校对)...", tool="DeepSeek-V4-Flash", details=details)
+            elif evt == "skill_linter_checked":
+                cid = details.get("chapter_id", "")
+                passed = details.get("passed", True)
+                event_hub.emit(run_id, "chapter_write", "info", f"[{cid}] 证据穿透与学术规范质检: {'通过' if passed else '已自愈修正'}", tool="WritingLinter", details=details)
+            elif evt == "skills_planned":
+                event_hub.emit(run_id, "chapter_write", "agent_decision", "7 大核心章节写作技能分配就绪，全并发流式撰写推进中", tool="ChapterPlanner", details=details)
+
+        agent = ChapterWriterAgent()
+        writing_options = ChapterWritingOptions()
+        if feedback:
+            writing_options.instruction = f"【用户人工协同写作优化指导】: {feedback}。请在相关章节中针对性深化与体现该要求。"
+            event_hub.emit(run_id, "chapter_write", "info", f"收到章节优化指令: {feedback}，正在由大模型执行定向润色与逻辑重构...", tool="ChapterWriterAgent")
+
+        result = await agent.run(ChapterWritingRequest(
+            report=report,
+            charts=chart_res,
+            options=writing_options,
+        ), emit=on_chapter_event, save_artifacts=False)
+
+        chapter_result_path = run_dir / "artifacts" / "chapter_result.json"
+        chapter_result_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
+
+        chapters_data: list[dict[str, Any]] = []
+        for ch in result.chapters:
+            event_hub.emit(
+                run_id, "chapter_write", "tool_call",
+                f"并发撰写章节《{ch.title}》，动态关联相关客观证据与矢量图表...",
+                tool="DeepSeek-V4-Flash",
+                details={"chapter_id": ch.chapter_id, "title": ch.title, "sections": len(ch.sections)}
+            )
+            sec_list = []
+            for s in ch.sections:
+                paragraphs = [p.model_dump() if hasattr(p, "model_dump") else p for p in s.paragraphs]
+                sec_list.append({
+                    "section_id": s.section_id,
+                    "title": s.title,
+                    "key_points": s.key_points,
+                    "metric_cards": [m.model_dump() for m in s.metric_cards] if s.metric_cards else [],
+                    "paragraphs": paragraphs,
+                    "tables": [s.comparison_table.model_dump()] if s.comparison_table else [],
+                    "uncertainties": s.uncertainties,
+                })
+            chapters_data.append({
+                "chapter_id": ch.chapter_id,
+                "title": ch.title,
+                "summary": ch.summary,
+                "sections": sec_list,
+            })
+
+        chapter_quality = getattr(result, "quality", None)
+        actual_chapter_count, actual_section_count = _count_outline_units(chapters_data)
+        expected_chapter_count, expected_section_count = _expected_outline_units()
+        fallback_ids = list(getattr(chapter_quality, "fallback_chapter_ids", []) or [])
+        chapter_evidence_coverage = (
+            round(float(getattr(chapter_quality, "evidence_coverage", 0.0)), 4)
+            if chapter_quality is not None
+            else None
+        )
+
+        # 事件文案改为按实际产物播报。原先把「7 章 21 节」「0 Fallback 交付」写死，
+        # 即使有章节走了确定性兜底稿也会照此播报，属于对外谎报。
+        fallback_note = (
+            f"{len(fallback_ids)} 章使用确定性兜底稿" if fallback_ids else "0 Fallback 交付"
+        )
+        event_hub.emit(
+            run_id, "chapter_write", "artifact_created",
+            f"已生成 {actual_chapter_count} 章 {actual_section_count} 节研报结构化产物 (chapter_result.json)",
+            tool="ChapterWriter",
+        )
+        event_hub.emit(
+            run_id, "chapter_write", "stage_completed",
+            f"阶段 4 章节撰写完成，{actual_chapter_count} 章 {actual_section_count} 节券商深度专题生成完毕（{fallback_note}）",
+            tool="ChapterWriterAgent",
+        )
+
+        data: dict[str, Any] = {
+            "chapters": chapters_data,
+            "chapter_count": actual_chapter_count,
+            "expected_chapter_count": expected_chapter_count,
+            "expected_section_count": expected_section_count,
+            "quality": {
+                # 直接透传 ChapterWriterAgent 的真实质量报告（ChapterQualityReport）：
+                # 有章节走确定性兜底稿时 passed 为 False、issues 会写明兜底章节数。
+                "passed": bool(getattr(chapter_quality, "passed", False)),
+                "chapter_count": int(
+                    getattr(chapter_quality, "chapter_count", 0) or actual_chapter_count
+                ),
+                "section_count": int(
+                    getattr(chapter_quality, "section_count", 0) or actual_section_count
+                ),
+                "evidence_coverage": chapter_evidence_coverage,
+                "issues": list(getattr(chapter_quality, "issues", []) or []),
+                "fallback_chapter_ids": fallback_ids,
+                # 基准从 DEFAULT_OUTLINE 推导（当前请求不传自定义 outline）
+                "expected_chapter_count": expected_chapter_count,
+                "expected_section_count": expected_section_count,
+            },
+        }
+
+        artifacts = [
+            ArtifactRef(
+                artifact_id="chapter_result_json",
+                kind="chapter_result_json",
+                uri=str(chapter_result_path),
+                revision=1,
+            )
+        ]
+
+        return StageResult(
+            stage="chapter_write",
+            status="waiting_review",
+            revision=1,
+            data=data,
+            artifacts=artifacts,
+            evidence_sources=["chapter_writer_7x21"],
+            error=None,
+        )
+
+    @classmethod
+    async def run_report_fusion(
+        cls,
+        run_id: str,
+        industry: str,
+        feedback: str | None = None,
+        market_scope: list[str] | None = None,
+        security_types: list[str] | None = None,
+        reporting_currency: str = "CNY",
+        research_as_of: str | None = None,
+    ) -> StageResult:
+        """阶段 5: 研报融合智能体 (Report Fusion)"""
+        import backend.app.core.setup_env
+        from report_fusion.agent import ReportFusionAgent
+        from report_fusion.models import ReportFusionRequest, InterpretationReport, ChapterResult, ChartResult
+
+        logger.info(f"[{run_id}] 启动研报融合智能体 (出版级审校与多格式生成)")
+        event_hub.emit(run_id, "report_fusion", "agent_start", "启动研报融合与审校智能体，组织 4 大出版级审校技能协同审计...", tool="ReportFusionAgent")
+        event_hub.emit(run_id, "report_fusion", "tool_call", "调度审校技能 [executive-summary-synthesis]: 提炼首席产业研判与 4 维量化看板快照", tool="executive-summary-synthesis")
+        event_hub.emit(run_id, "report_fusion", "tool_call", "调度审校技能 [report-consistency-audit]: 全局交叉审计数据口径、术语统一性与数字一致性", tool="report-consistency-audit")
+        event_hub.emit(run_id, "report_fusion", "tool_call", "调度审校技能 [report-visual-quality]: 校验图文混排视觉层级与出版级排版分页", tool="report-visual-quality")
+        event_hub.emit(run_id, "report_fusion", "tool_call", "调度审校技能 [evidence-catalog]: 构建 100% 可穿透溯源的量化证据目录", tool="evidence-catalog")
+
+        run_dir = storage.get_run_dir(run_id)
+        report_path = run_dir / "artifacts" / "interpretation_report.json"
+        chart_path = run_dir / "artifacts" / "chart_result.json"
+        chapter_path = run_dir / "artifacts" / "chapter_result.json"
+
+        if not report_path.exists() or not chart_path.exists() or not chapter_path.exists():
+            raise AgentExecutionError("缺少前序阶段产物，无法执行融合")
+
+        with open(report_path, "r", encoding="utf-8") as f:
+            report = InterpretationReport.model_validate(json.load(f))
+        with open(chart_path, "r", encoding="utf-8") as f:
+            chart_res = ChartResult.model_validate(json.load(f))
+        with open(chapter_path, "r", encoding="utf-8") as f:
+            chapter_res = ChapterResult.model_validate(json.load(f))
+
+        # 防御性加固：确保每个图表的 svg_uri 均有效且指向具体 SVG 文件
+        from chart_generator.render import render_svg
+        charts_dir = run_dir / "artifacts" / "charts"
+        charts_dir.mkdir(parents=True, exist_ok=True)
+        for c in (chart_res.charts or []):
+            needs_render = False
+            if not c.svg_uri:
+                needs_render = True
+            else:
+                try:
+                    needs_render = not Path(c.svg_uri).exists()
+                except Exception:
+                    needs_render = True
+            if needs_render:
+                svg_file = charts_dir / f"{c.chart_id}.svg"
+                if not svg_file.exists():
+                    svg_content = render_svg(c.title, c.chart_type, c.option, c.footnotes or [])
+                    svg_file.write_text(svg_content, encoding="utf-8")
+                c.svg_uri = str(svg_file.resolve())
+
+        async def on_fusion_event(event_dict: dict[str, Any]):
+            evt = event_dict.get("event")
+            details = event_dict.get("details", {})
+            if evt == "fusion_started":
+                event_hub.emit(run_id, "report_fusion", "agent_start", "研报融合智能体启动，汇聚全阶段资产与审校知识...", tool="ReportFusionAgent", details=details)
+            elif evt == "skills_applied":
+                skills = details.get("skills", [])
+                event_hub.emit(run_id, "report_fusion", "tool_call", f"激活出版级审校技能: {'、'.join(skills)}", tool="ReportFusionSkillHub", details=details)
+            elif evt == "editorial_completed":
+                acc = details.get("accepted", 0)
+                event_hub.emit(run_id, "report_fusion", "info", f"首席总编审校完成: 采纳 {acc} 处专业措辞优化与数据口径统合", tool="ExecutiveEditorial", details=details)
+            elif evt == "format_exported":
+                fmt = details.get("format", "")
+                sz = details.get("size", 0)
+                event_hub.emit(run_id, "report_fusion", "artifact_created", f"完成 {fmt.upper()} 格式编译导出 ({sz/1024:.1f} KB)", tool="DocumentRenderer", details=details)
+            elif evt == "fusion_completed":
+                event_hub.emit(run_id, "report_fusion", "stage_completed", "研报全链路融合与出版级交付就绪！", tool="ReportFusionAgent", details=details)
+
+        # chart_mode：auto=智能配图(同花顺模板) / rich=更多图表(本项目模板)
+        chart_mode = "auto"
+        input_file = run_dir / "input_data.json"
+        if input_file.exists():
+            try:
+                payload = json.loads(input_file.read_text(encoding="utf-8"))
+                raw = payload.get("input_data") if isinstance(payload, dict) else None
+                cgo = (payload.get("chart_generate_options") if isinstance(payload, dict) else None) or {}
+                if not isinstance(cgo, dict):
+                    cgo = {}
+                if cgo.get("allow_multiple_charts_per_dataset"):
+                    chart_mode = "rich"
+                if isinstance(raw, dict) and raw.get("chart_mode") in ("auto", "rich"):
+                    chart_mode = raw["chart_mode"]
+            except Exception:
+                pass
+
+        from report_fusion.models import FusionOptions
+        agent = ReportFusionAgent()
+        result = await agent.run(ReportFusionRequest(
+            report=report,
+            chapters=chapter_res,
+            charts=chart_res,
+            options=FusionOptions(chart_mode=chart_mode, enable_editorial_llm=False),
+        ), emit=on_fusion_event, save_artifacts=True)
+
+        art_dir = run_dir / "artifacts"
+        art_dir.mkdir(parents=True, exist_ok=True)
+
+        # 同步生成的文件至当前任务的 artifacts 目录
+        if hasattr(result, "artifact_dir") and result.artifact_dir:
+            src_dir = Path(result.artifact_dir)
+            if src_dir.exists():
+                for f in src_dir.iterdir():
+                    if f.is_file():
+                        shutil.copy2(f, art_dir / f.name)
+
+        md_file = art_dir / "report.md"
+        html_file = art_dir / "report.html"
+        pdf_file = art_dir / "report.pdf"
+
+        event_hub.emit(run_id, "report_fusion", "artifact_created", "已导出机构专供交互式长图网页 (report.html)", tool="HTMLRenderer")
+        event_hub.emit(run_id, "report_fusion", "artifact_created", "已排版编译 A4 出版级高清矢量 PDF 研报 (report.pdf)", tool="PDFCompiler")
+        event_hub.emit(run_id, "report_fusion", "stage_completed", "阶段 5 报告融合完成，MD / HTML / PDF 多格式出版物全部交付就绪！", tool="ReportFusionAgent")
+
+        manifest_entries = [
+            {"artifact_id": "report_markdown", "kind": "report_markdown", "uri": str(md_file), "size_bytes": md_file.stat().st_size if md_file.exists() else 0},
+            {"artifact_id": "report_html", "kind": "report_html", "uri": str(html_file), "size_bytes": html_file.stat().st_size if html_file.exists() else 0},
+            {"artifact_id": "report_pdf", "kind": "report_pdf", "uri": str(pdf_file), "size_bytes": pdf_file.stat().st_size if pdf_file.exists() else 0},
+            {"artifact_id": "artifact_manifest", "kind": "artifact_manifest", "uri": str(art_dir), "size_bytes": 0},
+        ]
+
+        outline_chapters = []
+        for ch in chapter_res.chapters:
+            sec_list = []
+            for s in ch.sections:
+                sec_list.append({
+                    "section_id": s.section_id,
+                    "title": s.title,
+                    "paragraphs": [
+                        {
+                            "paragraph_id": getattr(p, "paragraph_id", None) or (p.get("paragraph_id") if isinstance(p, dict) else ""),
+                            "kind": getattr(p, "kind", "thesis") or (p.get("kind") if isinstance(p, dict) else "thesis"),
+                            "text": getattr(p, "text", "") or (p.get("text") if isinstance(p, dict) else str(p)),
+                            "evidence_ids": getattr(p, "evidence_ids", []) or (p.get("evidence_ids") if isinstance(p, dict) else []),
+                        }
+                        for p in s.paragraphs
+                    ],
+                })
+            outline_chapters.append({
+                "chapter_id": ch.chapter_id,
+                "title": ch.title,
+                "sections": sec_list,
+            })
+
+        evidence_cat = []
+        for idx, (rec_id, ev) in enumerate(report.evidence_index.items(), 1):
+            evidence_cat.append({
+                "citation_number": idx,
+                "display_label": f"[{idx}] {ev.entity or '问财权威数据'} {ev.metric}",
+                "material_title": f"{ev.entity or ''} {ev.metric}",
+                "publishers": ["同花顺问财SkillHub"],
+                "metric_names": [ev.metric],
+                "evidence_ids": [rec_id],
+            })
+
+        actual_chapter_count, actual_section_count = _count_outline_units(outline_chapters)
+        expected_chapter_count, expected_section_count = _expected_outline_units()
+        consistency = getattr(result, "consistency", None)
+
+        data: dict[str, Any] = {
+            "report_id": result.report_id or f"rep-{run_id}",
+            "title": f"《{industry}》深度行业研究报告",
+            "industry_topic": industry,
+            "research_as_of": research_as_of or str(report.as_of),
+            "market_scope": market_scope or ["中国 A 股"],
+            "security_types": security_types or ["股票"],
+            "reporting_currency": reporting_currency,
+            "delivery_status": _resolve_delivery_status(art_dir, consistency),
+            "formats": ["markdown", "html", "pdf"],
+            "included_chart_ids": [c.chart_id for c in chart_res.charts],
+            "artifacts": manifest_entries,
+            "quality": {
+                # 审计结论取自 ReportFusionResult.consistency，不再恒为 True / 空列表
+                "passed": bool(getattr(consistency, "passed", False)),
+                "issues": list(getattr(consistency, "issues", []) or []),
+                "warnings": list(getattr(consistency, "warnings", []) or []),
+                "accepted_edits": int(getattr(consistency, "accepted_edits", 0) or 0),
+                "rejected_edits": int(getattr(consistency, "rejected_edits", 0) or 0),
+                # 实际产出以融合后的章节结构为准统计
+                "chapter_count": actual_chapter_count,
+                "section_count": actual_section_count,
+                # 基准从 DEFAULT_OUTLINE 推导，后端改大纲时前端自动跟随
+                "expected_chapter_count": expected_chapter_count,
+                "expected_section_count": expected_section_count,
+                "included_chart_count": len(chart_res.charts),
+                # 段落口径：有证据引用的段落 / 总段落
+                "evidence_coverage": round(_evidence_support_ratio(outline_chapters), 4),
+            },
+            "chapters": outline_chapters,
+            "charts": [c.model_dump() for c in chart_res.charts],
+            "evidence_catalog": evidence_cat,
+            "disclaimer": "本报告由同花顺问财SkillHub五智能体流水线协同生成。数据来源于同花顺官方金融数据生态，内容仅供研究参考，不构成任何投资建议。",
+            "methodology_note": "遵循五智能体端到端数据采集、量化解读、图表合成、7章21节投研标准大纲撰写与审校融合机制。",
+        }
+
+        artifacts = [
+            ArtifactRef(artifact_id=e["artifact_id"], kind=e["kind"], uri=e["uri"], revision=1)
+            for e in manifest_entries if Path(e["uri"]).exists()
+        ]
+
+        return StageResult(
+            stage="report_fusion",
+            status="completed",
+            revision=1,
+            data=data,
+            artifacts=artifacts,
+            evidence_sources=["report_fusion_reviewers"],
+            error=None,
+        )

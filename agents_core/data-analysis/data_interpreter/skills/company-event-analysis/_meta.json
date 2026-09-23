@@ -1,0 +1,1 @@
+{"domains":["news","reports","companies"],"keywords":["事件","并购","重组","回购","增持","减持","股权激励","定增","配股","质押","解禁","监管","退市"],"requires_signal":true,"source":"skills包/公司事件驱动分析/corporate-events/SKILL.md","adaptation":"保留事件分类、状态和影响分析；移除套利、时间窗和交易信号。"}
