@@ -1,0 +1,72 @@
+<!-- Cover Page Component -->
+<header class="cover-page">
+  <div class="brand-ribbon"></div>
+  
+  <div class="cover-top-meta">
+    <div class="report-series-wrap">
+      <span class="series-bullet">◆</span>
+      <span class="report-series">同花顺投研 · 产业深度专题 · 机构专供版</span>
+    </div>
+    <div class="cover-badge-group">
+      <span class="report-style-tag">INSTITUTIONAL {{ view.visual_style | upper }}</span>
+      <span class="confidential-tag">STRICTLY CONFIDENTIAL</span>
+    </div>
+  </div>
+  
+  <div class="cover-header-main">
+    <div class="cover-eyebrow-row">
+      <span class="cover-eyebrow">{{ view.subject }} · 深度产业格局与财务全景透视</span>
+      <span class="rating-posture-pill">研究定位：产业深度专题 · 机构专业视角</span>
+    </div>
+    <h1 class="cover-title">{{ view.title }}</h1>
+    <div class="cover-title-divider"></div>
+    <p class="cover-headline">{{ view.executive_summary.headline }}</p>
+  </div>
+
+  <div class="cover-snapshot-grid">
+    <div class="snapshot-card card-accent-blue">
+      <div class="snapshot-header">
+        <span class="snapshot-icon">📅</span>
+        <span class="snapshot-label">研究基准时点</span>
+      </div>
+      <div class="snapshot-val">{{ view.as_of.isoformat() }}</div>
+      <div class="snapshot-sub">最新年报/半年报口径</div>
+    </div>
+    <div class="snapshot-card card-accent-teal">
+      <div class="snapshot-header">
+        <span class="snapshot-icon">📊</span>
+        <span class="snapshot-label">数据循证覆盖</span>
+      </div>
+      <div class="snapshot-val">{{ view.evidence_catalog | length }} <span class="val-unit">条已核实证据</span></div>
+      <div class="snapshot-sub">包含财务/产业/估值全息</div>
+    </div>
+    <div class="snapshot-card card-accent-gold">
+      <div class="snapshot-header">
+        <span class="snapshot-icon">📑</span>
+        <span class="snapshot-label">覆盖核心章节</span>
+      </div>
+      <div class="snapshot-val">{{ view.chapters | length }} <span class="val-unit">大专题研判模块</span></div>
+      <div class="snapshot-sub">竞争格局·产业链·财务透视</div>
+    </div>
+    <div class="snapshot-card card-accent-purple">
+      <div class="snapshot-header">
+        <span class="snapshot-icon">🛡️</span>
+        <span class="snapshot-label">投研合规状态</span>
+      </div>
+      <div class="snapshot-val highlight">{{ view.delivery_status }}</div>
+      <div class="snapshot-sub">100% 交叉验证无虚构</div>
+    </div>
+  </div>
+
+  <div class="cover-footer-meta">
+    <div class="footer-meta-left">
+      <span>报告编号：<strong>{{ view.report_id }}</strong></span>
+      <span class="meta-sep">|</span>
+      <span>生成时间：{{ view.generated_at.strftime("%Y-%m-%d %H:%M UTC") }}</span>
+    </div>
+    <div class="footer-meta-right">
+      <span class="institutional-seal">同花顺智能投研五智能体协同成果</span>
+    </div>
+  </div>
+</header>
+

@@ -1,0 +1,7 @@
+{
+  "domains": ["financials", "industry"],
+  "keywords": ["敏感性", "热力图", "弹性", "情景测算", "矩阵", "成本变动", "售价"],
+  "requires_signal": true,
+  "source": "skills包/回报敏感性分析/SKILL.md",
+  "adaptation": "规范双变量敏感性矩阵热力图展示，明确横纵轴变量区间、基准情景标记与色阶弹性映射；移除对冲交易与杠杆买卖模型。"
+}

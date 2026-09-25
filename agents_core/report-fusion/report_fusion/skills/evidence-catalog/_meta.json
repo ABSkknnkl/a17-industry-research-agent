@@ -1,0 +1,5 @@
+{
+  "always": true,
+  "source": "skills包/投行材料质检/SKILL.md",
+  "adaptation": "保留来源追溯和数字核验方法；收窄为已引用证据目录，不引入外部资料。"
+}

@@ -1,0 +1,5 @@
+{
+  "always": true,
+  "source": "skills包/首次覆盖报告/SKILL.md; skills包/行业概览/SKILL.md",
+  "adaptation": "仅保留报告逻辑、摘要结构和结论边界；明确移除逐任务审批、外部研究、估值评级和投资建议。"
+}

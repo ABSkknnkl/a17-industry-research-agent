@@ -1,0 +1,7 @@
+{
+  "domains": ["industry_chain"],
+  "keywords": ["产业链", "上游", "中游", "下游", "供应链", "生态"],
+  "requires_signal": true,
+  "source": "skills包/产业链解读/SKILL.md",
+  "adaptation": "保留双轨产业链分层和链路表达；移除外部检索、咽喉投资映射、利润池预测与跟踪建议。"
+}

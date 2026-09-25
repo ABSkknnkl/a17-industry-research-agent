@@ -1,0 +1,168 @@
+{
+  "_说明": "确定性计算10组基准（EVALUATION_PLAN §5.3）。expected 为手工基准值，需在首跑 record 模式从同花顺真实快照回填后锁定；禁止凭空编造业务数值（否则会掩盖真实缺陷、报告失真）。expected=null 时，C1 判定按「无基准值」跳过。",
+  "baselines": [
+    {
+      "key": "dupont_roe",
+      "calculation_type": "dupont_roe",
+      "inputs": [
+        "净利润",
+        "营业收入",
+        "总资产",
+        "净资产"
+      ],
+      "expected": 14.85,
+      "source": {
+        "run_id": "run-20260923094843-353",
+        "artifact": "interpretation_report.json",
+        "pointer": "/roe_pct",
+        "row_index": 5,
+        "entity": "中电港"
+      }
+    },
+    {
+      "key": "cr3",
+      "calculation_type": "cr3",
+      "inputs": [
+        "市场份额"
+      ],
+      "expected": 37.602,
+      "minimum_samples": 3,
+      "source": {
+        "run_id": "run-20260923094843-353",
+        "artifact": "interpretation_report.json",
+        "pointer": "/entries(market_cap top3)",
+        "row_index": null,
+        "entity": "market_cap-based CR3",
+        "caliber": "market_cap 代理口径"
+      }
+    },
+    {
+      "key": "cr5",
+      "calculation_type": "cr5",
+      "inputs": [
+        "市场份额"
+      ],
+      "expected": 55.5614,
+      "minimum_samples": 5,
+      "source": {
+        "run_id": "run-20260923094843-353",
+        "artifact": "interpretation_report.json",
+        "pointer": "/entries(market_cap top5)",
+        "row_index": null,
+        "entity": "market_cap-based CR5",
+        "caliber": "market_cap 代理口径"
+      }
+    },
+    {
+      "key": "revenue_yoy",
+      "calculation_type": "revenue_yoy",
+      "inputs": [
+        "营业收入"
+      ],
+      "expected": 0.3471675963787197,
+      "source": {
+        "run_id": "run-20260923094843-353",
+        "artifact": "interpretation_report.json",
+        "pointer": "/change_pct",
+        "row_index": 5,
+        "entity": "中电港",
+        "metric": "revenue"
+      }
+    },
+    {
+      "key": "net_profit_yoy",
+      "calculation_type": "net_profit_yoy",
+      "inputs": [
+        "归母净利润"
+      ],
+      "expected": 0.19895088065902652,
+      "source": {
+        "run_id": "run-20260923094843-353",
+        "artifact": "interpretation_report.json",
+        "pointer": "/change_pct",
+        "row_index": 9,
+        "entity": "中电港",
+        "metric": "parent_net_profit"
+      }
+    },
+    {
+      "key": "inventory_turnover",
+      "calculation_type": "inventory_turnover",
+      "inputs": [
+        "营业成本",
+        "期初存货",
+        "期末存货"
+      ],
+      "expected": null
+    },
+    {
+      "key": "receivables_turnover",
+      "calculation_type": "receivables_turnover",
+      "inputs": [
+        "营业收入",
+        "期初应收账款",
+        "期末应收账款"
+      ],
+      "expected": null
+    },
+    {
+      "key": "capacity_utilization",
+      "calculation_type": "capacity_utilization",
+      "inputs": [
+        "实际产能",
+        "设计产能"
+      ],
+      "expected": null
+    },
+    {
+      "key": "gross_margin",
+      "calculation_type": "gross_margin",
+      "inputs": [
+        "营业收入",
+        "营业成本"
+      ],
+      "expected": 3.53,
+      "source": {
+        "run_id": "run-20260923094843-353",
+        "artifact": "interpretation_report.json",
+        "pointer": "/gross_margin_pct",
+        "row_index": 5,
+        "entity": "中电港"
+      }
+    },
+    {
+      "key": "net_margin",
+      "calculation_type": "net_margin",
+      "inputs": [
+        "归母净利润",
+        "营业收入"
+      ],
+      "expected": 87.72,
+      "source": {
+        "run_id": "run-20260923094843-353",
+        "artifact": "interpretation_report.json",
+        "pointer": "/net_margin_pct",
+        "row_index": 5,
+        "entity": "中电港"
+      }
+    }
+  ],
+  "_backfill": {
+    "run_id": "run-20260923094843-353",
+    "filled": [
+      "cr3",
+      "cr5",
+      "dupont_roe",
+      "gross_margin",
+      "net_margin",
+      "net_profit_yoy",
+      "revenue_yoy"
+    ],
+    "unresolved": [
+      "capacity_utilization",
+      "inventory_turnover",
+      "receivables_turnover"
+    ],
+    "note": "expected 仅来自黄金样本的真实生产输出；CR3/CR5 为 market_cap 代理口径"
+  }
+}

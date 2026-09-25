@@ -1,0 +1,1 @@
+{"domains":["industry","companies","financials","macro"],"keywords":["相关性","协整","联动","共振","领先","滞后","滚动相关"],"requires_signal":true,"source":"skills包/相关性与协整分析/correlation-analysis/SKILL.md","adaptation":"保留相关、协整和稳定性检验；移除配对交易与信号生成。"}

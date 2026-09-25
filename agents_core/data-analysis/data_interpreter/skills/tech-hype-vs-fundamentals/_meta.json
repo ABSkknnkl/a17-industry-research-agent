@@ -1,0 +1,7 @@
+{
+  "domains": ["companies", "financials", "reports", "industry"],
+  "keywords": ["估值", "泡沫", "概念", "炒作", "基本面", "科技", "芯片", "人工智能", "AI", "低空经济", "机器人", "商业航天", "市销率", "PS", "研发费用", "资本化"],
+  "requires_signal": true,
+  "source": "skills包/科技炒作与基本面/SKILL.md",
+  "adaptation": "评估营收增速与估值倍数匹配度、现金流造血能力与研发资本化，区分炒作与真实落地；移除外部个股买卖评级与主观定价。"
+}

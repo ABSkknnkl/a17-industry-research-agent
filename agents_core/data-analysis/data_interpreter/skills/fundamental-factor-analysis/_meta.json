@@ -1,0 +1,1 @@
+{"domains":["companies","financials"],"keywords":["基本面","因子","价值","成长","质量","筛选","横截面","分位数","ROE","PE","PB"],"requires_signal":true,"source":"skills包/基本面因子筛选/fundamental-filter/SKILL.md","adaptation":"保留因子定义、横截面处理和常见陷阱；移除数据接口、股票筛选与回测信号。"}

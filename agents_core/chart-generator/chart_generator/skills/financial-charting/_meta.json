@@ -1,0 +1,7 @@
+{
+  "domains": ["financials", "companies"],
+  "keywords": ["收入", "利润", "现金流", "毛利率", "净利率", "财务", "同比"],
+  "requires_signal": true,
+  "source": "skills包/财务报表深度解读/financial-statement/SKILL.md",
+  "adaptation": "保留三表指标口径、趋势和异常呈现；移除健康区间断言、估值、投资评级与外部数据调用。"
+}
