@@ -122,6 +122,7 @@ const form = reactive({
     'data_interpret',
     'chart_generate',
     'chapter_write',
+    'report_fusion',
   ] as StageName[],
 })
 

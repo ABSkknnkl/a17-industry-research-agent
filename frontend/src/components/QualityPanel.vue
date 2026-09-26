@@ -19,11 +19,13 @@ const expectedSections = computed(
   () => quality.value.expected_section_count ?? BASELINE_FALLBACK.sections
 )
 
-/** 结构/覆盖率子项评分（0-100），全部来自后端原始数值的前端聚合 */
+/** 结构/覆盖率/数据合规子项评分（0-100），全部来自后端原始数值与审计质检的前端聚合 */
 const subScores = computed(() => {
   const chapterCount = quality.value.chapter_count
   const sectionCount = quality.value.section_count
   const coverage = quality.value.evidence_coverage
+  const issues = quality.value.issues ?? []
+
   const chapterScore =
     typeof chapterCount === 'number'
       ? Math.min(100, Math.round((chapterCount / expectedChapters.value) * 100))
@@ -33,28 +35,77 @@ const subScores = computed(() => {
       ? Math.min(100, Math.round((sectionCount / expectedSections.value) * 100))
       : null
   const coverageScore = typeof coverage === 'number' ? Math.round(coverage * 100) : null
-  return [
+
+  // 数据一致性与合规审计分（满分 100，根据审计问题严重度扣分）
+  let consistencyScore: number | null = null
+  if (typeof quality.value.consistency_score === 'number') {
+    consistencyScore = Math.max(0, Math.min(100, Math.round(quality.value.consistency_score)))
+  } else if (quality.value.passed !== undefined || issues.length > 0) {
+    let penalty = 0
+    for (const iss of issues) {
+      const s = String(iss).toLowerCase()
+      if (s.includes('阻断') || s.includes('致命') || s.includes('fatal') || s.includes('failed')) {
+        penalty += 15
+      } else if (s.includes('冲突') || s.includes('矛盾') || s.includes('不一致')) {
+        penalty += 4
+      } else if (s.includes('缺失') || s.includes('功效有限') || s.includes('亏损') || s.includes('受限')) {
+        penalty += 2
+      } else {
+        penalty += 1.5
+      }
+    }
+    consistencyScore = Math.max(30, Math.min(100, Math.round(100 - penalty)))
+  }
+
+  const list: Array<{ label: string; value: number | null; hint: string; weight: number }> = [
     {
       label: '章节完整度',
       value: chapterScore,
       hint: `章节数 / 标准 ${expectedChapters.value} 章`,
+      weight: 0.1,
     },
     {
       label: '结构完整度',
       value: structureScore,
       hint: `小节数 / 标准 ${expectedSections.value} 节`,
+      weight: 0.1,
     },
-    { label: '证据覆盖率', value: coverageScore, hint: '正文证据引用覆盖' },
+    {
+      label: '证据覆盖率',
+      value: coverageScore,
+      hint: '正文观点挂载真实证据链的比例',
+      weight: 0.4,
+    },
   ]
+
+  if (consistencyScore !== null) {
+    list.push({
+      label: '数据一致与合规',
+      value: consistencyScore,
+      hint: `基于 ${issues.length} 项质量检查与数据口径审计结果动态核算`,
+      weight: 0.4,
+    })
+  }
+
+  return list
 })
 
-/** 总评分 = 可用子项的简单平均（前端聚合口径，非后端字段） */
+/** 综合评分：优先使用后端 overall_score，否则根据完整度(20%) + 证据(40%) + 质检(40%) 动态加权 */
 const overallScore = computed<number | null>(() => {
+  if (typeof quality.value.overall_score === 'number') {
+    return Math.max(0, Math.min(100, Math.round(quality.value.overall_score)))
+  }
   const available = subScores.value.filter(
-    (item): item is { label: string; value: number; hint: string } => item.value !== null
+    (item): item is { label: string; value: number; hint: string; weight: number } =>
+      item.value !== null
   )
   if (available.length === 0) return null
-  return Math.round(available.reduce((sum, item) => sum + item.value, 0) / available.length)
+  const totalWeight = available.reduce((sum, item) => sum + (item.weight ?? 0.25), 0)
+  const weightedSum = available.reduce(
+    (sum, item) => sum + item.value * (item.weight ?? 0.25),
+    0
+  )
+  return Math.round(weightedSum / (totalWeight || 1))
 })
 
 const scoreColor = (value: number): string => {
@@ -103,7 +154,9 @@ const sourceRevisions = computed(() =>
             <div class="score-caption">交付质量评分</div>
           </template>
         </el-progress>
-        <div class="score-note muted">前端聚合口径：章节/结构/覆盖率均值</div>
+        <div class="score-note muted">
+          {{ subScores.length >= 4 ? '综合质量加权：完整度(20%) + 证据(40%) + 质检(40%)' : '前端聚合口径：章节/结构/覆盖率均值' }}
+        </div>
       </div>
       <div class="score-bars">
         <div v-for="sub in subScores" :key="sub.label" class="score-bar-row">

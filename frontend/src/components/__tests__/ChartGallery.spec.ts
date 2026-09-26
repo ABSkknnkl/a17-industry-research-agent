@@ -242,4 +242,39 @@ describe('ChartGallery contract consumption', () => {
     expect(wrapper.find('.preview').exists()).toBe(true)
     expect(received).toEqual([option, option])
   })
+
+  it('sanitizes bubble and scatter data where entity names precede coordinates', async () => {
+    const rawBubbleSpec = {
+      chart_id: 'CHART-BUBBLE-1',
+      title: '动态市盈率与资产负债率定位',
+      chart_type: 'bubble' as const,
+      option: {
+        xAxis: { type: 'value', name: '动态市盈率' },
+        yAxis: { type: 'value', name: '资产负债率' },
+        series: [
+          {
+            type: 'scatter',
+            symbolSize: 'value[3]',
+            data: [
+              ['五粮液', 15.45, 35.69, 84.6],
+              ['贵州茅台', 17.37, 16.42, 91.18],
+            ],
+          },
+        ],
+      },
+    }
+    const wrapper = mountGallery([rawBubbleSpec])
+    await flushPromises()
+
+    expect(received.length).toBeGreaterThan(0)
+    const passedOpt = received[0] as Record<string, any>
+    const seriesData = passedOpt.series[0].data
+    expect(seriesData[0].name).toBe('五粮液')
+    expect(seriesData[0].value[0]).toBe(15.45)
+    expect(seriesData[0].value[1]).toBe(35.69)
+    expect(typeof seriesData[0].symbolSize).toBe('number')
+    expect(passedOpt.xAxis.scale).toBe(true)
+    expect(passedOpt.yAxis.scale).toBe(true)
+  })
 })
+

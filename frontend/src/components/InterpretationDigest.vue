@@ -15,6 +15,8 @@ export interface UserAnnotation {
 const props = defineProps<{
   data: Record<string, unknown>
   runId?: string
+  /** 阶段一来源记录（含 entity_name/metric/value/period），用于在缺少 evidence_digest 时生成可读凭证标签 */
+  sourceRecords?: Record<string, unknown>[]
 }>()
 
 const emit = defineEmits<{
@@ -81,6 +83,57 @@ const crossValidations = computed<Record<string, unknown>[]>(() => {
 const dimensionCoverage = computed<Record<string, unknown>[]>(() => {
   return asArray<Record<string, unknown>>(props.data.dimension_coverage)
 })
+
+/** 指标字段 → 中文名映射（凭证标签用，避免把 gross_margin 这类内部字段名暴露给分析师） */
+const METRIC_LABELS: Record<string, string> = {
+  gross_margin: '毛利率',
+  net_margin: '净利率',
+  roe: '净资产收益率',
+  debt_ratio: '资产负债率',
+  revenue: '营业收入',
+  parent_net_profit: '归母净利润',
+  operating_cash_flow: '经营活动现金流',
+  market_cap: '市值',
+}
+
+/** 异常类型 → 中文名映射（风险卡展示用，对应后端 anomaly.kind） */
+const RISK_KIND_LABELS: Record<string, string> = {
+  cross_sectional_outlier: '同业离群',
+  time_series_outlier: '时序离群',
+  conflict: '口径冲突',
+  missing_data: '数据缺失',
+  limitation: '统计局限',
+}
+
+const metricLabel = (metric?: string): string =>
+  metric ? (METRIC_LABELS[metric] ?? metric) : ''
+
+const riskKindLabel = (kind?: string): string => (kind ? (RISK_KIND_LABELS[kind] ?? kind) : '')
+
+/**
+ * 生成凭证的可读标签（不暴露内部 record_id）。
+ *
+ * 优先级：① 后端下发的 `evidence_digest[recordId].label`（最权威）；
+ * ② 阶段一来源记录（`sourceRecords`）拼装「实体 · 指标 值」；
+ * ③ 兜底回退原 record_id（仅当上游两者都缺失时）。
+ */
+function evidenceLabel(recordId: string): string {
+  const digest = (props.data.evidence_digest ?? {}) as Record<string, { label?: string } | undefined>
+  const fromDigest = digest?.[recordId]?.label
+  if (fromDigest) return fromDigest
+
+  const source = (props.sourceRecords ?? []).find((item) => item.record_id === recordId)
+  if (source) {
+    const entity = String(source.entity_name ?? source.entity ?? '').trim()
+    const metric = metricLabel(String(source.metric ?? ''))
+    const value =
+      source.value === undefined || source.value === null ? '' : String(source.value)
+    const tail = [metric, value].filter(Boolean).join(' ')
+    const label = [entity, tail].filter(Boolean).join(' · ')
+    if (label) return label
+  }
+  return recordId
+}
 
 const risks = computed<Record<string, unknown>[]>(() => {
   return asArray<Record<string, unknown>>(props.data.risks)
@@ -299,7 +352,7 @@ function formatVal(val: unknown, unit?: unknown): string {
                   class="evidence-tag-interactive"
                   @click="emit('view-evidence', [eid])"
                 >
-                  {{ eid }}
+                  {{ evidenceLabel(eid) }}
                 </el-tag>
                 <span v-if="asArray(ins.evidence_record_ids).length > 4" class="more-tag muted">
                   +{{ asArray(ins.evidence_record_ids).length - 4 }}
@@ -447,7 +500,18 @@ function formatVal(val: unknown, unit?: unknown): string {
         <div class="risk-cards">
           <div v-for="(r, idx) in risks" :key="idx" class="risk-card">
             <span class="risk-badge">风险 #{{ idx + 1 }}</span>
-            <span class="risk-content">{{ r.description || r.message || r.risk_code || JSON.stringify(r) }}</span>
+            <span v-if="riskKindLabel(String(r.kind ?? ''))" class="risk-kind">{{
+              riskKindLabel(String(r.kind ?? ''))
+            }}</span>
+            <span class="risk-content">
+              <template v-if="r.entity || r.metric"
+                >{{ [r.entity, r.metric].filter(Boolean).join(' · ') }}</template
+              >
+              <template v-if="r.observed_value !== undefined && r.observed_value !== null">
+                观测值 {{ r.observed_value }}</template
+              >
+              <template v-if="r.expected_range"> 参考区间 {{ r.expected_range }}</template>
+            </span>
           </div>
         </div>
       </div>

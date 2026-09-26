@@ -89,4 +89,32 @@ describe('QualityPanel 评分基准由后端下发', () => {
     expect(hints(wrapper)).toContain('小节数 / 标准 21 节')
     expect(subScoreValues(wrapper).slice(0, 2)).toEqual([100, 100])
   })
+
+  it('含质检冲突与警告时，动态计算数据合规分并执行加权评分', () => {
+    const wrapper = mountPanel({
+      chapter_count: 7,
+      section_count: 21,
+      expected_chapter_count: 7,
+      expected_section_count: 21,
+      evidence_coverage: 0.97,
+      passed: true,
+      issues: [
+        '检测到跨章节总市值数量级冲突，总编辑已启用事实基准自动对齐',
+        '趋势分析多数样本仅3-5个观测，统计功效有限',
+        '部分公司财务数据缺失，可比性受限',
+        '五粮液毛利率数据在不同来源中存在冲突（5.52% vs 77.54%）',
+        '样本中部分公司出现亏损，普通PE排名不适用',
+      ],
+    })
+
+    const values = subScoreValues(wrapper)
+    expect(values).toHaveLength(4)
+    expect(values[0]).toBe(100) // 章节完整度
+    expect(values[1]).toBe(100) // 结构完整度
+    expect(values[2]).toBe(97)  // 证据覆盖率
+    expect(values[3]).toBe(86)  // 数据一致与合规 (100 - 14)
+    // 综合加权得分：100*0.1 + 100*0.1 + 97*0.4 + 86*0.4 = 93.2 -> 93
+    expect(wrapper.find('.score-value').text()).toBe('93')
+  })
 })
+

@@ -91,12 +91,13 @@ function sanitizedOption(spec: ChartSpecLoose, isPreview = false): ChartOption |
   sanitizeAxes(option)
   sanitizeTooltip(option)
   sanitizeGraphOption(option, spec, isPreview)
+  sanitizeScatterBubbleOption(option, spec, isPreview)
   return option
 }
 
 function sanitizeTooltip(option: ChartOption): void {
   if (!option.tooltip || typeof option.tooltip !== 'object') {
-    option.tooltip = { trigger: 'axis' }
+    return
   }
   const tip = option.tooltip as Record<string, unknown>
   if (!tip.valueFormatter) {
@@ -595,6 +596,233 @@ function sanitizeGraphOption(option: ChartOption, spec: ChartSpecLoose, isPrevie
         return ''
       },
     }
+  }
+}
+
+/** 散点图与气泡图 (scatter / bubble) 坐标自适应、数据格式标准化与象限基准线增强 */
+function sanitizeScatterBubbleOption(
+  option: ChartOption,
+  spec: ChartSpecLoose,
+  _isPreview = false
+): void {
+  const isScatterOrBubble =
+    spec.chart_type === 'scatter' ||
+    spec.chart_type === 'bubble' ||
+    (Array.isArray(option.series) &&
+      option.series.some(
+        (s: unknown) =>
+          s &&
+          ((s as Record<string, unknown>).type === 'scatter' ||
+            (s as Record<string, unknown>).type === 'bubble')
+      )) ||
+    (option.series &&
+      ((option.series as Record<string, unknown>).type === 'scatter' ||
+        (option.series as Record<string, unknown>).type === 'bubble'))
+
+  if (!isScatterOrBubble) return
+
+  const seriesList = (
+    Array.isArray(option.series) ? option.series : [option.series]
+  ) as Record<string, unknown>[]
+
+  // 1. 坐标轴尺度自适应保护：启用 scale: true 避免强制从 0 开始拉偏视野
+  const rawXAxis = option.xAxis as unknown
+  const xAxes = Array.isArray(rawXAxis) ? rawXAxis : [rawXAxis]
+  for (const ax of xAxes) {
+    if (ax && typeof ax === 'object') {
+      const a = ax as Record<string, unknown>
+      if (!a.type || a.type === 'value') {
+        a.scale = true
+        const splitLine = ((a.splitLine ??= {}) as Record<string, unknown>)
+        splitLine.show = true
+        splitLine.lineStyle = { type: 'dashed', color: '#eaecf0' }
+      }
+    }
+  }
+
+  const rawYAxis = option.yAxis as unknown
+  const yAxes = Array.isArray(rawYAxis) ? rawYAxis : [rawYAxis]
+  for (const ax of yAxes) {
+    if (ax && typeof ax === 'object') {
+      const a = ax as Record<string, unknown>
+      if (!a.type || a.type === 'value') {
+        a.scale = true
+        const splitLine = ((a.splitLine ??= {}) as Record<string, unknown>)
+        splitLine.show = true
+        splitLine.lineStyle = { type: 'dashed', color: '#eaecf0' }
+      }
+    }
+  }
+
+  const xAxisName = ((xAxes[0] as Record<string, unknown>)?.name as string) || 'X'
+  const yAxisName = ((yAxes[0] as Record<string, unknown>)?.name as string) || 'Y'
+
+  // 2. 遍历 series 处理数据映射与气泡大小
+  for (const s of seriesList) {
+    if (!s || (s.type !== 'scatter' && s.type !== 'bubble')) continue
+    const rawData = Array.isArray(s.data) ? s.data : []
+    if (rawData.length === 0) continue
+
+    // 收集气泡尺寸维度（用于动态计算归一化半径）
+    const sizes: number[] = []
+    for (const item of rawData) {
+      if (Array.isArray(item)) {
+        if (typeof item[0] === 'string' && item.length >= 4) {
+          const sz = Number(item[3])
+          if (!Number.isNaN(sz)) sizes.push(sz)
+        } else if (item.length >= 3 && typeof item[2] === 'number') {
+          const sz = Number(item[2])
+          if (!Number.isNaN(sz)) sizes.push(sz)
+        }
+      } else if (typeof item === 'object' && item !== null) {
+        const val = (item as Record<string, unknown>).value
+        if (Array.isArray(val)) {
+          if (typeof val[0] === 'string' && val.length >= 4) {
+            const sz = Number(val[3])
+            if (!Number.isNaN(sz)) sizes.push(sz)
+          } else if (val.length >= 3 && typeof val[2] === 'number') {
+            const sz = Number(val[2])
+            if (!Number.isNaN(sz)) sizes.push(sz)
+          }
+        }
+      }
+    }
+
+    const minSz = sizes.length ? Math.min(...sizes) : 0
+    const maxSz = sizes.length ? Math.max(...sizes) : 0
+    const spanSz = maxSz - minSz || 1
+
+    const normalizedData: Record<string, unknown>[] = []
+
+    for (let i = 0; i < rawData.length; i++) {
+      const item = rawData[i]
+      let name = `样本${i + 1}`
+      let x = 0
+      let y = 0
+      let rawSize: number | null = null
+
+      if (Array.isArray(item)) {
+        if (typeof item[0] === 'string') {
+          name = resolveEntityDisplayName(item[0])
+          x = Number(item[1])
+          y = Number(item[2])
+          if (item.length >= 4 && !Number.isNaN(Number(item[3]))) {
+            rawSize = Number(item[3])
+          }
+        } else {
+          x = Number(item[0])
+          y = Number(item[1])
+          if (item.length >= 3) {
+            if (typeof item[2] === 'number') {
+              rawSize = Number(item[2])
+              if (item.length >= 4 && typeof item[3] === 'string') {
+                name = resolveEntityDisplayName(item[3])
+              }
+            } else if (typeof item[2] === 'string') {
+              name = resolveEntityDisplayName(item[2])
+            }
+          }
+        }
+      } else if (typeof item === 'object' && item !== null) {
+        const obj = item as Record<string, unknown>
+        name = resolveEntityDisplayName(String(obj.name || `样本${i + 1}`))
+        const val = obj.value
+        if (Array.isArray(val)) {
+          if (typeof val[0] === 'string') {
+            name = resolveEntityDisplayName(val[0])
+            x = Number(val[1])
+            y = Number(val[2])
+            if (val.length >= 4 && !Number.isNaN(Number(val[3]))) {
+              rawSize = Number(val[3])
+            }
+          } else {
+            x = Number(val[0])
+            y = Number(val[1])
+            if (val.length >= 3 && typeof val[2] === 'number') {
+              rawSize = Number(val[2])
+            }
+          }
+        } else {
+          x = Number(obj.x ?? 0)
+          y = Number(obj.y ?? 0)
+        }
+      }
+
+      if (Number.isNaN(x) || Number.isNaN(y)) continue
+
+      const radius =
+        rawSize !== null && sizes.length > 0
+          ? Math.round(10 + ((rawSize - minSz) / spanSz) * 16)
+          : (spec.chart_type === 'bubble' ? 16 : 12)
+
+      const isTarget = ['茅台', '五粮液', '泸州老窖'].some((k) => name.includes(k))
+      const ptColor = isTarget ? '#1B365D' : '#0f766e'
+
+      normalizedData.push({
+        name,
+        value: [x, y, rawSize ?? radius],
+        symbolSize: radius,
+        itemStyle: {
+          color: ptColor,
+          opacity: 0.85,
+          borderColor: '#ffffff',
+          borderWidth: 1.5,
+        },
+        label: {
+          show: true,
+          position: 'right',
+          formatter: '{b}',
+          fontSize: 11,
+          color: '#344054',
+          fontWeight: 600,
+        },
+      })
+    }
+
+    s.data = normalizedData
+    s.type = 'scatter'
+    delete s.symbolSize
+
+    // 增加四象限辅助参考线（均值虚线）
+    s.markLine = {
+      silent: true,
+      symbol: 'none',
+      lineStyle: { type: 'dashed', color: '#94a3b8', width: 1 },
+      data: [
+        { type: 'average', name: 'X轴均值', valueIndex: 0 },
+        { type: 'average', name: 'Y轴均值', valueIndex: 1 },
+      ],
+    }
+  }
+
+  // 3. 增强 Tooltip 交互展示
+  option.tooltip = {
+    trigger: 'item',
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+    borderColor: '#eaecf0',
+    borderWidth: 1,
+    padding: [8, 12],
+    textStyle: { color: '#101828', fontSize: 12 },
+    formatter: (params: unknown) => {
+      const p = params as {
+        name?: string
+        value?: [number, number, number?]
+      }
+      const name = p.name ?? ''
+      const vals = p.value || [0, 0]
+      const xv = typeof vals[0] === 'number' ? vals[0].toFixed(2) : String(vals[0])
+      const yv = typeof vals[1] === 'number' ? vals[1].toFixed(2) : String(vals[1])
+      const szLine =
+        spec.chart_type === 'bubble' &&
+        vals.length >= 3 &&
+        typeof vals[2] === 'number'
+          ? `<div style="color:#667085;margin-top:2px;">尺寸参照: ${vals[2]}</div>`
+          : ''
+      return `<div style="font-weight:700;font-size:13px;margin-bottom:4px;color:#1B365D;">${name}</div>
+              <div style="color:#475467;">${xAxisName}: <strong style="color:#101828;">${xv}</strong></div>
+              <div style="color:#475467;">${yAxisName}: <strong style="color:#101828;">${yv}</strong></div>
+              ${szLine}`
+    },
   }
 }
 
