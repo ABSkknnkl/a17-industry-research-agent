@@ -1,0 +1,41 @@
+{
+  "name": "remotion",
+  "version": "1.0.0",
+  "description": "My Remotion video",
+  "repository": {},
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "@remotion/media": "4.0.529",
+    "@remotion/tailwind-v4": "4.0.529",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.529",
+    "tailwindcss": "4.0.0"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.529",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "9.19.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "remotion studio",
+    "build": "remotion bundle",
+    "upgrade": "remotion upgrade",
+    "lint": "eslint src && tsc",
+    "render:overview": "remotion render SystemOverview ../output/videos/01_SystemOverview.mp4",
+    "render:fetcher": "remotion render DataFetcherAgent ../output/videos/02_DataFetcherAgent.mp4",
+    "render:interpreter": "remotion render DataInterpreterAgent ../output/videos/03_DataInterpreterAgent.mp4",
+    "render:chart": "remotion render ChartGeneratorAgent ../output/videos/04_ChartGeneratorAgent.mp4",
+    "render:writer": "remotion render ChapterWriterAgent ../output/videos/05_ChapterWriterAgent.mp4",
+    "render:fusion": "remotion render ReportFusionAgent ../output/videos/06_ReportFusionAgent.mp4",
+    "render:all": "npm run render:overview && npm run render:fetcher && npm run render:interpreter && npm run render:chart && npm run render:writer && npm run render:fusion"
+  },
+  "sideEffects": [
+    "*.css"
+  ]
+}
