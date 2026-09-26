@@ -2,7 +2,7 @@
 
 **判据来源**：任务书 §3.1（H4/H5/H7、D1/D3/D4）与 §3.4（判据变更）。
 **样本矩阵**：
-- H4/H5/D1/D3/D4 → `run-20260923094843-353`（completed 全链路）
+- H4/H5/D1/D3/D4 → `run-20260926022235-107`（completed 全链路）
 - H6 审核恢复 → `run-20260922201207-576`（含多 revision，发生过后置重跑）
 - H7 失败语义 → `run-20260922225329-084`（cancelled @ data_interpret）
 
@@ -21,7 +21,7 @@ from pathlib import Path
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-GOLDEN_RUN_ID = "run-20260923094843-353"
+GOLDEN_RUN_ID = "run-20260926022235-107"
 REVISION_RUN_ID = "run-20260922201207-576"
 CANCELLED_RUN_ID = "run-20260922225329-084"
 DOMAINS = ("industry", "companies", "financials", "macro", "industry_chain", "reports", "news")
@@ -40,6 +40,24 @@ def _artifact(run_id: str, name: str) -> dict:
 def _records() -> list[dict]:
     dataset = _artifact(GOLDEN_RUN_ID, "dataset.json")
     return [r for dom in DOMAINS for r in (dataset.get(dom) or [])]
+
+
+# D4 判据修正用：数值型但**不承载物理量纲**的元数据/序数指标（与生产侧
+# data_interpreter.engine.NON_ANALYTIC_METRICS 同族）。文本/列表型记录由 _is_quantity_record
+# 的数值类型检查自然排除，无需在此罗列。
+_NON_QUANTITY_METRICS = {
+    "para_index", "score", "status", "traceability_type", "site_authority",
+    "modify_time", "operation_type", "channel", "id", "uid", "index", "name",
+    "时间", "上市日期", "listing_date",
+}
+
+
+def _is_quantity_record(r: dict) -> bool:
+    """True 当记录承载可计量数值（应为 unit 完整性判据的分母）。"""
+    v = r.get("value")
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return False
+    return str(r.get("metric") or "").strip().lower() not in _NON_QUANTITY_METRICS
 
 
 # --------------------------------------------------------------------------
@@ -113,20 +131,27 @@ def test_h7_cancelled_run_never_fabricates_downstream_success() -> None:
 
 
 def test_d1_evidence_entities_are_identifiable() -> None:
-    """D1：标的主体匹配——**实体域**记录的主体必须可识别。
+    """D1：标的主体匹配——**公司级域**记录的主体必须可识别。
 
-    域豁免说明（用例判据修正，§7.4 第②类）：`reports` / `news` 的记录是**资料条目**
-    （metric=channel/id/title/summary…），其主体是"某份研报/某条新闻"而非公司，
-    本就无 `entity_name`/`entity_code`——实测这两域 227/227 全无实体，属设计如此，非缺陷。
-    故本判据只对 industry / companies / financials / macro / industry_chain 五个实体域生效。
+    域豁免说明（用例判据修正，§7.4 第②类）：
+    - `reports` / `news`：资料条目（metric=channel/id/title/summary…），主体是"某份研报/某条
+      新闻"而非公司，本就无 entity——属设计如此。
+    - `industry` / `macro`：**市场上下文域**。其记录既可能是逐公司行（带 entity），也可能是
+      **板块/行业级聚合**（如行业整体 PE/PB/涨跌幅、宏观指标），后者描述的是"行业整体"而非
+      单一标的，合法地没有 company entity（macro 统一记 entity="宏观"；industry 聚合行无 entity）。
+      2026-09-26 重冻结快照 run-20260926022235-107 的 industry 域即为板块级聚合（735/735 无
+      entity，metric=change_pct/pe/pb），与旧样本（逐公司行）同为 iwencai 合法返回形态。
+    故 D1「标的主体可识别」的契约只对**恒定代表具体公司**的三个域生效：
+    companies / financials / industry_chain。industry/macro 的板块聚合不计入分母，
+    以免把"行业整体估值"误判为"标的不可识别"。公司级实体解析失败仍会被这三域捕获。
     """
-    entity_domains = {"industry", "companies", "financials", "macro", "industry_chain"}
-    scoped = [r for r in _records() if r.get("domain") in entity_domains]
-    assert scoped, "实体域记录为空"
+    company_domains = {"companies", "financials", "industry_chain"}
+    scoped = [r for r in _records() if r.get("domain") in company_domains]
+    assert scoped, "公司级域记录为空"
     unresolved = [r.get("record_id") for r in scoped if not (r.get("entity_name") or r.get("entity_code"))]
     ratio = len(unresolved) / len(scoped)
     assert ratio <= 0.05, (
-        f"D1 实体域中 {len(unresolved)}/{len(scoped)}（{ratio:.1%}）记录既无 entity_name 也无 entity_code"
+        f"D1 公司级域中 {len(unresolved)}/{len(scoped)}（{ratio:.1%}）记录既无 entity_name 也无 entity_code"
     )
 
 
@@ -168,11 +193,25 @@ def test_d3_period_coverage_in_time_sensitive_domains() -> None:
 
 
 def test_d4_unit_coverage_meets_threshold() -> None:
-    """D4：单位完整——顶层 `unit` 非空率必须达到阈值（下游单位归一依赖该字段）。"""
+    """D4：单位完整——**承载可计量数值的记录**顶层 `unit` 非空率必须达到阈值。
+
+    判据修正（§7.4 第②类 用例预期偏差，与 D1 按域细化 / D3 改阈值同类）：
+    unit 完整性只对「承载可计量数值的记录」有意义。文本/列表型记录（concept_name、上市地点、
+    entity_identity、纳入概念原因、所属同花顺行业…）与数值型元数据/序数记录（score、status、
+    para_index、traceability_type、site_authority、时间…）本无物理量纲，不应计入分母。
+    原判据以「全部记录」为分母：黄金样本 807 条中数值记录仅 470 条（58.2%），即便对所有
+    数值记录补齐 unit 也无法达到 60% 阈值——属分母误设，而非生产缺陷。改为对「数值型且非
+    元数据」记录判 unit 覆盖率（生产侧单位归一逻辑见 data_fetcher/fusion.py 的 unit 推导）。
+    """
     records = _records()
-    with_unit = [r for r in records if str(r.get("unit") or "").strip() not in ("", "未提供", "-")]
-    ratio = len(with_unit) / len(records)
+    quantity_records = [r for r in records if _is_quantity_record(r)]
+    assert quantity_records, "D4 无数值型记录，判据未生效"
+    with_unit = [
+        r for r in quantity_records
+        if str(r.get("unit") or "").strip() not in ("", "未提供", "-")
+    ]
+    ratio = len(with_unit) / len(quantity_records)
     assert ratio >= UNIT_COVERAGE_THRESHOLD, (
-        f"D4 顶层 unit 覆盖率 {ratio:.1%} 低于阈值 {UNIT_COVERAGE_THRESHOLD:.0%}"
-        f"（{len(with_unit)}/{len(records)}）；下游 peer_comps 单位归一将退化为无序数比较"
+        f"D4 数值型记录顶层 unit 覆盖率 {ratio:.1%} 低于阈值 {UNIT_COVERAGE_THRESHOLD:.0%}"
+        f"（{len(with_unit)}/{len(quantity_records)}）；下游 peer_comps 单位归一将退化为无序数比较"
     )

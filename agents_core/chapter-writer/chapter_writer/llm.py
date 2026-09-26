@@ -43,11 +43,21 @@ def clean_and_parse_json(content: Any) -> dict[str, Any]:
 
     match = re.search(r"\{[\s\S]*\}", text)
     if match:
+        candidate = match.group(0)
         try:
-            parsed = json.loads(match.group(0))
+            parsed = json.loads(candidate)
             if isinstance(parsed, dict):
                 return parsed
         except json.JSONDecodeError:
+            pass
+
+        # 启发式自愈：修复字符串内部未转义的独立双引号（如 "summary": "xxx政策转"放量发展"阶段xxx"）
+        try:
+            healed = re.sub(r'(?<![:,\{\[\s])"(?![:,\}\]\s\n\r])', '”', candidate)
+            parsed = json.loads(healed)
+            if isinstance(parsed, dict):
+                return parsed
+        except Exception:
             pass
 
     raise ValueError(f"Failed to parse LLM response as JSON object: {text[:200]}...")

@@ -23,7 +23,7 @@ class Settings:
             llm_base_url=os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1").rstrip("/"),
             llm_model=os.getenv("LLM_MODEL", "deepseek-chat"),
             llm_reasoning_effort=os.getenv("LLM_REASONING_EFFORT") or os.getenv("REASONING_EFFORT") or None,
-            llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "300")),
+            llm_timeout_seconds=max(240.0, float(os.getenv("LLM_TIMEOUT_SECONDS", "300"))),
             output_dir=Path(os.getenv("OUTPUT_DIR", "output")),
             max_concurrency=int(os.getenv("CHAPTER_CONCURRENCY", "7")),
             llm_max_tokens=int(os.getenv("LLM_MAX_TOKENS", "16384")),

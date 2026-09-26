@@ -1,6 +1,7 @@
 {
   "domains": ["industry_chain", "companies", "industry", "reports", "news"],
   "keywords": ["产业链", "上游", "中游", "下游", "主营", "供应商", "客户", "价值链", "环节"],
+  "requires_signal": false,
   "source": "skills包/产业链解读/SKILL.md",
   "adaptation": "保留全链路拆解、关键节点和验证框架；移除投资价值评分和外部取数步骤。"
 }

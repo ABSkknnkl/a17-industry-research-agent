@@ -19,7 +19,7 @@ from functools import lru_cache
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-GOLDEN_RUN_ID = "run-20260923094843-353"
+GOLDEN_RUN_ID = "run-20260926022235-107"
 ARTIFACTS = PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts"
 DOMAINS = ("industry", "companies", "financials", "macro", "industry_chain", "reports", "news")
 

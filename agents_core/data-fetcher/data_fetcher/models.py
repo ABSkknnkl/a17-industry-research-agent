@@ -27,6 +27,7 @@ class ResearchRequest(BaseModel):
     industry: str = Field(min_length=2, max_length=200)
     focus_points: list[str] = Field(default_factory=list, max_length=20)
     data_requirements: list[str] = Field(default_factory=list, max_length=30)
+    must_include_entities: list[str] = Field(default_factory=list, max_length=20)
     as_of: date = Field(default_factory=date.today)
     max_iterations: int = Field(default=6, ge=1, le=15)
     max_skill_calls: int = Field(default=24, ge=1, le=100)
@@ -40,7 +41,7 @@ class ResearchRequest(BaseModel):
             raise ValueError("industry must contain at least two characters")
         return value
 
-    @field_validator("focus_points", "data_requirements")
+    @field_validator("focus_points", "data_requirements", "must_include_entities")
     @classmethod
     def strip_list(cls, values: list[str]) -> list[str]:
         return [item.strip() for item in values if item and item.strip()]
@@ -65,13 +66,14 @@ class ResearchObjective(BaseModel):
     industry: str
     focus_points: list[str] = Field(default_factory=list)
     data_requirements: list[str] = Field(default_factory=list)
+    must_include_entities: list[str] = Field(default_factory=list)
     required_domains: list[Domain] = Field(default_factory=lambda: list(Domain))
     requirements: list[ResearchRequirement] = Field(default_factory=list)
     as_of: date
 
 
 class SkillTask(BaseModel):
-    model_config = ConfigDict(extra="forbid", coerce_numbers_to_str=True)
+    model_config = ConfigDict(extra="ignore", coerce_numbers_to_str=True)
 
     task_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
     skill_name: str
@@ -93,7 +95,7 @@ class SkillTask(BaseModel):
 
 
 class AgentDecision(BaseModel):
-    model_config = ConfigDict(extra="forbid", coerce_numbers_to_str=True)
+    model_config = ConfigDict(extra="ignore", coerce_numbers_to_str=True)
 
     decision: Literal["continue", "stop", "blocked"]
     assessment: str = ""

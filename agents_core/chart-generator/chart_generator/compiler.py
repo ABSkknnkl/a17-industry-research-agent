@@ -543,7 +543,8 @@ class EChartsCompiler:
                 "symbolSize": [180, 48],
             }
             if s_val is not None:
-                node_dict["margin"] = f"{s_val}{table.unit}"
+                unit_str = table.series_units.get(table.primary_series_name, "") if table.primary_series_name else ""
+                node_dict["margin"] = f"{s_val}{unit_str}"
             nodes.append(node_dict)
 
         up_ids = [n["id"] for n in nodes if n.get("category") == "上游"]

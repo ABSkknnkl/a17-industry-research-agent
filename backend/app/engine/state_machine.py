@@ -242,10 +242,10 @@ class WorkflowEngine:
                         try:
                             ds_json = json.loads(ds_path.read_text(encoding="utf-8"))
                             del_set = set(deleted_ids)
-                            for list_key in ("records", "companies", "financials", "macro", "industry_chain"):
-                                if list_key in ds_json and isinstance(ds_json[list_key], list):
+                            for list_key, val in ds_json.items():
+                                if isinstance(val, list):
                                     ds_json[list_key] = [
-                                        item for item in ds_json[list_key]
+                                        item for item in val
                                         if (item.get("record_id") if isinstance(item, dict) else getattr(item, "record_id", "")) not in del_set
                                     ]
                             ds_path.write_text(json.dumps(ds_json, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -268,6 +268,8 @@ class WorkflowEngine:
                             ch_path.write_text(json.dumps(ch_json, ensure_ascii=False, indent=2), encoding="utf-8")
                         except Exception as e:
                             logger.warning(f"同步更新 chapter_result.json 失败: {e}")
+                    if "report_fusion" in state.stage_results and state.stage_results["report_fusion"].status in ("approved", "completed"):
+                        state.stage_results["report_fusion"].status = "pending"
                 elif req.stage == "chart_generate" and "chart_specs" in req.edited_data:
                     ct_path = art_dir / "chart_result.json"
                     if ct_path.exists():
@@ -502,6 +504,8 @@ class WorkflowEngine:
                         state.stage_results["chapter_write"].revision = state.revision
                         state.status = "waiting_review"
                         state.stage_results["chapter_write"].status = "waiting_review"
+                        if "report_fusion" in state.stage_results and state.stage_results["report_fusion"].status in ("approved", "completed"):
+                            state.stage_results["report_fusion"].status = "pending"
                         state.updated_at = datetime.now().isoformat()
                         storage.save_state(state)
                         event_hub.emit(
@@ -606,7 +610,7 @@ class WorkflowEngine:
             "data_interpret": ["dataset.json"],
             "chart_generate": ["interpretation_report.json"],
             "chapter_write": ["interpretation_report.json", "chart_result.json"],
-            "report_fusion": ["chapter_result.json"],
+            "report_fusion": ["interpretation_report.json", "chart_result.json", "chapter_result.json"],
         }
 
         # 2. 定位需要恢复推进的目标阶段
@@ -661,6 +665,8 @@ class WorkflowEngine:
         state.status = "running"
         target_idx = STAGE_ORDER.index(target_stage)
         for i, s in enumerate(STAGE_ORDER):
+            if s not in state.stage_results:
+                state.stage_results[s] = StageResult(stage=s, status="pending", revision=state.revision)
             if i == target_idx:
                 state.stage_results[s].status = "running"
                 state.stage_results[s].error = None

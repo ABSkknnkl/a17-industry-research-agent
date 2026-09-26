@@ -394,6 +394,16 @@ class SkillHub:
                 return await self.execute_task(task)
 
         while pending:
+            # 若依赖任务失败，但下游任务自身拥有独立完备的查询语句 (query)，
+            # 说明其并不依赖上游输出参数，自愈剥离失败依赖后继续调度执行，避免级联击穿核心数据采集
+            for task in list(pending.values()):
+                failed_deps = set(task.depends_on) & failed
+                if failed_deps:
+                    query_val = str(task.arguments.get("query", "")).strip()
+                    if query_val:
+                        new_deps = [d for d in task.depends_on if d not in failed]
+                        pending[task.task_id] = task.model_copy(update={"depends_on": new_deps})
+
             blocked = [
                 task for task in pending.values() if set(task.depends_on) & failed
             ]

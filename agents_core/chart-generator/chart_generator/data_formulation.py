@@ -76,6 +76,28 @@ def _filter_recent_periods(periods: list[Any], max_recent_count: int = 48, defau
     return periods[-max_recent_count:]
 
 
+# A2 financial_ratios field <- metric tokens. Used by the D-08 (#1 chart side) alignment so
+# that a single-ratio cross-entity comparison plots A2's calculated value (latest disclosure
+# period, single source of truth) instead of an independently-selected evidence record.
+_RATIO_FIELD_TOKENS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("gross_margin_pct", ("gross_margin", "销售毛利率", "毛利率")),
+    ("net_margin_pct", ("net_margin", "销售净利率", "净利率")),
+    ("roe_pct", ("roe", "净资产收益率")),
+    ("debt_ratio_pct", ("debt_ratio", "资产负债率")),
+)
+
+
+def _ratio_field_for_metric(metric: str | None) -> str | None:
+    """Map a record metric to its A2 financial_ratios field, or None if it is not a ratio."""
+    text = (metric or "").casefold()
+    if not text:
+        return None
+    for field, tokens in _RATIO_FIELD_TOKENS:
+        if any(tok.casefold() in text for tok in tokens):
+            return field
+    return None
+
+
 class DataFormulator:
     """Transforms raw heterogeneous EvidenceRef items into publication-grade Data Tables."""
 
@@ -103,6 +125,14 @@ class DataFormulator:
         by_metric: dict[str, list[EvidenceRef]] = defaultdict(list)
         for r in records:
             by_metric[r.metric].append(r)
+
+        # 3.0 Single-ratio cross-entity comparison (D-08 #1 chart side / G4).
+        # Must run before the generic paths: when one A2 financial-ratio metric is compared
+        # across entities, the plotted values are sourced from A2 financial_ratios so that
+        # 图上数值 == A2 计算值 by construction (see _try_formulate_ratio_comparison).
+        ratio_table = DataFormulator._try_formulate_ratio_comparison(by_metric, report, target_chart_type)
+        if ratio_table:
+            return ratio_table
 
         # 3. Check for specific chart types before generic dimension filtering
         # 3.1 Scatter / Bubble (requires 2 metrics across common entities)
@@ -142,7 +172,20 @@ class DataFormulator:
         # 5. Check for Time-Series Pattern
         dated_records = [r for r in records if r.period is not None]
         unique_periods = sorted({r.period for r in dated_records})
-        if len(unique_periods) >= 2 and len(dated_records) >= 2:
+        # D-08 fix (#3 period misalignment): a genuine time series needs >=2 periods for the
+        # SAME series (entity/metric). When several entities each contribute a single point but
+        # those points fall on different periods, this is a cross-entity comparison, NOT a time
+        # series. The old gate fired on ">=2 distinct periods across the record set", which
+        # routed e.g. 中电港@2025 / 博通集成@2025 / 中新赛克@2024 onto one period axis — mixing
+        # disclosure periods in a single "latest period" comparison and (formerly) zero-filling
+        # the gaps. Require a real per-series time dimension before taking the time-series path;
+        # otherwise fall through to entity cross-section, which aligns to a common period.
+        periods_by_series: dict[str, set[Any]] = defaultdict(set)
+        for r in dated_records:
+            series_key = r.entity or canonical_metric_label(r.metric)
+            periods_by_series[series_key].add(r.period)
+        max_periods_per_series = max((len(p) for p in periods_by_series.values()), default=0)
+        if len(unique_periods) >= 2 and len(dated_records) >= 2 and max_periods_per_series >= 2:
             unique_periods = _filter_recent_periods(unique_periods)
             period_set = set(unique_periods)
             dated_records = [r for r in dated_records if r.period in period_set]
@@ -156,6 +199,101 @@ class DataFormulator:
 
         # 7. Fallback to Discrete Sample Point Pattern
         return DataFormulator._formulate_discrete_samples(records)
+
+    @staticmethod
+    def _try_formulate_ratio_comparison(
+        by_metric: dict[str, list[EvidenceRef]],
+        report: InterpretationReport,
+        target_chart_type: str | None,
+    ) -> NormalizedDataTable | None:
+        """D-08 fix (#1 chart side, G4 / 台账修复建议①).
+
+        单个 A2 财务比率指标（毛利率/净利率/ROE/资产负债率）跨实体对比时，图上数值必须取自
+        A2 的 ``financial_ratios``（最新披露期、单一事实源），不得走"独立选取证据记录"的二次
+        推断。修复前各实体选取的报告期不一致（如 中电港 ROE 图取 2024=4.61，而 A2 最新期=5.35；
+        中新赛克 毛利率图取 2024=74.93，而 A2 最新期=71.18），导致 G4「图表数值与计算一致」失败。
+
+        严格护栏（任一不满足即返回 None，回退既有通用路径，保证零回归）：
+        - 目标图为对比/柱状类（非 pie/scatter/line/radar/combo）；
+        - by_metric 恰有一个指标且该指标可映射到 financial_ratios 字段；
+        - report.financial_ratios 非空（合成/无 A2 比对的报告直接跳过）；
+        - 至少 2 个实体、且其中 ≥2 个在 financial_ratios 中有该比率值。
+        点级证据对齐到各实体在 evidence_index 中该指标的**最新期**记录，保证可逐点溯源。
+        """
+        if target_chart_type not in (None, "bar", "horizontal_bar", "comparison_bar", "diverging_bar"):
+            return None
+        if len(by_metric) != 1:
+            return None
+        metric = next(iter(by_metric.keys()))
+        field = _ratio_field_for_metric(metric)
+        if not field:
+            return None
+        fr_rows = list(getattr(report, "financial_ratios", None) or [])
+        if not fr_rows:
+            return None
+
+        recs = [r for r in by_metric[metric] if r.entity]
+        entities: list[str] = []
+        seen: set[str] = set()
+        for r in recs:
+            if r.entity not in seen:
+                seen.add(r.entity)
+                entities.append(r.entity)
+        if len(entities) < 2:
+            return None
+
+        by_company = {
+            str(row.get("company")): row
+            for row in fr_rows
+            if isinstance(row, dict) and row.get("company") is not None
+        }
+
+        # Latest-period record per entity for this metric (point-level provenance).
+        latest_rec: dict[str, EvidenceRef] = {}
+        for ref in report.evidence_index.values():
+            if ref.metric == metric and ref.entity in seen:
+                cur = latest_rec.get(ref.entity)
+                if cur is None or (ref.period is not None and (cur.period is None or ref.period >= cur.period)):
+                    latest_rec[ref.entity] = ref
+
+        m_label = canonical_metric_label(metric)
+        categories: list[str] = []
+        values: list[float | None] = []
+        eids: list[str] = []
+        pds: list[str | None] = []
+        for ent in entities:
+            row = by_company.get(str(ent))
+            fv = row.get(field) if row else None
+            if not isinstance(fv, (int, float)) or isinstance(fv, bool):
+                # A2 无该实体比率值 → 不画该实体（禁止用原始记录二次推断冒充 A2 计算值）。
+                continue
+            ref = latest_rec.get(ent)
+            categories.append(str(ent))
+            values.append(round(float(fv), 2))
+            eids.append(str(ref.record_id) if ref else "")
+            pds.append(
+                ref.period.isoformat()
+                if ref and hasattr(ref.period, "isoformat")
+                else (str(ref.period) if ref and ref.period else None)
+            )
+        if len(categories) < 2:
+            return None
+
+        return NormalizedDataTable(
+            axis_type=AxisType.ENTITY_COMPARISON,
+            x_field_name="公司",
+            categories=categories,
+            series_data={m_label: values},
+            series_units={m_label: "%"},
+            primary_series_name=m_label,
+            raw_evidence_ids=[e for e in eids if e],
+            point_evidence_ids={m_label: eids},
+            point_periods={m_label: pds},
+            quality_notes=[
+                f"比率对比图数值取自 A2 financial_ratios.{field}（最新披露期·G4 单一事实源）；"
+                f"点级证据对齐各实体该指标最新期记录"
+            ],
+        )
 
     @staticmethod
     def _try_formulate_scatter(

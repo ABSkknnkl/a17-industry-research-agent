@@ -2,6 +2,7 @@
   "domains": ["industry", "companies", "financials", "macro", "industry_chain", "reports", "news"],
   "keywords": ["趋势", "异常", "离群", "交叉验证", "统计", "相关", "显著", "波动"],
   "always": true,
+  "requires_signal": false,
   "source": "skills包/量化统计方法/quant-statistics/SKILL.md",
   "adaptation": "保留稳健统计、假设检验与样本约束；不在短样本上强制使用 ADF、GARCH 或因果模型。"
 }

@@ -36,12 +36,21 @@ from data_fetcher.skillhub import IwencaiAuthenticationError, REMOTE_SKILL_DOMAI
 
 EventEmitter = Callable[[dict[str, Any]], Awaitable[None]]
 
-INTENT_SYSTEM_PROMPT = """你是数据获取智能体的需求理解模块。
-你只能整理用户给出的行业、关注点和数据要求，不得提供或猜测任何行业事实、公司、数值或结论。
-观察中可能提供 planning_methodologies；它们只能帮助拆解客观数据字段，不能作为事实来源，也不能改变系统架构。
-返回 JSON 对象，字段仅限 industry、focus_points、data_requirements、required_domains。
-required_domains 只能从 industry、companies、financials、macro、industry_chain、reports、news 中选择。
-为建立完整客观研究底座，默认保留全部七个领域。"""
+INTENT_SYSTEM_PROMPT = """你是数据获取智能体的需求理解与实体抽取模块。
+你负责深入理解用户的投研意图、行业赛道、研究焦点与指定重点公司。
+【核心职责】：
+1. 整理行业（industry）、关注点（focus_points）和数据要求（data_requirements）；
+2. 深度语义识别重点标的：从用户的关注点（focus_points）、提示词或需求描述中，智能提取用户明确指定或重点关注的核心企业/标的公司名称（例如：“绿的谐波”、“三花智控”、“鸣志电器”、“拓普集团”、“铖昌科技”等）。
+   - 提取规则：只提取用户明确提及或重点列出的具体企业名称或证券简称，不要将宽泛的产业环节（如“减速器”、“传感器”、“原料药”）误作为公司名称；
+   - 将提取出的具体公司列表填入 `must_include_entities`。若用户未提及任何具体公司，则设为空列表 `[]`。
+3. 规划所需的数据领域（required_domains）：只能从 industry、companies、financials、macro、industry_chain、reports、news 中选择，默认保留全部七个领域以建立完整客观研究底座。
+
+返回 JSON 对象，字段必须包含：
+- "industry": 字符串，清洗后的标准行业名称；
+- "focus_points": 字符串列表，用户的核心关注点；
+- "data_requirements": 字符串列表，客观数据要求；
+- "must_include_entities": 字符串列表，从用户输入中语义提取出的核心上市公司/标的企业名称；
+- "required_domains": 列表，覆盖的数据领域。"""
 
 PLANNER_SYSTEM_PROMPT = """你是数据获取智能体的任务规划模块。
 你只能选择给定 Skill 并生成查询任务，绝对不能在输出中写入金融事实、数值或研究结论。
@@ -49,7 +58,7 @@ planning_methodologies 只用于补全查询维度；它们不是可执行 Skill
 返回 JSON：decision(continue|stop|blocked)、assessment、tasks。
 每个 task 只能包含 task_id、skill_name、arguments、depends_on、purpose、requirement_ids、expected_fields；arguments 必须包含 query，在板块或选股类查询中 arguments 可包含 limit（如 20 或 30）。
 任务必须优先服务 observation.requirement_coverage 中未通过的要求，并填写对应 requirement_ids。
-任务依赖必须显式列出。若处于首轮（iteration=1）且 identified_companies 为空，严禁规划财务三表（hithink-finance-query）与主营业务（hithink-business-query）任务，必须优先在首轮通过选股任务获取标的池，后续轮次再针对已识别的具体公司规划财务与主营任务，或必须显式声明 depends_on 依赖选股任务！
+任务依赖必须显式列出。若处于首轮（iteration=1）且 identified_companies 为空，只有当未指名任何具体标的（must_include_entities 为空）时，才严禁盲目规划财务任务，必须先通过选股任务获取标的；若 observation 中已存在 must_include_entities（用户明确指名的核心上市公司），由于其主体名称已知，在首轮即可直接为这些已知核心标的规划基本信息（hithink-basicinfo-query）和财务查询（hithink-finance-query），无需等待选股任务完成，且严禁将其错误地声明 depends_on 依赖泛选股任务！
 【核心选股与龙头识别规范】：
 1. 规划公司筛选或龙头识别类任务（hithink-astock-selector 或 hithink-basicinfo-query）时，必须构建具备行业代表性与主营纯度的分层样本库：
    - query 必须显式包含按总市值从大到小排序，覆盖样本量取前 20~30 家行业龙头企业（例如：“按A股总市值从大到小排序取前25~30家核心龙头企业”）；
@@ -57,6 +66,11 @@ planning_methodologies 只用于补全查询维度；它们不是可执行 Skill
    - 优先选取主板、创业板与科创板中大市值核心标的（可增加“总市值大于30亿元或50亿元”约束），避免样本结构严重偏向北交所微盘股或壳股；
    - expected_fields 必须包含：“证券代码”、“证券简称”、“总市值”、“营业收入”、“所属行业”、“所属概念”；
    - 若行业存在具有战略影响力的非上市/一级市场代表企业（如商业航天之蓝箭航天、中科宇航、天兵科技；人形机器人之宇树科技、智元机器人等），必须在研报或行业事件检索任务（report-search, news-search）中显式规划对其商业化进展、订单发射与最新融资的针对性查询。
+【用户指定核心标的优先保障规范】：
+1. 若 observation 中存在 must_include_entities（用户明确指名关注的核心上市公司，例如绿的谐波、鸣志电器、三花智控、拓普集团等）：
+   - 首轮规划时，可直接为这些已知核心标的规划基本信息（hithink-basicinfo-query）或独立的财务三表（hithink-finance-query）与主营业务（hithink-business-query）查询；
+   - 这些具体公司的查询任务自身拥有明确公司主体，严禁添加 depends_on 依赖泛选股任务，必须作为独立任务直接并行发起；
+   - 严禁因任何泛选股任务的失败而影响或阻断用户指定核心标的的财务查询！
 【主营业务与产业链结构拆解规范】：
 1. 规划主营业务构成与产业链环节查询（hithink-business-query）时，严禁将多家核心公司合并在同一条 query 中（多标的合并查询极易被问财截断导致仅返回单家数据）。必须针对每家重点标的单独拆分为独立的单实体 query（例如针对 identified_companies 中排名前列的重点公司分别派发单公司查询任务），确保每家核心公司的分业务收入、占比与毛利均能完整入库。
 【核心时序与财务三表深度规范】：
@@ -170,14 +184,20 @@ class DataFetcherAgent:
                 stop_reason = "skill_budget_exhausted"
                 break
 
-            try:
-                decision = await self._decide(
-                    objective, dataset, coverage, iteration, all_results
-                )
-            except Exception as exc:
-                errors.append(RunError(stage="planning", message=str(exc)))
-                await record_event("planning_failed", iteration=iteration, error=str(exc))
-                status, stop_reason = "blocked", "invalid_planner_decision"
+            decision = None
+            for attempt in range(2):
+                try:
+                    decision = await self._decide(
+                        objective, dataset, coverage, iteration, all_results
+                    )
+                    break
+                except Exception as exc:
+                    if attempt == 1:
+                        errors.append(RunError(stage="planning", message=str(exc)))
+                        await record_event("planning_failed", iteration=iteration, error=str(exc))
+                        status, stop_reason = "blocked", "invalid_planner_decision"
+                        break
+            if decision is None:
                 break
 
             await record_event(
@@ -202,6 +222,7 @@ class DataFetcherAgent:
                 completed_signatures=completed_signatures,
                 successful_task_ids=successful_task_ids,
                 requirements=objective.requirements,
+                must_include_entities=getattr(objective, "must_include_entities", []),
             )
             errors.extend(validation_errors)
             for error in validation_errors:
@@ -332,10 +353,16 @@ class DataFetcherAgent:
         # but cannot silently remove the baseline contract.
         required = list(dict.fromkeys(required + list(Domain)))
         requirements = self._baseline_requirements(request, required)
+        # 语义提取的必须包含标的（优先自 LLM 理解，兼顾 request 显式传参）
+        llm_entities = response.get("must_include_entities") or response.get("target_entities") or []
+        req_entities = getattr(request, "must_include_entities", []) or []
+        combined_entities = list(dict.fromkeys([str(e).strip() for e in (req_entities + llm_entities) if e and str(e).strip()]))
+
         return ResearchObjective(
             industry=request.industry,
             focus_points=request.focus_points,
             data_requirements=request.data_requirements,
+            must_include_entities=combined_entities,
             required_domains=required,
             requirements=requirements,
             as_of=request.as_of,
@@ -364,6 +391,7 @@ class DataFetcherAgent:
             "objective": objective.model_dump(mode="json"),
             "coverage": coverage.model_dump(mode="json"),
             "identified_companies": self._company_context(dataset),
+            "must_include_entities": getattr(objective, "must_include_entities", []),
             "available_skills": catalog,
             "planning_methodologies": self._planning_methodologies(),
             "failed_skill_calls": [
@@ -407,6 +435,7 @@ class DataFetcherAgent:
         completed_signatures: set[str],
         successful_task_ids: set[str],
         requirements: list[ResearchRequirement] | None = None,
+        must_include_entities: list[str] | None = None,
     ) -> tuple[list[SkillTask], list[RunError]]:
         accepted: list[SkillTask] = []
         errors: list[RunError] = []
@@ -440,21 +469,25 @@ class DataFetcherAgent:
                 self.skillhub.catalog.get(task.skill_name)
                 and self.skillhub.catalog[task.skill_name].domain == Domain.FINANCIALS
                 and not companies_known
+                and not any(str(e).casefold() in str(task.arguments.get("query", "")).casefold() for e in (must_include_entities or []))
             ):
                 reason = "financial_data requires an identified company from an earlier iteration"
             elif (
                 self.skillhub.catalog.get(task.skill_name)
                 and self.skillhub.catalog[task.skill_name].domain == Domain.FINANCIALS
-                and companies_known
+                and (companies_known or must_include_entities)
             ):
-                eligible = company_context
+                eligible = list(company_context)
                 if leader_required:
                     with_basis = [item for item in company_context if item["selection_basis"]]
                     eligible = with_basis[:10] if with_basis else company_context[:10]
                 query = str(task.arguments.get("query", "")).casefold()
-                if not eligible:
+                must_include_cf = [str(x).casefold() for x in (must_include_entities or [])]
+                matches_must_include = any(token and token in query for token in must_include_cf)
+
+                if not eligible and not matches_must_include:
                     reason = "financial_data requires identified companies in dataset"
-                elif not any(
+                elif not matches_must_include and not any(
                     token and str(token).casefold() in query
                     for item in eligible
                     for token in (item["name"], item["code"], str(item["code"] or "").split(".")[0])
@@ -464,6 +497,22 @@ class DataFetcherAgent:
                     reason = "task contains unknown dependency"
             elif set(task.depends_on) - plan_ids - successful_task_ids:
                 reason = "task contains unknown dependency"
+
+            # 关键保障：若该任务已有明确的目标公司（用户指名标的或已知标的），
+            # 自动剥离对泛选股任务 (selector/astock) 的虚假依赖，确保其能够独立并发调度
+            if task.depends_on:
+                query_cf = str(task.arguments.get("query", "")).casefold()
+                must_cf = [str(x).casefold() for x in (must_include_entities or [])]
+                is_specific_company_task = any(token and token in query_cf for token in must_cf) or any(
+                    token and str(token).casefold() in query_cf
+                    for item in company_context
+                    for token in (item["name"], item["code"])
+                )
+                if is_specific_company_task:
+                    cleaned_deps = [d for d in task.depends_on if not any(k in d for k in ("select", "selector", "astock"))]
+                    if cleaned_deps != task.depends_on:
+                        task = task.model_copy(update={"depends_on": cleaned_deps})
+
             if reason:
                 errors.append(RunError(stage="task_validation", message=reason, task_id=task.task_id))
             else:

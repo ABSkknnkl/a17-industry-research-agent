@@ -39,6 +39,27 @@ NON_ANALYTIC_METRICS = {
     "上市日期", "listing_date",
 }
 
+# Entity names / substrings that denote a sector, index or aggregate rather than a
+# single listed company. Promoted to module scope so both peer-comps collection and
+# industry-chain extraction share one source of truth (values are identical to the
+# former local copies inside extract_industry_chain).
+NON_COMPANY_ENTITY_NAMES = {
+    "宏观", "研究主题", "全国", "中国", "行业", "各行业", "市场", "全部", "总计", "平均",
+}
+NON_COMPANY_ENTITY_PATTERNS = (
+    "指数", "板块", "概念", "ETF", "LOF", "主题", "基金", "大盘", "综指", "中国AI", "AI手机", "成分",
+)
+
+
+def _is_aggregate_entity(name: str | None) -> bool:
+    """True when the entity denotes a sector/index/aggregate instead of a concrete company."""
+    if not name:
+        return True
+    text = name.strip()
+    if not text or text in NON_COMPANY_ENTITY_NAMES:
+        return True
+    return any(pat in text for pat in NON_COMPANY_ENTITY_PATTERNS)
+
 
 def _id(prefix: str, *parts: Any) -> str:
     raw = "|".join(str(part) for part in parts)
@@ -109,24 +130,40 @@ COMMON_TICKER_NAMES: dict[str, str] = {
 }
 
 
-def resolve_ticker(code: str | None) -> str | None:
+def resolve_ticker(code: str | None, context_map: dict[str, str] | None = None) -> str | None:
+    """把证券代码解析为公司名（优先使用本批次动态映射，再回退内置表）。
+
+    Args:
+        code: 证券代码或代码形态的实体名（如 `001287.SZ`）。
+        context_map: 本次数据集内的 `entity_code → 公司名` 动态映射（队友机制，2026-09-26 合并）。
+            优先于内置 `COMMON_TICKER_NAMES`，用于消解内置表未覆盖的新标的（如当批次临时样本）。
+
+    Returns:
+        解析出的公司名；无法解析时原样返回 `code`。
+    """
     if not code:
         return None
     c = str(code).strip().upper()
+    if context_map and c in context_map:
+        return context_map[c]
     if c in COMMON_TICKER_NAMES:
         return COMMON_TICKER_NAMES[c]
     no_suf = re.sub(r"\.(SZ|SH|BJ|HK|US)$", "", c)
+    if context_map:
+        for k, v in context_map.items():
+            if k.startswith(no_suf):
+                return v
     for k, v in COMMON_TICKER_NAMES.items():
         if k.startswith(no_suf):
             return v
     return code
 
 
-def _entity(record: ResearchRecord) -> str | None:
+def _entity(record: ResearchRecord, context_map: dict[str, str] | None = None) -> str | None:
     if record.entity_name and record.entity_name.strip():
         name = record.entity_name.strip()
         if re.match(r"^\d{6}\.(SZ|SH|BJ|HK|US)$", name, re.I):
-            resolved = resolve_ticker(name)
+            resolved = resolve_ticker(name, context_map=context_map)
             if resolved and not re.match(r"^\d{6}\.(SZ|SH|BJ|HK|US)$", resolved, re.I):
                 return resolved
             if getattr(record, "raw_fields", None) and isinstance(record.raw_fields, dict):
@@ -141,7 +178,7 @@ def _entity(record: ResearchRecord) -> str | None:
             v = record.raw_fields.get(k)
             if v and str(v).strip() and not re.match(r"^\d{6}\.(SZ|SH|BJ|HK|US)$", str(v).strip(), re.I):
                 return str(v).strip()
-    return resolve_ticker(record.entity_code)
+    return resolve_ticker(record.entity_code, context_map=context_map)
 
 
 
@@ -604,15 +641,27 @@ class DeterministicAnalysisEngine:
         return val
 
     def build_peer_comps_matrix(self, dataset: StructuredResearchDataset) -> PeerCompsMatrix:
-        # Strictly take company-level records from companies and financials domains
-        # Exclude macro, industry (index aggregates), reports, news to avoid polluting peer comps
+        # Take company-level records from companies, financials and industry_chain domains.
+        # D-03 fix: individual peers' market-cap / PE / PB valuation rows are frequently
+        # carried in the `industry` domain (one row per listed company, e.g. metric
+        # "最新a股流通市值" / "最新市盈率ttm"), NOT in `companies`. Wholesale-excluding
+        # `industry` collapsed the matrix to the handful of companies that also had
+        # `financials` detail (3 of 23), which made CR3/CR5 unreproducible (recompute=100.0
+        # vs baseline 37.602/55.5614). We now include `industry` rows whose entity resolves
+        # to a concrete company and skip sector/index aggregates via entity-level
+        # (_is_aggregate_entity) plus metric-level (AGGREGATE_METRIC_TOKENS) guards.
+        # macro / reports / news remain excluded to avoid polluting peer comps.
         comp_records = list(dataset.companies) + list(dataset.financials)
         for r in getattr(dataset, "industry_chain", []):
             if r.entity_name or r.entity_code:
                 comp_records.append(r)
+        for r in getattr(dataset, "industry", []):
+            ent = _entity(r)
+            if ent and not _is_aggregate_entity(ent):
+                comp_records.append(r)
 
         company_data: dict[str, dict[str, Any]] = defaultdict(lambda: {
-            "name": None, "code": None, "metrics": {}, "evidence_ids": []
+            "name": None, "code": None, "metrics": {}, "periods": {}, "evidence_ids": []
         })
 
         AGGREGATE_METRIC_TOKENS = (
@@ -634,7 +683,20 @@ class DeterministicAnalysisEngine:
                 continue
             val = _number(r.value)
             if val is not None:
-                item["metrics"][m_key] = (val, r.unit, r.record_id)
+                # D-08 fix (#1 value mismatch): a company usually carries the SAME metric key
+                # across several reporting periods (financials are stored newest→oldest). The
+                # previous "last write wins" behaviour therefore kept the OLDEST period, so
+                # A2's financial_ratios disagreed with the chart, which correctly plots the
+                # latest disclosure period. Keep the latest-period observation instead; a
+                # record without a period never overrides a dated one.
+                r_period = _period(r)
+                prev_period = item["periods"].get(m_key)
+                if (
+                    m_key not in item["metrics"]
+                    or (r_period is not None and (prev_period is None or r_period >= prev_period))
+                ):
+                    item["metrics"][m_key] = (val, r.unit, r.record_id)
+                    item["periods"][m_key] = r_period
                 item["evidence_ids"].append(r.record_id)
 
         entries: list[PeerCompsEntry] = []
@@ -805,8 +867,8 @@ class DeterministicAnalysisEngine:
         )
 
         company_scores: dict[str, dict[str, int]] = {}
-        NON_COMPANY_NAMES = {"宏观", "研究主题", "全国", "中国", "行业", "各行业", "市场", "全部", "总计", "平均"}
-        NON_COMPANY_PATTERNS = ("指数", "板块", "概念", "ETF", "LOF", "主题", "基金", "大盘", "综指", "中国AI", "AI手机", "成分")
+        NON_COMPANY_NAMES = NON_COMPANY_ENTITY_NAMES
+        NON_COMPANY_PATTERNS = NON_COMPANY_ENTITY_PATTERNS
 
         def _clean_company_name(c: Any) -> str | None:
             if not c:
@@ -834,8 +896,23 @@ class DeterministicAnalysisEngine:
                     res.append(cleaned)
             return res
 
+        # context_map（队友机制，2026-09-26 合并）：当批次 `entity_code → 公司名` 动态映射。
+        # 产业链语义匹配时用它把代码形态实体消解为公司名，消解内置 COMMON_TICKER_NAMES 未覆盖的新标的。
+        dyn_tickers: dict[str, str] = {}
         for r in records:
-            ent = _entity(r)
+            c_code = r.entity_code or (r.entity_name if r.entity_name and re.match(r"^\d{6}\.(SZ|SH|BJ|HK|US)$", r.entity_name, re.I) else None)
+            c_name = r.entity_name if r.entity_name and not re.match(r"^\d{6}\.(SZ|SH|BJ|HK|US)$", r.entity_name, re.I) else None
+            if not c_name and getattr(r, "raw_fields", None) and isinstance(r.raw_fields, dict):
+                for k in ("成分简称", "股票简称", "证券简称", "公司简称", "公司名称", "成分名称", "名称"):
+                    v = r.raw_fields.get(k)
+                    if v and str(v).strip() and not re.match(r"^\d{6}\.(SZ|SH|BJ|HK|US)$", str(v).strip(), re.I):
+                        c_name = str(v).strip()
+                        break
+            if c_code and c_name:
+                dyn_tickers[c_code.upper()] = c_name
+
+        for r in records:
+            ent = _entity(r, context_map=dyn_tickers)
             text = str(r.value or "")
             m_name = r.metric.casefold()
             raw_seg = str(r.raw_fields.get("产业链环节") or r.raw_fields.get("环节") or "").casefold()
@@ -977,6 +1054,13 @@ class DeterministicAnalysisEngine:
 
 
     def compute_financial_ratios(self, dataset: StructuredResearchDataset) -> list[dict[str, Any]]:
+        """计算各对标公司的财务比率。
+
+        口径声明（D-02）：本函数输出的 ``*_pct`` 字段一律为**百分数**量纲
+        （``gross_margin_pct=3.24`` 表示 3.24%）；而 ``key_metrics[*].change_pct``
+        系列同比为**小数率**量纲（``0.3471`` 表示 34.71%）。两者量纲不同，下游与
+        判据（C1）须分开处理，不得混用同一容差口径。
+        """
         comps = self.build_peer_comps_matrix(dataset)
         ratios = []
         for e in comps.entries:
@@ -1008,6 +1092,15 @@ class DeterministicAnalysisEngine:
                 item["cash_flow_warning"] = "高增长但经营现金流为负，提示营运资金垫付及应收账款回款压力"
             elif cash_ratio is not None and cash_ratio >= 1.0:
                 item["cash_flow_quality"] = "净现比>=1.0，盈利含金量与造血能力优良"
+            # D-02 合理性校验：正常经营下净利率不应超过毛利率（净利 ≤ 毛利）。若 net_margin
+            # 显著高于 gross_margin，多为源侧口径污染（如把分部毛利率/其他口径混入净利率），
+            # 不再静默输出，改为显式标注异常供下游与人工复核识别（修复建议②）。
+            gm, nm = e.gross_margin, e.net_margin
+            if gm is not None and nm is not None and (nm - gm) >= 1.0:
+                item["ratio_anomaly_note"] = (
+                    f"净利率({nm}%)高于毛利率({gm}%)，结构上异常（正常经营净利≤毛利），"
+                    f"疑源侧口径污染，已标注待核，不作确定性结论使用"
+                )
             ratios.append(item)
         return ratios
 

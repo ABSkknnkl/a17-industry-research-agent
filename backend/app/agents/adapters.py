@@ -15,6 +15,103 @@ from backend.app.schemas.workflow import ArtifactRef, StageResult, WorkflowState
 logger = logging.getLogger("agent_adapters")
 
 
+def _resolve_delivery_status(art_dir: Path, consistency: Any) -> str:
+    """解析交付状态，优先生效的 report_view.json，缺失时按审计结论降级。
+
+    D-04 修复：ReportFusionResult 本身不携带 delivery_status，真实值由 ReportFusionAgent
+    写入 report_view.json（ReportViewModel.delivery_status）。合并退化后这里被无条件写死
+    "ready"，会把带保留的交付（ready_with_limits）伪装成正常交付。
+
+    Returns: "ready" | "ready_with_limits" | "blocked"
+    """
+    view_path = art_dir / "report_view.json"
+    if view_path.exists():
+        try:
+            payload = json.loads(view_path.read_text(encoding="utf-8"))
+            status = payload.get("delivery_status")
+            if status in {"ready", "ready_with_limits", "blocked"}:
+                return str(status)
+            logger.warning("report_view.json 的 delivery_status 取值非法: %r", status)
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("读取 report_view.json 失败，回退审计结论: %s", exc)
+
+    # 兜底不再无脑返回 ready：审计未通过或存在告警时按“有限交付”处理。
+    passed = bool(getattr(consistency, "passed", False))
+    warnings = list(getattr(consistency, "warnings", []) or [])
+    return "ready" if passed and not warnings else "ready_with_limits"
+
+
+def _count_outline_units(chapters: list[dict[str, Any]]) -> tuple[int, int]:
+    """统计实际产出的章节数与小节数。"""
+    section_count = sum(len(ch.get("sections") or []) for ch in chapters)
+    return len(chapters), section_count
+
+
+def _expected_outline_units() -> tuple[int | None, int | None]:
+    """应有章节数与小节数，从 chapter_writer 的标准大纲 DEFAULT_OUTLINE 推导。
+
+    D-04 修复：原先写死 7 / 21，改大纲时这里不会跟随，形成“假动态”。大纲的单一事实源
+    在 chapter_writer/outline.py。自行保证 sys.path 已注册，不依赖调用方是否已 import
+    setup_env，否则单独调用适配层函数（单元测试、脚本）时会静默退化为 None。
+
+    Returns: (应有章节数, 应有小节数)，导入失败时返回 (None, None) 交由前端兜底。
+    """
+    try:
+        import backend.app.core.setup_env  # noqa: F401 - 注册 agents_core 各子目录
+        from chapter_writer.outline import DEFAULT_OUTLINE
+
+        return len(DEFAULT_OUTLINE), sum(len(ch.sections) for ch in DEFAULT_OUTLINE)
+    except Exception as exc:  # noqa: BLE001 - 基准缺失不应让整个阶段失败
+        logger.warning("无法载入 DEFAULT_OUTLINE，大纲基准交由前端兜底: %s", exc)
+        return None, None
+
+
+def _extract_target_companies(texts: list[str]) -> list[str]:
+    """从用户关注问题或需求描述中提取明确提及的目标上市公司实体。
+
+    来源与沿革（2026-09-26 合并登记）：该函数来自队友源码包
+    （`a17-industry-research-agent`）。队友交付文档 §2.4 称"已移除该正则逻辑、改由 LLM 需求理解
+    + `must_include_entities` 承担"，但交付代码中该函数**仍保留且无调用点**（死代码）。
+    按用户裁决"拉过来"，此处保持与队友代码一致，便于后续比对；当前**不参与任何调用路径**。
+
+    Args:
+        texts: 用户关注点 / 数据要求等文本片段。
+
+    Returns:
+        去重后的候选公司名列表（长度 2–8、不含数字与百分号、已滤除产业链环节类噪音词）。
+
+    Note:
+        若后续确认完全由 LLM 路径承担标的识别，可删除本函数；在删除前不影响运行时行为。
+    """
+    extracted: list[str] = []
+    noise_words = {"环节", "上游", "中游", "下游", "原材料", "产业链", "应用", "设备", "制造", "总装", "测控"}
+    for text in texts:
+        for m in re.finditer(r"[（\(](?:如|包括|例如|核心标的)?([^）\)]+)[）\)]", text):
+            content = m.group(1).strip()
+            if any(k in content for k in noise_words):
+                continue
+            parts = re.split(r"[,，、\s]+", content)
+            for p in parts:
+                p = re.sub(r"^(?:如|例如|及|和|即)", "", p).strip()
+                p = re.sub(r"(?:等|等等|上市公司|核心标的)$", "", p).strip()
+                if 2 <= len(p) <= 8 and not re.search(r"[0-9%]", p):
+                    extracted.append(p)
+        for m in re.finditer(r"(?:重点关注|核心关注|核心标的为?|对标)([\u4e00-\u9fa5]{2,6}(?:[、，][\u4e00-\u9fa5]{2,6})+)", text):
+            content = m.group(1)
+            parts = re.split(r"[、，]", content)
+            for p in parts:
+                p = re.sub(r"的.*$", "", p).strip()
+                if 2 <= len(p) <= 8:
+                    extracted.append(p)
+    seen = set()
+    result: list[str] = []
+    for item in extracted:
+        if item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
 def _json_value(value: Any) -> Any:
     if hasattr(value, "isoformat"):
         return value.isoformat()
@@ -958,16 +1055,19 @@ class FiveAgentsAdapter:
         event_hub.emit(run_id, "chapter_write", "artifact_created", "已生成 7 章 21 节研报结构化产物 (chapter_result.json)", tool="ChapterWriter")
         event_hub.emit(run_id, "chapter_write", "stage_completed", "阶段 4 章节撰写完成，7 章 21 节券商深度专题全部生成完毕（0 Fallback 交付）", tool="ChapterWriterAgent")
 
+        # D-04 修复：章节/节数基准从 DEFAULT_OUTLINE 推导，不得写死 7/21
+        expected_chapter_count, expected_section_count = _expected_outline_units()
+
         data: dict[str, Any] = {
             "chapters": chapters_data,
             "chapter_count": len(chapters_data),
-            "expected_chapter_count": 7,
-            "expected_section_count": 21,
+            "expected_chapter_count": expected_chapter_count,
+            "expected_section_count": expected_section_count,
             "quality": {
                 "passed": True,
                 "chapter_count": len(chapters_data),
-                "expected_chapter_count": 7,
-                "expected_section_count": 21,
+                "expected_chapter_count": expected_chapter_count,
+                "expected_section_count": expected_section_count,
             },
         }
 
@@ -1135,6 +1235,9 @@ class FiveAgentsAdapter:
 
         actual_ch_count = len(outline_chapters)
         actual_sec_count = sum(len(c.get("sections", [])) for c in outline_chapters)
+        # D-04 修复：基准从 DEFAULT_OUTLINE 推导（不得写死 7/21）；交付状态读真实 report_view.json
+        expected_chapter_count, expected_section_count = _expected_outline_units()
+        consistency = getattr(result, "consistency", None)
 
         # 真实证据覆盖率与质检聚合
         raw_chapter_json = run_dir / "artifacts" / "chapter_result.json"
@@ -1191,9 +1294,9 @@ class FiveAgentsAdapter:
             "industry_topic": industry,
             "research_as_of": research_as_of or str(report.as_of),
             "market_scope": market_scope or ["中国 A 股", "港股", "美股", "中国 B 股"],
-            "security_types": security_types or ["股票", "债券", "基金", "期货", "指数"],
+            "security_types": security_types or ["股票"],
             "reporting_currency": reporting_currency,
-            "delivery_status": "ready",
+            "delivery_status": _resolve_delivery_status(art_dir, consistency),
             "formats": ["markdown", "html", "pdf"],
             "included_chart_ids": [c.chart_id for c in chart_res.charts],
             "artifacts": manifest_entries,
@@ -1201,8 +1304,8 @@ class FiveAgentsAdapter:
                 "passed": fusion_passed,
                 "chapter_count": actual_ch_count,
                 "section_count": actual_sec_count,
-                "expected_chapter_count": 7,
-                "expected_section_count": 21,
+                "expected_chapter_count": expected_chapter_count,
+                "expected_section_count": expected_section_count,
                 "included_chart_count": len(chart_res.charts),
                 "evidence_coverage": final_coverage,
                 "issues": clean_issues,

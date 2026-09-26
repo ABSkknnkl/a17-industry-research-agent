@@ -4,7 +4,7 @@
 重算对比，相对误差 ≤ 0.01%。
 
 **基准来源**：`eval/cases/baselines.json`（由 `eval/tools/backfill_baselines.py` 从黄金样本
-`run-20260923094843-353` 的**真实生产输出**回填；null 组表示样本无对应输出，判 skipped，禁止编数）。
+`run-20260926022235-107` 的**真实生产输出**回填；null 组表示样本无对应输出，判 skipped，禁止编数）。
 
 **重算来源**：`data_interpreter.engine.DeterministicAnalysisEngine` 纯函数 + **同一 run 自带**的
 `dataset.json`。即：用当前代码从原始数据重算，与该 run 产物里已存的数值比对——这正是 C1 要抓的
@@ -30,11 +30,11 @@ from data_interpreter.engine import DeterministicAnalysisEngine
 from data_interpreter.models import StructuredResearchDataset
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-GOLDEN_RUN_ID = "run-20260923094843-353"
+GOLDEN_RUN_ID = "run-20260926022235-107"
 GOLDEN_DIR = PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts"
 BASELINES_PATH = PROJECT_ROOT / "eval" / "cases" / "baselines.json"
 TOLERANCE_PCT = 0.01          # 判据：相对误差 ≤ 0.01%
-TARGET_COMPANY = "中电港"      # 基准值来源实体（backfill 记录中的 entity）
+TARGET_COMPANY = "亿纬锂能"      # 基准值来源实体（backfill 记录中的 entity；2026-09-26 重冻结快照 run-20260926022235-107）
 
 pytestmark = pytest.mark.filterwarnings("ignore::DeprecationWarning")
 

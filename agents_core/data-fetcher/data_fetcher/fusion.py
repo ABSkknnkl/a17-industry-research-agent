@@ -277,6 +277,36 @@ class DataFusion:
                         dataset.companies.append(company_record)
                         seen_companies.add(company_key)
 
+                # Specialized atomic parsing for macro tabular records
+                if result.domain == Domain.MACRO and any(k in raw for k in ("指标值", "数值", "value")):
+                    val_raw = raw.get("指标值") if "指标值" in raw else (raw.get("数值") if "数值" in raw else raw.get("value"))
+                    val, parsed_u = _split_value_unit(val_raw)
+                    m_name = str(raw.get("指标") or raw.get("macro_name") or raw.get("指标名称") or "宏观指标").strip()
+                    m_unit = parsed_u or str(raw.get("单位") or raw.get("指标单位") or "元").strip()
+                    m_date = _parse_date(raw.get("时间") or raw.get("日期") or raw.get("period"))
+                    m_ent = str(raw.get("国家") or raw.get("地区") or entity_name or "全国").strip()
+
+                    if m_date and m_date > as_of:
+                        dropped_future += 1
+                        continue
+
+                    rec = ResearchRecord(
+                        record_id=_record_id(["macro", m_ent, m_name, str(m_date), raw_index]),
+                        domain=Domain.MACRO,
+                        entity_name=m_ent,
+                        entity_code=None,
+                        metric=m_name,
+                        value=val,
+                        unit=m_unit,
+                        period_end=m_date,
+                        published_at=published or m_date,
+                        source=source,
+                        raw_fields=raw,
+                        issues=[] if m_date else ["missing_period_end"],
+                    )
+                    dataset.macro.append(rec)
+                    continue
+
                 macro_name = raw.get("指标名称") or raw.get("指标")
                 macro_unit = raw.get("指标单位")
                 if result.domain == Domain.MACRO and not entity_name:
@@ -352,7 +382,11 @@ class DataFusion:
                     if metric_period is None and record_domain in (Domain.FINANCIALS, Domain.MACRO) and not is_snapshot_market_data:
                         issues.append("missing_period_end")
                     if record_published is None and record_domain in (Domain.REPORTS, Domain.NEWS):
+                        # D-05 修复②：时间敏感域（reports/news）源侧缺发布时点时，统一以检索基准日
+                        # as_of 兜底填充 published_at，并保留 issue 留痕（标记源侧缺失、as_of 为检索日代理而非
+                        # 真实发布时点。避免下游时间轴/时效判定因 None 而整条记录不可用（D3 覆盖度）。
                         issues.append("missing_published_at")
+                        record_published = as_of
 
                     record_id = _record_id([
                         record_domain.value, entity_code or entity_name, metric, metric_period,

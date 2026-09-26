@@ -1,6 +1,7 @@
 {
   "domains": ["financials", "companies"],
   "keywords": ["财务", "财报", "盈利", "现金流", "收入", "利润", "资产负债", "杜邦"],
+  "requires_signal": false,
   "source": "skills包/财务报表深度解读/financial-statement/SKILL.md",
   "adaptation": "保留三表勾稽、盈利质量和杜邦框架；移除固定健康阈值与无数据推断。"
 }

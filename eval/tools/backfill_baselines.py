@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-GOLDEN_RUN_ID = "run-20260923094843-353"          # 主黄金样本（completed，五阶段全通过）
+GOLDEN_RUN_ID = "run-20260926022235-107"          # 主黄金样本（completed，五阶段全通过；2026-09-26 P0/P1/P2 修复后重冻结，真实 LLM+iwencai）
 GOLDEN_DIR = PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts"
 BASELINES_PATH = PROJECT_ROOT / "eval" / "cases" / "baselines.json"
 

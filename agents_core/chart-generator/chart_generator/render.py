@@ -80,13 +80,28 @@ COMMON_TICKER_NAMES: dict[str, str] = {
 }
 
 
-def resolve_ticker(code: str | None) -> str:
+def resolve_ticker(code: str | None, context_map: dict[str, str] | None = None) -> str:
+    """把证券代码解析为公司名（渲染层标签用），优先使用本批次动态映射。
+
+    Args:
+        code: 证券代码或代码形态实体名。
+        context_map: 当批次 `entity_code → 公司名` 动态映射（队友机制，2026-09-26 合并）。
+
+    Returns:
+        公司名；解析不到时返回去空格后的原值（渲染层需要非空标签）。
+    """
     if not code:
         return ""
     c = str(code).strip().upper()
+    if context_map and c in context_map:
+        return context_map[c]
     if c in COMMON_TICKER_NAMES:
         return COMMON_TICKER_NAMES[c]
     no_suf = re.sub(r"\.(SZ|SH|BJ|HK|US)$", "", c)
+    if context_map:
+        for k, v in context_map.items():
+            if k.startswith(no_suf):
+                return v
     for k, v in COMMON_TICKER_NAMES.items():
         if k.startswith(no_suf):
             return v
@@ -709,12 +724,12 @@ def render_svg(
             if isinstance(item, (list, tuple)):
                 if len(item) >= 3 and not isinstance(item[0], (int, float)):
                     name, xv, yv = str(item[0]), _num(item[1]), _num(item[2])
-                    sz = _num(item[3]) if len(item) >= 4 else 8.0
+                    sz = (_num(item[3]) if len(item) >= 4 else None) or 8.0
                     if xv is not None and yv is not None:
                         pts.append((name, xv, yv, sz or 8.0))
                 elif len(item) >= 2 and isinstance(item[0], (int, float)):
                     xv, yv = _num(item[0]), _num(item[1])
-                    sz = _num(item[2]) if len(item) >= 3 else 8.0
+                    sz = (_num(item[2]) if len(item) >= 3 else None) or 8.0
                     name = str(labels[idx]) if idx < len(labels) else f"样本{idx+1}"
                     if xv is not None and yv is not None:
                         pts.append((name, xv, yv, sz or 8.0))
@@ -723,13 +738,17 @@ def render_svg(
                 raw_val = item.get("value")
                 if isinstance(raw_val, (list, tuple)) and len(raw_val) >= 2:
                     xv, yv = _num(raw_val[0]), _num(raw_val[1])
-                    sz = _num(raw_val[2]) if len(raw_val) >= 3 else 8.0
+                    # value[2] may be a non-numeric label (e.g. _compile_scatter emits
+                    # [x, y, company_name]); _num() then yields None. Fall back to the
+                    # default bubble size instead of propagating None into `sz * 0.8`
+                    # below (which raised TypeError and aborted the whole SVG render).
+                    sz = (_num(raw_val[2]) if len(raw_val) >= 3 else None) or 8.0
                 else:
                     xv = _num(item.get("x") or (raw_val[0] if isinstance(raw_val, (list, tuple)) and len(raw_val) > 0 else None))
                     yv = _num(item.get("y") or (raw_val[1] if isinstance(raw_val, (list, tuple)) and len(raw_val) > 1 else None))
                     sz = _num(item.get("size") or item.get("symbolSize")) or 8.0
                 if xv is not None and yv is not None:
-                    pts.append((name, xv, yv, sz))
+                    pts.append((name, xv, yv, sz or 8.0))
 
         if not pts:
             parts.append(f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" rx="6" fill="#f8f9fa" stroke="#eaecf0"/>')

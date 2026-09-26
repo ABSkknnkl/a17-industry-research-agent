@@ -1,6 +1,7 @@
 {
   "domains": ["industry", "companies", "macro", "reports", "news"],
   "keywords": ["行业", "概览", "全景", "市场规模", "趋势", "驱动", "风险", "参与者"],
+  "requires_signal": false,
   "source": "skills包/行业概览/SKILL.md",
   "adaptation": "保留行业全景结构与来源要求；移除外部研究和投资含义生成。"
 }

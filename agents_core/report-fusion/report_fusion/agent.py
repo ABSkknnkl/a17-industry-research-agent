@@ -223,19 +223,47 @@ class ReportFusionAgent:
         return list(dict.fromkeys(issues)),list(dict.fromkeys(warnings))
 
     def _audit_cross_chapter_consistency(self, request: ReportFusionRequest, issues: list[str], warnings: list[str]) -> None:
+        comps = getattr(request.report, "comps_matrix", {}) or {}
+        tot = comps.get("total_market_cap")
+        canonical_wan_yi = None
+        if tot is not None:
+            try:
+                tot_f = float(tot)
+                canonical_wan_yi = round(tot_f / 10000.0, 2)
+            except (ValueError, TypeError):
+                pass
+
         mcap_scales: dict[str, list[str]] = {}
         for ch in request.chapters.chapters:
             for s in ch.sections:
                 for p in s.paragraphs:
-                    for match in re.finditer(r"(22\.14|2\.21)\s*万亿", p.text):
-                        val = match.group(1)
-                        mcap_scales.setdefault(val, []).append(f"{ch.chapter_id}/{p.paragraph_id}")
-                    for match in re.finditer(r"(221411|22141)\.?\d*\s*亿", p.text):
-                        val = "22.14" if match.group(1).startswith("221411") else "2.21"
-                        mcap_scales.setdefault(val, []).append(f"{ch.chapter_id}/{p.paragraph_id}")
+                    for match in re.finditer(r"(?:(?:总|流通)?市值|证券池[^。；\n]*?市值)[^。；\n]{0,40}?([0-9]+(?:\.[0-9]+)?)\s*万亿|([0-9]+(?:\.[0-9]+)?)\s*万亿(?:元)?(?:左右|上下)?(?:的)?(?:总|流通)?市值", p.text):
+                        val = match.group(1) or match.group(2)
+                        if val:
+                            mcap_scales.setdefault(val, []).append(f"{ch.chapter_id}/{p.paragraph_id}")
+                    if canonical_wan_yi:
+                        cm_val = canonical_wan_yi * 10000
+                        for match in re.finditer(r"([0-9]+(?:\.[0-9]+)?)\s*亿(?:元)?", p.text):
+                            try:
+                                val_f = float(match.group(1))
+                                if abs(val_f - cm_val * 10) / (cm_val * 10) < 0.2:
+                                    mcap_scales.setdefault(f"{canonical_wan_yi * 10:.2f}", []).append(f"{ch.chapter_id}/{p.paragraph_id}")
+                            except (ValueError, ZeroDivisionError):
+                                pass
 
-        if "22.14" in mcap_scales and "2.21" in mcap_scales:
-            warnings.append("检测到跨章节总市值数量级冲突（22.14万亿 vs 2.21万亿），总编辑已启用事实基准自动对齐")
+        if canonical_wan_yi:
+            drift_detected = False
+            for val_str in mcap_scales:
+                try:
+                    val_f = float(val_str)
+                    if (abs(val_f - canonical_wan_yi * 10) / (canonical_wan_yi * 10) < 0.2) or \
+                       (abs(val_f - canonical_wan_yi / 10) / (canonical_wan_yi / 10) < 0.2):
+                        drift_detected = True
+                        break
+                except (ValueError, ZeroDivisionError):
+                    pass
+            if drift_detected or len(mcap_scales) > 1:
+                warnings.append(f"检测到跨章节总市值数量级冲突，总编辑已启用事实基准自动对齐（标准基准: {canonical_wan_yi}万亿元）")
 
         if request.charts:
             chart_map = {c.chart_id: c for c in request.charts.charts}
@@ -249,28 +277,37 @@ class ReportFusionAgent:
     def _reconcile_market_cap_consistency(self, chapters: list[ChapterDraft], request: ReportFusionRequest) -> None:
         comps = getattr(request.report, "comps_matrix", {}) or {}
         tot = comps.get("total_market_cap")
-        canonical_val = "2.21"
-        if tot is not None:
-            try:
-                if float(tot) > 100000:
-                    canonical_val = "22.14"
-                else:
-                    canonical_val = "2.21"
-            except (ValueError, TypeError):
-                pass
-        wrong_val = "2.21" if canonical_val == "22.14" else "22.14"
-        wrong_re = re.compile(rf"{re.escape(wrong_val)}\s*万亿(?:元)?")
-        correct_text = f"{canonical_val}万亿元"
+        if tot is None:
+            return
+        try:
+            tot_f = float(tot)
+            canonical_val = round(tot_f / 10000.0, 2)
+        except (ValueError, TypeError):
+            return
+
+        def _reconcile_text(text: str) -> str:
+            if not text:
+                return text
+            def _repl_wan_yi(m):
+                val_str = m.group(1)
+                try:
+                    val = float(val_str)
+                    if (abs(val - canonical_val * 10) / (canonical_val * 10) < 0.2) or \
+                       (abs(val - canonical_val / 10) / (canonical_val / 10) < 0.2):
+                        return m.group(0).replace(val_str, str(canonical_val))
+                except (ValueError, ZeroDivisionError):
+                    pass
+                return m.group(0)
+
+            return re.sub(r"([0-9]+(?:\.[0-9]+)?)\s*万亿(?:元)?", _repl_wan_yi, text)
+
         for ch in chapters:
-            if wrong_re.search(ch.summary):
-                ch.summary = wrong_re.sub(correct_text, ch.summary)
+            ch.summary = _reconcile_text(ch.summary)
             for s in ch.sections:
                 for p in s.paragraphs:
-                    if wrong_re.search(p.text):
-                        p.text = wrong_re.sub(correct_text, p.text)
+                    p.text = _reconcile_text(p.text)
                 for mc in s.metric_cards:
-                    if wrong_re.search(mc.value):
-                        mc.value = wrong_re.sub(correct_text, mc.value)
+                    mc.value = _reconcile_text(mc.value)
 
     def _default_summary(self,request:ReportFusionRequest)->ExecutiveSummary:
         conclusions=[]
@@ -535,19 +572,41 @@ class ReportFusionAgent:
             chart_ref_map[f"[图表{idx}]"] = fn
             chart_ref_map[f"[图表{idx:02d}]"] = fn
 
+        def _clean_chart_text(text: str, default_fn: str | None = None) -> str:
+            if not text:
+                return text
+            for ref, fig_num in chart_ref_map.items():
+                if ref in text:
+                    text = text.replace(ref, fig_num)
+            if default_fn:
+                text = re.sub(r"\[(?:CHART|chart)-[^\]]+\]", default_fn, text)
+            else:
+                # Remove dangling/orphan chart placeholders
+                text = re.sub(r"(?:如|见|至|参(?:考|阅)?)\s*\[(?:CHART|chart|图表)-?[^\]]+\]\s*(?:所示)?", "", text)
+                text = re.sub(r"\[(?:CHART|chart|图表)-?[^\]]+\]", "", text)
+            # Context-aware typo cleanup:
+            # 1. "如图图 1所示" or "见图图 1" -> "如图 1 所示" or "见图 1"
+            text = re.sub(r"(如|见|至|参(?:考|阅)?)\s*图\s*图\s*(\d+)", r"\1图 \2", text)
+            # 2. Bare "图图 1" -> "图 1"
+            text = re.sub(r"图\s*图\s*(\d+)", r"图 \1", text)
+            # 3. Spacing "如图 1所示" -> "如图 1 所示"
+            text = re.sub(r"如图\s*(\d+)\s*所示", r"如图 \1 所示", text)
+            # 4. Clean up any leftover awkward spaces or duplicated punctuation
+            text = re.sub(r"\s+([，。、；])", r"\1", text)
+            text = re.sub(r"([，。、；！？])\s+", r"\1", text)
+            text = re.sub(r"([。；，])\s*\1+", r"\1", text)
+            return text
+
         for ch in chapters:
+            if ch.summary:
+                ch.summary = _clean_chart_text(ch.summary)
             for s in ch.sections:
+                if s.key_points:
+                    s.key_points = [_clean_chart_text(kp) for kp in s.key_points]
+                sec_charts = [ec for ec in result if ec.chart_id in s.chart_ids]
+                sec_default_fn = sec_charts[0].figure_number if sec_charts else None
                 for p in s.paragraphs:
-                    for ref, fig_num in chart_ref_map.items():
-                        if ref in p.text:
-                            p.text = p.text.replace(ref, fig_num)
-                    # Context-aware typo cleanup:
-                    # 1. "如图图 1所示" or "见图图 1" -> "如图 1 所示" or "见图 1"
-                    p.text = re.sub(r"(如|见|至|参(?:考|阅)?)\s*图\s*图\s*(\d+)", r"\1图 \2", p.text)
-                    # 2. Bare "图图 1" -> "图 1"
-                    p.text = re.sub(r"图\s*图\s*(\d+)", r"图 \1", p.text)
-                    # 3. Spacing "如图 1所示" -> "如图 1 所示"
-                    p.text = re.sub(r"如图\s*(\d+)\s*所示", r"如图 \1 所示", p.text)
+                    p.text = _clean_chart_text(p.text, sec_default_fn)
 
         return result
 

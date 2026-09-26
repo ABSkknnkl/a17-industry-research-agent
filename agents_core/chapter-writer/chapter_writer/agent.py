@@ -48,14 +48,14 @@ SYSTEM_PROMPT="""你是机构级证券与行业研究报告章节写作智能体
    - `comparison_table`：若本节涉及多企业横向对标或三档情景推演，提炼结构化对比表：title, columns, rows, evidence_ids；
    - `callouts`：若本节存在关键风险提示、政策边界或不可外推声明，提炼为 callout：type("risk"|"boundary"|"highlight"), title, text, evidence_ids；
    - `layout_hint`：根据图文关系选择：text_only, chart_right, chart_full, comparison_table, metrics_grid。
-5. 图文协同与显式强锚点：挂接的 `chart_ids` 必须在对应小节正文中提供具有分析深度的邻接解读（段落 `kind` 优先选用 `chart_readout`）。【强制约束】正文引用图表时必须显式出现对应图表的完整占位符（如 `[CHART-xx]`），严禁仅写模糊的“如图所示”而遗漏 `[CHART-xx]` 标签！排版引擎将统一映射为最终图表顺序编号。
+5. 图文协同与显式强锚点：挂接的 `chart_ids` 必须在对应小节正文中提供具有分析深度的邻接解读（段落 `kind` 优先选用 `chart_readout`）。【强制约束】正文引用图表时必须显式出现对应图表的完整占位符（如 `[CHART-xx]`），严禁仅写模糊的“如图所示”而遗漏 `[CHART-xx]` 标签！排版引擎将统一映射为最终图表顺序编号。【严禁捏造未挂接图表占位符】：若本小节未挂接图表（`chart_ids` 为空），严禁在正文中插入任何 `[CHART-xx]` 占位符或图表引用！只能引用在上下文 `charts` 中真实存在的图表 ID！
 6. 风险与情景推演规范（尤其针对第七章或预测性章节）：
    - 必须提供三档量化情景推演（建议提炼为 comparison_table 或 scenario 段落）：乐观（20%~30%）、基准（50%~60%）、悲观（15%~25%）；
    - 每档情景必须包含三要素：① 核心触发条件 (Catalyst)；② 经营与财务推演结果；③ 可观测的前瞻跟踪阈值 (Leading Indicators & Thresholds)；
    - 必须包含非外推声明 (Non-extrapolation Disclaimer，建议放置在 callout 中)：明确指出样本结构代表性边界（如未上市火箭/本体龙头未纳入三表核算）及期间跨度局限，禁止线性外推至整个产业。
 7. 全局事实与一致性锚点（强制约束）：严格遵循输入及上下文中的 `global_facts`。凡提及行业/样本总市值，必须统一按照 `global_facts` 给出，严禁在不同章节出现数量级矛盾（如 22.14万亿 与 2.21万亿 的10倍冲突）；凡提及重点企业产业链环节归属，必须与 `global_facts` 保持绝对一致，严禁同一标的在上中下游反复横跳！
 8. 非宏观章节套话禁令：除宏观综述或宏观驱动专章外，其余产业、竞争、财务等章节严禁重复展开脱节宏观指标（如社融、工业增加值）的周期无效性免责声明套话！保持对本行业真实财务、业务与竞争态势的专注。
-9. 返回严格 JSON 格式：
+9. 返回严格 JSON 格式（【极其重要规范】：你的输出必须且只能是一个纯合法的 JSON 对象。严禁在输出开头添加任何 Markdown 标题如 "# 标题" 或引言文字；严禁输出任何 ```json 代码块外围文本；正文内部出现的双引号若非 JSON 键值语法边界，一律使用中文双引号“”或转义）：
 {
   "chapter_id": "CH-xx",
   "title": "...",
@@ -282,6 +282,9 @@ class ChapterWriterAgent:
 
         selected_by_chapter: dict[str, list[WritingSkill]] = {}
         skill_reasons: dict[str, str] = {}
+        # D-11：跨章共享的越界证据留痕通道（asyncio 单线程事件循环内 append 安全；
+        # _audit_chapter 内为同步调用，无 await 打断）。汇入 result.warnings，不触发重写。
+        foreign_drops: list[str] = []
 
         async def _write_chapter(outline_chapter: Any) -> tuple[ChapterDraft, str | None, str | None]:
             async with semaphore:
@@ -316,7 +319,7 @@ class ChapterWriterAgent:
                             }
                             raw = await self.llm.generate_json(SYSTEM_PROMPT, json.dumps(payload, ensure_ascii=False, default=str))
                             chapter = ChapterDraft.model_validate(raw)
-                            errors = self._audit_chapter(chapter, outline_chapter, allowed_evidence, ready_charts, context, global_facts)
+                            errors = self._audit_chapter(chapter, outline_chapter, allowed_evidence, ready_charts, context, global_facts, drop_log=foreign_drops)
                             await record("skill_linter_checked", chapter_id=outline_chapter.chapter_id, passed=not errors, issues=errors)
                             await record("chapter_attempt", chapter_id=outline_chapter.chapter_id, attempt=attempt + 1, issues=errors)
                             if not errors:
@@ -332,7 +335,7 @@ class ChapterWriterAgent:
                     fallback_id = outline_chapter.chapter_id
                     warning = f"{outline_chapter.chapter_id} 使用确定性兜底稿：{'；'.join(errors) if errors else '未配置模型'}"
                     await record("chapter_fallback", chapter_id=outline_chapter.chapter_id)
-                    fb_errors = self._audit_chapter(chapter, outline_chapter, allowed_evidence, ready_charts, context, global_facts)
+                    fb_errors = self._audit_chapter(chapter, outline_chapter, allowed_evidence, ready_charts, context, global_facts, drop_log=foreign_drops)
                     await record("skill_linter_checked", chapter_id=outline_chapter.chapter_id, passed=not fb_errors, issues=fb_errors)
                 if artifact_dir:
                     (artifact_dir / "chapters" / f"{chapter.chapter_id}.json").write_text(
@@ -344,7 +347,7 @@ class ChapterWriterAgent:
         await record("skills_planned", skills={chapter_id: [skill.name for skill in skills] for chapter_id, skills in selected_by_chapter.items()})
         chapters: list[ChapterDraft] = [item[0] for item in chapter_results]
         fallback_ids = [item[1] for item in chapter_results if item[1] is not None]
-        warnings = list(request.report.warnings) + [item[2] for item in chapter_results if item[2] is not None]
+        warnings = list(request.report.warnings) + [item[2] for item in chapter_results if item[2] is not None] + list(dict.fromkeys(foreign_drops))
         issues=self._audit_package(chapters,allowed_evidence,ready_charts,global_facts)
         cited={eid for chapter in chapters for section in chapter.sections for para in section.paragraphs for eid in para.evidence_ids}
         coverage=len(cited)/len(allowed_evidence) if allowed_evidence else 0
@@ -381,8 +384,18 @@ class ChapterWriterAgent:
         charts: dict[str, Any],
         context: dict[str, Any] | None = None,
         global_facts: dict[str, Any] | None = None,
+        drop_log: list[str] | None = None,
     ) -> list[str]:
         issues = []
+        # D-11 修复：越界证据被过滤时必须留痕。drop_log 是一条**独立于 issues 的软通道**——
+        # issues 非空会触发本章重写/兜底（越界引用不应导致整章作废），而 drop_log 汇入
+        # result.warnings，使“模型引用了非本章证据”这一事实可观测、可据以评估提示词质量。
+        def _note_dropped(where: str, foreign: set[str]) -> None:
+            if drop_log is not None and foreign:
+                drop_log.append(
+                    f"{chapter.chapter_id} {where}引用了非本章/未授权证据 {sorted(foreign)}，已剔除（越界留痕）"
+                )
+
         if chapter.chapter_id != outline.chapter_id:
             issues.append("chapter_id 与大纲不一致")
         if [s.section_id for s in chapter.sections] != [s.section_id for s in outline.sections]:
@@ -420,6 +433,7 @@ class ChapterWriterAgent:
             for para in section.paragraphs:
                 unknown = set(para.evidence_ids) - allowed
                 if unknown:
+                    _note_dropped(f"段落 {para.paragraph_id} ", unknown)
                     para.evidence_ids = [e for e in para.evidence_ids if e in allowed]
 
                 # Consistency repair in paragraph text
@@ -492,6 +506,7 @@ class ChapterWriterAgent:
             if section.metric_cards:
                 for mc in section.metric_cards:
                     if getattr(mc, "evidence_ids", None):
+                        _note_dropped("指标卡 ", set(mc.evidence_ids) - allowed)
                         mc.evidence_ids = [e for e in mc.evidence_ids if e in allowed]
                     if global_facts and global_facts.get("market_cap_wan_yi") and "市值" in mc.label:
                         cw = global_facts["market_cap_wan_yi"]
@@ -500,10 +515,12 @@ class ChapterWriterAgent:
                         elif "221411" in str(mc.value):
                             mc.value = f"{cw * 10000:.2f}"
             if section.comparison_table and getattr(section.comparison_table, "evidence_ids", None):
+                _note_dropped("对比表 ", set(section.comparison_table.evidence_ids) - allowed)
                 section.comparison_table.evidence_ids = [e for e in section.comparison_table.evidence_ids if e in allowed]
             if section.callouts:
                 for co in section.callouts:
                     if getattr(co, "evidence_ids", None):
+                        _note_dropped("callout ", set(co.evidence_ids) - allowed)
                         co.evidence_ids = [e for e in co.evidence_ids if e in allowed]
 
         # Auto-attach any unattached charts designated for this chapter

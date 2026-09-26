@@ -71,3 +71,9 @@ Thumbs.db
 .migration-backup-*/
 production/*
 !production/.gitkeep
+
+# ── Remotion 视频工程依赖与产物 ───────────────────────────
+remotion/node_modules/
+remotion/.remotion/
+remotion/dist/
+remotion/out/

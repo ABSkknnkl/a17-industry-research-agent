@@ -18,9 +18,12 @@ from data_interpreter.models import (
     AnalysisTraceEvent,
     AppliedSkill,
     ContentSection,
+    Domain,
+    IndustryChainSegment,
     Insight,
     InterpretationReport,
     KnowledgeFact,
+    PeerCompsMatrix,
     SkillExecutionResult,
     StructuredResearchDataset,
 )
@@ -333,7 +336,7 @@ class DataInterpreterAgent:
                         ],
                     }, ensure_ascii=False, default=str),
                 )
-                executive_summary, knowledge_facts, insights, outline = self._validate_semantic(
+                executive_summary, knowledge_facts, insights, outline, chain_segments = self._validate_semantic(
                     response,
                     allowed_record_ids=set(evidence),
                     allowed_metric_ids={item.metric_id for item in metrics},
@@ -347,6 +350,8 @@ class DataInterpreterAgent:
                         outline,
                     ),
                 )
+                if chain_segments:
+                    industry_chain_segments = chain_segments
                 semantic_status = "completed"
                 trace.append(AnalysisTraceEvent(event="skill_linter_checked", details={
                     "facts_validated": len(knowledge_facts),
@@ -1027,11 +1032,27 @@ class DataInterpreterAgent:
             item.evidence_record_ids = [item_id for item_id in item.evidence_record_ids if item_id in allowed_record_ids]
             if item.evidence_record_ids:
                 outline.append(item)
+
+        chain_segments: list[IndustryChainSegment] = []
+        for raw in response.get("industry_chain_segments", []) or response.get("industry_chain", []):
+            if isinstance(raw, dict) and raw.get("segment_name"):
+                eids = [eid for eid in (raw.get("evidence_record_ids") or raw.get("evidence_ids") or []) if eid in allowed_record_ids]
+                chain_segments.append(IndustryChainSegment(
+                    segment_name=str(raw["segment_name"]),
+                    stage=raw.get("stage", "other"),
+                    description=str(raw.get("description", "")),
+                    representative_companies=[str(c) for c in raw.get("representative_companies", [])],
+                    key_products=[str(p) for p in raw.get("key_products", [])],
+                    gross_margin_range=raw.get("gross_margin_range"),
+                    evidence_record_ids=eids,
+                ))
+
         return (
             summary,
             knowledge_facts or fallback_knowledge,
             insights or fallback_insights,
             outline or fallback_outline,
+            chain_segments if len(chain_segments) == 3 else None,
         )
 
     @staticmethod

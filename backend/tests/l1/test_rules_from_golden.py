@@ -1,7 +1,7 @@
 """L1 规则判定（R/G/P/H/T 类）——全部基于黄金样本产物离线回放。
 
 **判据来源**：任务书 §3.1（V8 判定项全量映射）与 §3.4（判据变更登记）。
-**输入**：黄金样本 `run-20260923094843-353`（completed，五阶段全通过）的既有产物，
+**输入**：黄金样本 `run-20260926022235-107`（completed，五阶段全通过）的既有产物，
 不重跑、不调用任何模型（`provider_mode=replay`、`input_source=golden-run`）。
 
 **关键设计纪律**：
@@ -22,7 +22,7 @@ import pytest
 from chapter_writer.outline import DEFAULT_OUTLINE
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-GOLDEN_RUN_ID = "run-20260923094843-353"
+GOLDEN_RUN_ID = "run-20260926022235-107"
 GOLDEN_DIR = PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts"
 
 # R2 禁词（任务书 §3.1 R2）：违规表述

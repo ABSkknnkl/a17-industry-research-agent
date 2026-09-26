@@ -3,7 +3,7 @@
 **判据来源**：任务书 §3.1（A5-01/A5-02/A5-08 等）与 §2.1（L5 交付验收：MD/HTML/PDF/双模板/manifest SHA-256）。
 
 **样本**：
-- 主样本 `run-20260923094843-353`（completed，含 PDF）
+- 主样本 `run-20260926022235-107`（completed，含 PDF）
 - 副样本 `run-20260922213739-783`（completed，**无 PDF**）→ 验 A5-08 降级语义
 
 **D-04 回归护栏说明**：合并（以 A 版覆盖）导致 `adapters.py` 三处实现退化——
@@ -23,7 +23,7 @@ from pathlib import Path
 import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
-GOLDEN_RUN_ID = "run-20260923094843-353"
+GOLDEN_RUN_ID = "run-20260926022235-107"
 FALLBACK_RUN_ID = "run-20260922213739-783"
 ADAPTERS_PATH = PROJECT_ROOT / "backend" / "app" / "agents" / "adapters.py"
 

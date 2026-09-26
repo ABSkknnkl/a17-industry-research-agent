@@ -22,7 +22,7 @@ import pytest
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SKILLS_DIR = PROJECT_ROOT / "agents_core" / "data-analysis" / "data_interpreter" / "skills"
-GOLDEN_RUN_ID = "run-20260923094843-353"
+GOLDEN_RUN_ID = "run-20260926022235-107"
 EXPECTED_SKILL_COUNT = 20
 REQUIRED_META_FIELDS = ("domains", "keywords", "requires_signal")
 DOMAINS = ("industry", "companies", "financials", "macro", "industry_chain", "reports", "news")

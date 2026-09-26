@@ -60,6 +60,15 @@ CHART_AGENT_SYSTEM_PROMPT = """你是顶级金融与产业研报图表设计智�
    在正式设计图表前，你必须根据当前研报的数据特征，自主通过 invoke_skill 工具调用所需的相关技能，加载具体设计规范并说明调用理由。
 4. 严谨性与抑制（Suppression）：若某种图表形式缺乏必要数据支持（如没有连续时序却画折线、没有完整结构却画饼图、不同估值口径强行混画、或用户请求的图表类型无对应数据），必须予以主动抑制，并在 suppressed_charts 中说明专业原因。
 5. 输出合规的 ECharts Option：图表的 option 字段必须为完全合法的 ECharts 配置字典，包含 xAxis, yAxis, series, tooltip, legend 等基础结构；雷达图包含 radar/series；关系拓扑图包含 series (type=graph, data/links)；树图包含 series (type=treemap)。
+6. 章节合理分布（Chapter Distribution）：研报采用券商标准 7 大章节架构：
+   - CH-01 行业定义与研究基础（行业定位、宏观全景）
+   - CH-02 市场规模与成长性（时序规模、预测增速、复合增长率）
+   - CH-03 产业链与利润分配（产业链上下游拓扑、价值链毛利分布）
+   - CH-04 竞争格局（市场份额分布、横向横截面梯队排名、集中度）
+   - CH-05 财务质量与估值参照（重点公司三表质量、多维能力雷达、估值-成长四象限定位）
+   - CH-06 宏观、政策与技术催化（政策与催化演进）
+   - CH-07 情景、风险与研究结论（情景敏感度）
+   严禁将所有图表堆积在单一章节（如全部塞进 CH-04 或 CH-05）！规划的图表集必须均衡分布于上述各章节中，单章节图表数建议控制在 2~4 张以内。
 """
 
 
@@ -276,7 +285,8 @@ class ChartGeneratorAgent:
         elif self.llm.is_available:
             llm_failed = False
             llm_settings = getattr(self.llm, "settings", None)
-            llm_timeout = min(60.0, max(45.0, getattr(llm_settings, "llm_timeout_seconds", 45.0)))
+            cfg_timeout = float(getattr(llm_settings, "llm_timeout_seconds", 180.0) or 180.0)
+            llm_timeout = max(120.0, min(180.0, cfg_timeout))
             try:
                 called_skills, candidates, suppressed = await asyncio.wait_for(
                     self._run_llm_generation(request, record),
@@ -330,7 +340,7 @@ class ChartGeneratorAgent:
                     try:
                         repaired_cand, repaired_supp = await asyncio.wait_for(
                             self._repair_charts_with_llm(candidates, violations, request, record),
-                            timeout=15.0,
+                            timeout=45.0,
                         )
                     except Exception as e:
                         logger.warning(f"ChartGeneratorAgent LLM repair failed: {e}")
@@ -705,29 +715,65 @@ class ChartGeneratorAgent:
 
         return demands
 
-    def _bin_evidence_for_prompt(self, evidence_records: list[EvidenceRef], max_total: int = 40) -> list[dict[str, Any]]:
+    def _infer_chart_chapter(
+        self,
+        title: str = "",
+        chart_type: str = "",
+        domain: str = "",
+        metrics: list[str] | None = None,
+    ) -> str:
+        text = f"{title} {' '.join(metrics or [])} {domain} {chart_type}".lower()
+        if domain == "macro" or any(k in text for k in ("gdp", "宏观", "cpi", "pmi", "进出口", "政策")):
+            return "CH-06"
+        if chart_type == "industry_chain" or any(k in text for k in ("产业链", "供应链", "上游", "中游", "下游", "环节")):
+            return "CH-03"
+        if any(k in text for k in (
+            "负债", "debt", "毛利", "gross_margin", "净利", "net_profit", "roe", "roa",
+            "pe", "pb", "ps", "估值", "市盈率", "市净率", "市销率", "偿债", "现金流", "周转"
+        )):
+            return "CH-05"
+        if any(k in text for k in ("规模", "复合增长", "cagr", "市场空间", "产值", "增速")):
+            return "CH-02"
+        if any(k in text for k in ("份额", "集中度", "cr4", "cr8", "排名", "出货量", "市占率", "竞争格局", "市值集中度", "横向比较", "横向热力")):
+            return "CH-04"
+        return "CH-01"
+
+    def _bin_evidence_for_prompt(self, evidence_records: list[EvidenceRef], max_total: int = 80) -> list[dict[str, Any]]:
         chain_records = [it for it in evidence_records if it.domain == "industry_chain"]
         time_series_records = [it for it in evidence_records if it.domain != "industry_chain" and it.period]
         other_records = [it for it in evidence_records if it.domain != "industry_chain" and not it.period]
 
         selected: list[EvidenceRef] = []
-        # 1. Preserve industry chain records (up to 10)
-        selected.extend(chain_records[:10])
+        # 1. Preserve industry chain records (up to 12)
+        selected.extend(chain_records[:12])
 
-        # 2. Group timeseries by (entity, metric) to keep curves unbroken
-        ts_groups: dict[tuple[str, str], list[EvidenceRef]] = defaultdict(list)
+        # 2. Group timeseries by (domain, entity, metric) to keep curves unbroken and prevent domain starvation
+        ts_groups: dict[tuple[str, str, str], list[EvidenceRef]] = defaultdict(list)
         for r in time_series_records:
+            dom = str(r.domain or "unknown")
             ent = str(r.entity or "行业")
             met = canonical_metric_label(r.metric)
-            ts_groups[(ent, met)].append(r)
+            ts_groups[(dom, ent, met)].append(r)
+
+        # Ensure multi-domain timeseries diversity: macro, industry, and financials
+        macro_ts = [grp for key, grp in ts_groups.items() if key[0] == "macro"]
+        industry_ts = [grp for key, grp in ts_groups.items() if key[0] == "industry"]
+        other_ts = [grp for key, grp in ts_groups.items() if key[0] not in ("macro", "industry")]
 
         ts_selected: list[EvidenceRef] = []
-        for grp in ts_groups.values():
+        # Add macro timeseries (up to 2 groups)
+        for grp in macro_ts[:2]:
+            ts_selected.extend(sorted(grp, key=lambda x: str(x.period or "")))
+        # Add industry timeseries (up to 2 groups)
+        for grp in industry_ts[:2]:
+            ts_selected.extend(sorted(grp, key=lambda x: str(x.period or "")))
+        # Fill remaining timeseries budget (up to 35 total ts records)
+        for grp in other_ts:
             grp_sorted = sorted(grp, key=lambda x: str(x.period or ""))
-            if len(ts_selected) + len(grp_sorted) <= 20:
+            if len(ts_selected) + len(grp_sorted) <= 35:
                 ts_selected.extend(grp_sorted)
             else:
-                rem = max(0, 20 - len(ts_selected))
+                rem = max(0, 35 - len(ts_selected))
                 if rem > 0:
                     ts_selected.extend(grp_sorted[:rem])
                 break
@@ -753,6 +799,241 @@ class ChartGeneratorAgent:
                     "period": item.period.isoformat() if hasattr(item.period, "isoformat") else (str(item.period) if item.period else None),
                 })
         return payload
+
+    async def _run_llm_generation(
+        self,
+        request: ChartGenerationRequest,
+        record: Callable[..., Awaitable[None]],
+    ) -> tuple[list[dict[str, str]], list[_Candidate], list[SuppressedChart]]:
+        report = request.report
+        evidence_records = [
+            item for item in report.evidence_index.values()
+            if (isinstance(item.value, (int, float)) and not isinstance(item.value, bool))
+            or item.domain == "industry_chain"
+        ]
+
+        # Extract structured overview for LLM with Evidence Binning (preserves unbroken curves and topology)
+        evidence_payload = self._bin_evidence_for_prompt(evidence_records, max_total=120)
+
+        chart_limit_clause = f"不超过 {request.preferences.max_charts} 张" if (request.preferences.max_charts and request.preferences.max_charts > 0) else "不设数量上限，充分基于数据特征生成全部有价值的"
+        max_charts_display = str(request.preferences.max_charts) if (request.preferences.max_charts and request.preferences.max_charts > 0) else "不设上限（全面呈现全部可用维度）"
+
+        user_prompt = f"""【研报主题】: {report.subject} (基准日期: {report.as_of})
+
+【研报标准章节规划框架】:
+- CH-01 行业定义与研究基础（行业定位、宏观全景、数据底座，适合宏观/产值/定位图表）
+- CH-02 市场规模与成长性（市场总规模时序、预测增速、复合增长率，适合时序组合/折线图）
+- CH-03 产业链与利润分配（产业链上下游拓扑、价值链毛利率分布，适合产业链拓扑/供需图）
+- CH-04 竞争格局（核心环节企业市场份额、出货/营收横向排名、头部集中度，适合环形份额图、对比条形/柱图）
+- CH-05 财务质量与估值参照（重点标的财务三表透视、多维能力雷达、估值-成长四象限散点，适合散点图、雷达图）
+- CH-06 宏观、政策与技术催化（宏观周期传导、关键技术与产业催化，适合催化/周期图）
+- CH-07 情景、风险与研究结论（情景演化分析、主要风险敞口）
+
+【章节细化要点参考】:
+{json.dumps([{"heading": s.heading, "purpose": s.purpose} for s in report.content_outline], ensure_ascii=False, indent=2)}
+
+【关键指标概要】:
+{json.dumps([{"name": m.name, "entity": m.entity, "value": m.value, "unit": m.unit} for m in report.key_metrics[:15]], ensure_ascii=False, indent=2)}
+
+【事实证据清单】(共 {len(evidence_records)} 条，精选分箱 {len(evidence_payload)} 条):
+{json.dumps(evidence_payload, ensure_ascii=False, indent=2)}
+
+【用户配置偏好】:
+- 最大图表数: {max_charts_display}
+- 指定请求图表类型: {request.preferences.requested_types or "自动选型"}
+- 主题风格: {request.preferences.theme}
+- 包含进阶图表: {request.preferences.include_advanced}
+
+【任务要求】:
+1. 请先审查上述数据特征与研报需求，自主调用 `invoke_skill` 工具加载所需的技能规范；
+2. 加载规范后，严格遵循规范，生成{chart_limit_clause}专业金融研报图表；
+3. 【数据适配度与图表选型原则（按数据特征自然选型，严禁为追求形式而生搬硬套）】：
+   - 数据适配优先：必须基于数据维度、量纲与样本量选择最清晰直观的表达形态。
+     - 单指标横向对比（5~15家企业）：优先使用水平条形图（horizontal_bar）或柱状图（bar/comparison_bar）；严禁在样本量少于15时滥用箱线图（boxplot）；严禁在少量实体无分级时硬套矩形树图（treemap）；
+     - 规模与增速双指标：采用双轴组合图（combo: 柱状规模 + 折线增速）；
+     - 双变量跨实体对标：采用四象限散点图（scatter/bubble）；
+     - 存在正负指标分化：采用发散条形图（diverging_bar）；
+     - 单实体多维能力（>=3项指标）：采用多维雷达图（radar）；
+     - 上中下游拓扑传导：采用产业链拓扑图（industry_chain）；
+     - 时间序列分析：采用折线图（line），严禁对同一指标重复生成折线图和面积图。
+   - 自然多样性：在数据维度天然支持的前提下，积极组合上述适配类型，避免图表库形式单一。
+   - 【章节均衡分布原则】：所规划的图表集必须合理分布在研报的各个章节（重点覆盖 CH-01、CH-02、CH-03、CH-04、CH-05 等），单章节图表数建议控制在 2~4 张以内，严禁所有图表扎堆在个别章节！
+4. 输出合法的 JSON 格式，包含:
+   - "charts": 列表，每项包含:
+     - "title": 专业学术标题（体现对象、维度与口径）
+     - "chart_type": 必须为 "combo"|"scatter"|"bubble"|"diverging_bar"|"donut"|"radar"|"industry_chain"|"horizontal_bar"|"comparison_bar"|"bar"|"line"|"area" 之一
+     - "insight_goal": 该图表的核心分析目的与研报价值
+     - "recommended_chapter_id": 建议归属的章节编号（必须在 CH-01, CH-02, CH-03, CH-04, CH-05, CH-06, CH-07 中选择并保持各章合理分布）
+     - "evidence_ids": 列表，必须严格来自上述事实证据的真实 record_id
+     - "footnotes": 说明列表（单位、口径、数据来源或归一化说明）
+     - "option": (可选) 完整合规的 ECharts option 配置对象；亦可置为 {{}} 由系统基于真实证据高精度自动合成（推荐留空以提升生成速度）
+   - "suppressed_charts": 列表，记录因数据不足、口径冲突、单点无法成趋势或请求类型不匹配而被抑制的图表，说明 reason_code 与 reason。
+"""
+        tools = self.skillhub.get_tool_spec()
+
+        def skill_resolver(name: str) -> str | None:
+            skill = self.skillhub.get(name)
+            if not skill:
+                return None
+            return f"# Skill: {skill.name}\n## Description: {skill.description}\n\n{skill.instructions}"
+
+        try:
+            called_skills, llm_data = await self.llm.run_skill_and_chart_loop(
+                system_prompt=CHART_AGENT_SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+                tools=tools,
+                skill_resolver=skill_resolver,
+            )
+            for cs in called_skills:
+                await record("skill_invoked_by_llm", skill=cs.get("skill_name"), reason=cs.get("reason"))
+        except Exception as e:
+            logger.warning(f"LLM chart generation failed: {e}. Falling back to deterministic pipeline.", exc_info=True)
+            await record("llm_generation_error", error=str(e))
+            selected_skills = self.skillhub.select(request)
+            called_skills = [{"skill_name": s.name, "reason": s.adaptation} for s in selected_skills]
+            cand, supp = self._deterministic_fallback(request)
+            return called_skills, cand, supp
+
+        candidates: list[_Candidate] = []
+        suppressed: list[SuppressedChart] = []
+
+        # Parse suppressed charts from LLM
+        for item in llm_data.get("suppressed_charts", []):
+            if isinstance(item, dict):
+                suppressed.append(SuppressedChart(
+                    title=str(item.get("title", "未命名图表")),
+                    requested_type=item.get("requested_type"),
+                    reason_code=str(item.get("reason_code", "llm_suppressed")),
+                    reason=str(item.get("reason", "经专业技能规则审查，数据不足或口径冲突")),
+                    evidence_ids=[str(x) for x in item.get("evidence_ids", [])],
+                ))
+
+        # Parse and validate generated charts from LLM (Grounding Check)
+        for chart_dict in llm_data.get("charts", []):
+            if not isinstance(chart_dict, dict):
+                continue
+            title = str(chart_dict.get("title", "")).strip()
+            chart_type = chart_dict.get("chart_type") or chart_dict.get("type", "bar")
+            if chart_type not in VALID_CHART_TYPES:
+                chart_type = "bar"
+
+            raw_eids = (
+                chart_dict.get("evidence_ids")
+                or chart_dict.get("evidence_record_ids")
+                or chart_dict.get("records")
+                or []
+            )
+            valid_eids = [str(eid) for eid in raw_eids if str(eid) in report.evidence_index]
+
+            if not valid_eids:
+                # Suppress hallucinated or ungrounded charts
+                suppressed.append(SuppressedChart(
+                    title=title or "未命名图表",
+                    requested_type=chart_type,
+                    reason_code="hallucinated_evidence",
+                    reason="图表所引用的证据ID在真实证据库中不存在或未提供有效证据引用",
+                    evidence_ids=[],
+                ))
+                continue
+
+            option = chart_dict.get("option") or chart_dict.get("echarts_option") or {}
+            table = DataFormulator.formulate(valid_eids, report, target_chart_type=chart_type)
+            if table and (not isinstance(option, dict) or not option or self._has_option_defects(option, chart_type)):
+                option = EChartsCompiler.compile(table, chart_type, title)
+            elif not isinstance(option, dict) or not option or self._has_option_defects(option, chart_type):
+                option = self._synthesize_option_from_evidence(chart_type, valid_eids, title, report)
+
+            if not isinstance(option, dict) or not option:
+                suppressed.append(SuppressedChart(
+                    title=title,
+                    requested_type=chart_type,
+                    reason_code="invalid_echarts_option",
+                    reason="无法基于引用证据合成有效图表配置（量纲不相容或数据点缺失）",
+                    evidence_ids=valid_eids,
+                ))
+                continue
+
+            goal = str(chart_dict.get("insight_goal") or chart_dict.get("description") or title)
+            rec_ch = chart_dict.get("recommended_chapter_id")
+            if not rec_ch or rec_ch not in ("CH-01", "CH-02", "CH-03", "CH-04", "CH-05", "CH-06", "CH-07"):
+                domain_val = ""
+                metrics_val = []
+                for eid in valid_eids:
+                    ev = report.evidence_index.get(eid) if report and getattr(report, "evidence_index", None) else None
+                    if ev:
+                        domain_val = domain_val or getattr(ev, "domain", "") or ""
+                        if getattr(ev, "metric", None):
+                            metrics_val.append(str(ev.metric))
+                chapter = self._infer_chart_chapter(title=title, chart_type=chart_type, domain=domain_val, metrics=metrics_val)
+            else:
+                chapter = str(rec_ch)
+            footnotes = [str(f) for f in chart_dict.get("footnotes", [])]
+
+            flat_point_eids = []
+            if table and getattr(table, "point_evidence_ids", None):
+                for pe_list in table.point_evidence_ids.values():
+                    for eid in pe_list:
+                        if eid and eid not in flat_point_eids:
+                            flat_point_eids.append(eid)
+
+            candidates.append(_Candidate(
+                title=title,
+                chart_type=chart_type,
+                option=option,
+                evidence_ids=valid_eids,
+                goal=goal,
+                chapter=chapter,
+                score=100,
+                footnotes=footnotes,
+                point_evidence_ids=flat_point_eids or valid_eids,
+            ))
+
+        # Cross-chapter soft rebalancing: if a chapter (like CH-04) hoards > 4 charts while others have 0 or few,
+        # relocate charts whose semantic nature fits better in another chapter.
+        ch_counts = Counter(c.chapter for c in candidates)
+        for cand in candidates:
+            if ch_counts[cand.chapter] > 4:
+                domain_val = ""
+                metrics_val = []
+                for eid in cand.evidence_ids:
+                    ev = report.evidence_index.get(eid) if report and getattr(report, "evidence_index", None) else None
+                    if ev:
+                        domain_val = domain_val or getattr(ev, "domain", "") or ""
+                        if getattr(ev, "metric", None):
+                            metrics_val.append(str(ev.metric))
+                better_ch = self._infer_chart_chapter(title=cand.title, chart_type=cand.chart_type, domain=domain_val, metrics=metrics_val)
+                if better_ch != cand.chapter and ch_counts[better_ch] < 3:
+                    ch_counts[cand.chapter] -= 1
+                    cand.chapter = better_ch
+                    ch_counts[better_ch] += 1
+
+        return called_skills, candidates, suppressed
+
+    def _backfill_suppressed_evidence(self, title: str, report: Any, cap: int = 12) -> list[str]:
+        """按抑制图表标题的指标语义，从 evidence_index 确定性反查候选证据 ID（D-07）。
+
+        只在 LLM 未提供 evidence_ids 时兜底；无明确指标命中则返回空（不强行附会，
+        避免把无关证据挂到抑制记录上造成误导）。
+        """
+        text = (title or "").casefold()
+        if not text:
+            return []
+        needles: list[str] = []
+        for tok, metrics in self._SUPPRESS_METRIC_TOKENS:
+            if tok.casefold() in text:
+                for m in metrics:
+                    if m not in needles:
+                        needles.append(m)
+        if not needles:
+            return []
+        eids: list[str] = []
+        for eid, ref in report.evidence_index.items():
+            metric = str(getattr(ref, "metric", "") or "").casefold()
+            if any(n.casefold() in metric for n in needles):
+                eids.append(str(eid))
+                if len(eids) >= cap:
+                    break
+        return eids
 
     async def _run_llm_generation(
         self,
@@ -844,12 +1125,17 @@ class ChartGeneratorAgent:
         # Parse suppressed charts from LLM
         for item in llm_data.get("suppressed_charts", []):
             if isinstance(item, dict):
+                sup_title = str(item.get("title", "未命名图表"))
+                # 仅采纳真实存在于证据库的 ID（grounding）；LLM 漏填时按标题指标确定性兜底（D-07）。
+                sup_eids = [str(x) for x in item.get("evidence_ids", []) if str(x) in report.evidence_index]
+                if not sup_eids:
+                    sup_eids = self._backfill_suppressed_evidence(sup_title, report)
                 suppressed.append(SuppressedChart(
-                    title=str(item.get("title", "未命名图表")),
+                    title=sup_title,
                     requested_type=item.get("requested_type"),
                     reason_code=str(item.get("reason_code", "llm_suppressed")),
                     reason=str(item.get("reason", "经专业技能规则审查，数据不足或口径冲突")),
-                    evidence_ids=[str(x) for x in item.get("evidence_ids", [])],
+                    evidence_ids=sup_eids,
                 ))
 
         # Parse and validate generated charts from LLM (Grounding Check)
