@@ -1,0 +1,42 @@
+{
+  "n": 5,
+  "spearman": 0.9,
+  "pairs": [
+    {
+      "id": "S-HIGH",
+      "llm_score": 92.0,
+      "llm_band": "high",
+      "expect_band": "high",
+      "reason": "报告结构完整（7章21节），证据覆盖全面且引用干净，维度支持充分，风险披露完整，图表均被引用，整体质量高。"
+    },
+    {
+      "id": "S-MID",
+      "llm_score": 68.0,
+      "llm_band": "mid",
+      "expect_band": "mid",
+      "reason": "报告结构完整（7章21节），证据覆盖较高（80%），但存在1类未知引用、维度覆盖不全面（partial）、风险披露仅一半，图表数量偏少（2张），整体质量中等，仍有提升空间。"
+    },
+    {
+      "id": "S-LOW",
+      "llm_score": 15.0,
+      "llm_band": "low",
+      "expect_band": "low",
+      "reason": "报告结构严重不完整（仅3章9节），证据引用为空且存在3类未知引用，维度覆盖缺失，风险未披露，且无任何图表，整体质量极低。"
+    },
+    {
+      "id": "S-LOW2",
+      "llm_score": 15.0,
+      "llm_band": "low",
+      "expect_band": "low",
+      "reason": "报告结构虽声称7章21节，但核心结论被驳回，缺乏可用证据支撑，维度覆盖不足，图表引用未就绪且风险未披露，整体质量严重不达标。"
+    },
+    {
+      "id": "S-MID2",
+      "llm_score": 62.0,
+      "llm_band": "mid",
+      "expect_band": "mid",
+      "reason": "报告结构完整且风险披露充分，但证据覆盖仅50%，图表与规格不一致，且维度覆盖不均衡（2个充分、3个部分），整体质量中等。"
+    }
+  ],
+  "note": "LLM 仅作参考分；生产 total_score 由确定性 quality.py 产出"
+}

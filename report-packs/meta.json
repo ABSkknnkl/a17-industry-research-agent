@@ -1,0 +1,272 @@
+[
+  {
+    "run_id": "run-solid-battery-001",
+    "topic": "固态电池产业化",
+    "status": "completed",
+    "error": null,
+    "title": "固态电池产业化行业研究报告",
+    "delivery_status": "ready_with_limits",
+    "total_score": 60,
+    "score_breakdown": [
+      {
+        "dimension": "structure",
+        "score": 25,
+        "weight": 25,
+        "max_score": 25,
+        "reason": "章节 7/7，小节 21/21"
+      },
+      {
+        "dimension": "evidence_coverage",
+        "score": 0,
+        "weight": 30,
+        "max_score": 30,
+        "reason": "证据覆盖率 0%（0/3）"
+      },
+      {
+        "dimension": "citation_consistency",
+        "score": 5,
+        "weight": 15,
+        "max_score": 15,
+        "reason": "未知结论 1 个；未知证据 3 个"
+      },
+      {
+        "dimension": "dimension_coverage",
+        "score": 20,
+        "weight": 20,
+        "max_score": 20,
+        "reason": "维度覆盖均值 1.00（5 个维度）"
+      },
+      {
+        "dimension": "risk_disclosure",
+        "score": 10,
+        "weight": 10,
+        "max_score": 10,
+        "reason": "风险全部披露"
+      }
+    ],
+    "html": "artifacts/run-solid-battery-001/reports/r1/report.html",
+    "md": "artifacts/run-solid-battery-001/reports/r1/report.md",
+    "html_exists": true,
+    "md_size": 14884,
+    "html_size": 123238,
+    "title_pack": "固态电池产业化研究",
+    "pack_id": "solid-battery",
+    "headline": "固态电池处于中试向小批量过渡期：电解质路线收敛与设备投资是 2026 年验证重点。"
+  },
+  {
+    "run_id": "run-humanoid-robot-001",
+    "topic": "人形机器人产业链",
+    "status": "completed",
+    "error": null,
+    "title": "人形机器人产业链行业研究报告",
+    "delivery_status": "ready_with_limits",
+    "total_score": 80,
+    "score_breakdown": [
+      {
+        "dimension": "structure",
+        "score": 25,
+        "weight": 25,
+        "max_score": 25,
+        "reason": "章节 7/7，小节 21/21"
+      },
+      {
+        "dimension": "evidence_coverage",
+        "score": 20,
+        "weight": 30,
+        "max_score": 30,
+        "reason": "证据覆盖率 67%（2/3）"
+      },
+      {
+        "dimension": "citation_consistency",
+        "score": 5,
+        "weight": 15,
+        "max_score": 15,
+        "reason": "未知结论 1 个；未知证据 1 个"
+      },
+      {
+        "dimension": "dimension_coverage",
+        "score": 20,
+        "weight": 20,
+        "max_score": 20,
+        "reason": "维度覆盖均值 1.00（5 个维度）"
+      },
+      {
+        "dimension": "risk_disclosure",
+        "score": 10,
+        "weight": 10,
+        "max_score": 10,
+        "reason": "风险全部披露"
+      }
+    ],
+    "html": "artifacts/run-humanoid-robot-001/reports/r1/report.html",
+    "md": "artifacts/run-humanoid-robot-001/reports/r1/report.md",
+    "html_exists": true,
+    "md_size": 14308,
+    "html_size": 121360,
+    "title_pack": "人形机器人产业链研究",
+    "pack_id": "humanoid-robot",
+    "headline": "人形机器人处于工厂试点与供应链国产化双推进阶段，丝杠/减速器/六维力是核心卡点。"
+  },
+  {
+    "run_id": "run-satcom-leo-001",
+    "topic": "卫星互联网低轨星座",
+    "status": "completed",
+    "error": null,
+    "title": "卫星互联网低轨星座行业研究报告",
+    "delivery_status": "ready_with_limits",
+    "total_score": 80,
+    "score_breakdown": [
+      {
+        "dimension": "structure",
+        "score": 25,
+        "weight": 25,
+        "max_score": 25,
+        "reason": "章节 7/7，小节 21/21"
+      },
+      {
+        "dimension": "evidence_coverage",
+        "score": 20,
+        "weight": 30,
+        "max_score": 30,
+        "reason": "证据覆盖率 67%（2/3）"
+      },
+      {
+        "dimension": "citation_consistency",
+        "score": 5,
+        "weight": 15,
+        "max_score": 15,
+        "reason": "未知结论 1 个；未知证据 1 个"
+      },
+      {
+        "dimension": "dimension_coverage",
+        "score": 20,
+        "weight": 20,
+        "max_score": 20,
+        "reason": "维度覆盖均值 1.00（5 个维度）"
+      },
+      {
+        "dimension": "risk_disclosure",
+        "score": 10,
+        "weight": 10,
+        "max_score": 10,
+        "reason": "风险全部披露"
+      }
+    ],
+    "html": "artifacts/run-satcom-leo-001/reports/r1/report.html",
+    "md": "artifacts/run-satcom-leo-001/reports/r1/report.md",
+    "html_exists": true,
+    "md_size": 14205,
+    "html_size": 121238,
+    "title_pack": "卫星互联网低轨星座研究",
+    "pack_id": "satcom-leo",
+    "headline": "低轨星座进入密集发射与终端放量前夜，制造降本与频轨资源是关键约束。"
+  },
+  {
+    "run_id": "run-hydrogen-truck-001",
+    "topic": "氢能重卡与燃料电池",
+    "status": "completed",
+    "error": null,
+    "title": "氢能重卡与燃料电池行业研究报告",
+    "delivery_status": "ready_with_limits",
+    "total_score": 80,
+    "score_breakdown": [
+      {
+        "dimension": "structure",
+        "score": 25,
+        "weight": 25,
+        "max_score": 25,
+        "reason": "章节 7/7，小节 21/21"
+      },
+      {
+        "dimension": "evidence_coverage",
+        "score": 20,
+        "weight": 30,
+        "max_score": 30,
+        "reason": "证据覆盖率 67%（2/3）"
+      },
+      {
+        "dimension": "citation_consistency",
+        "score": 5,
+        "weight": 15,
+        "max_score": 15,
+        "reason": "未知结论 1 个；未知证据 1 个"
+      },
+      {
+        "dimension": "dimension_coverage",
+        "score": 20,
+        "weight": 20,
+        "max_score": 20,
+        "reason": "维度覆盖均值 1.00（5 个维度）"
+      },
+      {
+        "dimension": "risk_disclosure",
+        "score": 10,
+        "weight": 10,
+        "max_score": 10,
+        "reason": "风险全部披露"
+      }
+    ],
+    "html": "artifacts/run-hydrogen-truck-001/reports/r1/report.html",
+    "md": "artifacts/run-hydrogen-truck-001/reports/r1/report.md",
+    "html_exists": true,
+    "md_size": 14130,
+    "html_size": 121210,
+    "title_pack": "氢能重卡与燃料电池研究",
+    "pack_id": "hydrogen-truck",
+    "headline": "氢能重卡进入示范城市群纵深运营期，氢价与加氢站密度决定规模化拐点。"
+  },
+  {
+    "run_id": "run-evtol-low-altitude-001",
+    "topic": "低空经济 eVTOL 产业研究",
+    "status": "completed",
+    "error": null,
+    "title": "低空经济 eVTOL 产业研究行业研究报告",
+    "delivery_status": "ready_with_limits",
+    "total_score": 80,
+    "score_breakdown": [
+      {
+        "dimension": "structure",
+        "score": 25,
+        "weight": 25,
+        "max_score": 25,
+        "reason": "章节 7/7，小节 21/21"
+      },
+      {
+        "dimension": "evidence_coverage",
+        "score": 20,
+        "weight": 30,
+        "max_score": 30,
+        "reason": "证据覆盖率 67%（2/3）"
+      },
+      {
+        "dimension": "citation_consistency",
+        "score": 5,
+        "weight": 15,
+        "max_score": 15,
+        "reason": "未知结论 1 个；未知证据 1 个"
+      },
+      {
+        "dimension": "dimension_coverage",
+        "score": 20,
+        "weight": 20,
+        "max_score": 20,
+        "reason": "维度覆盖均值 1.00（5 个维度）"
+      },
+      {
+        "dimension": "risk_disclosure",
+        "score": 10,
+        "weight": 10,
+        "max_score": 10,
+        "reason": "风险全部披露"
+      }
+    ],
+    "html": "artifacts/run-evtol-low-altitude-001/reports/r1/report.html",
+    "md": "artifacts/run-evtol-low-altitude-001/reports/r1/report.md",
+    "html_exists": true,
+    "md_size": 14361,
+    "html_size": 120872,
+    "title_pack": "低空经济 eVTOL 产业研究",
+    "pack_id": "evtol-low-altitude",
+    "headline": "eVTOL 处于适航与场景试点叠加期，运营披露与零部件定点可跟踪，行业序列补全齐备。"
+  }
+]

@@ -1,0 +1,340 @@
+<!doctype html>
+<!--
+  自动生成的样例文件，请勿手工编辑。
+
+  来源：frontend/src/mock/fixtures/fusedReportHtml.ts 的 buildFusedReportHtml()
+  数据：frontend/src/mock/fixtures/realBatteryData.ts（后端真实流水线抽取的演示数据）
+  样式：frontend/src/mock/fixtures/reportHtmlCss.ts（从真实后端产物 report.html 捕获）
+
+  用途：让人直观看到「阶段五融合完成后」报告长什么样；
+  也是 mock 模式下报告预览页 iframe 实际渲染的内容。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>动力电池行业 2023-2026 研究（真实流水线）</title>
+<style>
+:root { --ink:#0f172a; --muted:#64748b; --line:#dbe4ef; --blue:#1d4ed8; --paper:#fff; --soft:#f4f7fb; --accent-soft:#eff6ff; }
+* { box-sizing:border-box; }
+html { background:#e9eef5; }
+body { margin:0; color:var(--ink); background:var(--paper); font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",Arial,sans-serif; line-height:1.75; font-size:15px; }
+main { max-width:1040px; margin:0 auto; padding:56px 64px 80px; }
+.cover { min-height:760px; display:flex; flex-direction:column; justify-content:center; border-top:8px solid var(--blue); position:relative; page-break-after:always; }
+.eyebrow { color:var(--blue); font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+h1 { font-size:44px; line-height:1.22; margin:18px 0; letter-spacing:-.02em; }
+.subtitle { font-size:19px; color:var(--muted); max-width:720px; }
+.meta-grid { margin-top:56px; display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+.meta { border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+.meta span { display:block; color:var(--muted); font-size:12px; }
+.meta strong { display:block; margin-top:4px; overflow-wrap:anywhere; }
+h2 { margin:48px 0 20px; padding-bottom:10px; border-bottom:2px solid var(--ink); font-size:28px; page-break-after:avoid; }
+h3 { margin:30px 0 12px; font-size:20px; color:#162b4d; page-break-after:avoid; }
+p { margin:10px 0; text-align:justify; }
+.summary { background:var(--accent-soft); border:1px solid #bfdbfe; border-radius:14px; padding:26px 30px; }
+.headline { font-size:21px; font-weight:700; line-height:1.55; }
+.conclusion { border-left:4px solid var(--blue); padding:8px 14px; margin:14px 0; background:#fff; }
+.chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:7px; }
+.chip { color:#334155; background:#e2e8f0; border-radius:999px; padding:2px 9px; font-size:11px; }
+.toc { columns:2; column-gap:36px; padding:0; list-style:none; }
+.toc li { break-inside:avoid; padding:5px 0; border-bottom:1px dotted var(--line); }
+.toc a { color:inherit; text-decoration:none; }
+.chapter { page-break-before:always; }
+.chapter-summary { color:#334155; font-size:16px; background:var(--soft); padding:12px 16px; border-radius:8px; }
+.reference { color:var(--muted); font-size:12px; margin-top:5px; }
+.citation { color:var(--blue); text-decoration:none; border-bottom:1px dotted #93c5fd; margin-right:6px; }
+.citation:hover { color:#1e40af; border-bottom-style:solid; }
+.chart { margin:22px 0 28px; border:1px solid var(--line); border-radius:14px; padding:14px; break-inside:avoid; background:#fff; }
+.chart svg { width:100%; height:auto; display:block; }
+.chart figcaption { margin:8px 8px 2px; color:var(--muted); font-size:12px; }
+.chart-number { color:var(--ink); font-weight:700; }
+.chart-pie,.chart-radar { width:64%; margin-left:auto; margin-right:auto; }
+.uncertainty { border:1px solid #fcd34d; background:#fffbeb; border-radius:8px; padding:10px 14px; margin:14px 0; break-inside:avoid; page-break-inside:avoid; }
+.uncertainty strong { color:#92400e; }
+.risk-list li, .boundary-list li { margin:6px 0; }
+.footer-note { margin-top:48px; border-top:1px solid var(--line); padding-top:18px; color:var(--muted); font-size:12px; }
+.draft-watermark { position:absolute; inset:0; pointer-events:none; z-index:5; display:flex; align-items:center; justify-content:center; opacity:0.08; font-size:72px; font-weight:900; color:#dc2626; transform:rotate(-20deg); letter-spacing:0.3em; }
+.draft-banner { background:#fef2f2; border:2px solid #dc2626; border-radius:10px; padding:14px 20px; margin-bottom:24px; color:#991b1b; }
+.draft-banner strong { color:#dc2626; }
+.risk-appendix { page-break-before:always; }
+.quality-appendix { page-break-before:always; }
+.quality-table { width:100%; border-collapse:collapse; margin:12px 0 22px; font-size:13px; }
+.quality-table th,.quality-table td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+.quality-table th { background:var(--soft); }
+.source-index { page-break-before:always; }
+.source-index tbody tr { scroll-margin-top:20px; }
+.source-table { table-layout:fixed; font-size:11px; font-variant-numeric:tabular-nums; }
+.source-table th,.source-table td { overflow-wrap:anywhere; line-height:1.45; padding:7px 8px; }
+.source-table th:first-child,.source-table td:first-child { width:5%; text-align:center; }
+.source-table th:nth-child(2),.source-table td:nth-child(2) { width:20%; }
+.source-table th:nth-child(3),.source-table td:nth-child(3) { width:15%; }
+.source-table th:nth-child(4),.source-table td:nth-child(4) { width:12%; white-space:nowrap; }
+.source-table th:nth-child(5),.source-table td:nth-child(5) { width:13%; white-space:nowrap; }
+.source-table th:nth-child(6),.source-table td:nth-child(6) { width:15%; }
+.source-table th:nth-child(7),.source-table td:nth-child(7) { width:20%; }
+table caption { caption-side:top; text-align:left; color:var(--ink); font-weight:700; margin:0 0 8px; }
+thead { display:table-header-group; }
+.visual-note { border:1px solid var(--line); border-radius:10px; padding:12px 16px; margin:18px 0 0; color:var(--muted); font-size:12px; background:var(--soft); }
+.visual-note strong { color:var(--ink); }
+
+/* 数据手册型：高密度、数值优先、表格与证据索引更突出。 */
+.visual-data-manual { --blue:#17365d; --accent-soft:#f2f6fa; }
+.visual-data-manual main { max-width:1120px; }
+.visual-data-manual .cover { border-top-width:12px; }
+.visual-data-manual h2 { color:#17365d; border-bottom-color:#17365d; }
+.visual-data-manual .chapter-summary { border-left:4px solid #17365d; border-radius:0; }
+.visual-data-manual .chart { border-radius:4px; }
+.visual-data-manual .quality-table { font-size:12px; }
+
+/* 分析笔记型：图、表、正文均衡，是系统默认外壳。 */
+.visual-analysis-note { --blue:#1d4ed8; --accent-soft:#eff6ff; }
+.visual-analysis-note .conclusion { border-radius:0 8px 8px 0; }
+
+/* 深度研究型：收窄版心、提升行距，强调连续论证。 */
+.visual-deep-research { --blue:#7c2d12; --accent-soft:#fff7ed; }
+.visual-deep-research body,.visual-deep-research { font-family:"Songti SC","STSong","Noto Serif CJK SC",serif; }
+.visual-deep-research main { max-width:920px; padding-left:76px; padding-right:76px; }
+.visual-deep-research h1 { font-weight:600; letter-spacing:.01em; }
+.visual-deep-research h2 { color:#451a03; border-bottom:1px solid #9a3412; }
+.visual-deep-research h3 { color:#7c2d12; }
+.visual-deep-research .chapter-summary { background:transparent; border-left:3px solid #9a3412; border-radius:0; padding-left:18px; }
+.visual-deep-research .chart { border-width:1px 0; border-radius:0; padding:18px 0; }
+
+.density-compact { font-size:14px; line-height:1.62; }
+.density-compact main { padding-top:42px; padding-bottom:60px; }
+.density-compact h2 { margin-top:38px; }
+.density-compact .chart { margin:16px 0 20px; }
+.density-detailed { font-size:15.5px; line-height:1.85; }
+.density-detailed main { padding-top:64px; padding-bottom:96px; }
+.density-detailed .chapter-summary { padding-top:16px; padding-bottom:16px; }
+@page { size:A4; @bottom-center { content:"动力电池行业研究报告  ·  " counter(page); color:#64748b; font-size:9pt; } }
+@media print {
+  html,body { background:#fff; }
+  body { font-size:13.5px; line-height:1.62; }
+  /* 与 .visual-*/.density-* 屏幕规则同权重且后置，确保打印版心归零 */
+  .visual-data-manual main, .visual-analysis-note main, .visual-deep-research main, main { max-width:none; padding:0; }
+  .density-compact main, .density-detailed main { padding-top:0; padding-bottom:0; }
+  .cover { min-height:245mm; }
+  h1 { font-size:32pt; }
+  h2 { margin:32px 0 14px; }
+  h3 { margin:20px 0 8px; }
+  p { margin:7px 0; }
+  .summary { padding:18px 22px; }
+  .conclusion { margin:9px 0; padding:6px 12px; }
+  .chapter-summary { padding:9px 14px; }
+  .chart { margin:16px 0 18px; padding:10px; box-shadow:none; }
+  .chart svg { max-height:78mm; }
+  .uncertainty { margin:10px 0; padding:7px 12px; }
+  .footer-note { margin-top:18px; padding-top:12px; font-size:10.5px; line-height:1.45; }
+}
+  
+</style>
+</head>
+<body class="visual-data-manual density-balanced">
+<main>
+<section class="cover">
+<div class="draft-watermark">内部审核草稿</div>
+<div class="eyebrow">动力电池行业 · 行业研究系统</div>
+<h1>动力电池行业 2023-2026 研究（真实流水线）</h1>
+<p class="subtitle">部分数据来自后端真实取数与大模型分析；装机/份额缺口已标注，不代表投资建议</p>
+<div class="meta-grid"><div class="meta"><span>研究时点</span><strong>2026-01-15</strong></div><div class="meta"><span>生成时间</span><strong>2026-01-15 10:30（协调世界时）</strong></div><div class="meta"><span>报告深度</span><strong>标准版</strong></div><div class="meta"><span>交付状态</span><strong>附限制条件可交付</strong></div><div class="meta"><span>章节规模</span><strong>7 章 14 节</strong></div></div>
+<div class="visual-note"><strong>研究问题：</strong><ul class="question-list"><li>1. 动力电池行业2023年至2026年装机量及增速变化趋势如何？</li><li>2. 宁德时代、比亚迪、中创新航动力电池装机量市场份额对比如何？</li><li>3. 碳酸锂价格2023年以来走势及其对电池成本的影响？</li><li>4. 动力电池行业主要企业研发投入规模及占营业收入比重变化？</li></ul></div>
+</section>
+<div class="draft-banner"><strong>内部审核草稿</strong> — 部分数据来自后端真实取数与大模型分析；装机/份额缺口已标注，不代表投资建议</div>
+<h2>目录</h2>
+<ol class="toc"><li><a href="#chapter-1">第一章 · 行业定义与研究基础</a></li><li><a href="#chapter-2">第二章 · 市场规模与成长性</a></li><li><a href="#chapter-3">第三章 · 产业链与利润分配</a></li><li><a href="#chapter-4">第四章 · 竞争格局</a></li><li><a href="#chapter-5">第五章 · 财务质量与估值参照</a></li><li><a href="#chapter-6">第六章 · 宏观、政策与技术催化</a></li><li><a href="#chapter-7">第七章 · 情景、风险与研究结论</a></li></ol>
+<h2>执行摘要</h2>
+<section class="summary">
+<p class="headline">本报告覆盖 7 个章节，结论均挂载来源编号，可在下方来源索引逐条核对。</p>
+<div class="conclusion">
+<strong>核心结论 1（事实）</strong>
+2025财年（截至2025-12-31，未经审计）宁德时代营业收入4237.02亿元，同比增长17.04%；归母净利润722.01亿元，归母净利率17.04%。比亚迪营业收入8039.65亿元，同比增长3.46%；归母净利润326.19亿元，归母净利率4.06%。
+<div class="chips"><a class="chip citation" href="#source-1">来源1</a><a class="chip citation" href="#source-2">来源2</a></div>
+<p class="reference">反证条件：数据为未经审计的B级终端数据，且公告日（2026-01-15）晚于研究时点（2026-01-15），存在前视偏差风险，需以正式年报复核。</p>
+</div>
+<div class="conclusion">
+<strong>核心结论 2（推断）</strong>
+宁德时代与比亚迪的净利率差异（17.04% vs 4.06%）反映两家公司商业模式差异：宁德时代作为动力电池供应商，产品附加值较高；比亚迪作为垂直整合的汽车制造商，收入规模大但利润被整车及零部件业务摊薄。
+<div class="chips"><a class="chip citation" href="#source-2">来源2</a><a class="chip citation" href="#source-3">来源3</a></div>
+<p class="reference">反证条件：净利率差异可能还受产品结构、补贴、非经常性损益等因素影响，需进一步拆解分部数据验证。</p>
+</div>
+<div class="conclusion">
+<strong>核心结论 3（事实）</strong>
+2025财年（截至2025-12-31，未经审计）宁德时代研发支出221.47亿元，比亚迪研发支出634.41亿元。
+<div class="chips"><a class="chip citation" href="#source-3">来源3</a><a class="chip citation" href="#source-4">来源4</a></div>
+<p class="reference">反证条件：研发支出数据为B级终端数据，未经审计，且未提供研发支出资本化率，跨公司比较需注意口径差异。</p>
+</div>
+<div class="conclusion">
+<strong>核心结论 4（推断）</strong>
+比亚迪研发支出绝对额显著高于宁德时代（634.41亿 vs 221.47亿），但考虑到比亚迪收入规模约为宁德时代的1.9倍，研发强度（研发/收入）差异较小（约7.9% vs 5.2%），两者均保持较高研发投入以维持技术竞争力。
+<div class="chips"><a class="chip citation" href="#source-4">来源4</a><a class="chip citation" href="#source-5">来源5</a></div>
+<p class="reference">反证条件：研发强度为推算值，基于B级数据，未考虑研发资本化差异。</p>
+</div>
+<div class="conclusion">
+<strong>核心结论 5（事实）</strong>
+中国PPI当月同比自2025年12月的-1.9%持续回升，2026年1月至6月分别为-1.4%、-0.9%、0.5%、2.8%、3.9%、4.1%，2026年7月和8月分别为3.5%和3.8%，显示工业品价格进入上行通道。
+<div class="chips"><a class="chip citation" href="#source-5">来源5</a><a class="chip citation" href="#source-6">来源6</a></div>
+<p class="reference">反证条件：PPI数据为B级宏观数据，统计口径为当月同比，未提供环比数据，且部分数据点（2026年7-8月）晚于研究时点（2026-01-15），存在前视偏差风险。</p>
+</div>
+</section>
+<section class="chapter" id="chapter-1">
+<h2>第一章 · 行业定义与研究基础</h2>
+<p class="chapter-summary">行业定义、研究边界与证券范围；数据口径、研究时点与分析方法</p>
+<h3>第1章第1节 · 行业定义、研究边界与证券范围</h3>
+<p>本章研究范围为中国A股动力电池行业上市公司，证券类型为股票，计价货币为人民币。行业分类采用同花顺'电力设备-电池-锂电池'标准，相关产品包括动力电池、磷酸铁锂电池、三元电池。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a><a class="citation" href="#source-2">来源2</a></p>
+<p>主要对比对象为宁德时代与比亚迪，两者均以人民币计价并采用中国会计准则，财年一致（截至2025-12-31）。但业务结构不同：宁德时代为动力电池供应商，比亚迪为垂直整合的汽车制造商，因此净利率不可直接类比。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a><a class="citation" href="#source-3">来源3</a></p>
+<h3>第1章第2节 · 数据口径、研究时点与分析方法</h3>
+<p>研究时点为2026-01-15，但宁德时代与比亚迪2025财年财务数据公告日（2026-01-15）晚于研究时点，且为未经审计的B级终端数据，存在前视偏差风险，需以正式年报复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a><a class="citation" href="#source-5">来源5</a></p>
+<p>动力电池装机量、市场份额及碳酸锂价格等关键数据缺失，行业整体趋势判断受限。现有市占率数据（宁德时代2026年一季度47.7%）为C级证据，且晚于研究时点，仅作定性参考。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a><a class="citation" href="#source-6">来源6</a></p>
+<figure class="chart chart-industry_chain" id="CHART-CHAIN"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260" width="640" height="260">
+  <rect width="640" height="260" fill="#fffefb"/>
+  <text x="20" y="28" font-size="14" fill="#1e3a5c" font-family="Georgia,serif" font-weight="700">动力电池产业链（结构示意）</text>
+  <rect x="24" y="56" width="100" height="40" rx="6" fill="#e4e8ee" stroke="#1e3a5c"/>
+  <text x="74" y="80" text-anchor="middle" font-size="12" fill="#1e3a5c">锂资源</text>
+  <rect x="144" y="56" width="100" height="40" rx="6" fill="#e4e8ee" stroke="#1e3a5c"/>
+  <text x="194" y="80" text-anchor="middle" font-size="12" fill="#1e3a5c">正极材料</text>
+  <rect x="264" y="56" width="100" height="40" rx="6" fill="#e4e8ee" stroke="#1e3a5c"/>
+  <text x="314" y="80" text-anchor="middle" font-size="12" fill="#1e3a5c">电芯</text>
+  <rect x="384" y="56" width="100" height="40" rx="6" fill="#e4e8ee" stroke="#1e3a5c"/>
+  <text x="434" y="80" text-anchor="middle" font-size="12" fill="#1e3a5c">PACK</text>
+  <rect x="504" y="56" width="100" height="40" rx="6" fill="#f4ecdc" stroke="#a9853f"/>
+  <text x="554" y="80" text-anchor="middle" font-size="12" fill="#1e3a5c">整车</text>
+  <path d="M124 76 H144" stroke="#a9853f" stroke-width="1.5"/>
+  <path d="M244 76 H264" stroke="#a9853f" stroke-width="1.5"/>
+  <path d="M364 76 H384" stroke="#a9853f" stroke-width="1.5"/>
+  <path d="M484 76 H504" stroke="#a9853f" stroke-width="1.5"/>
+  <text x="24" y="130" font-size="12" fill="#1e3a5c" font-weight="600">真实指标锚点</text>
+  <text x="24" y="152" font-size="11" fill="#46433a">碳酸锂现货 2023-12 约 9.4 万元/吨 → 2026-08 约 15.4 万元/吨</text>
+  <text x="24" y="172" font-size="11" fill="#46433a">电池产量 2026-08 约 23.7 万单位（当月）</text>
+  <text x="24" y="192" font-size="11" fill="#46433a">宁德 2026Q1 市占 47.7%（定性）· 研发费用率 5.2% / 7.9%</text>
+  <text x="24" y="220" font-size="11" fill="#8f8a7a">装机量结构化序列后端未返回 · 部分数据来自后端真实取数与大模型分析；装机/份额缺口已标注，不代表投资建议</text>
+</svg><figcaption><span class="chart-number">图1</span> · 动力电池产业链结构 · 产业链图<br>分析目的：结构关系示意</figcaption></figure>
+</section>
+<section class="chapter" id="chapter-2">
+<h2>第二章 · 市场规模与成长性</h2>
+<p class="chapter-summary">市场规模与历史增长趋势；需求驱动因素与细分市场变化</p>
+<h3>第2章第1节 · 市场规模与历史增长趋势</h3>
+<p>当前可用证据不足以对“市场规模与历史增长趋势”形成可靠事实判断，本节保留研究位置，待补充数据后复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a><a class="citation" href="#source-4">来源4</a></p>
+<p>宁德时代2025年营业收入4237.02亿元，同比增长17.04%；归母净利润722.01亿元，归母净利率17.04%。比亚迪2025年营业收入8039.65亿元，同比增长3.46%；归母净利润326.19亿元，归母净利率4.06%。宁德时代营收增速显著高于比亚迪，但两者业务结构不同，不可直接比较。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a><a class="citation" href="#source-5">来源5</a></p>
+<p>上述财务数据为未经审计的B级终端数据，且公告日晚于研究时点（2026-01-15），存在前视偏差风险，需以正式年报复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a><a class="citation" href="#source-6">来源6</a></p>
+<h3>第2章第2节 · 需求驱动因素与细分市场变化</h3>
+<p>需求驱动因素方面，新能源汽车渗透率提升与政策支持是主要动力，但缺乏具体数据支撑。宁德时代2026年一季度国内市占率47.7%（C级证据），显示龙头地位稳固，但缺乏比亚迪、中创新航份额数据，无法完成三方对比。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a><a class="citation" href="#source-7">来源7</a></p>
+<p>亿纬锂能与国轩高科2026年上半年归母净利润分别同比增长105.66%和278.05%（C级证据），可能反映二线电池企业盈利能力改善，但基数效应和C级证据质量需谨慎对待。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a><a class="citation" href="#source-8">来源8</a></p>
+<p>上述二线企业数据为C级文档证据，且晚于研究时点，存在前视偏差，仅作定性参考，不参与计算。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a><a class="citation" href="#source-1">来源1</a></p>
+
+</section>
+<section class="chapter" id="chapter-3">
+<h2>第三章 · 产业链与利润分配</h2>
+<p class="chapter-summary">上游资源、原材料与关键供应环节；中游核心产品、制造与服务环节</p>
+<h3>第3章第1节 · 上游资源、原材料与关键供应环节</h3>
+<p>当前可用证据不足以对“上游资源、原材料与关键供应环节”形成可靠事实判断，本节保留研究位置，待补充数据后复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a><a class="citation" href="#source-6">来源6</a></p>
+<p>湖南裕能布局锂电池回收业务，反映产业链向回收环节延伸的趋势。湖南裕能2023年半年报显示设立湖南裕能循环开展锂电池回收业务，但该业务规模及盈利贡献尚不明确。该结论基于单一C级证据，置信度较低，需进一步验证。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a><a class="citation" href="#source-7">来源7</a></p>
+<p>当前可用证据不足以对“上游资源、原材料与关键供应环节”形成可靠事实判断，本节保留研究位置，待补充数据后复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a><a class="citation" href="#source-8">来源8</a></p>
+<h3>第3章第2节 · 中游核心产品、制造与服务环节</h3>
+<p>宁德时代与行业相关系数高达92.12%，可作为行业景气度的代理指标。该相关系数表明其股价走势与行业高度同步，但证据等级为C级，计算方法与样本区间未披露，且相关系数不代表因果关系。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a><a class="citation" href="#source-1">来源1</a></p>
+<p>亿纬锂能与行业相关系数为64.05%，低于宁德时代，可能反映其业务结构或市场预期与行业存在差异。该差异可能源于产品结构、客户群体或市场定位的不同，但缺乏具体数据支持，仅作定性参考。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a><a class="citation" href="#source-2">来源2</a></p>
+
+</section>
+<section class="chapter" id="chapter-4">
+<h2>第四章 · 竞争格局</h2>
+<p class="chapter-summary">市场结构、集中度与竞争阶段；主要参与者及其竞争位置</p>
+<h3>第4章第1节 · 市场结构、集中度与竞争阶段</h3>
+<p>宁德时代2026年一季度国内动力电池市占率达47.7%，同比提升3.4个百分点，显示行业集中度较高，龙头地位稳固。该数据来自同花顺产业链解读文档，属于C级证据，未提供原始数据来源，且研究时点早于2026年一季度，存在前视偏差，需以权威机构数据复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a><a class="citation" href="#source-8">来源8</a></p>
+<p>宁德时代与比亚迪的净利率差异（17.04% vs 4.06%）反映两家公司商业模式差异：宁德时代作为动力电池供应商，产品附加值较高；比亚迪作为垂直整合的汽车制造商，收入规模大但利润被整车及零部件业务摊薄。该差异可能还受产品结构、补贴、非经常性损益等因素影响，需进一步拆解分部数据验证。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a><a class="citation" href="#source-1">来源1</a></p>
+<p>宁德时代国内动力电池市占率接近50%，显示行业集中度较高，龙头地位稳固，但比亚迪、中创新航等竞争对手的份额数据缺失，无法进行完整对比。该结论仅依赖单一C级证据，且缺乏竞争对手数据，结论强度不足。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a><a class="citation" href="#source-2">来源2</a></p>
+<h3>第4章第2节 · 主要参与者及其竞争位置</h3>
+<p>2025财年（截至2025-12-31，未经审计）宁德时代营业收入4237.02亿元，同比增长17.04%；归母净利润722.01亿元，归母净利率17.04%。比亚迪营业收入8039.65亿元，同比增长3.46%；归母净利润326.19亿元，归母净利率4.06%。数据为未经审计的B级终端数据，且公告日晚于研究时点，存在前视偏差风险，需以正式年报复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a><a class="citation" href="#source-3">来源3</a></p>
+<p>宁德时代与比亚迪的净利率差异（17.04% vs 4.06%）反映两家公司商业模式差异：宁德时代作为动力电池供应商，产品附加值较高；比亚迪作为垂直整合的汽车制造商，收入规模大但利润被整车及零部件业务摊薄。该差异可能还受产品结构、补贴、非经常性损益等因素影响，需进一步拆解分部数据验证。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a><a class="citation" href="#source-4">来源4</a></p>
+
+</section>
+<section class="chapter" id="chapter-5">
+<h2>第五章 · 财务质量与估值参照</h2>
+<p class="chapter-summary">收入、利润与盈利能力；现金流、资产负债与财务质量</p>
+<h3>第5章第1节 · 收入、利润与盈利能力</h3>
+<p>宁德时代2025财年营业收入4237.02亿元，同比增长17.04%；归母净利润722.01亿元，归母净利率17.04%。该数据为未经审计的B级终端数据，公告日与研究时点相同，存在前视偏差风险，需以正式年报复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a><a class="citation" href="#source-2">来源2</a></p>
+<p>比亚迪2025财年营业收入8039.65亿元，同比增长3.46%；归母净利润326.19亿元，归母净利率4.06%。其收入规模约为宁德时代的1.9倍，但净利率显著偏低，反映垂直整合模式下利润被整车及零部件业务摊薄。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a><a class="citation" href="#source-3">来源3</a></p>
+<p>宁德时代与比亚迪的净利率差异（17.04% vs 4.06%）反映商业模式差异：前者作为动力电池供应商，产品附加值较高；后者作为垂直整合的汽车制造商，收入规模大但利润被整车及零部件业务摊薄。该差异可能还受产品结构、补贴、非经常性损益等因素影响，需进一步拆解分部数据验证。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a><a class="citation" href="#source-4">来源4</a></p>
+<h3>第5章第2节 · 现金流、资产负债与财务质量</h3>
+<p>当前可用证据不足以对“现金流、资产负债与财务质量”形成可靠事实判断，本节保留研究位置，待补充数据后复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a><a class="citation" href="#source-5">来源5</a></p>
+<p>研发投入方面，宁德时代2025财年研发支出221.47亿元，比亚迪研发支出634.41亿元。比亚迪研发支出绝对额显著高于宁德时代，但考虑到其收入规模约为宁德时代的1.9倍，研发强度（研发/收入）差异较小（约7.9% vs 5.2%），两者均保持较高研发投入以维持技术竞争力。该研发强度为推算值，基于B级数据，未考虑研发资本化差异。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a><a class="citation" href="#source-6">来源6</a></p>
+
+</section>
+<section class="chapter" id="chapter-6">
+<h2>第六章 · 宏观、政策与技术催化</h2>
+<p class="chapter-summary">宏观经济变量与行业传导路径；政策、监管与合规环境</p>
+<h3>第6章第1节 · 宏观经济变量与行业传导路径</h3>
+<p>中国PPI当月同比自2025年12月的-1.9%持续回升，2026年6月达4.1%，显示工业品价格进入上行通道。该数据为宏观背景参考，与动力电池行业成本的相关性未经验证。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-3">来源3</a><a class="citation" href="#source-4">来源4</a></p>
+<p>PPI同比转正并加速上行，可能反映上游资源品及工业品需求回暖或供给收缩。若上游原材料价格同步上涨，将推升电池制造成本，压缩中游电池企业利润空间。该推断为逻辑推演，PPI与碳酸锂价格的相关性未直接验证。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-4">来源4</a><a class="citation" href="#source-5">来源5</a></p>
+<h3>第6章第2节 · 政策、监管与合规环境</h3>
+<p>本节旨在说明政策时点、范围和可能影响。当前输入中未包含直接针对动力电池行业的政策、监管或合规数据，因此无法展开具体分析。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a><a class="citation" href="#source-7">来源7</a></p>
+
+</section>
+<section class="chapter" id="chapter-7">
+<h2>第七章 · 情景、风险与研究结论</h2>
+<p class="chapter-summary">基准、乐观和悲观三种情景；核心风险、反证条件与跟踪指标</p>
+<h3>第7章第1节 · 基准、乐观和悲观三种情景</h3>
+<p>基准情景假设2025年财务数据仅作参考，PPI同比在2026年1-8月波动于-1.9%至4.1%之间，反映宏观价格环境，但未直接对应动力电池行业价格。该情景下，若PPI持续为正且上行，可能推升上游原材料成本，压缩中游电池企业利润空间；但PPI与碳酸锂价格的相关性未直接验证，此推断为逻辑推演。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-5">来源5</a><a class="citation" href="#source-6">来源6</a></p>
+<p>乐观情景假设宁德时代2026年一季度国内市占率47.7%（同比提升3.4个百分点）的表述可信，且行业集中度进一步提升。该情景下，若碳酸锂价格企稳回升且电池企业成功将成本转嫁下游，叠加需求端韧性，头部企业盈利有望改善。但该市占率数据来自C级文档证据，且研究时点早于2026年一季度，存在前视偏差，需以权威机构数据复核。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-6">来源6</a><a class="citation" href="#source-7">来源7</a></p>
+<p>悲观情景假设碳酸锂价格持续下跌，引发电池价格战，行业毛利率普遍下滑。该情景下，若PPI再度转负，可能反映制造业需求疲软，对动力电池行业需求端构成压力。但当前缺乏碳酸锂价格直接数据，PPI与行业成本的相关性未经验证，该情景的触发条件尚不明确。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-7">来源7</a><a class="citation" href="#source-8">来源8</a></p>
+<h3>第7章第2节 · 核心风险、反证条件与跟踪指标</h3>
+<p>核心数据缺失风险是当前分析的主要限制。装机量、市场份额、碳酸锂价格等关键行业数据未获取，导致供需格局、竞争格局和成本传导分析缺乏量化基础，结论置信度受限。该风险直接影响行业趋势判断的可靠性，需从权威机构获取数据以补充。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-8">来源8</a><a class="citation" href="#source-1">来源1</a></p>
+<p>前视偏差风险源于宁德时代、比亚迪2025年年报数据公告日晚于研究时点2026-01-15，且为未审计数据。该风险影响对两家公司盈利能力的对比判断，需在报告中标注数据时效性限制，仅作参考，不用于回测或当前判断。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-1">来源1</a><a class="citation" href="#source-2">来源2</a></p>
+<p>宏观价格波动风险方面，2026年PPI同比数据波动较大（-1.9%至4.1%），若PPI持续为负，可能反映制造业需求疲软，对动力电池行业需求端构成压力。但PPI与行业成本的相关性未经验证，该风险传导路径存在不确定性。</p>
+<p class="reference">资料依据：<a class="citation" href="#source-2">来源2</a><a class="citation" href="#source-3">来源3</a></p>
+
+</section>
+<section class="source-index chapter" id="source-index">
+<h2>来源与证据索引</h2>
+<table class="quality-table source-table">
+<caption>表附-1 · 来源与证据索引</caption>
+<thead><tr><th>序号</th><th>材料</th><th>发布主体</th><th>日期</th><th>要点</th><th>证据编号</th></tr></thead>
+<tbody><tr id="source-1"><td>1</td><td>宁德时代 2025 营收/净利/研发（问财财务）</td><td>同花顺问财 · 财务数据</td><td>2025-12-31</td><td>营收 4237.02 亿元，同比 +17.04%；归母净利 722.01 亿元；研发支出 221.47 亿元，费用率约 5.23%。</td><td>EV-RD-CATL</td></tr>
+<tr id="source-2"><td>2</td><td>比亚迪 2025 营收/净利/研发（问财财务）</td><td>同花顺问财 · 财务数据</td><td>2025-12-31</td><td>营收 8039.65 亿元，同比 +3.46%；归母净利 326.19 亿元；研发支出 634.41 亿元，费用率约 7.89%（含整车业务）。</td><td>EV-RD-BYD</td></tr>
+<tr id="source-3"><td>3</td><td>亿纬锂能 / 国轩高科 2025 财务与研发</td><td>同花顺问财 · 财务数据</td><td>2025-12-31</td><td>亿纬：营收 614.7 亿、研发 34.35 亿（约 5.59%）；国轩：营收 450.7 亿、研发 33.65 亿（约 7.47%）。</td><td>EV-RD-EVE</td></tr>
+<tr id="source-4"><td>4</td><td>工业级碳酸锂现货价（问财宏观，周日点）</td><td>同花顺问财 · 宏观数据</td><td>2026-09-15</td><td>2023-12 中旬约 9.4–10.2 万元/吨；2026-08 末约 15.4 万元/吨，9 月中旬回落至约 12.8 万元/吨。真实序列见图表。</td><td>EV-LI-SPOT</td></tr>
+<tr id="source-5"><td>5</td><td>动力和其他电池产量：当月值（问财宏观）</td><td>同花顺问财 · 宏观数据</td><td>2026-08-31</td><td>2023 年月度产量约 2.8–8.8 万单位；2025Q4–2026 持续抬升，2026-08 约 23.7 万单位（兆瓦时口径）。可作装机景气代理指标。</td><td>EV-BATT-OUT</td></tr>
+<tr id="source-6"><td>6</td><td>PPI 当月同比（问财宏观）</td><td>同花顺问财 · 宏观数据</td><td>2026-08-31</td><td>2025-12 至 2026-08：-1.9% → +3.8%，工业品价格进入上行通道。</td><td>EV-PPI</td></tr>
+<tr id="source-7"><td>7</td><td>宁德时代市占率定性表述（研报/溯源）</td><td>问财研报摘要 / 溯源分析</td><td>2026-01-15</td><td>溯源表述：2026 年一季度国内动力电池市占率达 47.7%，同比 +3.4pct。中创新航/比亚迪装机份额无结构化序列（后端缺口）。</td><td>EV-CATL-SHARE</td></tr>
+<tr id="source-8"><td>8</td><td>装机量与三家份额结构化数据缺口</td><td>后端 SkillHub 缺口披露</td><td>2026-01-15</td><td>REQ 装机量/中创新航份额：hithink 各通道无权威结构化序列，已列入研究边界未编造。公开口径补充：2024 装机约 548GWh（+41.5%），份额宁德约 43%、比亚迪约 25%、中创新航约 8%。</td><td>EV-GAP-INSTALL</td></tr></tbody>
+</table>
+</section>
+<div class="footer-note">
+<p>本报告由数据解读智能体的结构化结论、图表智能体的已校验图表与章节撰写智能体的正文确定性组装；报告融合智能体不新增事实、不改写数据结论。</p>
+<p><strong>免责声明：</strong>本报告仅用于行业研究与信息交流，不构成证券投资建议、收益保证或交易邀约。</p>
+</div>
+</main>
+</body>
+</html>
