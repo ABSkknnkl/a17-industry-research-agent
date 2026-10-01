@@ -464,7 +464,7 @@
        只收 hero 图组这一处间距就能让图回到本页，而且**不缩小任何图表**
        （保持满宽与原始长宽比，只压标题与题注的外边距）。
 
-       ⚠️ 收紧量必须够大。第一版只收到「margin 1mm / padding .5mm / 标题 1mm /
+       [注意] 收紧量必须够大。第一版只收到「margin 1mm / padding .5mm / 标题 1mm /
        题注 .8mm」，四个 profile 里只有 classic 与 data_intensive 让图回到了本页；
        modern 与 narrative 仍差约 0.1–2mm —— 因为各 profile 字体栈不同，同样的
        段落行高差 1.5–2mm，章首引言结束位置就跟着差。现在的取值再往下压约 2.5mm，
@@ -552,10 +552,10 @@
        只是从第 19 页挪到第 20 页（classic 0.643 → 0.637），modern 还多出一个
        0.651 的临界页。原因是这段空白来自**附录首个块 `break-before: page`**
        把第 7 章的尾巴截断，与条目原子性无关。已回退，不要再试第二次。
-       ⚠️ 这条注释会随 HTML 一起交付（style 标签内的注释不会被剥离），所以只能写
+       [注意] 这条注释会随 HTML 一起交付（style 标签内的注释不会被剥离），所以只能写
        「第 7 章」不能写机器编号 —— 机器编号只允许出现在 Jinja 注释里（渲染时会被
        剥掉，见本文件下方的图表落位说明）。
-       ⚠️ 另外：**注释正文里绝对不能出现注释的闭合符号**。实测踩过：描述「注释
+       [注意] 另外：**注释正文里绝对不能出现注释的闭合符号**。实测踩过：描述「注释
        会随 HTML 交付」时把闭合符号原样写进了注释，于是它提前闭合了本条注释，
        后面那段说明变成裸 CSS，浏览器按错误恢复跳过了后续规则 —— 分页随之改变
        （第 19 页的留白挪到了第 20 页）。要描述它就用「闭合符号」这样的措辞。 */
@@ -729,7 +729,7 @@
         <div class="meta-row"><span class="k">报告编号</span><span class="v">{{ view.report_id }}</span></div>
         <div class="meta-row"><span class="k">章节构成</span><span class="v">正文 {{ view.chapters|length }} 章 · 图表 {{ view.charts|length }} 项</span></div>
         <div class="meta-row"><span class="k">证据来源</span><span class="v">{{ view.evidence_catalog|length }} 组数据源</span></div>
-        <div class="meta-row"><span class="k">发布状态</span><span class="v">{{ view.delivery_status }}</span></div>
+        <div class="meta-row"><span class="k">发布状态</span><span class="v">{{ view.delivery_status | format_status }}</span></div>
       </div>
       <p class="cover-disclosure">{{ view.disclaimer }}</p>
     </div>
@@ -755,14 +755,14 @@
 
   <section class="chapter" id="executive-summary" data-page-role="narrative">
     <div class="chapter-intro">
-      <header class="chapter-heading"><span class="chapter-number">摘</span><h2>执行摘要与核心研判</h2></header>
+      <header class="chapter-heading"><h2>执行摘要与核心研判</h2></header>
       <p class="chapter-summary">{{ view.executive_summary.headline }}</p>
     </div>
     {% if view.executive_summary.metric_cards %}
     <div class="cover-hero-facts" style="margin:4mm 0">
       {% for mc in view.executive_summary.metric_cards %}
       <div class="hero-fact">
-        <span class="hf-value">{{ mc.value }}{{ mc.unit or "" }}</span>
+        <span class="hf-value">{{ format_card_value(mc.value, mc.unit) }}</span>
         <span class="hf-label">{{ mc.label }}</span>
       </div>
       {% endfor %}
@@ -773,7 +773,7 @@
       {% for c in view.executive_summary.conclusions %}
       <li>{{ c.text }}
         {% if c.evidence_ids %}<span class="citation">{{ lookup.get(c.evidence_ids[0], "") }}</span>{% endif %}
-        <span class="reference">置信度 {{ c.confidence }}</span>
+        <span class="reference">置信度：{{ c.confidence | format_confidence }}</span>
       </li>
       {% endfor %}
     </ul>
@@ -816,11 +816,13 @@
       {% for chart in sec_charts %}
       {% set ns.fig = ns.fig + 1 %}
       <figure class="chart chart-area chart-size-half" data-chart-id="{{ chart.figure_number or ('图' ~ ns.fig) }}">
-        <div class="figure-heading">{{ chart.figure_number or ("图" ~ ns.fig) }}　{{ chart.title }}</div>
+        <div class="figure-heading sr-only" style="display:none">{{ chart.figure_number or ("图" ~ ns.fig) }}　{{ chart.title }}</div>
         <div class="chart-svg-wrap">{{ chart.svg | safe }}</div>
-        <figcaption>
+        <figcaption style="display:none">
           {% if chart.insight_goal %}<div class="chart-goal">研判焦点：{{ chart.insight_goal }}</div>{% endif %}
-          <div class="chart-source">数据来源：{{ chart.source_line or "同花顺问财、企业财报与行业公开数据" }}</div>
+          {% set raw_src = chart.source_line or "同花顺问财、企业财报与行业公开数据" %}
+          {% set clean_src = raw_src | replace("数据来源：", "") | replace("数据来源:", "") | trim %}
+          <div class="chart-source">数据来源：{{ clean_src }}</div>
         </figcaption>
       </figure>
       {% endfor %}
@@ -855,7 +857,7 @@
           <tr id="source-{{ s.number }}">
             <td style="text-align: center; font-weight: 600;">来源{{ s.number }}</td>
             <td><strong>{{ s.entity or view.subject }}</strong> · {{ s.metric | format_metric }}</td>
-            <td style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;">{{ s.value | evidence_val(s.unit) }}</td>
+            <td style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;">{{ s.value | evidence_val(s.unit, s.metric) }}</td>
             <td style="text-align: center;">{{ s.period or "-" }}</td>
             <td style="text-align: center;"><span class="domain-tag">{{ s.domain | format_domain }}</span></td>
           </tr>

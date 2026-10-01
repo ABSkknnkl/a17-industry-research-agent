@@ -229,6 +229,31 @@ class ChartSkillLinter:
                         severity="error",
                     ))
 
+            # 3.3b Donut / Pie forbids non-additive rate/growth/ratio metrics (DEF-02)
+            if ctype in ("pie", "donut", "structure_donut"):
+                title_lower = title.lower()
+                is_non_additive = False
+                for eid in eids:
+                    if eid in evidence_index:
+                        ref = evidence_index[eid]
+                        met = getattr(ref, "metric", None) if not isinstance(ref, dict) else ref.get("metric")
+                        if met and any(k in str(met).lower() for k in ("率", "比", "价", "price", "pe", "pb", "ps", "roe", "roa", "eps", "每股", "收益率", "增速", "增长率", "margin", "ratio", "yoy", "growth")):
+                            is_non_additive = True
+                            break
+                if any(k in title_lower for k in ("率", "增速", "增长率", "yoy", "margin", "ratio", "roe", "roa", "pe", "pb")):
+                    is_non_additive = True
+                if is_non_additive:
+                    violations.append(ChartLinterViolation(
+                        code="donut_non_additive_metric",
+                        message=(
+                            f"图表《{title}》使用环形图/饼图展示不可加总的强度量（如增速、比率、估值倍数）。"
+                            f"环形图/饼图严格表示部分占总体的比例构成，只允许用于加总有意义的广延量或明确的构成份额，"
+                            f"严禁用于同比增长率、毛利率等比率指标的求和展示"
+                        ),
+                        chart_title=title,
+                        severity="error",
+                    ))
+
         # 3.4 Redundant duplicate line and area charting for the identical evidence
         line_area_map: dict[frozenset[str], list[str]] = {}
         for cand in candidates:

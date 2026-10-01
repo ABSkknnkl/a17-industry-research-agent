@@ -43,7 +43,6 @@
   <!-- Core Takeaways with Numbered Step Badges -->
   <div class="takeaways-container">
     <div class="takeaways-header">
-      <span class="header-icon">✦</span>
       <h3 class="subsection-title">核心研判结论与产业链驱动要素</h3>
     </div>
     <div class="takeaway-list">
@@ -79,7 +78,7 @@
     {% if view.executive_summary.risks %}
     <div class="boundary-card risk-card">
       <div class="boundary-card-header">
-        <span class="boundary-icon">⚠️</span>
+        <span class="boundary-badge risk">[风险提示]</span>
         <span class="boundary-title">核心投资风险与敏感性提示</span>
       </div>
       <ul class="boundary-list">
@@ -93,7 +92,7 @@
     {% if view.executive_summary.research_boundaries %}
     <div class="boundary-card note-card">
       <div class="boundary-card-header">
-        <span class="boundary-icon">🔍</span>
+        <span class="boundary-badge note">[边界说明]</span>
         <span class="boundary-title">研究边界与数据口径说明</span>
       </div>
       <ul class="boundary-list">

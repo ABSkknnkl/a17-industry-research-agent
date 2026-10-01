@@ -70,7 +70,14 @@ METRIC_REGISTRY: dict[str, MetricMeta] = {
         canonical_name="总市值",
         dimension=MetricDimension.CURRENCY_AMOUNT,
         preferred_unit="亿元",
-        aliases=("总市值", "A股总市值", "市值", "market_value"),
+        aliases=("总市值", "A股总市值", "市值", "market_value", "total_market_cap"),
+    ),
+    "circulating_market_cap": MetricMeta(
+        code="circulating_market_cap",
+        canonical_name="流通市值",
+        dimension=MetricDimension.CURRENCY_AMOUNT,
+        preferred_unit="亿元",
+        aliases=("流通市值", "最新a股流通市值", "a股流通市值", "float_market_cap", "circulating_market_cap"),
     ),
     "total_assets": MetricMeta(
         code="total_assets",
@@ -357,6 +364,8 @@ class DimensionGuard:
 
         Prevents dimensional fracturing where entity A is in '亿元' and entity B is in '万元'.
         """
+        if any(u in ("%", "百分比") for u in units if u):
+            return "%"
         if not values:
             return "亿元"
         # If any record explicitly uses 亿元, or any converted value exceeds 1e8, unify to 亿元

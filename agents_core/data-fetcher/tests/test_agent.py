@@ -241,8 +241,10 @@ def test_agent_stops_after_two_no_progress_iterations():
     result = asyncio.run(agent.run(
         ResearchRequest(industry="低空经济", max_iterations=6), save_artifacts=False
     ))
-    assert result.status == "partial"
-    assert result.stop_reason == "no_progress"
+    # P0-1 修正期望：空数据集不再标记为 partial 成功，一律降级为 blocked 并显式上报
+    assert result.status == "blocked"
+    assert result.stop_reason == "empty_dataset"
+    assert any(e.stage == "data_fetch" for e in result.errors)
 
 
 class SlowGateway:
@@ -308,5 +310,44 @@ def test_agent_decision_coerces_integer_task_id_and_dependencies():
     decision = AgentDecision.model_validate(raw)
     assert decision.tasks[0].task_id == "1"
     assert decision.tasks[0].depends_on == ["0"]
+
+
+def test_deterministic_guard_enforces_four_company_financials():
+    from data_fetcher.models import Domain, ResearchRecord, SourceRef, StructuredResearchDataset, ResearchRequirement
+    agent = DataFetcherAgent(llm=FakeLLM(), skillhub=SkillHub(gateway=FakeGateway()))
+    source = SourceRef(
+        task_id="companies", skill_id="hithink-astock-selector", skill_version="1.0.0",
+        query="低空经济公司", trace_id="c" * 64, retrieved_at="2026-09-14T00:00:00Z",
+    )
+    # 4 家已知企业
+    dataset = StructuredResearchDataset(
+        companies=[
+            ResearchRecord(record_id="R-1", domain=Domain.COMPANIES, entity_name="企业一", entity_code="000001.SZ", metric="总市值", value=1000, source=source),
+            ResearchRecord(record_id="R-2", domain=Domain.COMPANIES, entity_name="企业二", entity_code="000002.SZ", metric="总市值", value=800, source=source),
+            ResearchRecord(record_id="R-3", domain=Domain.COMPANIES, entity_name="企业三", entity_code="000003.SZ", metric="总市值", value=600, source=source),
+            ResearchRecord(record_id="R-4", domain=Domain.COMPANIES, entity_name="企业四", entity_code="000004.SZ", metric="总市值", value=400, source=source),
+        ],
+        financials=[
+            ResearchRecord(record_id="R-f1", domain=Domain.FINANCIALS, entity_name="企业一", entity_code="000001.SZ", metric="revenue", value=100, source=source),
+        ]
+    )
+    req = ResearchRequirement(
+        requirement_id="domain_financials",
+        label="financials 核心数据",
+        domain=Domain.FINANCIALS,
+        requires_entity_code=True,
+    )
+    coverage = agent._evaluate_requirement(dataset, req)
+    assert not coverage.passed
+    assert any("需覆盖至少 4 家" in m for m in coverage.missing)
+
+    # 补充其余 3 家财务后应通过
+    dataset.financials.extend([
+        ResearchRecord(record_id="R-f2", domain=Domain.FINANCIALS, entity_name="企业二", entity_code="000002.SZ", metric="revenue", value=80, source=source),
+        ResearchRecord(record_id="R-f3", domain=Domain.FINANCIALS, entity_name="企业三", entity_code="000003.SZ", metric="revenue", value=60, source=source),
+        ResearchRecord(record_id="R-f4", domain=Domain.FINANCIALS, entity_name="企业四", entity_code="000004.SZ", metric="revenue", value=40, source=source),
+    ])
+    coverage2 = agent._evaluate_requirement(dataset, req)
+    assert coverage2.passed
 
 

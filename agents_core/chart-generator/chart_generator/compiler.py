@@ -108,6 +108,11 @@ class EChartsCompiler:
 
         # 6. Donut / Pie
         if t_str in ("pie", "donut", "structure_donut"):
+            metric_check = f"{table.primary_series_name or ''} {title}".lower()
+            is_non_additive = any(k in metric_check for k in ("率", "比", "价", "price", "pe", "pb", "ps", "roe", "roa", "eps", "每股", "收益率", "增速", "增长率", "margin", "ratio", "yoy", "growth"))
+            if is_non_additive:
+                # 严格拦截率值/比率指标进入环形图，自动安全降级为对比柱状图 (DEF-02)
+                return EChartsCompiler._compile_bar(table, title, base_grid)
             return EChartsCompiler._compile_pie_donut(table, title, donut=(t_str in ("donut", "structure_donut")))
 
         # 7. Radar
@@ -515,10 +520,31 @@ class EChartsCompiler:
         counts: dict[str, int] = {"上游": 0, "中游": 0, "下游": 0}
 
         cat_assignments: list[str] = []
-        for i in range(n):
-            cat_name = "上游" if i < max(1, n // 3) else ("下游" if i >= 2 * n // 3 else "中游")
+        for i, c in enumerate(cats):
+            c_text = str(c).lower()
+            if any(k in c_text for k in ("上游", "原料", "材料", "元器件", "核心部件", "供给", "供应", "设备", "芯片", "资源", "研发", "原药", "基建", "零部件", "饲料", "育种", "晶圆", "电池", "正极", "负极", "电解液", "隔膜")):
+                cat_name = "上游"
+            elif any(k in c_text for k in ("中游", "制造", "加工", "系统", "集成", "组装", "整机", "生产", "成套", "装备", "代工", "平台", "模型", "产品", "器件", "本体", "整车", "主机厂")):
+                cat_name = "中游"
+            elif any(k in c_text for k in ("下游", "应用", "场景", "运营", "服务", "渠道", "销售", "终端", "分销", "零售", "商业", "消费", "交付", "客户", "出行", "充换电")):
+                cat_name = "下游"
+            else:
+                cat_name = "上游" if i < max(1, n // 3) else ("下游" if i >= 2 * n // 3 else "中游")
             cat_assignments.append(cat_name)
             counts[cat_name] += 1
+
+        # Rebalance if any stage is completely empty and total items >= 3
+        if n >= 3:
+            for target_stage in ["下游", "上游", "中游"]:
+                if counts[target_stage] == 0:
+                    donor_stage = max(counts, key=lambda s: counts[s])
+                    if counts[donor_stage] >= 2:
+                        for idx in range(n - 1, -1, -1):
+                            if cat_assignments[idx] == donor_stage:
+                                cat_assignments[idx] = target_stage
+                                counts[donor_stage] -= 1
+                                counts[target_stage] += 1
+                                break
 
         cur_idx: dict[str, int] = {"上游": 0, "中游": 0, "下游": 0}
         for i, c in enumerate(cats):
@@ -543,8 +569,13 @@ class EChartsCompiler:
                 "symbolSize": [180, 48],
             }
             if s_val is not None:
-                unit_str = table.series_units.get(table.primary_series_name, "") if table.primary_series_name else ""
-                node_dict["margin"] = f"{s_val}{unit_str}"
+                p_name = str(table.primary_series_name or "").lower()
+                is_margin_metric = any(k in p_name for k in ("毛利", "margin", "净利", "扣非", "收益率"))
+                if is_margin_metric:
+                    val_str = f"{s_val:.1f}%" if isinstance(s_val, (int, float)) else str(s_val)
+                    node_dict["margin"] = val_str if val_str.endswith("%") else f"{val_str}%"
+                else:
+                    node_dict["margin"] = "核心供给" if cat_name == "上游" else ("核心制造" if cat_name == "中游" else "终端应用")
             nodes.append(node_dict)
 
         up_ids = [n["id"] for n in nodes if n.get("category") == "上游"]

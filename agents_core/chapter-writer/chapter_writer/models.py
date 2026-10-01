@@ -71,10 +71,97 @@ class ChapterWritingOptions(BaseModel):
     max_repairs:int=Field(default=2,ge=0,le=4)
 
 
+def extract_dataset_industry(dataset: Any) -> str | None:
+    """Extracts or infers the primary industry/subject of the dataset."""
+    if not dataset:
+        return None
+    if isinstance(dataset, dict):
+        if isinstance(dataset.get("subject"), str) and dataset.get("subject").strip():
+            return dataset["subject"].strip()
+        if isinstance(dataset.get("industry"), str) and dataset.get("industry").strip():
+            return dataset["industry"].strip()
+    elif hasattr(dataset, "subject") and isinstance(dataset.subject, str) and dataset.subject.strip():
+        return dataset.subject.strip()
+
+    ind_records = getattr(dataset, "industry", None)
+    if ind_records is None and isinstance(dataset, dict):
+        ind_records = dataset.get("industry", [])
+    if isinstance(ind_records, list):
+        for r in ind_records:
+            metric = getattr(r, "metric", None) if not isinstance(r, dict) else r.get("metric")
+            val = getattr(r, "value", None) if not isinstance(r, dict) else r.get("value")
+            if metric == "industry_name" and val and isinstance(val, str) and val.strip():
+                return val.strip()
+            ent = getattr(r, "entity_name", None) if not isinstance(r, dict) else r.get("entity_name")
+            if ent and isinstance(ent, str) and ent.strip():
+                return ent.strip()
+
+    sources = getattr(dataset, "sources", None)
+    if sources is None and isinstance(dataset, dict):
+        sources = dataset.get("sources", [])
+    if sources and isinstance(sources, list):
+        for s in sources:
+            q = getattr(s, "query", None) if not isinstance(s, dict) else s.get("query")
+            if q and isinstance(q, str):
+                tokens = q.strip().split()
+                if tokens:
+                    first = tokens[0]
+                    if len(first) >= 2 and first not in ("查询", "股票", "A股", "行情"):
+                        return first
+
+    return None
+
+
+def validate_request_consistency(dataset: Any, subject: str | None) -> None:
+    """Validates that the input dataset's industry aligns with the requested subject."""
+    if not dataset or not subject:
+        return
+    if subject in ("研究主题", "默认主题", ""):
+        return
+    norm_sub = subject.strip().casefold()
+
+    # 1. 显式主题匹配
+    ds_sub = getattr(dataset, "subject", None) or (dataset.get("subject") if isinstance(dataset, dict) else None)
+    if ds_sub and isinstance(ds_sub, str) and ds_sub.strip():
+        norm_ds = ds_sub.strip().casefold()
+        if norm_ds in norm_sub or norm_sub in norm_ds:
+            return
+
+    # 2. 溯源检索词中是否包含目标行业主题
+    sources = getattr(dataset, "sources", None) or (dataset.get("sources", []) if isinstance(dataset, dict) else [])
+    for s in sources:
+        q = getattr(s, "query", None) or (s.get("query") if isinstance(s, dict) else None)
+        if q and isinstance(q, str):
+            q_cf = q.casefold()
+            if norm_sub in q_cf or any(token in q_cf for token in norm_sub.split() if len(token) >= 2):
+                return
+
+    # 3. 行业与产业链记录匹配
+    for dom_key in ("industry", "industry_chain"):
+        records = getattr(dataset, dom_key, None) or (dataset.get(dom_key, []) if isinstance(dataset, dict) else [])
+        for r in records:
+            ent = getattr(r, "entity_name", None) or (r.get("entity_name") if isinstance(r, dict) else None)
+            val = getattr(r, "value", None) or (r.get("value") if isinstance(r, dict) else None)
+            for item in (ent, val):
+                if item and isinstance(item, str):
+                    item_cf = item.casefold()
+                    if norm_sub in item_cf or item_cf in norm_sub:
+                        return
+
+    # 4. 兜底提取推断行业名称，若存在实质行业冲突则拦截
+    ds_ind = extract_dataset_industry(dataset)
+    if not ds_ind:
+        return
+    norm_ds = ds_ind.strip().casefold()
+    if norm_ds not in norm_sub and norm_sub not in norm_ds:
+        raise ValueError(f"输入数据集行业 ({ds_ind}) 与请求分析主题 ({subject}) 不一致！")
+
+
 class ChapterWritingRequest(BaseModel):
     model_config=ConfigDict(extra="forbid")
     report:InterpretationReport
     charts:ChartResult|None=None
+    input_dataset:dict[str, Any]|None=None
     outline:list[OutlineChapter]|None=None
     options:ChapterWritingOptions=Field(default_factory=ChapterWritingOptions)
 
@@ -85,6 +172,8 @@ class ChapterWritingRequest(BaseModel):
             if len(outline)!=7 or sum(len(c.sections) for c in outline)!=21: raise ValueError("custom outline must contain exactly 7 chapters and 21 sections")
             ids=[c.chapter_id for c in outline]+[s.section_id for c in outline for s in c.sections]
             if len(ids)!=len(set(ids)): raise ValueError("outline ids must be unique")
+        if self.input_dataset and self.report and self.report.subject:
+            validate_request_consistency(self.input_dataset, self.report.subject)
         return self
 
 

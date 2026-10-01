@@ -45,7 +45,7 @@ REMOTE_SKILL_DOMAINS: dict[str, Domain] = {
     "hithink-insresearch-query": Domain.REPORTS,
     "hithink-macro-query": Domain.MACRO,
     "hithink-management-query": Domain.COMPANIES,
-    "hithink-market-query": Domain.INDUSTRY,
+    "hithink-market-query": Domain.COMPANIES,
     "hithink-sector-selector": Domain.INDUSTRY,
     "hithink-usstock-selector": Domain.COMPANIES,
     "hithink-zhishu-query": Domain.INDUSTRY,
@@ -149,13 +149,183 @@ def _extract_records(payload: Any, keys: tuple[str, ...]) -> list[dict[str, Any]
     return []
 
 
-def simplify_query(query: str) -> str:
-    """Conservatively relax a query while retaining its nouns and time bounds."""
-    relaxed = re.sub(r"(?:请|帮我|详细|全面|深入|最新|核心|代表性|龙头)", " ", query)
+def record_query_telemetry(
+    task_id: str,
+    skill_name: str,
+    domain: str,
+    original_query: str,
+    relaxed_query: str | None,
+    success: bool,
+    row_count: int,
+    stage: str,
+    error: str | None = None,
+) -> None:
+    """Record query performance and zero-result anomalies for continuous benchmark expansion."""
+    try:
+        telemetry_dir = Path(__file__).resolve().parents[3] / "scratch"
+        telemetry_dir.mkdir(parents=True, exist_ok=True)
+        telemetry_file = telemetry_dir / "iwencai_query_telemetry.jsonl"
+        entry = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "task_id": task_id,
+            "skill_name": skill_name,
+            "domain": domain,
+            "original_query": original_query,
+            "relaxed_query": relaxed_query,
+            "stage": stage,
+            "success": success,
+            "row_count": row_count,
+            "error": error,
+        }
+        with open(telemetry_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
+def relax_level1_predicates(query: str) -> str:
+    """Level 1: Strip restrictive numerical inequalities, ranking bounds, and superfluous natural language."""
+    # 1. 剔除括号内修饰说明内容，如（eVTOL 无人机通航基础设施）
+    relaxed = re.sub(r"[（\(][^）\)]*[）\)]", "", query)
+    # 2. 剔除标点符号并替换为空格
     relaxed = re.sub(r"[，。！？；、,;!?]+", " ", relaxed)
-    relaxed = re.sub(r"\s+", " ", relaxed).strip()
-    relaxed = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])", "", relaxed)
+    # 3. 剔除自然语言引导废话（保留核心材料/核心技术等专业名词）
+    relaxed = re.sub(
+        r"(?:请|帮我|详细|全面|深入|最新(?=数据|信息|情况|行业)|核心(?=企业|龙头|标的|公司)|代表性|龙头|主营业务与|高度相关|企业按|按A股|取前\d+~\d+家|取前\d+家|前\d+~\d+家|排名前\d+家)",
+        "",
+        relaxed,
+    )
+    # 4. 剥离严苛的数值阈值过滤条件（长单位优先，如亿元优先于亿），避免过度约束导致零召回
+    relaxed = re.sub(
+        r"(?:最新)?(?:总市值|a股流通市值|流通市值|市值|动态市盈率|静态市盈率|市盈率|市净率|市销率|最新涨跌幅|涨跌幅|成交额|换手率|收盘价|最新价)\s*(?:大于|小于|高于|低于|>=|<=|>|<|=)\s*[0-9\.]+\s*(?:亿元|万元|万|亿|%|倍)?",
+        "",
+        relaxed,
+    )
+    # 5. 合并多余空白
+    relaxed = re.sub(r"[ \t]+", " ", relaxed).strip()
     return relaxed or query
+
+
+_METRIC_AND_ATTRIBUTE_KEYWORDS = (
+    "市盈率", "市净率", "市销率", "pe", "pb", "ps", "pe_ttm", "pe_lyr",
+    "涨跌幅", "板块排名", "行业排名", "区间涨跌幅", "排名",
+    "营业收入", "营业总收入", "营收", "主营业务收入", "净利润", "归母净利润", "扣非净利润",
+    "毛利率", "销售毛利率", "综合毛利率", "净利率", "销售净利率", "净资产收益率", "roe", "roa", "roic",
+    "总资产", "总负债", "资产负债率", "资产总计", "负债合计",
+    "现金流", "经营现金流", "经营活动产生的现金流量净额", "研发费用", "研发投入",
+    "总市值", "流通市值", "a股流通市值", "最新价", "收盘价", "换手率", "成交额", "成交量", "振幅",
+    "分红", "股息率", "每股收益", "每股净资产", "eps", "bps",
+    "流动比率", "速动比率", "主营业务", "主营构成", "分产品收入占比", "分产品",
+    "工业增加值", "国内生产总值", "gdp", "cpi", "ppi",
+    "当月同比", "当季同比", "同比增长", "环比增长", "月度", "季度", "半年度", "年度",
+    "近1年", "近2年", "近3年", "近4年", "近5年", "近3个月", "近6个月",
+)
+
+_TAIL_MODIFIERS = {
+    "A股", "a股", "按总市值降序", "按市值降序", "按涨跌幅降序", "按动态市盈率升序", "按市盈率升序"
+}
+
+
+def _is_metric_or_attribute_token(token: str) -> bool:
+    """Detect whether a token is a financial metric, ranking attribute, or temporal constraint."""
+    t = re.sub(r"[\(\[（].*?[\)\]）]", "", token).strip().lower()
+    if not t:
+        return True
+    if any(k == t for k in _METRIC_AND_ATTRIBUTE_KEYWORDS):
+        return True
+    if any(
+        t.startswith(k) or t.endswith(k)
+        for k in (
+            "市盈率", "市净率", "市销率", "涨跌幅", "排名", "营业收入",
+            "净利润", "毛利率", "净利率", "增加值", "同比", "环比",
+        )
+    ):
+        return True
+    return False
+
+
+def _clean_subject_term(term: str) -> str:
+    """Normalize subject terms by stripping generic domain suffixes like '行业' or '概念'."""
+    cleaned = re.sub(r"(?:行业|板块|概念|赛道|产业|制造业|指数)$", "", term).strip()
+    return cleaned if len(cleaned) >= 2 else term
+
+
+def relax_level2_disjunction(query: str) -> str:
+    """Level 2: Convert space-separated concepts into '或' disjunction to break iWenCai strict AND trap.
+
+    Crucially isolates business concepts from financial metric names (e.g. 市盈率, 市净率, 涨跌幅)
+    so metrics are NEVER joined with '或' clauses, which would cause cross-industry giant pollution.
+    """
+    cleaned = relax_level1_predicates(query)
+    tokens = cleaned.split()
+    if len(tokens) <= 1:
+        return cleaned
+
+    tail_modifiers: list[str] = []
+    subject_tokens: list[str] = []
+
+    for t in tokens:
+        if t in _TAIL_MODIFIERS:
+            tail_modifiers.append(t)
+        elif _is_metric_or_attribute_token(t):
+            continue
+        else:
+            subject_tokens.append(t)
+
+    if not tail_modifiers:
+        tail_modifiers = ["A股", "按总市值降序"]
+
+    cleaned_subjects = [
+        _clean_subject_term(s)
+        for s in subject_tokens
+        if _clean_subject_term(s) and _clean_subject_term(s) not in ("或", "or", "OR")
+    ]
+
+    # 多概念（例如：动力电池 正负极材料 电解液）转换为或连接
+    if len(cleaned_subjects) >= 2:
+        disjunction = " 或 ".join(cleaned_subjects)
+        return f"{disjunction} {' '.join(tail_modifiers)}"
+    elif len(cleaned_subjects) == 1:
+        # 单一概念（例如：光模块行业 剥离后缀为 光模块），直接保留核心词，绝不将指标转化为'或'分支
+        return f"{cleaned_subjects[0]} {' '.join(tail_modifiers)}"
+
+    return cleaned
+
+
+def relax_level3_domain_meta_fallback(query: str, domain: Domain) -> str:
+    """Level 3: Universal domain meta-template fallback extracting the primary core noun."""
+    # 提取核心主题：若包含“关于...的”，提取中间；若有空格切分，取第一个实词；否则按常见长短截断
+    m = re.search(r"关于(.+?)的", query)
+    if m:
+        subject = m.group(1).strip()
+    else:
+        tokens = [
+            t for t in re.split(r"[\s,;]+", query)
+            if t and t not in ("A股", "a股", "按总市值降序", "最新", "包含", "查询") and not _is_metric_or_attribute_token(t)
+        ]
+        if tokens:
+            subject = tokens[0][:30]
+        else:
+            subject = "核心产业"
+
+    subject = _clean_subject_term(subject)
+
+    if domain in (Domain.COMPANIES, Domain.INDUSTRY):
+        return f"{subject} A股 按总市值降序"
+    elif domain == Domain.REPORTS:
+        return f"{subject} 深度研究 行业分析"
+    elif domain == Domain.NEWS:
+        return f"{subject} 行业动态 市场趋势"
+    elif domain == Domain.MACRO:
+        return "国内生产总值:当季同比 季度 近3年"
+    elif domain == Domain.INDUSTRY_CHAIN:
+        return f"{subject} 主营构成 分产品收入占比"
+    return f"{subject} A股"
+
+
+def simplify_query(query: str) -> str:
+    """Backward-compatible wrapper for Level 1 relaxation."""
+    return relax_level1_predicates(query)
 
 
 class IwencaiGateway:
@@ -347,31 +517,81 @@ class SkillHub:
                 last_error = exc
                 break
 
-        relaxed = simplify_query(query)
-        if last_error is None and relaxed != query:
-            attempts += 1
-            arguments["query"] = relaxed
-            trace_id = secrets.token_hex(32)
-            attempt_trace_ids.append(trace_id)
-            try:
-                payload = await self.gateway.call(spec, arguments, call_type="retry", trace_id=trace_id)
-                records = _extract_records(payload, spec.response_list_keys)
-                return SkillResult(
-                    task_id=task.task_id, skill_name=task.skill_name, skill_id=spec.skill_id,
-                    skill_version=spec.version, domain=spec.domain, query=relaxed, trace_id=trace_id,
-                    attempt_trace_ids=attempt_trace_ids,
-                    success=bool(records), attempts=attempts, records=records, raw_payload=payload,
-                    error=None if records else "Skill returned no records after query relaxation",
-                )
-            except Exception as exc:
-                last_error = exc
+        # 若直接返回 0 条记录且未发生网络/鉴权异常，启动全行业通用三级自愈级联
+        if last_error is None:
+            # 候选自愈语句阶梯
+            heal_candidates = [
+                ("level1_strip_bounds", relax_level1_predicates(query)),
+                ("level2_or_disjunction", relax_level2_disjunction(query)),
+                ("level3_domain_meta", relax_level3_domain_meta_fallback(query, spec.domain)),
+            ]
+            seen_queries = {query}
+
+            for stage_name, relaxed_candidate in heal_candidates:
+                if not relaxed_candidate or relaxed_candidate in seen_queries:
+                    continue
+                seen_queries.add(relaxed_candidate)
+                attempts += 1
+                arguments["query"] = relaxed_candidate
+                trace_id = secrets.token_hex(32)
+                attempt_trace_ids.append(trace_id)
+                try:
+                    payload = await self.gateway.call(spec, arguments, call_type="retry", trace_id=trace_id)
+                    records = _extract_records(payload, spec.response_list_keys)
+                    if records:
+                        record_query_telemetry(
+                            task_id=task.task_id,
+                            skill_name=task.skill_name,
+                            domain=spec.domain.value,
+                            original_query=query,
+                            relaxed_query=relaxed_candidate,
+                            success=True,
+                            row_count=len(records),
+                            stage=stage_name,
+                        )
+                        return SkillResult(
+                            task_id=task.task_id,
+                            skill_name=task.skill_name,
+                            skill_id=spec.skill_id,
+                            skill_version=spec.version,
+                            domain=spec.domain,
+                            query=relaxed_candidate,
+                            trace_id=trace_id,
+                            attempt_trace_ids=attempt_trace_ids,
+                            success=True,
+                            attempts=attempts,
+                            records=records,
+                            raw_payload=payload,
+                        )
+                except Exception as exc:
+                    last_error = exc
+
+        # 若三级自愈后仍无数据或报错，写入遥测账本
+        record_query_telemetry(
+            task_id=task.task_id,
+            skill_name=task.skill_name,
+            domain=spec.domain.value,
+            original_query=query,
+            relaxed_query=str(arguments.get("query")),
+            success=False,
+            row_count=0,
+            stage="exhausted",
+            error=str(last_error or "Skill returned no records after 3-level self-healing"),
+        )
 
         return SkillResult(
-            task_id=task.task_id, skill_name=task.skill_name, skill_id=spec.skill_id,
-            skill_version=spec.version, domain=spec.domain, query=str(arguments["query"]),
-            trace_id=trace_id or secrets.token_hex(32), attempt_trace_ids=attempt_trace_ids,
-            retrieved_at=datetime.now(timezone.utc), success=False,
-            attempts=attempts, error=str(last_error or "Skill returned no records"),
+            task_id=task.task_id,
+            skill_name=task.skill_name,
+            skill_id=spec.skill_id,
+            skill_version=spec.version,
+            domain=spec.domain,
+            query=str(arguments["query"]),
+            trace_id=trace_id or secrets.token_hex(32),
+            attempt_trace_ids=attempt_trace_ids,
+            retrieved_at=datetime.now(timezone.utc),
+            success=False,
+            attempts=attempts,
+            error=str(last_error or "Skill returned no records after 3-level self-healing"),
         )
 
     async def execute_plan(

@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 import json
 from pathlib import Path
+import re
 import secrets
 from time import monotonic
 from typing import Any
@@ -43,44 +45,216 @@ INTENT_SYSTEM_PROMPT = """你是数据获取智能体的需求理解与实体抽
 2. 深度语义识别重点标的：从用户的关注点（focus_points）、提示词或需求描述中，智能提取用户明确指定或重点关注的核心企业/标的公司名称（例如：“绿的谐波”、“三花智控”、“鸣志电器”、“拓普集团”、“铖昌科技”等）。
    - 提取规则：只提取用户明确提及或重点列出的具体企业名称或证券简称，不要将宽泛的产业环节（如“减速器”、“传感器”、“原料药”）误作为公司名称；
    - 将提取出的具体公司列表填入 `must_include_entities`。若用户未提及任何具体公司，则设为空列表 `[]`。
-3. 规划所需的数据领域（required_domains）：只能从 industry、companies、financials、macro、industry_chain、reports、news 中选择，默认保留全部七个领域以建立完整客观研究底座。
+3. 拆解该行业的 2~4 个最具代表性的核心产品/关键零部件/纯正细分环节（core_subsectors），用于穿透宽泛概念板块捕获真正纯正的赛道龙头（例如对于“宠物经济”：["宠物食品", "宠物用品", "宠物医疗"]；对于“具身智能”：["机器人减速器", "伺服电机", "人形机器人", "灵巧手"]；对于“固态电池”：["固态电池", "固态电解质", "高镍正极"]；对于“低空经济”：["eVTOL", "飞行汽车", "通用航空", "空管系统"]）；
+4. 动态推导全行业通用的相关行业大类与排除行业大类（基于产业经济学常识与申万/同花顺31个一级行业分类）：
+   - `relevant_industries`: 字符串列表，该主题直接相关或深度赋能的一级/二级行业大类（例如对于“宠物经济”：["农林牧渔", "轻工制造", "医药生物", "商贸零售"]；对于“具身智能”：["机械设备", "电子", "计算机", "汽车"]）；
+   - `excluded_industries`: 字符串列表，该主题完全不相关、绝不应跨界混入的行业大类（例如对于“宠物经济”：["国防军工", "钢铁", "采掘", "建筑装饰"]；对于“新能源车”：["通信", "石油石化", "房地产", "建筑材料", "食品饮料"]）。
+5. 规划所需的数据领域（required_domains）：只能从 industry、companies、financials、macro、industry_chain、reports、news 中选择，默认保留全部七个领域以建立完整客观研究底座。
 
 返回 JSON 对象，字段必须包含：
 - "industry": 字符串，清洗后的标准行业名称；
 - "focus_points": 字符串列表，用户的核心关注点；
 - "data_requirements": 字符串列表，客观数据要求；
 - "must_include_entities": 字符串列表，从用户输入中语义提取出的核心上市公司/标的企业名称；
+- "core_subsectors": 字符串列表，核心细分产品或零部件词槽（2~4个）；
+- "relevant_industries": 字符串列表，主题相关的行业大类；
+- "excluded_industries": 字符串列表，主题互斥无关的跨界行业大类；
 - "required_domains": 列表，覆盖的数据领域。"""
 
 PLANNER_SYSTEM_PROMPT = """你是数据获取智能体的任务规划模块。
+你负责调用同花顺问财（iWenCai）Skill 工具包，为全行业投研报告自主规划精准、高召回、结构完备的查询任务。
 你只能选择给定 Skill 并生成查询任务，绝对不能在输出中写入金融事实、数值或研究结论。
 planning_methodologies 只用于补全查询维度；它们不是可执行 Skill，禁止写入 task.skill_name。
 返回 JSON：decision(continue|stop|blocked)、assessment、tasks。
 每个 task 只能包含 task_id、skill_name、arguments、depends_on、purpose、requirement_ids、expected_fields；arguments 必须包含 query，在板块或选股类查询中 arguments 可包含 limit（如 20 或 30）。
 任务必须优先服务 observation.requirement_coverage 中未通过的要求，并填写对应 requirement_ids。
-任务依赖必须显式列出。若处于首轮（iteration=1）且 identified_companies 为空，只有当未指名任何具体标的（must_include_entities 为空）时，才严禁盲目规划财务任务，必须先通过选股任务获取标的；若 observation 中已存在 must_include_entities（用户明确指名的核心上市公司），由于其主体名称已知，在首轮即可直接为这些已知核心标的规划基本信息（hithink-basicinfo-query）和财务查询（hithink-finance-query），无需等待选股任务完成，且严禁将其错误地声明 depends_on 依赖泛选股任务！
-【核心选股与龙头识别规范】：
-1. 规划公司筛选或龙头识别类任务（hithink-astock-selector 或 hithink-basicinfo-query）时，必须构建具备行业代表性与主营纯度的分层样本库：
-   - query 必须显式包含按总市值从大到小排序，覆盖样本量取前 20~30 家行业龙头企业（例如：“按A股总市值从大到小排序取前25~30家核心龙头企业”）；
-   - 对前沿、新兴或复合赛道（如人形机器人、商业航天、低空经济、具身智能等），query 必须同时包含赛道核心环节关键词或主营业务限定（例如：“人形机器人 核心零部件 减速器 伺服电机 传感器 丝杠 龙头”、“商业航天 运载火箭 卫星制造 核心配套 龙头”），防范因泛概念匹配误选进与核心赛道业务无关或仅有微弱概念的大型传统混业巨头；
-   - 优先选取主板、创业板与科创板中大市值核心标的（可增加“总市值大于30亿元或50亿元”约束），避免样本结构严重偏向北交所微盘股或壳股；
-   - expected_fields 必须包含：“证券代码”、“证券简称”、“总市值”、“营业收入”、“所属行业”、“所属概念”；
-   - 若行业存在具有战略影响力的非上市/一级市场代表企业（如商业航天之蓝箭航天、中科宇航、天兵科技；人形机器人之宇树科技、智元机器人等），必须在研报或行业事件检索任务（report-search, news-search）中显式规划对其商业化进展、订单发射与最新融资的针对性查询。
-【用户指定核心标的优先保障规范】：
-1. 若 observation 中存在 must_include_entities（用户明确指名关注的核心上市公司，例如绿的谐波、鸣志电器、三花智控、拓普集团等）：
-   - 首轮规划时，可直接为这些已知核心标的规划基本信息（hithink-basicinfo-query）或独立的财务三表（hithink-finance-query）与主营业务（hithink-business-query）查询；
-   - 这些具体公司的查询任务自身拥有明确公司主体，严禁添加 depends_on 依赖泛选股任务，必须作为独立任务直接并行发起；
-   - 严禁因任何泛选股任务的失败而影响或阻断用户指定核心标的的财务查询！
-【主营业务与产业链结构拆解规范】：
-1. 规划主营业务构成与产业链环节查询（hithink-business-query）时，严禁将多家核心公司合并在同一条 query 中（多标的合并查询极易被问财截断导致仅返回单家数据）。必须针对每家重点标的单独拆分为独立的单实体 query（例如针对 identified_companies 中排名前列的重点公司分别派发单公司查询任务），确保每家核心公司的分业务收入、占比与毛利均能完整入库。
-【核心时序与财务三表深度规范】：
-1. 规划财务类（hithink-finance-query）任务时，query 必须包含多年度连续时序（例如“近3~5年及最新报告期”或“2021年至2025年”），严禁只查单一报告期，以确保下游能计算多期复合增速（CAGR）和连续年度趋势；同行横向对比时必须统一约束基准报告期（例如统一以近三年或最新完整财年为锚点），严禁不同标的出现跨度数年的基准错配；
-2. 财务查询必须完整覆盖资产负债表、利润表、现金流量表三表核心指标：营业收入、归母净利润、销售毛利率、销售净利率、ROE、资产负债率、经营活动产生的现金流量净额、研发费用及其同比增速；
-3. 当目标包含“龙头”或进行同业对比时，必须从 identified_companies 中选取至少 4~6 家代表不同产业链关键环节的核心龙头标的，规划深度财务三表查询（hithink-finance-query），严禁仅查 1~2 家公司，确保下游生成充分有效的同行横截面对比柱状图与多维分析图表；
-【核心宏观与行业周期规范】：
-1. 规划宏观类（hithink-macro-query）任务时，query 必须指定明确的多期时间跨度（如“近3~5年GDP当季同比及工业增加值季度趋势”、“近3年社会融资规模存量月度数据”），GDP 查询必须指明“国内生产总值:当季同比 季度数据”或“GDP当季同比”，避免匹配到只到2022年的停更旧序列；确保抓取的数据带有明确报告期（period_end），严禁抓取无时间维度的静态孤立点；
-2. 对 failed_skill_calls 中仍未满足的要求，应拆分查询或换用同领域 Skill 补救；
-3. 优先并行补足缺失要求，禁止重复已执行的同一 Skill 与查询。"""
+
+【核心架构法则：严禁一次性盲目查询全部领域，必须实施“分层查询，层层递进”防止偏采】
+问财底层是金融自然语言解析器。若试图在单轮中一次性倾泻 7 大领域全部任务，或在单句中强行堆砌多重复杂条件（如“{行业} 市盈率 市净率 涨跌幅 板块排名 A股 按总市值降序”），极易导致词槽冲突、0召回或因自愈降级导致跨界巨头偏采。
+规划器必须遵循 observation.planning_phase 提示，严格按照“分层查询、层层递进”的节奏执行：
+
+1. 【第一层：确权与定界 · 标的池与宏观基准】（第 1 轮规划）：
+   - 核心目标：以最纯粹简练的语法锁定真实属于该赛道的成分股标的池与龙头排序，并并发抓取宏观基准、行业板块行情、产业链概况与权威研报/资讯。
+   - 任务清单：
+     1) 主题宽基选股 (hithink-astock-selector): "{topic} A股 按总市值降序 动态市盈率" (limit=20)
+     2) 核心细分赛道选股 (hithink-astock-selector): "{subsector} A股 按总市值降序 动态市盈率" (limit=15)
+     3) 宏观经济指标 (hithink-macro-query): "国内生产总值:当季同比 季度 近3年" 或 "{行业官方大类}:当月同比 月度 近3年"
+     4) 权威行业研报 (report-search): "{topic} 深度研究 行业分析" (limit=5)
+     5) 行业动态资讯 (news-search): "{topic} 行业动态 市场趋势" (limit=5)
+     6) 行业板块整体估值 (hithink-industry-query):
+        标准语法：针对所属官方大类（优先使用 observation.objective.relevant_industries 中的官方大类行业）：
+        "{relevant_industry}行业 估值 市盈率 市净率" 或 "{topic}行业 动态市盈率"
+     7) 产业链供需概况 (hithink-business-query):
+        标准语法："{topic}产业链 上中下游"
+   - 铁律约束：首轮严禁在行业估值查询中混入个股选股后缀（如“A股 按总市值降序”），防止偏采。
+
+2. 【第二层：实体锚定 · 估值与财务深度画像】（第 2 轮规划，当 observation.identified_companies 已入池）：
+   - 核心目标：必须以第一层确权排名的真实龙头公司名称作为查询主语（锚点），绝对禁止无主语泛查，从逻辑上彻底绝缘无关行业污染！
+   - 任务清单：
+     1) 批量行情与估值覆盖 (hithink-market-query):
+        "{' '.join(top_entities[:8])} 最新价 总市值 a股流通市值 动态市盈率 市净率 最新涨跌幅 所属同花顺行业 主营业务"
+     2) 核心龙头 5 年财务全景 (hithink-finance-query):
+        针对确权前 3~4 家核心龙头，分别发起："{entity_name} 近5年 营业收入 归母净利润 销售毛利率 销售净利率 ROE 资产负债率 经营活动产生的现金流量净额 研发费用"
+     3) 重点龙头主营业务与分产品拆解 (hithink-business-query):
+        针对确权前 2~3 家核心龙头，发起："{entity_name} 主营构成 分产品收入占比"
+
+3. 【第三层：纵深拆解与闭环补齐】（第 3 轮+ 规划）：
+   - 核心目标：针对 observation.unmet_requirements 中仍未满足的领域或硬性指标进行针对性单点精准补齐。
+
+【第一铁律：严禁使用股票代码，强制使用公司标准证券简称】
+问财底层是金融自然语言解析器：
+1. 严禁在 query 中使用纯数字代码（如“000001”极易被解析为上证综指而非平安银行；“600000”与指数冲突；代码与年份混在一起会被误识别为财务数值）；
+2. 严禁在 query 中携带交易所后缀（如“002594.SZ”、“300014.SZ”会被判定为非法浮点数报错）；
+3. 凡是涉及具体上市公司，必须提取 identified_companies 中的“name”（标准证券简称，如“比亚迪”、“宁德时代”、“绿的谐波”），使用公司名称查询在问财中召回率为 100%。
+
+【第二铁律：正反例对比（Bad vs Good Few-Shot）】
+- [错误] 错误（词槽重复冲突导致 0 行）: "宠物食品 A股 最新总市值 动态市盈率 按总市值降序"
+  [正确] 正确（单次排序自然包含市值）: "宠物食品 A股 按总市值降序 动态市盈率"
+- [错误] 错误（长串“或”被问财截断）: "人形机器人 或 机器人减速器 或 伺服电机 或 灵巧手 A股 按总市值降序"
+  [正确] 正确（分解独立细分任务）: 任务A "机器人减速器 A股 按总市值降序"、任务B "伺服电机 A股 按总市值降序"
+- [错误] 错误（代码与后缀歧义）: "002594.SZ 最新价 PE" 或 "000001 营业收入"
+  [正确] 正确（使用公司简称）: "比亚迪 最新价 总市值 动态市盈率" 或 "平安银行 近5年 营业收入 归母净利润"
+- [错误] 错误（多公司分散浪费配额）: 分别开 8 个 basicinfo 查 "宁德时代 基本信息"、"比亚迪 基本信息"
+  [正确] 正确（单次批量合并查行情）: "宁德时代 比亚迪 拓普集团 赛力斯 最新价 总市值 a股流通市值 动态市盈率 市净率 所属行业"
+- [错误] 错误（指标残缺不全）: "绿的谐波 营业收入 归母净利润"
+  [正确] 正确（全套8大财务指标）: "绿的谐波 近5年 营业收入 归母净利润 销售毛利率 销售净利率 ROE 资产负债率 经营活动产生的现金流量净额 研发费用"
+
+【第三铁律：全局 20 次调用预算平衡架构】
+在总预算限制下，自主保持健康配比，严禁单一领域垄断全部预算：
+- 赛道与核心细分选股: 2~3 次（首轮并发：1个主题宽基 + 1~2个核心细分环节，确保纯正标的入池）
+- 批量估值覆盖: 1 次（覆盖已识别前 6~8 家标的）
+- 核心龙头财务三表: 3~5 次（针对核心代表企业，8大指标全套）
+- 主营业务拆解: 2~3 次（重点环节企业）
+- 宏观/周期指标: 1~2 次
+- 权威行业研报: 2~3 次 (report-search)
+- 行业资讯动态: 2~3 次 (news-search)
+
+【依赖关系要求】：
+- 首轮且 identified_companies 为空时，优先并发发起选股（hithink-astock-selector）、研报（report-search）、新闻（news-search）与宏观（hithink-macro-query）；
+- 若 observation 中存在 must_include_entities（用户明确指定的重点标的），由于公司名已知，可直接发起这些标的的财务或行情任务，严禁声明依赖选股任务！
+
+【第四铁律：query 与返回字段的职责边界（P0-2 配套，务必遵守）】
+问财底层是自然语言解析器，query 越像"人话长句"越容易 0 召回。因此：
+1. query 只写检索用的「实体 + 主题词 + 指标词 + 年份」，词间用空格分隔，词数 ≤ 7（中文约 ≤40 字符）；
+2. 禁止把返回字段名写进 query（"证券代码/证券简称/总市值/营业收入/所属行业/所属概念/主营业务构成/分产品"等），它们只能写入 expected_fields；
+3. 禁止把说明性文字写进 query（"重点关注/用于评估/旨在/包括…等/时间范围/研究报告/最新动态"等）；
+4. 单条 query 的指标词不超过 3 个；超出的指标请拆成多条任务（或写入 expected_fields）；
+5. 年份放 query 末尾或省略，不得夹在实体与指标之间；多年度时序写入 arguments.time_range（如 "2021-2025"）；
+6. 排序与条数请写入 arguments.sort_by / arguments.limit，不要塞进 query；
+7. query 中不得出现标点（，。、；）与自然语言整句，只允许空格分隔的关键词；
+8. 长无空格连写短语（如 "2025年吨水成本"）必须拆成 "2025年 吨水成本"，否则问财解析为单一未知词槽而 0 命中。
+
+【第五铁律：主营业务与产业链拆解的拆分纪律】
+规划主营业务构成与产业链环节查询（hithink-business-query）时，严禁将多家核心公司合并在同一条 query 中（多标的合并极易被问财截断，仅返回单家数据）。必须针对每家重点标的单独拆分独立单实体 query，确保每家公司的分业务收入、占比与毛利完整入库。
+（注意：此约束仅针对主营构成类查询；批量行情估值类查询（hithink-market-query）反而应合并，见第二铁律正反例。）
+
+【第六铁律：财务三表与宏观的时序完整性】
+1. 财务类（hithink-finance-query）任务：时间跨度写入 arguments.time_range，严禁只查单一报告期，以确保下游能计算多期复合增速（CAGR）与连续年度趋势；同行横向对比时必须统一约束基准报告期，严禁不同标的基准错配；
+2. 财务指标清单写入 expected_fields（营业收入、归母净利润、销售毛利率、销售净利率、ROE、资产负债率、经营活动产生的现金流量净额、研发费用等）；单条 ≤3 个指标，严禁把指标清单塞进 query；
+3. 宏观类（hithink-macro-query）任务：确保抓取的数据带有明确报告期（period_end），严禁抓取无时间维度的静态孤立点，避免匹配到已停更的旧序列；
+4. 对 failed_skill_calls 中仍未满足的要求，应拆分查询或换用同领域 Skill 补救；禁止重复已执行的同一 Skill 与查询。"""
+
+
+# ── P0-2: query 编译层（把「需求描述式」query 编译为「检索关键词串」）────────────
+# 设计原则：编译只做「减法 + 重排 + 语义转移」，不发明新词，保证与原始意图一致、可审计。
+_FIELD_NAME_NOISE: tuple[str, ...] = (
+    "证券代码", "证券简称", "股票代码", "总市值", "流通市值", "营业收入", "归母净利润",
+    "销售毛利率", "销售净利率", "ROE", "资产负债率", "经营活动产生的现金流量净额",
+    "研发费用", "所属行业", "所属概念", "基本信息", "主营业务构成", "分行业", "分产品",
+)
+_DESC_NOISE: tuple[str, ...] = (
+    "重点关注", "用于评估", "旨在", "有助于", "判断", "分析", "梳理", "测算", "评估",
+    "时间范围", "研究报告", "研究提纲", "包括", "等数据", "等指标", "等各", "等信息",
+    "等，", "等。", "最新动态", "近一年资讯", "查询", "筛选", "排序", "从大到小",
+    "从小到大", "降序", "升序", "家企业", "的收入", "的业务", "各业务板块", "主营业务",
+)
+# “等X”通用清理的白名单：等技术术语（等静压 / 等高线 / 等温…）不得被误删。
+_EQ_PROTECTED: tuple[str, ...] = (
+    "等静压", "等高线", "等温", "等时", "等径", "等比", "等分", "等效", "等价",
+    "等值", "等距", "等精度", "等比例",
+)
+_PUNCT_RE = re.compile(r"[，。、；：,.;:！？!?…·～——\-（）()《》\[\]【】\"'“”‘’]")
+_YEAR_RE = re.compile(r"^20\d{2}年?$")
+# 拆出内联年份（如 “2025年吨水成本” → “2025年 吨水成本”），避免无空格连写归零。
+_YEAR_INLINE_RE = re.compile(r"(?<!\d)(20\d{2}年?)(?!\d)")
+# 拆出排序/取前N家语义并转移到 arguments.sort_by / arguments.limit。
+_LIMIT_AND_SORT_RE = re.compile(
+    r"取前\s*(\d{1,3})\s*家"
+    r"|按[\u4e00-\u9fa5A-Za-z0-9]{1,12}?(?:从大到小|从小到大|排序|降序|升序)"
+    r"|(?:从大到小|从小到大|降序|升序)"
+)
+# 长无空格串的弱切分：按连接词 “及/与” 拆成有空格的关键词（仅作用于 ≥12 字符的 token）。
+_CONJ_RE = re.compile(r"[及与]")
+
+
+def _compile_query(raw: str, *, max_tokens: int = 6) -> tuple[str, dict[str, Any]]:
+    """把「需求描述式」query 编译为「检索关键词串」（P0-2）。
+
+    规则：去标点 → 去返回字段名 → 去说明性文字 → 去重 → 年份移末尾 → 截断主体词数；
+    同时把「取前N家 / 按…从大到小排序」语义转移到返回的 extra（sort_by/limit）。
+
+    Args:
+        raw: LLM 产出的原始 query。
+        max_tokens: 主体部分保留的最大词数（默认 6）。
+
+    Returns:
+        (compiled, extra)。compiled 为编译后的关键词串（为空时原样返回 ``raw``）；
+        extra 为需要写入 task.arguments 的附加参数（sort_by / limit），可为空 dict。
+    """
+    text = str(raw or "")
+    extra: dict[str, Any] = {}
+
+    def _drop_semantics(m: re.Match[str]) -> str:
+        seg = m.group(0)
+        if seg.startswith("取前") and seg.endswith("家"):
+            num = re.search(r"\d+", seg)
+            if num:
+                extra["limit"] = int(num.group())
+            return " "
+        by = re.search(r"按([\u4e00-\u9fa5A-Za-z0-9]+)", seg)
+        if by:
+            direction = "desc" if ("从大到小" in seg or "降序" in seg) else "asc"
+            extra["sort_by"] = f"{by.group(1)} {direction}"
+        return " "
+
+    text = _LIMIT_AND_SORT_RE.sub(_drop_semantics, text)
+    text = _PUNCT_RE.sub(" ", text)
+    for noise in _FIELD_NAME_NOISE + _DESC_NOISE:
+        text = text.replace(noise, " ")
+
+    def _strip_etc(m: re.Match[str]) -> str:
+        seg = m.group(0)
+        if any(seg.startswith(p) for p in _EQ_PROTECTED):
+            return seg
+        return " "
+
+    text = re.sub(r"等[\u4e00-\u9fa5]{0,4}(?=\s|$)", _strip_etc, text)
+    text = _YEAR_INLINE_RE.sub(lambda m: f" {m.group(0)} ", text)
+    tokens = [t for t in re.split(r"\s+", text) if len(t) >= 2]
+    seen: set[str] = set()
+    uniq = [t for t in tokens if not (t in seen or seen.add(t))]
+    years = [t for t in uniq if _YEAR_RE.match(t)]
+    body: list[str] = []
+    for t in uniq:
+        if t in years:
+            continue
+        if len(t) >= 12 and _CONJ_RE.search(t):
+            body.extend(part for part in _CONJ_RE.split(t) if len(part) >= 2)
+        else:
+            body.append(t)
+    body = body[:max_tokens]
+    compiled = " ".join(body + years).strip()
+    return compiled or str(raw or ""), extra
+
+
+# ── P0-1: 空数据集硬风控（0 条结果 → blocked + 显式上报）────────────────────────
+_SEVEN_DOMAINS = ("industry", "companies", "financials", "macro",
+                  "industry_chain", "reports", "news")
+
+
+def _total_records(dataset: Any) -> int:
+    """统计七个数据域的记录总数（空数据集风控用）。"""
+    return sum(len(getattr(dataset, name, []) or []) for name in _SEVEN_DOMAINS)
 
 
 class DataFetcherAgent:
@@ -154,7 +328,13 @@ class DataFetcherAgent:
             "objective_ready",
             required_domains=[domain.value for domain in objective.required_domains],
         )
-        dataset = self.fusion.fuse([], request.as_of)
+        dataset = self.fusion.fuse(
+            [],
+            request.as_of,
+            excluded_industries=objective.excluded_industries,
+            must_include_entities=objective.must_include_entities,
+        )
+
 
         stop_reason = "max_iterations"
         status: str = "partial"
@@ -177,6 +357,10 @@ class DataFetcherAgent:
                 remaining_skill_calls=request.max_skill_calls - len(all_results),
             )
             if coverage.complete:
+                # P0-1: 记录数为 0 时不允许判为"覆盖完成"
+                if _total_records(dataset) == 0:
+                    status, stop_reason = "blocked", "empty_dataset"
+                    break
                 status, stop_reason = "completed", "coverage_complete"
                 break
             remaining = request.max_skill_calls - len(all_results)
@@ -207,6 +391,112 @@ class DataFetcherAgent:
                 assessment=decision.assessment,
                 proposed_tasks=len(decision.tasks),
             )
+            # DEF-07: 确定性规则守卫 (Deterministic Guard)
+            # 行业研究模式下，若已识别标的 >= 4，但已覆盖财务三表的标的小于 4 家，拦截提前终止并强制补全高优先级三表检索任务
+            identified_comps = self._company_context(dataset)
+            if len(identified_comps) >= 4:
+                fin_covered = {
+                    r.entity_name for r in dataset.financials if r.entity_name
+                } | {
+                    r.entity_code for r in dataset.financials if r.entity_code
+                }
+                covered_comp_count = sum(
+                    1 for c in identified_comps
+                    if (c.get("name") in fin_covered) or (c.get("code") in fin_covered)
+                )
+                target_min = min(4, len(identified_comps))
+                if covered_comp_count < target_min:
+                    if decision.decision == "stop":
+                        decision = decision.model_copy(update={"decision": "continue"})
+
+                    already_planned_names: set[str] = set()
+                    for t in decision.tasks:
+                        if t.skill_name in ("hithink-finance-query", "financial_data"):
+                            q = str(t.arguments.get("query", "")).casefold()
+                            for c in identified_comps:
+                                c_name = str(c.get("name", "")).strip().casefold()
+                                c_code = str(c.get("code", "")).strip().casefold()
+                                if (c_name and c_name in q) or (c_code and c_code in q):
+                                    already_planned_names.add(c.get("name"))
+
+                    needed = target_min - (covered_comp_count + len(already_planned_names))
+                    if needed > 0:
+                        injected_tasks: list[SkillTask] = []
+                        valid_req_ids = ["domain_financials"]
+                        if any(r.requirement_id == "focused_financials" for r in objective.requirements):
+                            valid_req_ids.append("focused_financials")
+                        for comp in identified_comps:
+                            c_name = comp.get("name")
+                            c_code = comp.get("code")
+                            if not c_name:
+                                continue
+                            if (c_name in fin_covered) or (c_code in fin_covered) or (c_name in already_planned_names):
+                                continue
+
+                            skill_name = "hithink-finance-query" if "hithink-finance-query" in self.skillhub.catalog else "financial_data"
+                            query = f"{c_name} 2021年至2025年 营业收入 归母净利润 销售毛利率 销售净利率 ROE 资产负债率 经营活动产生的现金流量净额"
+                            guard_task = SkillTask(
+                                task_id=f"fin_guard_{secrets.token_hex(4)}",
+                                skill_name=skill_name,
+                                arguments={"query": query},
+                                purpose=f"确定性规则守卫: 补足核心标的 {c_name} 深度财务三表时序数据",
+                                requirement_ids=valid_req_ids,
+                                expected_fields=["营业收入", "归母净利润", "销售毛利率", "销售净利率", "ROE", "资产负债率", "经营现金流"],
+                            )
+                            injected_tasks.append(guard_task)
+                            already_planned_names.add(c_name)
+                            if len(injected_tasks) >= needed:
+                                break
+
+                        if injected_tasks:
+                            decision = decision.model_copy(update={"tasks": injected_tasks + decision.tasks})
+                            await record_event(
+                                "deterministic_guard_triggered",
+                                iteration=iteration,
+                                guard="multi_company_financials",
+                                injected_tasks=[t.task_id for t in injected_tasks],
+                                target_companies=[t.arguments.get("query", "").split()[0] for t in injected_tasks],
+                            )
+
+            # NEW-10: 核心标的市值与估值全行业通用批量合并确定性规则守卫 (Batch Quote Guard)
+            # 用户明确指名或已提取的核心标的 (must_include_entities)，合并为单条批量行情查询
+            # 一次性获取其实时总市值、动态市盈率、市净率、所属行业与主营业务，彻底解决 NEW-10 并立省 7 次调用预算
+            must_include = getattr(objective, "must_include_entities", [])
+            if iteration == 1 and must_include:
+                val_covered = {
+                    r.entity_name for r in dataset.companies
+                    if r.entity_name and (r.metric in ("market_cap", "总市值", "a股流通市值") or "总市值" in str(r.metric))
+                } | {
+                    r.entity_code for r in dataset.companies
+                    if r.entity_code and (r.metric in ("market_cap", "总市值", "a股流通市值") or "总市值" in str(r.metric))
+                }
+                needed_ents = [ent for ent in must_include if ent not in val_covered]
+                if needed_ents:
+                    entities_str = " ".join(needed_ents[:10])
+                    skill_name = "hithink-astock-selector" if "hithink-astock-selector" in self.skillhub.catalog else "hithink-basicinfo-query"
+                    batch_query = f"{entities_str} 最新价 总市值 a股流通市值 动态市盈率 市净率 最新涨跌幅 所属同花顺行业 主营业务"
+                    val_task = SkillTask(
+                        task_id=f"val_batch_{secrets.token_hex(4)}",
+                        skill_name=skill_name,
+                        arguments={"query": batch_query, "limit": str(len(needed_ents))},
+                        purpose=f"通用元模式确定性守卫: 批量合并补足核心标的 ({entities_str}) 实时市值、估值与所属行业",
+                        requirement_ids=["domain_companies", "leader_identification"],
+                        expected_fields=["证券代码", "证券简称", "最新价", "总市值", "动态市盈率", "市净率", "所属行业", "主营业务"],
+                    )
+                    # 剥离 planner 规划的低效单标的 basicinfo 任务，用合并任务替代
+                    filtered_tasks = [
+                        t for t in decision.tasks
+                        if not (t.skill_name in ("hithink-basicinfo-query", "company_basic_info") and any(e in str(t.arguments.get("query", "")) for e in needed_ents))
+                    ]
+                    decision = decision.model_copy(update={"tasks": [val_task] + filtered_tasks})
+                    await record_event(
+                        "deterministic_guard_triggered",
+                        iteration=iteration,
+                        guard="core_entity_batch_valuation",
+                        injected_tasks=[val_task.task_id],
+                        target_companies=needed_ents,
+                    )
+
             if decision.decision == "blocked":
                 status, stop_reason = "blocked", "planner_blocked"
                 break
@@ -291,7 +581,12 @@ class DataFetcherAgent:
                         stage="skill_execution", message=result.error or "skill failed",
                         task_id=result.task_id, retryable=False,
                     ))
-            dataset = self.fusion.fuse(all_results, request.as_of)
+            dataset = self.fusion.fuse(
+                all_results,
+                request.as_of,
+                excluded_industries=objective.excluded_industries,
+                must_include_entities=objective.must_include_entities,
+            )
             after_count = int(dataset.quality_summary.get("structured_record_count", 0))
             no_progress = 0 if after_count > before_count else no_progress + 1
             await record_event(
@@ -308,7 +603,19 @@ class DataFetcherAgent:
             stop_reason = "max_iterations"
 
         final_coverage = self._coverage(dataset, objective.required_domains, objective.requirements)
-        if final_coverage.complete:
+        if _total_records(dataset) == 0 and status in ("completed", "partial"):
+            status, stop_reason = "blocked", "empty_dataset"
+            errors = list(errors) + [
+                RunError(
+                    stage="data_fetch",
+                    message=(
+                        "全部数据域为空（检索未命中任何记录）：禁止下游生成量化结论；"
+                        "请检查 query 构造或改用备用检索词后重试。"
+                    ),
+                    retryable=True,
+                )
+            ]
+        elif final_coverage.complete:
             status, stop_reason = "completed", "coverage_complete"
         elif status not in ("failed", "blocked"):
             status = "partial"
@@ -358,11 +665,19 @@ class DataFetcherAgent:
         req_entities = getattr(request, "must_include_entities", []) or []
         combined_entities = list(dict.fromkeys([str(e).strip() for e in (req_entities + llm_entities) if e and str(e).strip()]))
 
+        # 全行业通用的相关行业大类与排除行业大类（基于产业经济学常识动态推导）
+        relevant_ind = response.get("relevant_industries") or []
+        excluded_ind = response.get("excluded_industries") or []
+        core_subs = response.get("core_subsectors") or []
+
         return ResearchObjective(
             industry=request.industry,
             focus_points=request.focus_points,
             data_requirements=request.data_requirements,
             must_include_entities=combined_entities,
+            core_subsectors=core_subs,
+            relevant_industries=relevant_ind,
+            excluded_industries=excluded_ind,
             required_domains=required,
             requirements=requirements,
             as_of=request.as_of,
@@ -386,12 +701,22 @@ class DataFetcherAgent:
             for name, spec in self.skillhub.catalog.items()
             if name == spec.skill_id
         ]
+        companies_ctx = self._company_context(dataset)
+        if not companies_ctx and iteration == 1:
+            phase = "Layer 1: Scope & Entity Discovery (focus on selector, macro, reports, news)"
+        elif len(companies_ctx) >= 1 and coverage.score < 0.8:
+            phase = "Layer 2: Entity-Anchored Valuation & Financials (focus on market-query, finance-query for identified companies)"
+        else:
+            phase = "Layer 3: Deep-Dive & Targeted Replenishment (focus on business-query and unmet requirements)"
+
         observation = {
             "iteration": iteration,
+            "planning_phase": phase,
             "objective": objective.model_dump(mode="json"),
             "coverage": coverage.model_dump(mode="json"),
-            "identified_companies": self._company_context(dataset),
+            "identified_companies": companies_ctx,
             "must_include_entities": getattr(objective, "must_include_entities", []),
+            "core_subsectors": getattr(objective, "core_subsectors", []),
             "available_skills": catalog,
             "planning_methodologies": self._planning_methodologies(),
             "failed_skill_calls": [
@@ -450,10 +775,39 @@ class DataFetcherAgent:
         requirements_by_domain: dict[Domain, list[str]] = {}
         for item in requirements or []:
             requirements_by_domain.setdefault(item.domain, []).append(item.requirement_id)
+        domain_accepted_counts: dict[Domain, int] = defaultdict(int)
         for task in tasks:
             reason: str | None = None
+            # P0-2: query 模板编译（自然语言 → 检索关键词串）。
+            # 在 signature 计算之前统一改写，保证去重与后续校验均基于编译后的 query；
+            # 排序/条数语义转移至 arguments.sort_by / arguments.limit。
+            raw_query = str(task.arguments.get("query", "") or "")
+            if raw_query.strip():
+                compiled_query, extra_args = _compile_query(raw_query)
+                if compiled_query != raw_query or extra_args:
+                    merged_arguments = dict(task.arguments)
+                    merged_arguments["query"] = compiled_query
+                    for key, value in extra_args.items():
+                        merged_arguments.setdefault(key, value)
+                    task = task.model_copy(update={"arguments": merged_arguments})
+
+            # 自动规整行业查询：若行业查询混入了股票筛选排序词（如 '按总市值降序'），自动清洗防止语义冲突
+            if task.skill_name == "hithink-industry-query":
+                raw_q = str(task.arguments.get("query", ""))
+                if any(k in raw_q for k in ("按总市值降序", "按市值降序", "按涨跌幅降序", "按动态市盈率升序")):
+                    cleaned_q = re.sub(r"(?:A股\s*)?按(?:总)?(?:市值|涨跌幅|动态市盈率|市盈率)(?:降序|升序)", "", raw_q).strip()
+                    cleaned_q = re.sub(r"\s*A股\s*", " ", cleaned_q).strip()
+                    if "行业" in cleaned_q and not any(ind in cleaned_q for ind in ("银行", "证券", "保险", "钢铁", "煤炭", "通信", "电子")):
+                        cleaned_q = re.sub(r"行业(?=\s|$)", "概念", cleaned_q)
+                    task = task.model_copy(update={"arguments": {**task.arguments, "query": cleaned_q}})
             signature = self._task_signature(task)
-            if len(accepted) >= remaining:
+            task_spec = self.skillhub.catalog.get(task.skill_name)
+            task_domain = task_spec.domain if task_spec else None
+
+            # 领域预算硬隔离：避免单个领域（如财务三表）占满全部调用预算，确保研报与新闻有保底配额
+            if task_domain == Domain.FINANCIALS and domain_accepted_counts[Domain.FINANCIALS] >= 8:
+                reason = "financials domain budget limit (8) reached"
+            elif len(accepted) >= remaining:
                 reason = "global skill-call budget would be exceeded"
             elif task.task_id in used_task_ids:
                 reason = "task_id was already used"
@@ -477,10 +831,7 @@ class DataFetcherAgent:
                 and self.skillhub.catalog[task.skill_name].domain == Domain.FINANCIALS
                 and (companies_known or must_include_entities)
             ):
-                eligible = list(company_context)
-                if leader_required:
-                    with_basis = [item for item in company_context if item["selection_basis"]]
-                    eligible = with_basis[:10] if with_basis else company_context[:10]
+                eligible = [item for item in company_context if item.get("leader_score") is not None]
                 query = str(task.arguments.get("query", "")).casefold()
                 must_include_cf = [str(x).casefold() for x in (must_include_entities or [])]
                 matches_must_include = any(token and token in query for token in must_include_cf)
@@ -523,6 +874,8 @@ class DataFetcherAgent:
                     })
                 accepted.append(task)
                 accepted_signatures.add(signature)
+                if task_domain:
+                    domain_accepted_counts[task_domain] += 1
         try:
             self.skillhub.validate_plan(accepted, successful_task_ids)
         except SkillValidationError as exc:
@@ -628,6 +981,21 @@ class DataFetcherAgent:
         for group in requirement.expected_metric_groups:
             if not any(any(token.casefold() in metric for token in group) for metric in metrics):
                 missing.append("缺少指标组：" + "/".join(group))
+        if requirement.domain == Domain.FINANCIALS:
+            known_companies = {
+                c.entity_name for c in getattr(dataset, "companies", []) if c.entity_name
+            } | {
+                c.entity_code for c in getattr(dataset, "companies", []) if c.entity_code
+            }
+            if len(known_companies) >= 4:
+                fin_entities = {
+                    r.entity_name for r in records if r.entity_name
+                } | {
+                    r.entity_code for r in records if r.entity_code
+                }
+                target_min = min(4, len(known_companies))
+                if len(fin_entities) < target_min:
+                    missing.append(f"财务三表需覆盖至少 {target_min} 家核心标的（当前仅覆盖 {len(fin_entities)} 家）")
         return RequirementCoverage(
             requirement_id=requirement.requirement_id,
             label=requirement.label,
@@ -644,10 +1012,11 @@ class DataFetcherAgent:
         request: ResearchRequest, required: list[Domain]
     ) -> list[ResearchRequirement]:
         skill_ids = {
-            Domain.INDUSTRY: ["hithink-industry-query"],
+            Domain.INDUSTRY: ["hithink-industry-query", "hithink-zhishu-query"],
             Domain.COMPANIES: [
                 "hithink-basicinfo-query", "hithink-astock-selector",
                 "hithink-hkstock-selector", "hithink-usstock-selector",
+                "hithink-market-query",
             ],
             Domain.FINANCIALS: ["hithink-finance-query"],
             Domain.MACRO: ["hithink-macro-query"],
@@ -714,8 +1083,29 @@ class DataFetcherAgent:
         trace: list[TraceEvent],
         errors: list[RunError],
         artifact_dir: Path | None,
+        objective: ResearchObjective | None = None,
     ) -> ResearchRunResult:
-        dataset = self.fusion.fuse(results, request.as_of)
+        dataset = self.fusion.fuse(
+            results,
+            request.as_of,
+            excluded_industries=getattr(objective, "excluded_industries", None),
+            must_include_entities=getattr(objective, "must_include_entities", None),
+        )
+        # P0-1: 空数据集硬风控（兜底）—— 记录数为 0 一律降级为 blocked，
+        # 并在 errors 里留下可被前端消费的原因，避免"假绿灯"流入下游。
+        if _total_records(dataset) == 0 and status in ("completed", "partial"):
+            status = "blocked"
+            stop_reason = "empty_dataset"
+            errors = list(errors) + [
+                RunError(
+                    stage="data_fetch",
+                    message=(
+                        "全部数据域为空（检索未命中任何记录）：禁止下游生成量化结论；"
+                        "请检查 query 构造或改用备用检索词后重试。"
+                    ),
+                    retryable=True,
+                )
+            ]
         coverage = self._coverage(
             dataset,
             list(Domain),

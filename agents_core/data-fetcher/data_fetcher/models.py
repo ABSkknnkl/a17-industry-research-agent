@@ -67,6 +67,9 @@ class ResearchObjective(BaseModel):
     focus_points: list[str] = Field(default_factory=list)
     data_requirements: list[str] = Field(default_factory=list)
     must_include_entities: list[str] = Field(default_factory=list)
+    core_subsectors: list[str] = Field(default_factory=list)
+    relevant_industries: list[str] = Field(default_factory=list)
+    excluded_industries: list[str] = Field(default_factory=list)
     required_domains: list[Domain] = Field(default_factory=lambda: list(Domain))
     requirements: list[ResearchRequirement] = Field(default_factory=list)
     as_of: date
@@ -178,6 +181,7 @@ class ConflictRecord(BaseModel):
 
 
 class StructuredResearchDataset(BaseModel):
+    subject: str | None = None
     industry: list[ResearchRecord] = Field(default_factory=list)
     companies: list[ResearchRecord] = Field(default_factory=list)
     financials: list[ResearchRecord] = Field(default_factory=list)

@@ -54,6 +54,44 @@ def test_treemap_rejects_non_additive_metric():
     assert not any(v.code == "treemap_non_additive_metric" for v in v_mc), "Market cap treemap must be valid"
 
 
+def test_donut_rejects_non_additive_rate_metric():
+    """Verify that Donut/Pie charts strictly reject non-additive rate/growth metrics (DEF-02)."""
+    linter = ChartSkillLinter()
+    evidence_index = {
+        "R1": {"metric": "营业收入同比增长率", "value": 453.2, "entity": "寒武纪"},
+        "R2": {"metric": "营业收入同比增长率", "value": 60.3, "entity": "中际旭创"},
+        "R3": {"metric": "营业收入同比增长率", "value": 48.2, "entity": "工业富联"},
+    }
+
+    # 1. Non-additive: YoY revenue growth (must trigger donut_non_additive_metric)
+    cand_yoy = [
+        DummyCand(
+            "核心企业营业收入同比增长率集中度分布",
+            "donut",
+            {"series": [{"type": "pie", "radius": ["36%", "68%"], "data": [{"name": "寒武纪", "value": 453.2}]}]},
+            list(evidence_index.keys()),
+        )
+    ]
+    v_yoy = linter.lint(cand_yoy, evidence_index)
+    assert any(v.code == "donut_non_additive_metric" for v in v_yoy), "YoY growth donut must trigger donut_non_additive_metric"
+
+    # 2. Additive: Total market cap or market share (must NOT trigger)
+    ev_share = {
+        "R1": {"metric": "市场份额", "value": 45.0, "entity": "公司A"},
+        "R2": {"metric": "市场份额", "value": 30.0, "entity": "公司B"},
+    }
+    cand_share = [
+        DummyCand(
+            "核心企业市场份额分布",
+            "donut",
+            {"series": [{"type": "pie", "radius": ["36%", "68%"], "data": [{"name": "公司A", "value": 45.0}]}]},
+            list(ev_share.keys()),
+        )
+    ]
+    v_share = linter.lint(cand_share, ev_share)
+    assert not any(v.code == "donut_non_additive_metric" for v in v_share), "Market share donut must be valid"
+
+
 def test_radar_rejects_insufficient_dimensions():
     """Verify that radar charts with only 1 or 2 indicators are flagged as degenerate."""
     linter = ChartSkillLinter()

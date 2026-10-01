@@ -19,8 +19,14 @@ from data_fetcher.models import (
 )
 
 
-ENTITY_CODE_KEYS = ("股票代码", "证券代码", "代码", "成分代码", "stock_code", "symbol", "code")
-ENTITY_NAME_KEYS = ("股票简称", "证券简称", "公司简称", "公司名称", "成分简称", "成分名称", "名称", "company_name")
+ENTITY_CODE_KEYS = (
+    "股票代码", "证券代码", "代码", "成分代码", "stock_code", "symbol", "code",
+    "指数代码", "板块代码", "行业代码", "index_code",
+)
+ENTITY_NAME_KEYS = (
+    "股票简称", "证券简称", "公司简称", "公司名称", "成分简称", "成分名称", "名称", "company_name",
+    "指数简称", "板块名称", "板块简称", "行业名称", "指数名称", "index_name",
+)
 PERIOD_KEYS = ("报告期", "报告日期", "截止日期", "period_end", "REPORT_DATE")
 PUBLISHED_KEYS = (
     "发布日期", "公告日期", "发布时间", "publish_date", "published_at", "publish_time", "date"
@@ -62,17 +68,27 @@ METRIC_NAMES = {
     "研发费用占营业收入的比例": "rd_ratio",
     "研发投入占营业收入比例": "rd_ratio",
     "总市值": "market_cap",
+    "最新总市值": "market_cap",
     "市值": "market_cap",
     "流通市值": "circulating_market_cap",
+    "最新a股流通市值": "circulating_market_cap",
+    "a股流通市值": "circulating_market_cap",
     "市盈率": "pe",
+    "最新动态市盈率": "pe_ttm",
+    "动态市盈率": "pe_ttm",
+    "最新静态市盈率": "pe_lyr",
+    "静态市盈率": "pe_lyr",
     "市盈率(pe)": "pe",
     "市盈率(动)": "pe_ttm",
     "市盈率(静)": "pe_lyr",
     "市盈率(ttm)": "pe_ttm",
+    "最新市净率": "pb",
     "市净率": "pb",
     "市净率(pb)": "pb",
     "市销率": "ps",
     "市销率(ps)": "ps",
+    "所属同花顺行业": "industry_name",
+    "所属行业": "industry_name",
     "基本每股收益": "eps",
     "每股收益": "eps",
     "每股净资产": "bps",
@@ -172,7 +188,7 @@ def _standard_code(value: Any) -> str | None:
     if value in (None, ""):
         return None
     text = str(value).strip().upper()
-    matched = re.search(r"(?<!\d)(\d{6})(?:\.(SZ|SH|BJ))?(?!\d)", text)
+    matched = re.search(r"(?<!\d)(\d{6})(?:\.(SZ|SH|BJ|TI|CSI|SSI))?(?!\d)", text)
     if matched:
         digits, suffix = matched.groups()
         if not suffix:
@@ -222,10 +238,113 @@ def _record_id(parts: list[Any]) -> str:
     return "R-" + sha256(encoded).hexdigest()[:20]
 
 
+def _is_target_entity_match(target_entity: str, record_entity: str) -> bool:
+    """Checks whether the record entity name is consistent with the queried target entity."""
+    if not target_entity or not record_entity:
+        return True
+    t = target_entity.strip().lower()
+    r = record_entity.strip().lower()
+    if t == r:
+        return True
+    clean_t = re.sub(r"(股份有限公司|有限责任公司|有限公司|集团|控股|股份)$", "", t)
+    clean_r = re.sub(r"(股份有限公司|有限责任公司|有限公司|集团|控股|股份)$", "", r)
+    if clean_t in clean_r or clean_r in clean_t:
+        return True
+    if len(clean_t) >= 2 and clean_r.startswith(clean_t[:2]):
+        return True
+    return False
+
+
+def _is_record_relevant_to_query(query: str, entity_name: str | None, entity_code: str | None) -> bool:
+    """Checks whether a record returned from a single-company skill query is actually relevant.
+
+    Iwencai API falls back to broad semantic search when an exact A-share ticker is not found
+    (e.g. querying US-listed '亿航智能' returns A-share '同仁堂', '万科A').
+    This guard rejects such unrelated companies.
+    """
+    if not query or not (entity_name or entity_code):
+        return True
+
+    q = query.strip()
+    if entity_name and entity_name.strip() in q:
+        return True
+    if entity_code and entity_code.strip().split(".")[0] in q:
+        return True
+
+    tokens = q.split()
+    if len(tokens) >= 2:
+        target = tokens[0].strip()
+        # If the target is an industry/concept/general phrase, do not filter as a single company query
+        if any(k in target for k in ("测试", "测试查询", "查询", "获取", "调取", "请问", "近3年", "近5年", "行业", "经济", "概念", "产业", "赛道", "板块", "上市公司", "选股")):
+            return True
+        if entity_name and _is_target_entity_match(target, entity_name):
+            return True
+        return False
+
+    return True
+
+
+SINGLE_ENTITY_SKILLS = {
+    "hithink-basicinfo-query",
+    "hithink-finance-query",
+    "hithink-business-query",
+    "hithink-management-query",
+}
+
+
+def _is_entity_excluded(
+    entity_name: str | None,
+    raw: dict[str, Any],
+    clean_excluded: set[str],
+    clean_must: set[str],
+) -> bool:
+    """Detect whether a record belongs to an explicitly excluded industry sector.
+
+    Protects against semantic query drift, overly broad NLP matches, or disjunction leakage.
+    """
+    if not clean_excluded or not entity_name:
+        return False
+    if entity_name in clean_must:
+        return False
+
+    # 1. 检查 raw_fields 中明确标注的行业属性
+    for key in ("所属同花顺行业", "所属行业", "行业名称", "同花顺行业", "申万行业", "一级行业", "二级行业", "行业"):
+        val = raw.get(key)
+        if val and isinstance(val, str):
+            for ex in clean_excluded:
+                if ex and ex in val:
+                    return True
+
+    # 2. 检查名称与常见行业大类的强语义绑定（当 raw 中无行业字段时的兜底防线）
+    if any(ex in ("银行", "银行业") for ex in clean_excluded):
+        if entity_name.endswith("银行") or entity_name in ("工行", "建行", "农行", "中行", "交行", "招行", "邮储银行"):
+            return True
+    if any(ex in ("石油", "石油石化", "采掘") for ex in clean_excluded):
+        if entity_name in ("中国石油", "中国石化", "中国海油", "中海油服", "中石油", "中石化"):
+            return True
+    if any(ex in ("白酒", "食品饮料") for ex in clean_excluded):
+        if entity_name in ("贵州茅台", "五粮液", "泸州老窖", "山西汾酒", "洋河股份"):
+            return True
+    if any(ex in ("房地产", "地产") for ex in clean_excluded):
+        if entity_name in ("万科A", "保利发展", "招商蛇口", "金地集团", "新城控股"):
+            return True
+    return False
+
+
 class DataFusion:
     """Pure fusion engine; it never calls an LLM or an external data source."""
 
-    def fuse(self, results: list[SkillResult], as_of: date) -> StructuredResearchDataset:
+    def fuse(
+        self,
+        results: list[SkillResult],
+        as_of: date,
+        *,
+        excluded_industries: list[str] | None = None,
+        must_include_entities: list[str] | None = None,
+    ) -> StructuredResearchDataset:
+        clean_excluded = {ind.strip() for ind in (excluded_industries or []) if ind and ind.strip()}
+        clean_must = {ent.strip() for ent in (must_include_entities or []) if ent and ent.strip()}
+
         dataset = StructuredResearchDataset()
         seen_record_ids: set[str] = set()
         seen_companies: set[str] = set()
@@ -247,11 +366,22 @@ class DataFusion:
                 failed_results += 1
                 continue
 
+            is_single_entity_skill = result.skill_id in SINGLE_ENTITY_SKILLS
+
             for raw_index, raw in enumerate(result.records):
                 source = source_base.model_copy(update={"raw_record_index": raw_index})
                 entity_name_value = _first(raw, ENTITY_NAME_KEYS)
                 entity_name = str(entity_name_value).strip() if entity_name_value else None
                 entity_code = _standard_code(_first(raw, ENTITY_CODE_KEYS))
+
+                # Guard against iwencai semantic fallback / irrelevant company mismatch
+                if is_single_entity_skill and not _is_record_relevant_to_query(result.query, entity_name, entity_code):
+                    continue
+
+                # Guard against records from explicitly excluded industry sectors
+                if clean_excluded and _is_entity_excluded(entity_name, raw, clean_excluded, clean_must):
+                    continue
+
                 period = _parse_date(_first(raw, PERIOD_KEYS))
                 published = _parse_date(_first(raw, PUBLISHED_KEYS))
                 if (published and published > as_of) or (period and period > as_of):
@@ -259,23 +389,29 @@ class DataFusion:
                     continue
 
                 if entity_name or entity_code:
-                    company_key = entity_code or entity_name or ""
-                    if company_key not in seen_companies:
-                        company_record = ResearchRecord(
-                            record_id=_record_id(["company", company_key, result.skill_id, raw_index]),
-                            domain=Domain.COMPANIES,
-                            entity_name=entity_name,
-                            entity_code=entity_code,
-                            metric="entity_identity",
-                            value=entity_name or entity_code,
-                            period_end=period,
-                            published_at=published,
-                            source=source,
-                            raw_fields=raw,
-                            issues=[] if entity_code else ["missing_entity_code"],
-                        )
-                        dataset.companies.append(company_record)
-                        seen_companies.add(company_key)
+                    # 指数代码 (如 .TI, .CSI, .SSI) 或来自行业领域的板块指数实体，不作为个股公司录入
+                    is_index_entity = (
+                        (entity_code and any(entity_code.endswith(sfx) for sfx in (".TI", ".CSI", ".SSI")))
+                        or (result.domain == Domain.INDUSTRY and any(k in raw for k in ("指数代码", "指数简称", "板块代码", "板块名称")))
+                    )
+                    if not is_index_entity:
+                        company_key = entity_code or entity_name or ""
+                        if company_key not in seen_companies:
+                            company_record = ResearchRecord(
+                                record_id=_record_id(["company", company_key, result.skill_id, raw_index]),
+                                domain=Domain.COMPANIES,
+                                entity_name=entity_name,
+                                entity_code=entity_code,
+                                metric="entity_identity",
+                                value=entity_name or entity_code,
+                                period_end=period,
+                                published_at=published,
+                                source=source,
+                                raw_fields=raw,
+                                issues=[] if entity_code else ["missing_entity_code"],
+                            )
+                            dataset.companies.append(company_record)
+                            seen_companies.add(company_key)
 
                 # Specialized atomic parsing for macro tabular records
                 if result.domain == Domain.MACRO and any(k in raw for k in ("指标值", "数值", "value")):
@@ -290,6 +426,13 @@ class DataFusion:
                         dropped_future += 1
                         continue
 
+                    compact_raw = raw
+                    if len(raw) > 15:
+                        ident_keys = ("指标名称", "指标", "macro_name", "单位", "指标单位", "时间", "日期", "period", "国家", "地区")
+                        compact_raw = {k: raw[k] for k in ident_keys if k in raw}
+                        if val_raw is not None:
+                            compact_raw["指标值"] = val_raw
+
                     rec = ResearchRecord(
                         record_id=_record_id(["macro", m_ent, m_name, str(m_date), raw_index]),
                         domain=Domain.MACRO,
@@ -301,7 +444,7 @@ class DataFusion:
                         period_end=m_date,
                         published_at=published or m_date,
                         source=source,
-                        raw_fields=raw,
+                        raw_fields=compact_raw,
                         issues=[] if m_date else ["missing_period_end"],
                     )
                     dataset.macro.append(rec)
@@ -373,7 +516,13 @@ class DataFusion:
                     record_domain = result.domain
                     record_published = published
                     is_snapshot_market_data = any(k in metric.lower() or k in raw_key_str.lower() for k in ("latest_price", "change_pct", "close_price", "最新价", "最新涨跌幅", "收盘价"))
-                    if is_snapshot_market_data and result.domain == Domain.FINANCIALS:
+                    # 若为个股日间快照（来自财务或市场查询），且非指数代码，归入 COMPANIES 领域
+                    is_stock_market_data = (
+                        is_snapshot_market_data
+                        and not (entity_code and any(entity_code.endswith(sfx) for sfx in (".TI", ".CSI", ".SSI")))
+                        and not any(k in raw for k in ("指数代码", "指数简称", "板块代码", "板块名称"))
+                    )
+                    if is_stock_market_data and result.domain in (Domain.FINANCIALS, Domain.INDUSTRY):
                         record_domain = Domain.COMPANIES
                         if record_published is None:
                             record_published = as_of
@@ -395,7 +544,12 @@ class DataFusion:
                     if record_id in seen_record_ids:
                         exact_duplicates += 1
                         continue
-                    seen_record_ids.add(record_id)
+                    compact_raw = raw
+                    if len(raw) > 15:
+                        ident_keys = ("股票代码", "股票简称", "指标名称", "指标单位", "时间", "日期", "行业名称", "国家", "地区")
+                        compact_raw = {k: raw[k] for k in ident_keys if k in raw}
+                        compact_raw[raw_key_str] = raw_value
+
                     item = ResearchRecord(
                         record_id=record_id,
                         domain=record_domain,
@@ -407,13 +561,16 @@ class DataFusion:
                         period_end=metric_period,
                         published_at=record_published,
                         source=source,
-                        raw_fields=raw,
+                        raw_fields=compact_raw,
                         issues=issues,
                     )
                     dataset.records_for(record_domain).append(item)
+                    seen_record_ids.add(record_id)
 
         # 挖掘 reports 中的结构化财务时序并反哺至 financials 库
-        mined_financials = self._mine_financials_from_reports(dataset, as_of)
+        mined_financials = self._mine_financials_from_reports(
+            dataset, as_of, clean_excluded=clean_excluded, clean_must=clean_must
+        )
         if mined_financials:
             dataset.financials.extend(mined_financials)
 
@@ -438,7 +595,11 @@ class DataFusion:
         return dataset
 
     def _mine_financials_from_reports(
-        self, dataset: StructuredResearchDataset, as_of: date
+        self,
+        dataset: StructuredResearchDataset,
+        as_of: date,
+        clean_excluded: set[str] | None = None,
+        clean_must: set[str] | None = None,
     ) -> list[ResearchRecord]:
         """Scans unstructured report text in dataset.reports to extract structured financial metrics.
 
@@ -489,6 +650,9 @@ class DataFusion:
                 entity_name = entity_name[1:]
 
             if not entity_name:
+                continue
+
+            if clean_excluded and _is_entity_excluded(entity_name, raw, clean_excluded, clean_must or set()):
                 continue
 
             def add_record(metric: str, raw_val_str: str, period: date, snippet: str):

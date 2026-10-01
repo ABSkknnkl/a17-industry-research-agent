@@ -464,10 +464,14 @@ class DataFormulator:
     ) -> NormalizedDataTable | None:
         """Formulates structure donut/pie table across entities or segments."""
         for m, recs in by_metric.items():
+            lbl = canonical_metric_label(m)
+            # 严格拦截非加性率值指标进入环形结构表 (DEF-02)
+            non_additive = any(k in lbl.lower() for k in ("率", "比", "价", "price", "pe", "pb", "ps", "roe", "roa", "eps", "每股", "收益率", "增速", "增长率", "margin", "ratio", "yoy")) or any(k in m.lower() for k in ("price", "ratio", "margin", "pe", "pb", "ps", "rate", "yoy", "growth"))
+            if non_additive:
+                continue
             ent_recs = [r for r in recs if r.entity and float(r.value) > 0]
             unique_ents = list(dict.fromkeys(r.entity for r in ent_recs))
             if len(unique_ents) >= 2:
-                lbl = canonical_metric_label(m)
                 unit = ent_recs[0].unit or ""
                 categories = unique_ents[:8]
                 val_dict = {r.entity: float(r.value) for r in ent_recs}
@@ -517,6 +521,11 @@ class DataFormulator:
                 k1, k2 = metric_keys[i], metric_keys[j]
                 comp, _ = DimensionGuard.is_dual_axis_compatible(k1, k2)
                 if comp:
+                    best_pair = (k1, k2)
+                    break
+                # Special case: allow dual growth/YoY rate combo (e.g. 营收增速柱状 + 净利增速折线)
+                is_both_growth = any(w in k1 for w in ("增速", "增长率", "yoy", "growth")) and any(w in k2 for w in ("增速", "增长率", "yoy", "growth"))
+                if is_both_growth:
                     best_pair = (k1, k2)
                     break
                 # Special case: Total Market Cap + Float Market Cap -> derive Market Cap + Ratio%
@@ -653,8 +662,15 @@ class DataFormulator:
 
         # Group by series key (entity or metric)
         by_series: dict[str, dict[date, EvidenceRef]] = defaultdict(dict)
+        unique_metrics = {r.metric for r in dated_records}
+        unique_entities = {r.entity for r in dated_records if r.entity}
         for r in dated_records:
-            s_name = r.entity or canonical_metric_label(r.metric)
+            if len(unique_metrics) > 1 and len(unique_entities) <= 1:
+                s_name = canonical_metric_label(r.metric)
+            elif len(unique_metrics) > 1 and len(unique_entities) > 1:
+                s_name = f"{r.entity}_{canonical_metric_label(r.metric)}"
+            else:
+                s_name = r.entity or canonical_metric_label(r.metric)
             by_series[s_name][r.period] = r
 
         series_data: dict[str, list[float | None]] = {}
@@ -749,7 +765,13 @@ class DataFormulator:
 
         raw_vals = [float(r.value) for r in target_records]
         raw_units = [r.unit for r in target_records]
-        dest_unit = DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+        is_ratio_metric = any("率" in r.metric or "比" in r.metric or "%" in str(r.unit) for r in target_records) or any(
+            k in str(primary_metric).lower() for k in ("margin", "rate", "ratio", "pct", "roe", "roa")
+        )
+        if is_ratio_metric:
+            dest_unit = "%"
+        else:
+            dest_unit = DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
 
         entity_val_map: dict[str, float] = {}
         used_records: list[EvidenceRef] = []

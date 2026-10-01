@@ -16,11 +16,11 @@ class Settings:
     llm_api_key: str = ""
     llm_base_url: str = "https://api.deepseek.com/v1"
     llm_model: str = "deepseek-chat"
-    llm_reasoning_effort: str | None = None
+    llm_reasoning_effort: str | None = "low"
     fetch_timeout_seconds: float = 30.0
-    fetch_concurrency_limit: int = 5
+    fetch_concurrency_limit: int = 8
     output_dir: Path = Path("output")
-    llm_max_tokens: int = 16384
+    llm_max_tokens: int = 4096
 
     @property
     def iwencai_api_keys(self) -> tuple[str, ...]:
@@ -36,6 +36,15 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> "Settings":
+        try:
+            from dotenv import load_dotenv
+            env_path = Path(__file__).resolve().parents[3] / ".env"
+            if env_path.exists():
+                load_dotenv(env_path, override=True)
+            else:
+                load_dotenv(override=True)
+        except Exception:
+            pass
         return cls(
             iwencai_api_key=os.getenv("IWENCAI_API_KEY", "").strip(),
             iwencai_api_key_backup=os.getenv("IWENCAI_API_KEY_BACKUP", "").strip(),
@@ -43,10 +52,10 @@ class Settings:
             llm_api_key=(os.getenv("LLM_API_KEY") or os.getenv("DEEPSEEK_API_KEY") or "").strip(),
             llm_base_url=os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1").rstrip("/"),
             llm_model=os.getenv("LLM_MODEL", "deepseek-chat").strip(),
-            llm_reasoning_effort=os.getenv("LLM_REASONING_EFFORT") or os.getenv("REASONING_EFFORT") or None,
+            llm_reasoning_effort=os.getenv("LLM_REASONING_EFFORT") or os.getenv("REASONING_EFFORT") or "low",
             fetch_timeout_seconds=float(os.getenv("FETCH_TIMEOUT_SECONDS", "30")),
-            fetch_concurrency_limit=max(1, int(os.getenv("FETCH_CONCURRENCY_LIMIT", "5"))),
+            fetch_concurrency_limit=max(1, int(os.getenv("FETCH_CONCURRENCY_LIMIT", "8"))),
             output_dir=Path(os.getenv("OUTPUT_DIR", "output")),
-            llm_max_tokens=int(os.getenv("LLM_MAX_TOKENS", "16384")),
+            llm_max_tokens=int(os.getenv("PLANNER_MAX_TOKENS") or os.getenv("LLM_PLANNER_MAX_TOKENS") or "4096"),
         )
 

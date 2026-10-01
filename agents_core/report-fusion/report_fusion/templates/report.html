@@ -844,7 +844,7 @@
         <tr id="src-{{ src.number }}">
           <td style="text-align:center;font-weight:600;">来源{{ src.number }}</td>
           <td><strong>{{ src.entity or view.subject }}</strong> · {{ src.metric | format_metric }}</td>
-          <td style="text-align:right;font-variant-numeric:tabular-nums;"><strong>{{ src.value | evidence_val(src.unit) }}</strong></td>
+          <td style="text-align:right;font-variant-numeric:tabular-nums;"><strong>{{ src.value | evidence_val(src.unit, src.metric) }}</strong></td>
           <td style="text-align:center;">{{ src.period or "-" }}</td>
           <td style="text-align:center;">{{ src.domain | format_domain }}</td>
         </tr>

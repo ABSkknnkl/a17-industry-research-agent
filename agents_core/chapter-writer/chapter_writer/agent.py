@@ -140,8 +140,20 @@ def extract_global_quantitative_anchor(report: Any) -> dict[str, Any]:
     ) if comps else 0
     loss_count = total_companies - profitable_count if total_companies else 0
 
-    # Resolve company canonical segments
-    canonical_segments = dict(AEROSPACE_CANONICAL_SEGMENTS)
+    # Resolve subject for domain-specific canonical dictionaries
+    subj = ""
+    meta = getattr(report, "metadata", None)
+    if isinstance(meta, dict):
+        subj = meta.get("industry") or meta.get("subject") or ""
+    elif meta:
+        subj = getattr(meta, "industry", "") or getattr(meta, "subject", "") or ""
+    if not subj and hasattr(report, "subject"):
+        subj = getattr(report, "subject", "") or ""
+
+    is_aerospace = any(k in str(subj) for k in ("航天", "卫星", "低轨"))
+    canonical_segments: dict[str, str] = dict(AEROSPACE_CANONICAL_SEGMENTS) if is_aerospace else {}
+
+    # Resolve company canonical segments dynamically
     for seg in getattr(report, "industry_chain_segments", []):
         s_name = getattr(seg, "segment_name", "") or (seg.get("segment_name", "") if isinstance(seg, dict) else "")
         reps = getattr(seg, "representative_companies", []) or (seg.get("representative_companies", []) if isinstance(seg, dict) else [])
@@ -317,7 +329,21 @@ class ChapterWriterAgent:
                                 "global_facts": global_facts_prompt,
                                 "previous_errors": errors,
                             }
-                            raw = await self.llm.generate_json(SYSTEM_PROMPT, json.dumps(payload, ensure_ascii=False, default=str))
+                            # Call LLM with jittered backoff retry on 429 / RateLimit
+                            raw = None
+                            for retry_idx in range(3):
+                                try:
+                                    raw = await self.llm.generate_json(SYSTEM_PROMPT, json.dumps(payload, ensure_ascii=False, default=str))
+                                    break
+                                except Exception as api_exc:
+                                    err_str = str(api_exc).lower()
+                                    is_rate_limit = any(k in err_str for k in ("429", "rate limit", "ratelimit", "too many requests", "resource exhausted", "overloaded"))
+                                    if is_rate_limit and retry_idx < 2:
+                                        jitter = 0.5 + secrets.randbelow(100) / 100.0
+                                        sleep_time = (2.0 ** retry_idx) * jitter
+                                        await asyncio.sleep(sleep_time)
+                                        continue
+                                    raise
                             chapter = ChapterDraft.model_validate(raw)
                             errors = self._audit_chapter(chapter, outline_chapter, allowed_evidence, ready_charts, context, global_facts, drop_log=foreign_drops)
                             await record("skill_linter_checked", chapter_id=outline_chapter.chapter_id, passed=not errors, issues=errors)

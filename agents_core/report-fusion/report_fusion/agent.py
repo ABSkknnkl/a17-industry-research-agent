@@ -23,11 +23,33 @@ SYSTEM_PROMPT="""你是行业研究报告总编辑。只能编辑已有内容，
    - 严禁将研究主题（如“人形机器人”、“新能源汽车”、“航天”）作为映射 key 替换为长句定义；
    - 映射后的目标词（value）必须是极简短的专有名词（不超过 8 个字），严禁包含逗号、句号、冒号、分号或任何解释性描述语句；如果不需别名归一，保持 terminology_map 为空字典 {}。
 2. chapter_transitions 是 chapter_id 到承上启下过渡句的映射；
-3. paragraph_edits 是 paragraph_id 到 {text, evidence_ids} 的微调映射（仅在必要时修改关键段落，严禁无故大段重写）；
+3. paragraph_edits 是 paragraph_id 到 {text, evidence_ids} 的微调映射（正文各章节内容已完成严格证据核对，通常必须保持为空字典 {}。严禁无故大段重写！严禁改动任何数字、严禁增加任何未在原文中出现的数字，包括股票代码如 002085、年份、列表序号等；必须 100% 原样保留所有数字与精确字面值；必须完全复用原段落的 evidence_ids，严禁伪造不存在的证据编号）；
 4. 所有证据ID必须来自输入；所有数字必须已存在于输入。"""
 
 def _sha(data:bytes)->str:return hashlib.sha256(data).hexdigest()
 def _numbers(value:object)->set[str]:return set(NUMBER_RE.findall(json.dumps(value,ensure_ascii=False,default=str)))
+
+def _deduplicate_warnings(warnings: list[str]) -> list[str]:
+    seen: list[str] = []
+    for w in warnings:
+        w_str = str(w).strip()
+        if not w_str:
+            continue
+        is_subsumed = False
+        for idx, existing in enumerate(seen):
+            if w_str == existing:
+                is_subsumed = True
+                break
+            if existing.startswith(w_str) or (len(w_str) >= 15 and w_str in existing):
+                is_subsumed = True
+                break
+            if w_str.startswith(existing) or (len(existing) >= 15 and existing in w_str):
+                seen[idx] = w_str
+                is_subsumed = True
+                break
+        if not is_subsumed:
+            seen.append(w_str)
+    return seen
 
 FUSION_SKILL_PLANNING_PROMPT = """你是研报融合与总编审校模块。
 你必须基于待融合研报的整体结构（主题、章节数量与大纲、图表数量、证据量、数据质量预警等），自主调用 `invoke_skill` 工具选择指导本研报审校与融合的专业技能。
@@ -145,7 +167,7 @@ class ReportFusionAgent:
             if evidence_id in used_evidence
         ]
         catalog=[EvidenceSource(number=i,record_id=e.record_id,label=f"{e.entity or request.report.subject} / {e.metric}",domain=e.domain,metric=e.metric,entity=e.entity,value=e.value,unit=e.unit,period=e.period) for i,e in enumerate(ordered_evidence,1)]
-        all_warnings=list(dict.fromkeys([*request.report.warnings,*request.chapters.warnings,*(request.charts.warnings if request.charts else []),*warnings,*issues]))
+        all_warnings=_deduplicate_warnings([*request.report.warnings,*request.chapters.warnings,*(request.charts.warnings if request.charts else []),*warnings,*issues])
         consistency=ConsistencyReport(passed=not issues,issues=issues,warnings=warnings,accepted_edits=accepted,rejected_edits=rejected,terminology_map=term_map)
         km_list = []
         for km in getattr(request.report, "key_metrics", []):
@@ -285,19 +307,28 @@ class ReportFusionAgent:
         except (ValueError, TypeError):
             return
 
-        def _reconcile_text(text: str) -> str:
+        def _reconcile_text(text: str, is_metric_card: bool = False) -> str:
             if not text:
                 return text
-            def _repl_wan_yi(m):
+            def _repl_wan_yi(m: re.Match) -> str:
                 val_str = m.group(1)
                 try:
                     val = float(val_str)
-                    if (abs(val - canonical_val * 10) / (canonical_val * 10) < 0.2) or \
-                       (abs(val - canonical_val / 10) / (canonical_val / 10) < 0.2):
-                        return m.group(0).replace(val_str, str(canonical_val))
+                    if not ((abs(val - canonical_val * 10) / (canonical_val * 10) < 0.2) or \
+                            (abs(val - canonical_val / 10) / (canonical_val / 10) < 0.2)):
+                        return m.group(0)
                 except (ValueError, ZeroDivisionError):
-                    pass
-                return m.group(0)
+                    return m.group(0)
+
+                # Avoid mis-replacing macro/market size figures without market-cap context
+                if not is_metric_card:
+                    start_pos = max(0, m.start() - 50)
+                    end_pos = min(len(text), m.end() + 20)
+                    window = text[start_pos:end_pos]
+                    if not any(k in window for k in ("市值", "证券池", "样本规模", "标的规模")):
+                        return m.group(0)
+
+                return m.group(0).replace(val_str, str(canonical_val))
 
             return re.sub(r"([0-9]+(?:\.[0-9]+)?)\s*万亿(?:元)?", _repl_wan_yi, text)
 
@@ -307,7 +338,8 @@ class ReportFusionAgent:
                 for p in s.paragraphs:
                     p.text = _reconcile_text(p.text)
                 for mc in s.metric_cards:
-                    mc.value = _reconcile_text(mc.value)
+                    is_mc_target = any(k in str(getattr(mc, "label", "")) for k in ("市值", "证券池"))
+                    mc.value = _reconcile_text(mc.value, is_metric_card=is_mc_target)
 
     def _default_summary(self,request:ReportFusionRequest)->ExecutiveSummary:
         conclusions=[]
@@ -371,7 +403,11 @@ class ReportFusionAgent:
         return {"subject":request.report.subject,"as_of":request.report.as_of,"existing_summary":self._default_summary(request).model_dump(mode="json"),"chapters":[c.model_dump(mode="json") for c in request.chapters.chapters],"allowed_evidence_ids":list(request.report.evidence_index),"evidence":{k:v.model_dump(mode="json") for k,v in request.report.evidence_index.items()},"final_instruction":request.options.final_instruction}
 
     def _apply_editorial(self,raw:dict[str,Any],request:ReportFusionRequest,chapters:list[ChapterDraft])->tuple[ExecutiveSummary,list[ChapterDraft],dict[str,str],int,int,list[str]]:
-        allowed_ids=set(request.report.evidence_index);allowed_numbers=_numbers(self._editorial_payload(request));accepted=rejected=0;warnings=[]
+        allowed_ids=set(request.report.evidence_index)
+        allowed_numbers=_numbers(self._editorial_payload(request))
+        # Structural integers 1..30 (chapter/section/figure indices) are structural metadata, not ungrounded external numbers
+        allowed_numbers.update(str(i) for i in range(1, 31))
+        accepted=rejected=0;warnings=[]
         def valid_text(text:str)->bool:return _numbers(text)<=allowed_numbers
         default=self._default_summary(request)
         conclusions=[]
@@ -422,10 +458,20 @@ class ReportFusionAgent:
                     continue
                 term_map[old] = new
         paragraph_map={p.paragraph_id:p for c in chapters for s in c.sections for p in s.paragraphs}
+        rejected_pids: list[str] = []
         for pid,edit in raw.get("paragraph_edits",{}).items():
             para=paragraph_map.get(pid);text=str(edit.get("text","")).strip() if isinstance(edit,dict) else "";ids=edit.get("evidence_ids",[]) if isinstance(edit,dict) else []
-            if para and text and set(ids)<=allowed_ids and valid_text(text):para.text=text;para.evidence_ids=ids;accepted+=1
-            else:rejected+=1;warnings.append(f"拒绝了 {pid} 的编辑：包含新增数字、未知证据或目标不存在")
+            if para and text and set(ids)<=allowed_ids and valid_text(text):
+                para.text=text
+                para.evidence_ids=ids
+                accepted+=1
+            else:
+                rejected+=1
+                rejected_pids.append(pid)
+        if rejected_pids:
+            warnings.append(
+                f"审校防幻觉拦截：已拦截 {len(rejected_pids)} 处未获数据证据授权的段落微调（涉及 {', '.join(rejected_pids[:3])}{' 等' if len(rejected_pids) > 3 else ''}），全量保留各章节原始事实数据"
+            )
         transitions=raw.get("chapter_transitions",{})
         for chapter in chapters:
             transition=str(transitions.get(chapter.chapter_id,"")).strip()
@@ -464,12 +510,38 @@ class ReportFusionAgent:
                         target_sec_id = s.section_id
                         break
 
-            # Priority 2: Recommended chapter exists, place into its first section
+            # Priority 2: Recommended chapter exists, place into best section within that chapter
             if not target_sec_id and rec_ch_id:
                 for ch in chapters:
                     if ch.chapter_id == rec_ch_id and ch.sections:
-                        sec = next((s for s in ch.sections if s.section_id not in assigned_sections), ch.sections[0])
-                        target_sec_id = sec.section_id
+                        # Find semantic section match first
+                        matched_sec = None
+                        t_lower = chart.title.lower()
+                        for s in ch.sections:
+                            s_title = s.title.lower()
+                            if ("利润" in t_lower or "收入" in t_lower or "盈利" in t_lower) and ("收入" in s_title or "利润" in s_title or "盈利" in s_title):
+                                matched_sec = s
+                                break
+                            if ("负债" in t_lower or "现金" in t_lower or "资产" in t_lower) and ("负债" in s_title or "现金" in s_title or "质量" in s_title):
+                                matched_sec = s
+                                break
+                            if ("估值" in t_lower or "pe" in t_lower or "pb" in t_lower or "市值" in t_lower) and ("估值" in s_title or "参照" in s_title or "水平" in s_title):
+                                matched_sec = s
+                                break
+                            if ("份额" in t_lower or "集中度" in t_lower or "排名" in t_lower) and ("结构" in s_title or "集中度" in s_title or "参与者" in s_title):
+                                matched_sec = s
+                                break
+
+                        # Count current assignments per section in this chapter
+                        sec_counts = {s.section_id: sum(1 for p in assigned_placements.values() if p == s.section_id) for s in ch.sections}
+
+                        # If matched section is not overloaded (<= 2 charts), use it
+                        if matched_sec and sec_counts.get(matched_sec.section_id, 0) < 3:
+                            target_sec_id = matched_sec.section_id
+                        else:
+                            # Otherwise choose least-loaded section in this chapter
+                            best_sec = min(ch.sections, key=lambda s: sec_counts.get(s.section_id, 0))
+                            target_sec_id = best_sec.section_id
                         break
 
             # Priority 3: First candidate section where cid appeared (DO NOT use dict overwrite which picks last!)
@@ -504,8 +576,24 @@ class ReportFusionAgent:
             for s in ch.sections:
                 s.chart_ids = [cid for cid in chart_map if assigned_placements.get(cid) == s.section_id]
 
+        # Determine physical reading order across chapters and sections (DEF-03)
+        ordered_chart_ids: list[str] = []
+        for ch in chapters:
+            for s in ch.sections:
+                for cid in s.chart_ids:
+                    if cid in chart_map and cid not in ordered_chart_ids:
+                        ordered_chart_ids.append(cid)
+        # Any leftover charts
+        for cid in chart_map:
+            if cid not in ordered_chart_ids:
+                ordered_chart_ids.append(cid)
+
+        has_tubiao = any(str(getattr(c, "figure_number", "")).startswith("图表") for c in chart_map.values())
+        prefix_str = "图表" if has_tubiao else "图"
+
         result=[]
-        for cid,chart in chart_map.items():
+        for new_idx, cid in enumerate(ordered_chart_ids, 1):
+            chart = chart_map[cid]
             svg=""
             image_uri = getattr(chart, "image_uri", None)
             render_mode = getattr(chart, "render_mode", "echarts")
@@ -530,8 +618,17 @@ class ReportFusionAgent:
                 except OSError:warnings.append(f"图表 {cid} 的 SVG 文件不可读")
             if not svg:svg=f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 180"><rect width="100%" height="100%" fill="#f8fafc"/><text x="480" y="90" text-anchor="middle" fill="#64748b">{chart.title}：图表预览不可用</text></svg>'
             
+            # Re-index canonical figure number strictly in physical reading order
+            fig_number = f"{prefix_str} {new_idx}"
+            # Synchronize figure number inside SVG vector text
+            if svg and "<svg" in svg:
+                old_fig = getattr(chart, "figure_number", None)
+                if old_fig and old_fig in svg:
+                    svg = svg.replace(f"{old_fig}：", f"{fig_number}：").replace(f"{old_fig} ", f"{fig_number} ").replace(old_fig, fig_number)
+                else:
+                    svg = re.sub(r'图\s*\d+\s*[：:]\s*', f'{fig_number}：', svg, count=1)
+
             placement_id = assigned_placements.get(cid)
-            fig_number = getattr(chart, "figure_number", None) or f"图表 {len(result) + 1}"
             result.append(EmbeddedChart(
                 chart_id=cid,
                 title=chart.title,
@@ -552,7 +649,7 @@ class ReportFusionAgent:
         # Cross-reference normalization: replace [CHART-xx] placeholders in paragraph texts with canonical figure numbers
         chart_ref_map: dict[str, str] = {}
         for idx, ec in enumerate(result, 1):
-            fn = ec.figure_number or f"图表 {idx}"
+            fn = ec.figure_number or f"图 {idx}"
             chart_ref_map[f"[{ec.chart_id}]"] = fn
             chart_ref_map[ec.chart_id] = fn
             parts = ec.chart_id.split("-")
@@ -562,10 +659,22 @@ class ReportFusionAgent:
                 chart_ref_map[prefix] = fn
                 chart_ref_map[f"[{prefix.lower()}]"] = fn
                 chart_ref_map[prefix.lower()] = fn
+            # Also map original chart.figure_number if different
+            orig_chart = chart_map.get(ec.chart_id)
+            if orig_chart and orig_chart.figure_number and orig_chart.figure_number != fn:
+                chart_ref_map[f"[{orig_chart.figure_number}]"] = fn
+                chart_ref_map[f"如{orig_chart.figure_number}"] = f"如{fn}"
+                chart_ref_map[f"见{orig_chart.figure_number}"] = f"见{fn}"
+                chart_ref_map[f"至{orig_chart.figure_number}"] = f"至{fn}"
             # Map index variants: [CHART-1], [CHART-01], [chart-1], [chart-01], [图表-1], [图表-01], [图表1]
             chart_ref_map[f"[CHART-{idx}]"] = fn
             chart_ref_map[f"[CHART-{idx:02d}]"] = fn
             chart_ref_map[f"[chart-{idx}]"] = fn
+            chart_ref_map[f"[chart-{idx:02d}]"] = fn
+            chart_ref_map[f"[图表-{idx}]"] = fn
+            chart_ref_map[f"[图表-{idx:02d}]"] = fn
+            chart_ref_map[f"[图表{idx}]"] = fn
+            chart_ref_map[f"[图表{idx:02d}]"] = fn
             chart_ref_map[f"[chart-{idx:02d}]"] = fn
             chart_ref_map[f"[图表-{idx}]"] = fn
             chart_ref_map[f"[图表-{idx:02d}]"] = fn

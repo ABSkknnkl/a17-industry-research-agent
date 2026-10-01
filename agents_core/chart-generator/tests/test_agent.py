@@ -639,7 +639,77 @@ def test_render_type_safety_against_raw_floats_and_nested_lists():
     assert "<svg" in svg_radar_floats
 
 
+def test_backfill_suppressed_evidence():
+    agent = ChartGeneratorAgent()
+    report = report_payload()
+    # Test matching "利润" in title
+    eids = agent._backfill_suppressed_evidence("各季度净利润对比图", report)
+    assert len(eids) > 0
+    assert all(eid.startswith("R") for eid in eids)
+
+    # Test no match
+    eids_none = agent._backfill_suppressed_evidence("完全无关的某种概念图", report)
+    assert eids_none == []
 
 
+def test_deterministic_fallback_scatter_bubble_option_structure():
+    agent = ChartGeneratorAgent()
+    evidence = {
+        "E1": {"record_id": "E1", "domain": "financials", "entity": "公司A", "metric": "营业收入", "value": 100.0, "unit": "亿元"},
+        "E2": {"record_id": "E2", "domain": "financials", "entity": "公司B", "metric": "营业收入", "value": 200.0, "unit": "亿元"},
+        "E3": {"record_id": "E3", "domain": "financials", "entity": "公司C", "metric": "营业收入", "value": 300.0, "unit": "亿元"},
+        "E4": {"record_id": "E4", "domain": "financials", "entity": "公司A", "metric": "净利润", "value": 10.0, "unit": "亿元"},
+        "E5": {"record_id": "E5", "domain": "financials", "entity": "公司B", "metric": "净利润", "value": 25.0, "unit": "亿元"},
+        "E6": {"record_id": "E6", "domain": "financials", "entity": "公司C", "metric": "净利润", "value": 40.0, "unit": "亿元"},
+        "E7": {"record_id": "E7", "domain": "financials", "entity": "公司A", "metric": "研发费用", "value": 5.0, "unit": "亿元"},
+        "E8": {"record_id": "E8", "domain": "financials", "entity": "公司B", "metric": "研发费用", "value": 12.0, "unit": "亿元"},
+        "E9": {"record_id": "E9", "domain": "financials", "entity": "公司C", "metric": "研发费用", "value": 18.0, "unit": "亿元"},
+    }
+    report = InterpretationReport.model_validate({"report_id": "BUBBLE_TEST", "subject": "散点测试", "as_of": "2026-09-01", "status": "completed", "evidence_index": evidence})
+    req = ChartGenerationRequest(report=report, preferences=ChartPreferences(include_advanced=True))
+    cands, _ = agent._deterministic_fallback(req)
+
+    scat_cand = next((c for c in cands if c.chart_type in ("scatter", "bubble")), None)
+    assert scat_cand is not None, "应当在具备交叉多指标时生成散点或气泡图"
+    s0 = scat_cand.option["series"][0]
+    data = s0["data"]
+    assert len(data) == 3
+    # Check item structure: must be a dict with name and numeric coordinates in value
+    for pt in data:
+        assert isinstance(pt, dict)
+        assert "name" in pt
+        assert "value" in pt
+        assert isinstance(pt["value"], list)
+        assert isinstance(pt["value"][0], (int, float))
+        assert isinstance(pt["value"][1], (int, float))
+        assert isinstance(pt.get("symbolSize"), (int, float)), "symbolSize 必须为数值，严禁为字符串 'value[3]'"
+    assert "markLine" in s0
+    # Also verify SVG rendering works cleanly
+    svg = render_svg(scat_cand.title, scat_cand.chart_type, scat_cand.option, scat_cand.evidence_ids)
+    assert "<svg" in svg
+    assert "暂无有效散点坐标数据" not in svg
 
 
+def test_chart_generation_request_rejects_mismatched_dataset():
+    import pytest
+    report = InterpretationReport.model_validate({
+        "report_id": "TEST-1",
+        "subject": "商业航天",
+        "as_of": "2026-09-01",
+        "status": "completed",
+    })
+    # Mismatched dataset
+    mismatched_dataset = {
+        "sources": [{"query": "低空经济 概念股 筛选"}],
+        "industry": [{"metric": "industry_name", "value": "低空经济"}],
+    }
+    with pytest.raises(ValueError, match="输入数据集行业.*低空经济.*请求分析主题.*商业航天.*不一致"):
+        ChartGenerationRequest(report=report, input_dataset=mismatched_dataset)
+
+    # Matched dataset
+    matched_dataset = {
+        "sources": [{"query": "商业航天 运载火箭 龙头"}],
+        "industry": [{"metric": "industry_name", "value": "商业航天"}],
+    }
+    req = ChartGenerationRequest(report=report, input_dataset=matched_dataset)
+    assert req.report.subject == "商业航天"

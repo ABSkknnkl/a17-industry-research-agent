@@ -188,3 +188,28 @@ def test_fast_skill_router_policy_routing_and_linter_events():
     assert all(e["details"].get("passed") is True for e in linter_events)
 
 
+def test_chapter_writing_request_rejects_mismatched_dataset():
+    import pytest
+    from chapter_writer.models import InterpretationReport
+    rep = InterpretationReport.model_validate({
+        "report_id": "TEST-1",
+        "subject": "商业航天",
+        "as_of": "2026-09-01",
+        "status": "completed",
+    })
+    mismatched_dataset = {
+        "sources": [{"query": "低空经济 概念股 筛选"}],
+        "industry": [{"metric": "industry_name", "value": "低空经济"}],
+    }
+    with pytest.raises(ValueError, match="输入数据集行业.*低空经济.*请求分析主题.*商业航天.*不一致"):
+        ChapterWritingRequest(report=rep, input_dataset=mismatched_dataset)
+
+    matched_dataset = {
+        "sources": [{"query": "商业航天 运载火箭 龙头"}],
+        "industry": [{"metric": "industry_name", "value": "商业航天"}],
+    }
+    req = ChapterWritingRequest(report=rep, input_dataset=matched_dataset)
+    assert req.report.subject == "商业航天"
+
+
+

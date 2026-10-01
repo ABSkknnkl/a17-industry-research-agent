@@ -26,6 +26,7 @@ from data_interpreter.models import (
     PeerCompsMatrix,
     SkillExecutionResult,
     StructuredResearchDataset,
+    validate_request_consistency,
 )
 from data_interpreter.skillhub import AnalysisSkill, AnalysisSkillHub
 
@@ -160,9 +161,24 @@ class DataInterpreterAgent:
         emit: Any | None = None,
         save_artifacts: bool = True,
     ) -> InterpretationReport:
-        request = request or AnalysisRequest()
+        if request is None:
+            request = AnalysisRequest()
+        elif not isinstance(request, AnalysisRequest):
+            if hasattr(request, "model_dump"):
+                request = AnalysisRequest.model_validate(request.model_dump(mode="python"))
+            elif isinstance(request, dict):
+                request = AnalysisRequest.model_validate(request)
+
         if not isinstance(dataset, StructuredResearchDataset):
-            dataset = StructuredResearchDataset.model_validate(dataset)
+            if hasattr(dataset, "model_dump"):
+                dataset = StructuredResearchDataset.model_validate(dataset.model_dump(mode="python"))
+            elif isinstance(dataset, dict):
+                dataset = StructuredResearchDataset.model_validate(dataset)
+            else:
+                dataset = StructuredResearchDataset.model_validate(dataset)
+        # DEF-10: 离线用例与主题一致性断言守卫
+        if request and request.subject:
+            validate_request_consistency(dataset, request.subject)
         report_id = f"analysis-{request.as_of.strftime('%Y%m%d')}-{secrets.token_hex(4)}"
         artifact_dir = self.settings.output_dir / "runs" / report_id if save_artifacts else None
 
@@ -226,7 +242,7 @@ class DataInterpreterAgent:
         }))
 
         # Compute specialized financial modeling & peer comparisons
-        comps_matrix = self.engine.build_peer_comps_matrix(dataset)
+        comps_matrix = self.engine.build_peer_comps_matrix(dataset, subject=request.subject)
         industry_chain_segments = self.engine.extract_industry_chain(dataset, request.subject, comps_matrix=comps_matrix)
         financial_ratios = self.engine.compute_financial_ratios(dataset)
 
@@ -272,8 +288,23 @@ class DataInterpreterAgent:
 
                 for sr in skill_results:
                     for w in getattr(sr, "warnings", []):
-                        if w and w not in quality.limitations and len(quality.limitations) < 8:
-                            quality.limitations.append(w)
+                        w_str = str(w).strip()
+                        if not w_str:
+                            continue
+                        is_subsumed = False
+                        for idx, existing in enumerate(quality.limitations):
+                            if w_str == existing:
+                                is_subsumed = True
+                                break
+                            if existing.startswith(w_str) or (len(w_str) >= 15 and w_str in existing):
+                                is_subsumed = True
+                                break
+                            if w_str.startswith(existing) or (len(existing) >= 15 and existing in w_str):
+                                quality.limitations[idx] = w_str
+                                is_subsumed = True
+                                break
+                        if not is_subsumed and len(quality.limitations) < 8:
+                            quality.limitations.append(w_str)
                 warnings = list(quality.limitations)
 
 

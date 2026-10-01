@@ -56,9 +56,24 @@ def _is_aggregate_entity(name: str | None) -> bool:
     if not name:
         return True
     text = name.strip()
-    if not text or text in NON_COMPANY_ENTITY_NAMES:
+    if not text:
         return True
-    return any(pat in text for pat in NON_COMPANY_ENTITY_PATTERNS)
+    # Whitelist protection: known listed company names are never aggregate entities
+    if text in COMMON_TICKER_NAMES.values():
+        return False
+    norm_text = re.sub(r"[\(（\[].*?[\)）\]]", "", text).strip() or text
+    if norm_text in COMMON_TICKER_NAMES.values():
+        return False
+    # Strict exact match for sector/aggregate terms (never substring match "中国")
+    if text in NON_COMPANY_ENTITY_NAMES or norm_text in NON_COMPANY_ENTITY_NAMES:
+        return True
+    for pat in NON_COMPANY_ENTITY_PATTERNS:
+        if pat == "成分":
+            if norm_text in ("成分", "成分股") or norm_text.endswith("成分股"):
+                return True
+        elif pat in text:
+            return True
+    return False
 
 
 def _id(prefix: str, *parts: Any) -> str:
@@ -200,6 +215,77 @@ def _is_analytic_numeric(record: ResearchRecord) -> bool:
 def _mad(values: list[float]) -> float:
     center = median(values)
     return median([abs(value - center) for value in values])
+
+
+def _is_industry_relevant(company_name: str, ind_text: str, subject: str | None) -> bool:
+    """Universal industry domain compatibility check: filter out cross-industry concept giants without industry hardcoding."""
+    if not subject or not ind_text:
+        return True
+    s = subject.lower().strip()
+    ind = ind_text.lower().strip()
+    c = (company_name or "").lower().strip()
+
+    # 1. 白名单保护：若公司名称与主题关键词直接包含，100% 保留
+    if c and (c in s or s in c):
+        return True
+
+    # 主题核心分词
+    s_tokens = [t for t in re.split(r"[\s/、,，]+", s) if len(t) >= 2 and t not in ("行业", "产业", "概念", "经济", "中国", "全国", "市场", "深度", "研究", "分析")]
+    if c and any(t in c for t in s_tokens):
+        return True
+
+    # 若行业文本或主营文本直接命中主题分词，直接保留
+    if any(t in ind for t in s_tokens):
+        return True
+
+    # 2. 全市场通用领域正交互斥过滤（Domain-Orthogonal Cross-Industry Cleaning）
+    # (1) 金融、地产与建筑排斥非对应主题
+    if any(bad in ind for bad in ("银行", "保险", "证券", "非银金融", "房地产", "建筑装饰")):
+        if not any(k in s for k in ("金融", "银行", "证券", "保险", "地产", "房", "建筑")):
+            return False
+
+    # (2) 传统化石能源、重周期采掘与钢铁排斥非化石能源与重工主题（注意：新能源绝不等于传统石油石化与煤炭）
+    if any(bad in ind for bad in ("石油石化", "煤炭", "采掘", "钢铁")):
+        is_fossil_or_heavy = any(k in s for k in ("石化", "石油", "煤炭", "油气", "采掘", "矿产", "钢铁", "黑色金属")) or ("传统能源" in s or ("能源" in s and "新能源" not in s))
+        if not is_fossil_or_heavy:
+            return False
+
+    # (3) 食品饮料白酒排斥非食品饮料/大消费/农业主题
+    if any(bad in ind for bad in ("食品饮料", "白酒", "乳制品", "调味品", "饮料")):
+        if not any(k in s for k in ("食品", "饮料", "消费", "酒", "农业", "餐饮", "乳", "食")):
+            return False
+
+    # (4) 传统医药生物排斥非生命健康/医药医疗/动保主题
+    if any(bad in ind for bad in ("医药生物", "化学制药", "中药", "生物制品")):
+        if not any(k in s for k in ("医", "药", "生物", "健康", "疫苗", "器械", "宠", "诊", "病")):
+            return False
+
+    # (5) 纯通信设备/光模块/光器件/CPO排斥非通信网络与算力主题
+    if "通信" in ind and any(k in ind for k in ("通信设备", "光模块", "光器件", "光通信", "光纤", "cpo")):
+        if not any(k in s for k in ("通信", "5g", "6g", "光模块", "光器件", "cpo", "网络", "算力", "信息", "通信设备")):
+            return False
+
+    # (6) 纯消费电子（手机/耳机/穿戴）排斥非消费电子主题
+    if any(bad in ind for bad in ("消费电子", "品牌消费电子", "手机", "智能穿戴")):
+        if not any(k in s for k in ("消费电子", "手机", "耳机", "穿戴", "数码", "3c", "果链", "苹果链", "安卓")):
+            return False
+
+    # (7) 纯安防监控设备排斥非安防/智慧监控主题
+    if any(bad in ind for bad in ("安防设备", "视频监控", "安防")):
+        if not any(k in s for k in ("安防", "监控", "智能安防", "安保")):
+            return False
+
+    # (8) 纯物流快递仓储排斥非物流货运主题
+    if any(bad in ind for bad in ("快递", "物流", "仓储", "货运")):
+        if not any(k in s for k in ("物流", "快递", "仓储", "货运", "供应链服务")):
+            return False
+
+    # (9) 纯汽车整车/商用车排斥非交通出行与动力制造主题
+    if "汽车" in ind and any(k in ind for k in ("汽车整车", "乘用车", "商用车")):
+        if not any(k in s for k in ("车", "汽车", "汽配", "交通", "出行", "动力", "整车")):
+            return False
+
+    return True
 
 
 class DeterministicAnalysisEngine:
@@ -402,10 +488,11 @@ class DeterministicAnalysisEngine:
             for record, value in values:
                 score = 0.6745 * (value - center) / dispersion
                 if abs(score) >= threshold:
+                    sev = "high" if abs(score) >= threshold * 2 else "medium"
                     findings.append(AnomalyFinding(
                         anomaly_id=_id("A", "outlier", record.record_id),
                         kind="cross_sectional_outlier",
-                        severity="high" if abs(score) >= threshold * 2 else "medium",
+                        severity=sev,
                         metric=record.metric,
                         entity=_entity(record),
                         period=_period(record),
@@ -414,6 +501,7 @@ class DeterministicAnalysisEngine:
                         score=score,
                         explanation="该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
                         evidence_record_ids=[record.record_id],
+                        charting_guidance="suppress_or_isolate" if sev == "high" else None,
                     ))
         series: dict[tuple[str | None, str], list[tuple[ResearchRecord, float]]] = defaultdict(list)
         for record, value in numeric:
@@ -640,7 +728,7 @@ class DeterministicAnalysisEngine:
             return val * 100
         return val
 
-    def build_peer_comps_matrix(self, dataset: StructuredResearchDataset) -> PeerCompsMatrix:
+    def build_peer_comps_matrix(self, dataset: StructuredResearchDataset, subject: str | None = None) -> PeerCompsMatrix:
         # Take company-level records from companies, financials and industry_chain domains.
         # D-03 fix: individual peers' market-cap / PE / PB valuation rows are frequently
         # carried in the `industry` domain (one row per listed company, e.g. metric
@@ -659,6 +747,21 @@ class DeterministicAnalysisEngine:
             ent = _entity(r)
             if ent and not _is_aggregate_entity(ent):
                 comp_records.append(r)
+
+        # Collect company industry classifications from dataset raw_fields and metrics
+        comp_industries: dict[str, str] = {}
+        for r in dataset.all_records():
+            ent = _entity(r)
+            if not ent:
+                continue
+            rf = getattr(r, "raw_fields", {}) or {}
+            ind = rf.get("所属同花顺行业") or rf.get("所属申万行业") or rf.get("行业")
+            if not ind and ("行业" in str(r.metric)):
+                ind = r.value
+            if ind:
+                ind_str = " ".join(ind) if isinstance(ind, (list, tuple)) else str(ind)
+                prev = comp_industries.get(ent, "")
+                comp_industries[ent] = f"{prev} {ind_str}".strip()
 
         company_data: dict[str, dict[str, Any]] = defaultdict(lambda: {
             "name": None, "code": None, "metrics": {}, "periods": {}, "evidence_ids": []
@@ -770,6 +873,11 @@ class DeterministicAnalysisEngine:
                     if not (revenue or net_profit or cash_flow):
                         continue
 
+            c_target = clean_name or ent
+            c_ind = comp_industries.get(c_target, comp_industries.get(ent, ""))
+            if subject and not _is_industry_relevant(c_target, c_ind, subject):
+                continue
+
             if any(x is not None for x in (market_cap, revenue, net_profit, pe)):
                 if pe is not None and 0 < pe <= 150:
                     val_tier = "profitable"
@@ -874,7 +982,7 @@ class DeterministicAnalysisEngine:
             if not c:
                 return None
             c_str = str(c).strip()
-            if not c_str or c_str in NON_COMPANY_NAMES:
+            if not c_str:
                 return None
             if re.match(r"^\d{6}\.(SZ|SH|BJ|HK|US)$", c_str, re.I):
                 resolved = resolve_ticker(c_str)
@@ -882,10 +990,27 @@ class DeterministicAnalysisEngine:
                     c_str = resolved
                 else:
                     return None
-            if any(p in c_str for p in NON_COMPANY_PATTERNS) or c_str in NON_COMPANY_NAMES:
-                return None
-            if 2 <= len(c_str) <= 16:
+            if c_str in COMMON_TICKER_NAMES.values():
                 return c_str
+            cleaned_base = re.sub(r"[\(（\[].*?[\)）\]]", "", c_str).strip()
+            if cleaned_base in COMMON_TICKER_NAMES.values():
+                return cleaned_base
+            target_str = cleaned_base if cleaned_base else c_str
+            if target_str in NON_COMPANY_NAMES:
+                return None
+            is_pattern_excluded = False
+            for p in NON_COMPANY_PATTERNS:
+                if p == "成分":
+                    if target_str in ("成分", "成分股") or target_str.endswith("成分股"):
+                        is_pattern_excluded = True
+                        break
+                elif p in target_str:
+                    is_pattern_excluded = True
+                    break
+            if is_pattern_excluded:
+                return None
+            if 2 <= len(target_str) <= 16:
+                return target_str
             return None
 
         def _clean_company_list(comps: Iterable[str]) -> list[str]:
@@ -916,6 +1041,17 @@ class DeterministicAnalysisEngine:
             text = str(r.value or "")
             m_name = r.metric.casefold()
             raw_seg = str(r.raw_fields.get("产业链环节") or r.raw_fields.get("环节") or "").casefold()
+
+            # Only match supply chain segment keywords if the record comes from INDUSTRY_CHAIN
+            # or explicitly describes business products/scope, never from generic company financial metrics, concepts, or ticker info.
+            is_chain_relevant = (
+                r.domain == Domain.INDUSTRY_CHAIN
+                or bool(raw_seg)
+                or any(k in m_name for k in ("主营产品", "主要产品", "主营构成", "产品名称", "业务范围", "product", "business_scope"))
+            ) and not any(k in m_name for k in ("行业", "所属同花顺行业", "板块", "概念", "代码", "市值", "股价", "市盈率", "市净率", "概念原因", "纳入概念", "concept", "market_cap", "price", "pe", "pb"))
+            if not is_chain_relevant:
+                continue
+
             combined = f"{ent or ''} {m_name} {raw_seg} {text}".casefold()
 
             # Direct segment match from raw metadata if available
@@ -923,22 +1059,33 @@ class DeterministicAnalysisEngine:
             is_down = "下游" in raw_seg or any(k in combined for k in downstream_kw)
             is_mid = "中游" in raw_seg or any(k in combined for k in midstream_kw)
 
-            # Product extraction helper: only extract from descriptive domains, never from numeric financials
+            # Product extraction helper: only extract from concise product/business fields, never from narrative concept/announcement text
             is_product_field = (
-                r.domain in (Domain.INDUSTRY_CHAIN, Domain.COMPANIES)
-                or any(k in m_name for k in ("产品", "主营", "业务", "product", "business"))
-            ) and not any(k in m_name for k in ("营业收入", "净利润", "费用", "市值", "资金", "现金流"))
+                r.domain == Domain.INDUSTRY_CHAIN
+                or any(k in m_name for k in ("主营产品", "主要产品", "主营构成", "产品名称", "业务范围", "product", "business_scope"))
+            ) and not any(k in m_name for k in ("营业收入", "净利润", "费用", "市值", "资金", "现金流", "概念原因", "纳入概念", "简介", "公告", "新闻"))
 
             def _extract_phrases(val_text: str) -> list[str]:
                 phrases = []
+                # If text contains long narrative prose with punctuation, reject
+                if len(val_text) > 60 and any(punc in val_text for punc in ("。", "！", "？", "；")):
+                    return []
                 for p in re.split(r"[,，;；、|/\n]+", val_text):
                     p = p.strip()
-                    # Strip quotation marks and brackets (e.g. from Python list string repr)
-                    p = re.sub(r"^[\[\'\"\(（]+|[\]\'\"\)）]+$", "", p).strip()
+                    # Strip quotation marks and brackets
+                    p = re.sub(r"^[\[\'\"\(（【]+|[\]\'\"\)）】]+$", "", p).strip()
                     # Reject pure numbers, floats, scientific notations, currencies, percentages
                     if re.match(r"^[\d\.\+\-eE,/%]+$", p):
                         continue
-                    if 2 <= len(p) <= 24 and not any(stop in p for stop in (
+                    # Reject narrative sentence fragments (verbs, temporal words, announcement jargon)
+                    if any(bad in p for bad in (
+                        "携手", "投放", "发展", "打造", "截至", "签约", "预计", "实现", "投资", "建设",
+                        "推进", "完成", "成立", "取得", "发布", "披露", "同意", "审议", "董事会", "股东",
+                        "报告期", "上半年", "下半年", "第.*季度", "一季度", "二季度", "三季度", "四季度",
+                        "第一批", "批次", "合作", "战略", "充分运用", "目前已", "连续", "始创于", "入选",
+                    )):
+                        continue
+                    if 2 <= len(p) <= 16 and not any(stop in p for stop in (
                         "公司", "服务", "同比", "环比", "亿元", "万元", "主要", "概念", "板块", "指数", "代码", "日期", "中国ai"
                     )):
                         phrases.append(p)
@@ -980,18 +1127,43 @@ class DeterministicAnalysisEngine:
         mid_prods = _get_products("midstream", ["核心产品研发与技术方案", "系统集成与一体化交付", "核心算法/模型与平台底座"])
         down_prods = _get_products("downstream", ["场景化应用与终端解决方案", "商业化运营与客户服务", "行业生态与落地部署"])
 
+        # Collect company industry classifications from dataset
+        comp_industries: dict[str, str] = {}
+        for r in records:
+            ent_name = _entity(r, context_map=dyn_tickers)
+            if not ent_name:
+                continue
+            rf = getattr(r, "raw_fields", {}) or {}
+            ind = rf.get("所属同花顺行业") or rf.get("所属申万行业") or rf.get("行业")
+            if not ind and any(k in r.metric.casefold() for k in ("所属同花顺行业", "industry_classification", "行业")):
+                ind = r.value
+            if ind:
+                ind_str = " ".join(ind) if isinstance(ind, (list, tuple)) else str(ind)
+                prev = comp_industries.get(ent_name, "")
+                comp_industries[ent_name] = f"{prev} {ind_str}".strip()
+
         # Collect all valid unique candidate companies across all stages and peer comps
-        all_candidate_comps = _clean_company_list(
+        raw_candidates = _clean_company_list(
             list(chain_data["upstream"]["companies"])
             + list(chain_data["midstream"]["companies"])
             + list(chain_data["downstream"]["companies"])
             + [e.company_name for e in getattr(comps_matrix, "entries", [])]
         )
+        all_candidate_comps = [c for c in raw_candidates if _is_industry_relevant(c, comp_industries.get(c, ""), subject)]
 
         stage_assigned: dict[str, list[str]] = {"upstream": [], "midstream": [], "downstream": []}
         for c in all_candidate_comps:
             sc = company_scores.get(c, {"upstream": 0, "midstream": 0, "downstream": 0})
-            best = max(["midstream", "upstream", "downstream"], key=lambda s: (sc[s], s == "midstream"))
+            ind_text = comp_industries.get(c, "")
+            if sc["upstream"] == 0 and sc["midstream"] == 0 and sc["downstream"] == 0 and ind_text:
+                if any(k in ind_text for k in ("农林牧渔", "农产品", "粮食", "包装", "包材", "原材料", "芯片", "零部件", "原料")):
+                    best = "upstream"
+                elif any(k in ind_text for k in ("商贸零售", "零售", "物流", "贸易", "电商", "百货", "经销", "销售", "渠道")):
+                    best = "downstream"
+                else:
+                    best = "midstream"
+            else:
+                best = max(["midstream", "upstream", "downstream"], key=lambda s: (sc[s], s == "midstream"))
             stage_assigned[best].append(c)
 
         # Rebalance across stages if any stage is empty and total companies >= 3, ensuring strictly disjoint assignments
@@ -1000,8 +1172,7 @@ class DeterministicAnalysisEngine:
                 if not stage_assigned[target_stage]:
                     donor = max(stage_assigned, key=lambda s: len(stage_assigned[s]))
                     if len(stage_assigned[donor]) >= 2:
-                        cand = max(stage_assigned[donor], key=lambda comp: company_scores.get(comp, {}).get(target_stage, 0))
-                        stage_assigned[donor].remove(cand)
+                        cand = stage_assigned[donor].pop()
                         stage_assigned[target_stage].append(cand)
 
         up_comps = stage_assigned["upstream"]

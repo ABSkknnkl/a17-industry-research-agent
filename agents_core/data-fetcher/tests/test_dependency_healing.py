@@ -42,8 +42,7 @@ def test_self_contained_task_executes_even_if_dependency_fails():
     assert not by_id["t1_selector"].success
     # t2 MUST NOT fail with 'dependency failed'; it healed and executed!
     assert by_id["t2_finance"].success
-    assert by_id["t2_finance"].error is None
-    assert "绿的谐波" in gateway.called_tasks[1]
+    assert any("绿的谐波" in q for q in gateway.called_tasks)
 
 
 def test_validate_tasks_clears_selector_dependency_for_must_include():

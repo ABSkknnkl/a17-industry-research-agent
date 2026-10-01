@@ -34,14 +34,21 @@ def _format_card_value(val: Any, unit: str | None) -> str:
         return val_s
     if unit_s in {"0-1", "0~1", "[0,1]", "0-100", "0~100"}:
         return f"{val_s} (区间 {unit_s})"
+    if unit_s in ("日期", "时间", "时点", "无", "-"):
+        return val_s
+    if unit_s in ("倍数", "倍率"):
+        unit_s = "倍"
     if val_s.endswith(unit_s):
         return val_s
-    return f"{val_s}{unit_s}"
+    if unit_s == "%":
+        return f"{val_s}%"
+    return f"{val_s} {unit_s}"
 
 METRIC_DISPLAY_NAMES = {
     "parent_net_profit": "归母净利润",
     "net_profit": "净利润",
     "revenue": "营业收入",
+    "operating_revenue": "营业收入",
     "operating_cash_flow": "经营性现金流净额",
     "cash_flow": "经营现金流",
     "net_margin": "销售净利率",
@@ -51,11 +58,57 @@ METRIC_DISPLAY_NAMES = {
     "debt_ratio": "资产负债率",
     "debt_asset_ratio": "资产负债率",
     "pe": "市盈率(PE)",
+    "pe_ttm": "市盈率(TTM)",
+    "pe_lyr": "市盈率(静)",
     "pb": "市净率(PB)",
     "ps": "市销率(PS)",
+    "concept_name": "概念板块",
+    "industry_name": "所属行业",
+    "bps": "每股净资产",
+    "cfps": "每股经营现金流",
+    "total_equity": "净资产",
     "total_market_cap": "总市值",
     "market_cap": "总市值",
+    "circulating_market_cap": "流通市值",
+    "float_market_cap": "流通市值",
+    "latest_price": "最新股价",
+    "close_price": "收盘价",
+    "price": "价格",
+    "change_pct": "最新涨跌幅",
+    "yoy": "同比增长率",
+    "revenue_yoy": "营收同比增长率",
+    "net_profit_yoy": "净利同比增长率",
+    "rd_expense": "研发费用",
+    "rd_ratio": "研发费用率",
+    "total_assets": "总资产",
+    "total_liabilities": "总负债",
+    "eps": "每股收益(EPS)",
+    "dividend_yield": "股息率",
+    "gdp": "国内生产总值(GDP)",
+    "cpi": "居民消费价格指数(CPI)",
+    "ppi": "工业品出厂价格指数(PPI)",
 }
+
+CONFIDENCE_DISPLAY_NAMES = {
+    "high": "高",
+    "medium": "中",
+    "low": "低",
+}
+
+def _format_confidence(conf: str) -> str:
+    c = str(conf or "").strip().lower()
+    return CONFIDENCE_DISPLAY_NAMES.get(c, conf or "中")
+
+DELIVERY_STATUS_NAMES = {
+    "ready": "审核通过（已交付）",
+    "ready_with_limits": "审核通过（附数据边界说明）",
+    "draft": "草稿待审",
+    "reviewing": "审校中",
+}
+
+def _format_delivery_status(status: str) -> str:
+    s = str(status or "").strip().lower()
+    return DELIVERY_STATUS_NAMES.get(s, status or "已交付")
 
 def _format_metric_label(metric: str) -> str:
     m = str(metric or "").strip()
@@ -145,6 +198,12 @@ DOMAIN_DISPLAY_NAMES = {
     "policy": "政策法规",
     "valuation": "估值数据",
     "news": "市场资讯",
+    "companies": "公司概况",
+    "company": "公司概况",
+    "reports": "研报观点",
+    "report": "研报观点",
+    "industry_chain": "产业链",
+    "research": "行业研究",
 }
 
 
@@ -153,14 +212,53 @@ def _format_domain_label(domain: str) -> str:
     return DOMAIN_DISPLAY_NAMES.get(d, DOMAIN_DISPLAY_NAMES.get(d.lower(), d))
 
 
-def _display_evidence_value(value: object, unit: str | None = None) -> str:
+def _display_evidence_value(value: object, unit: str | None = None, metric: str | None = None, *args: Any, **kwargs: Any) -> str:
     s = _display_value(value)
     if not unit:
+        try:
+            val_num = float(str(value).strip().replace(",", ""))
+            if abs(val_num) >= 1e8:
+                return f"{val_num / 1e8:.2f} 亿元"
+            if abs(val_num) >= 1e4 and metric and any(k in str(metric).lower() for k in ("成交额", "金额", "amount", "turnover", "市值", "资金", "费用", "收入", "利润")):
+                return f"{val_num / 1e4:.2f} 万元"
+        except (ValueError, TypeError):
+            pass
         return s
     u = str(unit).strip()
+    if u in ("日期", "时间", "时点", "无", "-"):
+        return s
+    if u in ("倍数", "倍率"):
+        u = "倍"
     if not u or s.endswith(u) or (u == "%" and s.endswith("%")):
         return s
-    return f"{s}{u}"
+    if u == "%":
+        return f"{s}%"
+    if u in ("元", "人民币", "CNY", "¥"):
+        try:
+            val_num = float(str(value).strip().replace(",", ""))
+            if abs(val_num) >= 1e8:
+                return f"{val_num / 1e8:.2f} 亿元"
+            if abs(val_num) >= 1e4:
+                return f"{val_num / 1e4:.2f} 万元"
+        except (ValueError, TypeError):
+            pass
+    elif u == "股":
+        try:
+            val_num = float(str(value).strip().replace(",", ""))
+            if abs(val_num) >= 1e8:
+                return f"{val_num / 1e8:.2f} 亿股"
+            if abs(val_num) >= 1e4:
+                return f"{val_num / 1e4:.2f} 万股"
+        except (ValueError, TypeError):
+            pass
+    elif u == "手":
+        try:
+            val_num = float(str(value).strip().replace(",", ""))
+            if abs(val_num) >= 1e4:
+                return f"{val_num / 1e4:.2f} 万手"
+        except (ValueError, TypeError):
+            pass
+    return f"{s} {u}"
 
 
 for _e in list(_jinja_envs.values()) + [_jinja_env]:
@@ -168,6 +266,8 @@ for _e in list(_jinja_envs.values()) + [_jinja_env]:
     _e.filters["evidence_val"] = _display_evidence_value
     _e.filters["format_metric"] = _format_metric_label
     _e.filters["format_domain"] = _format_domain_label
+    _e.filters["format_confidence"] = _format_confidence
+    _e.filters["format_status"] = _format_delivery_status
 
 
 def render_markdown(view: ReportViewModel) -> str:
@@ -176,7 +276,7 @@ def render_markdown(view: ReportViewModel) -> str:
         f"# {view.title}",
         "",
         f"- 研究时点：{view.as_of.isoformat()}",
-        f"- 交付状态：{view.delivery_status}",
+        f"- 交付状态：{_format_delivery_status(view.delivery_status)}",
         f"- 报告编号：{view.report_id}",
         "",
         "## 执行摘要与核心研判",
@@ -194,7 +294,7 @@ def render_markdown(view: ReportViewModel) -> str:
     lines += ["### 核心结论与驱动", ""]
     for item in view.executive_summary.conclusions:
         lines.append(
-            f"- ■ **{item.text}** {_citations(item.evidence_ids, lookup)}（置信度：{item.confidence}；不确定性：{item.uncertainty or '见研究边界'}）"
+            f"- ■ **{item.text}** {_citations(item.evidence_ids, lookup)}（置信度：{_format_confidence(item.confidence)}；不确定性：{item.uncertainty or '见研究边界'}）"
         )
 
     if view.executive_summary.risks:
@@ -283,7 +383,7 @@ def render_markdown(view: ReportViewModel) -> str:
     if conflicts:
         for conf in conflicts:
             vals_str = " vs ".join(conf.get("observed_values", []))
-            lines.append(f"| {conf.get('entity', '-')} | {conf.get('metric', '-')} | {conf.get('period', '-')} | {vals_str} | {conf.get('arbitration_rule', '法定审计公告优先')} |")
+            lines.append(f"| {conf.get('entity', '-')} | {_format_metric_label(conf.get('metric', '-'))} | {conf.get('period', '-')} | {vals_str} | {conf.get('arbitration_rule', '法定审计公告优先')} |")
     else:
         lines.append("| 行业标的 | 关键财务指标 | 最新报告期 | 一致口径 | 多源校验偏差处于容差范围（<=1.5%），未发生实质冲突 |")
 
@@ -299,7 +399,7 @@ def render_markdown(view: ReportViewModel) -> str:
     ]
     for source in view.evidence_catalog:
         lines.append(
-            f"|来源{source.number}|{source.entity or view.subject} / {source.metric}|{_display_value(source.value)}{source.unit or ''}|{source.period or '-'}|{source.domain}|"
+            f"|来源{source.number}|{source.entity or view.subject} / {_format_metric_label(source.metric)}|{_display_evidence_value(source.value, source.unit, source.metric)}|{source.period or '-'}|{_format_domain_label(source.domain)}|"
         )
     lines += ["", f"> {view.disclaimer}"]
     return "\n".join(lines) + "\n"

@@ -44,7 +44,13 @@ _image_spent = False
 _POLL_INTERVAL_SECONDS = 3.0
 _TERMINAL_SUCCESS = frozenset({"COMPLETED"})
 _TERMINAL_FAILURE = frozenset({"FAILED", "CANCELED", "CANCELLED"})
-_PENDING_STATUS = frozenset({"SUBMITTING", "PENDING", "QUEUED", "RUNNING", "GENERATING", "IN_PROGRESS", "PROCESSING"})
+# 轮询期间的「非终态」状态白名单。任何不在成功/失败终态集合里的中间态都必须在此登记，
+# 否则会被 _poll_until_image 判为「unexpected state」直接放弃。实测服务端在受理后、
+# 真正开始生成前会先回 SUBMITTED（与 SUBMITTING 是两个不同状态），漏登记会导致生图必失败。
+_PENDING_STATUS = frozenset({
+    "SUBMITTED", "SUBMITTING", "PENDING", "QUEUED",
+    "RUNNING", "GENERATING", "IN_PROGRESS", "PROCESSING",
+})
 
 
 def reset_image_budget() -> None:
@@ -78,7 +84,7 @@ class ImageGenSettings:
     api_key: str
     base_url: str
     model: str
-    timeout_seconds: float = 600.0
+    timeout_seconds: float = 30.0
     size: str = "auto"
     extra_body: dict[str, Any] | None = None
     llm_api_key: str = ""
@@ -101,7 +107,7 @@ class ImageGenSettings:
             api_key=os.getenv("IMAGE_API_KEY", "").strip(),
             base_url=os.getenv("IMAGE_BASE_URL", "https://router.shengsuanyun.com/api/v1").rstrip("/"),
             model=os.getenv("IMAGE_MODEL", "openai/gpt-image-2").strip(),
-            timeout_seconds=float(os.getenv("IMAGE_TIMEOUT_SECONDS", "600")),
+            timeout_seconds=float(os.getenv("IMAGE_TIMEOUT_SECONDS", "30")),
             size=os.getenv("IMAGE_SIZE", "auto").strip() or "auto",
             extra_body=extra,
             llm_api_key=os.getenv("LLM_API_KEY", "").strip(),
@@ -146,7 +152,7 @@ class OpenAICompatiblePromptCompiler:
                         {"role": "user", "content": runtime_prompt},
                     ],
                     "temperature": 0.1,
-                    "max_tokens": 6000,
+                    "max_tokens": 1200,
                 },
             )
             res.raise_for_status()
@@ -228,6 +234,29 @@ async def _poll_until_image(
         if status not in _PENDING_STATUS:
             raise RuntimeError(f"image task in unexpected state: {status}")
         await asyncio.sleep(min(_POLL_INTERVAL_SECONDS, remaining))
+
+
+async def _download_image_bytes(client: httpx.AsyncClient, image_url: str) -> bytes:
+    """下载生图结果，带 http→https 协议回退。
+
+    为什么要回退：服务端返回的 OSS 直链是 **http**（80 端口），在受限网络/企业防火墙下
+    80 端口常被拦截并回 403；而签名基于路径与查询串计算，换 https 不影响校验结果。
+    """
+    candidates = [image_url]
+    if image_url.startswith("http://"):
+        candidates.append("https://" + image_url[len("http://"):])
+
+    last_err: Exception | None = None
+    for url in candidates:
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+            if len(response.content) >= 32:
+                return response.content
+            last_err = ValueError(f"返回内容过短：{len(response.content)} bytes")
+        except Exception as exc:  # noqa: BLE001  逐个候选协议尝试，最后一次抛错
+            last_err = exc
+    raise RuntimeError(f"图片下载失败（已尝试 {len(candidates)} 种协议）：{last_err}")
 
 
 async def _compile_pure_prompt(
@@ -361,6 +390,11 @@ async def generate_industry_chain_image(
 ) -> GeneratedImage | None:
     """Agent3 产业链生图入口：编译合格提示词后调用生图模型（全链路仅成功 1 次）。"""
     cfg = settings or ImageGenSettings.from_env()
+    # 门禁前置：若未配置生图 API Key，无需做任何耗时的 LLM 提示词编译，直接秒级跳过
+    if not cfg.api_key:
+        logger.info("IMAGE_API_KEY 未配置，跳过产业链 AI 生图流程")
+        return None
+
     graph = build_verified_graph_for_report(
         subject=subject, title=title, segments=segments, option=option,
     )
@@ -380,9 +414,6 @@ async def generate_industry_chain_image(
         logger.warning(f"产业链生图提示词构建失败（Agent3）: {e}")
         return None
 
-    if not cfg.api_key:
-        logger.warning("IMAGE_API_KEY 未配置，跳过产业链 AI 生图；提示词已就绪")
-        return None
     if not _try_consume_budget():
         logger.info("产业链生图预算已耗尽（仅允许成功一次），跳过本次生图")
         return None
@@ -405,19 +436,26 @@ async def generate_industry_chain_image(
             "watermark": False,
         }
 
+    # 熔断上限：取配置超时与 IMAGE_GEN_TIMEOUT_SECONDS 的较小值（默认 30s）
+    timeout_limit = min(cfg.timeout_seconds, float(os.getenv("IMAGE_GEN_TIMEOUT_SECONDS", "30.0")))
     try:
-        async with httpx.AsyncClient(timeout=cfg.timeout_seconds) as client:
-            submit = await client.post(
-                f"{cfg.base_url}/tasks/generations", headers=headers, json=body,
-            )
-            submit.raise_for_status()
-            request_id = _extract_request_id(submit.json())
-            image_url = await _poll_until_image(
-                client, headers, cfg.base_url, request_id, cfg.timeout_seconds,
-            )
-            img_res = await client.get(image_url)
-            img_res.raise_for_status()
-            body_bytes = img_res.content
+        async def _do_generate() -> bytes:
+            async with httpx.AsyncClient(timeout=timeout_limit) as client:
+                submit = await client.post(
+                    f"{cfg.base_url}/tasks/generations", headers=headers, json=body,
+                )
+                submit.raise_for_status()
+                request_id = _extract_request_id(submit.json())
+                image_url = await _poll_until_image(
+                    client, headers, cfg.base_url, request_id, timeout_limit,
+                )
+                return await _download_image_bytes(client, image_url)
+
+        body_bytes = await asyncio.wait_for(_do_generate(), timeout=timeout_limit)
+    except asyncio.TimeoutError:
+        _refund_budget()
+        logger.warning(f"产业链生图超过 {timeout_limit}s 熔断上限，自动降级为 SVG 静态拓扑图")
+        return None
     except Exception as e:
         _refund_budget()
         logger.warning(f"产业链生图调用失败（Agent3），保留 SVG 回退: {e}")

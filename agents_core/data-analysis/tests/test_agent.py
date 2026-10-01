@@ -239,3 +239,23 @@ def test_batched_skills_execution():
     assert any(item.event == "skill_completed" for item in report.execution_trace)
 
 
+def test_validate_request_consistency_rejects_mismatched_industry():
+    import pytest
+    from data_interpreter.models import SourceRef, Domain, ResearchRecord, StructuredResearchDataset, validate_request_consistency
+    source = SourceRef(task_id="t1", skill_id="s1", trace_id="tr1", retrieved_at="2026-09-27T00:00:00Z", query="低空经济 行业估值")
+    ds = StructuredResearchDataset(
+        industry=[
+            ResearchRecord(record_id="r1", domain=Domain.INDUSTRY, metric="industry_name", value="低空经济", source=source),
+        ],
+        sources=[source],
+    )
+    # 对齐的主题：通过
+    validate_request_consistency(ds, "低空经济")
+    validate_request_consistency(ds, "低空经济产业深度分析")
+
+    # 错配的主题：抛出 ValueError
+    with pytest.raises(ValueError, match="输入数据集行业.*低空经济.*请求分析主题.*商业航天.*不一致"):
+        validate_request_consistency(ds, "商业航天")
+
+
+

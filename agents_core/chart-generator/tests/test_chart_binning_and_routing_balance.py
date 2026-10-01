@@ -57,3 +57,19 @@ def test_chart_chapter_fallback_semantic():
         metrics=["GDP"],
     )
     assert assigned_ch6 == "CH-06"
+
+    assigned_ch7 = agent._infer_chart_chapter(
+        title="主要原材料价格上涨情景推演与敏感性测试",
+        chart_type="bar",
+        domain="risk",
+        metrics=["敏感性", "情景推演"],
+    )
+    assert assigned_ch7 == "CH-07"
+
+    assigned_ch1 = agent._infer_chart_chapter(
+        title="行业全景图谱与产业定位",
+        chart_type="bar",
+        domain="overview",
+        metrics=["行业概况"],
+    )
+    assert assigned_ch1 == "CH-01"

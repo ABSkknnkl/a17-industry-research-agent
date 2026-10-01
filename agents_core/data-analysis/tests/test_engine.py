@@ -238,3 +238,22 @@ def test_tiered_valuation_and_ratio_bounding_and_appendix():
     assert appendix["sample_info"]["profitable_sample_size"] == 1
     assert appendix["sample_info"]["loss_or_high_multiple_size"] == 2
     assert len(appendix["non_extrapolation_disclaimers"]) >= 3
+
+
+def test_aggregate_entity_distinction():
+    from data_interpreter.engine import _is_aggregate_entity
+    # True aggregate entities
+    assert _is_aggregate_entity("中国") is True
+    assert _is_aggregate_entity("全国") is True
+    assert _is_aggregate_entity("宏观") is True
+    assert _is_aggregate_entity("商业航天概念") is True
+    assert _is_aggregate_entity("卫星互联网板块") is True
+    assert _is_aggregate_entity("成分") is True
+    assert _is_aggregate_entity("中证500ETF") is True
+
+    # Real listed companies starting with 中国 should NOT be classified as aggregate
+    assert _is_aggregate_entity("中国卫星") is False
+    assert _is_aggregate_entity("中国船舶") is False
+    assert _is_aggregate_entity("中国卫通") is False
+    assert _is_aggregate_entity("中国卫星(成分股)") is False
+

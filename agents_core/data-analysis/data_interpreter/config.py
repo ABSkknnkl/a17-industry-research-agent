@@ -14,7 +14,7 @@ class Settings:
     llm_model: str = "deepseek-chat"
     llm_reasoning_effort: str | None = "low"
     llm_timeout_seconds: float = 180.0
-    skill_concurrency_limit: int = 4
+    skill_concurrency_limit: int = 6
     output_dir: Path = Path("output")
     llm_max_tokens: int = 16384
     batch_skills: bool = False
@@ -27,7 +27,7 @@ class Settings:
             llm_model=os.getenv("LLM_MODEL", "deepseek-chat").strip(),
             llm_reasoning_effort=os.getenv("LLM_REASONING_EFFORT") or os.getenv("REASONING_EFFORT") or "low",
             llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "180")),
-            skill_concurrency_limit=max(1, int(os.getenv("SKILL_CONCURRENCY_LIMIT", "4"))),
+            skill_concurrency_limit=max(1, int(os.getenv("SKILL_CONCURRENCY_LIMIT", "6"))),
             output_dir=Path(os.getenv("OUTPUT_DIR", "output")),
             llm_max_tokens=int(os.getenv("LLM_MAX_TOKENS", "16384")),
             batch_skills=os.getenv("BATCH_SKILLS", "false").strip().lower() in {"true", "1", "yes"},

@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from data_interpreter.agent import DataInterpreterAgent
-from data_interpreter.models import AnalysisRequest, StructuredResearchDataset
+from data_interpreter.models import AnalysisRequest, StructuredResearchDataset, validate_request_consistency
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,6 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
 async def _run(args: argparse.Namespace) -> int:
     payload = json.loads(args.dataset.read_text(encoding="utf-8"))
     dataset = StructuredResearchDataset.model_validate(payload)
+    validate_request_consistency(dataset, args.subject)
     report = await DataInterpreterAgent().run(
         dataset,
         AnalysisRequest(

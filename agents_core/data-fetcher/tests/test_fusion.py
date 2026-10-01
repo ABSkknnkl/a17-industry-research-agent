@@ -170,3 +170,44 @@ def test_fusion_mines_unstructured_financials_from_reports():
     assert gm_records[0].value == 60.44
 
 
+def test_fusion_index_entity_parsing_and_no_bogus_company():
+    index_res = make_result("ind1", "hithink-industry-query", Domain.INDUSTRY, [
+        {
+            "指数代码": "881129.TI",
+            "指数简称": "通信设备",
+            "最新价": "9241.38",
+            "市盈率(pe,ttm)": "65.79",
+            "涨跌幅": "0.12%",
+        }
+    ])
+    dataset = DataFusion().fuse([index_res], date(2026, 9, 29))
+    assert len(dataset.industry) >= 2
+    # Ensure index entity is not treated as a corporate stock in dataset.companies
+    assert not any(c.entity_code == "881129.TI" for c in dataset.companies)
+    # Ensure records in industry retain the index code and entity name
+    ind_rec = next(r for r in dataset.industry if r.metric == "pe")
+    assert ind_rec.entity_name == "通信设备"
+    assert ind_rec.entity_code == "881129.TI"
+    assert ind_rec.value == 65.79
+    assert ind_rec.unit == "倍"
+
+
+def test_fusion_stock_market_data_redirects_to_companies():
+    stock_res = make_result("stk1", "hithink-market-query", Domain.INDUSTRY, [
+        {
+            "股票代码": "300308.SZ",
+            "股票简称": "中际旭创",
+            "最新价": "817.5元",
+            "最新涨跌幅": "0.44%",
+            "最新动态市盈率": "35.44",
+        }
+    ])
+    dataset = DataFusion().fuse([stock_res], date(2026, 9, 29))
+    # Should redirect stock market data to COMPANIES domain
+    comp_prices = [r for r in dataset.companies if r.entity_name == "中际旭创" and r.metric == "latest_price"]
+    assert len(comp_prices) == 1
+    assert comp_prices[0].value == 817.5
+    assert comp_prices[0].unit == "元"
+
+
+

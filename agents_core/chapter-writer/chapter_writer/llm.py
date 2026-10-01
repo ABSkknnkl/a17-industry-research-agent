@@ -219,8 +219,10 @@ class OpenAICompatibleLLM:
                             await client.aclose()
                         except Exception:
                             pass
-                        self._client = None
-                    await asyncio.sleep(1.5 * (attempt + 1))
+                    import secrets
+                    jitter = 0.8 + (secrets.randbelow(40) / 100.0)
+                    sleep_time = (2.0 ** attempt) * 2.0 * jitter
+                    await asyncio.sleep(sleep_time)
                 else:
                     raise last_err
 

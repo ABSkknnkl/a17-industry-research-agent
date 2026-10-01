@@ -31,7 +31,13 @@ METRIC_DISPLAY_NAMES: dict[str, str] = {
     "rd_expense": "研发费用",
     "rd_ratio": "研发费用率",
     "operating_cash_flow": "经营活动现金流",
+    "investing_cash_flow": "投资活动现金流",
+    "financing_cash_flow": "筹资活动现金流",
+    "net_cash_flow": "现金净增加额",
     "market_cap": "总市值",
+    "total_market_cap": "总市值",
+    "circulating_market_cap": "流通市值",
+    "float_market_cap": "流通市值",
     "latest_price": "最新股价",
     "close_price": "收盘价",
     "change_pct": "涨跌幅",
@@ -45,10 +51,18 @@ METRIC_DISPLAY_NAMES: dict[str, str] = {
     "open_interest": "持仓量",
     "total_assets": "总资产",
     "total_liabilities": "总负债",
+    "total_equity": "净资产",
     "pe": "市盈率(PE)",
+    "pe_ttm": "市盈率(PE TTM)",
+    "pe_lyr": "市盈率(PE 静)",
     "pb": "市净率(PB)",
     "ps": "市销率(PS)",
     "eps": "每股收益",
+    "bps": "每股净资产",
+    "cfps": "每股经营现金流",
+    "monetary_funds": "货币资金",
+    "current_ratio": "流动比率",
+    "quick_ratio": "速动比率",
 }
 
 
@@ -112,6 +126,7 @@ def clean_metric_label(name: str) -> str:
     if not name:
         return ""
     cleaned = str(name).strip()
+    cleaned = cleaned.replace("{(}", "(").replace("{)}", ")").replace("{/}", "/")
     lower = cleaned.lower()
     if lower in METRIC_DISPLAY_NAMES:
         return METRIC_DISPLAY_NAMES[lower]
@@ -128,10 +143,10 @@ def clean_chart_title(title: str) -> str:
     if not title:
         return ""
     res = str(title)
-    res = re.sub(r"(?i)a股", "A股", res)
+    res = res.replace("{(}", "(").replace("{)}", ")").replace("{/}", "/")
     res = res.replace("a股", "A股")
     for k, v in sorted(METRIC_DISPLAY_NAMES.items(), key=lambda x: -len(x[0])):
-        res = re.sub(rf"(?i){k}", v, res)
+        res = re.sub(rf"(?i)(?<![a-zA-Z0-9_]){re.escape(k)}(?![a-zA-Z0-9_])", v, res)
     return res
 
 
@@ -320,11 +335,16 @@ def render_svg(
     if not raw_unit and isinstance(option.get("xAxis"), dict):
         raw_unit = clean_metric_label(option.get("xAxis", {}).get("name", ""))
     
-    unit = raw_unit
-    if any(k in unit for k in ("增长率", "增速", "变动率", "同比", "环比", "百分比", "份额", "占比", "渗透率")):
-        unit = "%"
-    elif len(unit) > 6 and not any(u in unit for u in ("%", "亿", "万", "元", "倍", "点", "吨", "件", "台", "户")):
+    if chart_type in ("scatter", "bubble", "radar", "heatmap", "industry_chain"):
         unit = ""
+    else:
+        unit = raw_unit
+        if any(k in unit for k in ("增长率", "增速", "变动率", "同比", "环比", "百分比", "份额", "占比", "渗透率", "涨跌幅", "涨跌", "收益率", "毛利率", "净利率", "率", "比")):
+            unit = "%"
+        elif any(k in unit for k in ("归母净利润", "营业收入", "净利润", "总市值", "最新股价", "最新价", "研发费用", "动态市盈率", "市盈率", "市净率", "估值", "X轴", "Y轴", "时间", "日期", "季度", "年份", "样本", "公司", "企业")):
+            unit = ""
+        elif len(unit) > 6 and not any(u in unit for u in ("%", "亿", "万", "元", "倍", "点", "吨", "件", "台", "户")):
+            unit = ""
 
     opt_title = option.get("title", "") if isinstance(option.get("title"), str) else (option.get("title", {}).get("text", "") if isinstance(option.get("title"), dict) else "")
     if not unit:
@@ -338,7 +358,7 @@ def render_svg(
 
     legend_opt_data = option.get("legend", {}).get("data", []) if isinstance(option.get("legend"), dict) else []
     has_multiple_series = len(series) > 1 or bool(legend_opt_data)
-    needs_top_legend = has_multiple_series and chart_type in ("line", "area", "bar", "radar")
+    needs_top_legend = has_multiple_series and chart_type in ("line", "area", "bar", "radar", "comparison_bar", "horizontal_bar")
 
     legend_rows: list[list[dict[str, Any]]] = []
     base_leg_y = 74.0 if subtitle else 66.0
@@ -496,7 +516,16 @@ def render_svg(
                     if not isinstance(it, dict):
                         it = {"name": str(it)}
                     name = resolve_ticker(str(it.get("name", "")))
-                    badge = str(it.get("margin", "") or it.get("extra", "") or it.get("sub", "") or it.get("badge", "") or it.get("role", ""))
+                    badge = str(it.get("margin", "") or it.get("extra", "") or it.get("sub", "") or it.get("badge", "") or it.get("role", "")).strip()
+                    # Clean up stock price or inappropriate numeric badges (e.g. "293.5元", "293.5", "¥293.5")
+                    is_price_like = bool(
+                        re.search(r'(最新价|股价|收盘价|现价)', badge)
+                        or badge.endswith("元")
+                        or re.match(r'^[¥\$]?\s*\d+(\.\d+)?\s*元?$', badge)
+                        or badge in ("整车制造", "场景服务")
+                    )
+                    if is_price_like:
+                        badge = "核心供给" if stage["id"] == "上游" else ("核心制造" if stage["id"] == "中游" else "终端应用")
 
                     sym_sz = it.get("symbolSize", 0)
                     sym_sz_val = float(sym_sz) if isinstance(sym_sz, (int, float)) else 0.0
@@ -523,6 +552,15 @@ def render_svg(
         # Publication dual-axis combo chart: Left axis (Bars/Volume) + Right axis (Lines/Growth %)
         left_series = [s for s in series if s.get("yAxisIndex", 0) == 0] or series[:1]
         right_series = [s for s in series if s.get("yAxisIndex", 0) == 1] or series[1:]
+
+        # 解析左右轴实际单位与量纲属性
+        y_axes = option.get("yAxis", []) if isinstance(option, dict) else []
+        y_axes_list = y_axes if isinstance(y_axes, list) else ([y_axes] if isinstance(y_axes, dict) else [])
+        l_unit = str(y_axes_list[0].get("name", "") if len(y_axes_list) > 0 and isinstance(y_axes_list[0], dict) else "")
+        r_unit = str(y_axes_list[1].get("name", "") if len(y_axes_list) > 1 and isinstance(y_axes_list[1], dict) else "")
+
+        r_is_rate = "%" in r_unit or any(k in r_unit for k in ("率", "比", "增速", "增长率", "yoy", "ratio", "margin")) or any(k in str(s.get("name", "")) for k in ("率", "比", "增速", "增长率", "yoy") for s in right_series)
+        l_is_rate = "%" in l_unit or any(k in l_unit for k in ("率", "比", "增速", "增长率", "yoy", "ratio", "margin")) or any(k in str(s.get("name", "")) for k in ("率", "比", "增速", "增长率", "yoy") for s in left_series)
 
         left_vals = [_num(v.get("value") if isinstance(v, dict) else v) for s in left_series for v in s.get("data", [])]
         left_vals = [v for v in left_vals if v is not None]
@@ -551,9 +589,15 @@ def render_svg(
         for i, tv in enumerate(l_ticks):
             ty = to_ly(tv)
             parts.append(f'<line x1="{left}" y1="{ty:.1f}" x2="{width-right}" y2="{ty:.1f}" stroke="#eaecf0" stroke-dasharray="3 3"/>')
-            parts.append(f'<text x="{left-12}" y="{ty+4:.1f}" text-anchor="end" font-size="11" fill="#667085">{_format_num(tv)}</text>')
+            l_tick_str = _format_num(tv)
+            if l_is_rate and not l_tick_str.endswith("%"):
+                l_tick_str += "%"
+            parts.append(f'<text x="{left-12}" y="{ty+4:.1f}" text-anchor="end" font-size="11" fill="#667085">{l_tick_str}</text>')
             if i < len(r_ticks):
-                parts.append(f'<text x="{width-right+10}" y="{ty+4:.1f}" text-anchor="start" font-size="11" fill="#0f766e">{_format_num(r_ticks[i])}%</text>')
+                r_tick_str = _format_num(r_ticks[i])
+                if r_is_rate and not r_tick_str.endswith("%"):
+                    r_tick_str += "%"
+                parts.append(f'<text x="{width-right+10}" y="{ty+4:.1f}" text-anchor="start" font-size="11" fill="#0f766e">{r_tick_str}</text>')
 
         # Baseline (Exact zero line, aligned across both axes)
         zero_ly = to_ly(0.0)
@@ -578,6 +622,17 @@ def render_svg(
         n = max(len(labels), max((len(s.get("data", [])) for s in series), default=1))
         step_x = plot_w / max(n, 1)
 
+        # Pre-calculate line points to coordinate anti-collision between bar tops and line labels
+        line_pt_by_idx: dict[int, tuple[float, float, float]] = {}
+        if right_series:
+            r_data = right_series[0].get("data", [])
+            for i, item in enumerate(r_data):
+                val = _num(item.get("value") if isinstance(item, dict) else item)
+                if val is not None:
+                    line_pt_by_idx[i] = (left + (i + 0.5) * step_x, to_ry(val), val)
+
+        bar_pt_by_idx: dict[int, tuple[float, float, float]] = {}
+
         # Draw Left Series (Bars)
         for si, s in enumerate(left_series):
             scolor = PALETTE_PRIMARY if si == 0 else PALETTE_SECONDARY
@@ -594,9 +649,27 @@ def render_svg(
                     continue
                 by = min(to_ly(val), zero_ly)
                 bh = max(abs(to_ly(val) - zero_ly), 2.0)
+                bar_pt_by_idx[i] = (bx + bar_w / 2, by, bh)
                 parts.append(f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" rx="3" fill="{scolor}"/>')
                 if show_bar_text:
-                    parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by-5:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{_format_num(val)}</text>')
+                    collides = False
+                    line_above_bar = False
+                    if i in line_pt_by_idx:
+                        _, line_y, _ = line_pt_by_idx[i]
+                        if abs(by - line_y) < 22:
+                            collides = True
+                            line_above_bar = (line_y <= by)
+
+                    if collides:
+                        if line_above_bar:
+                            if bh >= 24:
+                                parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by+15:.1f}" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">{_format_num(val)}</text>')
+                            else:
+                                parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by+15:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">{_format_num(val)}</text>')
+                        else:
+                            parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by-6:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{_format_num(val)}</text>')
+                    else:
+                        parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by-5:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{_format_num(val)}</text>')
 
         # Draw Right Series (Lines) - connectNulls: False (segmented polyline)
         for si, s in enumerate(right_series):
@@ -633,7 +706,20 @@ def render_svg(
                 for pt_idx, (x, yy, val, orig_i) in enumerate(seg):
                     if not dense or orig_i in key_indices or pt_idx == 0 or pt_idx == len(seg) - 1:
                         parts.append(f'<circle cx="{x:.1f}" cy="{yy:.1f}" r="4" fill="#ffffff" stroke="{scolor}" stroke-width="2.5"/>')
-                        parts.append(f'<text x="{x:.1f}" y="{yy-8:.1f}" text-anchor="middle" font-size="10" font-weight="700" fill="{scolor}" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{val:.1f}%</text>')
+                        val_str = f"{val:.1f}%" if r_is_rate else (_format_num(val) if abs(val) >= 10000 else f"{val:.1f}")
+                        collides = False
+                        line_above_bar = False
+                        if orig_i in bar_pt_by_idx:
+                            _, bar_y, _ = bar_pt_by_idx[orig_i]
+                            if abs(bar_y - yy) < 22:
+                                collides = True
+                                line_above_bar = (yy <= bar_y)
+
+                        if collides:
+                            lbl_y = (yy - 10.0) if line_above_bar else (yy + 16.0)
+                        else:
+                            lbl_y = yy - 8.0
+                        parts.append(f'<text x="{x:.1f}" y="{lbl_y:.1f}" text-anchor="middle" font-size="10" font-weight="700" fill="{scolor}" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{val_str}</text>')
 
         # X-axis Labels (downsampled across the full horizontal span without collision)
         sampled_indices = _sample_indices(len(labels), 7)
@@ -649,72 +735,116 @@ def render_svg(
                 parts.append(f'<text x="{lx:.1f}" y="{ly}" text-anchor="middle" font-size="11" fill="#475467">{escape(lbl_text)}</text>')
 
 
-    elif chart_type in ("horizontal_bar", "comparison_bar", "diverging_bar") or (chart_type == "bar" and any(len(str(l)) > 4 for l in labels)):
+    elif (
+        chart_type == "diverging_bar"
+        or (chart_type == "horizontal_bar")
+        or (chart_type in ("bar", "comparison_bar") and len(series) <= 1 and any(len(str(l)) > 6 for l in labels) and not any(re.match(r"^\d{4}", str(l)) for l in labels))
+    ) and not (chart_type in ("bar", "comparison_bar") and len(series) > 1):
         # Publication horizontal / diverging bar chart
-        raw_items = []
-        if series:
-            s_data = series[0].get("data", [])
-            for i, l in enumerate(labels):
-                v = _num(s_data[i].get("value") if isinstance(s_data[i], dict) else (s_data[i] if i < len(s_data) else None))
-                if v is not None:
-                    raw_items.append((str(l), v))
-        if not raw_items and values:
-            raw_items = [(str(labels[i]) if i < len(labels) else f"样本{i+1}", v) for i, v in enumerate(values[:10])]
+        if len(series) > 1:
+            h_labels = [str(l) for l in labels[:10]]
+            all_vals = [_num(v.get("value") if isinstance(v, dict) else v) for s in series for v in s.get("data", [])]
+            valid_vals = [v for v in all_vals if v is not None]
+            v_low = min([0.0, *valid_vals]) if valid_vals else 0.0
+            v_high = max([0.0, *valid_vals]) if valid_vals else 1.0
 
-        if not raw_items:
-            parts.append(f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" rx="6" fill="#f8f9fa" stroke="#eaecf0"/>')
-            parts.append(f'<text x="{left+plot_w/2:.1f}" y="{top+plot_h/2:.1f}" text-anchor="middle" font-size="13" font-weight="500" fill="#98a2b3">暂无有效对比数据</text>')
-            parts.append('</svg>')
-            return "\n".join(parts)
+            bar_area_x = left + 90.0
+            bar_area_w = plot_w - 90.0 - 40.0
+            step_y = plot_h / max(len(h_labels), 1)
+            sub_bar_h = min(16.0, (step_y - 6) / len(series))
 
-        h_labels = [it[0] for it in raw_items[:10]]
-        h_vals = [it[1] for it in raw_items[:10]]
-        v_low = min([0.0, *h_vals])
-        v_high = max([0.0, *h_vals]) or 1.0
-        v_span = v_high - v_low or 1.0
+            ticks = _calc_ticks(v_low, v_high, 5)
+            if ticks[-1] < v_high:
+                ticks.append(ticks[-1] + (ticks[1] - ticks[0] if len(ticks) > 1 else 1.0))
+            t_span = ticks[-1] - ticks[0] or 1.0
 
-        bar_h = min(24.0, (plot_h - 20) / max(len(h_labels), 1))
-        step_y = plot_h / max(len(h_labels), 1)
+            for tv in ticks:
+                tx = bar_area_x + ((tv - ticks[0]) / t_span) * bar_area_w
+                parts.append(f'<line x1="{tx:.1f}" y1="{top}" x2="{tx:.1f}" y2="{top+plot_h}" stroke="#eaecf0" stroke-dasharray="3 3"/>')
+                parts.append(f'<text x="{tx:.1f}" y="{top+plot_h+18}" text-anchor="middle" font-size="10" fill="#667085">{_format_num(tv)}</text>')
 
-        # Reserve safe margin for company labels on left so negative bars never collide
-        label_margin = 90.0
-        bar_area_x = left + label_margin
-        bar_area_w = plot_w - label_margin - 40.0
+            zero_x = bar_area_x + ((0.0 - ticks[0]) / t_span) * bar_area_w
+            parts.append(f'<line x1="{zero_x:.1f}" y1="{top}" x2="{zero_x:.1f}" y2="{top+plot_h}" stroke="#475467" stroke-width="1.5"/>')
 
-        ticks = _calc_ticks(v_low, v_high, 5)
-        if ticks[-1] < v_high:
-            ticks.append(ticks[-1] + (ticks[1] - ticks[0] if len(ticks) > 1 else 1.0))
-        t_span = ticks[-1] - ticks[0] or 1.0
+            for i, lab in enumerate(h_labels):
+                cat_y = top + i * step_y + step_y / 2
+                parts.append(f'<text x="{bar_area_x-12:.1f}" y="{cat_y+4:.1f}" text-anchor="end" font-size="12" font-weight="500" fill="#344054">{escape(lab)}</text>')
+                for si, s in enumerate(series):
+                    s_data = s.get("data", [])
+                    val = _num(s_data[i].get("value") if isinstance(s_data[i], dict) else (s_data[i] if i < len(s_data) else None))
+                    if val is None:
+                        continue
+                    scolor = SERIES_COLORS[si % len(SERIES_COLORS)]
+                    cur_y = top + i * step_y + (step_y - sub_bar_h * len(series)) / 2 + si * sub_bar_h
+                    val_pos = bar_area_x + ((val - ticks[0]) / t_span) * bar_area_w
+                    b_width = max(abs(val_pos - zero_x), 2.0)
+                    bx = min(val_pos, zero_x)
+                    parts.append(f'<rect x="{bx:.1f}" y="{cur_y:.1f}" width="{b_width:.1f}" height="{sub_bar_h-1:.1f}" rx="2" fill="{scolor}"/>')
+                    parts.append(f'<text x="{bx + b_width + 4:.1f}" y="{cur_y+sub_bar_h*0.75:.1f}" text-anchor="start" font-size="9.5" font-weight="600" fill="{scolor}">{_format_num(val)}</text>')
+        else:
+            raw_items = []
+            if series:
+                s_data = series[0].get("data", [])
+                for i, l in enumerate(labels):
+                    v = _num(s_data[i].get("value") if isinstance(s_data[i], dict) else (s_data[i] if i < len(s_data) else None))
+                    if v is not None:
+                        raw_items.append((str(l), v))
+            if not raw_items and values:
+                raw_items = [(str(labels[i]) if i < len(labels) else f"样本{i+1}", v) for i, v in enumerate(values[:10])]
 
-        for tv in ticks:
-            tx = bar_area_x + ((tv - ticks[0]) / t_span) * bar_area_w
-            parts.append(f'<line x1="{tx:.1f}" y1="{top}" x2="{tx:.1f}" y2="{top+plot_h}" stroke="#eaecf0" stroke-dasharray="3 3"/>')
-            parts.append(f'<text x="{tx:.1f}" y="{top+plot_h+18}" text-anchor="middle" font-size="10" fill="#667085">{_format_num(tv)}</text>')
+            if not raw_items:
+                parts.append(f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" rx="6" fill="#f8f9fa" stroke="#eaecf0"/>')
+                parts.append(f'<text x="{left+plot_w/2:.1f}" y="{top+plot_h/2:.1f}" text-anchor="middle" font-size="13" font-weight="500" fill="#98a2b3">暂无有效对比数据</text>')
+                parts.append('</svg>')
+                return "\n".join(parts)
 
-        zero_x = bar_area_x + ((0.0 - ticks[0]) / t_span) * bar_area_w
-        parts.append(f'<line x1="{zero_x:.1f}" y1="{top}" x2="{zero_x:.1f}" y2="{top+plot_h}" stroke="#475467" stroke-width="1.5"/>')
+            h_labels = [it[0] for it in raw_items[:10]]
+            h_vals = [it[1] for it in raw_items[:10]]
+            v_low = min([0.0, *h_vals])
+            v_high = max([0.0, *h_vals]) or 1.0
+            v_span = v_high - v_low or 1.0
 
-        for i, (lab, val) in enumerate(zip(h_labels, h_vals)):
-            cur_y = top + i * step_y + (step_y - bar_h) / 2
-            is_target = bool(target_entity and target_entity in lab)
-            text_color = "#155eef" if is_target else "#344054"
-            font_w = "700" if is_target else "500"
-            parts.append(f'<text x="{bar_area_x-12:.1f}" y="{cur_y+bar_h*0.7:.1f}" text-anchor="end" font-size="12" font-weight="{font_w}" fill="{text_color}">{escape(lab)}</text>')
+            bar_h = min(24.0, (plot_h - 20) / max(len(h_labels), 1))
+            step_y = plot_h / max(len(h_labels), 1)
 
-            val_pos = bar_area_x + ((val - ticks[0]) / t_span) * bar_area_w
-            b_width = max(abs(val_pos - zero_x), 2.0)
-            bx = min(val_pos, zero_x)
-            b_color = (PALETTE_ACCENT if is_target else PALETTE_PRIMARY) if val >= 0 else PALETTE_NEGATIVE
-            parts.append(f'<rect x="{bx:.1f}" y="{cur_y:.1f}" width="{b_width:.1f}" height="{bar_h:.1f}" rx="3" fill="{b_color}"/>')
+            # Reserve safe margin for company labels on left so negative bars never collide
+            label_margin = 90.0
+            bar_area_x = left + label_margin
+            bar_area_w = plot_w - label_margin - 40.0
+            ticks = _calc_ticks(v_low, v_high, 5)
+            if ticks[-1] < v_high:
+                ticks.append(ticks[-1] + (ticks[1] - ticks[0] if len(ticks) > 1 else 1.0))
+            t_span = ticks[-1] - ticks[0] or 1.0
 
-            val_text = f"{_format_num(val)}"
-            if val >= 0:
-                parts.append(f'<text x="{bx + b_width + 6:.1f}" y="{cur_y+bar_h*0.7:.1f}" text-anchor="start" font-size="11" font-weight="600" fill="{b_color}">{val_text}</text>')
-            else:
-                if b_width >= 36:
-                    parts.append(f'<text x="{bx + 6:.1f}" y="{cur_y+bar_h*0.7:.1f}" text-anchor="start" font-size="10.5" font-weight="700" fill="#ffffff">{val_text}</text>')
+            for tv in ticks:
+                tx = bar_area_x + ((tv - ticks[0]) / t_span) * bar_area_w
+                parts.append(f'<line x1="{tx:.1f}" y1="{top}" x2="{tx:.1f}" y2="{top+plot_h}" stroke="#eaecf0" stroke-dasharray="3 3"/>')
+                parts.append(f'<text x="{tx:.1f}" y="{top+plot_h+18}" text-anchor="middle" font-size="10" fill="#667085">{_format_num(tv)}</text>')
+
+            zero_x = bar_area_x + ((0.0 - ticks[0]) / t_span) * bar_area_w
+            parts.append(f'<line x1="{zero_x:.1f}" y1="{top}" x2="{zero_x:.1f}" y2="{top+plot_h}" stroke="#475467" stroke-width="1.5"/>')
+
+            for i, (lab, val) in enumerate(zip(h_labels, h_vals)):
+                cur_y = top + i * step_y + (step_y - bar_h) / 2
+                is_target = bool(target_entity and target_entity in lab)
+                text_color = "#155eef" if is_target else "#344054"
+                font_w = "700" if is_target else "500"
+                parts.append(f'<text x="{bar_area_x-12:.1f}" y="{cur_y+bar_h*0.7:.1f}" text-anchor="end" font-size="12" font-weight="{font_w}" fill="{text_color}">{escape(lab)}</text>')
+
+                val_pos = bar_area_x + ((val - ticks[0]) / t_span) * bar_area_w
+                b_width = max(abs(val_pos - zero_x), 2.0)
+                bx = min(val_pos, zero_x)
+                b_color = (PALETTE_ACCENT if is_target else PALETTE_PRIMARY) if val >= 0 else PALETTE_NEGATIVE
+                parts.append(f'<rect x="{bx:.1f}" y="{cur_y:.1f}" width="{b_width:.1f}" height="{bar_h:.1f}" rx="3" fill="{b_color}"/>')
+
+                val_text = f"{_format_num(val)}"
+                if val >= 0:
+                    parts.append(f'<text x="{bx + b_width + 6:.1f}" y="{cur_y+bar_h*0.7:.1f}" text-anchor="start" font-size="11" font-weight="600" fill="{b_color}">{val_text}</text>')
                 else:
-                    parts.append(f'<text x="{bx - 6:.1f}" y="{cur_y+bar_h*0.7:.1f}" text-anchor="end" font-size="10.5" font-weight="700" fill="{b_color}">{val_text}</text>')
+                    if b_width >= 36:
+                        parts.append(f'<text x="{bx + 6:.1f}" y="{cur_y+bar_h*0.7:.1f}" text-anchor="start" font-size="10.5" font-weight="700" fill="#ffffff">{val_text}</text>')
+                    else:
+                        parts.append(f'<text x="{bx - 6:.1f}" y="{cur_y+bar_h*0.7:.1f}" text-anchor="end" font-size="10.5" font-weight="700" fill="{b_color}">{val_text}</text>')
 
     elif chart_type in ("scatter", "bubble"):
         # Publication 4-Quadrant Positioning Chart (e.g. Valuation PE vs Growth / Profitability)
@@ -729,8 +859,12 @@ def render_svg(
                         pts.append((name, xv, yv, sz or 8.0))
                 elif len(item) >= 2 and isinstance(item[0], (int, float)):
                     xv, yv = _num(item[0]), _num(item[1])
-                    sz = (_num(item[2]) if len(item) >= 3 else None) or 8.0
-                    name = str(labels[idx]) if idx < len(labels) else f"样本{idx+1}"
+                    if len(item) >= 3 and isinstance(item[-1], str):
+                        name = str(item[-1])
+                        sz = (_num(item[2]) if len(item) >= 4 else None) or 8.0
+                    else:
+                        sz = (_num(item[2]) if len(item) >= 3 else None) or 8.0
+                        name = str(labels[idx]) if idx < len(labels) else f"样本{idx+1}"
                     if xv is not None and yv is not None:
                         pts.append((name, xv, yv, sz or 8.0))
             elif isinstance(item, dict):
@@ -836,23 +970,37 @@ def render_svg(
         is_val_growth = any(k in (x_name + title).lower() for k in ("pe", "估值", "市盈率", "市净率")) and any(k in (y_name + title).lower() for k in ("增速", "增长", "成长", "收益", "利润", "收入"))
 
         if is_val_growth:
-            parts.append(f'<text x="{left+15}" y="{top+24}" font-size="11" font-weight="600" fill="#0f766e" opacity="0.75">【高成长·低估值】优势配置</text>')
-            parts.append(f'<text x="{width-right-15}" y="{top+24}" text-anchor="end" font-size="11" font-weight="600" fill="#155eef" opacity="0.75">【高成长·高估值】溢价预期</text>')
-            parts.append(f'<text x="{left+15}" y="{top+plot_h-12}" font-size="11" font-weight="600" fill="#64748b" opacity="0.75">【估值折价 / 稳健】</text>')
-            parts.append(f'<text x="{width-right-15}" y="{top+plot_h-12}" text-anchor="end" font-size="11" font-weight="600" fill="#d92d20" opacity="0.75">【高估值·低增长】风险关注</text>')
+            parts.append(f'<text x="{left+15}" y="{top+22}" font-size="10.5" font-weight="600" fill="#0f766e" opacity="0.20">【高成长·低估值】优势配置</text>')
+            parts.append(f'<text x="{width-right-15}" y="{top+22}" text-anchor="end" font-size="10.5" font-weight="600" fill="#155eef" opacity="0.20">【高成长·高估值】溢价预期</text>')
+            parts.append(f'<text x="{left+15}" y="{top+plot_h-12}" font-size="10.5" font-weight="600" fill="#64748b" opacity="0.20">【估值折价 / 稳健】</text>')
+            parts.append(f'<text x="{width-right-15}" y="{top+plot_h-12}" text-anchor="end" font-size="10.5" font-weight="600" fill="#d92d20" opacity="0.20">【高估值·低增长】风险关注</text>')
         else:
-            x_short = re.sub(r"[（(].*?[）)]", "", x_name).strip() or "X轴"
-            y_short = re.sub(r"[（(].*?[）)]", "", y_name).strip() or "Y轴"
-            parts.append(f'<text x="{left+15}" y="{top+24}" font-size="11" font-weight="600" fill="#0f766e" opacity="0.75">【高{y_short} · 低{x_short}】优势区间</text>')
-            parts.append(f'<text x="{width-right-15}" y="{top+24}" text-anchor="end" font-size="11" font-weight="600" fill="#155eef" opacity="0.75">【高{y_short} · 高{x_short}】高估高增</text>')
-            parts.append(f'<text x="{left+15}" y="{top+plot_h-12}" font-size="11" font-weight="600" fill="#64748b" opacity="0.75">【低{y_short} · 低{x_short}】稳健防守</text>')
-            parts.append(f'<text x="{width-right-15}" y="{top+plot_h-12}" text-anchor="end" font-size="11" font-weight="600" fill="#d92d20" opacity="0.75">【低{y_short} · 高{x_short}】溢价承压</text>')
+            x_clean = clean_metric_label(x_name)
+            y_clean = clean_metric_label(y_name)
+            x_short = re.sub(r"[（(].*?[）)]", "", x_clean).strip() or "X轴"
+            y_short = re.sub(r"[（(].*?[）)]", "", y_clean).strip() or "Y轴"
+            parts.append(f'<text x="{left+15}" y="{top+22}" font-size="10.5" font-weight="600" fill="#0f766e" opacity="0.20">【高{y_short} · 低{x_short}】优势区间</text>')
+            parts.append(f'<text x="{width-right-15}" y="{top+22}" text-anchor="end" font-size="10.5" font-weight="600" fill="#155eef" opacity="0.20">【高{y_short} · 高{x_short}】高估高增</text>')
+            parts.append(f'<text x="{left+15}" y="{top+plot_h-12}" font-size="10.5" font-weight="600" fill="#64748b" opacity="0.20">【低{y_short} · 低{x_short}】稳健防守</text>')
+            parts.append(f'<text x="{width-right-15}" y="{top+plot_h-12}" text-anchor="end" font-size="10.5" font-weight="600" fill="#d92d20" opacity="0.20">【低{y_short} · 高{x_short}】溢价承压</text>')
 
         # Points and Collision-Free Smart Label Placement
         placed_boxes: list[tuple[float, float, float, float]] = []
 
         def _overlaps(b1: tuple[float, float, float, float], b2: tuple[float, float, float, float]) -> bool:
             return not (b1[2] < b2[0] or b1[0] > b2[2] or b1[3] < b2[1] or b1[1] > b2[3])
+
+        def _format_outlier_val(val: float, axis_dict: Any) -> str:
+            a_name = str(axis_dict.get("name", "") if isinstance(axis_dict, dict) else "").lower()
+            if any(k in a_name for k in ("pe", "pb", "ps", "市盈率", "市净率", "市销率", "倍")):
+                return f"{val:.0f}倍" if abs(val) >= 10 else f"{val:.1f}倍"
+            if any(k in a_name for k in ("率", "比", "增速", "变动", "幅", "pct", "%")):
+                return f"{val:.1f}%"
+            if any(k in a_name for k in ("市值", "收入", "净利润", "费用", "金额", "资金", "资产", "负债")):
+                return _format_num(val)
+            if abs(val) >= 10000:
+                return _format_num(val)
+            return f"{val:.1f}".rstrip("0").rstrip(".")
 
         for idx, (name, xv, yv, sz) in enumerate(pts):
             px = to_sx(xv)
@@ -867,13 +1015,13 @@ def render_svg(
 
             display_name = name
             if yv < y_ticks[0]:
-                display_name = f"{name} ({yv:.0f}% ↓)"
+                display_name = f"{name} ({_format_outlier_val(yv, y_axis)} ↓)"
             elif yv > y_ticks[-1]:
-                display_name = f"{name} ({yv:.0f}% ↑)"
+                display_name = f"{name} ({_format_outlier_val(yv, y_axis)} ↑)"
             elif xv < x_ticks[0]:
-                display_name = f"{name} ({xv:.0f}% ←)"
+                display_name = f"{name} ({_format_outlier_val(xv, x_axis)} ←)"
             elif xv > x_ticks[-1]:
-                display_name = f"{name} ({xv:.0f}% →)"
+                display_name = f"{name} ({_format_outlier_val(xv, x_axis)} →)"
 
             txt_w = len(display_name) * 11.0 + 4
             candidates = [
@@ -894,7 +1042,7 @@ def render_svg(
             placed_boxes.append(chosen_box)
             font_w = "700" if (is_target or is_extreme) else "600"
             font_color = "#b42318" if is_extreme else "#101828"
-            parts.append(f'<text x="{chosen_tx:.1f}" y="{chosen_ty:.1f}" text-anchor="{chosen_anchor}" font-size="10.5" font-weight="{font_w}" fill="{font_color}">{escape(display_name)}</text>')
+            parts.append(f'<text x="{chosen_tx:.1f}" y="{chosen_ty:.1f}" text-anchor="{chosen_anchor}" font-size="10.5" font-weight="{font_w}" fill="{font_color}" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{escape(display_name)}</text>')
 
 
     elif chart_type == "radar":
@@ -922,7 +1070,7 @@ def render_svg(
             lab_x = rcx + (rr + 18) * math.cos(ang)
             lab_y = rcy + (rr + 18) * math.sin(ang)
             anchor = "middle" if abs(math.cos(ang)) < 0.2 else ("start" if math.cos(ang) > 0 else "end")
-            ind_name = ind.get("name", "") if isinstance(ind, dict) else str(ind)
+            ind_name = clean_metric_label(str(ind.get("name", "") if isinstance(ind, dict) else str(ind)))
             parts.append(f'<text x="{lab_x:.1f}" y="{lab_y+4:.1f}" text-anchor="{anchor}" font-size="11" font-weight="600" fill="#344054">{escape(str(ind_name))}</text>')
 
         # Series Polygons
@@ -1012,7 +1160,7 @@ def render_svg(
         parts.append(f'<text x="{cx}" y="{cy-6}" text-anchor="middle" font-size="11" fill="#667085">结构分布</text>')
         parts.append(f'<text x="{cx}" y="{cy+14}" text-anchor="middle" font-size="15" font-weight="800" fill="#101828">{_format_num(total)}</text>')
 
-    elif chart_type in ("line", "area", "bar"):
+    elif chart_type in ("line", "area", "bar", "comparison_bar"):
         # Publication vertical line / area / bar chart with complete Y-axis scale and grid
         low_val = min([0.0, *values]) if values else 0.0
         high_val = max([0.0, *values]) if values else 1.0
@@ -1123,7 +1271,7 @@ def render_svg(
                             parts.append(f'<polyline points="{" ".join(f"{x:.1f},{yy:.1f}" for x, yy, _, _ in seg)}" fill="none" stroke="{s_color}" stroke-width="2.5"/>')
                         for x, yy, val, orig_i in seg:
                             parts.append(f'<circle cx="{x:.1f}" cy="{yy:.1f}" r="4" fill="#ffffff" stroke="{s_color}" stroke-width="2"/>')
-                            show_pt_text = (len(nums) <= 6 or orig_i == 0 or orig_i == len(nums) - 1) if len(series) <= 2 else (orig_i == 0 or orig_i == len(nums) - 1)
+                            show_pt_text = (len(nums) <= 6 or orig_i == 0 or orig_i == len(nums) - 1) if len(series) <= 1 else False
                             if show_pt_text:
                                 parts.append(f'<text x="{x:.1f}" y="{yy-8:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="{s_color}">{_format_num(val)}</text>')
             else:
@@ -1163,9 +1311,11 @@ def render_svg(
                 ty = p["target_y"]
                 p_color = p["color"]
                 p_name = p["name"]
+                p_val = p.get("val")
+                val_str = f" {_format_num(p_val)}" if p_val is not None else ""
                 if abs(ty - ly) > 3.0:
                     parts.append(f'<path d="M {lx+4:.1f} {ly:.1f} L {lx+8:.1f} {ty:.1f}" stroke="{p_color}" stroke-width="1" stroke-opacity="0.45" fill="none"/>')
-                parts.append(f'<text x="{lx+10:.1f}" y="{ty+3.5:.1f}" font-size="10.5" font-weight="700" fill="{p_color}">{escape(p_name)}</text>')
+                parts.append(f'<text x="{lx+10:.1f}" y="{ty+3.5:.1f}" font-size="10.5" font-weight="700" fill="{p_color}">{escape(p_name)}{val_str}</text>')
 
         # X-axis labels: evenly downsample across the entire horizontal span without collision
         sampled_indices = _sample_indices(len(labels), 7)
