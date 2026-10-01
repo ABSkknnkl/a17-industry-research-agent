@@ -19,7 +19,7 @@ def _load_env_files() -> None:
                     k, v = line.split("=", 1)
                     k = k.strip()
                     v = v.strip().strip("'\"")
-                    if k and k not in os.environ:
+                    if k:
                         os.environ[k] = v
             except Exception:
                 pass
@@ -94,6 +94,8 @@ class Settings(BaseModel):
         os.environ["IWENCAI_API_KEY_BACKUP"] = self.IWENCAI_API_KEY_BACKUP
         os.environ["SKILL_CONCURRENCY_LIMIT"] = str(self.SKILL_CONCURRENCY_LIMIT)
         os.environ["CHAPTER_CONCURRENCY"] = str(self.CHAPTER_CONCURRENCY)
+        os.environ["CHAPTER_WRITER_CONCURRENCY"] = str(self.CHAPTER_CONCURRENCY)
+        os.environ["FETCH_CONCURRENCY_LIMIT"] = os.getenv("FETCH_CONCURRENCY_LIMIT", "8")
 
     def load_user_settings(self) -> None:
         """从持久化文件加载用户自定义设置"""

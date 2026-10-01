@@ -22,6 +22,8 @@ from pathlib import Path
 
 import pytest
 
+from .golden_helper import resolve_golden_dir
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 GOLDEN_RUN_ID = "run-20260926022235-107"
 FALLBACK_RUN_ID = "run-20260922213739-783"
@@ -30,9 +32,13 @@ ADAPTERS_PATH = PROJECT_ROOT / "backend" / "app" / "agents" / "adapters.py"
 
 @lru_cache(maxsize=1)
 def _manifest(run_id: str = GOLDEN_RUN_ID) -> dict:
-    return json.loads(
-        (PROJECT_ROOT / "data" / "runs" / run_id / "artifacts" / "manifest.json").read_text(encoding="utf-8")
-    )
+    if run_id == GOLDEN_RUN_ID:
+        path = resolve_golden_dir(GOLDEN_RUN_ID, required_files=["manifest.json"]) / "manifest.json"
+    else:
+        path = PROJECT_ROOT / "data" / "runs" / run_id / "artifacts" / "manifest.json"
+        if not path.exists():
+            pytest.skip(f"Manifest not found: {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
 # --------------------------------------------------------------------------
@@ -86,6 +92,8 @@ def test_a5_08_pdf_missing_keeps_markdown_and_html() -> None:
     assert "pdf" not in kinds, "副样本本应无 pdf（样本语义变了？）"
 
     run_dir = PROJECT_ROOT / "data" / "runs" / FALLBACK_RUN_ID / "artifacts"
+    if not run_dir.exists():
+        pytest.skip(f"副样本不存在: {run_dir}")
     for name in ("report.md", "report.html"):
         path = run_dir / name
         assert path.exists(), f"降级场景下产物缺失: {path}"
@@ -134,14 +142,11 @@ def test_dual_templates_produce_complete_artifacts() -> None:
     备注：黄金样本仅含单套模板产物 → 本用例按"模板切换开关可查"降级判定，
     完整双模板比对需专用 fixture（登记为待补项）。
     """
-    report_html = PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts" / "report.html"
+    golden_dir = resolve_golden_dir(GOLDEN_RUN_ID, required_files=["report.html", "report_view.json"])
+    report_html = golden_dir / "report.html"
     assert report_html.exists() and report_html.stat().st_size > 0
     text = report_html.read_text(encoding="utf-8", errors="ignore")
     # 双模板产物的结构差异可由 report_view.json 的 chart_mode 反映
-    view = json.loads(
-        (PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts" / "report_view.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    view = json.loads((golden_dir / "report_view.json").read_text(encoding="utf-8"))
     assert view.get("chart_mode") in {"auto", "rich"}, f"chart_mode 取值非法: {view.get('chart_mode')}"
     assert "reader-rail" in text or "report-main" in text or "<article" in text, "HTML 结构不含预期容器"

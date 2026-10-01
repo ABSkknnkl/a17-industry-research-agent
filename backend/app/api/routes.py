@@ -154,15 +154,35 @@ async def stream_run_events_endpoint(run_id: str):
     )
 
 
+@router.delete("/runs")
+async def clear_all_runs_endpoint():
+    """彻底清空所有历史研报任务与本地全量产物数据"""
+    cancelled_count = engine.cancel_all_tasks()
+    deleted_count = storage.clear_all_runs()
+    event_hub.clear_all()
+    return {
+        "status": "ok",
+        "message": f"已成功彻底清空所有历史任务与后端产物数据（清理 {deleted_count} 个任务）",
+        "deleted_count": deleted_count,
+        "cancelled_tasks": cancelled_count,
+    }
+
+
 @router.delete("/runs/{run_id}")
 async def delete_run_endpoint(run_id: str):
-    """删除历史任务及其所有本地产物"""
-    run_dir = storage.get_run_dir(run_id)
-    if not run_dir.exists():
+    """删除指定历史任务及其所有本地产物数据"""
+    run_dir = storage.base_dir / run_id
+    output_run_dir = settings.PROJECT_ROOT / "output" / "runs" / run_id
+    if not run_dir.exists() and not output_run_dir.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"任务不存在: {run_id}",
         )
+    # 中断该任务的运行协程（若正在运行）
+    running_task = engine._running_tasks.pop(run_id, None)
+    if running_task and not running_task.done():
+        running_task.cancel()
+    event_hub.clear_run(run_id)
     storage.delete_run(run_id)
     return {"status": "ok", "message": f"任务 {run_id} 已成功删除"}
 
@@ -221,6 +241,29 @@ async def download_artifact_endpoint(run_id: str, artifact_id: str):
         media_type=mime_type,
         filename=target_path.name,
     )
+
+
+# ── 问财 SkillHub 技能生态库端点 ──────────────────────────────────────────
+from backend.app.core.skills_hub import skills_hub
+from backend.app.schemas.workflow import SkillCatalogResponse, SkillItem
+
+
+@router.get("/skills", response_model=SkillCatalogResponse)
+async def list_skills_catalog(refresh: bool = False) -> SkillCatalogResponse:
+    """获取同花顺问财与五智能体协同技能全景目录"""
+    return skills_hub.get_catalog(force_reload=refresh)
+
+
+@router.get("/skills/{stage_id}/{skill_id}", response_model=SkillItem)
+async def get_skill_detail_endpoint(stage_id: str, skill_id: str) -> SkillItem:
+    """获取指定智能体阶段下单个技能的完整文档与参数定义"""
+    item = skills_hub.get_skill_detail(stage_id=stage_id, skill_id=skill_id)
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"未找到指定的智能体技能: {stage_id}/{skill_id}",
+        )
+    return item
 
 
 # ── 系统与模型 Key 设置端点 ──────────────────────────────────────────
@@ -373,13 +416,17 @@ async def test_iwencai_connectivity(req: TestIwencaiRequest):
 
     start_t = time.time()
     try:
-        url = "https://openapi.iwencai.com/v1/semantic/query"
+        url = "https://openapi.iwencai.com/v1/query2data"
+        import secrets
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
-            "X-Claw-Call-Type": "health_check",
-            "X-Claw-Skill-Id": "hithink-basicinfo-query",
+            "X-Claw-Call-Type": "normal",
+            "X-Claw-Skill-Id": "hithink-astock-selector",
             "X-Claw-Skill-Version": "1.0.0",
+            "X-Claw-Plugin-Id": "none",
+            "X-Claw-Plugin-Version": "none",
+            "X-Claw-Trace-Id": secrets.token_hex(32),
         }
         payload = {
             "query": "平安银行",

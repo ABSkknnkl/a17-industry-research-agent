@@ -106,7 +106,9 @@ class WorkflowEngine:
         return None
 
     async def create_run(self, req: RunCreateRequest) -> WorkflowState:
-        run_id = f"run-{datetime.now().strftime('%Y%m%d%H%M%S')}-{datetime.now().microsecond // 1000:03d}"
+        # 秒+毫秒在并发 create 时会撞号（同一毫秒多条共写一个 run 目录）；
+        # 改用随机后缀保证唯一，兼容既有 run-YYYYmmddHHMMSS-xxx 形态。
+        run_id = f"run-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(3)}"
         now_str = datetime.now().isoformat()
 
         # 初始化五个阶段的 StageResult
@@ -238,19 +240,26 @@ class WorkflowEngine:
                 if req.stage == "data_fetch":
                     ds_path = art_dir / "dataset.json"
                     deleted_ids = req.edited_data.get("deleted_record_ids", [])
-                    if ds_path.exists() and deleted_ids:
+                    confirmed_scope = req.edited_data.get("confirmed_scope")
+                    confirmed_keywords = req.edited_data.get("confirmed_keywords")
+                    if ds_path.exists():
                         try:
                             ds_json = json.loads(ds_path.read_text(encoding="utf-8"))
-                            del_set = set(deleted_ids)
-                            for list_key, val in ds_json.items():
-                                if isinstance(val, list):
-                                    ds_json[list_key] = [
-                                        item for item in val
-                                        if (item.get("record_id") if isinstance(item, dict) else getattr(item, "record_id", "")) not in del_set
-                                    ]
+                            if deleted_ids:
+                                del_set = set(deleted_ids)
+                                for list_key, val in ds_json.items():
+                                    if isinstance(val, list):
+                                        ds_json[list_key] = [
+                                            item for item in val
+                                            if (item.get("record_id") if isinstance(item, dict) else getattr(item, "record_id", "")) not in del_set
+                                        ]
+                            if confirmed_scope is not None:
+                                ds_json["confirmed_scope"] = confirmed_scope
+                            if confirmed_keywords is not None:
+                                ds_json["confirmed_keywords"] = confirmed_keywords
                             ds_path.write_text(json.dumps(ds_json, ensure_ascii=False, indent=2), encoding="utf-8")
                         except Exception as e:
-                            logger.warning(f"同步清洗 dataset.json 失败: {e}")
+                            logger.warning(f"同步更新 dataset.json 失败: {e}")
                     if deleted_ids and "source_records" in cur_data:
                         del_set = set(deleted_ids)
                         cur_data["source_records"] = [
@@ -272,6 +281,28 @@ class WorkflowEngine:
                         state.stage_results["report_fusion"].status = "pending"
                 elif req.stage == "chart_generate" and "chart_specs" in req.edited_data:
                     ct_path = art_dir / "chart_result.json"
+                    charts_dir = art_dir / "charts"
+                    charts_dir.mkdir(parents=True, exist_ok=True)
+
+                    try:
+                        from chart_generator.render import render_svg
+                        for spec in req.edited_data["chart_specs"]:
+                            cid = spec.get("chart_id")
+                            c_opt = spec.get("option")
+                            c_type = spec.get("chart_type", "bar")
+                            c_title = spec.get("title", "")
+                            c_notes = spec.get("footnotes") or []
+                            if cid and c_opt:
+                                try:
+                                    svg_file = charts_dir / f"{cid}.svg"
+                                    svg_text = render_svg(c_title, c_type, c_opt, c_notes)
+                                    svg_file.write_text(svg_text, encoding="utf-8")
+                                    spec["svg_uri"] = str(svg_file.resolve())
+                                except Exception as svg_err:
+                                    logger.warning(f"重新渲染图表 {cid} SVG 失败: {svg_err}")
+                    except Exception as imp_err:
+                        logger.warning(f"加载 SVG 渲染器失败: {imp_err}")
+
                     if ct_path.exists():
                         try:
                             ct_json = json.loads(ct_path.read_text(encoding="utf-8"))
@@ -335,6 +366,16 @@ class WorkflowEngine:
                         annot_text = "【用户对象级标注要求】:\n" + "\n".join(annot_lines)
                         combined_feedback = f"{annot_text}\n【综合补充指令】: {combined_feedback}" if combined_feedback else annot_text
 
+                if req.stage == "data_fetch":
+                    kws = req.edited_data.get("confirmed_keywords")
+                    scopes = req.edited_data.get("confirmed_scope")
+                    if kws or scopes:
+                        kw_line = f"【指定必查核心检索关键词】: {', '.join(kws)}" if kws else ""
+                        scope_line = f"【指定重点覆盖领域】: {', '.join(scopes)}" if scopes else ""
+                        extra_parts = [p for p in (kw_line, scope_line) if p]
+                        if extra_parts:
+                            combined_feedback = f"{'；'.join(extra_parts)}\n{combined_feedback}" if combined_feedback else "；".join(extra_parts)
+
             # 记录协同反馈历史
             history_file = run_dir / "feedback_history.json"
             history = []
@@ -380,10 +421,30 @@ class WorkflowEngine:
                 if ds_path.exists() and new_records:
                     try:
                         ds_json = json.loads(ds_path.read_text(encoding="utf-8"))
+                        valid_domains = {"industry", "companies", "financials", "macro", "industry_chain", "reports", "news"}
+                        for r in new_records:
+                            r_dict = r.model_dump(mode="json") if hasattr(r, "model_dump") else (dict(r) if isinstance(r, dict) else {})
+                            domain_val = getattr(r.domain, "value", str(r.domain)) if hasattr(r, "domain") else (r.get("domain") if isinstance(r, dict) else "financials")
+                            domain_key = domain_val if domain_val in valid_domains else "financials"
+                            if domain_key not in ds_json or not isinstance(ds_json[domain_key], list):
+                                ds_json[domain_key] = []
+                            ds_json[domain_key].append(r_dict)
+
+                            # 同步更新 sources 溯源
+                            src = getattr(r, "source", None) or (r.get("source") if isinstance(r, dict) else None)
+                            if src:
+                                s_dict = src.model_dump(mode="json") if hasattr(src, "model_dump") else (dict(src) if isinstance(src, dict) else {})
+                                if "sources" not in ds_json or not isinstance(ds_json["sources"], list):
+                                    ds_json["sources"] = []
+                                if s_dict and s_dict not in ds_json["sources"]:
+                                    ds_json["sources"].append(s_dict)
+
+                        # 保留 records 兼容字段以防泛用组件依赖
                         if "records" not in ds_json or not isinstance(ds_json["records"], list):
                             ds_json["records"] = []
                         new_dicts = [r.model_dump(mode="json") if hasattr(r, "model_dump") else r for r in new_records]
                         ds_json["records"].extend(new_dicts)
+
                         ds_path.write_text(json.dumps(ds_json, ensure_ascii=False, indent=2), encoding="utf-8")
                     except Exception as e:
                         logger.warning(f"增量补采写入 dataset.json 失败: {e}")
@@ -436,14 +497,22 @@ class WorkflowEngine:
                     from chapter_writer.retriever import DynamicEvidenceRetriever
 
                     with open(report_path, "r", encoding="utf-8") as f:
-                        report = InterpretationReport.model_validate(json.load(f))
+                        report_raw = json.load(f)
+                        report = InterpretationReport.model_validate(report_raw)
                     chart_res = None
                     if chart_path.exists():
                         with open(chart_path, "r", encoding="utf-8") as f:
                             chart_res = ChartResult.model_validate(json.load(f))
 
+                    expert_bg = str(report_raw.get("expert_background") or "").strip()
+                    inst_parts = []
+                    if expert_bg:
+                        inst_parts.append(f"【专家背景知识先验】: {expert_bg}")
+                    if instruction:
+                        inst_parts.append(f"【用户定向重写指令】: {instruction}")
+
                     writing_options = ChapterWritingOptions(
-                        instruction=f"【用户定向重写指令】: {instruction}" if instruction else ""
+                        instruction="\n".join(inst_parts) if inst_parts else ""
                     )
                     request = ChapterWritingRequest(
                         report=report,
@@ -590,6 +659,17 @@ class WorkflowEngine:
         logger.info(f"[{run_id}] 任务已被成功标记为已取消 (cancelled)")
         return state
 
+    def cancel_all_tasks(self) -> int:
+        """中断并清理所有正在运行中的后台异步任务"""
+        cancelled_count = 0
+        for run_id, task in list(self._running_tasks.items()):
+            if not task.done():
+                logger.info(f"[{run_id}] 正在终止后台运行任务...")
+                task.cancel()
+                cancelled_count += 1
+        self._running_tasks.clear()
+        return cancelled_count
+
     async def resume_run(self, run_id: str, from_stage: StageName | None = None) -> WorkflowState:
         """断点恢复执行：从中断、失败阶段或指定阶段一键继续推进流水线"""
         state = storage.load_state(run_id)
@@ -710,6 +790,7 @@ class WorkflowEngine:
         research_as_of = None
         analysis_depth = "standard"
         chart_options = None
+        selected_skills = []
 
         run_dir = storage.get_run_dir(run_id)
         input_file = run_dir / "input_data.json"
@@ -728,6 +809,8 @@ class WorkflowEngine:
                     research_as_of = req_data.input_data.research_as_of
                 if req_data.input_data.analysis_depth:
                     analysis_depth = req_data.input_data.analysis_depth
+                if req_data.input_data.selected_skills:
+                    selected_skills = req_data.input_data.selected_skills
                 chart_options = req_data.input_data.chart_generate_options
             except Exception:
                 pass
@@ -762,6 +845,7 @@ class WorkflowEngine:
                     reporting_currency=reporting_currency,
                     research_as_of=research_as_of,
                     analysis_depth=analysis_depth,
+                    selected_skills=selected_skills,
                 )
             elif stage == "chart_generate":
                 result = await FiveAgentsAdapter.run_chart_generator(
@@ -772,6 +856,7 @@ class WorkflowEngine:
                 result = await FiveAgentsAdapter.run_chapter_writer(
                     run_id=run_id,
                     feedback=feedback,
+                    selected_skills=selected_skills,
                 )
             elif stage == "report_fusion":
                 result = await FiveAgentsAdapter.run_report_fusion(

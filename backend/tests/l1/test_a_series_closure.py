@@ -19,9 +19,14 @@ from pathlib import Path
 
 import pytest
 
+from .golden_helper import resolve_golden_dir
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 GOLDEN_RUN_ID = "run-20260926022235-107"
-ARTIFACTS = PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts"
+
+def _artifact_path(name: str) -> Path:
+    golden_dir = resolve_golden_dir(GOLDEN_RUN_ID, required_files=[name])
+    return golden_dir / name
 
 # 图表标题 → A2 计算字段的映射（仅在可确证时比对，避免误判）
 TITLE_TO_A2_FIELD = {
@@ -36,17 +41,17 @@ EXEMPT = ("不构成投资建议", "不构成任何投资建议", "仅供研究�
 
 @lru_cache(maxsize=1)
 def _report() -> dict:
-    return json.loads((ARTIFACTS / "interpretation_report.json").read_text(encoding="utf-8"))
+    return json.loads(_artifact_path("interpretation_report.json").read_text(encoding="utf-8"))
 
 
 @lru_cache(maxsize=1)
 def _charts() -> dict:
-    return json.loads((ARTIFACTS / "chart_result.json").read_text(encoding="utf-8"))
+    return json.loads(_artifact_path("chart_result.json").read_text(encoding="utf-8"))
 
 
 @lru_cache(maxsize=1)
 def _chapters() -> dict:
-    return json.loads((ARTIFACTS / "chapter_result.json").read_text(encoding="utf-8"))
+    return json.loads(_artifact_path("chapter_result.json").read_text(encoding="utf-8"))
 
 
 # --------------------------------------------------------------------------
@@ -65,7 +70,7 @@ def test_a2_01_artifact_conforms_to_pydantic_model() -> None:
 
 def test_a2_02_insight_evidence_references_are_valid() -> None:
     """A2-02：insights 的 `evidence_record_ids` 必须非空且全部落在 A1 证据池内。"""
-    dataset = json.loads((ARTIFACTS / "dataset.json").read_text(encoding="utf-8"))
+    dataset = json.loads(_artifact_path("dataset.json").read_text(encoding="utf-8"))
     pool: set[str] = set()
     for key, value in dataset.items():
         if isinstance(value, list):

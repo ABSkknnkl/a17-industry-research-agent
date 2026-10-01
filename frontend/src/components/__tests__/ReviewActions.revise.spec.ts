@@ -59,25 +59,24 @@ describe('ReviewActions 差异化人机协同控制区（彻底清理旧通用�
     expect(wrapper.find('[data-testid="btn-direct-edit"]').exists()).toBe(false)
   })
 
-  it('data_fetch 阶段正确渲染数据采集专属的 3 项介入功能', () => {
+  it('data_fetch 阶段正确渲染数据获取专属的介入功能', () => {
     const wrapper = mountComponent('data_fetch')
     const text = wrapper.text()
+    expect(text).toContain('审核确认检索范围与关键词')
     expect(text).toContain('增量数据补采')
-    expect(text).toContain('局部子域重采')
     expect(text).toContain('脏数据清洗与剔除')
   })
 
-  it('chapter_write 阶段正确渲染章节撰写专属的 3 项介入功能', () => {
+  it('chapter_write 阶段正确渲染分章节内容专属的介入功能', () => {
     const wrapper = mountComponent('chapter_write')
     const text = wrapper.text()
-    expect(text).toContain('指定单章定向重写')
+    expect(text).toContain('提出修改意见与补充要求')
     expect(text).toContain('正文段落就地精修')
-    expect(text).toContain('研报行文风格引导')
   })
 
   it('点击阶段专属功能按钮时调起 StageInterventionModal 弹窗', async () => {
     const wrapper = mountComponent('chapter_write')
-    const rewriteBtn = wrapper.findAll('button').find((b) => b.text().includes('指定单章定向重写'))
+    const rewriteBtn = wrapper.findAll('button').find((b) => b.text().includes('提出修改意见与补充要求'))
     expect(rewriteBtn).toBeTruthy()
     await rewriteBtn!.trigger('click')
     await flushPromises()
@@ -85,7 +84,7 @@ describe('ReviewActions 差异化人机协同控制区（彻底清理旧通用�
     const modal = wrapper.findComponent(StageInterventionModal)
     expect(modal.exists()).toBe(true)
     expect(modal.props('visible')).toBe(true)
-    expect(modal.props('initialTab')).toBe('single_chapter')
+    expect(modal.props('initialTab')).toBe('revision_requirements')
   })
 })
 

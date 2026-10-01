@@ -8,6 +8,7 @@ import {
   type StageName,
 } from '../api/types'
 import { dimensionLabel, fieldLabel, skillLabel } from '../api/labels'
+import { Check } from '@element-plus/icons-vue'
 import ChartGallery from './ChartGallery.vue'
 import ReportPreview from './ReportPreview.vue'
 import InterpretationDigest from './InterpretationDigest.vue'
@@ -26,6 +27,7 @@ const emit = defineEmits<{
   /** anchor：点目录结构里某一章时带上锚点，预览页打开后直接跳到该章 */
   (e: 'preview-report', anchor?: string): void
   (e: 'annotate', payload: { stage: StageName; annotations: any[] }): void
+  (e: 'view-evidence', recordIds: string[]): void
 }>()
 
 const d = computed(() => props.data as Record<string, unknown>)
@@ -344,6 +346,7 @@ const coverageLabel = (status?: string) => {
           :source-records="sourceRecords"
           :run-id="runId"
           @annotate="(annots) => emit('annotate', { stage: 'data_fetch', annotations: annots })"
+          @view-evidence="(ids) => emit('view-evidence', ids)"
         />
       </template>
 
@@ -357,10 +360,10 @@ const coverageLabel = (status?: string) => {
             底层智能体正在基于投研需求分解 7 大维度，并并发调度问财金融技能抓取实体与财务指标。采集完成后将自动在此渲染结构化指标列表与意图路由明细。
           </p>
           <div class="pending-steps">
-            <div class="pstep is-done">✓ 投研意图分解与 7 大分析领域激活</div>
-            <div class="pstep is-active">● 问财金融数据多轮闭环抽取中...</div>
-            <div class="pstep">○ 多源数据实体对齐与冲突消解</div>
-            <div class="pstep">○ 结构化事实总库入库交付</div>
+            <div class="pstep is-done"><el-icon><Check /></el-icon> 投研意图分解与 7 大分析领域激活</div>
+            <div class="pstep is-active"><span class="pdot active" /> 问财金融数据多轮闭环抽取中...</div>
+            <div class="pstep"><span class="pdot" /> 多源数据实体对齐与冲突消解</div>
+            <div class="pstep"><span class="pdot" /> 结构化事实总库入库交付</div>
           </div>
         </div>
       </template>
@@ -380,6 +383,7 @@ const coverageLabel = (status?: string) => {
           :data="data"
           :run-id="runId"
           @annotate="(annots) => emit('annotate', { stage: 'data_interpret', annotations: annots })"
+          @view-evidence="(ids) => emit('view-evidence', ids)"
         />
       </template>
       <template v-else>
@@ -392,10 +396,10 @@ const coverageLabel = (status?: string) => {
             正在基于阶段一全量数据集执行确定性复合增速 CAGR 测算、稳健 Z 分数离群异常检测、三表勾稽验证与 6 维投研方法论洞察提炼。
           </p>
           <div class="pending-steps">
-            <div class="pstep is-done">✓ 阶段一数据集已成功挂载</div>
-            <div class="pstep is-active">● 底层量化计算与同行对标矩阵构建中...</div>
-            <div class="pstep">○ 投研方法论自主规划与深度语义洞察</div>
-            <div class="pstep">○ 维度覆盖矩阵与风险提示生成</div>
+            <div class="pstep is-done"><el-icon><Check /></el-icon> 阶段一数据集已成功挂载</div>
+            <div class="pstep is-active"><span class="pdot active" /> 底层量化计算与同行对标矩阵构建中...</div>
+            <div class="pstep"><span class="pdot" /> 投研方法论自主规划与深度语义洞察</div>
+            <div class="pstep"><span class="pdot" /> 维度覆盖矩阵与风险提示生成</div>
           </div>
         </div>
       </template>
@@ -417,10 +421,10 @@ const coverageLabel = (status?: string) => {
             正在分析数据形态规划出版级图表矩阵，结合 ECharts 引擎渲染 960x520 矢量图表并进行排版自愈与审美校验。
           </p>
           <div class="pending-steps">
-            <div class="pstep is-done">✓ 解读数据特征与量化指标就绪</div>
-            <div class="pstep is-active">● 出版级图表选型规划与 ECharts 渲染中...</div>
-            <div class="pstep">○ 图表排版自愈与合规审查</div>
-            <div class="pstep">○ 960x520 矢量图表交付</div>
+            <div class="pstep is-done"><el-icon><Check /></el-icon> 解读数据特征与量化指标就绪</div>
+            <div class="pstep is-active"><span class="pdot active" /> 出版级图表选型规划与 ECharts 渲染中...</div>
+            <div class="pstep"><span class="pdot" /> 图表排版自愈与合规审查</div>
+            <div class="pstep"><span class="pdot" /> 960x520 矢量图表交付</div>
           </div>
         </div>
       </template>
@@ -477,10 +481,10 @@ const coverageLabel = (status?: string) => {
             7 章 21 节券商深度专题骨架已激活，正在并发组织写作方法论技能调度，并穿透关联客观证据与矢量图表。
           </p>
           <div class="pending-steps">
-            <div class="pstep is-done">✓ 7 章 21 节大纲与动态证据检索就绪</div>
-            <div class="pstep is-active">● 各章节写作方法论技能全并发撰写中...</div>
-            <div class="pstep">○ 证据引用与学术规范 Linting 质检</div>
-            <div class="pstep">○ 深度连贯研报正文就绪</div>
+            <div class="pstep is-done"><el-icon><Check /></el-icon> 7 章 21 节大纲与动态证据检索就绪</div>
+            <div class="pstep is-active"><span class="pdot active" /> 各章节写作方法论技能全并发撰写中...</div>
+            <div class="pstep"><span class="pdot" /> 证据引用与学术规范 Linting 质检</div>
+            <div class="pstep"><span class="pdot" /> 深度连贯研报正文就绪</div>
           </div>
         </div>
       </template>
@@ -512,10 +516,10 @@ const coverageLabel = (status?: string) => {
           正在组织 4 大总编审校技能协同审计，统合数据口径、编纂证据穿透目录并编译导出 Markdown / HTML / PDF 多格式报告。
         </p>
         <div class="pending-steps">
-          <div class="pstep is-done">✓ 汇聚全阶段资产（数据、图表、正文）</div>
-          <div class="pstep is-active">● 首席产业研判提炼与 4 维一致性审计中...</div>
-          <div class="pstep">○ 100% 证据穿透溯源目录编纂</div>
-          <div class="pstep">○ 多格式出版级报告定稿生成</div>
+          <div class="pstep is-done"><el-icon><Check /></el-icon> 汇聚全阶段资产（数据、图表、正文）</div>
+          <div class="pstep is-active"><span class="pdot active" /> 首席产业研判提炼与 4 维一致性审计中...</div>
+          <div class="pstep"><span class="pdot" /> 100% 证据穿透溯源目录编纂</div>
+          <div class="pstep"><span class="pdot" /> 多格式出版级报告定稿生成</div>
         </div>
       </div>
     </template>
@@ -739,8 +743,22 @@ const coverageLabel = (status?: string) => {
   padding: 10px 14px;
 }
 .pstep {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   color: #94a3b8;
+}
+.pstep .pdot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.pstep .pdot.active {
+  background: #2563eb;
 }
 .pstep.is-done {
   color: #10b981;

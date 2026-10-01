@@ -116,5 +116,40 @@ describe('QualityPanel 评分基准由后端下发', () => {
     // 综合加权得分：100*0.1 + 100*0.1 + 97*0.4 + 86*0.4 = 93.2 -> 93
     expect(wrapper.find('.score-value').text()).toBe('93')
   })
+
+  it('对重复/前缀包含的局限项去重，并折叠段落编辑拦截记录', () => {
+    const wrapper = mountPanel({
+      chapter_count: 7,
+      section_count: 21,
+      expected_chapter_count: 7,
+      expected_section_count: 21,
+      evidence_coverage: 0.97,
+      passed: true,
+      issues: [
+        '拒绝了 P-01-03-04 的编辑：包含新增数字、未知证据或目标不存在',
+        '拒绝了 P-02-01-03 的编辑：包含新增数字、未知证据或目标不存在',
+        '拒绝了 P-03-01-04 的编辑：包含新增数字、未知证据或目标不存在',
+        '拒绝了 P-04-02-02 的编辑：包含新增数字、未知证据或目标不存在',
+        '拒绝了 P-05-01-01 的编辑：包含新增数字、未知证据或目标不存在',
+        '拒绝了 P-07-01-02 的编辑：包含新增数字、未知证据或目标不存在',
+        '超过一半的数值记录缺少可用于趋势分析的日期',
+        '个股财务报表附表细项（如应收账款账龄、存货跌价等）未充分覆盖，营运资金变动原因需结合财报附注定性研判',
+        '超过一半的数值记录缺少可用于趋势分析的日期（数据质量中dated_numeric_record_count仅180条），趋势方向信号可能不完整，不可作为完整时间序列解释。',
+      ],
+    })
+
+    const items = wrapper.findAll('.check-item')
+    // 1 个质量门通过 + 1 个事实合规护栏 + 2 个投研合规边界项 = 4 项
+    expect(items).toHaveLength(4)
+    const textContent = wrapper.text()
+    expect(textContent).toContain('已拦截 6 处未获数据证据授权的段落微调')
+    expect(textContent).toContain('【数据时效边界】')
+    expect(textContent).toContain('【财务附注边界】')
+    // 验证合规分未被过度扣罚，保持在 90 以上高分区间
+    const values = subScoreValues(wrapper)
+    expect(values[3]).toBeGreaterThanOrEqual(92)
+    expect(Number(wrapper.find('.score-value').text())).toBeGreaterThanOrEqual(95)
+  })
 })
+
 

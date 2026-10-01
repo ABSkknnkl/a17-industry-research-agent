@@ -20,7 +20,7 @@ import asyncio
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("🚀 行业研究五智能体协同服务启动中...")
+    logger.info("行业研究五智能体协同服务启动中...")
     logger.info(f"  模型基座: {settings.LLM_MODEL} @ {settings.LLM_BASE_URL}")
     logger.info(f"  问财SkillHub配置完成，数据存储路径: {settings.DATA_DIR}")
 
@@ -32,13 +32,13 @@ async def lifespan(app: FastAPI):
         runs_resp = storage.list_runs(offset=0, limit=200)
         for r in runs_resp.items:
             if r.status == "running":
-                logger.warning(f"⚠️ [自愈守护] 检测到服务重启前遗留的中断任务: {r.run_id} (阶段: {r.current_stage})，正在启动自动断点续跑...")
+                logger.warning(f"[自愈守护] 检测到服务重启前遗留的中断任务: {r.run_id} (阶段: {r.current_stage})，正在启动自动断点续跑...")
                 asyncio.create_task(engine.resume_run(r.run_id))
     except Exception as e:
         logger.warning(f"自愈检测异常 (非致命): {e}")
 
     yield
-    logger.info("🛑 行业研究五智能体协同服务已安全停止")
+    logger.info("行业研究五智能体协同服务已安全停止")
 
 
 app = FastAPI(

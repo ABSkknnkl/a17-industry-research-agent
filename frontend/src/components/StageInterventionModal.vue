@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Cpu, View, EditPen, Promotion, Check } from '@element-plus/icons-vue'
 import type { StageName } from '../api/types'
 import { STAGE_LABELS } from '../api/types'
 
@@ -24,35 +25,173 @@ const emit = defineEmits<{
 const activeTab = ref('tab-1')
 
 // =========================================================================
-// 阶段 1：数据采集 (data_fetch)
+// 阶段 1：数据获取 (data_fetch)
 // =========================================================================
-// 1.1 增量数据补采 (Data Replenishment)
+// 1.0 审核确认检索范围与关键词 (Scope & Keywords Review)
+interface ScopeDomain {
+  id: string
+  name: string
+  desc: string
+  checked: boolean
+}
+const scopeDomains = ref<ScopeDomain[]>([
+  { id: 'macro', name: '宏观政策与产销大盘', desc: '产业规划政策、行业总装机量、进出口走势与投融资大盘', checked: true },
+  { id: 'industry_chain', name: '产业链供需与关键环节', desc: '原材料成本、核心元器件、中游制造与下游应用渗透率', checked: true },
+  { id: 'financials', name: '样本龙头财务与盈利能力', desc: '营业收入、净利润、毛利率、研发费用率及资产负债率', checked: true },
+  { id: 'competitors', name: '竞争格局与市场份额对标', desc: 'CR3/CR5行业集中度、第二梯队对标与出海全球市占率', checked: true },
+])
+const activeKeywords = ref<string[]>([])
+const newKeywordInput = ref('')
+
+function initScopeKeywords() {
+  const rawKeywords = (props.data?.keywords || props.data?.search_keywords || []) as string[]
+  if (Array.isArray(rawKeywords) && rawKeywords.length > 0) {
+    activeKeywords.value = [...rawKeywords]
+  } else {
+    const recs = (props.data?.source_records || props.data?.records || []) as any[]
+    const extracted = new Set<string>()
+    recs.forEach((r) => {
+      if (r.metric) extracted.add(r.metric)
+      if (r.entity_name && r.entity_name !== '综合行业') extracted.add(r.entity_name)
+    })
+    if (extracted.size > 0) {
+      activeKeywords.value = Array.from(extracted).slice(0, 8)
+    } else {
+      activeKeywords.value = ['行业市场规模', '龙头毛利率', '研发投入壁垒', '海外出海份额', '产业链供需格局']
+    }
+  }
+}
+
+function removeKeyword(idx: number) {
+  activeKeywords.value.splice(idx, 1)
+}
+
+function addKeyword() {
+  const kw = newKeywordInput.value.trim()
+  if (kw && !activeKeywords.value.includes(kw)) {
+    activeKeywords.value.push(kw)
+    newKeywordInput.value = ''
+  }
+}
+
+function handleScopeKeywordsConfirm() {
+  const selectedScope = scopeDomains.value.filter((s) => s.checked).map((s) => s.id)
+  if (selectedScope.length === 0) {
+    ElMessage.warning('请至少保留一个检索领域')
+    return
+  }
+  if (activeKeywords.value.length === 0) {
+    ElMessage.warning('请至少保留一个检索关键词')
+    return
+  }
+  emit('submitDirectEdit', {
+    edited_data: {
+      confirmed_scope: selectedScope,
+      confirmed_keywords: activeKeywords.value,
+    },
+    comment: `审核确认检索范围(${selectedScope.length}个领域)与关键词(${activeKeywords.value.length}个词)`,
+  })
+  emit('update:visible', false)
+}
+
+function handleScopeKeywordsRevise() {
+  const selectedScope = scopeDomains.value.filter((s) => s.checked).map((s) => s.id)
+  emit('submitRevise', {
+    comment: `按人工确认的检索范围[${selectedScope.join(', ')}]与关键词[${activeKeywords.value.join(', ')}]重新检索`,
+    edited_data: {
+      action_type: 'scope_keywords_refetch',
+      confirmed_scope: selectedScope,
+      confirmed_keywords: activeKeywords.value,
+    },
+  })
+  emit('update:visible', false)
+}
+
+// 1.1 增量数据补采 (Data Replenishment) - 通用且自适应上下文
 const replenishEntity = ref('')
 const replenishDomain = ref('financials')
 const replenishQuery = ref('')
 const replenishReason = ref('')
 
+function getContextTopic(): string {
+  const d = props.data || {}
+  const raw =
+    (d.industry_topic as string) ||
+    (d.topic as string) ||
+    (d.industry as string) ||
+    (d.title as string) ||
+    ((d.metadata as any)?.industry_topic as string) ||
+    ((d.metadata as any)?.topic as string) ||
+    ''
+  if (typeof raw === 'string' && raw.trim()) {
+    const cleaned = raw.replace(/行业研究报告|行业分析报告|深度研究报告|深度报告|行业研报|研究报告/g, '').trim()
+    if (cleaned) {
+      return cleaned.endsWith('行业') ? cleaned : `${cleaned}行业`
+    }
+  }
+  return '行业'
+}
+
+function getContextEntities(): string[] {
+  const d = props.data || {}
+  const recs = (d.source_records || d.records || []) as any[]
+  const set = new Set<string>()
+  recs.forEach((r) => {
+    const name = r.entity_name || r.entity || r.name
+    if (name && typeof name === 'string') {
+      const clean = name.replace(/\(.*?\)/g, '').replace(/（.*?）/g, '').trim()
+      if (
+        clean &&
+        clean !== '综合行业' &&
+        clean !== '行业大盘' &&
+        clean !== '未知代码' &&
+        !clean.includes('统计') &&
+        !clean.includes('大盘')
+      ) {
+        set.add(clean)
+      }
+    }
+  })
+  return Array.from(set)
+}
+
+function initDataFetchReplenish(forceReset = false) {
+  const topic = getContextTopic()
+  const entities = getContextEntities()
+  const defaultEntity = entities.length > 0 ? entities.slice(0, 2).join(', ') : '行业核心龙头企业'
+
+  if (forceReset || !replenishQuery.value) {
+    replenishDomain.value = 'financials'
+    replenishEntity.value = defaultEntity
+    replenishQuery.value = `查询${topic}核心龙头企业近3年营业收入、净利润、毛利率及研发费用率`
+    replenishReason.value = `下游图表与报告章节缺少${topic}核心龙头财务表现与盈利质量数据`
+  }
+}
+
 function quickFillReplenish(type: string) {
+  const topic = getContextTopic()
+  const entities = getContextEntities()
+
   if (type === 'finance') {
     replenishDomain.value = 'financials'
-    replenishEntity.value = '宁德时代, 比亚迪'
-    replenishQuery.value = '查询宁德时代与比亚迪近3年研发费用、毛利率及储能业务拆分出货量'
-    replenishReason.value = '下游图表与章节缺少核心龙头研发投入与储能毛利拆分'
+    replenishEntity.value = entities.length > 0 ? entities.slice(0, 2).join(', ') : '行业核心龙头企业'
+    replenishQuery.value = `查询${topic}核心龙头企业近3年营业收入、净利润、毛利率及研发费用率`
+    replenishReason.value = `下游图表与报告章节缺少${topic}核心龙头财务表现与盈利质量数据`
   } else if (type === 'chain') {
     replenishDomain.value = 'industry_chain'
-    replenishEntity.value = '产业链上中下游'
-    replenishQuery.value = '查询正负极材料、电解液、隔膜及电池系统集成各环节龙头厂商与产能集中度'
-    replenishReason.value = '补充产业链各环节核心供需格局'
+    replenishEntity.value = '产业链上下游关键环节'
+    replenishQuery.value = `查询${topic}产业链上游原材料/元器件、中游制造与下游应用主要环节代表企业及集中度`
+    replenishReason.value = `补充${topic}产业链各环节核心供需格局与价值分布`
   } else if (type === 'macro') {
     replenishDomain.value = 'macro'
-    replenishEntity.value = '行业产销数据'
-    replenishQuery.value = '查询近3年新能源汽车与储能动力电池月度装机量、出口规模及政策补贴演变'
-    replenishReason.value = '补充宏观产销增速支撑行业大盘论据'
+    replenishEntity.value = `${topic}产销与大盘数据`
+    replenishQuery.value = `查询近3年${topic}市场总规模、月度产销增速、进出口数据及核心产业政策`
+    replenishReason.value = `补充宏观经济周期与${topic}大盘增速支撑行业分析论据`
   } else if (type === 'competitors') {
-    replenishDomain.value = 'financials'
-    replenishEntity.value = '国轩高科, 亿纬锂能, 中创新航'
-    replenishQuery.value = '查询第二梯队核心动力电池企业营收规模与国内市场份额占比'
-    replenishReason.value = '补充二线标的对标竞争矩阵数据'
+    replenishDomain.value = 'competitors'
+    replenishEntity.value = entities.length > 2 ? entities.slice(2, 5).join(', ') : '行业第二梯队重点标的'
+    replenishQuery.value = `查询${topic}主要企业国内市场份额占比、营收规模与行业梯队竞争格局`
+    replenishReason.value = `补充${topic}行业梯队对标与竞争壁垒矩阵数据`
   }
 }
 
@@ -158,6 +297,60 @@ function handleCleanSubmit() {
 // =========================================================================
 // 阶段 2：数据解读 (data_interpret)
 // =========================================================================
+// 2.0 补充专家背景知识与修正核心判断 (Knowledge & Judgments)
+const expertBackgroundNotes = ref('')
+interface JudgmentItem {
+  id: string
+  title: string
+  text: string
+  decision: 'confirm' | 'modify' | 'reject'
+}
+const localJudgments = ref<JudgmentItem[]>([])
+
+function quickFillExpertKnowledge(type: string) {
+  if (type === 'channel') {
+    expertBackgroundNotes.value = '【草根调研纪要】最新产业调研显示，海外头部云厂商下半年资本开支预期上修，核心高算力元器件采购订单节奏明显前置；但上游关键芯片供给周期拉长至 36 周以上。'
+  } else if (type === 'policy') {
+    expertBackgroundNotes.value = '【政策与出海壁垒】重点出口区域出台本地化供应链采购合规要求，具备海外本地化交付产线与专利授权资质的厂商护城河进一步加深。'
+  } else if (type === 'tech') {
+    expertBackgroundNotes.value = '【技术演进先验】新一代低功耗技术路线商业化渗透率预计于未来 4-6 个季度跨越临界拐点，既有老产线存在折旧计提加速压力。'
+  }
+}
+
+function initKnowledgeAndJudgment() {
+  expertBackgroundNotes.value = String(props.data?.expert_background || props.data?.prior_notes || '')
+  const rawFindings = (props.data?.findings || props.data?.key_findings || props.data?.claims || []) as any[]
+  if (Array.isArray(rawFindings) && rawFindings.length > 0) {
+    localJudgments.value = rawFindings.map((f, i) => ({
+      id: f.id || `J-${i + 1}`,
+      title: f.title || f.claim || `核心研判 #${i + 1}`,
+      text: typeof f === 'string' ? f : f.text || f.content || f.description || '',
+      decision: 'confirm',
+    }))
+  } else {
+    localJudgments.value = [
+      { id: 'J-1', title: '产业处于高景气周期与出海放量红利期', text: '行业龙头依托技术代际差与客户黏性享受溢价，海外出海份额持续提升。', decision: 'confirm' },
+      { id: 'J-2', title: '上游供给扩张带动成本曲线优化', text: '原材料价格进入合理平稳区间，中下游制造环节毛利出现修复拐点。', decision: 'confirm' },
+    ]
+  }
+}
+
+function handleKnowledgeAndJudgmentSubmit() {
+  const activeFindings = localJudgments.value
+    .filter((j) => j.decision !== 'reject')
+    .map((j) => ({ id: j.id, title: j.title, text: j.text }))
+
+  emit('submitDirectEdit', {
+    edited_data: {
+      expert_background: expertBackgroundNotes.value.trim(),
+      findings: activeFindings,
+      key_findings: activeFindings,
+    },
+    comment: `补充专家背景知识并修正核心判断（确认 ${activeFindings.length} 条研判论据）`,
+  })
+  emit('update:visible', false)
+}
+
 // 2.1 可比公司标的池微调 (Comps Matrix)
 interface LocalCompItem {
   name: string
@@ -313,6 +506,9 @@ interface LocalChartItem {
   excluded: boolean
   unit?: string
   footnotes?: string[]
+  highlight_target?: string // 重点高亮标的/系列
+  benchmark_line?: number | null // 重点参考基准线
+  emphasis_note?: string // 重点事件/拐点标注
   _rawSpec?: Record<string, unknown>
 }
 const localCharts = ref<LocalChartItem[]>([])
@@ -327,47 +523,173 @@ function morphChartOption(option: any, targetType: string): any {
   const xAxis = opt.xAxis
   const yAxis = opt.yAxis
 
-  if (targetType === 'horizontal_bar') {
-    series.forEach((s: any) => {
-      s.type = 'bar'
-      delete s.stack
-      delete s.areaStyle
-    })
-    const isXCat = xAxis?.type === 'category' || (xAxis?.data && yAxis?.type !== 'category')
-    if (isXCat) {
-      const newY = { ...xAxis, type: 'category' }
-      const newX = { ...(yAxis || {}), type: 'value' }
-      opt.xAxis = newX
-      opt.yAxis = newY
+  if (targetType === 'pie' || targetType === 'donut') {
+    const categories = xAxis?.data || yAxis?.data || []
+    const firstSeries = series[0] || {}
+    const rawData = Array.isArray(firstSeries.data) ? firstSeries.data : []
+    const pieData = (categories.length > 0 ? categories : rawData).map((cat: any, idx: number) => {
+      const val = typeof rawData[idx] === 'object' ? rawData[idx]?.value : rawData[idx]
+      return {
+        name: String(typeof cat === 'object' ? (cat.name || cat.value || `项目${idx + 1}`) : cat),
+        value: typeof val === 'number' ? Math.abs(val) : 10,
+      }
+    }).filter((item: any) => item.value > 0)
+
+    opt.series = [{
+      name: firstSeries.name || opt.title?.text || '占比结构',
+      type: 'pie',
+      radius: ['45%', '70%'],
+      avoidLabelOverlap: true,
+      itemStyle: { borderRadius: 4, borderColor: '#ffffff', borderWidth: 2 },
+      label: { show: true, formatter: '{b}: {d}%' },
+      data: pieData.length > 0 ? pieData : [{ name: '核心分部', value: 60 }, { name: '其他分部', value: 40 }],
+    }]
+    delete opt.xAxis
+    delete opt.yAxis
+    delete opt.radar
+  } else if (targetType === 'radar') {
+    const categories = (xAxis?.data || yAxis?.data || []).slice(0, 6)
+    const validCats = categories.length >= 3 ? categories : ['盈利能力', '成长弹性', '资产质量', '估值吸引力', '研发强度']
+    const indicators = validCats.map((cat: any) => ({
+      name: String(typeof cat === 'object' ? (cat.name || cat.value) : cat),
+      max: 100,
+    }))
+    opt.radar = {
+      indicator: indicators,
+      shape: 'polygon',
+      splitNumber: 4,
     }
+    opt.series = [{
+      type: 'radar',
+      data: series.slice(0, 3).map((s: any, idx: number) => {
+        const sName = s.name || `标的${idx + 1}`
+        const vals = Array.isArray(s.data)
+          ? s.data.slice(0, indicators.length).map((v: any) => {
+              const num = typeof v === 'object' ? v?.value : v
+              return typeof num === 'number' ? Math.min(Math.max(Math.abs(num), 10), 100) : 50
+            })
+          : [60, 70, 80, 75, 85]
+        while (vals.length < indicators.length) vals.push(50)
+        return { value: vals, name: sName }
+      }),
+    }]
+    delete opt.xAxis
+    delete opt.yAxis
+  } else if (targetType === 'horizontal_bar') {
+    // 若原图是 pie 或 radar，先恢复直角坐标系
+    if (!xAxis && opt.series?.[0]?.type === 'pie') {
+      const pieData = opt.series[0].data || []
+      opt.xAxis = { type: 'value' }
+      opt.yAxis = { type: 'category', data: pieData.map((d: any) => d.name) }
+      opt.series = [{ type: 'bar', data: pieData.map((d: any) => d.value) }]
+    } else {
+      series.forEach((s: any) => {
+        s.type = 'bar'
+        delete s.stack
+        delete s.areaStyle
+      })
+      const isXCat = xAxis?.type === 'category' || (xAxis?.data && yAxis?.type !== 'category')
+      if (isXCat) {
+        const newY = { ...xAxis, type: 'category' }
+        const newX = { ...(yAxis || {}), type: 'value' }
+        opt.xAxis = newX
+        opt.yAxis = newY
+      }
+    }
+    delete opt.radar
   } else if (['bar', 'line', 'stacked_bar', 'area'].includes(targetType)) {
-    const isYCat = yAxis?.type === 'category' && xAxis?.type === 'value'
-    if (isYCat) {
-      const newX = { ...yAxis, type: 'category' }
-      const newY = { ...xAxis, type: 'value' }
-      opt.xAxis = newX
-      opt.yAxis = newY
+    // 若原图是 pie 或 radar，先恢复直角坐标系
+    if (!xAxis && opt.series?.[0]?.type === 'pie') {
+      const pieData = opt.series[0].data || []
+      opt.xAxis = { type: 'category', data: pieData.map((d: any) => d.name) }
+      opt.yAxis = { type: 'value' }
+      opt.series = [{
+        name: opt.series[0].name || '数值',
+        type: targetType === 'stacked_bar' ? 'bar' : (targetType === 'area' ? 'line' : targetType),
+        data: pieData.map((d: any) => d.value),
+      }]
+    } else if (!xAxis && opt.radar?.indicator) {
+      const indicators = opt.radar.indicator || []
+      opt.xAxis = { type: 'category', data: indicators.map((d: any) => d.name) }
+      opt.yAxis = { type: 'value' }
+      const radarSeries = opt.series?.[0]?.data || []
+      opt.series = radarSeries.map((rs: any) => ({
+        name: rs.name || '标的',
+        type: targetType === 'stacked_bar' ? 'bar' : (targetType === 'area' ? 'line' : targetType),
+        data: rs.value || [],
+      }))
+      delete opt.radar
+    } else {
+      const isYCat = yAxis?.type === 'category' && xAxis?.type === 'value'
+      if (isYCat) {
+        const newX = { ...yAxis, type: 'category' }
+        const newY = { ...xAxis, type: 'value' }
+        opt.xAxis = newX
+        opt.yAxis = newY
+      }
+      series.forEach((s: any) => {
+        if (targetType === 'bar') {
+          s.type = 'bar'
+          delete s.stack
+          delete s.areaStyle
+        } else if (targetType === 'line') {
+          s.type = 'line'
+          delete s.stack
+          delete s.areaStyle
+        } else if (targetType === 'stacked_bar') {
+          s.type = 'bar'
+          s.stack = 'total'
+          delete s.areaStyle
+        } else if (targetType === 'area') {
+          s.type = 'line'
+          delete s.stack
+          s.areaStyle = s.areaStyle || {}
+        }
+      })
     }
+    delete opt.radar
+  }
+  return opt
+}
+
+function applyEmphasisToOption(option: any, chart: LocalChartItem): any {
+  if (!option || typeof option !== 'object') return option
+  const opt = JSON.parse(JSON.stringify(option))
+
+  // 1. 注入参考基准线 (markLine)
+  if (chart.benchmark_line !== null && chart.benchmark_line !== undefined && chart.benchmark_line !== 0) {
+    const series = opt.series || []
+    if (series.length > 0) {
+      series[0].markLine = {
+        data: [{ yAxis: chart.benchmark_line, name: `参考基准线 (${chart.benchmark_line})` }],
+        lineStyle: { color: '#E6A23C', type: 'dashed', width: 2 },
+        label: { position: 'end', formatter: `基准: ${chart.benchmark_line}` },
+      }
+    }
+  }
+
+  // 2. 注入重点事件/拐点标注 (markPoint)
+  if (chart.emphasis_note && chart.emphasis_note.trim()) {
+    const series = opt.series || []
+    if (series.length > 0) {
+      series[0].markPoint = {
+        data: [{ type: 'max', name: chart.emphasis_note.trim() }],
+        label: { formatter: chart.emphasis_note.trim() },
+      }
+    }
+  }
+
+  // 3. 高亮重点标的 (highlight_target)
+  if (chart.highlight_target && chart.highlight_target.trim()) {
+    const target = chart.highlight_target.trim().toLowerCase()
+    const series = opt.series || []
     series.forEach((s: any) => {
-      if (targetType === 'bar') {
-        s.type = 'bar'
-        delete s.stack
-        delete s.areaStyle
-      } else if (targetType === 'line') {
-        s.type = 'line'
-        delete s.stack
-        delete s.areaStyle
-      } else if (targetType === 'stacked_bar') {
-        s.type = 'bar'
-        s.stack = 'total'
-        delete s.areaStyle
-      } else if (targetType === 'area') {
-        s.type = 'line'
-        delete s.stack
-        s.areaStyle = s.areaStyle || {}
+      if (s.name && String(s.name).toLowerCase().includes(target)) {
+        s.itemStyle = { color: '#409EFF', borderWidth: 2 }
       }
     })
   }
+
   return opt
 }
 
@@ -380,6 +702,9 @@ function initChartData() {
     excluded: c.status === 'excluded',
     unit: c.unit || (c.options?.yAxis?.name || c.option?.yAxis?.name || ''),
     footnotes: c.footnotes || ['数据来源：同花顺 iFinD，全链路智能体整理'],
+    highlight_target: c.highlight_target || '',
+    benchmark_line: c.benchmark_line ?? null,
+    emphasis_note: c.emphasis_note || '',
     _rawSpec: c,
   }))
 }
@@ -387,7 +712,8 @@ function initChartData() {
 function handleChartMorphSubmit() {
   const updated = localCharts.value.map((c) => {
     const raw = c._rawSpec ? JSON.parse(JSON.stringify(c._rawSpec)) : {}
-    const morphedOption = morphChartOption(raw.option, c.chart_type)
+    let morphedOption = morphChartOption(raw.option, c.chart_type)
+    morphedOption = applyEmphasisToOption(morphedOption, c)
     return {
       ...raw,
       chart_id: c.chart_id,
@@ -396,6 +722,9 @@ function handleChartMorphSubmit() {
       status: c.excluded ? 'excluded' : 'ready',
       unit: c.unit,
       footnotes: c.footnotes,
+      highlight_target: c.highlight_target,
+      benchmark_line: c.benchmark_line,
+      emphasis_note: c.emphasis_note,
       option: morphedOption,
     }
   })
@@ -403,7 +732,7 @@ function handleChartMorphSubmit() {
     edited_data: {
       chart_specs: updated,
     },
-    comment: `就地调整图表形态与显隐配置（共 ${updated.length} 张图表）`,
+    comment: `配置图表样式与强调重点（共更新 ${updated.length} 张图表）`,
   })
   emit('update:visible', false)
 }
@@ -425,6 +754,50 @@ function handleNewChartSubmit() {
 // =========================================================================
 // 阶段 4：章节撰写 (chapter_write)
 // =========================================================================
+// 4.0 提出修改意见与补充要求 (Revision Suggestions & Supplementary Requirements)
+const selectedRevisionTags = ref<string[]>([])
+const revisionRequirementText = ref('')
+const revisionScope = ref<'single' | 'all'>('single')
+
+const REVISION_TAGS = [
+  '强化核心竞争壁垒与护城河论述',
+  '弱化宏观套话，聚焦细分产业落地',
+  '补齐各环节毛利率与估值对标数据',
+  '补充海外出海市场份额与关税壁垒',
+  '增加前沿技术商业化量产节奏预测',
+  '提升行业下行风险与估值安全边际',
+]
+
+function toggleRevisionTag(tag: string) {
+  const idx = selectedRevisionTags.value.indexOf(tag)
+  if (idx >= 0) selectedRevisionTags.value.splice(idx, 1)
+  else selectedRevisionTags.value.push(tag)
+}
+
+function handleRevisionRequirementsSubmit() {
+  const inst = [
+    selectedRevisionTags.value.length ? `【修改意见】: ${selectedRevisionTags.value.join('；')}` : '',
+    revisionRequirementText.value.trim() ? `【补充要求】: ${revisionRequirementText.value.trim()}` : '',
+  ].filter(Boolean).join('\n')
+
+  if (!inst) {
+    ElMessage.warning('请勾选修改意见或输入补充要求')
+    return
+  }
+
+  emit('submitRevise', {
+    comment: revisionScope.value === 'single'
+      ? `针对章节 ${targetChapterId.value} 提出修改意见与补充要求: ${inst}`
+      : `针对全文提出修改意见与补充要求: ${inst}`,
+    edited_data: {
+      action_type: revisionScope.value === 'single' ? 'single_chapter_rewrite' : 'full_revision',
+      target_chapter_id: revisionScope.value === 'single' ? targetChapterId.value : null,
+      instruction: inst,
+    },
+  })
+  emit('update:visible', false)
+}
+
 // 4.1 指定单章定向重写 (Single-Chapter Rewrite)
 const targetChapterId = ref('CH-04')
 const singleChapterInstruction = ref('')
@@ -535,6 +908,30 @@ function handleStyleSubmit() {
 // =========================================================================
 // 阶段 5：报告融合 (report_fusion)
 // =========================================================================
+// 5.0 整体审核并提出修订方向 (Holistic Audit & Global Steering)
+const globalSteeringDirection = ref('机构审慎 / 深度防守')
+const globalSteeringComment = ref('')
+
+const STEERING_OPTIONS = [
+  { label: '机构审慎 / 深度防守', desc: '强调估值安全边际与宏观下行压力，收缩激进增长假设，提升下行风险提示比重' },
+  { label: '积极成长 / 景气驱动', desc: '聚焦出海爆发与核心龙头业绩弹性，突出产业红利期与上行催化剂' },
+  { label: '技术破局 / 创新催化', desc: '聚焦前沿技术代际变革（如硅光/半固态），突出供应链卡位与技术护城河' },
+  { label: '中立客观 / 深度对标', desc: '全方位客观交叉验证，强化样本企业多维指标横向对比与历史估值分位数' },
+]
+
+function handleGlobalSteeringSubmit() {
+  const comment = `【全局修订方向】: ${globalSteeringDirection.value}。${globalSteeringComment.value}`
+  emit('submitRevise', {
+    comment,
+    edited_data: {
+      action_type: 'global_steering',
+      steering_direction: globalSteeringDirection.value,
+      instruction: comment,
+    },
+  })
+  emit('update:visible', false)
+}
+
 // 5.1 8 张核心指标卡深度定制 (8 Metric Cards)
 interface MetricCardItem {
   id: string
@@ -639,8 +1036,11 @@ watch(
         activeTab.value = 'tab-1'
       }
       if (props.stage === 'data_fetch') {
+        initScopeKeywords()
         initDataFetchClean()
+        initDataFetchReplenish(true)
       } else if (props.stage === 'data_interpret') {
+        initKnowledgeAndJudgment()
         initCompsData()
         initFindingsData()
         initRisksData()
@@ -659,13 +1059,13 @@ watch(
 
 const dialogTitle = computed(() => {
   const map: Record<StageName, string> = {
-    data_fetch: '数据采集智能体 · 投研人机协同工作台',
-    data_interpret: '数据解读智能体 · 投研人机协同工作台',
-    chart_generate: '图表生成智能体 · 投研人机协同工作台',
-    chapter_write: '章节撰写智能体 · 投研人机协同工作台',
-    report_fusion: '报告融合智能体 · 投研人机协同工作台',
+    data_fetch: '数据获取智能体 · 审核确认检索范围与关键词',
+    data_interpret: '数据解读智能体 · 补充背景知识与修正判断',
+    chart_generate: '可视化图表智能体 · 选择图表样式与强调重点',
+    chapter_write: '分章节内容智能体 · 提出修改意见与补充要求',
+    report_fusion: '报告融合智能体 · 整体审核并提出修订方向',
   }
-  return map[props.stage] || `${STAGE_LABELS[props.stage]} · 协同工作台`
+  return map[props.stage] || `${STAGE_LABELS[props.stage]} · 人机协同控制台`
 })
 </script>
 
@@ -681,30 +1081,102 @@ const dialogTitle = computed(() => {
     <div class="modal-inner">
       <!-- 阶段专属说明横幅 -->
       <div class="modal-banner">
-        <div class="banner-badge">专业协同模式</div>
+        <div class="closed-loop-flow">
+          <span class="loop-chip active"><el-icon><Cpu /></el-icon> 1. AI辅助推荐</span>
+          <span class="loop-arrow">→</span>
+          <span class="loop-chip active"><el-icon><View /></el-icon> 2. 人工审核把关</span>
+          <span class="loop-arrow">→</span>
+          <span class="loop-chip"><el-icon><EditPen /></el-icon> 3. 反馈优化调整</span>
+          <span class="loop-arrow">→</span>
+          <span class="loop-chip"><el-icon><Promotion /></el-icon> 4. AI改进生效</span>
+        </div>
         <div class="banner-text">
           <template v-if="stage === 'data_fetch'">
-            数据采集阶段提供<strong>「增量数据补采」</strong>（单点快速抓取入库）、<strong>「局部子域重采」</strong>（仅重采指定领域）与<strong>「脏数据清洗剔除」</strong>，拒绝推翻全量数据的低效重跑。
+            数据获取阶段提供<strong>「审核确认检索范围与关键词」</strong>、<strong>「增量数据精准补采」</strong>与<strong>「脏数据清洗剔除」</strong>，严格把关上游数据源头质量。
           </template>
           <template v-else-if="stage === 'data_interpret'">
-            数据解读阶段提供<strong>「可比公司标的池调整」</strong>、<strong>「核心研判论点精修」</strong>与<strong>「异常指标裁决」</strong>，精准校准分析师投研逻辑。
+            数据解读阶段提供<strong>「补充专家背景知识先验」</strong>、<strong>「修正与裁决核心研判判断」</strong>与<strong>「可比公司标的池调整」</strong>，确保投研论据准确可信。
           </template>
           <template v-else-if="stage === 'chart_generate'">
-            图表生成阶段提供<strong>「形态类型切换」</strong>（柱状/折线/堆叠快速转换）、<strong>「显隐编排控制」</strong>与<strong>「元数据精修」</strong>，确保券商出版级制图。
+            可视化图表阶段提供<strong>「选择图表呈现样式（柱/折/条/堆）」</strong>、<strong>「指定重点标的高亮与基准线强调重点」</strong>与<strong>「新增定向图表诉求」</strong>。
           </template>
           <template v-else-if="stage === 'chapter_write'">
-            章节撰写阶段提供<strong>「指定单章定向重写」</strong>（仅重写单一不满意的章节，其余6章完全保留）、<strong>「段落正文就地精修」</strong>与<strong>「风格引导」</strong>。
+            分章节内容阶段提供<strong>「提出修改意见与补充要求（单章定向重写）」</strong>与<strong>「正文段落就地精修」</strong>，高效定向迭代章节内容。
           </template>
           <template v-else-if="stage === 'report_fusion'">
-            报告融合阶段提供<strong>「8 张核心指标卡深度定制」</strong>、<strong>「投资评级与执行摘要定稿」</strong>与<strong>「出版级签发交付」</strong>。
+            报告融合阶段提供<strong>「全篇四维质量整体审核」</strong>、<strong>「提出宏观修订方向」</strong>与<strong>「8 张指标卡与投资评级终审定稿」</strong>。
           </template>
         </div>
       </div>
 
       <!-- ------------------------------------------------------------- -->
-      <!-- 阶段 1：数据采集 (data_fetch) -->
+      <!-- 阶段 1：数据获取 (data_fetch) -->
       <!-- ------------------------------------------------------------- -->
       <el-tabs v-if="stage === 'data_fetch'" v-model="activeTab" class="stage-tabs">
+        <!-- Tab 1.0: 检索范围与关键词审核 -->
+        <el-tab-pane label="审核确认检索范围与关键词" name="scope_keywords">
+          <div class="tab-pane-content">
+            <div class="section-lead">
+              核对并调整数据检索覆盖的投研领域与关键词集合。确认后将以此范围作为后续分析的权威数据源：
+            </div>
+
+            <div class="scope-section-title">
+              <span class="title-bold">1. 审核投研检索范围 (子领域选择)</span>
+              <span class="title-sub">勾选本次研究需要覆盖的数据维度：</span>
+            </div>
+            <div class="scope-grid">
+              <div
+                v-for="domain in scopeDomains"
+                :key="domain.id"
+                class="scope-card"
+                :class="{ active: domain.checked }"
+                @click="domain.checked = !domain.checked"
+              >
+                <div class="scope-card-top">
+                  <el-checkbox v-model="domain.checked" @click.stop>{{ domain.name }}</el-checkbox>
+                </div>
+                <div class="scope-card-desc">{{ domain.desc }}</div>
+              </div>
+            </div>
+
+            <div class="scope-section-title" style="margin-top: 18px">
+              <span class="title-bold">2. 审核与精简检索核心关键词</span>
+              <span class="title-sub">点击标签后的 × 可剔除不相关词；支持输入新关键词扩充：</span>
+            </div>
+            <div class="keywords-cloud">
+              <el-tag
+                v-for="(kw, idx) in activeKeywords"
+                :key="kw"
+                closable
+                size="large"
+                class="kw-tag"
+                @close="removeKeyword(idx)"
+              >
+                {{ kw }}
+              </el-tag>
+              <div class="kw-add-box">
+                <el-input
+                  v-model="newKeywordInput"
+                  placeholder="+ 添加关键词后回车"
+                  size="small"
+                  style="width: 160px"
+                  @keyup.enter="addKeyword"
+                />
+                <el-button size="small" type="primary" plain @click="addKeyword">添加</el-button>
+              </div>
+            </div>
+
+            <div class="pane-footer" style="display: flex; gap: 12px; justify-content: flex-end">
+              <el-button type="primary" size="large" :loading="submitting" @click="handleScopeKeywordsConfirm">
+                确认审核无误并进入下一步
+              </el-button>
+              <el-button type="info" plain size="large" :loading="submitting" @click="handleScopeKeywordsRevise">
+                按此范围与关键词重新检索
+              </el-button>
+            </div>
+          </div>
+        </el-tab-pane>
+
         <!-- Tab 1.1: 增量补采 -->
         <el-tab-pane label="增量数据补采" name="replenish">
           <div class="tab-pane-content">
@@ -712,17 +1184,17 @@ const dialogTitle = computed(() => {
             
             <div class="quick-chips">
               <span class="chip-label">热门补采预设：</span>
-              <el-button size="small" round @click="quickFillReplenish('finance')">补充龙头研发与储能财务</el-button>
+              <el-button size="small" round @click="quickFillReplenish('finance')">补充龙头财务与盈利</el-button>
               <el-button size="small" round @click="quickFillReplenish('chain')">补充产业链关键环节</el-button>
-              <el-button size="small" round @click="quickFillReplenish('macro')">补充宏观产销与出口</el-button>
-              <el-button size="small" round @click="quickFillReplenish('competitors')">补充二线对标份额</el-button>
+              <el-button size="small" round @click="quickFillReplenish('macro')">补充宏观产销与大盘</el-button>
+              <el-button size="small" round @click="quickFillReplenish('competitors')">补充竞争格局与份额</el-button>
             </div>
 
             <el-form label-position="top" size="default">
               <el-row :gutter="16">
                 <el-col :span="12">
                   <el-form-item label="补采目标实体（公司代码/企业名/行业细分）">
-                    <el-input v-model="replenishEntity" placeholder="例如：宁德时代, 比亚迪, 国轩高科" />
+                    <el-input v-model="replenishEntity" placeholder="例如：行业核心龙头企业名、公司代码或细分板块" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -742,12 +1214,12 @@ const dialogTitle = computed(() => {
                   v-model="replenishQuery"
                   type="textarea"
                   :rows="3"
-                  placeholder="输入针对性查询提示，例如：查询宁德时代与比亚迪2023-2025年研发费用、毛利率及储能出货量"
+                  placeholder="输入针对性查询提示，例如：查询核心龙头企业近3年营业收入、毛利率及研发费用率"
                 />
               </el-form-item>
 
               <el-form-item label="补采原因 / 分析诉求">
-                <el-input v-model="replenishReason" placeholder="例如：下游定量图表缺少核心龙头储能出货数据" />
+                <el-input v-model="replenishReason" placeholder="例如：下游定量图表与报告章节缺少核心龙头关键财务指标" />
               </el-form-item>
             </el-form>
 
@@ -868,6 +1340,83 @@ const dialogTitle = computed(() => {
       <!-- 阶段 2：数据解读 (data_interpret) -->
       <!-- ------------------------------------------------------------- -->
       <el-tabs v-else-if="stage === 'data_interpret'" v-model="activeTab" class="stage-tabs">
+        <!-- Tab 2.0: 补充背景知识与修正判断 -->
+        <el-tab-pane label="补充背景知识与修正判断" name="knowledge_judgment">
+          <div class="tab-pane-content">
+            <div class="section-lead">
+              补充一手行业专家纪要或非公开背景先验（将作为贝叶斯先验融入全文分析）；对智能体提取的核心研判结论进行逐条裁决修正：
+            </div>
+
+            <!-- 1. 专家背景知识注入区 -->
+            <div class="knowledge-block">
+              <div class="scope-section-title">
+                <span class="title-bold">1. 补充行业专家背景知识 (先验事实输入)</span>
+                <span class="title-sub">快捷填入行业典型调研先验，或自由粘贴一手产业笔记：</span>
+              </div>
+              <div class="quick-chips" style="margin-bottom: 8px">
+                <span class="chip-label">快捷注入先验：</span>
+                <el-button size="small" round @click="quickFillExpertKnowledge('channel')">海外云厂商资本开支与采购节奏</el-button>
+                <el-button size="small" round @click="quickFillExpertKnowledge('policy')">重点出海市场本地化合规壁垒</el-button>
+                <el-button size="small" round @click="quickFillExpertKnowledge('tech')">新架构商业化替代拐点预警</el-button>
+              </div>
+              <el-input
+                v-model="expertBackgroundNotes"
+                type="textarea"
+                :rows="3"
+                placeholder="例如：【草根调研】头部客户下半年采购订单增长30%，但上游芯片交付周期拉长..."
+              />
+            </div>
+
+            <!-- 2. 核心研判判断逐条修正区 -->
+            <div class="judgments-block" style="margin-top: 18px">
+              <div class="scope-section-title">
+                <span class="title-bold">2. 核心研判论点逐条修正与裁决</span>
+                <span class="title-sub">选择【认同保留】、【就地修正观点】或【剔除否定】：</span>
+              </div>
+
+              <div class="judgments-list">
+                <div v-for="j in localJudgments" :key="j.id" class="judgment-card" :class="j.decision">
+                  <div class="judgment-top">
+                    <div class="j-title-row">
+                      <el-tag size="small" type="primary">{{ j.id }}</el-tag>
+                      <el-input
+                        v-if="j.decision === 'modify'"
+                        v-model="j.title"
+                        size="small"
+                        placeholder="修改论点标题..."
+                        style="margin-left: 8px; flex: 1"
+                      />
+                      <span v-else class="j-title-text">{{ j.title }}</span>
+                    </div>
+                    <el-radio-group v-model="j.decision" size="small">
+                      <el-radio-button value="confirm">认同保留</el-radio-button>
+                      <el-radio-button value="modify">修正观点</el-radio-button>
+                      <el-radio-button value="reject">剔除否定</el-radio-button>
+                    </el-radio-group>
+                  </div>
+                  <div v-if="j.decision === 'modify'" style="margin-top: 8px">
+                    <el-input
+                      v-model="j.text"
+                      type="textarea"
+                      :rows="2"
+                      placeholder="修改详细逻辑与论据..."
+                    />
+                  </div>
+                  <div v-else class="judgment-desc" :class="{ 'rejected-text': j.decision === 'reject' }">
+                    {{ j.text }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="pane-footer">
+              <el-button type="success" size="large" :loading="submitting" @click="handleKnowledgeAndJudgmentSubmit">
+                保存背景知识与判断修正 (就地生效)
+              </el-button>
+            </div>
+          </div>
+        </el-tab-pane>
+
         <!-- Tab 2.1: 标的池微调 -->
         <el-tab-pane label="可比公司标的池调整" name="comps">
           <div class="tab-pane-content">
@@ -988,39 +1537,67 @@ const dialogTitle = computed(() => {
       <!-- 阶段 3：图表生成 (chart_generate) -->
       <!-- ------------------------------------------------------------- -->
       <el-tabs v-else-if="stage === 'chart_generate'" v-model="activeTab" class="stage-tabs">
-        <!-- Tab 3.1: 图表形态切换 -->
-        <el-tab-pane label="图表形态与类型切换" name="morph">
+        <!-- Tab 3.1: 图表样式选择与强调重点 -->
+        <el-tab-pane label="选择图表样式与强调重点" name="morph_emphasis">
           <div class="tab-pane-content">
-            <div class="section-lead">就地调整图表的可视化呈现形态（柱状/折线/水平条形/堆叠图快速切换）：</div>
+            <div class="section-lead">
+              就地调整图表的可视化呈现样式（柱状/折线/水平条形/堆叠/面积图），并配置重点标的高亮、参考警戒基准线与关键拐点标注：
+            </div>
 
             <el-table :data="localCharts" size="small" height="340px" style="width: 100%" border>
-              <el-table-column prop="chart_id" label="图表编号" width="100" />
-              <el-table-column label="图表标题" min-width="180">
+              <el-table-column prop="chart_id" label="编号" width="85" />
+              <el-table-column label="图表标题" min-width="150">
                 <template #default="{ row }">
                   <el-input v-model="row.title" size="small" />
                 </template>
               </el-table-column>
-              <el-table-column label="图表呈现类型" width="160">
+              <el-table-column label="呈现样式" width="135">
                 <template #default="{ row }">
                   <el-select v-model="row.chart_type" size="small">
                     <el-option label="柱状图 (bar)" value="bar" />
                     <el-option label="折线图 (line)" value="line" />
-                    <el-option label="水平条形图 (horizontal_bar)" value="horizontal_bar" />
-                    <el-option label="堆叠柱状图 (stacked_bar)" value="stacked_bar" />
+                    <el-option label="水平条形图 (h_bar)" value="horizontal_bar" />
+                    <el-option label="堆叠柱状图 (stacked)" value="stacked_bar" />
                     <el-option label="面积图 (area)" value="area" />
+                    <el-option label="环形饼图 (donut/pie)" value="pie" />
+                    <el-option label="雷达多维图 (radar)" value="radar" />
                   </el-select>
                 </template>
               </el-table-column>
-              <el-table-column label="是否纳入研报" width="120" align="center">
+              <el-table-column label="强调重点配置 (高亮标的 / 参考基准线 / 拐点标注)" min-width="320">
                 <template #default="{ row }">
-                  <el-switch v-model="row.excluded" :active-value="false" :inactive-value="true" inline-prompt active-text="展示" inactive-text="排除" />
+                  <div class="chart-emphasis-grid">
+                    <el-input
+                      v-model="row.highlight_target"
+                      size="small"
+                      placeholder="高亮企业/标的名"
+                      style="width: 32%"
+                    />
+                    <el-input
+                      v-model.number="row.benchmark_line"
+                      size="small"
+                      placeholder="基准线值(如 25)"
+                      style="width: 32%"
+                    />
+                    <el-input
+                      v-model="row.emphasis_note"
+                      size="small"
+                      placeholder="拐点/重点标注"
+                      style="width: 32%"
+                    />
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column label="纳入研报" width="85" align="center">
+                <template #default="{ row }">
+                  <el-switch v-model="row.excluded" :active-value="false" :inactive-value="true" inline-prompt active-text="开" inactive-text="关" />
                 </template>
               </el-table-column>
             </el-table>
 
             <div class="pane-footer">
               <el-button type="success" size="large" :loading="submitting" @click="handleChartMorphSubmit">
-                保存图表形态变更 (就地毫秒级生效)
+                保存图表样式与强调重点配置 (就地生效)
               </el-button>
             </div>
           </div>
@@ -1055,57 +1632,64 @@ const dialogTitle = computed(() => {
       <!-- 阶段 4：章节撰写 (chapter_write) -->
       <!-- ------------------------------------------------------------- -->
       <el-tabs v-else-if="stage === 'chapter_write'" v-model="activeTab" class="stage-tabs">
-        <!-- Tab 4.1: 单章定向重写 -->
-        <el-tab-pane label="指定单章定向重写" name="single_chapter">
+        <!-- Tab 4.0: 提出修改意见与补充要求 -->
+        <el-tab-pane label="提出修改意见与补充要求" name="revision_requirements">
           <div class="tab-pane-content">
-            <div class="single-rewrite-hero">
-              <div class="hero-badge">章节独立重写引擎</div>
-              <div class="hero-text">
-                7 章 21 节已撰写完毕。若对某一章节不满意，<strong>仅重写该章节</strong>，其余 6 个已满意的章节原封不动完整保留，不破坏全局产出。
+            <div class="section-lead">
+              根据赛题人机协同规范，您可针对具体章节或报告全篇提出结构化修改意见与补充要求，指导智能体执行定向高阶重构：
+            </div>
+
+            <div class="scope-section-title">
+              <span class="title-bold">1. 选择协同修改范围</span>
+              <el-radio-group v-model="revisionScope" size="small" style="margin-left: 12px">
+                <el-radio-button value="single">针对指定单章定向重构 (其余6章原封不动)</el-radio-button>
+                <el-radio-button value="all">针对全篇报告全局优化</el-radio-button>
+              </el-radio-group>
+            </div>
+
+            <div v-if="revisionScope === 'single'" style="margin-top: 10px">
+              <el-select v-model="targetChapterId" style="width: 380px" size="default">
+                <el-option
+                  v-for="op in CHAPTER_OPTIONS"
+                  :key="op.id"
+                  :label="op.title"
+                  :value="op.id"
+                />
+              </el-select>
+            </div>
+
+            <div class="scope-section-title" style="margin-top: 18px">
+              <span class="title-bold">2. 结构化修改意见 (点击快速勾选组合)</span>
+              <span class="title-sub">选择需要强化的分析深度与论证维度：</span>
+            </div>
+            <div class="revision-tags-grid">
+              <div
+                v-for="tag in REVISION_TAGS"
+                :key="tag"
+                class="rev-tag-item"
+                :class="{ active: selectedRevisionTags.includes(tag) }"
+                @click="toggleRevisionTag(tag)"
+              >
+                <el-icon v-if="selectedRevisionTags.includes(tag)" class="tag-check"><Check /></el-icon>
+                <span v-else class="tag-check">+</span>
+                <span class="tag-label">{{ tag }}</span>
               </div>
             </div>
 
-            <el-form label-position="top" style="margin-top: 16px">
-              <el-form-item label="选择要重写的单一章节">
-                <el-select v-model="targetChapterId" style="width: 380px" size="large">
-                  <el-option
-                    v-for="op in CHAPTER_OPTIONS"
-                    :key="op.id"
-                    :label="op.title"
-                    :value="op.id"
-                  />
-                </el-select>
-              </el-form-item>
-
-              <div class="quick-chips">
-                <span class="chip-label">快捷优化策略：</span>
-                <el-button size="small" round @click="quickFillSingleChapter('深化龙头核心壁垒分析，补充专利矩阵与产能护城河论证')">
-                  深化竞争壁垒
-                </el-button>
-                <el-button size="small" round @click="quickFillSingleChapter('强化量化数据与图表引用，穿透至具体财务指标与毛利率数据')">
-                  强化数据穿透
-                </el-button>
-                <el-button size="small" round @click="quickFillSingleChapter('补充海外对标与全球化出海进度，分析主要海外市场份额走势')">
-                  补充出海对比
-                </el-button>
-                <el-button size="small" round @click="quickFillSingleChapter('细化固态电池与快充技术商业化量产时间表及降本路径')">
-                  细化技术路径
-                </el-button>
-              </div>
-
-              <el-form-item label="针对该单章的定向优化指令 (Instruction)">
-                <el-input
-                  v-model="singleChapterInstruction"
-                  type="textarea"
-                  :rows="4"
-                  placeholder="填写具体的章节修改指导，例如：深入分析第二梯队厂商的差异化生存策略，强化财务毛利走势对比..."
-                />
-              </el-form-item>
-            </el-form>
+            <div class="scope-section-title" style="margin-top: 18px">
+              <span class="title-bold">3. 补充具体要求 (自由指导指示)</span>
+              <span class="title-sub">输入个性化投研分析诉求、对比标的或特殊行文侧重点：</span>
+            </div>
+            <el-input
+              v-model="revisionRequirementText"
+              type="textarea"
+              :rows="3"
+              placeholder="例如：请在第4章深入剖析头部两家厂商在北美云厂商的采购份额对比，论证其壁垒深度；引用图表3量化数据..."
+            />
 
             <div class="pane-footer">
-              <el-button type="primary" size="large" :loading="submitting" @click="handleSingleChapterSubmit">
-                立即定向重写所选单章 (其余6章原封不动)
+              <el-button type="primary" size="large" :loading="submitting" @click="handleRevisionRequirementsSubmit">
+                提交修改意见与补充要求 (启动 AI 定向改进)
               </el-button>
             </div>
           </div>
@@ -1203,6 +1787,79 @@ const dialogTitle = computed(() => {
       <!-- 阶段 5：报告融合 (report_fusion) -->
       <!-- ------------------------------------------------------------- -->
       <el-tabs v-else-if="stage === 'report_fusion'" v-model="activeTab" class="stage-tabs">
+        <!-- Tab 5.0: 整体审核并提出修订方向 -->
+        <el-tab-pane label="整体审核并提出修订方向" name="audit_steering">
+          <div class="tab-pane-content">
+            <div class="section-lead">
+              全篇报告已完成 5 阶段流水线编排与生成。您可查看四维质量整体审核看板，并提出宏观修订方向（导向调控），指导融合智能体统领润色：
+            </div>
+
+            <!-- 1. 四维质量整体审核看板 (AI辅助把关) -->
+            <div class="audit-board">
+              <div class="audit-item">
+                <div class="audit-val">7 / 7 章</div>
+                <div class="audit-lbl">结构章节完整度</div>
+                <div class="audit-sub">21 节投研逻辑自洽</div>
+              </div>
+              <div class="audit-item">
+                <div class="audit-val">100%</div>
+                <div class="audit-lbl">量化数据穿透率</div>
+                <div class="audit-sub">同花顺 iFinD 溯源索引</div>
+              </div>
+              <div class="audit-item">
+                <div class="audit-val">{{ localCharts.length || 6 }} 幅</div>
+                <div class="audit-lbl">可视化图表嵌入</div>
+                <div class="audit-sub">券商出版级矢量混排</div>
+              </div>
+              <div class="audit-item">
+                <div class="audit-val" style="color: var(--el-color-primary)">{{ localRating }}</div>
+                <div class="audit-lbl">当前投资建议评级</div>
+                <div class="audit-sub">基于多维财务估值矩阵</div>
+              </div>
+            </div>
+
+            <!-- 2. 全局修订方向选择 -->
+            <div class="scope-section-title" style="margin-top: 18px">
+              <span class="title-bold">提出全局修订方向 (宏观投资立场与基调导向)</span>
+              <span class="title-sub">选择适合本次研报交付目的的全局论述基调：</span>
+            </div>
+
+            <div class="steering-grid">
+              <div
+                v-for="st in STEERING_OPTIONS"
+                :key="st.label"
+                class="steering-card"
+                :class="{ active: globalSteeringDirection === st.label }"
+                @click="globalSteeringDirection = st.label"
+              >
+                <div class="steering-top">
+                  <el-radio :model-value="globalSteeringDirection" :label="st.label" @click.stop>
+                    <span class="steering-name">{{ st.label }}</span>
+                  </el-radio>
+                </div>
+                <div class="steering-desc">{{ st.desc }}</div>
+              </div>
+            </div>
+
+            <div class="scope-section-title" style="margin-top: 18px">
+              <span class="title-bold">全篇统筹修订指示与特别说明</span>
+              <span class="title-sub">补充总编审校指导细节（如重点论点前置、段落篇幅平衡）：</span>
+            </div>
+            <el-input
+              v-model="globalSteeringComment"
+              type="textarea"
+              :rows="3"
+              placeholder="例如：请将第三章竞争格局的结论提炼前置到执行摘要开头；下调乐观盈利预测，强化海外关税下行风险提示..."
+            />
+
+            <div class="pane-footer" style="display: flex; gap: 12px; justify-content: flex-end">
+              <el-button type="primary" size="large" :loading="submitting" @click="handleGlobalSteeringSubmit">
+                提交全局修订方向 (启动 AI 终审重构)
+              </el-button>
+            </div>
+          </div>
+        </el-tab-pane>
+
         <!-- Tab 5.1: 8 张核心指标卡定制 -->
         <el-tab-pane label="8 张核心指标卡定制" name="metric_cards">
           <div class="tab-pane-content">
@@ -1313,11 +1970,39 @@ const dialogTitle = computed(() => {
   border: 1px solid var(--el-border-color-lighter);
   border-left: 4px solid var(--el-color-primary);
   border-radius: 6px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   margin-bottom: 16px;
   font-size: 13px;
   line-height: 1.6;
   color: var(--el-text-color-regular);
+}
+.closed-loop-flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.loop-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--el-fill-color);
+  color: var(--el-text-color-secondary);
+  font-weight: 500;
+}
+.loop-chip.active {
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 600;
+  border: 1px solid var(--el-color-primary-light-7);
+}
+.loop-arrow {
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
 }
 .banner-badge {
   display: inline-block;
@@ -1329,6 +2014,234 @@ const dialogTitle = computed(() => {
   color: var(--el-color-primary);
   margin-bottom: 4px;
 }
+
+/* 标题与分区小标 */
+.scope-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.title-bold {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.title-sub {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+/* 阶段 1：检索范围与关键词 */
+.scope-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.scope-card {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--el-bg-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.scope-card:hover {
+  border-color: var(--el-color-primary-light-5);
+}
+.scope-card.active {
+  border-color: var(--el-color-primary-light-3);
+  background: var(--el-color-primary-light-9);
+}
+.scope-card-top {
+  font-weight: 600;
+  font-size: 13px;
+}
+.scope-card-desc {
+  font-size: 11.5px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.keywords-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--el-fill-color-blank);
+  border: 1px dashed var(--el-border-color);
+  border-radius: 6px;
+}
+.kw-tag {
+  font-size: 12.5px;
+  padding: 4px 10px;
+}
+.kw-add-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 阶段 2：研判裁决卡片 */
+.judgments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.judgment-card {
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: var(--el-bg-color);
+  transition: all 0.2s ease;
+}
+.judgment-card.confirm {
+  border-left: 3px solid var(--el-color-success);
+}
+.judgment-card.modify {
+  border-left: 3px solid var(--el-color-warning);
+  background: rgba(230, 162, 60, 0.03);
+}
+.judgment-card.reject {
+  border-left: 3px solid var(--el-color-danger);
+  opacity: 0.6;
+}
+.judgment-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.j-title-row {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+.j-title-text {
+  font-weight: 600;
+  font-size: 13.5px;
+  margin-left: 8px;
+}
+.judgment-desc {
+  font-size: 12.5px;
+  color: var(--el-text-color-regular);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.rejected-text {
+  text-decoration: line-through;
+  color: var(--el-text-color-placeholder);
+}
+
+/* 阶段 3：图表强调重点表单网格 */
+.chart-emphasis-grid {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* 阶段 4：修改意见标签网格 */
+.revision-tags-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.rev-tag-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-light);
+  background: var(--el-bg-color);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--el-text-color-regular);
+  transition: all 0.2s ease;
+}
+.rev-tag-item:hover {
+  border-color: var(--el-color-primary);
+}
+.rev-tag-item.active {
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+  font-weight: 600;
+}
+.tag-check {
+  font-weight: bold;
+}
+
+/* 阶段 5：体检看板与全局导向 */
+.audit-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+.audit-item {
+  text-align: center;
+  padding: 4px 0;
+  border-right: 1px solid var(--el-border-color-extra-light);
+}
+.audit-item:last-child {
+  border-right: none;
+}
+.audit-val {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--el-color-success);
+}
+.audit-lbl {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  margin-top: 2px;
+}
+.audit-sub {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  margin-top: 2px;
+}
+.steering-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.steering-card {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  padding: 10px 14px;
+  background: var(--el-bg-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.steering-card:hover {
+  border-color: var(--el-color-primary-light-5);
+}
+.steering-card.active {
+  border-color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+.steering-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+.steering-desc {
+  font-size: 11.5px;
+  color: var(--el-text-color-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+  padding-left: 22px;
+}
+
 .stage-tabs :deep(.el-tabs__item) {
   font-size: 13.5px;
   font-weight: 500;

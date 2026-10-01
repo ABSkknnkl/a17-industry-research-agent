@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, useRouter } from 'vue-router'
+import { Check } from '@element-plus/icons-vue'
 
 const router = useRouter()
 function goToCreate(topic: string): void {
@@ -199,7 +200,7 @@ export default { name: 'LandingView' }
         <!-- 审核通过浮标 -->
         <div class="badge-pass">
           <span class="pass-dot" />
-          <span class="check">✓</span>
+          <span class="check"><el-icon><Check /></el-icon></span>
           <span class="pass-text">全流程审核通过</span>
         </div>
 

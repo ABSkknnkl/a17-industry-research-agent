@@ -144,5 +144,15 @@ class EventHub:
             if run_id in self._subscribers and queue in self._subscribers[run_id]:
                 self._subscribers[run_id].remove(queue)
 
+    def clear_run(self, run_id: str) -> None:
+        """清理特定任务的事件缓存与订阅者队列"""
+        self._cache.pop(run_id, None)
+        self._subscribers.pop(run_id, None)
+
+    def clear_all(self) -> None:
+        """清空全系统事件缓存与所有订阅者"""
+        self._cache.clear()
+        self._subscribers.clear()
+
 
 event_hub = EventHub()

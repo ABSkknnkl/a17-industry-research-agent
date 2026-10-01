@@ -13,6 +13,7 @@ import {
   type WorkflowState,
 } from '../api/types'
 import { showPipelineOverlay, hidePipelineOverlay } from '../composables/usePipelineOverlay'
+import { Cpu, View, EditPen, Promotion } from '@element-plus/icons-vue'
 import StageInterventionModal from './StageInterventionModal.vue'
 
 const props = defineProps<{
@@ -203,29 +204,29 @@ const approveLabel = computed(() => {
 
 const stageTitle = computed(() => {
   const map: Record<StageName, string> = {
-    data_fetch: '【阶段一：数据采集智能体】人机协同控制区',
-    data_interpret: '【阶段二：数据解读智能体】人机协同控制区',
-    chart_generate: '【阶段三：图表生成智能体】人机协同控制区',
-    chapter_write: '【阶段四：章节撰写智能体】人机协同控制区',
-    report_fusion: '【阶段五：报告融合智能体】人机协同控制区',
+    data_fetch: '【阶段一：数据获取智能体】审核确认检索范围与关键词',
+    data_interpret: '【阶段二：数据解读智能体】补充背景知识与修正判断',
+    chart_generate: '【阶段三：可视化图表智能体】选择图表样式与强调重点',
+    chapter_write: '【阶段四：分章节内容智能体】提出修改意见与补充要求',
+    report_fusion: '【阶段五：报告融合智能体】整体审核并提出修订方向',
   }
   return map[props.stage] || '阶段人机协同控制区'
 })
 
 const stageDescription = computed(() => {
   const map: Record<StageName, string> = {
-    data_fetch: '支持增量数据单点精准补采、按子领域局部重采与脏数据清洗剔除，拒绝低效全盘重跑。',
-    data_interpret: '支持可比公司标的池动态增删与梯队调整、核心研判论点精修与行业异常信号人工裁决。',
-    chart_generate: '支持图表形态类型自由切换（柱状/折线/水平/堆叠）、图表显隐排除编排与定向新增图表。',
-    chapter_write: '支持指定单章定向重写（仅重写单一章节，其余6章完全保留）、正文段落就地精修与行文风格引导。',
-    report_fusion: '支持 8 张核心指标卡深度定制、行业投资建议评级定稿、执行摘要精修与出版级交付。',
+    data_fetch: '用户可审核确认检索范围与核心关键词，支持单点精准补采与脏数据剔除。',
+    data_interpret: '用户可补充行业专家背景知识先验，并对AI核心研判进行逐条修正与裁决。',
+    chart_generate: '用户可选择图表呈现样式（柱/折/条/堆），并指定核心标的高亮与基准线强调重点。',
+    chapter_write: '用户可按章节提出修改意见与补充要求，支持单章定向重写与正文就地精修。',
+    report_fusion: '用户可进行全篇整体质量审核，指定宏观修订方向，并终审定稿核心指标卡与投资评级。',
   }
   return map[props.stage] || '提供专业差异化的人机协同干预能力。'
 })
 
 // 专业协同弹窗状态
 const stageInterventionVisible = ref(false)
-const stageInterventionTab = ref('replenish')
+const stageInterventionTab = ref('scope_keywords')
 
 function openStageModal(tab: string): void {
   stageInterventionTab.value = tab
@@ -283,6 +284,29 @@ async function onStageDirectEditSubmit(payload: { edited_data: Record<string, un
 
     <!-- 阶段差异化人机协同控制区 -->
     <div class="stage-intervention-card" data-testid="stage-intervention-hub">
+      <!-- 人机协同四步闭环指示栏 -->
+      <div class="closed-loop-stepper">
+        <div class="loop-step">
+          <el-icon class="step-icon"><Cpu /></el-icon>
+          <span class="step-text">AI辅助推荐</span>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="loop-step active">
+          <el-icon class="step-icon"><View /></el-icon>
+          <span class="step-text">人工审核把关</span>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="loop-step">
+          <el-icon class="step-icon"><EditPen /></el-icon>
+          <span class="step-text">反馈优化调整</span>
+        </div>
+        <div class="step-arrow">→</div>
+        <div class="loop-step">
+          <el-icon class="step-icon"><Promotion /></el-icon>
+          <span class="step-text">AI改进生效</span>
+        </div>
+      </div>
+
       <div class="intervention-header">
         <div class="header-left">
           <span class="intervention-badge">人机协同分工模式</span>
@@ -332,25 +356,25 @@ async function onStageDirectEditSubmit(payload: { edited_data: Record<string, un
           </el-button>
         </template>
 
-        <!-- 阶段 1：数据采集 (data_fetch) 专属介入 -->
+        <!-- 阶段 1：数据获取 (data_fetch) 专属介入 -->
         <template v-if="stage === 'data_fetch'">
           <el-button
             type="primary"
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
-            @click="openStageModal('replenish')"
+            @click="openStageModal('scope_keywords')"
           >
-            增量数据补采
+            审核确认检索范围与关键词
           </el-button>
           <el-button
-            type="primary"
+            type="info"
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
-            @click="openStageModal('partial_refetch')"
+            @click="openStageModal('replenish')"
           >
-            局部子域重采
+            增量数据补采
           </el-button>
           <el-button
             type="warning"
@@ -370,27 +394,18 @@ async function onStageDirectEditSubmit(payload: { edited_data: Record<string, un
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
+            @click="openStageModal('knowledge_judgment')"
+          >
+            补充背景知识与修正判断
+          </el-button>
+          <el-button
+            type="info"
+            plain
+            size="large"
+            :disabled="submitting || recoveryBlocked"
             @click="openStageModal('comps')"
           >
             标的池与可比公司调整
-          </el-button>
-          <el-button
-            type="primary"
-            plain
-            size="large"
-            :disabled="submitting || recoveryBlocked"
-            @click="openStageModal('findings')"
-          >
-            核心研判论点精修
-          </el-button>
-          <el-button
-            type="warning"
-            plain
-            size="large"
-            :disabled="submitting || recoveryBlocked"
-            @click="openStageModal('risks')"
-          >
-            异常指标与风险裁决
           </el-button>
         </template>
 
@@ -401,12 +416,12 @@ async function onStageDirectEditSubmit(payload: { edited_data: Record<string, un
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
-            @click="openStageModal('morph')"
+            @click="openStageModal('morph_emphasis')"
           >
-            图表形态与类型切换
+            选择图表样式与强调重点
           </el-button>
           <el-button
-            type="primary"
+            type="info"
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
@@ -423,27 +438,18 @@ async function onStageDirectEditSubmit(payload: { edited_data: Record<string, un
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
-            @click="openStageModal('single_chapter')"
+            @click="openStageModal('revision_requirements')"
           >
-            指定单章定向重写
+            提出修改意见与补充要求
           </el-button>
           <el-button
-            type="primary"
+            type="info"
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
             @click="openStageModal('inline_polish')"
           >
             正文段落就地精修
-          </el-button>
-          <el-button
-            type="warning"
-            plain
-            size="large"
-            :disabled="submitting || recoveryBlocked"
-            @click="openStageModal('style_guide')"
-          >
-            研报行文风格引导
           </el-button>
         </template>
 
@@ -454,12 +460,21 @@ async function onStageDirectEditSubmit(payload: { edited_data: Record<string, un
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
+            @click="openStageModal('audit_steering')"
+          >
+            整体审核并提出修订方向
+          </el-button>
+          <el-button
+            type="info"
+            plain
+            size="large"
+            :disabled="submitting || recoveryBlocked"
             @click="openStageModal('metric_cards')"
           >
             8 张核心指标卡定制
           </el-button>
           <el-button
-            type="primary"
+            type="info"
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
@@ -527,6 +542,45 @@ async function onStageDirectEditSubmit(payload: { edited_data: Record<string, un
   border-radius: 8px;
   padding: 16px 20px;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.04);
+}
+.closed-loop-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.06) 0%, rgba(103, 194, 58, 0.06) 100%);
+  border: 1px solid rgba(64, 158, 255, 0.18);
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+}
+.loop-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--el-text-color-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+.loop-step.active {
+  color: var(--el-color-primary);
+  background: rgba(64, 158, 255, 0.12);
+  font-weight: 600;
+}
+.step-arrow {
+  color: var(--el-text-color-placeholder);
+  font-size: 13px;
+  font-weight: bold;
+}
+.step-icon {
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+.step-text {
+  letter-spacing: 0.3px;
 }
 .intervention-header {
   display: flex;

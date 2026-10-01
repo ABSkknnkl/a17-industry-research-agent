@@ -28,10 +28,10 @@ import pytest
 
 from data_interpreter.engine import DeterministicAnalysisEngine
 from data_interpreter.models import StructuredResearchDataset
+from .golden_helper import resolve_golden_dir
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 GOLDEN_RUN_ID = "run-20260926022235-107"
-GOLDEN_DIR = PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts"
 BASELINES_PATH = PROJECT_ROOT / "eval" / "cases" / "baselines.json"
 TOLERANCE_PCT = 0.01          # 判据：相对误差 ≤ 0.01%
 TARGET_COMPANY = "亿纬锂能"      # 基准值来源实体（backfill 记录中的 entity；2026-09-26 重冻结快照 run-20260926022235-107）
@@ -48,7 +48,8 @@ def _baselines() -> dict[str, dict]:
 @lru_cache(maxsize=1)
 def _recomputed() -> dict[str, object]:
     """用当前代码从黄金样本自带 dataset.json 重算（模块级缓存，避免重复解析）。"""
-    raw = json.loads((GOLDEN_DIR / "dataset.json").read_text(encoding="utf-8"))
+    golden_dir = resolve_golden_dir(GOLDEN_RUN_ID, required_files=["dataset.json"])
+    raw = json.loads((golden_dir / "dataset.json").read_text(encoding="utf-8"))
     # dataset.json 的 sources 字段是「技能调用台账」（task_id/skill_id/trace_id…），
     # 与 models.SourceRef 不同构；聚合计算不需要它，故剔除后再校验。
     payload = {k: v for k, v in raw.items() if k != "sources"}
@@ -125,7 +126,8 @@ def test_c1_comps_coverage_matches_production_artifact() -> None:
     若该断言先失败，说明"重算路径与产物路径不同源"，后续 CR 组失败应归因于此（缺陷 D-03），
     而不是归因于公式本身。
     """
-    report = json.loads((GOLDEN_DIR / "interpretation_report.json").read_text(encoding="utf-8"))
+    golden_dir = resolve_golden_dir(GOLDEN_RUN_ID, required_files=["interpretation_report.json"])
+    report = json.loads((golden_dir / "interpretation_report.json").read_text(encoding="utf-8"))
     artifact_entries = len((report.get("comps_matrix") or {}).get("entries") or [])
     recomputed_entries = int(_recomputed()["entries_count"])
     assert recomputed_entries == artifact_entries, (

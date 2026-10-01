@@ -11,7 +11,7 @@ from backend.app.core.config import settings
 
 def main():
     print("================================================================================")
-    print("🚀 启动同花顺问财SkillHub五智能体研报后端服务")
+    print("[启动] 启动同花顺问财SkillHub五智能体研报后端服务")
     print(f"  服务地址: http://{settings.HOST}:{settings.PORT}")
     print(f"  接口文档: http://{settings.HOST}:{settings.PORT}/docs")
     print(f"  模型基座: {settings.LLM_MODEL}")

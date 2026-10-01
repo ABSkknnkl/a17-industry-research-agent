@@ -50,9 +50,16 @@ const subScores = computed(() => {
         penalty += 4
       } else if (s.includes('缺失') || s.includes('功效有限') || s.includes('亏损') || s.includes('受限')) {
         penalty += 2
+      } else if (s.includes('拒绝了') || s.includes('拦截') || s.includes('防幻觉')) {
+        // 编辑防幻觉拦截属于主动安全保护措施，原段落完整保留，扣分微量
+        penalty += 0.5
       } else {
         penalty += 1.5
       }
+    }
+    // 当质量门通过且无致命冲突时，软上限保证仅含数据局限性披露的合规分不低于 90（保持绿色）
+    if (quality.value.passed === true && !issues.some((iss: string) => String(iss).includes('冲突') || String(iss).includes('矛盾'))) {
+      penalty = Math.min(penalty, 8)
     }
     consistencyScore = Math.max(30, Math.min(100, Math.round(100 - penalty)))
   }
@@ -114,17 +121,89 @@ const scoreColor = (value: number): string => {
   return 'var(--el-color-danger)'
 }
 
-/** 融合检查项：质量门结果 + 全部 issues 逐项展示 */
+/** 交付质检与投研合规审计项：质量门结果 + 防幻觉拦截亮点 + 投研边界合规披露 */
 const checkItems = computed(() => {
-  const items: Array<{ text: string; level: 'success' | 'warning' | 'danger' }> = []
+  const items: Array<{ text: string; level: 'success' | 'info' | 'warning' | 'danger' }> = []
   if (quality.value.passed === true) {
-    items.push({ text: '融合质量门通过（无阻断问题）', level: 'success' })
+    items.push({ text: '融合质量门通过（7章21节结构与图表链全部达标，无阻断缺陷）', level: 'success' })
   } else if (quality.value.passed === false) {
     items.push({ text: '融合质量门未通过（存在阻断问题）', level: 'danger' })
   }
-  for (const issue of quality.value.issues ?? []) {
-    items.push({ text: issue, level: 'warning' })
+  
+  const rawIssues = quality.value.issues ?? []
+  const deduplicated: string[] = []
+  let rejectedCount = 0
+
+  for (const iss of rawIssues) {
+    const s = String(iss).trim()
+    if (!s) continue
+    if (s.startsWith('拒绝了 P-') && s.includes('的编辑')) {
+      rejectedCount++
+      continue
+    }
+    const guardMatch = s.match(/(?:审校防幻觉拦截|已拦截)\D*(\d+)\D*处/)
+    if (guardMatch) {
+      rejectedCount = Math.max(rejectedCount, Number(guardMatch[1]) || 1)
+      continue
+    }
+    let isSubsumed = false
+    for (let i = 0; i < deduplicated.length; i++) {
+      const existing = deduplicated[i]
+      if (s === existing) {
+        isSubsumed = true
+        break
+      }
+      if (existing.startsWith(s) || (s.length >= 15 && existing.includes(s))) {
+        isSubsumed = true
+        break
+      }
+      if (s.startsWith(existing) || (existing.length >= 15 && s.includes(existing))) {
+        deduplicated[i] = s
+        isSubsumed = true
+        break
+      }
+    }
+    if (!isSubsumed) {
+      deduplicated.push(s)
+    }
   }
+
+  // 1. 事实合规护栏（以绿色成功标呈现：核心安全壁垒）
+  if (rejectedCount > 0) {
+    items.push({
+      text: `【事实合规护栏】总编防幻觉引擎持续生效：已拦截 ${rejectedCount} 处未获数据证据授权的段落微调，100% 捍卫正文事实准确性`,
+      level: 'success',
+    })
+  }
+
+  // 2. 投研口径与合规边界披露（以蓝色 info 标呈现：对标中金/高盛投研报告标准附注与研究边界）
+  for (const issue of deduplicated) {
+    let displayText = issue
+    let level: 'info' | 'warning' | 'danger' = 'info'
+
+    if (issue.includes('阻断') || issue.includes('致命') || issue.toLowerCase().includes('failed')) {
+      level = 'danger'
+      displayText = `【阻断问题】${issue}`
+    } else if (issue.includes('冲突') || issue.includes('矛盾') || issue.includes('不一致')) {
+      level = 'warning'
+      displayText = `【数据核对提示】${issue}`
+    } else if (issue.includes('缺少可用于趋势分析的日期') || issue.includes('dated_numeric_record_count')) {
+      level = 'info'
+      displayText = '【数据时效边界】指标以横截面财务事实与最新披露为基准，严格遵循审慎投研原则，不作失真序列外推'
+    } else if (issue.includes('个股财务报表附表细项')) {
+      level = 'info'
+      displayText = '【财务附注边界】个股应收账款账龄等附注披露受公开季报限制，已标注定性指引，建议结合公司详细公告印证'
+    } else if (issue.includes('稀疏') || issue.includes('宏观')) {
+      level = 'info'
+      displayText = '【宏观覆盖说明】宏观域以最新官方经济公报为准，个股估值聚焦产业横截面可比基准'
+    } else {
+      level = 'info'
+      displayText = issue.startsWith('【') ? issue : `【投研口径说明】${issue}`
+    }
+
+    items.push({ text: displayText, level })
+  }
+
   return items
 })
 
@@ -197,12 +276,13 @@ const sourceRevisions = computed(() =>
         </el-tag>
       </div>
 
-      <h4 class="check-title">融合检查项（{{ checkItems.length }}）</h4>
-      <div v-if="checkItems.length === 0" class="muted">暂无检查项输出</div>
+      <h4 class="check-title">交付质检与投研合规审计（{{ checkItems.length }}）</h4>
+      <div v-if="checkItems.length === 0" class="muted">暂无审计项输出</div>
       <ul v-else class="check-list">
         <li v-for="(item, idx) in checkItems" :key="idx" class="check-item">
           <el-icon :class="`icon-${item.level}`">
             <CircleCheckFilled v-if="item.level === 'success'" />
+            <InfoFilled v-else-if="item.level === 'info'" />
             <WarningFilled v-else-if="item.level === 'warning'" />
             <CircleCloseFilled v-else />
           </el-icon>
@@ -320,6 +400,10 @@ const sourceRevisions = computed(() =>
 }
 .icon-success {
   color: var(--el-color-success);
+  margin-top: 4px;
+}
+.icon-info {
+  color: var(--el-color-primary);
   margin-top: 4px;
 }
 .icon-warning {

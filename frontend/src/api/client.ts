@@ -9,6 +9,8 @@ import type {
   WorkflowState,
   SystemSettingsConfig,
   TestConnectivityResult,
+  SkillCatalogResponse,
+  SkillItem,
 } from './types'
 
 /**
@@ -108,6 +110,11 @@ export async function deleteRun(runId: string): Promise<void> {
   await http.delete(`/runs/${runId}`)
 }
 
+export async function clearAllRuns(): Promise<{ message: string; deleted_count: number }> {
+  const { data } = await http.delete<{ status: string; message: string; deleted_count: number }>('/runs')
+  return data
+}
+
 export async function cancelRun(runId: string): Promise<WorkflowState> {
   const { data } = await http.post<WorkflowState>(`/runs/${runId}/cancel`)
   return data
@@ -195,5 +202,18 @@ export async function testIwencaiConnectivity(payload: {
   })
   return data
 }
+
+export async function getSkillsCatalog(refresh = false): Promise<SkillCatalogResponse> {
+  const { data } = await http.get<SkillCatalogResponse>('/skills', {
+    params: { refresh },
+  })
+  return data
+}
+
+export async function getSkillDetail(stageId: string, skillId: string): Promise<SkillItem> {
+  const { data } = await http.get<SkillItem>(`/skills/${stageId}/${skillId}`)
+  return data
+}
+
 
 

@@ -14,21 +14,28 @@ FRONTEND_DIR="${SCRIPT_DIR}/frontend"
 export PYTHONPATH="${SCRIPT_DIR}:${SCRIPT_DIR}/agents_core/data-fetcher:${SCRIPT_DIR}/agents_core/data-analysis:${SCRIPT_DIR}/agents_core/chart-generator:${SCRIPT_DIR}/agents_core/chapter-writer:${SCRIPT_DIR}/agents_core/report-fusion:${PYTHONPATH:-}"
 
 echo "================================================================================"
-echo "🚀 正在启动 同花顺问财SkillHub五智能体全链路行业研报系统"
+echo "[启动] 正在启动 同花顺问财SkillHub五智能体全链路行业研报系统"
 echo "  工程路径: ${SCRIPT_DIR}"
 echo "================================================================================"
 
-# 1. 检查并选择 Python 解释器
-PYTHON_CMD="python3"
-if command -v python3.11 >/dev/null 2>&1; then
-  # 优先检查 3.11
-  PYTHON_CMD="python3.11"
-fi
-if ! "${PYTHON_CMD}" -c "import fastapi, pydantic, uvicorn" >/dev/null 2>&1; then
-  PYTHON_CMD="python3"
+# 1. 检查并选择具备必要依赖的 Python 解释器
+PYTHON_CMD=""
+for cmd in python3.10 python3 python3.11 python; do
+  if command -v "$cmd" >/dev/null 2>&1; then
+    if "$cmd" -c "import fastapi, pydantic, uvicorn" >/dev/null 2>&1; then
+      PYTHON_CMD="$cmd"
+      break
+    fi
+  fi
+done
+
+if [ -z "${PYTHON_CMD}" ]; then
+  echo "  [错误] 未找到包含 fastapi, pydantic, uvicorn 的 Python 环境！"
+  echo "         请先在项目根目录运行: pip install -r requirements.txt"
+  exit 1
 fi
 
-echo "  --> 使用 Python: $("${PYTHON_CMD}" --version)"
+echo "  --> 使用 Python: $("${PYTHON_CMD}" --version) (${PYTHON_CMD})"
 
 # 2. 清理可能残留的端口占用
 echo "  --> 检查并释放 8000 与 5173 端口..."
@@ -41,13 +48,17 @@ echo "  --> 正在启动 FastAPI 后端服务 (端口 8000)..."
 BACKEND_PID=$!
 
 cleanup() {
+  trap - SIGINT SIGTERM EXIT
   echo ""
-  echo "🛑 正在停止前后端服务..."
-  kill -9 "${BACKEND_PID}" 2>/dev/null || true
+  echo "[停止] 正在停止前后端服务..."
+  kill -9 "${BACKEND_PID:-}" 2>/dev/null || true
   if [ -n "${FRONTEND_PID:-}" ]; then
     kill -9 "${FRONTEND_PID}" 2>/dev/null || true
   fi
-  echo "✅ 已安全停止所有服务进程。"
+  # 额外确保端口完全释放，杜绝 Vite/Node 孤儿进程
+  lsof -ti:8000 | xargs kill -9 2>/dev/null || true
+  lsof -ti:5173 | xargs kill -9 2>/dev/null || true
+  echo "[完成] 已安全停止所有服务进程。"
   exit 0
 }
 trap cleanup SIGINT SIGTERM EXIT
@@ -64,26 +75,30 @@ for i in {1..30}; do
 done
 
 if ! curl -s "http://localhost:8000/health" >/dev/null 2>&1; then
-  echo " ❌ 后端启动失败，请查看日志: ${SCRIPT_DIR}/backend.log"
+  echo " [错误] 后端启动失败，请查看日志: ${SCRIPT_DIR}/backend.log"
   tail -n 20 "${SCRIPT_DIR}/backend.log"
   exit 1
 fi
 
-echo "  ✅ 后端服务已就绪: http://localhost:8000 (API Docs: http://localhost:8000/docs)"
+echo "  [就绪] 后端服务已就绪: http://localhost:8000 (API Docs: http://localhost:8000/docs)"
 
 # 4. 启动前端服务
 echo "  --> 正在启动 Vue3 + Vite 前端工作台 (端口 5173)..."
 cd "${FRONTEND_DIR}"
+if [ ! -d "node_modules" ] || [ ! -x "node_modules/.bin/vite" ]; then
+  echo "  --> 检测到前端依赖未就绪，正在自动安装 (npm install)..."
+  npm install
+fi
 npm run dev &
 FRONTEND_PID=$!
 
 echo ""
 echo "================================================================================"
-echo "🎉 系统全栈启动成功！"
-echo "  👉 前端工作台: http://localhost:5173"
-echo "  👉 后端接口:   http://localhost:8000/api/v1"
-echo "  👉 接口文档:   http://localhost:8000/docs"
+echo "[成功] 系统全栈启动成功！"
+echo "  - 前端工作台: http://localhost:5173"
+echo "  - 后端接口:   http://localhost:8000/api/v1"
+echo "  - 接口文档:   http://localhost:8000/docs"
 echo "================================================================================"
-echo "💡 提示: 按 Ctrl+C 可一键停止前后端所有服务"
+echo "提示: 按 Ctrl+C 可一键停止前后端所有服务"
 
 wait "${FRONTEND_PID}"

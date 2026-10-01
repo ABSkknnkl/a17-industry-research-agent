@@ -854,6 +854,30 @@ function resolveChartSvgUrl(spec: ChartSpecLoose | null): string | null {
 const thumbsRef = ref<HTMLElement[]>([])
 const thumbInstances: echarts.ECharts[] = []
 let resizeObserver: ResizeObserver | null = null
+let resizeTimer: ReturnType<typeof setTimeout> | null = null
+
+function debouncedResize(): void {
+  if (resizeTimer) {
+    clearTimeout(resizeTimer)
+  }
+  resizeTimer = setTimeout(() => {
+    resizeTimer = null
+    for (const instance of thumbInstances) {
+      try {
+        instance.resize()
+      } catch {
+        // ignore disposed instance
+      }
+    }
+    if (dialogInstance) {
+      try {
+        dialogInstance.resize()
+      } catch {
+        // ignore disposed instance
+      }
+    }
+  }, 150)
+}
 
 function chartFootnotes(spec: ChartSpecLoose | null): string[] {
   const notes = [
@@ -895,7 +919,7 @@ function renderThumbs(): void {
     })
     if (thumbInstances.length > 0) {
       resizeObserver = new ResizeObserver(() => {
-        for (const instance of thumbInstances) instance.resize()
+        debouncedResize()
       })
       for (const instance of thumbInstances) {
         const dom = instance.getDom()
@@ -906,8 +930,13 @@ function renderThumbs(): void {
 }
 
 function disposeThumbs(): void {
+  if (resizeTimer) {
+    clearTimeout(resizeTimer)
+    resizeTimer = null
+  }
   resizeObserver?.disconnect()
   resizeObserver = null
+  window.removeEventListener('resize', debouncedResize)
   for (const instance of thumbInstances) instance.dispose()
   thumbInstances.length = 0
 }
@@ -994,13 +1023,20 @@ function updatedAtLabel(spec: ChartSpecLoose): string | null {
   }
 }
 
-onMounted(renderThumbs)
+onMounted(() => {
+  renderThumbs()
+  window.addEventListener('resize', debouncedResize)
+})
 watch(
   () => props.specs,
   () => renderThumbs(),
   { deep: false }
 )
-onBeforeUnmount(disposeThumbs)
+onBeforeUnmount(() => {
+  disposeThumbs()
+  dialogInstance?.dispose()
+  dialogInstance = null
+})
 </script>
 
 <script lang="ts">

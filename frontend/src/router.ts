@@ -16,6 +16,12 @@ export const router = createRouter({
     },
     { path: '/runs', name: 'runs', component: () => import('./views/RunsView.vue') },
     {
+      path: '/skills',
+      name: 'skills',
+      component: () => import('./views/SkillsHubView.vue'),
+      meta: { wide: true },
+    },
+    {
       path: '/runs/:runId',
       name: 'review',
       component: () => import('./views/ReviewView.vue'),

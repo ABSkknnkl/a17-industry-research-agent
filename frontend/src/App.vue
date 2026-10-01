@@ -33,6 +33,7 @@ onMounted(() => {
         <RouterLink to="/" class="nav-link">首页</RouterLink>
         <RouterLink to="/create" class="nav-link">创建任务</RouterLink>
         <RouterLink to="/runs" class="nav-link">历史任务</RouterLink>
+        <RouterLink to="/skills" class="nav-link">问财Skill库</RouterLink>
       </nav>
       <div class="header-right">
         <el-tag type="success" effect="plain" style="margin-right: 10px">五智能体引擎就绪</el-tag>

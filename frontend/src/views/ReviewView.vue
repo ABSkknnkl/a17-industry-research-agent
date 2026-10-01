@@ -25,6 +25,7 @@ import WorkbenchActions from '../components/WorkbenchActions.vue'
 import ProjectTree from '../components/ProjectTree.vue'
 import AgentLiveTrace from '../components/AgentLiveTrace.vue'
 import RevisionDiffViewer from '../components/RevisionDiffViewer.vue'
+import EvidenceDrawer from '../components/EvidenceDrawer.vue'
 import { shouldAutoJumpToDownload } from '../api/reportGate'
 
 const route = useRoute()
@@ -41,9 +42,22 @@ const selectedStageOverride = ref<StageName | null>(null)
 const traceDrawerVisible = ref(false)
 const currentAnnotations = ref<any[]>([])
 
+const evidenceDrawerVisible = ref(false)
+const activeEvidenceRecordIds = ref<string[]>([])
+
 function onStageAnnotate(payload: { stage: StageName; annotations: any[] }): void {
   currentAnnotations.value = payload.annotations
 }
+
+function onStageViewEvidence(recordIds: string[]): void {
+  activeEvidenceRecordIds.value = recordIds
+  evidenceDrawerVisible.value = true
+}
+
+const currentEvidenceIndex = computed(() => {
+  const interpretData = workflow.value?.stage_results?.['data_interpret']?.data
+  return (interpretData?.evidence_index || {}) as Record<string, any>
+})
 
 let pollTimer: ReturnType<typeof setTimeout> | null = null
 const POLL_INTERVAL_MS = 3_000
@@ -532,6 +546,7 @@ export default { name: 'ReviewView' }
           :run-id="runId"
           @preview-report="(anchor) => openReportPreview(anchor)"
           @annotate="onStageAnnotate"
+          @view-evidence="onStageViewEvidence"
         />
 
         <el-divider />
@@ -621,6 +636,14 @@ export default { name: 'ReviewView' }
       @stage-change="reload"
     />
   </el-drawer>
+
+  <!-- 事实穿透与凭证审计抽屉 -->
+  <EvidenceDrawer
+    v-model="evidenceDrawerVisible"
+    :record-ids="activeEvidenceRecordIds"
+    :evidence-index="currentEvidenceIndex"
+    :source-records="sourceRecords"
+  />
 </template>
 
 <style scoped>

@@ -1,0 +1,552 @@
+{
+  "C-01/C-02/L-01/L-02/L-07": {
+    "count": 71,
+    "samples": [
+      {
+        "case_id": "C-061",
+        "run_id": "run-20260927232022-a1cfc5",
+        "topic": "海水淡化",
+        "question": "研究海水淡化2025年吨水成本与项目，测算规模化条件",
+        "stage": "chapter_write",
+        "symptom": "dataset 为空（0 记录）但章节出现 215 处百分比（如 ['25%', '45%', '20%']）",
+        "evidence": "data/runs/run-20260927232022-a1cfc5/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-062",
+        "run_id": "run-20260927232022-8dbc25",
+        "topic": "再生水",
+        "question": "分析再生水2025年利用率与政策，测算投资需求",
+        "stage": "chapter_write",
+        "symptom": "dataset 为空（0 记录）但章节出现 174 处百分比（如 ['25%', '45%', '20%']）",
+        "evidence": "data/runs/run-20260927232022-8dbc25/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-063",
+        "run_id": "run-20260927232022-b7ecf3",
+        "topic": "反渗透膜",
+        "question": "研究反渗透膜2025年国产替代，对比外资份额",
+        "stage": "chapter_write",
+        "symptom": "dataset 为空（0 记录）但章节出现 334 处百分比（如 ['25%', '45%', '20%']）",
+        "evidence": "data/runs/run-20260927232022-b7ecf3/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-064",
+        "run_id": "run-20260927232022-ce666d",
+        "topic": "危废处置",
+        "question": "分析危废2025年处置价格与产能过剩，判断盈利底部",
+        "stage": "chapter_write",
+        "symptom": "dataset 为空（0 记录）但章节出现 154 处百分比（如 ['25%', '45%', '20%']）",
+        "evidence": "data/runs/run-20260927232022-ce666d/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-065",
+        "run_id": "run-20260927232515-ebb4d9",
+        "topic": "医废处理",
+        "question": "研究医废2025年处置量与收费标准，测算需求",
+        "stage": "chapter_write",
+        "symptom": "dataset 为空（0 记录）但章节出现 122 处百分比（如 ['25%', '45%', '20%']）",
+        "evidence": "data/runs/run-20260927232515-ebb4d9/artifacts/chapter_result.json"
+      }
+    ]
+  },
+  "C-03[写入正文（真污染）]": {
+    "count": 36,
+    "samples": [
+      {
+        "case_id": "C-048",
+        "run_id": "run-20260927234542-58c70b",
+        "topic": "电池铝箔",
+        "question": "分析电池铝箔2025年加工费与盈利，对比头部企业产能",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 18 处航天类词 → 写入正文（真污染）",
+        "evidence": "data/runs/run-20260927234542-58c70b/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-050",
+        "run_id": "run-20260927235053-dba1fd",
+        "topic": "不干胶标签",
+        "question": "分析不干胶标签2025年需求与材料成本，测算毛利变化",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 10 处航天类词 → 写入正文（真污染）",
+        "evidence": "data/runs/run-20260927235053-dba1fd/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-011",
+        "run_id": "run-20260927233639-b8de70",
+        "topic": "CMP抛光材料",
+        "question": "研究CMP抛光垫与抛光液2025年国产化率，对比国产与外资份额及客户导入进展",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 4 处航天类词 → 写入正文（真污染）",
+        "evidence": "data/runs/run-20260927233639-b8de70/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-012",
+        "run_id": "run-20260927233639-3365ca",
+        "topic": "掩膜版",
+        "question": "分析掩膜版2025年制造成本与国产替代进展，输出光掩模核心标的",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 4 处航天类词 → 写入正文（真污染）",
+        "evidence": "data/runs/run-20260927233639-3365ca/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-013",
+        "run_id": "run-20260927233639-899df8",
+        "topic": "引线框架",
+        "question": "研究引线框架2025年蚀刻工艺渗透率，测算头部企业毛利率与产能利用率",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 15 处航天类词 → 写入正文（真污染）",
+        "evidence": "data/runs/run-20260927233639-899df8/artifacts/chapter_result.json"
+      }
+    ]
+  },
+  "C-03[拒绝引用声明（防御成功）]": {
+    "count": 38,
+    "samples": [
+      {
+        "case_id": "C-061",
+        "run_id": "run-20260927232022-a1cfc5",
+        "topic": "海水淡化",
+        "question": "研究海水淡化2025年吨水成本与项目，测算规模化条件",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 1 处航天类词 → 拒绝引用声明（防御成功）",
+        "evidence": "data/runs/run-20260927232022-a1cfc5/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-065",
+        "run_id": "run-20260927232515-ebb4d9",
+        "topic": "医废处理",
+        "question": "研究医废2025年处置量与收费标准，测算需求",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 4 处航天类词 → 拒绝引用声明（防御成功）",
+        "evidence": "data/runs/run-20260927232515-ebb4d9/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-047",
+        "run_id": "run-20260927234542-fec117",
+        "topic": "瓦楞纸",
+        "question": "研究瓦楞纸2025年废纸成本与箱板纸价格，测算盈利",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 6 处航天类词 → 拒绝引用声明（防御成功）",
+        "evidence": "data/runs/run-20260927234542-fec117/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-049",
+        "run_id": "run-20260927234542-08685c",
+        "topic": "特种纸龙头",
+        "question": "研究特种纸2025年高端产品占比提升，分析产品结构升级",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 11 处航天类词 → 拒绝引用声明（防御成功）",
+        "evidence": "data/runs/run-20260927234542-08685c/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-014",
+        "run_id": "run-20260927233639-cc779c",
+        "topic": "键合丝",
+        "question": "分析键合金丝与铜丝2025年价差与用量变化，评估国产替代空间",
+        "stage": "chapter_write",
+        "symptom": "主题与航天无关，正文命中 5 处航天类词 → 拒绝引用声明（防御成功）",
+        "evidence": "data/runs/run-20260927233639-cc779c/artifacts/chapter_result.json"
+      }
+    ]
+  },
+  "C-04": {
+    "count": 6,
+    "samples": [
+      {
+        "case_id": "C-099",
+        "run_id": "run-20260928005226-d63f5c",
+        "topic": "红外探测器",
+        "question": "研究红外探测器2025年军民用需求，测算国产化",
+        "stage": "data_interpret（industry_chain_segments）",
+        "symptom": "产业链 segments 含异主题（航天类）词",
+        "evidence": "data/runs/run-20260928005226-d63f5c/artifacts/interpretation_report.json"
+      },
+      {
+        "case_id": "C-100",
+        "run_id": "run-20260928010133-a5c638",
+        "topic": "火工品",
+        "question": "分析火工品2025年配套需求，测算行业格局",
+        "stage": "data_interpret（industry_chain_segments）",
+        "symptom": "产业链 segments 含异主题（航天类）词",
+        "evidence": "data/runs/run-20260928010133-a5c638/artifacts/interpretation_report.json"
+      },
+      {
+        "case_id": "C-027",
+        "run_id": "run-20260928001544-367068",
+        "topic": "高温合金",
+        "question": "研究高温合金2025年航发与燃气轮机需求，对比龙头产能扩张",
+        "stage": "data_interpret（industry_chain_segments）",
+        "symptom": "产业链 segments 含异主题（航天类）词",
+        "evidence": "data/runs/run-20260928001544-367068/artifacts/interpretation_report.json"
+      },
+      {
+        "case_id": "C-028",
+        "run_id": "run-20260928001544-c8e0e4",
+        "topic": "金属粉末",
+        "question": "分析金属粉末2025年3D打印渗透与原料成本，测算毛利率变化",
+        "stage": "data_interpret（industry_chain_segments）",
+        "symptom": "产业链 segments 含异主题（航天类）词",
+        "evidence": "data/runs/run-20260928001544-c8e0e4/artifacts/interpretation_report.json"
+      },
+      {
+        "case_id": "C-029",
+        "run_id": "run-20260928001544-973989",
+        "topic": "航空钛材",
+        "question": "研究航空钛合金2025年需求与海绵钛价格联动，评估盈利弹性",
+        "stage": "data_interpret（industry_chain_segments）",
+        "symptom": "产业链 segments 含异主题（航天类）词",
+        "evidence": "data/runs/run-20260928001544-973989/artifacts/interpretation_report.json"
+      }
+    ]
+  },
+  "C-05/L-08": {
+    "count": 71,
+    "samples": [
+      {
+        "case_id": "C-061",
+        "run_id": "run-20260927232022-a1cfc5",
+        "topic": "海水淡化",
+        "question": "研究海水淡化2025年吨水成本与项目，测算规模化条件",
+        "stage": "chart_generate",
+        "symptom": "quality.passed=False（issues=5）但 status=approved",
+        "evidence": "state.json → stage_results.chart_generate"
+      },
+      {
+        "case_id": "C-062",
+        "run_id": "run-20260927232022-8dbc25",
+        "topic": "再生水",
+        "question": "分析再生水2025年利用率与政策，测算投资需求",
+        "stage": "chart_generate",
+        "symptom": "quality.passed=False（issues=5）但 status=approved",
+        "evidence": "state.json → stage_results.chart_generate"
+      },
+      {
+        "case_id": "C-063",
+        "run_id": "run-20260927232022-b7ecf3",
+        "topic": "反渗透膜",
+        "question": "研究反渗透膜2025年国产替代，对比外资份额",
+        "stage": "chart_generate",
+        "symptom": "quality.passed=False（issues=5）但 status=approved",
+        "evidence": "state.json → stage_results.chart_generate"
+      },
+      {
+        "case_id": "C-064",
+        "run_id": "run-20260927232022-ce666d",
+        "topic": "危废处置",
+        "question": "分析危废2025年处置价格与产能过剩，判断盈利底部",
+        "stage": "chart_generate",
+        "symptom": "quality.passed=False（issues=5）但 status=approved",
+        "evidence": "state.json → stage_results.chart_generate"
+      },
+      {
+        "case_id": "C-065",
+        "run_id": "run-20260927232515-ebb4d9",
+        "topic": "医废处理",
+        "question": "研究医废2025年处置量与收费标准，测算需求",
+        "stage": "chart_generate",
+        "symptom": "quality.passed=False（issues=5）但 status=approved",
+        "evidence": "state.json → stage_results.chart_generate"
+      }
+    ]
+  },
+  "D-01/F-04": {
+    "count": 71,
+    "samples": [
+      {
+        "case_id": "C-061",
+        "run_id": "run-20260927232022-a1cfc5",
+        "topic": "海水淡化",
+        "question": "研究海水淡化2025年吨水成本与项目，测算规模化条件",
+        "stage": "data_fetch（根源）→ 全链路",
+        "symptom": "dataset 七域全 0（source_records 空），但阶段状态 approved",
+        "evidence": "data/runs/run-20260927232022-a1cfc5/artifacts/dataset.json"
+      },
+      {
+        "case_id": "C-062",
+        "run_id": "run-20260927232022-8dbc25",
+        "topic": "再生水",
+        "question": "分析再生水2025年利用率与政策，测算投资需求",
+        "stage": "data_fetch（根源）→ 全链路",
+        "symptom": "dataset 七域全 0（source_records 空），但阶段状态 approved",
+        "evidence": "data/runs/run-20260927232022-8dbc25/artifacts/dataset.json"
+      },
+      {
+        "case_id": "C-063",
+        "run_id": "run-20260927232022-b7ecf3",
+        "topic": "反渗透膜",
+        "question": "研究反渗透膜2025年国产替代，对比外资份额",
+        "stage": "data_fetch（根源）→ 全链路",
+        "symptom": "dataset 七域全 0（source_records 空），但阶段状态 approved",
+        "evidence": "data/runs/run-20260927232022-b7ecf3/artifacts/dataset.json"
+      },
+      {
+        "case_id": "C-064",
+        "run_id": "run-20260927232022-ce666d",
+        "topic": "危废处置",
+        "question": "分析危废2025年处置价格与产能过剩，判断盈利底部",
+        "stage": "data_fetch（根源）→ 全链路",
+        "symptom": "dataset 七域全 0（source_records 空），但阶段状态 approved",
+        "evidence": "data/runs/run-20260927232022-ce666d/artifacts/dataset.json"
+      },
+      {
+        "case_id": "C-065",
+        "run_id": "run-20260927232515-ebb4d9",
+        "topic": "医废处理",
+        "question": "研究医废2025年处置量与收费标准，测算需求",
+        "stage": "data_fetch（根源）→ 全链路",
+        "symptom": "dataset 七域全 0（source_records 空），但阶段状态 approved",
+        "evidence": "data/runs/run-20260927232515-ebb4d9/artifacts/dataset.json"
+      }
+    ]
+  },
+  "D-02": {
+    "count": 86,
+    "samples": [
+      {
+        "case_id": "C-061",
+        "run_id": "run-20260927232022-a1cfc5",
+        "topic": "海水淡化",
+        "question": "研究海水淡化2025年吨水成本与项目，测算规模化条件",
+        "stage": "data_fetch（intent_routing）",
+        "symptom": "7/7 域 requires_clarification=True，但澄清字段全部缺失、blocking_issues=None",
+        "evidence": "state.json → data_fetch.data.intent_routing.plans"
+      },
+      {
+        "case_id": "C-062",
+        "run_id": "run-20260927232022-8dbc25",
+        "topic": "再生水",
+        "question": "分析再生水2025年利用率与政策，测算投资需求",
+        "stage": "data_fetch（intent_routing）",
+        "symptom": "7/7 域 requires_clarification=True，但澄清字段全部缺失、blocking_issues=None",
+        "evidence": "state.json → data_fetch.data.intent_routing.plans"
+      },
+      {
+        "case_id": "C-063",
+        "run_id": "run-20260927232022-b7ecf3",
+        "topic": "反渗透膜",
+        "question": "研究反渗透膜2025年国产替代，对比外资份额",
+        "stage": "data_fetch（intent_routing）",
+        "symptom": "7/7 域 requires_clarification=True，但澄清字段全部缺失、blocking_issues=None",
+        "evidence": "state.json → data_fetch.data.intent_routing.plans"
+      },
+      {
+        "case_id": "C-064",
+        "run_id": "run-20260927232022-ce666d",
+        "topic": "危废处置",
+        "question": "分析危废2025年处置价格与产能过剩，判断盈利底部",
+        "stage": "data_fetch（intent_routing）",
+        "symptom": "7/7 域 requires_clarification=True，但澄清字段全部缺失、blocking_issues=None",
+        "evidence": "state.json → data_fetch.data.intent_routing.plans"
+      },
+      {
+        "case_id": "C-065",
+        "run_id": "run-20260927232515-ebb4d9",
+        "topic": "医废处理",
+        "question": "研究医废2025年处置量与收费标准，测算需求",
+        "stage": "data_fetch（intent_routing）",
+        "symptom": "7/7 域 requires_clarification=True，但澄清字段全部缺失、blocking_issues=None",
+        "evidence": "state.json → data_fetch.data.intent_routing.plans"
+      }
+    ]
+  },
+  "D-05": {
+    "count": 21,
+    "samples": [
+      {
+        "case_id": "C-096",
+        "run_id": "run-20260928005226-24fc7e",
+        "topic": "光纤陀螺",
+        "question": "分析光纤陀螺2025年渗透与成本下降，测算需求",
+        "stage": "data_fetch",
+        "symptom": "有数样本域偏斜：industry_chain=0, macro=140（总记录 689）",
+        "evidence": "data/runs/run-20260928005226-24fc7e/artifacts/dataset.json"
+      },
+      {
+        "case_id": "C-097",
+        "run_id": "run-20260928005226-670aa5",
+        "topic": "T/R组件",
+        "question": "研究T/R组件2025年相控阵需求，测算订单弹性",
+        "stage": "data_fetch",
+        "symptom": "有数样本域偏斜：industry_chain=60, macro=10（总记录 980）",
+        "evidence": "data/runs/run-20260928005226-670aa5/artifacts/dataset.json"
+      },
+      {
+        "case_id": "C-098",
+        "run_id": "run-20260928005226-17ba66",
+        "topic": "微波组件",
+        "question": "分析微波组件2025年军品订单，测算营收",
+        "stage": "data_fetch",
+        "symptom": "有数样本域偏斜：industry_chain=114, macro=10（总记录 438）",
+        "evidence": "data/runs/run-20260928005226-17ba66/artifacts/dataset.json"
+      },
+      {
+        "case_id": "C-099",
+        "run_id": "run-20260928005226-d63f5c",
+        "topic": "红外探测器",
+        "question": "研究红外探测器2025年军民用需求，测算国产化",
+        "stage": "data_fetch",
+        "symptom": "有数样本域偏斜：industry_chain=95, macro=10（总记录 837）",
+        "evidence": "data/runs/run-20260928005226-d63f5c/artifacts/dataset.json"
+      },
+      {
+        "case_id": "C-100",
+        "run_id": "run-20260928010133-a5c638",
+        "topic": "火工品",
+        "question": "分析火工品2025年配套需求，测算行业格局",
+        "stage": "data_fetch",
+        "symptom": "有数样本域偏斜：industry_chain=85, macro=10（总记录 1192）",
+        "evidence": "data/runs/run-20260928010133-a5c638/artifacts/dataset.json"
+      }
+    ]
+  },
+  "L-03": {
+    "count": 29,
+    "samples": [
+      {
+        "case_id": "C-096",
+        "run_id": "run-20260928005226-24fc7e",
+        "topic": "光纤陀螺",
+        "question": "分析光纤陀螺2025年渗透与成本下降，测算需求",
+        "stage": "chapter_write",
+        "symptom": "章节文本含 607 处裸 evidence_id 引用",
+        "evidence": "data/runs/run-20260928005226-24fc7e/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-097",
+        "run_id": "run-20260928005226-670aa5",
+        "topic": "T/R组件",
+        "question": "研究T/R组件2025年相控阵需求，测算订单弹性",
+        "stage": "chapter_write",
+        "symptom": "章节文本含 652 处裸 evidence_id 引用",
+        "evidence": "data/runs/run-20260928005226-670aa5/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-098",
+        "run_id": "run-20260928005226-17ba66",
+        "topic": "微波组件",
+        "question": "分析微波组件2025年军品订单，测算营收",
+        "stage": "chapter_write",
+        "symptom": "章节文本含 576 处裸 evidence_id 引用",
+        "evidence": "data/runs/run-20260928005226-17ba66/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-099",
+        "run_id": "run-20260928005226-d63f5c",
+        "topic": "红外探测器",
+        "question": "研究红外探测器2025年军民用需求，测算国产化",
+        "stage": "chapter_write",
+        "symptom": "章节文本含 652 处裸 evidence_id 引用",
+        "evidence": "data/runs/run-20260928005226-d63f5c/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-100",
+        "run_id": "run-20260928010133-a5c638",
+        "topic": "火工品",
+        "question": "分析火工品2025年配套需求，测算行业格局",
+        "stage": "chapter_write",
+        "symptom": "章节文本含 599 处裸 evidence_id 引用",
+        "evidence": "data/runs/run-20260928010133-a5c638/artifacts/chapter_result.json"
+      }
+    ]
+  },
+  "M-01/M-02": {
+    "count": 10,
+    "samples": [
+      {
+        "case_id": "C-097",
+        "run_id": "run-20260928005226-670aa5",
+        "topic": "T/R组件",
+        "question": "研究T/R组件2025年相控阵需求，测算订单弹性",
+        "stage": "chart_generate（combo 编译）",
+        "symptom": "双轴同名：yAxis=['%', '%']｜图「全志科技净资产收益率(ROE)与净利率」",
+        "evidence": "data/runs/run-20260928005226-670aa5/artifacts/chart_result.json"
+      },
+      {
+        "case_id": "C-099",
+        "run_id": "run-20260928005226-d63f5c",
+        "topic": "红外探测器",
+        "question": "研究红外探测器2025年军民用需求，测算国产化",
+        "stage": "chart_generate（combo 编译）",
+        "symptom": "双轴同名：yAxis=['%', '%']｜图「高德红外净资产收益率(ROE)与资产负债率」",
+        "evidence": "data/runs/run-20260928005226-d63f5c/artifacts/chart_result.json"
+      },
+      {
+        "case_id": "C-099",
+        "run_id": "run-20260928005226-d63f5c",
+        "topic": "红外探测器",
+        "question": "研究红外探测器2025年军民用需求，测算国产化",
+        "stage": "chart_generate（combo 编译）",
+        "symptom": "双轴同名：yAxis=['%', '%']｜图「久之洋资产负债率与净利率」",
+        "evidence": "data/runs/run-20260928005226-d63f5c/artifacts/chart_result.json"
+      },
+      {
+        "case_id": "C-100",
+        "run_id": "run-20260928010133-a5c638",
+        "topic": "火工品",
+        "question": "分析火工品2025年配套需求，测算行业格局",
+        "stage": "chart_generate（combo 编译）",
+        "symptom": "双轴同名：yAxis=['%', '%']｜图「广东宏大毛利率与营业收入同比增长率」",
+        "evidence": "data/runs/run-20260928010133-a5c638/artifacts/chart_result.json"
+      },
+      {
+        "case_id": "C-100",
+        "run_id": "run-20260928010133-a5c638",
+        "topic": "火工品",
+        "question": "分析火工品2025年配套需求，测算行业格局",
+        "stage": "chart_generate（combo 编译）",
+        "symptom": "双轴同名：yAxis=['%', '%']｜图「高争民爆研发费用同比增长率与资产负债率」",
+        "evidence": "data/runs/run-20260928010133-a5c638/artifacts/chart_result.json"
+      }
+    ]
+  },
+  "M-03": {
+    "count": 6,
+    "samples": [
+      {
+        "case_id": "C-097",
+        "run_id": "run-20260928005226-670aa5",
+        "topic": "T/R组件",
+        "question": "研究T/R组件2025年相控阵需求，测算订单弹性",
+        "stage": "chapter_write",
+        "symptom": "章节含 8 处 >500% 的同比数字（如 ['71528.66%', '5201.60%', '415612%']）",
+        "evidence": "data/runs/run-20260928005226-670aa5/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-026",
+        "run_id": "run-20260928001544-88ad62",
+        "topic": "陶瓷基复材",
+        "question": "分析陶瓷基复合材料2025年航空发动机应用进展，输出核心标的",
+        "stage": "chapter_write",
+        "symptom": "章节含 16 处 >500% 的同比数字（如 ['1911.6%', '+1911.60%', '1911.60%']）",
+        "evidence": "data/runs/run-20260928001544-88ad62/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-060",
+        "run_id": "run-20260928002533-c7b851",
+        "topic": "医用同位素",
+        "question": "分析医用同位素2025年国产化进展，评估供应链安全",
+        "stage": "chapter_write",
+        "symptom": "章节含 7 处 >500% 的同比数字（如 ['627.15%', '+627.15%', '627.15%']）",
+        "evidence": "data/runs/run-20260928002533-c7b851/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-095",
+        "run_id": "run-20260928004139-82b09f",
+        "topic": "卫星测控",
+        "question": "研究商业测控2025年服务模式与市场规模",
+        "stage": "chapter_write",
+        "symptom": "章节含 27 处 >500% 的同比数字（如 ['+618.8%', '+618.8%', '618.8%']）",
+        "evidence": "data/runs/run-20260928004139-82b09f/artifacts/chapter_result.json"
+      },
+      {
+        "case_id": "C-019",
+        "run_id": "run-20260927234632-a007fe",
+        "topic": "电子级多晶硅",
+        "question": "研究电子级多晶硅2025年国产供应量，评估进口替代进度与盈利",
+        "stage": "chapter_write",
+        "symptom": "章节含 3 处 >500% 的同比数字（如 ['9999%', '9999999%', '999999999%']）",
+        "evidence": "data/runs/run-20260927234632-a007fe/artifacts/chapter_result.json"
+      }
+    ]
+  }
+}

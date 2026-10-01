@@ -29,6 +29,22 @@ from typing import Any
 import httpx
 
 
+def _decoded_headers(headers: Any) -> dict[str, str]:
+    """剔除 content-encoding/content-length。
+
+    快照层持有的 body 已是解压后的字节；若原样保留
+    ``content-encoding: gzip``，httpx 会二次解压并报
+    "incorrect header check"。
+    """
+    raw = dict(headers or {})
+    out = {str(k): str(v) for k, v in raw.items()}
+    for drop in ("content-encoding", "content-length", "transfer-encoding"):
+        for key in list(out):
+            if key.lower() == drop:
+                out.pop(key, None)
+    return out
+
+
 def canonical_json(obj: Any) -> str:
     """键排序、紧凑分隔、保留中文（ensure_ascii=False）。"""
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
@@ -397,50 +413,105 @@ class SnapshotTransport(httpx.AsyncBaseTransport):
             self._real = httpx.AsyncHTTPTransport()
         return self._real
 
+    def _match_key_for_request(
+        self,
+        *,
+        skill: str,
+        endpoint: str,
+        request: httpx.Request,
+        payload: dict[str, Any],
+        body: str,
+    ) -> tuple[str, str]:
+        """SkillHub 走 skill+endpoint+query+page；其余（LLM 等）按完整请求体寻址。
+
+        LLM 的 chat/completions 没有 query/page 字段，若沿用 SkillHub 键
+        会把所有 LLM 响应撞到同一快照，必须用请求体哈希区分。
+        """
+        has_skillhub_shape = skill not in ("", "unknown") or "query2data" in endpoint or (
+            "query" in payload and "page" in payload
+        )
+        if has_skillhub_shape:
+            query = str(payload.get("query", ""))
+            page_raw = payload.get("page", "1")
+            page = int(page_raw) if str(page_raw).isdigit() else 1
+            return (
+                compute_match_key(skill=skill, endpoint=endpoint, query=query, page=page),
+                query,
+            )
+        # 通用/LLM：method + url + 完整 body 作为身份
+        identity = {
+            "method": request.method.upper(),
+            "url": str(request.url),
+            "body_sha256": hashlib.sha256(body.encode("utf-8")).hexdigest(),
+        }
+        key = hashlib.sha256(canonical_json(identity).encode("utf-8")).hexdigest()[:32]
+        return key, body[:120]
+
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         skill = request.headers.get("X-Claw-Skill-Id", "unknown")
-        endpoint = "query2data" if "/query2data" in str(request.url) else "search"
+        endpoint = "query2data" if "/query2data" in str(request.url) else (
+            "chat_completions" if "/chat/completions" in str(request.url) else "search"
+        )
         body = request.content.decode("utf-8") if request.content else "{}"
         try:
             payload = json.loads(body)
         except json.JSONDecodeError:
             payload = {}
-        query = str(payload.get("query", ""))
-        page = int(payload.get("page", "1")) if str(payload.get("page", "1")).isdigit() else 1
-        match_key = compute_match_key(skill=skill, endpoint=endpoint, query=query, page=page)
+        match_key, miss_label = self._match_key_for_request(
+            skill=skill, endpoint=endpoint, request=request, payload=payload, body=body
+        )
 
         if self.mode == "record":
             response = await self._resolved().handle_async_request(request)
-            self._save_snapshot(match_key, skill, response)
-            return response
+            # 传输层返回的响应默认未读；必须 aread() 后才能取 text/json，
+            # 否则会触发 "Attempted to access streaming response content"。
+            content = await response.aread()
+            self._save_snapshot(match_key, skill, response, content=content)
+            return httpx.Response(
+                status_code=response.status_code,
+                content=content,
+                headers=_decoded_headers(response.headers),
+                request=request,
+            )
 
         # replay（默认 strict）
         snapshot = self._load_snapshot(match_key)
         if snapshot is None:
-            if self.on_miss == "strict":
-                raise SnapshotMiss(match_key, skill=skill, query=query)
-            raise SnapshotMiss(match_key, skill=skill, query=query)
+            raise SnapshotMiss(match_key, skill=skill, query=miss_label)
         return httpx.Response(
             status_code=snapshot["status_code"],
             content=snapshot["content"].encode("utf-8"),
-            headers={k: v for k, v in snapshot.get("headers", {}).items() if v},
+            headers=_decoded_headers(snapshot.get("headers", {})),
             request=request,
         )
 
     def _snapshot_file(self, match_key: str) -> Path:
         return self.snapshot_dir / f"{match_key}.json"
 
-    def _save_snapshot(self, match_key: str, skill: str, response: httpx.Response) -> None:
+    def _save_snapshot(
+        self,
+        match_key: str,
+        skill: str,
+        response: httpx.Response,
+        *,
+        content: bytes | None = None,
+    ) -> None:
         self.snapshot_dir.mkdir(parents=True, exist_ok=True)
-        text = response.text
+        if content is None:
+            # 兼容调用方未预读：尽量安全取 body，失败则跳过 schema 计算
+            try:
+                content = response.content
+            except Exception:
+                content = b""
+        text = content.decode("utf-8", errors="replace")
         rows = _extract_rows(text)
         record: dict[str, Any] = {
             "match_key": match_key,
             "skill": skill,
             "status_code": response.status_code,
             "content": text,
-            "headers": dict(response.headers),
-            "raw_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "headers": _decoded_headers(response.headers),
+            "raw_sha256": hashlib.sha256(content).hexdigest(),
             "schema_hash": compute_schema_hash(rows),
             "recorded_at": datetime.now(timezone.utc).isoformat(),
             "snapshot_ver": self.snapshot_ver,

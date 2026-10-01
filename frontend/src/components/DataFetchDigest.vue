@@ -230,7 +230,7 @@ const annotationStats = computed(() => {
         </template>
       </el-table-column>
 
-      <el-table-column label="协同标注" width="130" align="center">
+      <el-table-column label="协同操作" width="160" align="center">
         <template #default="{ row }">
           <div class="row-actions">
             <el-tooltip content="标记为重点分析标的" placement="top">
@@ -251,6 +251,15 @@ const annotationStats = computed(() => {
                 @click="toggleRecordAnnotation(row, 'reject')"
               >
                 剔除
+              </button>
+            </el-tooltip>
+            <el-tooltip content="查看该条数据事实的完整溯源与审计凭证" placement="top">
+              <button
+                type="button"
+                class="icon-btn audit-btn"
+                @click="emit('view-evidence', [String(row.record_id)])"
+              >
+                穿透
               </button>
             </el-tooltip>
           </div>
@@ -440,6 +449,15 @@ const annotationStats = computed(() => {
   border-color: #ef4444;
   color: #b91c1c;
   font-weight: 600;
+}
+.audit-btn {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+.audit-btn:hover {
+  background: #dcfce7;
+  border-color: #86efac;
 }
 
 .pagination-bar {

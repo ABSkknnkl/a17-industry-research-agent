@@ -1,0 +1,98 @@
+[
+  {
+    "id": "E-04",
+    "group": "full",
+    "input": "创新药集采范围持续扩大会带来哪些影响",
+    "industry_topic": "创新药",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-08",
+    "group": "full",
+    "input": "当前新能源车板块整体PE、PB估值",
+    "industry_topic": "新能源车",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-12",
+    "group": "full",
+    "input": "沪深300、创业板当前估值水平对比历史区间",
+    "industry_topic": "A股指数",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-24",
+    "group": "full",
+    "input": "光伏逆变器国内外厂商市占率及海外政策影响",
+    "industry_topic": "光伏逆变器",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-28",
+    "group": "full",
+    "input": "看下宁德时代财务，顺便和比亚迪对比，各出一张图",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-32",
+    "group": "intercept",
+    "input": "华安新能源的毛利率",
+    "industry_topic": "财务",
+    "expected_outcome": "intercept",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-36",
+    "group": "intercept",
+    "input": "蓝天电池科技近四年财报",
+    "industry_topic": "财务",
+    "expected_outcome": "intercept",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-40",
+    "group": "intercept",
+    "input": "标的全部字段缺失",
+    "industry_topic": "通用",
+    "expected_outcome": "intercept",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-44",
+    "group": "full",
+    "input": "汇总机构对宁德时代的盈利预测与评级变化",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-48",
+    "group": "full",
+    "input": "当前经济周期阶段下消费、成长板块的配置逻辑",
+    "industry_topic": "消费成长",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "S-E02",
+    "group": "intercept",
+    "input": "（溯源）证据篡改致断链",
+    "industry_topic": "动力电池",
+    "expected_outcome": "specialized",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "S-E06",
+    "group": "intercept",
+    "input": "（溯源）数值claim无证据池",
+    "industry_topic": "动力电池",
+    "expected_outcome": "specialized",
+    "source": "V8/cases_v7.json"
+  }
+]

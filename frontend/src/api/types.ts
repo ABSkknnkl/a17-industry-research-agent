@@ -337,6 +337,7 @@ export interface ResearchInput {
   risk_preference?: RiskPreference
   research_brief?: ResearchBrief
   chart_generate_options?: ChartGenerationOptions
+  selected_skills?: string[]
 }
 
 export interface RunCreateRequest {
@@ -440,6 +441,8 @@ export interface ReportQualityReport {
   included_chart_count?: number
   /** 0-1 */
   evidence_coverage?: number
+  consistency_score?: number
+  overall_score?: number
   issues?: string[]
   /**
    * 评分基准（分母），由后端下发。前端不得写死 7 / 21 —— 后端改大纲时前端自动跟随。
@@ -643,5 +646,38 @@ export interface TestConnectivityResult {
   latency_ms?: number
   model?: string
 }
+
+// ---------- 问财 SkillHub 技能生态模型 ----------
+
+export interface SkillItem {
+  id: string
+  name: string
+  description: string
+  domains?: string[]
+  keywords?: string[]
+  requires_signal?: boolean
+  source?: string
+  adaptation?: string
+  category?: string
+  doc_preview?: string
+  full_doc?: string
+}
+
+export interface AgentSkillGroup {
+  stage_id: StageName
+  stage_num: number
+  agent_name: string
+  agent_role: string
+  badge_text: string
+  description: string
+  skills_count: number
+  skills: SkillItem[]
+}
+
+export interface SkillCatalogResponse {
+  total: number
+  agents: AgentSkillGroup[]
+}
+
 
 

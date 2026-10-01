@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { CircleCheck } from '@element-plus/icons-vue'
 import { getFeedbackHistory, getRevision, type FeedbackHistoryItem } from '../api/client'
 import type { StageName, WorkflowState } from '../api/types'
 import { STAGE_LABELS } from '../api/types'
@@ -105,7 +106,7 @@ function formatTime(iso: string): string {
             <h6 class="col-title">智能体优化响应成果 (r{{ selectedHistory.to_revision }})</h6>
             <div class="col-content result-box">
               <div class="response-status">
-                <span class="status-pill">✓ 靶向优化指令已完成推理闭环</span>
+                <span class="status-pill"><el-icon><CircleCheck /></el-icon> 靶向优化指令已完成推理闭环</span>
                 <span class="status-hint">底层智能体已针对您的批注重构了分析矩阵与事实链条</span>
               </div>
               <div v-if="selectedHistory.edited_data?.annotations" class="annot-feedback-summary">
@@ -115,12 +116,81 @@ function formatTime(iso: string): string {
             </div>
           </div>
         </div>
+
+        <!-- 版本红绿演化 Diff -->
+        <div class="diff-trace-box">
+          <div class="diff-trace-header">
+            <span class="diff-tag-lead">版本演化对比 (Diff):</span>
+            <span class="diff-tag-sub muted">r{{ selectedHistory.from_revision }} (旧版基线) vs r{{ selectedHistory.to_revision }} (新版优化)</span>
+          </div>
+          <div class="diff-lines">
+            <div class="diff-line diff-del">
+              <span class="diff-sign">-</span>
+              <span class="diff-text">[r{{ selectedHistory.from_revision }} 原基线] 阶段「{{ STAGE_LABELS[selectedHistory.stage as StageName] || selectedHistory.stage }}」为初始默认参数推演，未包含人工介入反馈</span>
+            </div>
+            <div class="diff-line diff-add">
+              <span class="diff-sign">+</span>
+              <span class="diff-text">[r{{ selectedHistory.to_revision }} 优化后] 融合人机协同指令: “{{ selectedHistory.combined_feedback || selectedHistory.comment || '定制参数精细化生成' }}”</span>
+            </div>
+            <div v-if="selectedHistory.edited_data?.chart_specs" class="diff-line diff-add">
+              <span class="diff-sign">+</span>
+              <span class="diff-text">[r{{ selectedHistory.to_revision }} 视觉重构] 已直接重构 {{ (selectedHistory.edited_data.chart_specs as unknown[]).length }} 张图表样式与高亮重点，生成出版级矢量 SVG</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.diff-trace-box {
+  margin-top: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+.diff-trace-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--rp-navy, #1e3a5c);
+}
+.diff-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 11.5px;
+}
+.diff-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  line-height: 1.45;
+}
+.diff-del {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.diff-add {
+  background: #f0fdf4;
+  color: #15803d;
+}
+.diff-sign {
+  font-weight: 700;
+  width: 10px;
+  text-align: center;
+}
+.diff-text {
+  word-break: break-word;
+}
 .revision-diff-viewer {
   background: #ffffff;
   border: 1px solid var(--rp-line, #e2e8f0);

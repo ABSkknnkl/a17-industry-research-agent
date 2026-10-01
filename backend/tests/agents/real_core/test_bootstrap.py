@@ -56,14 +56,15 @@ def test_all_five_agent_packages_importable() -> None:
 
 
 def test_agent_paths_do_not_require_desktop_location() -> None:
-    """不允许把桌面工作副本路径写进 sys.path（便携性硬约束）。
+    """不允许把外部硬编码路径写进 sys.path（便携性硬约束）。
 
-    判据：注入路径中不得出现 Desktop/桌面目录；允许项目自身的 Downloads 工作区路径。
+    判据：注入路径必须严格由 settings.AGENTS_CORE_DIR 动态推导，不得引用项目外的硬编码路径。
     """
     init_agent_paths()
     injected = {
-        p for p in sys.path if Path(p).parent.name == "agents_core"
+        Path(p).resolve() for p in sys.path if Path(p).parent.name == "agents_core"
     }
     assert injected, "未检测到任何 agents_core 注入路径"
-    desktop_hits = [p for p in injected if "Desktop" in p or "桌面" in p]
-    assert desktop_hits == [], f"注入路径含桌面依赖: {desktop_hits}"
+    agents_core_resolved = settings.AGENTS_CORE_DIR.resolve()
+    external_hits = [p for p in injected if not p.is_relative_to(agents_core_resolved)]
+    assert external_hits == [], f"注入路径含非当前项目外部依赖: {external_hits}"

@@ -2,7 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listRuns, deleteRun } from '../api/client'
+import { listRuns, deleteRun, clearAllRuns } from '../api/client'
 import { ApiError } from '../api/http'
 import { STAGE_LABELS, type RunSummary } from '../api/types'
 import StatusTag from '../components/StatusTag.vue'
@@ -70,6 +70,36 @@ async function handleDelete(row: RunSummary): Promise<void> {
   }
 }
 
+async function handleClearAll(): Promise<void> {
+  try {
+    await ElMessageBox.confirm(
+      '确定要彻底清空所有历史研报任务及其全部后端产物数据吗？该操作将从磁盘彻底删除所有数据，无法恢复。',
+      '清空所有任务确认',
+      {
+        confirmButtonText: '确定清空全部',
+        cancelButtonText: '取消',
+        type: 'error',
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    loading.value = true
+    const res = await clearAllRuns()
+    ElMessage.success(res.message || '所有历史任务与后端数据已成功清空')
+    offset.value = 0
+    await load()
+  } catch (e) {
+    if (e instanceof ApiError) {
+      ElMessage.error(`清空失败：${e.message}`)
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
 function formatTime(value: string): string {
   return new Date(value).toLocaleString('zh-CN')
 }
@@ -78,12 +108,23 @@ onMounted(load)
 </script>
 
 <template>
-  <div class="card-header" style="margin-bottom: 16px">
+  <div class="card-header" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
     <h2 class="page-title" style="margin: 0">任务列表</h2>
-    <el-button :loading="loading" @click="load">
-      <el-icon style="margin-right: 4px"><Refresh /></el-icon>
-      刷新
-    </el-button>
+    <div style="display: flex; gap: 8px;">
+      <el-button :loading="loading" @click="load">
+        <el-icon style="margin-right: 4px"><Refresh /></el-icon>
+        刷新
+      </el-button>
+      <el-button
+        type="danger"
+        plain
+        :disabled="items.length === 0"
+        @click="handleClearAll"
+      >
+        <el-icon style="margin-right: 4px"><Delete /></el-icon>
+        清空所有任务
+      </el-button>
+    </div>
   </div>
 
   <el-card class="page-card" shadow="never">

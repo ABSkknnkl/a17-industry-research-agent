@@ -67,14 +67,20 @@ class StorageManager:
     def save_state(self, state: WorkflowState) -> None:
         run_dir = self.get_run_dir(state.run_id)
         state_file = run_dir / "state.json"
+        tmp_state_file = run_dir / f"state.{state.revision}.tmp"
         data = state.model_dump(mode="json")
-        with open(state_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
 
-        # 同时归档当前 revision
-        rev_file = run_dir / "revisions" / f"{state.revision}.json"
-        with open(rev_file, "w", encoding="utf-8") as f:
+        # 原子落盘 state.json（写入同目录临时文件后通过系统调用原子替换，防止并发损坏）
+        with open(tmp_state_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+        tmp_state_file.replace(state_file)
+
+        # 同时归档当前 revision（同样执行原子替换）
+        rev_file = run_dir / "revisions" / f"{state.revision}.json"
+        tmp_rev_file = run_dir / "revisions" / f"{state.revision}.tmp"
+        with open(tmp_rev_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2, default=str)
+        tmp_rev_file.replace(rev_file)
 
     def load_state(self, run_id: str) -> WorkflowState | None:
         state_file = self.get_run_dir(run_id) / "state.json"
@@ -218,10 +224,50 @@ class StorageManager:
     def delete_run(self, run_id: str) -> bool:
         # 复用同一套校验：越界 run_id 直接抛错，绝不对 base_dir 之外执行 rmtree（缺陷 D-01）
         run_dir = self._safe_run_dir(run_id)
+        deleted = False
         if run_dir.exists():
             shutil.rmtree(run_dir, ignore_errors=True)
-            return True
-        return False
+            deleted = True
+
+        # 同步清理 output/runs 下对应 run_id 或关联产物目录
+        output_runs_dir = settings.PROJECT_ROOT / "output" / "runs"
+        if output_runs_dir.exists():
+            # 1. 精确匹配 output/runs/<run_id>
+            exact_output = output_runs_dir / run_id
+            if exact_output.exists():
+                shutil.rmtree(exact_output, ignore_errors=True)
+                deleted = True
+            # 2. 匹配可能包含 run_id 的残留文件夹
+            try:
+                for p in output_runs_dir.iterdir():
+                    if p.is_dir() and run_id in p.name:
+                        shutil.rmtree(p, ignore_errors=True)
+                        deleted = True
+            except Exception:
+                pass
+
+        return deleted
+
+    def clear_all_runs(self) -> int:
+        """彻底清空所有历史研报任务与本地全量产物数据"""
+        count = 0
+        # 1. 清空 data/runs/ 下所有运行目录（保留 .gitkeep）
+        if self.base_dir.exists():
+            for p in list(self.base_dir.iterdir()):
+                if p.is_dir():
+                    shutil.rmtree(p, ignore_errors=True)
+                    count += 1
+
+        # 2. 清空 output/runs/ 下所有残留中间产物（保留 .gitkeep）
+        output_runs_dir = settings.PROJECT_ROOT / "output" / "runs"
+        if output_runs_dir.exists():
+            for p in list(output_runs_dir.iterdir()):
+                if p.is_dir():
+                    shutil.rmtree(p, ignore_errors=True)
+                elif p.is_file() and p.name != ".gitkeep":
+                    p.unlink(missing_ok=True)
+
+        return count
 
 
 storage = StorageManager()

@@ -18,23 +18,29 @@ from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 
+from .golden_helper import resolve_golden_dir
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 GOLDEN_RUN_ID = "run-20260926022235-107"
-ARTIFACTS = PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts"
 DOMAINS = ("industry", "companies", "financials", "macro", "industry_chain", "reports", "news")
 
 # 时间序列类图表类型（这些图被"缺连续时间点"抑制时，须核对数据事实）
 TIME_SERIES_TYPES = {"line", "area", "candlestick"}
 
 
+def _artifact_path(name: str) -> Path:
+    golden_dir = resolve_golden_dir(GOLDEN_RUN_ID, required_files=[name])
+    return golden_dir / name
+
+
 @lru_cache(maxsize=1)
 def _chart_result() -> dict:
-    return json.loads((ARTIFACTS / "chart_result.json").read_text(encoding="utf-8"))
+    return json.loads(_artifact_path("chart_result.json").read_text(encoding="utf-8"))
 
 
 @lru_cache(maxsize=1)
 def _dataset() -> dict:
-    return json.loads((ARTIFACTS / "dataset.json").read_text(encoding="utf-8"))
+    return json.loads(_artifact_path("dataset.json").read_text(encoding="utf-8"))
 
 
 def test_g5_every_chart_has_evidence() -> None:

@@ -20,10 +20,10 @@ from pathlib import Path
 import pytest
 
 from chapter_writer.outline import DEFAULT_OUTLINE
+from .golden_helper import resolve_golden_dir
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 GOLDEN_RUN_ID = "run-20260926022235-107"
-GOLDEN_DIR = PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts"
 
 # R2 禁词（任务书 §3.1 R2）：违规表述
 FORBIDDEN_PATTERNS = ("收益承诺", "买入", "卖出", "目标价", "稳赚", "投资建议")
@@ -35,8 +35,8 @@ DEFAULT_MAX_SKILL_CALLS = 24
 
 @lru_cache(maxsize=1)
 def _artifact(name: str) -> dict:
-    path = GOLDEN_DIR / name
-    assert path.exists(), f"黄金样本产物缺失: {path}"
+    golden_dir = resolve_golden_dir(GOLDEN_RUN_ID, required_files=[name])
+    path = golden_dir / name
     return json.loads(path.read_text(encoding="utf-8"))
 
 

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listRuns, deleteRun } from '../api/client'
+import { listRuns, deleteRun, clearAllRuns } from '../api/client'
 import { ApiError } from '../api/http'
 import type { RunSummary, StageStatus } from '../api/types'
 
@@ -101,6 +101,36 @@ async function handleDelete(run: RunSummary): Promise<void> {
   }
 }
 
+async function handleClearAll(): Promise<void> {
+  try {
+    await ElMessageBox.confirm(
+      '确定要彻底清空所有历史研报任务及其全部后端产物数据吗？该操作将从磁盘彻底删除所有数据，无法恢复。',
+      '清空所有任务确认',
+      {
+        confirmButtonText: '确定清空全部',
+        cancelButtonText: '取消',
+        type: 'error',
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    loading.value = true
+    const res = await clearAllRuns()
+    ElMessage.success(res.message || '所有历史任务与后端数据已成功清空')
+    await load()
+    void router.push({ name: 'create' })
+  } catch (e) {
+    if (e instanceof ApiError) {
+      ElMessage.error(`清空失败：${e.message}`)
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
 function statusDot(status: string): string {
   if (status === 'running') return 'var(--rp-navy)'
   if (status === 'waiting_review') return 'var(--rp-gold)'
@@ -153,10 +183,22 @@ onMounted(load)
   <div v-loading="loading" class="report-nav" data-testid="report-nav">
     <h3 class="nav-title">研究报告</h3>
 
-    <el-button class="create-btn" type="primary" data-testid="btn-new-report" @click="goCreate">
-      <el-icon style="margin-right: 4px"><Plus /></el-icon>
-      新建报告
-    </el-button>
+    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+      <el-button class="create-btn" type="primary" style="flex: 1; margin: 0;" data-testid="btn-new-report" @click="goCreate">
+        <el-icon style="margin-right: 4px"><Plus /></el-icon>
+        新建报告
+      </el-button>
+      <el-button
+        v-if="runs.length > 0"
+        type="danger"
+        plain
+        title="彻底清空全部历史任务与后端数据"
+        style="padding: 8px 12px; margin: 0;"
+        @click="handleClearAll"
+      >
+        <el-icon><Delete /></el-icon>
+      </el-button>
+    </div>
 
     <!-- 进行中 -->
     <div class="group">

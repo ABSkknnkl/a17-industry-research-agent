@@ -28,16 +28,16 @@ function randomProjectId(): string {
 /** 配图密度（standard=标准精选(12~15张) / rich=详尽全景(18~22张) / minimal=极简摘要(4~6张) / none=纯文与表格(0张)） */
 type ChartMode = 'standard' | 'rich' | 'minimal' | 'none' | 'auto'
 
-const SECURITY_TYPE_OPTIONS = ['股票', '债券', '基金', '期货', '指数']
+const SECURITY_TYPE_OPTIONS = ['股票', '基金', '期货', '指数']
 
 /** 市场范围选项（value 为提交给后端的纯市场名；label 带可达性备注）。
  * 可达性依据当前接线（问财 hithink_* + L3 博查联网）实测：
- * full=结构化完整；partial=部分数据（联网定性/缺口披露补充）；unavailable=暂无结构化数据。
+ * full=结构化完整；partial=部分数据（联网定性/缺口披露补充）。
  */
 interface MarketOption {
   value: string
   label: string
-  availability: 'full' | 'partial' | 'unavailable'
+  availability: 'full' | 'partial'
 }
 
 const MARKET_OPTIONS: MarketOption[] = [
@@ -45,13 +45,10 @@ const MARKET_OPTIONS: MarketOption[] = [
   { value: '港股', label: '港股（港交所）', availability: 'partial' },
   { value: '美股', label: '美股（纽交所/纳斯达克，含中概 ADR）', availability: 'partial' },
   { value: '中国 B 股', label: '中国 B 股（深港币/沪美元）', availability: 'partial' },
-  { value: '中国台湾', label: '中国台湾（暂无可获取的结构化数据）', availability: 'unavailable' },
-  { value: '日本', label: '日本（暂无可获取的结构化数据）', availability: 'unavailable' },
-  { value: '欧洲', label: '欧洲（暂无可获取的结构化数据）', availability: 'unavailable' },
 ]
 
-/** 默认可用市场：中国 A 股 + 港股 + 美股 + 中国 B 股（排除暂无结构化数据的台湾/日本/欧洲） */
-const AVAILABLE_MARKET_OPTIONS = MARKET_OPTIONS.filter((opt) => opt.availability !== 'unavailable').map((opt) => opt.value)
+/** 默认可用市场：中国 A 股 + 港股 + 美股 + 中国 B 股 */
+const AVAILABLE_MARKET_OPTIONS = MARKET_OPTIONS.map((opt) => opt.value)
 const AVAILABLE_SECURITY_TYPES = [...SECURITY_TYPE_OPTIONS]
 
 export interface PresetTopic {
@@ -108,6 +105,31 @@ const PRESET_TOPICS: PresetTopic[] = [
   },
 ]
 
+export interface SkillOption {
+  name: string
+  label: string
+  desc: string
+  category: '产业格局' | '深度财务' | '策略与事件'
+}
+
+const SKILL_HUB_OPTIONS: SkillOption[] = [
+  { name: '竞争格局分析', label: '竞争格局分析', desc: 'CR4/CR8行业集中度测算、梯队对标矩阵', category: '产业格局' },
+  { name: '产业链全景拆解', label: '产业链全景拆解', desc: '上中下游全环节拆解与价值链利润池流动', category: '产业格局' },
+  { name: '财务报表与杜邦分析', label: '财务报表与杜邦分析', desc: 'ROE杜邦拆解、三表勾稽与盈利质量体检', category: '深度财务' },
+  { name: '科技炒作与基本面', label: '科技炒作与基本面', desc: 'Gartner技术成熟度、泡沫甄别与量产商业化', category: '策略与事件' },
+  { name: '估值环境与可比分析', label: '估值环境与可比', desc: '历史PE/PB分位数、可比公司相对估值', category: '深度财务' },
+  { name: '宏观周期与政策研判', label: '宏观周期与政策', desc: '宏观流动性环境、产业政策支持与周期位置', category: '产业格局' },
+  { name: '公司事件与催化剂', label: '公司事件与催化剂', desc: '重大产业会议、新品发布与关键业绩窗口', category: '策略与事件' },
+  { name: '风险分析与压力测试', label: '风险分析与压力测试', desc: '关税汇率波动、原材料成本与需求下行测算', category: '深度财务' },
+]
+
+const DEFAULT_SELECTED_SKILLS = [
+  '竞争格局分析',
+  '产业链全景拆解',
+  '财务报表与杜邦分析',
+  '科技炒作与基本面',
+]
+
 const form = reactive({
   industryTopic: '',
   marketScope: [...AVAILABLE_MARKET_OPTIONS],
@@ -117,6 +139,7 @@ const form = reactive({
   focusQuestionsText: '',
   analysisDepth: 'standard' as AnalysisDepth,
   chartMode: 'standard' as ChartMode,
+  selectedSkills: [...DEFAULT_SELECTED_SKILLS] as string[],
   reviewStages: [
     'data_fetch',
     'data_interpret',
@@ -125,6 +148,14 @@ const form = reactive({
     'report_fusion',
   ] as StageName[],
 })
+
+function toggleSkill(name: string, checked: boolean): void {
+  if (checked) {
+    if (!form.selectedSkills.includes(name)) form.selectedSkills.push(name)
+  } else {
+    form.selectedSkills = form.selectedSkills.filter((s) => s !== name)
+  }
+}
 
 const REVIEW_STAGE_OPTIONS = Object.entries(STAGE_LABELS).map(([value, label]) => ({
   value: value as StageName,
@@ -160,22 +191,6 @@ function selectAllSecurityTypes(): void {
   form.securityTypes = [...AVAILABLE_SECURITY_TYPES]
 }
 
-/** 市场 → 建议报告币种（与 A2 框架「按上市地记账币种」口径一致；仅提示，不自动改值）。 */
-const CURRENCY_BY_MARKET: Record<string, string> = { 港股: 'HKD', 美股: 'USD', '中国 B 股': 'HKD' }
-
-const currencyHints = computed(() =>
-  form.marketScope
-    .filter((market) => CURRENCY_BY_MARKET[market] != null)
-    .map((market) => ({ market, currency: CURRENCY_BY_MARKET[market] }))
-)
-
-function applySuggestedCurrency(): void {
-  const target = [...new Set(currencyHints.value.map((hint) => hint.currency))]
-  if (target.length > 0) {
-    form.reportingCurrency = target[0]
-    ElMessage.success(`已填入报告币种 ${target[0]}`)
-  }
-}
 
 /** 一键通过（全自动）：取消全部人工审核门，流程结束后自动跳转下载页。 */
 async function automateGates(): Promise<void> {
@@ -229,8 +244,8 @@ async function submit(): Promise<void> {
     return opt != null && opt.availability !== 'full'
   })
   if (limited.length > 0) {
-    ElMessage.warning(
-      `以下市场数据获取能力有限，报告将以缺口披露或联网定性补充：${limited.join('、')}`
+    ElMessage.info(
+      `已选境外市场（${limited.join('、')}），系统将重点对标核心龙头行情与中概对标标的`
     )
   }
   submitting.value = true
@@ -251,7 +266,7 @@ async function submit(): Promise<void> {
         industry_topic: form.industryTopic.trim(),
         market_scope: form.marketScope,
         security_types: form.securityTypes,
-        reporting_currency: form.reportingCurrency.trim() || undefined,
+        reporting_currency: 'CNY',
         research_as_of: form.researchAsOf,
         focus_questions: splitLines(form.focusQuestionsText),
         analysis_depth: form.analysisDepth,
@@ -259,6 +274,7 @@ async function submit(): Promise<void> {
           requested_chart_count: chartCount,
           allow_multiple_charts_per_dataset: form.chartMode === 'rich',
         },
+        selected_skills: form.selectedSkills,
       },
       review_stages: form.reviewStages,
     }
@@ -324,7 +340,7 @@ async function submit(): Promise<void> {
               <span class="section-line" />
             </div>
             <el-row :gutter="16">
-              <el-col :span="12">
+              <el-col :span="16">
                 <el-form-item label="行业主题" required>
                   <el-input
                     v-model="form.industryTopic"
@@ -351,7 +367,7 @@ async function submit(): Promise<void> {
                   </div>
                 </el-form-item>
               </el-col>
-              <el-col :span="6">
+              <el-col :span="8">
                 <el-form-item label="研究时点" required>
                   <el-date-picker
                     v-model="form.researchAsOf"
@@ -359,35 +375,9 @@ async function submit(): Promise<void> {
                     value-format="YYYY-MM-DD"
                     style="width: 100%"
                   />
-                </el-form-item>
-              </el-col>
-              <el-col :span="6">
-                <el-form-item label="报告币种">
-                  <el-input
-                    v-model="form.reportingCurrency"
-                    placeholder="CNY / USD"
-                    maxlength="20"
-                  />
-                  <div v-if="currencyHints.length" class="tip-line muted">
+                  <div class="tip-line muted" style="margin-top: 6px;">
                     <el-icon><InfoFilled /></el-icon>
-                    <template
-                      v-if="
-                        currencyHints.some(
-                          (hint) => hint.currency === form.reportingCurrency.trim().toUpperCase()
-                        )
-                      "
-                    >
-                      当前币种与所选市场建议一致（{{
-                        currencyHints.map((hint) => `${hint.market}→${hint.currency}`).join('，')
-                      }}）
-                    </template>
-                    <template v-else>
-                      已选 {{ currencyHints.map((hint) => hint.market).join('、') }}，建议币种
-                      {{ [...new Set(currencyHints.map((hint) => hint.currency))].join('/') }}
-                      <el-link type="primary" :underline="false" @click="applySuggestedCurrency"
-                        >一键填入</el-link
-                      >
-                    </template>
+                    基准币种统一固定为 CNY（人民币），保障财报原币真实性。
                   </div>
                 </el-form-item>
               </el-col>
@@ -423,8 +413,7 @@ async function submit(): Promise<void> {
                   </el-select>
                   <div class="tip-line muted">
                     <el-icon><InfoFilled /></el-icon>
-                    数据可达性：中国 A 股完整；港股/美股/中国 B
-                    股为部分数据（联网补充+缺口披露）；中国台湾/日本/欧洲暂无结构化数据，也可输入自定义市场。
+                    数据可达性：中国 A 股提供全套三表与行情；港股/美股/中国 B 股提供代表性标的行情与对标数据。
                   </div>
                 </el-form-item>
               </el-col>
@@ -538,6 +527,27 @@ async function submit(): Promise<void> {
                 </el-form-item>
               </el-col>
             </el-row>
+
+            <!-- 问财 SkillHub 投研技能挂载 -->
+            <div class="skillhub-mount-box">
+              <div class="skillhub-mount-title">
+                <span class="skillhub-tag">问财 SkillHub</span>
+                <span>投研分析技能挂载（已选 {{ form.selectedSkills.length }} 项）：</span>
+                <span class="muted skillhub-hint">智能体将优先调用所选技能专属方法论推演事实与研报章节</span>
+              </div>
+              <div class="skillhub-chips">
+                <el-check-tag
+                  v-for="skill in SKILL_HUB_OPTIONS"
+                  :key="skill.name"
+                  :checked="form.selectedSkills.includes(skill.name)"
+                  class="skill-chip"
+                  @change="(val: boolean) => toggleSkill(skill.name, val)"
+                >
+                  <span class="skill-name">{{ skill.label }}</span>
+                  <span class="skill-cat">[{{ skill.category }}]</span>
+                </el-check-tag>
+              </div>
+            </div>
           </div>
 
           <!-- 04 高级选项 -->
@@ -874,5 +884,53 @@ async function submit(): Promise<void> {
 .preset-chip.active .chip-badge {
   background: #1e3a5c;
   color: #fff;
+}
+
+.skillhub-mount-box {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+.skillhub-mount-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rp-navy, #1e3a5c);
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.skillhub-tag {
+  font-size: 10px;
+  font-weight: 700;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.skillhub-hint {
+  font-size: 11px;
+  font-weight: normal;
+  color: #64748b;
+}
+.skillhub-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.skill-chip {
+  cursor: pointer;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+}
+.skill-cat {
+  font-size: 10px;
+  opacity: 0.75;
 }
 </style>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { Check } from '@element-plus/icons-vue'
 import { STAGE_LABELS, STAGE_ORDER } from '../api/types'
 import { usePipelineOverlayState } from '../composables/usePipelineOverlay'
 
@@ -85,7 +86,7 @@ export default { name: 'PipelineOverlay' }
                   todo: currentIndex < idx || currentIndex === -1,
                 }"
               >
-                <span class="dot-core">{{ currentIndex > idx ? '✓' : '' }}</span>
+                <span class="dot-core"><el-icon v-if="currentIndex > idx"><Check /></el-icon></span>
               </div>
               <div v-if="idx < STAGE_ORDER.length - 1" class="dot-line" />
             </template>

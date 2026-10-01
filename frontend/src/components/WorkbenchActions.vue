@@ -184,7 +184,7 @@ async function submitRevise(): Promise<void> {
             :rows="4"
             maxlength="2000"
             show-word-limit
-            placeholder="请写明具体行业/公司、指标与时间范围，例如：&#10;锂电池行业2024-2025年营业收入与净利润增速如何？"
+            placeholder="请写明具体行业/公司、指标与时间范围，例如：&#10;核心行业/企业2024-2025年营业收入与净利润增速如何？"
           />
         </el-form-item>
       </el-form>

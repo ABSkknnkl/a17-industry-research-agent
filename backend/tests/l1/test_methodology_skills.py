@@ -20,6 +20,8 @@ from pathlib import Path
 
 import pytest
 
+from .golden_helper import resolve_golden_dir
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 SKILLS_DIR = PROJECT_ROOT / "agents_core" / "data-analysis" / "data_interpreter" / "skills"
 GOLDEN_RUN_ID = "run-20260926022235-107"
@@ -50,11 +52,8 @@ def _skill_packages() -> dict[str, dict]:
 
 @lru_cache(maxsize=1)
 def _applied_skills() -> list[str]:
-    report = json.loads(
-        (PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts" / "interpretation_report.json").read_text(
-            encoding="utf-8"
-        )
-    )
+    golden_dir = resolve_golden_dir(GOLDEN_RUN_ID, required_files=["interpretation_report.json"])
+    report = json.loads((golden_dir / "interpretation_report.json").read_text(encoding="utf-8"))
     return [str(s.get("name")) for s in (report.get("applied_skills") or [])]
 
 
@@ -146,9 +145,8 @@ def test_n29_triggered_skills_have_supporting_domains() -> None:
 
     语义：若某技能声明的适用域在本次输入里完全没有记录，却仍被触发，即为误触发。
     """
-    dataset = json.loads(
-        (PROJECT_ROOT / "data" / "runs" / GOLDEN_RUN_ID / "artifacts" / "dataset.json").read_text(encoding="utf-8")
-    )
+    golden_dir = resolve_golden_dir(GOLDEN_RUN_ID, required_files=["dataset.json", "interpretation_report.json"])
+    dataset = json.loads((golden_dir / "dataset.json").read_text(encoding="utf-8"))
     populated = {dom for dom in DOMAINS if dataset.get(dom)}
     packages = _skill_packages()
     violations: dict[str, list[str]] = {}

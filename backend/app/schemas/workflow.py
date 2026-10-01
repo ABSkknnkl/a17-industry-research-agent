@@ -162,6 +162,7 @@ class ResearchInput(BaseModel):
     risk_preference: RiskPreference = "balanced"
     research_brief: ResearchBrief | None = None
     chart_generate_options: ChartGenerationOptions | None = None
+    selected_skills: list[str] = Field(default_factory=list)
 
 
 class RunCreateRequest(BaseModel):
@@ -190,3 +191,36 @@ class ReviewRequest(BaseModel):
     selected_chart_ids: list[str] | None = None
     decision_id: str | None = None
     risk_snapshot_sha256: str | None = None
+
+
+# ---------- 问财 SkillHub 技能生态模型 ----------
+
+class SkillItem(BaseModel):
+    id: str
+    name: str
+    description: str
+    domains: list[str] = Field(default_factory=list)
+    keywords: list[str] = Field(default_factory=list)
+    requires_signal: bool = False
+    source: str = ""
+    adaptation: str = ""
+    category: str = ""
+    doc_preview: str = ""
+    full_doc: str = ""
+
+
+class AgentSkillGroup(BaseModel):
+    stage_id: StageName
+    stage_num: int
+    agent_name: str
+    agent_role: str
+    badge_text: str
+    description: str
+    skills_count: int
+    skills: list[SkillItem] = Field(default_factory=list)
+
+
+class SkillCatalogResponse(BaseModel):
+    total: int
+    agents: list[AgentSkillGroup] = Field(default_factory=list)
+

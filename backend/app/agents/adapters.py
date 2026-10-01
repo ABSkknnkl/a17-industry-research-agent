@@ -66,6 +66,30 @@ def _expected_outline_units() -> tuple[int | None, int | None]:
         return None, None
 
 
+def _deduplicate_warnings(warnings: list[str]) -> list[str]:
+    """对告警与局限项执行语义去重，消除短规则与长描述的前缀/子串冗余，保留信息量最全项。"""
+    seen: list[str] = []
+    for w in warnings:
+        w_str = str(w).strip()
+        if not w_str:
+            continue
+        is_subsumed = False
+        for idx, existing in enumerate(seen):
+            if w_str == existing:
+                is_subsumed = True
+                break
+            if existing.startswith(w_str) or (len(w_str) >= 15 and w_str in existing):
+                is_subsumed = True
+                break
+            if w_str.startswith(existing) or (len(existing) >= 15 and existing in w_str):
+                seen[idx] = w_str
+                is_subsumed = True
+                break
+        if not is_subsumed:
+            seen.append(w_str)
+    return seen
+
+
 def _extract_target_companies(texts: list[str]) -> list[str]:
     """从用户关注问题或需求描述中提取明确提及的目标上市公司实体。
 
@@ -211,8 +235,8 @@ class FiveAgentsAdapter:
             foci.append(f"用户修订需求:{feedback}")
 
         is_deep = analysis_depth == "deep"
-        max_iters = 6 if is_deep else 4
-        max_calls = 18 if is_deep else 12
+        max_iters = 10 if is_deep else 8
+        max_calls = 32 if is_deep else 24
 
         req_kwargs: dict[str, Any] = {
             "industry": industry,
@@ -326,6 +350,24 @@ class FiveAgentsAdapter:
         agent = DataFetcherAgent()
         run_res = await agent.run(request, emit=on_fetch_event, save_artifacts=False)
         dataset = run_res.dataset
+        dataset.subject = industry
+
+        # P0-1: 失败显式上报 —— 将 A1 的 errors/状态透传到前端可见通道（warnings/blocking_issues/error）
+        fetch_errors = [
+            e for e in run_res.errors
+            if e.stage in ("data_fetch", "execution", "skill_execution", "planning")
+        ]
+        blocking_issues = [e.message for e in fetch_errors]
+        stage_error = None
+        if run_res.status == "blocked" and not dataset.all_records():
+            stage_error = "数据获取阶段未命中任何有效记录（empty_dataset），已阻止下游生成量化结论；请调整研究主题或检索词后重试。"
+            if not blocking_issues:
+                blocking_issues = [stage_error]
+            event_hub.emit(
+                run_id, "data_fetch", "warn",
+                f"数据获取阶段未命中任何有效记录（status=blocked, stop_reason={run_res.stop_reason}），下游生成将被阻止。",
+                tool="DataFetcherAgent",
+            )
 
         run_dir = storage.get_run_dir(run_id)
         dataset_path = run_dir / "artifacts" / "dataset.json"
@@ -337,13 +379,14 @@ class FiveAgentsAdapter:
         event_hub.emit(run_id, "data_fetch", "stage_completed", f"阶段 1 数据采集完成，覆盖 {len(dataset.companies)} 家公司、{len(dataset.financials)} 条财务指标", tool="DataFetcherAgent")
         source_records: list[dict[str, Any]] = []
         evidence_sources: set[str] = set()
-        # 仅保留前 100 条代表性记录供前端界面高频关联展示，剥离超大 raw_fields
-        # 完整原始海量数据（数千条）已在 dataset.json 中完整持久化并提供独立下载
-        for r in all_records:
-            if r.source and r.source.skill_id:
-                evidence_sources.add(r.source.skill_id)
+        # 跨 7 大投研领域均衡采样代表性记录（每领域采样前 35 条，总计可达 200+ 条），确保前端与人机协同工作台完整覆盖全领域
+        from data_fetcher.models import Domain as FetchDomain
+        representative_records = []
+        for dom in (FetchDomain.INDUSTRY, FetchDomain.COMPANIES, FetchDomain.FINANCIALS, FetchDomain.MACRO, FetchDomain.INDUSTRY_CHAIN, FetchDomain.REPORTS, FetchDomain.NEWS):
+            dom_records = dataset.records_for(dom)
+            representative_records.extend(dom_records[:35])
 
-        for r in all_records[:100]:
+        for r in representative_records:
             source_records.append({
                 "record_id": r.record_id,
                 "domain": r.domain.value if hasattr(r.domain, "value") else str(r.domain),
@@ -376,6 +419,9 @@ class FiveAgentsAdapter:
             "source_records": source_records,
             "total_records": len(all_records),
             "evidence_count": len(all_records),
+            "topic": industry,
+            "industry_topic": industry,
+            "keywords": [f for f in foci if not any(f.startswith(p) for p in ("限定", "用户", "修订"))] or [industry],
             "domains": {
                 "industry": len(dataset.industry),
                 "companies": len(dataset.companies),
@@ -391,7 +437,10 @@ class FiveAgentsAdapter:
                 "plans": intent_plans,
             },
             "collaboration_requests": [],
-            "blocking_issues": [],
+            "blocking_issues": blocking_issues,
+            "warnings": blocking_issues,
+            "agent_status": run_res.status,
+            "stop_reason": run_res.stop_reason,
         }
 
         artifacts = [
@@ -410,7 +459,7 @@ class FiveAgentsAdapter:
             data=data,
             artifacts=artifacts,
             evidence_sources=sorted(list(evidence_sources)),
-            error=None,
+            error=stage_error,
         )
 
     @classmethod
@@ -424,6 +473,7 @@ class FiveAgentsAdapter:
         reporting_currency: str = "CNY",
         research_as_of: str | None = None,
         analysis_depth: str = "standard",
+        selected_skills: list[str] | None = None,
     ) -> StageResult:
         """阶段 2: 数据解读智能体 (Data Interpreter)"""
         import backend.app.core.setup_env
@@ -431,7 +481,7 @@ class FiveAgentsAdapter:
         from data_interpreter.models import AnalysisRequest, StructuredResearchDataset
 
         is_deep = analysis_depth == "deep"
-        logger.info(f"[{run_id}] 启动数据解读智能体: 深度={analysis_depth}, 币种={reporting_currency}")
+        logger.info(f"[{run_id}] 启动数据解读智能体: 深度={analysis_depth}, 币种={reporting_currency}, 挂载技能={selected_skills}")
         event_hub.emit(
             run_id,
             "data_interpret",
@@ -439,6 +489,15 @@ class FiveAgentsAdapter:
             f"启动数据解读智能体，载入行业数据集: {industry} (深度: {analysis_depth}, 币种: {reporting_currency})...",
             tool="DataInterpreterAgent",
         )
+        if selected_skills:
+            event_hub.emit(
+                run_id,
+                "data_interpret",
+                "tool_call",
+                f"已挂载用户选定的问财投研方法论技能: {'、'.join(selected_skills)}",
+                tool="SkillHub",
+                details={"skills": selected_skills},
+            )
         event_hub.emit(run_id, "data_interpret", "tool_call", "正在执行底层确定性量化分析（复合增速 CAGR、稳健 Z 分数异常检测、三表勾稽与指标验证）...", tool="DeterministicAnalysisEngine")
 
         run_dir = storage.get_run_dir(run_id)
@@ -448,6 +507,8 @@ class FiveAgentsAdapter:
 
         with open(dataset_path, "r", encoding="utf-8") as f:
             dataset_dict = json.load(f)
+        if not dataset_dict.get("subject"):
+            dataset_dict["subject"] = industry
         dataset = StructuredResearchDataset.model_validate(dataset_dict)
 
         focus_items = []
@@ -458,6 +519,24 @@ class FiveAgentsAdapter:
                 focus_items.append("统一财务计账币种:CNY(人民币)")
             else:
                 focus_items.append(f"用户参考币种:{reporting_currency}(注意:底层原始财务数据为CNY，未经实时汇率换算请保持原币并标明CNY)")
+
+        if selected_skills:
+            focus_items.append(f"用户挂载问财投研方法论技能: {'、'.join(selected_skills)}")
+
+        confirmed_scope = dataset_dict.get("confirmed_scope")
+        if confirmed_scope and isinstance(confirmed_scope, list):
+            scope_map = {
+                "macro": "宏观政策与产销大盘",
+                "industry_chain": "产业链供需与关键环节",
+                "financials": "样本龙头财务与盈利能力",
+                "competitors": "竞争格局与市场份额对标",
+            }
+            scope_labels = [scope_map.get(s, s) for s in confirmed_scope]
+            focus_items.append(f"用户人工确权重点领域:{'、'.join(scope_labels)}")
+
+        confirmed_keywords = dataset_dict.get("confirmed_keywords")
+        if confirmed_keywords and isinstance(confirmed_keywords, list):
+            focus_items.append(f"用户人工确权核心关键词:{'、'.join(confirmed_keywords)}")
 
         if feedback:
             focus_items.append(f"修订需求:{feedback}")
@@ -549,12 +628,18 @@ class FiveAgentsAdapter:
             for ano in report.anomalies:
                 risks.append(_serialize_anomaly_risk(ano))
 
+        ev_index_dict: dict[str, Any] = {}
+        if hasattr(report, "evidence_index") and isinstance(report.evidence_index, dict):
+            for k, v in report.evidence_index.items():
+                ev_index_dict[k] = v.model_dump() if hasattr(v, "model_dump") else v
+
         data: dict[str, Any] = {
             "summary": report.executive_summary,
             "executive_summary": report.executive_summary,
             "knowledge_facts": [f.model_dump() for f in report.knowledge_facts],
             "insights": [ins.model_dump() for ins in report.insights],
             "evidence_digest": _build_evidence_digest(report),
+            "evidence_index": ev_index_dict,
             "content_outline": [c.model_dump() for c in report.content_outline],
             "dimension_coverage": dim_coverage,
             "risks": risks,
@@ -724,10 +809,21 @@ class FiveAgentsAdapter:
             try:
                 with open(dataset_path, "r", encoding="utf-8") as f:
                     raw_dataset_dict = json.load(f)
+                if isinstance(raw_dataset_dict, dict) and not raw_dataset_dict.get("subject"):
+                    raw_dataset_dict["subject"] = report.subject or input_data.get("industry")
             except Exception:
                 raw_dataset_dict = None
 
-        agent = ChartGeneratorAgent()
+        from chart_generator.config import Settings as ChartSettings
+        chart_settings = ChartSettings(
+            output_dir=settings.DATA_DIR,
+            llm_api_key=settings.LLM_API_KEY,
+            llm_base_url=settings.LLM_BASE_URL,
+            llm_model=settings.LLM_MODEL,
+            llm_reasoning_effort=settings.LLM_REASONING_EFFORT,
+            llm_timeout_seconds=float(settings.LLM_TIMEOUT_SECONDS),
+        )
+        agent = ChartGeneratorAgent(settings=chart_settings)
         from chart_generator.models import ChartPreferences
         chart_prefs = ChartPreferences(max_charts=target_max_charts)
 
@@ -926,6 +1022,12 @@ class FiveAgentsAdapter:
                 "artifact_id": f"{c.chart_id}_svg",
                 "evidence_ids": c.evidence_ids,
                 "point_evidence_ids": getattr(c, "point_evidence_ids", []) or c.evidence_ids,
+                "recommended_chapter_id": getattr(c, "recommended_chapter_id", None),
+                "insight_goal": getattr(c, "insight_goal", None),
+                "figure_number": getattr(c, "figure_number", None),
+                "render_mode": getattr(c, "render_mode", "echarts"),
+                "svg_uri": getattr(c, "svg_uri", None),
+                "image_uri": getattr(c, "image_uri", None),
             }
             for c in result.charts
         ]
@@ -968,14 +1070,24 @@ class FiveAgentsAdapter:
         cls,
         run_id: str,
         feedback: str | None = None,
+        selected_skills: list[str] | None = None,
     ) -> StageResult:
         """阶段 4: 章节撰写智能体 (Chapter Writer)"""
         import backend.app.core.setup_env
         from chapter_writer.agent import ChapterWriterAgent
         from chapter_writer.models import ChapterWritingRequest, InterpretationReport, ChartResult, ChapterWritingOptions
 
-        logger.info(f"[{run_id}] 启动章节撰写智能体 (7章21节全并发)")
+        logger.info(f"[{run_id}] 启动章节撰写智能体 (7章21节全并发), 挂载技能={selected_skills}")
         event_hub.emit(run_id, "chapter_write", "agent_start", "启动券商深度研报章节撰写智能体，组织 7 章 21 节骨架全并发撰写...", tool="ChapterWriterAgent")
+        if selected_skills:
+            event_hub.emit(
+                run_id,
+                "chapter_write",
+                "tool_call",
+                f"章节撰写已融合挂载方法论技能: {'、'.join(selected_skills)}",
+                tool="SkillHub",
+                details={"skills": selected_skills},
+            )
 
         run_dir = storage.get_run_dir(run_id)
         report_path = run_dir / "artifacts" / "interpretation_report.json"
@@ -985,9 +1097,18 @@ class FiveAgentsAdapter:
             raise AgentExecutionError("缺少前序解读或图表产物")
 
         with open(report_path, "r", encoding="utf-8") as f:
-            report = InterpretationReport.model_validate(json.load(f))
+            report_raw = json.load(f)
+            report = InterpretationReport.model_validate(report_raw)
         with open(chart_path, "r", encoding="utf-8") as f:
             chart_res = ChartResult.model_validate(json.load(f))
+
+        expert_bg = str(report_raw.get("expert_background") or "").strip()
+        if expert_bg:
+            report.knowledge_facts.append({
+                "fact_id": "EXPERT-PRIOR-01",
+                "claim": f"【用户专家背景先验】: {expert_bg}",
+                "evidence_record_ids": [],
+            })
 
         async def on_chapter_event(event_dict: dict[str, Any]):
             evt = event_dict.get("event")
@@ -1012,9 +1133,17 @@ class FiveAgentsAdapter:
 
         agent = ChapterWriterAgent()
         writing_options = ChapterWritingOptions()
+        instructions = []
+        if selected_skills:
+            instructions.append(f"【挂载问财投研技能方法论】: {'、'.join(selected_skills)}。请在各章节论述中紧扣上述专业分析框架。")
+        if expert_bg:
+            instructions.append(f"【用户补充专家背景知识先验】: {expert_bg}。请在相关章节中针对性深化与体现该产业背景。")
         if feedback:
-            writing_options.instruction = f"【用户人工协同写作优化指导】: {feedback}。请在相关章节中针对性深化与体现该要求。"
+            instructions.append(f"【用户人工协同写作优化指导】: {feedback}。请在相关章节中针对性深化与体现该要求。")
             event_hub.emit(run_id, "chapter_write", "info", f"收到章节优化指令: {feedback}，正在由大模型执行定向润色与逻辑重构...", tool="ChapterWriterAgent")
+
+        if instructions:
+            writing_options.instruction = "\n".join(instructions)
 
         result = await agent.run(ChapterWritingRequest(
             report=report,
@@ -1107,6 +1236,15 @@ class FiveAgentsAdapter:
         from report_fusion.models import ReportFusionRequest, InterpretationReport, ChapterResult, ChartResult
 
         logger.info(f"[{run_id}] 启动研报融合智能体 (出版级审校与多格式生成)")
+        if feedback:
+            logger.info(f"[{run_id}] 收到人工协同全局修订方向与指导: {feedback}")
+            event_hub.emit(
+                run_id,
+                "report_fusion",
+                "info",
+                f"收到人工协同全局修订方向: {feedback}，指导总编审校技能调整执行摘要基调与结论",
+                tool="ReportFusionAgent",
+            )
         event_hub.emit(run_id, "report_fusion", "agent_start", "启动研报融合与审校智能体，组织 4 大出版级审校技能协同审计...", tool="ReportFusionAgent")
         event_hub.emit(run_id, "report_fusion", "tool_call", "调度审校技能 [executive-summary-synthesis]: 提炼首席产业研判与 4 维量化看板快照", tool="executive-summary-synthesis")
         event_hub.emit(run_id, "report_fusion", "tool_call", "调度审校技能 [report-consistency-audit]: 全局交叉审计数据口径、术语统一性与数字一致性", tool="report-consistency-audit")
@@ -1166,11 +1304,17 @@ class FiveAgentsAdapter:
             elif evt == "fusion_completed":
                 event_hub.emit(run_id, "report_fusion", "stage_completed", "研报全链路融合与出版级交付就绪！", tool="ReportFusionAgent", details=details)
 
+        from report_fusion.models import FusionOptions
+        fusion_options = FusionOptions(
+            final_instruction=feedback,
+        )
+
         agent = ReportFusionAgent()
         result = await agent.run(ReportFusionRequest(
             report=report,
             chapters=chapter_res,
             charts=chart_res,
+            options=fusion_options,
         ), emit=on_fusion_event, save_artifacts=True)
 
         art_dir = run_dir / "artifacts"
@@ -1181,8 +1325,10 @@ class FiveAgentsAdapter:
             src_dir = Path(result.artifact_dir)
             if src_dir.exists():
                 for f in src_dir.iterdir():
-                    if f.is_file():
+                    if f.is_file() and f.name != "events.jsonl":
                         shutil.copy2(f, art_dir / f.name)
+                # 清理临时中间目录，防止 output/runs 泄露孤立数据
+                shutil.rmtree(src_dir, ignore_errors=True)
 
         md_file = art_dir / "report.md"
         html_file = art_dir / "report.html"
@@ -1285,8 +1431,23 @@ class FiveAgentsAdapter:
             if iss not in fusion_issues:
                 fusion_issues.append(iss)
 
-        clean_issues = [iss for iss in dict.fromkeys(fusion_issues) if iss]
+        clean_issues = _deduplicate_warnings(fusion_issues)
         fusion_passed = not any("阻断" in str(iss) or "致命" in str(iss) or "failed" in str(iss).lower() for iss in clean_issues)
+
+        penalty = 0.0
+        for iss in clean_issues:
+            s = str(iss).lower()
+            if any(k in s for k in ("阻断", "致命", "fatal", "failed")):
+                penalty += 15.0
+            elif any(k in s for k in ("冲突", "矛盾", "不一致")):
+                penalty += 3.0
+            elif any(k in s for k in ("拦截", "防幻觉", "微调")):
+                penalty += 0.5
+            else:
+                penalty += 1.5
+        if fusion_passed and penalty > 4.5 and not any(k in str(iss) for iss in clean_issues for k in ("冲突", "矛盾", "不一致")):
+            penalty = min(penalty, 4.0)
+        consistency_score = max(50, min(100, round(100.0 - penalty)))
 
         data: dict[str, Any] = {
             "report_id": result.report_id or f"rep-{run_id}",
@@ -1302,6 +1463,7 @@ class FiveAgentsAdapter:
             "artifacts": manifest_entries,
             "quality": {
                 "passed": fusion_passed,
+                "consistency_score": consistency_score,
                 "chapter_count": actual_ch_count,
                 "section_count": actual_sec_count,
                 "expected_chapter_count": expected_chapter_count,
@@ -1318,6 +1480,15 @@ class FiveAgentsAdapter:
             "key_metrics": [km.model_dump(mode="json") if hasattr(km, "model_dump") else km for km in getattr(report, "key_metrics", [])],
             "comps_matrix": getattr(report, "comps_matrix", None).model_dump(mode="json") if hasattr(getattr(report, "comps_matrix", None), "model_dump") else getattr(report, "comps_matrix", None),
         }
+
+        if feedback:
+            data["human_steering_applied"] = feedback
+            if "审慎" in feedback or "防守" in feedback:
+                data["investment_rating"] = "中性 (Neutral) · 审慎观察"
+            elif "积极" in feedback or "景气" in feedback:
+                data["investment_rating"] = "买入 (Buy) · 强烈推荐"
+            elif "技术" in feedback or "破局" in feedback:
+                data["investment_rating"] = "增持 (Overweight) · 创新催化"
 
         artifacts = [
             ArtifactRef(artifact_id=e["artifact_id"], kind=e["kind"], uri=e["uri"], revision=1)
