@@ -91,17 +91,69 @@ class TestEventStructuredExtraction:
 
 class TestEventGuardrails:
     def test_missing_fields_flagged_not_fabricated(self):
+        # 有标题但缺类型/日期（部分字段缺失）→ 落库且留痕，缺失字段保持 None
         ds = _fuse([_result("announcement-search", [{
-            "股票代码": "300750.SZ", "股票简称": "宁德时代",
+            "股票代码": "300750.SZ", "title": "宁德时代关于某项事宜的公告",
         }])])
         assert len(ds.events) == 1
         ev = ds.events[0]
-        assert ev.title is None and ev.event_type is None and ev.announce_date is None
-        assert "missing_title" in ev.issues
+        assert ev.title == "宁德时代关于某项事宜的公告"
+        assert ev.event_type is None
+        assert ev.announce_date is None
         assert "missing_event_type" in ev.issues
         assert "missing_announce_date" in ev.issues
-        # 不造数：缺失字段不得用 as_of 冒充
+        assert "missing_title" not in ev.issues
+        # 不造数：缺失日期不得用 as_of 冒充
         assert ev.announce_date != AS_OF
+
+    def test_event_query_market_snapshot_produces_no_event(self):
+        # 实测 hithink-event-query 部分 query 返回行情型字段，无任何事件要素 → 不产空壳事件
+        ds = _fuse([_result("hithink-event-query", [{
+            "股票代码": "002594.SZ", "股票简称": "比亚迪",
+            "最新价": "83.31", "最新涨跌幅": 1.5727,
+            "报告期[20260930]": "2026年三季报",
+        }])])
+        assert ds.events == []
+        # 行情字段照常走通用指标拆分
+        assert any("最新价" in r.metric or "涨跌幅" in r.metric for r in ds.news)
+
+    def test_announcement_stock_infos_supplies_entity(self):
+        # announcement-search 真实返回原样：stock_infos 首个元素常无 name，需遍历取带名称项
+        ds = _fuse([_result("announcement-search", [{
+            "channel": "announcement", "id": "abc_29", "uid": "abc",
+            "url": "http://static.cninfo.com.cn/x.PDF",
+            "title": "宁德时代：关于2022年股票期权与限制性股票激励计划归属结果公告",
+            "summary": "（六）股票来源：公司向激励对象定向发行公司A股普通股股票。",
+            "source_original": "（六）股票来源：公司向激励对象定向发行公司A股普通股股票。",
+            "index": "iwc_index_china_notice_daily_v5_vector",
+            "score": 0.169,
+            "extra": {"seq": "5293173086", "publish_source": "公告"},
+            "name": "admin",
+            "status": 0,
+            "data_source": "ZH_NOTICE_KEYWORD",
+            "para_index": 29,
+            "publish_time": 1789056000,
+            "publish_date": "2026-09-11 00:00:00",
+            "stock_infos": [
+                {"code": "CYATY"}, {"code": "CATL23"}, {"code": "CATL01"},
+                {"name": "宁德时代", "code": "300750"}, {"code": "CATL80"},
+            ],
+            "traceability_type": 0, "site_authority": 4, "modify_time": 0, "operation_type": 0,
+        }])])
+        assert len(ds.events) == 1
+        ev = ds.events[0]
+        assert ev.entity_name == "宁德时代"
+        assert ev.entity_code == "300750.SZ"
+        assert ev.announce_date == date(2026, 9, 11)
+        assert ev.event_type == "股权激励"  # 从标题推断
+        assert ev.body and ev.body.startswith("（六）股票来源")
+        assert ev.issues == []
+        # 检索型元数据（channel/id/url/index/score/stock_infos/admin…）不得产指标碎片
+        assert not any(
+            r.metric in ("channel", "id", "url", "score", "index", "name", "status",
+                         "data_source", "para_index", "stock_infos", "source_original")
+            for r in ds.news
+        )
 
     def test_future_dated_event_dropped(self):
         ds = _fuse([_result("hithink-event-query", [{

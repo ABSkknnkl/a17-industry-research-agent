@@ -297,9 +297,21 @@ SINGLE_ENTITY_SKILLS = {
 EVENT_SOURCE_SKILLS = frozenset({"announcement-search", "hithink-event-query"})
 EVENT_TYPE_KEYS = ("事件类型", "事件类别", "公告类型", "event_type")
 EVENT_TITLE_KEYS = ("公告标题", "公告名称", "事件标题", "标题", "title")
-EVENT_DATE_KEYS = ("公告日期", "发布日期", "事件日期", "公布日期", "announce_date", "announcement_date")
-EVENT_BODY_KEYS = ("公告内容", "公告摘要", "事件内容", "事件描述", "内容", "摘要", "summary", "body")
+EVENT_DATE_KEYS = ("公告日期", "发布日期", "事件日期", "公布日期", "publish_date", "publish_time",
+                   "announce_date", "announcement_date")
+EVENT_BODY_KEYS = ("公告内容", "公告摘要", "事件内容", "事件描述", "内容", "摘要", "summary",
+                   "source_original", "body", "snippet")
 EVENT_CONSUMABLE_KEYS = frozenset(EVENT_TYPE_KEYS + EVENT_TITLE_KEYS + EVENT_DATE_KEYS + EVENT_BODY_KEYS)
+
+# 公告/资讯检索型返回的元数据键（channel/id/url/score/stock_infos…）不构成指标，
+# 实测 announcement-search 每条返回 22 个字段中约 17 个属于此类——不消费会在 news 域产垃圾碎片。
+EVENT_RETRIEVAL_METADATA_KEYS = frozenset({
+    "channel", "id", "uid", "index", "score", "extra", "name", "status",
+    "data_source", "source_original", "para_index", "stock_infos",
+    "traceability_type", "trace_info", "site_authority", "modify_time",
+    "operation_type", "publish_time", "publish_date", "url", "doc_type", "content",
+})
+EVENT_CONSUMED_ALL = EVENT_CONSUMABLE_KEYS | EVENT_RETRIEVAL_METADATA_KEYS
 
 # event_type 缺失时的确定性推断规则（按序匹配标题/内容关键词；fusion 不调 LLM，见类 docstring）
 _EVENT_TYPE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -495,14 +507,35 @@ class DataFusion:
                     entity_name = "宏观"
 
                 # ── 类D(P-06): 事件/公告记录走独立结构化通道 ──
-                # 识别条件（满足其一）：来源技能在白名单；raw 含事件类型特征键。
+                # 识别条件：raw 含事件类型键，或来自事件类技能且带标题/正文（公告型返回）。
+                # 实测 hithink-event-query 在部分 query 下返回行情型字段（最新价/涨跌幅），
+                # 无任何事件要素 → 不产事件记录，完全落回通用指标拆分，避免空壳事件污染。
                 # 数值字段（如"增发数量"）不在此 continue，仍走下方通用拆分保留为指标。
                 is_event_source = result.skill_id in EVENT_SOURCE_SKILLS
                 raw_event_type = _first(raw, EVENT_TYPE_KEYS)
+                event_title = _first(raw, EVENT_TITLE_KEYS)
+                event_body = _first(raw, EVENT_BODY_KEYS)
+                has_event_signal = bool(raw_event_type) or (
+                    is_event_source and (event_title or event_body)
+                )
                 consumed_event_keys: frozenset[str] = frozenset()
-                if is_event_source or raw_event_type not in (None, ""):
-                    event_title = _first(raw, EVENT_TITLE_KEYS)
-                    event_body = _first(raw, EVENT_BODY_KEYS)
+                if has_event_signal:
+                    # 公告检索型返回的实体在 stock_infos[] 中，且首个元素常只有内部证券代码
+                    # （如 [{"code":"CYATY"},…,{"name":"宁德时代","code":"300750"}]）→ 遍历取首个带名称项
+                    if not (entity_name or entity_code):
+                        stock_infos = raw.get("stock_infos")
+                        if isinstance(stock_infos, list):
+                            for info in stock_infos:
+                                if not isinstance(info, dict):
+                                    continue
+                                info_name = info.get("name") or info.get("股票简称")
+                                if not info_name:
+                                    continue
+                                entity_name = str(info_name).strip()
+                                code_raw = info.get("code") or info.get("股票代码")
+                                if code_raw:
+                                    entity_code = _standard_code(code_raw)
+                                break
                     announce_date = _parse_date(_first(raw, EVENT_DATE_KEYS) or published)
                     etype = (
                         str(raw_event_type).strip()
@@ -540,7 +573,7 @@ class DataFusion:
                             issues=event_issues,
                         ))
                         seen_record_ids.add(event_id)
-                    consumed_event_keys = EVENT_CONSUMABLE_KEYS
+                    consumed_event_keys = EVENT_CONSUMED_ALL
 
                 metrics = [
                     (key, value) for key, value in raw.items()
