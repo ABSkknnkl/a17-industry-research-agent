@@ -6,6 +6,9 @@
 *.key
 user_settings.json
 
+# ── pytest 沙箱临时目录（basetemp，每次跑用全新后缀名） ──
+.pytest_tmp*
+
 # ── Python 虚拟环境与依赖 ────────────────────────────────
 .venv/
 venv/
