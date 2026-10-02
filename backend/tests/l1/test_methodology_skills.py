@@ -27,7 +27,9 @@ SKILLS_DIR = PROJECT_ROOT / "agents_core" / "data-analysis" / "data_interpreter"
 GOLDEN_RUN_ID = "run-20260926022235-107"
 EXPECTED_SKILL_COUNT = 20
 REQUIRED_META_FIELDS = ("domains", "keywords", "requires_signal")
-DOMAINS = ("industry", "companies", "financials", "macro", "industry_chain", "reports", "news")
+# 七域指标 Domain + "events"（类D P-06：事件/公告独立证据域，非第八个指标域，
+# 与 A2 _filter_evidence_for_skill 的域别名表对齐；StructuredResearchDataset.events 单独容器）
+DOMAINS = ("industry", "companies", "financials", "macro", "industry_chain", "reports", "news", "events")
 
 
 @lru_cache(maxsize=1)
@@ -119,7 +121,7 @@ def test_n29_requires_signal_is_explicitly_declared() -> None:
 
 
 def test_n29_skill_domains_are_registered_domains() -> None:
-    """N29：每个技能声明的 domains 必须是七个已注册 Domain 的子集。"""
+    """N29：每个技能声明的 domains 必须是已注册域（七域指标 + events 事件证据域）的子集。"""
     unknown: dict[str, list[str]] = {}
     for name, pkg in _skill_packages().items():
         meta = pkg["meta"]

@@ -235,6 +235,19 @@ class DataInterpreterAgent:
                     deduped_evidence[rid] = ev
         evidence = deduped_evidence
 
+        # 类D(P-06) 下游衔接：结构化事件注入证据池。
+        # 放在 dedup 之后：dedup 按 (entity, metric, period) 折叠，会把同一公司多条
+        # 同类事件（如宁德时代 5 条股权激励公告）错误折叠成 1 条，故必须后置注入。
+        # 事件经 _filter_evidence_for_skill 的 events 域别名分发给声明事件域的技能，
+        # 同时参与「前 30 条兜底」供其他技能参考；不进入数值分析（all_records 不含 events）。
+        dataset_events = getattr(dataset, "events", None)
+        if dataset_events:
+            evidence.update({
+                ev.record_id: DeterministicAnalysisEngine._event_evidence(ev)
+                for ev in dataset_events
+                if ev.record_id not in evidence
+            })
+
         warnings = list(quality.limitations)
         trace.append(AnalysisTraceEvent(event="deterministic_analysis_completed", details={
             "key_metrics": len(metrics), "trends": len(trends), "anomalies": len(anomalies),
@@ -769,7 +782,10 @@ class DataInterpreterAgent:
 
         if target_domains:
             for k, item in evidence.items():
-                dom = str(getattr(item, "domain", "")).lower()
+                # 枚举取 .value（str(Domain.NEWS) 得 "Domain.NEWS" 会失配别名）；
+                # 事件证据 domain 是 "events" 纯字符串，直接小写。
+                dom_raw = getattr(item, "domain", "")
+                dom = dom_raw.value.lower() if hasattr(dom_raw, "value") else str(dom_raw).lower()
                 if dom in target_domains and k not in selected_keys:
                     selected_keys.append(k)
                     if len(selected_keys) >= max_items:

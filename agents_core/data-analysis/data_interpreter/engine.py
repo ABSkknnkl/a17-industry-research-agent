@@ -17,6 +17,7 @@ from data_interpreter.models import (
     DataQualityAssessment,
     Domain,
     EvidenceRef,
+    EventRecord,
     IndustryChainSegment,
     KeyMetric,
     PeerCompsEntry,
@@ -326,6 +327,26 @@ class DeterministicAnalysisEngine:
             period=_period(record),
             skill_id=record.source.skill_id,
             trace_id=record.source.trace_id,
+        )
+
+    @staticmethod
+    def _event_evidence(ev: EventRecord) -> EvidenceRef:
+        """结构化事件 → 证据条目（类D P-06 下游衔接）。
+
+        事件不是数值指标：metric=事件类型、value=公告标题、period=公告日期、
+        domain="events"（字符串，非七域枚举），供 _filter_evidence_for_skill 的
+        events 域别名分发给声明了事件域的技能；不进入数值分析（CAGR/异常检测）。
+        """
+        return EvidenceRef(
+            record_id=ev.record_id,
+            domain="events",
+            entity=ev.entity_name,
+            metric=ev.event_type or "event",
+            value=ev.title or ev.body,
+            unit=None,
+            period=ev.announce_date,
+            skill_id=ev.source.skill_id if ev.source else "",
+            trace_id=ev.source.trace_id if ev.source else "",
         )
 
     def _key_metrics(

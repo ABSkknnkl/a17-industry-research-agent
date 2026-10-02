@@ -48,6 +48,25 @@ class ResearchRecord(BaseModel):
     issues: list[str] = Field(default_factory=list)
 
 
+class EventRecord(BaseModel):
+    """结构化事件/公告记录（与 A1 data_fetcher.models.EventRecord 同构，契约同步）。
+
+    A2 需要自己的副本：dataset.json 经本文件 StructuredResearchDataset 反序列化时，
+    若字段表缺 events 会被 extra="ignore" 静默丢弃——这是类D(P-06) 事件进不了 A2 的闸门。
+    """
+
+    record_id: str
+    entity_name: str | None = None
+    entity_code: str | None = None
+    title: str | None = None
+    event_type: str | None = None
+    announce_date: date | None = None
+    body: str | None = None
+    source: SourceRef
+    raw_fields: dict[str, Any] = Field(default_factory=dict)
+    issues: list[str] = Field(default_factory=list)
+
+
 class ConflictRecord(BaseModel):
     model_config = ConfigDict(extra="allow")
 
@@ -70,6 +89,7 @@ class StructuredResearchDataset(BaseModel):
     industry_chain: list[ResearchRecord] = Field(default_factory=list)
     reports: list[ResearchRecord] = Field(default_factory=list)
     news: list[ResearchRecord] = Field(default_factory=list)
+    events: list[EventRecord] = Field(default_factory=list)
     sources: list[SourceRef] = Field(default_factory=list)
     conflicts: list[ConflictRecord] = Field(default_factory=list)
     quality_summary: dict[str, Any] = Field(default_factory=dict)
@@ -187,7 +207,8 @@ class AnalysisRequest(BaseModel):
 
 class EvidenceRef(BaseModel):
     record_id: str
-    domain: Domain
+    # Domain 枚举仅覆盖七域指标；事件证据以 "events" 字符串注入（类D P-06 下游衔接）。
+    domain: Domain | str
     entity: str | None = None
     metric: str
     value: Any = None
