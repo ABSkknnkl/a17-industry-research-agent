@@ -879,12 +879,51 @@ function debouncedResize(): void {
   }, 150)
 }
 
+/** 检测图表数据中是否存在显著离群值（>5倍中位数且数值较大），以添加审慎分析注脚 */
+function detectOutlierNote(spec: ChartSpecLoose | null): string | null {
+  if (!spec?.option) return null
+  const seriesList = (
+    Array.isArray(spec.option.series)
+      ? spec.option.series
+      : spec.option.series
+        ? [spec.option.series]
+        : []
+  ) as Array<Record<string, unknown>>
+
+  for (const s of seriesList) {
+    if (!s || !Array.isArray(s.data)) continue
+    const nums: number[] = []
+    for (const d of s.data) {
+      if (typeof d === 'number' && !isNaN(d)) {
+        nums.push(d)
+      } else if (d && typeof d === 'object' && typeof (d as { value?: unknown }).value === 'number') {
+        const v = (d as { value: number }).value
+        if (!isNaN(v)) nums.push(v)
+      }
+    }
+    if (nums.length >= 4) {
+      const positiveNums = nums.filter((n) => n > 0)
+      if (positiveNums.length >= 4) {
+        const sorted = [...positiveNums].sort((a, b) => a - b)
+        const mid = sorted[Math.floor(sorted.length / 2)]
+        const max = sorted[sorted.length - 1]
+        if (mid > 0 && max > 5 * mid && max >= 100) {
+          return '注：部分标的数值显著偏离行业中枢（超过中位数 5 倍），已自动标记离群参考，分析时建议结合样本体量谨慎参考。'
+        }
+      }
+    }
+  }
+  return null
+}
+
 function chartFootnotes(spec: ChartSpecLoose | null): string[] {
+  const outlier = detectOutlierNote(spec)
   const notes = [
     ...new Set([
       ...(spec?.footnotes ?? []),
       ...(spec?.option?.footnotes ?? []),
       ...graphicTextNotes(spec?.option?.graphic as unknown),
+      ...(outlier ? [outlier] : []),
     ]),
   ]
   return notes
@@ -1121,6 +1160,14 @@ export default { name: 'ChartGallery' }
           />
           <div v-else class="chart-img-missing muted">AI 生成图未内联，请从产出物下载查看</div>
         </div>
+        <!-- 产业链拓扑图矢量呈现与生图降级轻量提示 -->
+        <div
+          v-if="spec.chart_type === 'industry_chain' && spec.render_mode !== 'generated_image'"
+          class="chain-fallback-notice"
+        >
+          <span class="notice-icon">ℹ️</span>
+          <span>已使用 ECharts 矢量拓扑图呈现产业链结构（如需 AI 概念配图可配置生图 Key）</span>
+        </div>
         <div v-if="spec.insight_goal" class="chart-insight">
           <span>分析目的</span>
           {{ spec.insight_goal }}
@@ -1281,6 +1328,23 @@ export default { name: 'ChartGallery' }
   font-size: 12px;
   padding: 20px;
   color: var(--el-text-color-secondary);
+}
+.chain-fallback-notice {
+  margin: 6px 14px 2px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(14, 116, 144, 0.06);
+  border: 1px solid rgba(14, 116, 144, 0.18);
+  color: #0e7490;
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.4;
+}
+.chain-fallback-notice .notice-icon {
+  font-size: 12px;
+  flex-shrink: 0;
 }
 .chart-insight {
   margin: 6px 14px 0;

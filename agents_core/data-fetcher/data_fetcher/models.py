@@ -154,6 +154,8 @@ class SourceRef(BaseModel):
     trace_id: str
     retrieved_at: datetime
     raw_record_index: int | None = None
+    status: str | None = None
+    record_count: int | None = None
 
 
 class ResearchRecord(BaseModel):

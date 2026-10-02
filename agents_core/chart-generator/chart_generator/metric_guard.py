@@ -447,7 +447,8 @@ class DimensionGuard:
                 if 0 < abs(value) <= 1.0:
                     return round(value * 100.0, 2), "%"
 
-            return round(value, 2), raw_unit or meta.preferred_unit
+        if meta.dimension == MetricDimension.VALUATION_MULTIPLE or target_unit in ("倍", "x", "X"):
+            return round(value, 2), target_unit or meta.preferred_unit or "倍"
 
-        return round(value, 2), raw_unit or meta.preferred_unit
+        return round(value, 2), target_unit or raw_unit or meta.preferred_unit
 

@@ -278,8 +278,10 @@ class ChartSkillLinter:
                 for eid in getattr(cand, "evidence_ids", []):
                     if eid in evidence_index:
                         ref = evidence_index[eid]
+                        dom = getattr(ref, "domain", None) if not isinstance(ref, dict) else ref.get("domain")
                         met = getattr(ref, "metric", None) if not isinstance(ref, dict) else ref.get("metric")
-                        if met:
+                        is_macro = str(dom).lower() == "macro" or any(k in str(met).lower() for k in ("工业增加值", "cpi", "ppi", "pmi", "gdp", "社融", "m2", "出口额"))
+                        if met and is_macro:
                             macro_combo_metrics.add(str(met))
         if macro_combo_metrics:
             for cand in candidates:

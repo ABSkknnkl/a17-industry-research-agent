@@ -681,10 +681,11 @@ class ReportFusionAgent:
             chart_ref_map[f"[图表{idx}]"] = fn
             chart_ref_map[f"[图表{idx:02d}]"] = fn
 
-        def _clean_chart_text(text: str, default_fn: str | None = None) -> str:
+        def _clean_chart_text(text: str, default_fn: str | None = None, mapping: dict[str, str] | None = None) -> str:
             if not text:
                 return text
-            for ref, fig_num in chart_ref_map.items():
+            active_map = mapping or chart_ref_map
+            for ref, fig_num in sorted(active_map.items(), key=lambda x: -len(x[0])):
                 if ref in text:
                     text = text.replace(ref, fig_num)
             if default_fn:
@@ -693,29 +694,53 @@ class ReportFusionAgent:
                 # Remove dangling/orphan chart placeholders
                 text = re.sub(r"(?:如|见|至|参(?:考|阅)?)\s*\[(?:CHART|chart|图表)-?[^\]]+\]\s*(?:所示)?", "", text)
                 text = re.sub(r"\[(?:CHART|chart|图表)-?[^\]]+\]", "", text)
-            # Context-aware typo cleanup:
-            # 1. "如图图 1所示" or "见图图 1" -> "如图 1 所示" or "见图 1"
+
+            # 消除 AI Prompt 机械指令词及前缀图号（如 "[图 3]图前结论："、"图前结论："、"图后含义："、"图中数据显示："）
+            text = re.sub(r"\[?图\s*\d+\]?\s*(?:图前结论|图前导读|图前研判|图前要点)\s*[:：]\s*", "", text)
+            text = re.sub(r"(?:图前结论|图前导读|图前研判|图前要点)\s*[:：]\s*", "", text)
+            text = re.sub(r"\[?图\s*\d+\]?\s*(?:图后含义|图后分析|图后启示|图后结论|图后研判)\s*[:：]\s*", "", text)
+            text = re.sub(r"(?:图后含义|图后分析|图后启示|图后结论|图后研判)\s*[:：]\s*", "", text)
+            text = re.sub(r"\[?图\s*\d+\]?\s*图中数据(?:显示)?\s*[:：，,]\s*", "", text)
+            text = re.sub(r"图中数据(?:显示)?\s*[:：，,]\s*", "", text)
+
+            # Context-aware typo and duplicate figure number cleanup:
+            # 1. First normalize double "图": "如图图 1所示", "如图 图 1", "见图图 1", "图图 1"
             text = re.sub(r"(如|见|至|参(?:考|阅)?)\s*图\s*图\s*(\d+)", r"\1图 \2", text)
-            # 2. Bare "图图 1" -> "图 1"
             text = re.sub(r"图\s*图\s*(\d+)", r"图 \1", text)
-            # 3. Spacing "如图 1所示" -> "如图 1 所示"
             text = re.sub(r"如图\s*(\d+)\s*所示", r"如图 \1 所示", text)
-            # 4. Clean up any leftover awkward spaces or duplicated punctuation
+            # 2. Remove contradictory duplicate figure number right after "如图 X 所示，":
+            # e.g. "如图 1 所示，图 1" 或 "如图 1 所示，图 3" 或 "如图 4 所示，图 5" -> "如图 4 所示，"
+            text = re.sub(r"(如图\s*\d+\s*所示[，,])\s*图\s*\d+\s*", r"\1", text)
+            # 3. Clean up any leftover awkward spaces or duplicated punctuation
             text = re.sub(r"\s+([，。、；])", r"\1", text)
             text = re.sub(r"([，。、；！？])\s+", r"\1", text)
             text = re.sub(r"([。；，])\s*\1+", r"\1", text)
-            return text
+            text = re.sub(r"^[，,。；]\s*", "", text)
+            return text.strip()
 
         for ch in chapters:
             if ch.summary:
                 ch.summary = _clean_chart_text(ch.summary)
             for s in ch.sections:
-                if s.key_points:
-                    s.key_points = [_clean_chart_text(kp) for kp in s.key_points]
                 sec_charts = [ec for ec in result if ec.chart_id in s.chart_ids]
                 sec_default_fn = sec_charts[0].figure_number if sec_charts else None
+                # 构建小节专属映射，优先将小节内引用的 [CHART-xx] 精准映射为对应图表在报告中的实际图序
+                sec_map = dict(chart_ref_map)
+                for sc in sec_charts:
+                    fn = sc.figure_number or f"图 {result.index(sc) + 1}"
+                    sec_map[f"[{sc.chart_id}]"] = fn
+                    sec_map[sc.chart_id] = fn
+                    parts = sc.chart_id.split("-")
+                    if len(parts) >= 2:
+                        pfx = f"{parts[0]}-{parts[1]}"
+                        sec_map[f"[{pfx}]"] = fn
+                        sec_map[pfx] = fn
+                        sec_map[f"[{pfx.lower()}]"] = fn
+                        sec_map[pfx.lower()] = fn
+                if s.key_points:
+                    s.key_points = [_clean_chart_text(kp, sec_default_fn, sec_map) for kp in s.key_points]
                 for p in s.paragraphs:
-                    p.text = _clean_chart_text(p.text, sec_default_fn)
+                    p.text = _clean_chart_text(p.text, sec_default_fn, sec_map)
 
         return result
 

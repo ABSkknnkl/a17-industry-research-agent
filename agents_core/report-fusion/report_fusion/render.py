@@ -316,8 +316,40 @@ def render_markdown(view: ReportViewModel) -> str:
             lines += ["", f"### {section.title}", ""]
             if section.key_points:
                 lines += ["**本节要点**：", *["- " + kp for kp in section.key_points], ""]
+
+            sec_charts = list(charts_by_section.get(section.section_id, []))
+            rendered_chart_ids: set[str] = set()
+
+            def _chart_block(chart: Any) -> list[str]:
+                fig_title = f"{chart.figure_number or '图表'}：{chart.title}"
+                return [
+                    f"**{fig_title}**",
+                    f"> 分析目的：{chart.insight_goal}；资料依据：{_citations(chart.evidence_ids, lookup)}",
+                    "",
+                    f"![{fig_title}](./charts/{chart.chart_id}.svg)",
+                    "",
+                ]
+
             for para in section.paragraphs:
                 lines += [para.text + " " + _citations(para.evidence_ids, lookup), ""]
+                # 就近锚定：若段落提及了图表或为解读段，将对应图表紧随段落后内联插入，避免小节末尾图表堆叠
+                for chart in sec_charts:
+                    if chart.chart_id in rendered_chart_ids:
+                        continue
+                    fn = chart.figure_number
+                    is_match = False
+                    if fn and fn in para.text:
+                        is_match = True
+                    elif chart.chart_id in para.text:
+                        is_match = True
+                    elif getattr(para, "kind", "") == "chart_readout" and not rendered_chart_ids:
+                        is_match = True
+
+                    if is_match:
+                        lines += _chart_block(chart)
+                        rendered_chart_ids.add(chart.chart_id)
+                        break
+
             if section.comparison_table and section.comparison_table.columns:
                 lines += [f"**{section.comparison_table.title or '对比表'}**", ""]
                 header = "| " + " | ".join(section.comparison_table.columns) + " |"
@@ -326,15 +358,13 @@ def render_markdown(view: ReportViewModel) -> str:
                 for row in section.comparison_table.rows:
                     lines.append("| " + " | ".join(str(c) for c in row) + " |")
                 lines.append("")
-            for chart in charts_by_section.get(section.section_id, []):
-                fig_title = f"{chart.figure_number or '图表'}：{chart.title}"
-                lines += [
-                    f"**{fig_title}**",
-                    f"> 分析目的：{chart.insight_goal}；资料依据：{_citations(chart.evidence_ids, lookup)}",
-                    "",
-                    f"![{fig_title}](./charts/{chart.chart_id}.svg)",
-                    "",
-                ]
+
+            # 剩余未被段落就近内联引用的图表，安全兜底渲染
+            for chart in sec_charts:
+                if chart.chart_id not in rendered_chart_ids:
+                    lines += _chart_block(chart)
+                    rendered_chart_ids.add(chart.chart_id)
+
             if section.uncertainties:
                 lines += ["**待验证事项**", *["- " + x for x in section.uncertainties], ""]
 

@@ -215,5 +215,13 @@ export async function getSkillDetail(stageId: string, skillId: string): Promise<
   return data
 }
 
+export async function resumeRun(runId: string, fromStage?: string): Promise<WorkflowState> {
+  const { data } = await http.post<WorkflowState>(`/runs/${runId}/resume`, null, {
+    params: fromStage ? { from_stage: fromStage } : undefined,
+    ...LONG_TIMEOUT,
+  })
+  return data
+}
+
 
 

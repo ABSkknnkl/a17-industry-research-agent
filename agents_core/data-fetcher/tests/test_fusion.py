@@ -58,7 +58,7 @@ def test_all_dataset_sections_exist_even_when_empty():
     dataset = DataFusion().fuse([], date(2026, 9, 14))
     dumped = dataset.model_dump()
     assert set(dumped) == {
-        "industry", "companies", "financials", "macro", "industry_chain",
+        "subject", "industry", "companies", "financials", "macro", "industry_chain",
         "reports", "news", "sources", "conflicts", "quality_summary",
     }
 

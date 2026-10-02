@@ -133,8 +133,11 @@ async function onTestIwencai(): Promise<void> {
   testingIwencai.value = true
   iwencaiTestResult.value = null
   try {
+    const rawKey = form.iwencai_api_key || ''
+    // 若填入了逗号/分号/换行拼接的多 key，优先提取首个有效 key 进行接口探测，避免整串探测报 401
+    const testKey = rawKey.split(/[,;\n]+/)[0]?.trim() || rawKey.trim()
     const res = await testIwencaiConnectivity({
-      iwencai_api_key: form.iwencai_api_key,
+      iwencai_api_key: testKey,
     })
     iwencaiTestResult.value = res
   } catch (e: any) {

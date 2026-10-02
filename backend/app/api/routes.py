@@ -3,6 +3,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import mimetypes
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Query, status
@@ -409,11 +410,17 @@ async def test_llm_connectivity(req: TestLlmRequest):
 
 @router.post("/settings/test-iwencai")
 async def test_iwencai_connectivity(req: TestIwencaiRequest):
-    """测试问财金融数据接口连通性"""
-    api_key = (req.iwencai_api_key or settings.IWENCAI_API_KEY).strip()
-    if not api_key:
+    """测试问财金融数据接口连通性（支持单 Key 或多 Key 逗号分隔配置）"""
+    raw_api_key = (req.iwencai_api_key or settings.IWENCAI_API_KEY).strip()
+    if not raw_api_key:
         return {"success": False, "message": "问财 API Key 不能为空"}
 
+    # 支持逗号、分号、换行分隔的多 Key 配置，提取所有有效 Key
+    keys = [k.strip() for k in re.split(r"[,;\n]+", raw_api_key) if k.strip()]
+    if not keys:
+        return {"success": False, "message": "问财 API Key 不能为空"}
+
+    api_key = keys[0]
     start_t = time.time()
     try:
         url = "https://openapi.iwencai.com/v1/query2data"
@@ -436,10 +443,11 @@ async def test_iwencai_connectivity(req: TestIwencaiRequest):
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.post(url, headers=headers, json=payload)
             elapsed_ms = int((time.time() - start_t) * 1000)
+            key_count_hint = f"（已识别 {len(keys)} 个 Key，首个 Key 耗时 {elapsed_ms}ms）" if len(keys) > 1 else f"（耗时 {elapsed_ms}ms）"
             if resp.status_code == 200:
                 return {
                     "success": True,
-                    "message": f"问财官方 SkillHub 接口验证通过！（耗时 {elapsed_ms}ms）",
+                    "message": f"问财官方 SkillHub 接口验证通过！{key_count_hint}",
                     "latency_ms": elapsed_ms,
                 }
             elif resp.status_code in (401, 403):
@@ -451,7 +459,7 @@ async def test_iwencai_connectivity(req: TestIwencaiRequest):
             else:
                 return {
                     "success": True,
-                    "message": f"问财接口鉴权通过（响应码 {resp.status_code}，耗时 {elapsed_ms}ms）",
+                    "message": f"问财接口鉴权通过（响应码 {resp.status_code}，{key_count_hint}）",
                     "latency_ms": elapsed_ms,
                 }
     except Exception as e:

@@ -29,3 +29,11 @@ def test_settings_config_api():
     reset_res = client.post("/api/v1/settings/reset")
     assert reset_res.status_code == 200
     assert settings.LLM_MODEL == "deepseek-v4-flash"
+
+
+def test_iwencai_empty_key_rejected():
+    res = client.post("/api/v1/settings/test-iwencai", json={"iwencai_api_key": ""})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["success"] is False
+    assert "不能为空" in data["message"]

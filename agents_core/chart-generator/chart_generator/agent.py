@@ -24,7 +24,12 @@ from chart_generator.compiler import ChartArchetype, DeclarativeChartSpec, EChar
 from chart_generator.data_formulation import AxisType, DataFormulator, NormalizedDataTable
 from chart_generator.image_gen import generate_industry_chain_image
 from chart_generator.linter import BAR_TYPES, ChartLinterViolation, ChartSkillLinter
-from chart_generator.metric_guard import DimensionGuard, canonical_metric_label
+from chart_generator.metric_guard import (
+    DimensionGuard,
+    MetricDimension,
+    canonical_metric_label,
+    resolve_metric_meta,
+)
 from chart_generator.render import (
     clean_chart_title, clean_metric_label, render_preview, render_svg, resolve_ticker,
 )
@@ -37,43 +42,6 @@ VALID_CHART_TYPES = {
     "line", "bar", "comparison_bar", "horizontal_bar", "diverging_bar", "pie", "donut", "radar", "industry_chain",
     "combo", "area", "scatter", "bubble", "heatmap", "boxplot", "treemap",
 }
-
-# 抑制图表标题 → 证据 metric 反查词表（_backfill_suppressed_evidence）
-# 合并版：中文别名（本地） + 英文字段别名（源码包）取并集，键序保持稳定。
-_SUPPRESS_METRIC_TOKENS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("营收", ("revenue", "营业收入", "营收", "收入", "主营业务收入")),
-    ("收入", ("revenue", "营业收入", "营收", "收入", "主营业务收入")),
-    ("净利", ("profit", "net_profit", "归母净利润", "净利润", "净利")),
-    ("利润", ("profit", "net_profit", "归母净利润", "净利润", "利润总额", "利润")),
-    ("毛利", ("gross_margin", "毛利率", "毛利")),
-    ("roe", ("roe", "净资产收益率", "ROE")),
-    ("roa", ("roa", "总资产收益率", "ROA")),
-    ("增速", ("growth", "同比", "增长率", "增速", "CAGR")),
-    ("成长", ("growth", "增长率", "增速", "CAGR")),
-    ("增长", ("growth", "同比", "增速", "增长率")),
-    ("现金流", ("operating_cash_flow", "经营性现金流", "经营现金流", "现金流", "经营活动现金流")),
-    ("负债", ("debt", "total_liabilities", "资产负债率", "负债率", "有息负债", "总负债")),
-    ("资产", ("asset", "total_assets", "总资产")),
-    ("研发", ("rd_expense", "研发费用", "研发支出", "研发投入")),
-    ("产能", ("产能", "产量", "开工率", "产能利用率")),
-    ("价格", ("close_price", "价格", "均价", "价差", "单价", "收盘价", "股价")),
-    ("成交", ("trade_volume", "成交量", "成交额")),
-    ("份额", ("share", "市场份额", "份额", "市占率", "占比")),
-    ("市值", ("market_cap", "总市值", "A股总市值", "市值")),
-    ("市盈率", ("pe_ratio", "市盈率", "pe")),
-    ("市净率", ("pb_ratio", "市净率", "pb")),
-    ("估值", ("pe_ratio", "pb_ratio", "市盈率", "市净率", "PE", "PB", "估值")),
-    ("装机", ("装机量", "装机", "出货量")),
-    ("出货", ("出货量", "出货", "销量")),
-    ("出口", ("出口量", "出口", "出口额")),
-    ("渗透", ("渗透率", "渗透")),
-    ("国产", ("国产化率", "国产替代", "国产化")),
-    ("产业链", ("产业链", "上游", "中游", "下游", "环节")),
-    ("供需", ("供需", "供给", "需求", "供需平衡")),
-    ("成本", ("成本", "单位成本", "原材料")),
-    ("毛利率", ("毛利率", "毛利")),
-    ("集中度", ("集中度", "CR3", "CR5", "CR10")),
-)
 
 CHART_AGENT_SYSTEM_PROMPT = """你是顶级金融与产业研报图表设计智能体（ChartGeneratorAgent）。
 你的职责是根据《数据解读报告》中的事实证据、关键指标、趋势和章节结构，设计具有高学术与出版品质的可视化图表。
@@ -140,7 +108,42 @@ class _Candidate:
 
 class ChartGeneratorAgent:
     # 抑制图表标题 → 证据 metric 反查词表（_backfill_suppressed_evidence）
-    _SUPPRESS_METRIC_TOKENS = _SUPPRESS_METRIC_TOKENS
+    # 合并版：中文别名（本地） + 英文字段别名（源码包）取并集，键序保持稳定。
+    # 注：合入他人版本时保留本仓 33 条全集版（对方版本仅 18 条，语义上是本表的真子集）。
+    _SUPPRESS_METRIC_TOKENS: tuple[tuple[str, tuple[str, ...]], ...] = (
+        ("营收", ("revenue", "营业收入", "营收", "收入", "主营业务收入")),
+        ("收入", ("revenue", "营业收入", "营收", "收入", "主营业务收入")),
+        ("净利", ("profit", "net_profit", "归母净利润", "净利润", "净利")),
+        ("利润", ("profit", "net_profit", "归母净利润", "净利润", "利润总额", "利润")),
+        ("毛利", ("gross_margin", "毛利率", "毛利")),
+        ("roe", ("roe", "净资产收益率", "ROE")),
+        ("roa", ("roa", "总资产收益率", "ROA")),
+        ("增速", ("growth", "同比", "增长率", "增速", "CAGR")),
+        ("成长", ("growth", "增长率", "增速", "CAGR")),
+        ("增长", ("growth", "同比", "增速", "增长率")),
+        ("现金流", ("operating_cash_flow", "经营性现金流", "经营现金流", "现金流", "经营活动现金流")),
+        ("负债", ("debt", "total_liabilities", "资产负债率", "负债率", "有息负债", "总负债")),
+        ("资产", ("asset", "total_assets", "总资产")),
+        ("研发", ("rd_expense", "研发费用", "研发支出", "研发投入")),
+        ("产能", ("产能", "产量", "开工率", "产能利用率")),
+        ("价格", ("close_price", "价格", "均价", "价差", "单价", "收盘价", "股价")),
+        ("成交", ("trade_volume", "成交量", "成交额")),
+        ("份额", ("share", "市场份额", "份额", "市占率", "占比")),
+        ("市值", ("market_cap", "总市值", "A股总市值", "市值")),
+        ("市盈率", ("pe_ratio", "市盈率", "pe")),
+        ("市净率", ("pb_ratio", "市净率", "pb")),
+        ("估值", ("pe_ratio", "pb_ratio", "市盈率", "市净率", "PE", "PB", "估值")),
+        ("装机", ("装机量", "装机", "出货量")),
+        ("出货", ("出货量", "出货", "销量")),
+        ("出口", ("出口量", "出口", "出口额")),
+        ("渗透", ("渗透率", "渗透")),
+        ("国产", ("国产化率", "国产替代", "国产化")),
+        ("产业链", ("产业链", "上游", "中游", "下游", "环节")),
+        ("供需", ("供需", "供给", "需求", "供需平衡")),
+        ("成本", ("成本", "单位成本", "原材料")),
+        ("毛利率", ("毛利率", "毛利")),
+        ("集中度", ("集中度", "CR3", "CR5", "CR10")),
+    )
 
     def __init__(
         self,
@@ -342,6 +345,15 @@ class ChartGeneratorAgent:
                 await record("skill_routed_by_policy", skills=["chart-selection", "financial-charting"], reason="大模型未产出合规落地图表，自动激活确定性数据适配选型保底")
                 fb_cands, fb_supp = self._deterministic_fallback(request)
                 candidates = fb_cands
+                suppressed.extend(fb_supp)
+            elif candidates and request.preferences.max_charts and len(candidates) < request.preferences.max_charts and has_numeric_or_chain:
+                fb_cands, fb_supp = self._deterministic_fallback(request)
+                existing_keys = {self._candidate_semantic_key(c, request.report.evidence_index) for c in candidates}
+                for fc in fb_cands:
+                    fk = self._candidate_semantic_key(fc, request.report.evidence_index)
+                    if fk not in existing_keys:
+                        candidates.append(fc)
+                        existing_keys.add(fk)
                 suppressed.extend(fb_supp)
 
             # Map called skills to AppliedSkill models
@@ -762,23 +774,42 @@ class ChartGeneratorAgent:
         domain: str = "",
         metrics: list[str] | None = None,
     ) -> str:
-        text = f"{title} {' '.join(metrics or [])} {domain} {chart_type}".lower()
-        if domain == "macro" or any(k in text for k in ("gdp", "宏观", "cpi", "pmi", "进出口", "政策")):
+        m_str = " ".join(metrics or [])
+        text = f"{title} {m_str} {domain} {chart_type}".lower()
+        # 1. 风险、情景与敏感性推演
+        if any(k in text for k in ("情景", "风险", "敏感性", "推演", "压力测试", "弹性", "回撤")):
+            return "CH-07"
+        # 2. 宏观、政策与外部传导 (精准匹配，避免“利率”误触“净利率”)
+        if domain == "macro" or any(k in text for k in ("gdp", "宏观", "cpi", "ppi", "pmi", "进出口", "政策", "监管", "基准利率", "lpr", "国债收益率")):
             return "CH-06"
-        if chart_type == "industry_chain" or any(k in text for k in ("产业链", "供应链", "上游", "中游", "下游", "环节")):
+        # 3. 产业链拓扑与上下游供需
+        if chart_type == "industry_chain" or any(k in text for k in ("产业链", "供应链", "上游", "中游", "下游", "环节", "拓扑")):
             return "CH-03"
+        # 4. 行业总市值或产业宏观基准全景归入 CH-01
+        if any(k in text for k in ("全景", "概览", "产业基础", "行业概况", "行业定位", "产业定位", "研究边界", "行业定义", "市值集中度", "市值分布")):
+            return "CH-01"
+        # 5. 竞争格局、份额与横向同业对标 (同业横向对比与排名归入竞争格局)
+        if any(k in text for k in (
+            "份额", "集中度", "cr4", "cr8", "排名", "出货量", "市占率", "竞争格局",
+            "横向比较", "横向对比", "横向热力", "竞争梯队", "格局"
+        )):
+            return "CH-04"
+        # 6. 规模、成长性与中微观景气趋势
+        if any(k in text for k in (
+            "规模", "复合增长", "cagr", "市场空间", "产值", "增速",
+            "增长率趋势", "增速趋势", "营收趋势", "收入趋势", "规模趋势", "净利率趋势", "毛利率趋势"
+        )):
+            return "CH-02"
+        # 7. 财务质量、资产负债、现金流与估值定位 (企业三表质量、雷达与四象限定位)
         if any(k in text for k in (
             "负债", "debt", "毛利", "gross_margin", "净利", "net_profit", "roe", "roa",
-            "pe", "pb", "ps", "估值", "市盈率", "市净率", "市销率", "偿债", "现金流", "周转"
+            "pe", "pb", "ps", "估值", "市盈率", "市净率", "市销率", "偿债", "现金流", "周转",
+            "雷达", "四象限", "定位", "财务质量"
         )):
             return "CH-05"
-        if any(k in text for k in ("规模", "复合增长", "cagr", "市场空间", "产值", "增速")):
-            return "CH-02"
-        if any(k in text for k in ("份额", "集中度", "cr4", "cr8", "排名", "出货量", "市占率", "竞争格局", "市值集中度", "横向比较", "横向热力")):
-            return "CH-04"
         return "CH-01"
 
-    def _bin_evidence_for_prompt(self, evidence_records: list[EvidenceRef], max_total: int = 80) -> list[dict[str, Any]]:
+    def _bin_evidence_for_prompt(self, evidence_records: list[EvidenceRef], max_total: int = 100) -> list[dict[str, Any]]:
         chain_records = [it for it in evidence_records if it.domain == "industry_chain"]
         time_series_records = [it for it in evidence_records if it.domain != "industry_chain" and it.period]
         other_records = [it for it in evidence_records if it.domain != "industry_chain" and not it.period]
@@ -807,16 +838,15 @@ class ChartGeneratorAgent:
         # Add industry timeseries (up to 2 groups)
         for grp in industry_ts[:2]:
             ts_selected.extend(sorted(grp, key=lambda x: str(x.period or "")))
-        # Fill remaining timeseries budget (up to 35 total ts records)
+        # Fill remaining timeseries budget (up to 75% of max_total, keeping groups atomic)
+        ts_limit = max(60, int(max_total * 0.75))
         for grp in other_ts:
             grp_sorted = sorted(grp, key=lambda x: str(x.period or ""))
-            if len(ts_selected) + len(grp_sorted) <= 35:
+            if len(ts_selected) + len(grp_sorted) <= ts_limit:
                 ts_selected.extend(grp_sorted)
             else:
-                rem = max(0, 35 - len(ts_selected))
-                if rem > 0:
-                    ts_selected.extend(grp_sorted[:rem])
-                break
+                # Do not slice a group partially, keep timeseries unbroken!
+                continue
         selected.extend(ts_selected)
 
         # 3. Fill remaining quota with cross-sectional and market records
@@ -940,12 +970,17 @@ class ChartGeneratorAgent:
         # Parse suppressed charts from LLM
         for item in llm_data.get("suppressed_charts", []):
             if isinstance(item, dict):
+                sup_title = str(item.get("title", "未命名图表"))
+                # 仅采纳真实存在于证据库的 ID（grounding）；LLM 漏填时按标题指标确定性兜底（D-07）。
+                sup_eids = [str(x) for x in item.get("evidence_ids", []) if str(x) in report.evidence_index]
+                if not sup_eids:
+                    sup_eids = self._backfill_suppressed_evidence(sup_title, report)
                 suppressed.append(SuppressedChart(
-                    title=str(item.get("title", "未命名图表")),
+                    title=sup_title,
                     requested_type=item.get("requested_type"),
                     reason_code=str(item.get("reason_code", "llm_suppressed")),
                     reason=str(item.get("reason", "经专业技能规则审查，数据不足或口径冲突")),
-                    evidence_ids=[str(x) for x in item.get("evidence_ids", [])],
+                    evidence_ids=sup_eids,
                 ))
 
         # Parse and validate generated charts from LLM (Grounding Check)
@@ -1028,11 +1063,11 @@ class ChartGeneratorAgent:
                 point_evidence_ids=flat_point_eids or valid_eids,
             ))
 
-        # Cross-chapter soft rebalancing: if a chapter (like CH-04) hoards > 4 charts while others have 0 or few,
+        # Cross-chapter soft rebalancing: if a chapter (like CH-04) hoards > 3 charts while others have 0 or few,
         # relocate charts whose semantic nature fits better in another chapter.
         ch_counts = Counter(c.chapter for c in candidates)
         for cand in candidates:
-            if ch_counts[cand.chapter] > 4:
+            if ch_counts[cand.chapter] > 3:
                 domain_val = ""
                 metrics_val = []
                 for eid in cand.evidence_ids:
@@ -1068,185 +1103,13 @@ class ChartGeneratorAgent:
             return []
         eids: list[str] = []
         for eid, ref in report.evidence_index.items():
-            metric = str(getattr(ref, "metric", "") or "").casefold()
+            raw_metric = ref.get("metric", "") if isinstance(ref, dict) else getattr(ref, "metric", "")
+            metric = str(raw_metric or "").casefold()
             if any(n.casefold() in metric for n in needles):
                 eids.append(str(eid))
                 if len(eids) >= cap:
                     break
         return eids
-
-    async def _run_llm_generation(
-        self,
-        request: ChartGenerationRequest,
-        record: Callable[..., Awaitable[None]],
-    ) -> tuple[list[dict[str, str]], list[_Candidate], list[SuppressedChart]]:
-        report = request.report
-        evidence_records = [
-            item for item in report.evidence_index.values()
-            if (isinstance(item.value, (int, float)) and not isinstance(item.value, bool))
-            or item.domain == "industry_chain"
-        ]
-
-        # Extract structured overview for LLM with Evidence Binning (preserves unbroken curves and topology)
-        evidence_payload = self._bin_evidence_for_prompt(evidence_records, max_total=120)
-
-        chart_limit_clause = f"不超过 {request.preferences.max_charts} 张" if (request.preferences.max_charts and request.preferences.max_charts > 0) else "不设数量上限，充分基于数据特征生成全部有价值的"
-        max_charts_display = str(request.preferences.max_charts) if (request.preferences.max_charts and request.preferences.max_charts > 0) else "不设上限（全面呈现全部可用维度）"
-
-        user_prompt = f"""【研报主题】: {report.subject} (基准日期: {report.as_of})
-
-【章节结构】:
-{json.dumps([{"heading": s.heading, "purpose": s.purpose} for s in report.content_outline], ensure_ascii=False, indent=2)}
-
-【关键指标概要】:
-{json.dumps([{"name": m.name, "entity": m.entity, "value": m.value, "unit": m.unit} for m in report.key_metrics[:15]], ensure_ascii=False, indent=2)}
-
-【事实证据清单】(共 {len(evidence_records)} 条，精选分箱 {len(evidence_payload)} 条):
-{json.dumps(evidence_payload, ensure_ascii=False, indent=2)}
-
-【用户配置偏好】:
-- 最大图表数: {max_charts_display}
-- 指定请求图表类型: {request.preferences.requested_types or "自动选型"}
-- 主题风格: {request.preferences.theme}
-- 包含进阶图表: {request.preferences.include_advanced}
-
-【任务要求】:
-1. 请先审查上述数据特征与研报需求，自主调用 `invoke_skill` 工具加载所需的技能规范；
-2. 加载规范后，严格遵循规范，生成{chart_limit_clause}专业金融研报图表；
-3. 【数据适配度与图表选型原则（按数据特征自然选型，严禁为追求形式而生搬硬套）】：
-   - 数据适配优先：必须基于数据维度、量纲与样本量选择最清晰直观的表达形态。
-     - 单指标横向对比（5~15家企业）：优先使用水平条形图（horizontal_bar）或柱状图（bar/comparison_bar）；严禁在样本量少于15时滥用箱线图（boxplot）；严禁在少量实体无分级时硬套矩形树图（treemap）；
-     - 规模与增速双指标：采用双轴组合图（combo: 柱状规模 + 折线增速）；
-     - 双变量跨实体对标：采用四象限散点图（scatter/bubble）；
-     - 存在正负指标分化：采用发散条形图（diverging_bar）；
-     - 单实体多维能力（>=3项指标）：采用多维雷达图（radar）；
-     - 上中下游拓扑传导：采用产业链拓扑图（industry_chain）；
-     - 时间序列分析：采用折线图（line），严禁对同一指标重复生成折线图和面积图。
-   - 自然多样性：在数据维度天然支持的前提下，积极组合上述适配类型，避免图表库形式单一。
-4. 输出合法的 JSON 格式，包含:
-   - "charts": 列表，每项包含:
-     - "title": 专业学术标题（体现对象、维度与口径）
-     - "chart_type": 必须为 "combo"|"scatter"|"bubble"|"diverging_bar"|"donut"|"radar"|"industry_chain"|"horizontal_bar"|"comparison_bar"|"bar"|"line"|"area" 之一
-     - "insight_goal": 该图表的核心分析目的与研报价值
-     - "recommended_chapter_id": 建议归属的章节编号 (如 CH-02, CH-03, CH-04, CH-05 等)
-     - "evidence_ids": 列表，必须严格来自上述事实证据的真实 record_id
-     - "footnotes": 说明列表（单位、口径、数据来源或归一化说明）
-     - "option": (可选) 完整合规的 ECharts option 配置对象；亦可置为 {{}} 由系统基于真实证据高精度自动合成（推荐留空以提升生成速度）
-   - "suppressed_charts": 列表，记录因数据不足、口径冲突、单点无法成趋势或请求类型不匹配而被抑制的图表，说明 reason_code 与 reason。
-"""
-        tools = self.skillhub.get_tool_spec()
-
-        def skill_resolver(name: str) -> str | None:
-            skill = self.skillhub.get(name)
-            if not skill:
-                return None
-            return f"# Skill: {skill.name}\n## Description: {skill.description}\n\n{skill.instructions}"
-
-        try:
-            called_skills, llm_data = await self.llm.run_skill_and_chart_loop(
-                system_prompt=CHART_AGENT_SYSTEM_PROMPT,
-                user_prompt=user_prompt,
-                tools=tools,
-                skill_resolver=skill_resolver,
-            )
-            for cs in called_skills:
-                await record("skill_invoked_by_llm", skill=cs.get("skill_name"), reason=cs.get("reason"))
-        except Exception as e:
-            logger.warning(f"LLM chart generation failed: {e}. Falling back to deterministic pipeline.", exc_info=True)
-            await record("llm_generation_error", error=str(e))
-            selected_skills = self.skillhub.select(request)
-            called_skills = [{"skill_name": s.name, "reason": s.adaptation} for s in selected_skills]
-            cand, supp = self._deterministic_fallback(request)
-            return called_skills, cand, supp
-
-        candidates: list[_Candidate] = []
-        suppressed: list[SuppressedChart] = []
-
-        # Parse suppressed charts from LLM
-        for item in llm_data.get("suppressed_charts", []):
-            if isinstance(item, dict):
-                sup_title = str(item.get("title", "未命名图表"))
-                # 仅采纳真实存在于证据库的 ID（grounding）；LLM 漏填时按标题指标确定性兜底（D-07）。
-                sup_eids = [str(x) for x in item.get("evidence_ids", []) if str(x) in report.evidence_index]
-                if not sup_eids:
-                    sup_eids = self._backfill_suppressed_evidence(sup_title, report)
-                suppressed.append(SuppressedChart(
-                    title=sup_title,
-                    requested_type=item.get("requested_type"),
-                    reason_code=str(item.get("reason_code", "llm_suppressed")),
-                    reason=str(item.get("reason", "经专业技能规则审查，数据不足或口径冲突")),
-                    evidence_ids=sup_eids,
-                ))
-
-        # Parse and validate generated charts from LLM (Grounding Check)
-        for chart_dict in llm_data.get("charts", []):
-            if not isinstance(chart_dict, dict):
-                continue
-            title = str(chart_dict.get("title", "")).strip()
-            chart_type = chart_dict.get("chart_type") or chart_dict.get("type", "bar")
-            if chart_type not in VALID_CHART_TYPES:
-                chart_type = "bar"
-
-            raw_eids = (
-                chart_dict.get("evidence_ids")
-                or chart_dict.get("evidence_record_ids")
-                or chart_dict.get("records")
-                or []
-            )
-            valid_eids = [str(eid) for eid in raw_eids if str(eid) in report.evidence_index]
-
-            if not valid_eids:
-                # Suppress hallucinated or ungrounded charts
-                suppressed.append(SuppressedChart(
-                    title=title or "未命名图表",
-                    requested_type=chart_type,
-                    reason_code="hallucinated_evidence",
-                    reason="图表所引用的证据ID在真实证据库中不存在或未提供有效证据引用",
-                    evidence_ids=[],
-                ))
-                continue
-
-            option = chart_dict.get("option") or chart_dict.get("echarts_option") or {}
-            table = DataFormulator.formulate(valid_eids, report, target_chart_type=chart_type)
-            if table and (not isinstance(option, dict) or not option or self._has_option_defects(option, chart_type)):
-                option = EChartsCompiler.compile(table, chart_type, title)
-            elif not isinstance(option, dict) or not option or self._has_option_defects(option, chart_type):
-                option = self._synthesize_option_from_evidence(chart_type, valid_eids, title, report)
-
-            if not isinstance(option, dict) or not option:
-                suppressed.append(SuppressedChart(
-                    title=title,
-                    requested_type=chart_type,
-                    reason_code="invalid_echarts_option",
-                    reason="无法基于引用证据合成有效图表配置（量纲不相容或数据点缺失）",
-                    evidence_ids=valid_eids,
-                ))
-                continue
-
-            goal = str(chart_dict.get("insight_goal") or chart_dict.get("description") or title)
-            chapter = str(chart_dict.get("recommended_chapter_id", "CH-04"))
-            footnotes = [str(f) for f in chart_dict.get("footnotes", [])]
-
-            flat_point_eids = []
-            if table and getattr(table, "point_evidence_ids", None):
-                for pe_list in table.point_evidence_ids.values():
-                    for eid in pe_list:
-                        if eid and eid not in flat_point_eids:
-                            flat_point_eids.append(eid)
-
-            candidates.append(_Candidate(
-                title=title,
-                chart_type=chart_type,
-                option=option,
-                evidence_ids=valid_eids,
-                goal=goal,
-                chapter=chapter,
-                score=100,
-                footnotes=footnotes,
-                point_evidence_ids=flat_point_eids or valid_eids,
-            ))
-
-        return called_skills, candidates, suppressed
 
     def _has_option_defects(self, option: dict[str, Any], chart_type: str = "") -> bool:
         """Detects whether an option contains obvious quality defects like raw slugs or duplicate labels."""
@@ -1600,9 +1463,57 @@ class ChartGeneratorAgent:
         for metric, rows in by_metric.items():
             m_label = clean_metric_label(metric)
             rows = sorted(rows, key=lambda x: (x.period or request.report.as_of, x.entity or ""))
-            unit = next((x.unit for x in rows if x.unit), None)
+            
+            # 统一确定指标的规范量纲与单位
+            meta = resolve_metric_meta(metric)
+            raw_vals: list[float] = []
+            raw_units: list[str | None] = []
+            for x in rows:
+                if x.value is not None:
+                    try:
+                        raw_vals.append(float(x.value))
+                        raw_units.append(x.unit)
+                    except (ValueError, TypeError):
+                        pass
+
+            m_lower = metric.lower()
+            if (
+                meta.dimension == MetricDimension.VALUATION_MULTIPLE
+                or any(k in m_lower for k in ("pe", "pb", "ps", "市盈率", "市净率", "市销率", "倍数"))
+                or any(u in ("倍", "x", "X") for u in raw_units if u)
+            ):
+                unit = "倍"
+            elif (
+                meta.dimension == MetricDimension.PERCENTAGE_RATIO
+                or any(k in m_lower for k in ("pct", "率", "比", "增速", "增长率", "涨跌幅", "份额", "占比"))
+                or any(u in ("%", "百分比") for u in raw_units if u)
+            ):
+                unit = "%"
+            elif (
+                meta.dimension == MetricDimension.TRADING_PRICE
+                or any(k in m_lower for k in ("price", "股价", "最新价", "收盘价", "最高价", "最低价", "开盘价"))
+            ):
+                unit = meta.preferred_unit or "元"
+            elif meta.dimension == MetricDimension.TRADING_VOLUME:
+                unit = meta.preferred_unit or "手"
+            elif (
+                meta.dimension == MetricDimension.CURRENCY_AMOUNT
+                or any(k in m_lower for k in ("cap", "市值", "收入", "营收", "利润", "净利", "费用", "现金", "资产", "负债"))
+            ):
+                unit = DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+            else:
+                raw_u = next((x.unit for x in rows if x.unit), None)
+                unit = raw_u or DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+
             footnotes = [] if unit else ["原始数据未提供统一单位，跨实体比较需谨慎"]
             ids = [x.record_id for x in rows]
+
+            # 研报主体前缀修饰
+            subj = (request.report.subject or "").strip()
+            def _with_subject(title_tmpl: str) -> str:
+                if subj and subj not in title_tmpl:
+                    return f"{subj}{title_tmpl}"
+                return title_tmpl
 
             # Time series
             dated_entities: dict[str, list[EvidenceRef]] = defaultdict(list)
@@ -1616,15 +1527,25 @@ class ChartGeneratorAgent:
                     labels = [x.isoformat() for x in periods]
                     series = []
                     for entity, group in list(usable_series.items())[:10]:
-                        mapping = {x.period: float(x.value) for x in group}
+                        mapping = {}
+                        for x in group:
+                            v_norm, _ = DimensionGuard.normalize_financial_value(
+                                float(x.value), metric, x.unit, target_unit=unit
+                            )
+                            mapping[x.period] = v_norm
                         series.append({"name": entity, "type": "line", "connectNulls": False, "data": [mapping.get(p) for p in periods]})
                     option = {"tooltip": {"trigger": "axis"}, "legend": {"data": [s["name"] for s in series]}, "xAxis": {"type": "category", "data": labels}, "yAxis": {"type": "value", "name": unit or ""}, "series": series}
+                    ts_title = _with_subject(f"核心标的{m_label}走势")
+                    ts_ch = self._infer_chart_chapter(title=ts_title, chart_type="line", domain=rows[0].domain if rows else "", metrics=[metric])
+                    if ts_ch == "CH-01" and not any(k in m_label for k in ("全景", "概览", "产业基础", "行业概况", "定位")):
+                        ts_ch = "CH-02"
                     if request.preferences.include_advanced and len(periods) >= 4 and ("area" in req_types or ("累计" in metric and "line" not in req_types)):
                         area = json.loads(json.dumps(option))
                         area["series"][0]["areaStyle"] = {}
-                        candidates.append(_Candidate(f"{m_label}累计趋势", "area", area, ids, f"突出{m_label}的累计变化轮廓", "CH-02", 95, footnotes, point_evidence_ids=ids))
+                        area_title = _with_subject(f"核心标的{m_label}累计趋势")
+                        candidates.append(_Candidate(area_title, "area", area, ids, f"突出{m_label}的累计变化轮廓", ts_ch, 95, footnotes, point_evidence_ids=ids))
                     else:
-                        candidates.append(_Candidate(f"{m_label}趋势", "line", option, ids, f"观察{m_label}的时间变化", "CH-02", 100, footnotes, point_evidence_ids=ids))
+                        candidates.append(_Candidate(ts_title, "line", option, ids, f"观察{m_label}的时间变化", ts_ch, 100, footnotes, point_evidence_ids=ids))
 
             # Cross-sectional comparison
             latest: dict[str, EvidenceRef] = {}
@@ -1635,22 +1556,48 @@ class ChartGeneratorAgent:
             comparable = list(latest.values())[:30]
             if len(comparable) >= 3 and len({x.entity for x in comparable if x.entity}) >= 3:
                 labels = [x.entity or clean_metric_label(x.metric) for x in comparable]
-                vals = [float(x.value) for x in comparable]
+                vals = [
+                    DimensionGuard.normalize_financial_value(float(x.value), metric, x.unit, target_unit=unit)[0]
+                    for x in comparable
+                ]
                 comp_eids = [x.record_id for x in comparable]
                 signed = min(vals) < 0 < max(vals)
                 option = {"tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": labels}, "yAxis": {"type": "value", "name": unit or "", "min": min(0, min(vals))}, "series": [{"name": m_label, "type": "bar", "data": vals}]}
                 if signed:
                     c_type: ChartType = "diverging_bar" if ("diverging_bar" in req_types and "comparison_bar" not in req_types) else "comparison_bar"
-                    c_title = f"{m_label}发散对比" if c_type == "diverging_bar" else f"{m_label}横向比较"
+                    c_title = _with_subject(f"主要企业{m_label}发散对比" if c_type == "diverging_bar" else f"主要企业{m_label}横向比较")
                     c_goal = f"清晰呈现不同实体的{m_label}正负分化" if c_type == "diverging_bar" else f"比较不同实体的{m_label}"
-                    candidates.append(_Candidate(c_title, c_type, option, comp_eids, c_goal, "CH-04", 90, footnotes, point_evidence_ids=comp_eids))
+                    c_ch = self._infer_chart_chapter(title=c_title, chart_type=c_type, domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(c_title, c_type, option, comp_eids, c_goal, c_ch, 90, footnotes, point_evidence_ids=comp_eids))
                 else:
                     bar_type: ChartType = "horizontal_bar" if any(len(str(l)) > 4 for l in labels) else "bar"
-                    candidates.append(_Candidate(f"{m_label}横向比较", bar_type, option, comp_eids, f"比较不同实体的{m_label}", "CH-04", 90, footnotes, point_evidence_ids=comp_eids))
+                    bar_title = _with_subject(f"主要企业{m_label}横向对比")
+                    b_ch = self._infer_chart_chapter(title=bar_title, chart_type=bar_type, domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(bar_title, bar_type, option, comp_eids, f"比较不同实体的{m_label}", b_ch, 90, footnotes, point_evidence_ids=comp_eids))
 
-                is_explicit_share = any(k in metric.lower() for k in ("占比", "份额", "构成", "share"))
-                is_top_concentration = all(v > 0 for v in vals) and (len(vals) >= 3) and any(k in metric.lower() for k in ("收入", "营收", "市值", "出货", "装机", "产量", "销量", "产能"))
-                if (all(v > 0 for v in vals) and is_explicit_share) or is_top_concentration:
+                is_explicit_share = any(k in metric.lower() for k in ("占比", "份额", "构成", "share", "市占率"))
+                non_additive = (not is_explicit_share) and (
+                    any(k in m_label.lower() for k in ("率", "比", "价", "price", "pe", "pb", "ps", "roe", "roa", "eps", "每股", "收益率", "增速", "增长率", "margin", "ratio", "yoy"))
+                    or any(k in metric.lower() for k in ("price", "ratio", "margin", "pe", "pb", "ps", "rate", "yoy", "growth"))
+                )
+                is_additive = any(k in m_label for k in ("市值", "收入", "营收", "利润", "净利", "资产", "规模", "出货", "装机", "销量", "产能", "金额", "支出")) and not non_additive
+
+                total_val = sum(vals)
+                max_share = (max(vals) / total_val) if total_val > 0 else 0.0
+                # 若单一企业占总样本份额超过90%且非显式市占率，说明样本失衡/受巨型混业标的干扰，不生成失真的集中度环形图；且严禁率值/非加性指标进入环形图
+                is_top_concentration = all(v > 0 for v in vals) and (len(vals) >= 3) and is_additive and (max_share < 0.90)
+                # 环形图语义防泛滥：
+                # 1. 对非显式占比指标，集中度环形图仅保留核心市值/规模集中度，严禁对营业收入、净利润等非总体概念多重生成
+                # 2. 对总市值与流通市值，若已存在市值集中度环形图，跳过流通市值重复生成
+                if is_top_concentration and not is_explicit_share:
+                    has_concentration_pie = any(
+                        c.chart_type in ("donut", "pie") and ("集中度" in c.title or "分布" in c.title)
+                        for c in candidates
+                    )
+                    # 仅允许“市值”指标或首个规模指标生成集中度环形图，且全局最多保留1个集中度环形图
+                    if has_concentration_pie or not any(k in m_label for k in ("市值", "资产", "规模")):
+                        is_top_concentration = False
+                if ((all(v > 0 for v in vals) and is_explicit_share) or is_top_concentration):
                     paired = sorted(zip(labels, vals, strict=True), key=lambda x: x[1], reverse=True)
                     if len(paired) > 6:
                         top_items = paired[:5]
@@ -1660,23 +1607,63 @@ class ChartGeneratorAgent:
                         pie_data = [{"name": n, "value": v} for n, v in paired]
                     pie = {"tooltip": {"trigger": "item"}, "series": [{"type": "pie", "radius": ["36%", "68%"], "data": pie_data}]}
                     pie_type: ChartType = "pie" if ("pie" in req_types and "donut" not in req_types) else "donut"
-                    pie_title = f"{m_label}构成" if is_explicit_share else f"核心企业{m_label}集中度分布"
+                    pie_title = _with_subject(f"{m_label}构成" if is_explicit_share else f"核心企业{m_label}集中度分布")
                     pie_prio = 95 if is_explicit_share else 88
-                    candidates.append(_Candidate(pie_title, pie_type, pie, comp_eids, f"展示{m_label}的结构构成与头部集中度", "CH-04", pie_prio, footnotes, point_evidence_ids=comp_eids))
-                non_additive = any(k in m_label.lower() for k in ("率", "比", "价", "price", "pe", "pb", "ps", "roe", "roa", "eps", "每股", "收益率", "增速", "增长率", "margin", "ratio")) or any(k in metric.lower() for k in ("price", "ratio", "margin", "pe", "pb", "ps", "rate"))
-                is_additive = any(k in m_label for k in ("市值", "收入", "营收", "利润", "净利", "资产", "规模", "出货", "装机", "销量", "产能", "金额", "支出")) and not non_additive
+                    pie_ch = self._infer_chart_chapter(title=pie_title, chart_type=pie_type, domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(pie_title, pie_type, pie, comp_eids, f"展示{m_label}的结构构成与头部集中度", pie_ch, pie_prio, footnotes, point_evidence_ids=comp_eids))
                 if request.preferences.include_advanced and is_additive and all(v >= 0 for v in vals) and (("treemap" in req_types) or len(vals) >= 8):
                     tree = {"series": [{"type": "treemap", "data": [{"name": n, "value": v} for n, v in zip(labels, vals, strict=True)]}]}
-                    candidates.append(_Candidate(f"{m_label}规模矩形树", "treemap", tree, comp_eids, f"同时观察{m_label}的规模和集中度", "CH-04", 48, footnotes, point_evidence_ids=comp_eids))
+                    tree_title = _with_subject(f"{m_label}规模矩形树")
+                    tree_ch = self._infer_chart_chapter(title=tree_title, chart_type="treemap", domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(tree_title, "treemap", tree, comp_eids, f"同时观察{m_label}的规模和集中度", tree_ch, 48, footnotes, point_evidence_ids=comp_eids))
                 if request.preferences.include_advanced and (len(vals) >= 15 or "boxplot" in req_types):
                     ordered = sorted(vals)
                     def q(p: float) -> float:
                         return ordered[round((len(ordered) - 1) * p)]
                     box = {"xAxis": {"type": "category", "data": [m_label]}, "yAxis": {"type": "value"}, "series": [{"type": "boxplot", "data": [[min(vals), q(0.25), q(0.5), q(0.75), max(vals)]]}]}
-                    candidates.append(_Candidate(f"{m_label}样本分布", "boxplot", box, comp_eids, f"展示{m_label}的样本分布与分位数", "CH-04", 42, footnotes, point_evidence_ids=comp_eids))
+                    box_title = _with_subject(f"{m_label}样本分布")
+                    box_ch = self._infer_chart_chapter(title=box_title, chart_type="boxplot", domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(box_title, "boxplot", box, comp_eids, f"展示{m_label}的样本分布与分位数", box_ch, 42, footnotes, point_evidence_ids=comp_eids))
+
+        # Collect core entities and suppressed/outlier entities
+        cm_data = getattr(report, "comps_matrix", None) or getattr(report, "comps_table", None)
+        core_entities: set[str] = set()
+        core_entity_rank: dict[str, int] = {}
+        if cm_data:
+            if isinstance(cm_data, dict):
+                entries = cm_data.get("entries", []) or cm_data.get("comps", []) or []
+            elif isinstance(cm_data, list):
+                entries = cm_data
+            else:
+                entries = getattr(cm_data, "entries", None) or getattr(cm_data, "comps", []) or []
+            for rank_idx, e in enumerate(entries):
+                if isinstance(e, dict):
+                    name = e.get("company_name") or e.get("entity_name") or e.get("name") or ""
+                    tkr = e.get("ticker") or e.get("code") or ""
+                else:
+                    name = getattr(e, "company_name", None) or getattr(e, "entity_name", None) or getattr(e, "name", "") or ""
+                    tkr = getattr(e, "ticker", None) or getattr(e, "code", "") or ""
+                if name:
+                    core_entities.add(str(name).strip())
+                    if str(name).strip() not in core_entity_rank:
+                        core_entity_rank[str(name).strip()] = rank_idx
+                if tkr:
+                    core_entities.add(str(tkr).strip())
+                    if str(tkr).strip() not in core_entity_rank:
+                        core_entity_rank[str(tkr).strip()] = rank_idx
+
+        suppressed_entities: set[str] = set()
+        for a in getattr(report, "anomalies", []):
+            guidance = a.get("charting_guidance") if isinstance(a, dict) else getattr(a, "charting_guidance", None)
+            ent = a.get("entity", "") if isinstance(a, dict) else getattr(a, "entity", "")
+            if guidance == "suppress_or_isolate" and ent:
+                suppressed_entities.add(ent)
 
         # Radar for multi-metric entity
         for entity, rows in by_entity.items():
+            ent_name = resolve_ticker(entity) or entity
+            if (ent_name in suppressed_entities) or (entity in suppressed_entities):
+                continue
             latest_by_metric: dict[str, EvidenceRef] = {}
             for row in rows:
                 if row.metric not in latest_by_metric or (row.period or report.as_of) >= (latest_by_metric[row.metric].period or report.as_of):
@@ -1704,10 +1691,15 @@ class ChartGeneratorAgent:
                         else:
                             norm_v = 60.0
                     normalized.append(norm_v)
-                ent_name = resolve_ticker(entity) or entity
                 radar = {"radar": {"indicator": [{"name": clean_metric_label(x.metric), "max": 100} for x in metrics]}, "series": [{"type": "radar", "data": [{"name": ent_name, "value": normalized}]}]}
                 m_eids = [x.record_id for x in metrics]
-                candidates.append(_Candidate(f"{ent_name}多指标雷达", "radar", radar, m_eids, f"比较{ent_name}多项指标的相对位置与行业分位", "CH-05", 86, ["各指标采用行业可比样本 0—100 分位对齐"], point_evidence_ids=m_eids))
+                is_core = (ent_name in core_entities or entity in core_entities)
+                rank = min(core_entity_rank.get(ent_name, 999), core_entity_rank.get(entity, 999))
+                if is_core:
+                    radar_prio = max(86, 96 - min(rank, 10))
+                else:
+                    radar_prio = 75
+                candidates.append(_Candidate(f"{ent_name}多指标雷达", "radar", radar, m_eids, f"比较{ent_name}多项指标的相对位置与行业分位", "CH-05", radar_prio, ["各指标采用行业可比样本 0—100 分位对齐"], point_evidence_ids=m_eids))
 
         if request.preferences.include_advanced:
             cross: list[tuple[str, dict[str, EvidenceRef]]] = []
@@ -1732,18 +1724,52 @@ class ChartGeneratorAgent:
                     usable = [name for name in common if not bubble or name in third[1]]
                     points = []
                     ids = []
+                    sizes = [max(float(third[1][name].value), 0.0) for name in usable if bubble and third and name in third[1]] if bubble and third else []
+                    min_sz, max_sz = (min(sizes), max(sizes)) if sizes else (0.0, 0.0)
+                    span_sz = max_sz - min_sz or 1.0
+
                     for name in usable:
-                        row = [name, float(x_rows[name].value), float(y_rows[name].value)]
+                        xv = float(x_rows[name].value)
+                        yv = float(y_rows[name].value)
                         ids.extend([x_rows[name].record_id, y_rows[name].record_id])
-                        if bubble and third:
-                            row.append(max(float(third[1][name].value), 0))
+                        sz_val = max(float(third[1][name].value), 0.0) if bubble and third and name in third[1] else None
+                        if sz_val is not None:
                             ids.append(third[1][name].record_id)
-                        points.append(row)
+                            r = round(10.0 + ((sz_val - min_sz) / span_sz) * 16.0, 1)
+                        else:
+                            r = 14.0
+                        points.append({
+                            "name": name,
+                            "value": [xv, yv, sz_val if sz_val is not None else r],
+                            "symbolSize": r,
+                            "label": {"show": True, "position": "right", "formatter": "{b}", "fontSize": 11},
+                        })
                     kind: ChartType = "bubble" if bubble else "scatter"
-                    symbol_size = "value[3]" if bubble else 12
-                    option = {"tooltip": {"trigger": "item"}, "xAxis": {"type": "value", "name": x_label}, "yAxis": {"type": "value", "name": y_label}, "series": [{"type": "scatter", "symbolSize": symbol_size, "data": points}]}
+                    option = {
+                        "tooltip": {
+                            "trigger": "item",
+                            "formatter": "{b}<br/>" + f"{x_label}: " + "{c[0]}<br/>" + f"{y_label}: " + "{c[1]}",
+                        },
+                        "xAxis": {"type": "value", "name": x_label, "scale": True, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}},
+                        "yAxis": {"type": "value", "name": y_label, "scale": True, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}},
+                        "series": [{
+                            "name": f"{x_label}与{y_label}定位",
+                            "type": "scatter",
+                            "data": points,
+                            "markLine": {
+                                "silent": True,
+                                "symbol": "none",
+                                "lineStyle": {"type": "dashed", "color": "#94a3b8", "width": 1},
+                                "data": [
+                                    {"type": "average", "name": "均值", "valueIndex": 0},
+                                    {"type": "average", "name": "均值", "valueIndex": 1},
+                                ],
+                            },
+                        }],
+                    }
                     unique_scat_ids = list(dict.fromkeys(ids))
-                    candidates.append(_Candidate(f"{x_label}与{y_label}定位", kind, option, unique_scat_ids, f"观察实体在{x_label}和{y_label}维度的位置", "CH-04", 85, ["仅展示两个指标均有数据的实体"], point_evidence_ids=unique_scat_ids))
+                    scat_ch = self._infer_chart_chapter(title=f"{x_label}与{y_label}定位", chart_type=kind, domain="financials", metrics=[x_name, y_name])
+                    candidates.append(_Candidate(f"{x_label}与{y_label}定位", kind, option, unique_scat_ids, f"观察实体在{x_label}和{y_label}维度的位置", scat_ch, 85, ["仅展示两个指标均有数据的实体"], point_evidence_ids=unique_scat_ids))
             if len(cross) >= 3:
                 matrix_metrics = cross[:5]
                 entities = sorted(set.intersection(*(set(rows) for _, rows in matrix_metrics)))[:12]
@@ -1752,14 +1778,29 @@ class ChartGeneratorAgent:
                     ids = []
                     for y, (metric, rows) in enumerate(matrix_metrics):
                         values = [float(rows[e].value) for e in entities]
-                        low, high = min(values), max(values)
-                        span = high - low or 1
-                        for x, (entity, value) in enumerate(zip(entities, values, strict=True)):
-                            cells.append([x, y, round((value - low) / span * 100, 2)])
-                            ids.append(rows[entity].record_id)
+                        # 生产级分位数位序归一化 (Percentile Ranking)，杜绝极值压缩正常标的色阶
+                        n_ent = len(entities)
+                        indexed_vals = sorted(enumerate(values), key=lambda it: it[1])
+                        ranks = [0.0] * n_ent
+                        i = 0
+                        while i < n_ent:
+                            j = i
+                            while j < n_ent - 1 and indexed_vals[j + 1][1] == indexed_vals[j][1]:
+                                j += 1
+                            avg_rank = (i + j) / 2.0
+                            for k in range(i, j + 1):
+                                orig_idx = indexed_vals[k][0]
+                                norm_score = 10.0 + (avg_rank / max(n_ent - 1, 1)) * 80.0
+                                ranks[orig_idx] = round(norm_score, 1)
+                            i = j + 1
+
+                        for x in range(n_ent):
+                            cells.append([x, y, ranks[x]])
+                            ids.append(rows[entities[x]].record_id)
                     option = {"tooltip": {"position": "top"}, "xAxis": {"type": "category", "data": entities}, "yAxis": {"type": "category", "data": [clean_metric_label(m) for m, _ in matrix_metrics]}, "visualMap": {"min": 0, "max": 100}, "series": [{"type": "heatmap", "data": cells}]}
                     unique_heat_ids = list(dict.fromkeys(ids))
-                    candidates.append(_Candidate("多指标横向热力图", "heatmap", option, unique_heat_ids, "以各指标样本内标准化值比较实体位置", "CH-04", 52, ["每行指标独立归一化为0—100"], point_evidence_ids=unique_heat_ids))
+                    heat_ch = self._infer_chart_chapter(title="多指标横向热力图", chart_type="heatmap", domain="financials", metrics=[m for m, _ in matrix_metrics])
+                    candidates.append(_Candidate("多指标横向热力图", "heatmap", option, unique_heat_ids, "以各指标样本内分位数位序比较实体相对梯队", heat_ch, 52, ["每行指标以样本内分位数位序标准化（10—90分位）"], point_evidence_ids=unique_heat_ids))
 
             # Combo (规模与增速 / 双指标联动)
             combo_count = 0
@@ -1788,7 +1829,8 @@ class ChartGeneratorAgent:
                             "series": [{"name": left_label, "type": "bar", "yAxisIndex": 0, "data": [float(left_rows[p].value) for p in periods]}, {"name": right_label, "type": "line", "yAxisIndex": 1, "data": [float(right_rows[p].value) for p in periods]}],
                         }
                         ent_display = resolve_ticker(entity) or entity
-                        candidates.append(_Candidate(f"{ent_display}{left_label}与{right_label}", "combo", option, ids, f"联合观察{ent_display}的{left_label}和{right_label}", "CH-05", 92, point_evidence_ids=ids))
+                        combo_ch = self._infer_chart_chapter(title=f"{ent_display}{left_label}与{right_label}", chart_type="combo", domain="financials", metrics=[left_name, right_name])
+                        candidates.append(_Candidate(f"{ent_display}{left_label}与{right_label}", "combo", option, ids, f"联合观察{ent_display}的{left_label}和{right_label}", combo_ch, 92, point_evidence_ids=ids))
                         found = True
                         break
                     if found:
@@ -1823,8 +1865,14 @@ class ChartGeneratorAgent:
                 # If stage has < 3 companies, supplement with key applications / products if available
                 if sum(1 for n in nodes if n["category"] == cat) < 3:
                     for kp in seg.get("key_products", []):
-                        kp_clean = str(kp).strip(" []'\"")
-                        if kp_clean and len(kp_clean) >= 2 and not kp_clean.replace(".", "").isdigit() and not any(n["name"] == kp_clean for n in nodes):
+                        kp_clean = str(kp).strip(" []'\"【】")
+                        if (
+                            kp_clean
+                            and 2 <= len(kp_clean) <= 14
+                            and not kp_clean.replace(".", "").isdigit()
+                            and not any(n["name"] == kp_clean for n in nodes)
+                            and not any(bad in kp_clean for bad in ("携手", "投放", "第一批", "截至", "签约", "月", "年", "超", "亿元", "万元", "企业", "公司", "品牌", "合作", "阶段", "报告期"))
+                        ):
                             node_dict = {
                                 "id": f"N{len(nodes)+1}",
                                 "name": kp_clean[:14],
@@ -1893,6 +1941,24 @@ class ChartGeneratorAgent:
                     }
                     chain_eids = [x.record_id for x in chain[:30]]
                     candidates.append(_Candidate("产业链结构", "industry_chain", option, chain_eids, "展示已获证据支持的产业链环节", "CH-03", 110, point_evidence_ids=chain_eids))
+
+        # Cross-chapter soft rebalancing for fallback candidates (enforce <= 3 per chapter)
+        ch_counts = Counter(c.chapter for c in candidates)
+        for cand in candidates:
+            if ch_counts[cand.chapter] > 3:
+                domain_val = ""
+                metrics_val = []
+                for eid in cand.evidence_ids:
+                    ev = report.evidence_index.get(eid) if report and getattr(report, "evidence_index", None) else None
+                    if ev:
+                        domain_val = domain_val or getattr(ev, "domain", "") or ""
+                        if getattr(ev, "metric", None):
+                            metrics_val.append(str(ev.metric))
+                better_ch = self._infer_chart_chapter(title=cand.title, chart_type=cand.chart_type, domain=domain_val, metrics=metrics_val)
+                if better_ch != cand.chapter and ch_counts[better_ch] < 3:
+                    ch_counts[cand.chapter] -= 1
+                    cand.chapter = better_ch
+                    ch_counts[better_ch] += 1
 
         return candidates, suppressed
 
@@ -1968,7 +2034,19 @@ class ChartGeneratorAgent:
                 if not isinstance(option, dict) or not option:
                     continue
                 goal = str(chart_dict.get("insight_goal") or chart_dict.get("description") or title)
-                chapter = str(chart_dict.get("recommended_chapter_id", "CH-04"))
+                rec_ch = chart_dict.get("recommended_chapter_id")
+                if not rec_ch or rec_ch not in ("CH-01", "CH-02", "CH-03", "CH-04", "CH-05", "CH-06", "CH-07"):
+                    domain_val = ""
+                    metrics_val = []
+                    for eid in valid_eids:
+                        ev = report.evidence_index.get(eid) if report and getattr(report, "evidence_index", None) else None
+                        if ev:
+                            domain_val = domain_val or getattr(ev, "domain", "") or ""
+                            if getattr(ev, "metric", None):
+                                metrics_val.append(str(ev.metric))
+                    chapter = self._infer_chart_chapter(title=title, chart_type=chart_type, domain=domain_val, metrics=metrics_val)
+                else:
+                    chapter = str(rec_ch)
                 footnotes = [str(f) for f in chart_dict.get("footnotes", [])]
                 flat_point_eids = []
                 if table and getattr(table, "point_evidence_ids", None):
@@ -2091,16 +2169,21 @@ class ChartGeneratorAgent:
         is_unlimited = not max_charts or max_charts <= 0
         if is_unlimited:
             max_bars = 9999
+            max_pies = 9999
         else:
             max_bars = min(3, max(1, int(max_charts * 0.38))) if max_charts >= 5 else max_charts
+            max_pies = 2 if not req_types else 9999
 
         # Categorize
         bars = [c for c in candidates if c.chart_type in BAR_TYPES]
         non_bars = [c for c in candidates if c.chart_type not in BAR_TYPES]
 
+        bars.sort(key=lambda c: -c.score)
         by_type: dict[str, list[_Candidate]] = defaultdict(list)
         for c in non_bars:
             by_type[c.chart_type].append(c)
+        for ctype in by_type:
+            by_type[ctype].sort(key=lambda c: -c.score)
 
         conformed: list[_Candidate] = []
 
@@ -2157,9 +2240,16 @@ class ChartGeneratorAgent:
             conformed.append(bars.pop(0))
             current_bars += 1
 
-        # Fill remaining non-bars
+        # Fill remaining non-bars (observing max_pies limit for donut/pie)
+        current_pies = sum(1 for c in conformed if c.chart_type in ("donut", "pie"))
         for ctype, items in by_type.items():
-            conformed.extend(items)
+            if ctype in ("donut", "pie"):
+                for it in items:
+                    if current_pies < max_pies:
+                        conformed.append(it)
+                        current_pies += 1
+            else:
+                conformed.extend(items)
 
         # Fill remaining bars
         conformed.extend(bars)

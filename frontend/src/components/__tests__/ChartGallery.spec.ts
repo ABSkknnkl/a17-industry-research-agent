@@ -276,5 +276,46 @@ describe('ChartGallery contract consumption', () => {
     expect(passedOpt.xAxis.scale).toBe(true)
     expect(passedOpt.yAxis.scale).toBe(true)
   })
+
+  it('renders chain-fallback-notice for industry_chain charts using ECharts vector mode', async () => {
+    const chainSpec = {
+      chart_id: 'CHART-CHAIN-1',
+      title: '动力电池产业链拓扑图',
+      chart_type: 'industry_chain' as const,
+      option: {
+        series: [{ type: 'graph', data: [{ name: '上游' }, { name: '中游' }] }],
+      },
+    }
+    const wrapper = mountGallery([chainSpec])
+    await flushPromises()
+
+    const notice = wrapper.find('.chain-fallback-notice')
+    expect(notice.exists()).toBe(true)
+    expect(notice.text()).toContain('已使用 ECharts 矢量拓扑图呈现产业链结构')
+  })
+
+  it('automatically adds outlier footnote when series data has values > 5x median', async () => {
+    const outlierSpec = {
+      chart_id: 'CHART-OUTLIER-1',
+      title: '样本市盈率横向对比',
+      chart_type: 'bar' as const,
+      option: {
+        xAxis: { type: 'category', data: ['A', 'B', 'C', 'D'] },
+        yAxis: { type: 'value', name: '倍' },
+        series: [
+          {
+            type: 'bar',
+            data: [15, 18, 20, 200], // median is 18-20, 200 is > 5x
+          },
+        ],
+      },
+    }
+    const wrapper = mountGallery([outlierSpec])
+    await flushPromises()
+
+    const footnotes = wrapper.findAll('.chart-footnote')
+    const hasOutlierNote = footnotes.some((f) => f.text().includes('显著偏离行业中枢'))
+    expect(hasOutlierNote).toBe(true)
+  })
 })
 

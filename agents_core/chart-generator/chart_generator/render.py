@@ -145,8 +145,34 @@ def clean_chart_title(title: str) -> str:
     res = str(title)
     res = res.replace("{(}", "(").replace("{)}", ")").replace("{/}", "/")
     res = res.replace("a股", "A股")
+
+    # 1. 预处理：折叠已产生的多层重复嵌套
+    res = re.sub(r"市盈率\s*[（\(]+(?:\s*市盈率\s*[（\(]+)*\s*PE(?:\s*TTM|\s*静)?\s*[）\)]*(?:\s*[）\)]+)*", "市盈率(PE)", res, flags=re.I)
+    res = re.sub(r"市净率\s*[（\(]+(?:\s*市净率\s*[（\(]+)*\s*PB\s*[）\)]*(?:\s*[）\)]+)*", "市净率(PB)", res, flags=re.I)
+    res = re.sub(r"市销率\s*[（\(]+(?:\s*市销率\s*[（\(]+)*\s*PS\s*[）\)]*(?:\s*[）\)]+)*", "市销率(PS)", res, flags=re.I)
+
+    # 2. 遍历替换，对已包含中文说明的缩写做负向后瞻保护，防止二次自嵌套
+    _PREFIX_MAP = {
+        "pe": "市盈率",
+        "pe_ttm": "市盈率",
+        "pe_lyr": "市盈率",
+        "pb": "市净率",
+        "ps": "市销率",
+    }
     for k, v in sorted(METRIC_DISPLAY_NAMES.items(), key=lambda x: -len(x[0])):
-        res = re.sub(rf"(?i)(?<![a-zA-Z0-9_]){re.escape(k)}(?![a-zA-Z0-9_])", v, res)
+        if k in _PREFIX_MAP:
+            pfx = _PREFIX_MAP[k]
+            pattern = rf"(?i)(?<!{pfx})(?<!{pfx}\()(?<!{pfx}（)(?<![a-zA-Z0-9_]){re.escape(k)}(?![a-zA-Z0-9_])"
+        else:
+            pattern = rf"(?i)(?<![a-zA-Z0-9_]){re.escape(k)}(?![a-zA-Z0-9_])"
+        res = re.sub(pattern, v, res)
+
+    # 3. 后处理：再次清理可能产生的嵌套括号与双括号
+    res = re.sub(r"市盈率\s*[（\(]+\s*市盈率\(PE\)\s*[）\)]+", "市盈率(PE)", res, flags=re.I)
+    res = re.sub(r"市净率\s*[（\(]+\s*市净率\(PB\)\s*[）\)]+", "市净率(PB)", res, flags=re.I)
+    res = re.sub(r"市销率\s*[（\(]+\s*市销率\(PS\)\s*[）\)]+", "市销率(PS)", res, flags=re.I)
+    res = re.sub(r"（\s*（([^（）]+)）\s*）", r"（\1）", res)
+    res = re.sub(r"\(\s*\(([^()]+)\)\s*\)", r"(\1)", res)
     return res
 
 

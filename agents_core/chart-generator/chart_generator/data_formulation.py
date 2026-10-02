@@ -765,11 +765,25 @@ class DataFormulator:
 
         raw_vals = [float(r.value) for r in target_records]
         raw_units = [r.unit for r in target_records]
-        is_ratio_metric = any("率" in r.metric or "比" in r.metric or "%" in str(r.unit) for r in target_records) or any(
-            k in str(primary_metric).lower() for k in ("margin", "rate", "ratio", "pct", "roe", "roa")
+        meta = resolve_metric_meta(primary_metric)
+        is_ratio_metric = (
+            meta.dimension == MetricDimension.PERCENTAGE_RATIO
+            or any("率" in r.metric or "比" in r.metric or "%" in str(r.unit) for r in target_records)
+            or any(k in str(primary_metric).lower() for k in ("margin", "rate", "ratio", "pct", "roe", "roa"))
+        )
+        is_multiple_metric = (
+            meta.dimension == MetricDimension.VALUATION_MULTIPLE
+            or any(u in ("倍", "x", "X") for u in raw_units if u)
+            or any(k in str(primary_metric).lower() for k in ("pe", "pb", "ps", "市盈率", "市净率", "市销率", "倍数", "倍", "multiple", "ev/ebitda"))
         )
         if is_ratio_metric:
             dest_unit = "%"
+        elif is_multiple_metric:
+            dest_unit = "倍"
+        elif meta.dimension == MetricDimension.TRADING_PRICE:
+            dest_unit = meta.preferred_unit or "元"
+        elif meta.dimension == MetricDimension.TRADING_VOLUME:
+            dest_unit = meta.preferred_unit or "手"
         else:
             dest_unit = DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
 
@@ -813,7 +827,28 @@ class DataFormulator:
         categories = []
         raw_vals = [float(r.value) for r in records[:25]]
         raw_units = [r.unit for r in records[:25]]
-        dest_unit = DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+        primary_metric = records[0].metric if records else ""
+        meta = resolve_metric_meta(primary_metric)
+        is_ratio_metric = (
+            meta.dimension == MetricDimension.PERCENTAGE_RATIO
+            or any("率" in r.metric or "比" in r.metric or "%" in str(r.unit) for r in records[:25])
+            or any(k in str(primary_metric).lower() for k in ("margin", "rate", "ratio", "pct", "roe", "roa"))
+        )
+        is_multiple_metric = (
+            meta.dimension == MetricDimension.VALUATION_MULTIPLE
+            or any(u in ("倍", "x", "X") for u in raw_units if u)
+            or any(k in str(primary_metric).lower() for k in ("pe", "pb", "ps", "市盈率", "市净率", "市销率", "倍数", "倍", "multiple", "ev/ebitda"))
+        )
+        if is_ratio_metric:
+            dest_unit = "%"
+        elif is_multiple_metric:
+            dest_unit = "倍"
+        elif meta.dimension == MetricDimension.TRADING_PRICE:
+            dest_unit = meta.preferred_unit or "元"
+        elif meta.dimension == MetricDimension.TRADING_VOLUME:
+            dest_unit = meta.preferred_unit or "手"
+        else:
+            dest_unit = DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
         values: list[float | None] = []
         m_name = canonical_metric_label(records[0].metric)
         used_records = records[:25]

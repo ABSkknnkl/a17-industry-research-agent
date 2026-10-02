@@ -360,6 +360,8 @@ class DataFusion:
                 query=result.query,
                 trace_id=result.trace_id,
                 retrieved_at=result.retrieved_at,
+                status="success" if result.success else "failed",
+                record_count=len(result.records) if result.success else 0,
             )
             dataset.sources.append(source_base)
             if not result.success:

@@ -40,7 +40,7 @@
 
   <!-- Layout Container: Text and Optional Adjacent Chart -->
   {% set sec_charts = charts_by_section.get(section.section_id, []) %}
-  <div class="section-body {% if sec_charts and section.layout_hint == chart_right %}split-body{% endif %}">
+  <div class="section-body {% if sec_charts and section.layout_hint == 'chart_right' %}split-body{% endif %}">
     
     <div class="text-column">
       {% for para in section.paragraphs %}

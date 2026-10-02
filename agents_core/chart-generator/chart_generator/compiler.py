@@ -218,6 +218,29 @@ class EChartsCompiler:
         unit = table.series_units.get(series_name, "")
         min_v = _safe_min(data, 0.0)
 
+        pos_vals = sorted([v for v in data if isinstance(v, (int, float)) and v > 0])
+        has_extreme_outlier = False
+        if len(pos_vals) >= 4:
+            median_v = pos_vals[len(pos_vals) // 2]
+            max_v = pos_vals[-1]
+            if median_v > 0 and max_v > 5 * median_v and max_v >= 100:
+                has_extreme_outlier = True
+
+        series_item: dict[str, Any] = {
+            "name": series_name,
+            "type": "bar",
+            "data": data,
+            "itemStyle": {"color": PRIMARY_COLOR, "borderRadius": [0, 4, 4, 0]},
+        }
+        if has_extreme_outlier:
+            series_item["markPoint"] = {
+                "data": [{"type": "max", "name": "离群极值"}],
+                "symbol": "pin",
+                "symbolSize": 36,
+                "label": {"fontSize": 10, "color": "#ffffff"},
+                "itemStyle": {"color": "#e11d48"},
+            }
+
         return {
             "tooltip": {"trigger": "axis"},
             "grid": grid,
@@ -234,14 +257,7 @@ class EChartsCompiler:
                 "splitNumber": 4,
                 "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}},
             },
-            "series": [
-                {
-                    "name": series_name,
-                    "type": "bar",
-                    "data": data,
-                    "itemStyle": {"color": PRIMARY_COLOR, "borderRadius": [0, 4, 4, 0]},
-                }
-            ],
+            "series": [series_item],
         }
 
     @staticmethod
@@ -299,9 +315,26 @@ class EChartsCompiler:
                 "itemStyle": {"color": PALETTE[i % len(PALETTE)], "borderRadius": [3, 3, 0, 0]},
             })
 
-        all_vals = [v for s_data in table.series_data.values() for v in s_data]
+        all_vals = [v for s_data in table.series_data.values() for v in s_data if isinstance(v, (int, float))]
         min_v = _safe_min(all_vals, 0.0)
 
+        # 极值离群点自动标注与保护（当样本量 >= 4 且最大值 > 5 倍中位数且 >= 100 时，添加 markPoint 标注）
+        pos_vals = sorted([v for v in all_vals if v > 0])
+        has_extreme_outlier = False
+        if len(pos_vals) >= 4:
+            median_v = pos_vals[len(pos_vals) // 2]
+            max_v = pos_vals[-1]
+            if median_v > 0 and max_v > 5 * median_v and max_v >= 100:
+                has_extreme_outlier = True
+
+        if has_extreme_outlier and series_list:
+            series_list[0]["markPoint"] = {
+                "data": [{"type": "max", "name": "离群极值"}],
+                "symbol": "pin",
+                "symbolSize": 36,
+                "label": {"fontSize": 10, "color": "#ffffff"},
+                "itemStyle": {"color": "#e11d48"},
+            }
 
         opt: dict[str, Any] = {
             "tooltip": {"trigger": "axis"},

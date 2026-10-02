@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CloseBold, Download, ArrowDown } from '@element-plus/icons-vue'
-import { getRun, listRevisions, cancelRun, downloadArtifact, triggerBlobDownload } from '../api/client'
+import { getRun, listRevisions, cancelRun, resumeRun, downloadArtifact, triggerBlobDownload } from '../api/client'
 import { ApiError } from '../api/http'
 import {
   STAGE_LABELS,
@@ -330,6 +330,25 @@ async function handleCancelInFlight(): Promise<void> {
   }
 }
 
+const resuming = ref(false)
+
+async function handleResumeStage(stage?: StageName): Promise<void> {
+  if (!runId.value) return
+  resuming.value = true
+  try {
+    const updated = await resumeRun(runId.value, stage)
+    workflow.value = updated
+    const stageText = stage ? `阶段【${STAGE_LABELS[stage] || stage}】` : '流水线'
+    ElMessage.success(`已从${stageText}恢复并继续推进`)
+    schedulePoll()
+    projectTreeRef.value?.reload()
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '恢复执行失败，请重试')
+  } finally {
+    resuming.value = false
+  }
+}
+
 function formatTime(value: string): string {
   return new Date(value).toLocaleString('zh-CN')
 }
@@ -489,6 +508,14 @@ export default { name: 'ReviewView' }
         title="该任务已被中途终止。您可以重新发起新任务或查看已产出的中间数据。"
         style="margin-bottom: 10px"
       />
+      <el-alert
+        v-if="workflow?.status === 'failed'"
+        type="error"
+        show-icon
+        :closable="false"
+        title="当前研报流水线在执行过程中遇到异常并已安全暂停。您可以查看下方错误原因，点击「重试 / 断点恢复」继续推进流水线。"
+        style="margin-bottom: 10px"
+      />
 
       <!-- 流程节点 -->
       <el-card class="page-card" shadow="never" v-loading="loading">
@@ -535,6 +562,28 @@ export default { name: 'ReviewView' }
           </div>
         </template>
 
+        <el-alert
+          v-if="currentStageResult.status === 'failed' || currentStageResult.error"
+          type="error"
+          show-icon
+          :closable="false"
+          style="margin-bottom: 16px"
+        >
+          <template #title>
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 8px;">
+              <span>阶段执行异常：{{ currentStageResult.error || '执行过程中发生未捕获异常' }}</span>
+              <el-button
+                type="danger"
+                size="small"
+                :loading="resuming"
+                @click="handleResumeStage(currentStageResult.stage)"
+              >
+                重试本阶段
+              </el-button>
+            </div>
+          </template>
+        </el-alert>
+
         <MetricCards :stage="currentStageResult.stage" :data="currentStageResult.data" />
 
         <el-divider />
@@ -571,11 +620,13 @@ export default { name: 'ReviewView' }
           {{
             workflow?.status === 'cancelled'
               ? '该任务已被中途终止，未继续执行后续阶段。'
-              : currentStageResult.status === 'running' || workflow?.status === 'running'
-                ? '该阶段正在执行，完成后将进入人工审核（若配置了审核门）。'
-                : currentStageName !== workflow?.current_stage
-                  ? '正在查看已产出阶段内容；阶段级操作请回到当前等待审核的阶段。'
-                  : '该阶段当前无需人工操作。'
+              : workflow?.status === 'failed' || currentStageResult.status === 'failed'
+                ? `该阶段发生异常暂停（${currentStageResult.error || '执行中断'}）。可点击上方「重试本阶段」或顶部「一键断点恢复」继续推进。`
+                : currentStageResult.status === 'running' || workflow?.status === 'running'
+                  ? '该阶段正在执行，完成后将进入人工审核（若配置了审核门）。'
+                  : currentStageName !== workflow?.current_stage
+                    ? '正在查看已产出阶段内容；阶段级操作请回到当前等待审核的阶段。'
+                    : '该阶段当前无需人工操作。'
           }}
         </p>
       </el-card>

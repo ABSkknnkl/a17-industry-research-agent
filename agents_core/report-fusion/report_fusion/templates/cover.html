@@ -26,7 +26,6 @@
   <div class="cover-snapshot-grid">
     <div class="snapshot-card card-accent-blue">
       <div class="snapshot-header">
-        <span class="snapshot-icon">📅</span>
         <span class="snapshot-label">研究基准时点</span>
       </div>
       <div class="snapshot-val">{{ view.as_of.isoformat() }}</div>
@@ -34,7 +33,6 @@
     </div>
     <div class="snapshot-card card-accent-teal">
       <div class="snapshot-header">
-        <span class="snapshot-icon">📊</span>
         <span class="snapshot-label">数据循证覆盖</span>
       </div>
       <div class="snapshot-val">{{ view.evidence_catalog | length }} <span class="val-unit">条已核实证据</span></div>
@@ -42,7 +40,6 @@
     </div>
     <div class="snapshot-card card-accent-gold">
       <div class="snapshot-header">
-        <span class="snapshot-icon">📑</span>
         <span class="snapshot-label">覆盖核心章节</span>
       </div>
       <div class="snapshot-val">{{ view.chapters | length }} <span class="val-unit">大专题研判模块</span></div>
@@ -50,7 +47,6 @@
     </div>
     <div class="snapshot-card card-accent-purple">
       <div class="snapshot-header">
-        <span class="snapshot-icon">🛡️</span>
         <span class="snapshot-label">投研合规状态</span>
       </div>
       <div class="snapshot-val highlight">{{ view.delivery_status }}</div>
