@@ -2,6 +2,7 @@
 
 from data_fetcher.agent import DataFetcherAgent
 from data_fetcher.models import (
+    EventRecord,
     ResearchRequest,
     ResearchRunResult,
     StructuredResearchDataset,
@@ -9,6 +10,7 @@ from data_fetcher.models import (
 
 __all__ = [
     "DataFetcherAgent",
+    "EventRecord",
     "ResearchRequest",
     "ResearchRunResult",
     "StructuredResearchDataset",

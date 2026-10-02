@@ -173,6 +173,26 @@ class ResearchRecord(BaseModel):
     issues: list[str] = Field(default_factory=list)
 
 
+class EventRecord(BaseModel):
+    """结构化事件/公告记录（类D P-06 修复：事件四要素独立 Schema）。
+
+    与 ResearchRecord 平行存在：事件不是指标——禁止把 event_type 塞进 metric、
+    把公告日期塞进 period_end。来源限定 announcement-search / hithink-event-query，
+    或含事件特征字段（事件类型/公告标题等）的记录。
+    """
+
+    record_id: str
+    entity_name: str | None = None
+    entity_code: str | None = None
+    title: str | None = None
+    event_type: str | None = None
+    announce_date: date | None = None
+    body: str | None = None
+    source: SourceRef
+    raw_fields: dict[str, Any] = Field(default_factory=dict)
+    issues: list[str] = Field(default_factory=list)
+
+
 class ConflictRecord(BaseModel):
     conflict_key: str
     entity: str
@@ -191,6 +211,7 @@ class StructuredResearchDataset(BaseModel):
     industry_chain: list[ResearchRecord] = Field(default_factory=list)
     reports: list[ResearchRecord] = Field(default_factory=list)
     news: list[ResearchRecord] = Field(default_factory=list)
+    events: list[EventRecord] = Field(default_factory=list)
     sources: list[SourceRef] = Field(default_factory=list)
     conflicts: list[ConflictRecord] = Field(default_factory=list)
     quality_summary: dict[str, Any] = Field(default_factory=dict)

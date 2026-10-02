@@ -253,8 +253,13 @@ _SEVEN_DOMAINS = ("industry", "companies", "financials", "macro",
 
 
 def _total_records(dataset: Any) -> int:
-    """统计七个数据域的记录总数（空数据集风控用）。"""
-    return sum(len(getattr(dataset, name, []) or []) for name in _SEVEN_DOMAINS)
+    """统计七个数据域的记录总数（空数据集风控用）。
+
+    类D(P-06)：events 为结构化事件记录，计入有效记录总数——
+    否则"只有事件数据"的 run 会被 P0-1 误判 empty_dataset（打破 E-41/E-42 completed 预期）。
+    """
+    total = sum(len(getattr(dataset, name, []) or []) for name in _SEVEN_DOMAINS)
+    return total + len(getattr(dataset, "events", []) or [])
 
 
 class DataFetcherAgent:

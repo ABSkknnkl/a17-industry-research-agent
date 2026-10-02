@@ -386,6 +386,21 @@ class FiveAgentsAdapter:
             dom_records = dataset.records_for(dom)
             representative_records.extend(dom_records[:35])
 
+        # 类D(P-06)：结构化事件并入 A2 源记录（复用既有键形状：metric=事件类型、value=标题）
+        for ev in dataset.events[:35]:
+            source_records.append({
+                "record_id": ev.record_id,
+                "domain": "events",
+                "metric": ev.event_type or "event",
+                "value": ev.title,
+                "unit": None,
+                "entity_name": ev.entity_name,
+                "entity_code": ev.entity_code,
+                "period": str(ev.announce_date) if ev.announce_date else None,
+                "query": ev.source.query if ev.source else "",
+                "skill_name": ev.source.skill_id if ev.source else "",
+            })
+
         for r in representative_records:
             source_records.append({
                 "record_id": r.record_id,
@@ -417,8 +432,8 @@ class FiveAgentsAdapter:
 
         data: dict[str, Any] = {
             "source_records": source_records,
-            "total_records": len(all_records),
-            "evidence_count": len(all_records),
+            "total_records": len(all_records) + len(dataset.events),
+            "evidence_count": len(all_records) + len(dataset.events),
             "topic": industry,
             "industry_topic": industry,
             "keywords": [f for f in foci if not any(f.startswith(p) for p in ("限定", "用户", "修订"))] or [industry],
@@ -430,6 +445,7 @@ class FiveAgentsAdapter:
                 "industry_chain": len(dataset.industry_chain),
                 "reports": len(dataset.reports),
                 "news": len(dataset.news),
+                "events": len(dataset.events),
             },
             "intent_routing": {
                 "strategy": "multi_skill_autonomous_routing",

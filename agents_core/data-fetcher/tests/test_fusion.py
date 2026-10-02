@@ -59,7 +59,7 @@ def test_all_dataset_sections_exist_even_when_empty():
     dumped = dataset.model_dump()
     assert set(dumped) == {
         "subject", "industry", "companies", "financials", "macro", "industry_chain",
-        "reports", "news", "sources", "conflicts", "quality_summary",
+        "reports", "news", "events", "sources", "conflicts", "quality_summary",
     }
 
 

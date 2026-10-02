@@ -12,6 +12,7 @@ from typing import Any
 from data_fetcher.models import (
     ConflictRecord,
     Domain,
+    EventRecord,
     ResearchRecord,
     SkillResult,
     SourceRef,
@@ -292,6 +293,42 @@ SINGLE_ENTITY_SKILLS = {
 }
 
 
+# ── 类D(P-06): 事件/公告结构化抽取常量 ──────────────────────────────────────
+EVENT_SOURCE_SKILLS = frozenset({"announcement-search", "hithink-event-query"})
+EVENT_TYPE_KEYS = ("事件类型", "事件类别", "公告类型", "event_type")
+EVENT_TITLE_KEYS = ("公告标题", "公告名称", "事件标题", "标题", "title")
+EVENT_DATE_KEYS = ("公告日期", "发布日期", "事件日期", "公布日期", "announce_date", "announcement_date")
+EVENT_BODY_KEYS = ("公告内容", "公告摘要", "事件内容", "事件描述", "内容", "摘要", "summary", "body")
+EVENT_CONSUMABLE_KEYS = frozenset(EVENT_TYPE_KEYS + EVENT_TITLE_KEYS + EVENT_DATE_KEYS + EVENT_BODY_KEYS)
+
+# event_type 缺失时的确定性推断规则（按序匹配标题/内容关键词；fusion 不调 LLM，见类 docstring）
+_EVENT_TYPE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("业绩预告", ("业绩预增", "业绩预减", "业绩预告", "预盈", "预亏", "扭亏")),
+    ("股权激励", ("股权激励", "限制性股票", "股票期权", "员工持股计划")),
+    ("增发配股", ("增发", "配股", "定增", "非公开发行")),
+    ("回购增持", ("回购", "增持")),
+    ("分红派息", ("分红", "派息", "利润分配", "送转")),
+    ("资产重组", ("重组", "并购", "收购", "重大资产")),
+    ("股权质押", ("质押", "解押")),
+    ("限售解禁", ("解禁", "限售股上市")),
+    ("机构调研", ("调研", "接待机构")),
+    ("监管函件", ("问询函", "关注函", "警示函", "监管函", "监管措施")),
+    ("重大合同", ("中标", "重大合同", "签订合同")),
+    ("股东大会", ("股东大会",)),
+    ("高管变动", ("辞职", "聘任", "离任", "高管变动")),
+)
+
+
+def _infer_event_type(*texts: str | None) -> str | None:
+    blob = "".join(t for t in texts if t)
+    if not blob:
+        return None
+    for etype, keywords in _EVENT_TYPE_RULES:
+        if any(kw in blob for kw in keywords):
+            return etype
+    return None
+
+
 def _is_entity_excluded(
     entity_name: str | None,
     raw: dict[str, Any],
@@ -457,8 +494,62 @@ class DataFusion:
                 if result.domain == Domain.MACRO and not entity_name:
                     entity_name = "宏观"
 
-                metrics = [(key, value) for key, value in raw.items() if key not in METADATA_KEYS]
+                # ── 类D(P-06): 事件/公告记录走独立结构化通道 ──
+                # 识别条件（满足其一）：来源技能在白名单；raw 含事件类型特征键。
+                # 数值字段（如"增发数量"）不在此 continue，仍走下方通用拆分保留为指标。
+                is_event_source = result.skill_id in EVENT_SOURCE_SKILLS
+                raw_event_type = _first(raw, EVENT_TYPE_KEYS)
+                consumed_event_keys: frozenset[str] = frozenset()
+                if is_event_source or raw_event_type not in (None, ""):
+                    event_title = _first(raw, EVENT_TITLE_KEYS)
+                    event_body = _first(raw, EVENT_BODY_KEYS)
+                    announce_date = _parse_date(_first(raw, EVENT_DATE_KEYS) or published)
+                    etype = (
+                        str(raw_event_type).strip()
+                        if raw_event_type not in (None, "")
+                        else _infer_event_type(
+                            str(event_title) if event_title else None,
+                            str(event_body) if event_body else None,
+                        )
+                    )
+                    if announce_date and announce_date > as_of:
+                        dropped_future += 1
+                        continue
+                    event_issues: list[str] = []
+                    if event_title in (None, ""):
+                        event_issues.append("missing_title")
+                    if not etype:
+                        event_issues.append("missing_event_type")
+                    if announce_date is None:
+                        event_issues.append("missing_announce_date")
+                    event_id = _record_id([
+                        "event", entity_code or entity_name, etype, announce_date,
+                        str(event_title) if event_title else None, result.skill_id,
+                    ])
+                    if event_id not in seen_record_ids:
+                        dataset.events.append(EventRecord(
+                            record_id=event_id,
+                            entity_name=entity_name,
+                            entity_code=entity_code,
+                            title=str(event_title).strip() if event_title else None,
+                            event_type=etype,
+                            announce_date=announce_date,
+                            body=str(event_body).strip() if event_body else None,
+                            source=source,
+                            raw_fields=raw,
+                            issues=event_issues,
+                        ))
+                        seen_record_ids.add(event_id)
+                    consumed_event_keys = EVENT_CONSUMABLE_KEYS
+
+                metrics = [
+                    (key, value) for key, value in raw.items()
+                    if key not in METADATA_KEYS and key not in consumed_event_keys
+                ]
                 if not metrics:
+                    if consumed_event_keys:
+                        # 纯事件记录：EventRecord 已承载全部结构化信息，不再产碎片
+                        continue
                     metrics = [("record", raw)]
                 for raw_key, raw_value in metrics:
                     raw_key_str = str(raw_key)
@@ -593,6 +684,8 @@ class DataFusion:
             "records_with_issues": sum(
                 1 for domain in Domain for record in dataset.records_for(domain) if record.issues
             ),
+            "event_count": len(dataset.events),
+            "events_with_issues": sum(1 for ev in dataset.events if ev.issues),
         }
         return dataset
 
