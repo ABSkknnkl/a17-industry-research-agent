@@ -5,6 +5,7 @@ from backend.app.core.config import settings
 def init_agent_paths() -> None:
     agents_core = settings.AGENTS_CORE_DIR
     subdirs = [
+        agents_core,  # 跨包共享模块（如 skill_policy 技能融合器）
         agents_core / "data-fetcher",
         agents_core / "data-analysis",
         agents_core / "chart-generator",

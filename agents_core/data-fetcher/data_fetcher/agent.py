@@ -50,6 +50,7 @@ INTENT_SYSTEM_PROMPT = """你是数据获取智能体的需求理解与实体抽
    - `relevant_industries`: 字符串列表，该主题直接相关或深度赋能的一级/二级行业大类（例如对于“宠物经济”：["农林牧渔", "轻工制造", "医药生物", "商贸零售"]；对于“具身智能”：["机械设备", "电子", "计算机", "汽车"]）；
    - `excluded_industries`: 字符串列表，该主题完全不相关、绝不应跨界混入的行业大类（例如对于“宠物经济”：["国防军工", "钢铁", "采掘", "建筑装饰"]；对于“新能源车”：["通信", "石油石化", "房地产", "建筑材料", "食品饮料"]）。
 5. 规划所需的数据领域（required_domains）：只能从 industry、companies、financials、macro、industry_chain、reports、news 中选择，默认保留全部七个领域以建立完整客观研究底座。
+6. 逐个识别用户问询中的量化指标需求，生成可验收的 metric_requirements（验收标准由你制定，代码只负责数数核对）：
 
 返回 JSON 对象，字段必须包含：
 - "industry": 字符串，清洗后的标准行业名称；
@@ -59,7 +60,25 @@ INTENT_SYSTEM_PROMPT = """你是数据获取智能体的需求理解与实体抽
 - "core_subsectors": 字符串列表，核心细分产品或零部件词槽（2~4个）；
 - "relevant_industries": 字符串列表，主题相关的行业大类；
 - "excluded_industries": 字符串列表，主题互斥无关的跨界行业大类；
-- "required_domains": 列表，覆盖的数据领域。"""
+- "required_domains": 列表，覆盖的数据领域；
+- "metric_requirements": 数组，用户问询中量化指标需求的验收标准，每项结构为：
+  {
+    "requirement_id": 小写字母/数字/下划线组成的英文标识（如 "market_scale_series"），
+    "label": 中文需求描述（如 "2021-2025 年市场规模年度序列"），
+    "metric_terms": 2~5 个同义/近义指标词（中英皆可），将用于在取回记录的 metric 字段中做子串匹配验收——词给得越准，验收越严，
+    "domain": 该指标最可能所在的数据领域（七域之一），
+    "time_range": 用户指定的时间范围（如 "2021-2025"），未指定则为 null，
+    "min_records": 整数，判定"已满足"所需的最少合格记录数，
+    "requires_period_end": 布尔，是否要求记录带报告期，
+    "reasoning": 一句话说明为什么需要这项验收
+  }
+
+【metric_requirements 生成规则】
+1. 数值、序列、比率、排名、计数都算量化指标；用户每问一个，生成一条；
+2. 用户问了时间范围（如"近三年/2021至2025"）时必须写 time_range，并把 min_records 设为不低于年份数的 60%（序列不许只剩单点）；
+3. 用户问"数量/个数/多少家"类计数指标时，min_records 可为 1，但 metric_terms 必须包含计数特征词；
+4. 【自我验收】写完后自问：若取回的数据里完全没有命中 metric_terms 的记录，这条需求是否该判"未满足"？若是，才允许输出；
+5. 用户没有问任何量化指标时，输出空数组 []，不要编造需求。"""
 
 PLANNER_SYSTEM_PROMPT = """你是数据获取智能体的任务规划模块。
 你负责调用同花顺问财（iWenCai）Skill 工具包，为全行业投研报告自主规划精准、高召回、结构完备的查询任务。
@@ -100,6 +119,16 @@ planning_methodologies 只用于补全查询维度；它们不是可执行 Skill
 
 3. 【第三层：纵深拆解与闭环补齐】（第 3 轮+ 规划）：
    - 核心目标：针对 observation.unmet_requirements 中仍未满足的领域或硬性指标进行针对性单点精准补齐。
+
+【用户指标需求的最高优先级】
+observation.coverage.requirement_coverage 中 passed=false 且 requirement_id 不以 "domain_" 开头的条目，
+是从用户问询直接推导的指标验收需求（含 label 与 missing 中的指标词）。当它们未通过时：
+1. 你的下一轮任务必须优先尝试满足这些条目，三层递进节奏为其让路，并填写对应 requirement_ids；
+2. 自主选择你认为最可能取到该指标结构化数值的技能与查询语法——
+   注意 report-search / news-search 返回的是文本片段而非指标序列，
+   对"需要年度数值序列"的需求通常应改用数据类技能（如 hithink-industry-query / hithink-macro-query / hithink-finance-query）；
+3. 尝试 2 轮仍未取到时，在 assessment 中写明"该指标在数据源中不可得"及已尝试的查询——
+   这是合法结论，把判断权留给下游（解读层会如实披露），禁止为凑数用文本片段冒充序列。
 
 【第一铁律：严禁使用股票代码，强制使用公司标准证券简称】
 问财底层是金融自然语言解析器：
@@ -332,6 +361,8 @@ class DataFetcherAgent:
         await record_event(
             "objective_ready",
             required_domains=[domain.value for domain in objective.required_domains],
+            model_requirements=[r.requirement_id for r in objective.model_requirements],
+            rejected_metric_requirements=objective.rejected_metric_requirements,
         )
         dataset = self.fusion.fuse(
             [],
@@ -644,6 +675,7 @@ class DataFetcherAgent:
             coverage=final_coverage,
             errors=errors,
             execution_trace=trace,
+            model_requirements=list(objective.model_requirements),
             artifact_dir=str(artifact_dir.resolve()) if artifact_dir else None,
         )
         self._save_artifacts(artifact_dir, request, all_results, result)
@@ -664,7 +696,12 @@ class DataFetcherAgent:
         # All seven sections form the default data foundation. The LLM may order them,
         # but cannot silently remove the baseline contract.
         required = list(dict.fromkeys(required + list(Domain)))
-        requirements = self._baseline_requirements(request, required)
+        baseline_reqs = self._baseline_requirements(request, required)
+        # v3 接线（断点 A/B）：模型从问询中推导的指标验收需求不再丢弃。
+        # 代码只做白名单/格式校验（算术，非决策），校验不过的条目退化为不参与验收。
+        model_reqs, rejected = self._parse_metric_requirements(response, baseline_reqs)
+        # 模型需求排在基线之前：未满足时 observation 优先呈现，反馈循环优先逼问。
+        requirements = model_reqs + baseline_reqs
         # 语义提取的必须包含标的（优先自 LLM 理解，兼顾 request 显式传参）
         llm_entities = response.get("must_include_entities") or response.get("target_entities") or []
         req_entities = getattr(request, "must_include_entities", []) or []
@@ -678,15 +715,88 @@ class DataFetcherAgent:
         return ResearchObjective(
             industry=request.industry,
             focus_points=request.focus_points,
-            data_requirements=request.data_requirements,
+            # 模型理解的指标需求标签回流，供后续阶段（解读/写作）引用
+            data_requirements=list(dict.fromkeys(
+                request.data_requirements + [r.label for r in model_reqs]
+            )),
             must_include_entities=combined_entities,
             core_subsectors=core_subs,
             relevant_industries=relevant_ind,
             excluded_industries=excluded_ind,
             required_domains=required,
             requirements=requirements,
+            model_requirements=model_reqs,
+            rejected_metric_requirements=rejected,
             as_of=request.as_of,
         )
+
+    @staticmethod
+    def _parse_metric_requirements(
+        response: dict[str, Any],
+        baseline_reqs: list[ResearchRequirement],
+    ) -> tuple[list[ResearchRequirement], list[str]]:
+        """解析 INTENT 模型返回的 metric_requirements（v3：模型生成验收标准，代码只校验）。
+
+        校验规则（防幻觉，非决策）：
+        - domain 必须在七域白名单；metric_terms 非空去重；min_records ≥ 1；
+        - requirement_id 须符合契约 pattern 且不与基线/已接受条目重复。
+        校验不过的条目退化为不参与验收，原因记入 rejected，不猜测修正。
+        """
+        raw = response.get("metric_requirements") or []
+        if not isinstance(raw, list):
+            return [], ["metric_requirements 不是数组，已忽略"]
+        used_ids = {item.requirement_id for item in baseline_reqs}
+        accepted: list[ResearchRequirement] = []
+        rejected: list[str] = []
+        for idx, item in enumerate(raw):
+            if not isinstance(item, dict):
+                rejected.append(f"第 {idx + 1} 条不是对象")
+                continue
+            label = str(item.get("label") or "").strip()
+            terms = item.get("metric_terms")
+            if isinstance(terms, str):
+                terms = [terms]
+            terms = list(dict.fromkeys(
+                str(t).strip() for t in (terms or []) if str(t).strip()
+            ))
+            domain_raw = str(item.get("domain") or "").strip()
+            try:
+                min_records = int(item.get("min_records") or 1)
+            except (TypeError, ValueError):
+                min_records = 1
+            requirement_id = str(item.get("requirement_id") or "").strip()
+            reason = None
+            if not label:
+                reason = "label 为空"
+            elif not terms:
+                reason = "metric_terms 为空"
+            elif domain_raw not in {d.value for d in Domain}:
+                reason = f"domain 不在七域白名单: {domain_raw or '空'}"
+            elif min_records < 1:
+                reason = "min_records < 1"
+            elif not requirement_id:
+                reason = "requirement_id 为空"
+            elif requirement_id in used_ids:
+                reason = f"requirement_id 重复: {requirement_id}"
+            if reason:
+                rejected.append(f"{label or requirement_id or f'第 {idx + 1} 条'}: {reason}")
+                continue
+            try:
+                req = ResearchRequirement(
+                    requirement_id=requirement_id,
+                    label=label,
+                    domain=Domain(domain_raw),
+                    hard=True,
+                    min_records=min_records,
+                    expected_metric_groups=[terms],
+                    requires_period_end=bool(item.get("requires_period_end")),
+                )
+            except ValidationError as exc:
+                rejected.append(f"{label}: 契约校验失败 {exc.errors()[0].get('msg', '')}")
+                continue
+            used_ids.add(req.requirement_id)
+            accepted.append(req)
+        return accepted, rejected
 
     async def _decide(
         self,
@@ -1111,10 +1221,13 @@ class DataFetcherAgent:
                     retryable=True,
                 )
             ]
+        # 终态 coverage 与循环内口径一致：优先用 objective 的融合验收标准
+        # （含模型生成的指标需求），无 objective 时退化为基线。
         coverage = self._coverage(
             dataset,
             list(Domain),
-            self._baseline_requirements(request, list(Domain)),
+            (objective.requirements if objective and objective.requirements else None)
+            or self._baseline_requirements(request, list(Domain)),
         )
         return ResearchRunResult(
             run_id=run_id,
@@ -1124,6 +1237,7 @@ class DataFetcherAgent:
             coverage=coverage,
             errors=errors,
             execution_trace=trace,
+            model_requirements=list(objective.model_requirements) if objective else [],
             artifact_dir=str(artifact_dir.resolve()) if artifact_dir else None,
         )
 

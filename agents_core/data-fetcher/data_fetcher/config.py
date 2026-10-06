@@ -38,11 +38,15 @@ class Settings:
     def from_env(cls) -> "Settings":
         try:
             from dotenv import load_dotenv
-            env_path = Path(__file__).resolve().parents[3] / ".env"
-            if env_path.exists():
-                load_dotenv(env_path, override=True)
-            else:
-                load_dotenv(override=True)
+            # 参数扫描实验会置 SKIP_DOTENV_OVERRIDE=1 关闭 .env 覆盖：
+            # 否则 .env 里的值会把注入的实验参数盖回去，扫描结论会失真。
+            # 生产路径下该变量不存在，行为与改造前完全一致。
+            if not os.getenv("SKIP_DOTENV_OVERRIDE"):
+                env_path = Path(__file__).resolve().parents[3] / ".env"
+                if env_path.exists():
+                    load_dotenv(env_path, override=True)
+                else:
+                    load_dotenv(override=True)
         except Exception:
             pass
         return cls(

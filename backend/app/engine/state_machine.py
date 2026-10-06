@@ -836,6 +836,13 @@ class WorkflowEngine:
                     analysis_depth=analysis_depth,
                 )
             elif stage == "data_interpret":
+                # v3：A1 模型生成的指标验收需求随阶段产物透传给解读层
+                fetch_stage = state.stage_results.get("data_fetch")
+                metric_requirements = (
+                    (fetch_stage.data or {}).get("metric_requirements")
+                    if fetch_stage and isinstance(fetch_stage.data, dict)
+                    else None
+                )
                 result = await FiveAgentsAdapter.run_data_interpreter(
                     run_id=run_id,
                     industry=industry,
@@ -845,7 +852,10 @@ class WorkflowEngine:
                     reporting_currency=reporting_currency,
                     research_as_of=research_as_of,
                     analysis_depth=analysis_depth,
+                    # 用户原始问询必须透传给解读层：其技能路由靠它做关键词匹配
+                    user_questions=focus_points,
                     selected_skills=selected_skills,
+                    metric_requirements=metric_requirements,
                 )
             elif stage == "chart_generate":
                 result = await FiveAgentsAdapter.run_chart_generator(

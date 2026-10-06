@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 from pathlib import Path
 import secrets
 from typing import Any
@@ -30,13 +31,39 @@ from data_interpreter.models import (
 )
 from data_interpreter.skillhub import AnalysisSkill, AnalysisSkillHub
 
+try:
+    from skill_policy import merge_selection
+except ModuleNotFoundError:  # 单包测试或独立运行时 agents_core 不在搜索路径上，按包位置回推
+    import sys as _sys
+
+    _sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from skill_policy import merge_selection
+
+# 并集合并后的技能上限。确定性路由与模型规划各自的上限都是 7，
+# 合并后会自然变大；放宽到 10 是给「规则补漏」留空间，同时避免挂载过多技能拖长解读耗时。
+SKILL_MERGE_LIMIT = 10
+
+# 提示词 A/B 实验（B 组）追加的「技能选择精确性」约束。
+# 假设：模型存在过度扩张倾向（实测平均自选 7 项，其中部分与用户问询无关），
+# 明确「只选与问询对应且数据具备前提的技能」可降低无关技能占比。
+# 仅当环境变量 SKILL_PRECISION_GUARD=1 时生效，默认（A 组）行为完全不变。
+SKILL_PRECISION_SUFFIX = """
+
+【技能选择的精确性要求】
+你选择的每一项技能都必须同时满足两个条件：
+1) 与用户实际问询直接对应——用户问市场规模与增速，就不要去选市场情绪、产业链拓扑这类它并未问及的维度；
+2) 数据具备该技能的前提——例如缺少收入、利润、现金流明细时，不要选择需要三表勾稽的深度财务分析。
+每项技能都要在 reason 中写明「它对应用户问询中的哪一项」；写不出对应关系的技能不要选。
+"""
+
 
 SKILL_PLANNING_SYSTEM_PROMPT = """你是顶级产业与金融研报数据解读规划总监。
 你负责根据取数数据集的结构、领域分布、关键指标、异常情况与核心公司，自主调用投研方法论技能库中的专业技能（通过 invoke_skill 工具），以实现针对性的深度行业解读。
 【原则】
 1. 必须根据实际数据特征（如是否包含产业链上下游数据、是否有财务三大表、是否有估值/异动指标、是否有宏观周期指标）精准调用技能；
 2. 每次调用 invoke_skill 必须结合当前数据形态给出清晰、专业的调用理由与预期分析重点；
-3. 请自主挑选 4 到 7 个最适用的技能进行深入剖析。"""
+3. 请自主挑选 4 到 7 个最适用的技能进行深入剖析；
+4. 若输入含 metric_requirements（取数阶段从用户问询推导的指标需求），技能选择应优先围绕这些指标——它们就是用户真正要的答案。"""
 
 SEMANTIC_SYSTEM_PROMPT = """你是顶级研报数据解读智能体的语义分析模块。
 你的唯一事实来源是输入 JSON 中的 deterministic_findings（含 key_metrics、trends、anomalies、cross_validations、comps_matrix、industry_chain、financial_ratios）和 evidence_index。
@@ -47,6 +74,9 @@ SEMANTIC_SYSTEM_PROMPT = """你是顶级研报数据解读智能体的语义分�
 
 【核心龙头与混业边界约束】：
 在分析行业核心龙头与竞争格局时，应优先聚焦业务纯正度高、处于核心产业链主环节的企业；若市值最大企业属于混业跨界或外围概念标的，应明确指出其主要业务来源，不得将其整体财务波动直接等同于该细分赛道的核心现状。
+
+【用户指标需求约束】：
+若输入 request 中含 metric_requirements（取数阶段从用户问询推导的指标需求），洞察组织应优先围绕这些指标；若输入数据无法支撑某项指标，必须在对应洞察中明确写"证据不足/数据缺失"，不得绕开、不得用无关指标顶替。
 
 仅返回 JSON 对象，字段为：
 1. executive_summary：3-5 句，高水准概括行业市场定位、核心竞争龙头财务表现（结合可比矩阵与估值分位数）、产业链关键瓶颈及数据限制；
@@ -259,13 +289,17 @@ class DataInterpreterAgent:
         industry_chain_segments = self.engine.extract_industry_chain(dataset, request.subject, comps_matrix=comps_matrix)
         financial_ratios = self.engine.compute_financial_ratios(dataset)
 
-        # LLM autonomous skill planning when LLM is available, fallback to deterministic select
+        # 确定性路由始终先算一遍：它与模型判断取并集，保证「该用的技能不漏」。
+        # 改造前是互斥替代（模型可用就用模型的、失败才回落规则），每次运行都会丢掉另一侧的信息。
+        policy_skills = self.skillhub.select(request, dataset)
+
         if request.enable_semantic_analysis and self.llm.is_available and hasattr(self.llm, "plan_skills_with_tools"):
             selected_skills = await self._plan_skills(
-                request, dataset, metrics, trends, anomalies, validations, quality, trace
+                request, dataset, metrics, trends, anomalies, validations, quality, trace,
+                policy_skills=policy_skills,
             )
         else:
-            selected_skills = self.skillhub.select(request, dataset)
+            selected_skills = policy_skills
             trace.append(AnalysisTraceEvent(event="skill_routed_by_policy", details={
                 "skills": [s.name for s in selected_skills],
                 "reason": "基于数据集结构与字段覆盖特征，快速路由分析方法论技能",
@@ -472,6 +506,8 @@ class DataInterpreterAgent:
         validations: list[CrossValidationFinding],
         quality: Any,
         trace: list[AnalysisTraceEvent],
+        *,
+        policy_skills: list[AnalysisSkill],
     ) -> list[AnalysisSkill]:
         populated_domains = [
             d for d in ("industry", "companies", "financials", "macro", "industry_chain", "reports", "news")
@@ -481,6 +517,7 @@ class DataInterpreterAgent:
         user_prompt = json.dumps({
             "subject": request.subject,
             "focus_points": request.focus_points,
+            "metric_requirements": request.metric_requirements,
             "data_summary": {
                 "record_count": quality.record_count,
                 "populated_domains": populated_domains,
@@ -495,7 +532,9 @@ class DataInterpreterAgent:
 
         try:
             planned = await self.llm.plan_skills_with_tools(
-                SKILL_PLANNING_SYSTEM_PROMPT,
+                SKILL_PLANNING_SYSTEM_PROMPT + (
+                    SKILL_PRECISION_SUFFIX if os.getenv("SKILL_PRECISION_GUARD") == "1" else ""
+                ),
                 user_prompt,
                 tools=self.skillhub.get_tool_spec(),
             )
@@ -529,14 +568,32 @@ class DataInterpreterAgent:
                     skills_map[s.name] = s
 
             if skills_map:
-                return sorted(skills_map.values(), key=lambda x: (not x.always, x.name))
+                model_skills = sorted(skills_map.values(), key=lambda x: (not x.always, x.name))
+                # 与确定性路由取并集：模型漏选的、规则认为该有的，在这里补上。
+                # 传入意图文本，让与本次需求无关的条件技能（如未问 ESG 却补 ESG）被裁掉。
+                intent_text = " ".join([request.subject, *(request.focus_points or [])])
+                merged = merge_selection(
+                    model_skills,
+                    policy_skills,
+                    limit=SKILL_MERGE_LIMIT,
+                    intent_text=intent_text,
+                )
+                trace.append(AnalysisTraceEvent(event="skill_selection_merged", details={
+                    "model_selected": [s.name for s in model_skills],
+                    "policy_added": merged.added_by_policy,
+                    "policy_screened_out": merged.screened_out,
+                    "dropped_by_limit": merged.dropped_by_limit,
+                    "provenance": merged.provenance,
+                }))
+                return merged.final
         except Exception as exc:
             trace.append(AnalysisTraceEvent(
                 event="skill_planning_fallback",
                 details={"error": str(exc)},
             ))
 
-        return self.skillhub.select(request, dataset)
+        # 规划失败时不再重新算一遍路由，直接复用调用方已算好的确定性结果
+        return policy_skills
 
     async def _execute_skills(
         self, selected_skills, request, metrics, trends, anomalies, validations,

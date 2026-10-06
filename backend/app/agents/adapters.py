@@ -457,6 +457,24 @@ class FiveAgentsAdapter:
             "warnings": blocking_issues,
             "agent_status": run_res.status,
             "stop_reason": run_res.stop_reason,
+            # v3：模型在 A1 生成的指标验收需求，透传给解读层（A2）决定解读重点
+            "metric_requirements": [
+                {
+                    "requirement_id": r.requirement_id,
+                    "label": r.label,
+                    "metric_terms": [t for g in r.expected_metric_groups for t in g],
+                    "domain": r.domain.value if hasattr(r.domain, "value") else str(r.domain),
+                    "passed": next(
+                        (
+                            c.passed
+                            for c in run_res.coverage.requirement_coverage
+                            if c.requirement_id == r.requirement_id
+                        ),
+                        None,
+                    ),
+                }
+                for r in (getattr(run_res, "model_requirements", []) or [])
+            ],
         }
 
         artifacts = [
@@ -490,6 +508,8 @@ class FiveAgentsAdapter:
         research_as_of: str | None = None,
         analysis_depth: str = "standard",
         selected_skills: list[str] | None = None,
+        user_questions: list[str] | None = None,
+        metric_requirements: list[dict[str, Any]] | None = None,
     ) -> StageResult:
         """阶段 2: 数据解读智能体 (Data Interpreter)"""
         import backend.app.core.setup_env
@@ -528,6 +548,13 @@ class FiveAgentsAdapter:
         dataset = StructuredResearchDataset.model_validate(dataset_dict)
 
         focus_items = []
+        # 用户原始问询必须排在最前：解读层的技能路由（skillhub.select）用
+        # subject + focus_points 做关键词打分，若这里只有市场/币种/确权类环境信息，
+        # 技能选择就只能靠行业名猜，报告会出现"问市占率答估值"的答非所问。
+        for q in (user_questions or []):
+            text = str(q).strip()
+            if text:
+                focus_items.append(f"用户问询:{text}")
         if market_scope:
             focus_items.append(f"重点覆盖市场:{'、'.join(market_scope)}")
         if reporting_currency:
@@ -557,12 +584,28 @@ class FiveAgentsAdapter:
         if feedback:
             focus_items.append(f"修订需求:{feedback}")
 
+        # v3：A1 模型生成的指标验收需求 → A2 解读重点（"重点讲什么"由模型需求决定，
+        # "数字怎么算"仍由确定性引擎负责，二者不冲突）
+        metric_req_items: list[str] = []
+        for item in (metric_requirements or []):
+            if isinstance(item, dict):
+                label = str(item.get("label") or "").strip()
+                terms = "、".join(
+                    str(t).strip() for t in (item.get("metric_terms") or []) if str(t).strip()
+                )
+                if label:
+                    metric_req_items.append(f"{label}（指标词：{terms}）" if terms else label)
+            elif str(item).strip():
+                metric_req_items.append(str(item).strip())
+
         analysis_kwargs: dict[str, Any] = {
             "subject": industry,
             "focus_points": focus_items,
             "max_key_metrics": 30 if is_deep else 20,
             "max_insights": 18 if is_deep else 12,
         }
+        if metric_req_items:
+            analysis_kwargs["metric_requirements"] = metric_req_items
         if research_as_of:
             try:
                 from datetime import date
@@ -1350,9 +1393,31 @@ class FiveAgentsAdapter:
         html_file = art_dir / "report.html"
         pdf_file = art_dir / "report.pdf"
 
-        event_hub.emit(run_id, "report_fusion", "artifact_created", "已导出机构专供交互式长图网页 (report.html)", tool="HTMLRenderer")
-        event_hub.emit(run_id, "report_fusion", "artifact_created", "已排版编译 A4 出版级高清矢量 PDF 研报 (report.pdf)", tool="PDFCompiler")
-        event_hub.emit(run_id, "report_fusion", "stage_completed", "阶段 5 报告融合完成，MD / HTML / PDF 多格式出版物全部交付就绪！", tool="ReportFusionAgent")
+        # 交付实况：以产物是否真实存在为准（此前为无条件播报，导出失败时仍会宣告成功）
+        export_warnings: list[str] = [str(w) for w in (getattr(result, "warnings", None) or [])]
+        delivered_formats: list[str] = []
+        for label, path in (("markdown", md_file), ("html", html_file), ("pdf", pdf_file)):
+            if path.exists() and path.stat().st_size > 0:
+                delivered_formats.append(label)
+            else:
+                export_warnings.append(f"{label} 格式导出缺失或为空文件（{path.name}）")
+
+        def _size_kb(path: Path) -> str:
+            return f"{path.stat().st_size / 1024:.0f} KB" if path.exists() else "0 KB"
+
+        if html_file.exists() and html_file.stat().st_size > 0:
+            event_hub.emit(run_id, "report_fusion", "artifact_created", f"已导出机构专供交互式长图网页 (report.html, {_size_kb(html_file)})", tool="HTMLRenderer")
+        else:
+            event_hub.emit(run_id, "report_fusion", "warn", "HTML 产物缺失或为空文件，请检查渲染日志", tool="HTMLRenderer")
+        if pdf_file.exists() and pdf_file.stat().st_size > 0:
+            event_hub.emit(run_id, "report_fusion", "artifact_created", f"已排版编译 A4 出版级高清矢量 PDF 研报 (report.pdf, {_size_kb(pdf_file)})", tool="PDFCompiler")
+        else:
+            event_hub.emit(run_id, "report_fusion", "warn", "PDF 导出失败，已按实际交付格式降级（详见阶段 warnings）", tool="PDFCompiler")
+        event_hub.emit(
+            run_id, "report_fusion", "stage_completed",
+            f"阶段 5 报告融合完成，实际交付格式：{' / '.join(delivered_formats).upper() or '无'}",
+            tool="ReportFusionAgent",
+        )
 
         manifest_entries = [
             {"artifact_id": "report_markdown", "kind": "report_markdown", "uri": str(md_file), "size_bytes": md_file.stat().st_size if md_file.exists() else 0},
@@ -1446,6 +1511,11 @@ class FiveAgentsAdapter:
         for iss in ch_quality.get("issues", []):
             if iss not in fusion_issues:
                 fusion_issues.append(iss)
+        # 导出类告警（缺格式 / 空文件 / 渲染异常）必须进入质量问题清单，
+        # 否则导出失败对评审与前端完全不可见
+        for w in export_warnings[:5]:
+            if w not in fusion_issues:
+                fusion_issues.append(w)
 
         clean_issues = _deduplicate_warnings(fusion_issues)
         fusion_passed = not any("阻断" in str(iss) or "致命" in str(iss) or "failed" in str(iss).lower() for iss in clean_issues)
@@ -1474,7 +1544,10 @@ class FiveAgentsAdapter:
             "security_types": security_types or ["股票"],
             "reporting_currency": reporting_currency,
             "delivery_status": _resolve_delivery_status(art_dir, consistency),
-            "formats": ["markdown", "html", "pdf"],
+            # 交付格式以实际产物为准，避免对外展示并未生成的格式
+            "formats": delivered_formats,
+            # 导出类告警（缺格式 / 空文件 / 渲染异常）显式落盘，供前端与评审核对
+            "warnings": export_warnings,
             "included_chart_ids": [c.chart_id for c in chart_res.charts],
             "artifacts": manifest_entries,
             "quality": {

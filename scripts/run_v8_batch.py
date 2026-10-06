@@ -276,7 +276,18 @@ async def main() -> int:
         default="record",
         help="快照层：record=真实请求顺带落盘（默认，首轮用）；replay=零配额重放；off=关闭",
     )
+    ap.add_argument(
+        "--out-dir",
+        default=None,
+        help="产物输出目录（默认 eval/runs/v8_batch）。参数扫描等实验请指定独立目录，避免与常规批跑互相覆盖",
+    )
     args = ap.parse_args()
+
+    if args.out_dir:
+        # 输出目录是模块级常量、被多处引用，这里整体重定向到实验目录
+        global OUT_DIR, PROGRESS_PATH
+        OUT_DIR = Path(args.out_dir).resolve()
+        PROGRESS_PATH = OUT_DIR / "progress.json"
 
     if os.environ.get("IMAGE_API_KEY", "UNSET") != "":
         log("⚠️ IMAGE_API_KEY 未置空 → 生图会消耗大量时间，请用 IMAGE_API_KEY='' 启动")

@@ -37,6 +37,14 @@ METADATA_KEYS = set(ENTITY_CODE_KEYS + ENTITY_NAME_KEYS + PERIOD_KEYS + PUBLISHE
     "宏观@id", "指标名称", "指标单位", "指标类型", "频度", "数据来源", "国家", "地区",
 }
 
+# 长表（long-format）序列返回的键族：问财"序列类"查询（市场规模/出口量/装机量/产销量…）
+# 不论从哪个技能进入，底层都是宏观库长表——每行一个时间点。
+# 判定要求三族同时命中（值 ∧ 时间 ∧ 名称），只能命中真正的长表，
+# 不会误伤公司财报/行情等宽表（它们不含"指标值/指标"这类列名）。
+LONG_TABLE_VALUE_KEYS = ("指标值", "数值", "value")
+LONG_TABLE_TIME_KEYS = ("时间", "日期", "period")
+LONG_TABLE_NAME_KEYS = ("指标", "macro_name", "指标名称")
+
 METRIC_NAMES = {
     "营业收入": "revenue",
     "营业总收入": "revenue",
@@ -380,6 +388,67 @@ def _is_entity_excluded(
     return False
 
 
+def _fuse_long_table_row(
+    raw: dict[str, Any],
+    *,
+    domain: Domain,
+    source: SourceRef,
+    entity_name: str | None,
+    published: date | None,
+    as_of: date,
+    raw_index: int,
+    default_entity: str | None,
+) -> ResearchRecord | None:
+    """把一行长表（时间/指标/指标值/单位…）原子化为一条 ResearchRecord。
+
+    长表是"每行一个时间点、指标名在列值里"的形状；逐键拆分会把一行炸成
+    metric='时间'/'指标值'/'周期' 等 8 条碎片，指标名与数值彻底脱钩。
+    返回 None 表示该行日期晚于 as_of（调用方计入 dropped_future）。
+    """
+    val_raw = raw.get("指标值")
+    if val_raw is None:
+        val_raw = raw.get("数值")
+    if val_raw is None:
+        val_raw = raw.get("value")
+    val, parsed_u = _split_value_unit(val_raw)
+    m_name = str(
+        raw.get("指标") or raw.get("macro_name") or raw.get("指标名称") or "宏观指标"
+    ).strip()
+    m_unit = parsed_u or str(raw.get("单位") or raw.get("指标单位") or "元").strip()
+    m_date = _parse_date(raw.get("时间") or raw.get("日期") or raw.get("period"))
+    m_ent = str(
+        raw.get("国家") or raw.get("地区") or entity_name or default_entity or ""
+    ).strip() or None
+
+    if m_date and m_date > as_of:
+        return None
+
+    compact_raw = raw
+    if len(raw) > 15:
+        ident_keys = (
+            "指标名称", "指标", "macro_name", "单位", "指标单位",
+            "时间", "日期", "period", "国家", "地区",
+        )
+        compact_raw = {k: raw[k] for k in ident_keys if k in raw}
+        if val_raw is not None:
+            compact_raw["指标值"] = val_raw
+
+    return ResearchRecord(
+        record_id=_record_id([domain.value, m_ent, m_name, str(m_date), raw_index]),
+        domain=domain,
+        entity_name=m_ent,
+        entity_code=None,
+        metric=m_name,
+        value=val,
+        unit=m_unit,
+        period_end=m_date,
+        published_at=published or m_date,
+        source=source,
+        raw_fields=compact_raw,
+        issues=[] if m_date else ["missing_period_end"],
+    )
+
+
 class DataFusion:
     """Pure fusion engine; it never calls an LLM or an external data source."""
 
@@ -465,39 +534,20 @@ class DataFusion:
                             seen_companies.add(company_key)
 
                 # Specialized atomic parsing for macro tabular records
-                if result.domain == Domain.MACRO and any(k in raw for k in ("指标值", "数值", "value")):
-                    val_raw = raw.get("指标值") if "指标值" in raw else (raw.get("数值") if "数值" in raw else raw.get("value"))
-                    val, parsed_u = _split_value_unit(val_raw)
-                    m_name = str(raw.get("指标") or raw.get("macro_name") or raw.get("指标名称") or "宏观指标").strip()
-                    m_unit = parsed_u or str(raw.get("单位") or raw.get("指标单位") or "元").strip()
-                    m_date = _parse_date(raw.get("时间") or raw.get("日期") or raw.get("period"))
-                    m_ent = str(raw.get("国家") or raw.get("地区") or entity_name or "全国").strip()
-
-                    if m_date and m_date > as_of:
+                if result.domain == Domain.MACRO and any(k in raw for k in LONG_TABLE_VALUE_KEYS):
+                    rec = _fuse_long_table_row(
+                        raw,
+                        domain=Domain.MACRO,
+                        source=source,
+                        entity_name=entity_name,
+                        published=published,
+                        as_of=as_of,
+                        raw_index=raw_index,
+                        default_entity="全国",
+                    )
+                    if rec is None:
                         dropped_future += 1
                         continue
-
-                    compact_raw = raw
-                    if len(raw) > 15:
-                        ident_keys = ("指标名称", "指标", "macro_name", "单位", "指标单位", "时间", "日期", "period", "国家", "地区")
-                        compact_raw = {k: raw[k] for k in ident_keys if k in raw}
-                        if val_raw is not None:
-                            compact_raw["指标值"] = val_raw
-
-                    rec = ResearchRecord(
-                        record_id=_record_id(["macro", m_ent, m_name, str(m_date), raw_index]),
-                        domain=Domain.MACRO,
-                        entity_name=m_ent,
-                        entity_code=None,
-                        metric=m_name,
-                        value=val,
-                        unit=m_unit,
-                        period_end=m_date,
-                        published_at=published or m_date,
-                        source=source,
-                        raw_fields=compact_raw,
-                        issues=[] if m_date else ["missing_period_end"],
-                    )
                     dataset.macro.append(rec)
                     continue
 
@@ -575,15 +625,43 @@ class DataFusion:
                         seen_record_ids.add(event_id)
                     consumed_event_keys = EVENT_CONSUMED_ALL
 
+                # ── 长表原子化通道（全域）──
+                # 形状判定与域无关：MACRO 域有专属通道（上方），其余域在此兜住。
+                # 典型场景：hithink-industry-query 查"市场规模/出口量"序列时，返回的是
+                # 宏观库长表；若不原子化，会被下方通用逐键拆分成
+                # metric='时间'/'指标值'/'周期' 等碎片（指标名与数值脱钩、记录数虚高）。
+                # 放在事件通道之后，保证类D事件/公告记录的优先级不受影响。
+                # 域归属保持 result.domain —— v3 的 metric_requirements 按 domain 验收，
+                # 重定向到 macro 会让 industry 域的指标需求永远无法通过。
+                if (
+                    any(k in raw for k in LONG_TABLE_VALUE_KEYS)
+                    and any(k in raw for k in LONG_TABLE_TIME_KEYS)
+                    and any(k in raw for k in LONG_TABLE_NAME_KEYS)
+                ):
+                    rec = _fuse_long_table_row(
+                        raw,
+                        domain=result.domain,
+                        source=source,
+                        entity_name=entity_name,
+                        published=published,
+                        as_of=as_of,
+                        raw_index=raw_index,
+                        default_entity=None,
+                    )
+                    if rec is None:
+                        dropped_future += 1
+                        continue
+                    dataset.records_for(result.domain).append(rec)
+                    continue
+
                 metrics = [
                     (key, value) for key, value in raw.items()
                     if key not in METADATA_KEYS and key not in consumed_event_keys
                 ]
                 if not metrics:
-                    if consumed_event_keys:
-                        # 纯事件记录：EventRecord 已承载全部结构化信息，不再产碎片
-                        continue
-                    metrics = [("record", raw)]
+                    # 空 raw / 纯元数据 raw（如仅含股票代码+简称的身份行，其身份记录
+                    # 已在上方 company 通道产出）：不产 metric='record' value={} 的占位垃圾。
+                    continue
                 for raw_key, raw_value in metrics:
                     raw_key_str = str(raw_key)
                     if macro_name and ("宏观@值" in raw_key_str or "@值" in raw_key_str):

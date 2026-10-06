@@ -189,6 +189,9 @@ class AnalysisRequest(BaseModel):
 
     subject: str = Field(default="研究主题", min_length=2, max_length=200)
     focus_points: list[str] = Field(default_factory=list, max_length=20)
+    # v3：A1 模型从用户问询推导的指标验收需求（如 "2021-2025 年市场规模年度序列（指标词：市场规模、行业规模）"）。
+    # 解读层据此决定"重点讲什么"；数字仍由确定性引擎计算。
+    metric_requirements: list[str] = Field(default_factory=list, max_length=20)
     as_of: date = Field(default_factory=date.today)
     enable_semantic_analysis: bool = True
     max_key_metrics: int = Field(default=20, ge=1, le=100)

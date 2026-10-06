@@ -24,6 +24,14 @@ from chart_generator.compiler import ChartArchetype, DeclarativeChartSpec, EChar
 from chart_generator.data_formulation import AxisType, DataFormulator, NormalizedDataTable
 from chart_generator.image_gen import generate_industry_chain_image
 from chart_generator.linter import BAR_TYPES, ChartLinterViolation, ChartSkillLinter
+
+try:
+    from skill_policy import screen_policy_skills
+except ModuleNotFoundError:  # 单包测试或独立运行时 agents_core 不在搜索路径上，按包位置回推
+    import sys as _sys
+
+    _sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from skill_policy import screen_policy_skills
 from chart_generator.metric_guard import (
     DimensionGuard,
     MetricDimension,
@@ -597,10 +605,22 @@ class ChartGeneratorAgent:
             previews.append((title, svg))
             await record("chart_ready", chart_id=chart_id, chart_type=item.chart_type, title=title)
 
-        # ── 产业链 AI 生图（独立于六种 ECharts 风格，全链路最多成功 1 次）──
+        # ── 产业链 AI 生图（**默认关闭**，独立于六种 ECharts 风格，全链路最多成功 1 次）──
         # 数据来源：阶段2 解读产出的 industry_chain_segments；无该数据则不触发，避免无谓扣费。
+        #
+        # 为什么默认关闭：产业链结构已由本地确定性 ECharts 渲染成「产业链结构」图
+        # （上中下游三栏 + 代表企业 + 证据注），信息量与可追溯性都更强且零外部依赖；
+        # AI 生图则要额外调外部模型，单次可达数分钟、曾造成阶段三长时间无响应，
+        # 且产出的位图无法被 report_fusion 逐点校验。
+        # 需要恢复 AI 配图时置 ENABLE_INDUSTRY_CHAIN_IMAGE=1。
         segments = list(getattr(request.report, "industry_chain_segments", None) or [])
-        if segments:
+        if segments and not self.settings.enable_industry_chain_image:
+            # 显式留痕：否则「为什么没有产业链 AI 图」会变成排查黑洞。
+            await record(
+                "image_generation_skipped",
+                message="产业链 AI 生图已关闭（默认），产业链图由本地 ECharts 渲染的「产业链结构」承担",
+            )
+        if segments and self.settings.enable_industry_chain_image:
             chain_id = f"CHART-CHAIN-{secrets.token_hex(3).upper()}"
             chain_title = f"{request.report.subject}产业链结构"
             await record(
@@ -956,6 +976,38 @@ class ChartGeneratorAgent:
             )
             for cs in called_skills:
                 await record("skill_invoked_by_llm", skill=cs.get("skill_name"), reason=cs.get("reason"))
+
+            # 与确定性路由取并集：模型在工具循环里没调用、但按图表数据特征该用的技能在此补上。
+            # 本层的数据形态是 dict 列表（不是技能对象），因此不走统一融合器，直接按名去重合并；
+            # 但「与本次意图无关的条件技能不补」这条准入规则仍然适用（图表技能带信号门槛）。
+            policy_all = self.skillhub.select(request)
+            report_obj = getattr(request, "report", None)
+            intent_text = " ".join(
+                part for part in (
+                    getattr(report_obj, "subject", ""),
+                    getattr(report_obj, "title", ""),
+                    getattr(report_obj, "industry", ""),
+                ) if part
+            )
+            policy_skills, screened = screen_policy_skills(policy_all, intent_text)
+            if screened:
+                await record(
+                    "skill_screened_out",
+                    skills=screened,
+                    reason="与本次图表意图无关，规则补入前裁掉",
+                )
+            model_skill_names = {cs.get("skill_name") for cs in called_skills}
+            rescued = [s for s in policy_skills if s.name not in model_skill_names]
+            if rescued:
+                called_skills = list(called_skills) + [
+                    {"skill_name": s.name, "reason": s.adaptation or "确定性路由补充：图表数据特征匹配"}
+                    for s in rescued
+                ]
+                await record(
+                    "skill_routed_by_policy",
+                    skills=[s.name for s in rescued],
+                    reason="模型未调用的图表数据特征匹配技能，由确定性路由补充",
+                )
         except Exception as e:
             logger.warning(f"LLM chart generation failed: {e}. Falling back to deterministic pipeline.", exc_info=True)
             await record("llm_generation_error", error=str(e))

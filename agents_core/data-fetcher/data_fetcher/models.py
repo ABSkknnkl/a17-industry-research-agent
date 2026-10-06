@@ -72,6 +72,11 @@ class ResearchObjective(BaseModel):
     excluded_industries: list[str] = Field(default_factory=list)
     required_domains: list[Domain] = Field(default_factory=lambda: list(Domain))
     requirements: list[ResearchRequirement] = Field(default_factory=list)
+    # 模型从用户问询中直接推导的指标验收需求（v3 接线：INTENT 提示词产出，
+    # 代码只做白名单校验，不做内容决策）。是 requirements 的子集（排在最前）。
+    model_requirements: list[ResearchRequirement] = Field(default_factory=list)
+    # 模型产出但校验不通过、被退化为不参与验收的条目及原因（审计用）。
+    rejected_metric_requirements: list[str] = Field(default_factory=list)
     as_of: date
 
 
@@ -269,4 +274,6 @@ class ResearchRunResult(BaseModel):
     coverage: Coverage
     errors: list[RunError] = Field(default_factory=list)
     execution_trace: list[TraceEvent] = Field(default_factory=list)
+    # 模型生成的指标验收需求（透传给下游解读层：解读重点围绕这些指标组织）。
+    model_requirements: list[ResearchRequirement] = Field(default_factory=list)
     artifact_dir: str | None = None

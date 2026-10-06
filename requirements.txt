@@ -15,7 +15,9 @@ anyio>=4.0.0
 
 # 模版引擎与研报导出
 jinja2>=3.1.0
+# PDF 排版渲染：playwright 负责无头浏览器排版，pymupdf 负责目录页码回填与文���回读
 playwright>=1.45.0,<2.0.0
+pymupdf>=1.24.0
 
 # 测试套件 (可选)
 pytest>=8.0.0

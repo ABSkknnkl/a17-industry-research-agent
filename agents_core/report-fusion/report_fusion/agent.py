@@ -13,8 +13,19 @@ from report_fusion.pdf import render_pdf
 from report_fusion.render import render_html,render_markdown
 from report_fusion.skillhub import FusionSkillHub
 
+try:
+    from skill_policy import merge_selection
+except ModuleNotFoundError:  # 单包测试或独立运行时 agents_core 不在搜索路径上，按包位置回推
+    import sys as _sys
+
+    _sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from skill_policy import merge_selection
+
 EventEmitter=Callable[[dict[str,Any]],Awaitable[None]]
 NUMBER_RE=re.compile(r"(?<![A-Za-z0-9_-])[-+]?\d+(?:\.\d+)?%?")
+
+# 并集合并后可挂载的总编审校规范上限
+FUSION_SKILL_LIMIT = 10
 SYSTEM_PROMPT="""你是行业研究报告总编辑。只能编辑已有内容，不能补充外部事实、数字或来源。skills 只提供编辑方法，绝不是事实来源。
 返回JSON：headline；conclusions[{text,evidence_ids,confidence,uncertainty}]；risks；research_boundaries；terminology_map；chapter_transitions；paragraph_edits。
 【重要约束规范】：
@@ -70,6 +81,19 @@ class ReportFusionAgent:
         request: ReportFusionRequest,
         record: Any,
     ) -> tuple[list[FusionSkill], dict[str, str]]:
+        # 确定性路由始终先算：总编审校的标准四维规范是必备下限，
+        # 它与模型规划取并集，模型漏选的规范由此补上。
+        # 融合层技能元数据默认为 always=True（强制规范），因此不会被意图裁剪；
+        # 保留 intent_text 参数是为了四层接口一致、将来新增条件性技能时能自动生效。
+        policy_skills = self.skillhub.select()
+        policy_reasons = {s.name: s.adaptation or "默认审校规范" for s in policy_skills}
+        intent_text = " ".join(
+            part for part in (
+                getattr(getattr(request, "report", None), "subject", ""),
+                " ".join(str(x) for x in (getattr(request, "warnings", None) or [])),
+            ) if part
+        )
+
         if self.llm.is_available and hasattr(self.llm, "plan_skills_with_tools"):
             try:
                 tools = self.skillhub.get_tool_spec()
@@ -90,7 +114,7 @@ class ReportFusionAgent:
                     FUSION_SKILL_PLANNING_PROMPT, user_prompt, tools
                 )
                 if planned:
-                    skills: list[FusionSkill] = []
+                    model_skills: list[FusionSkill] = []
                     reasons: dict[str, str] = {}
                     seen = set()
                     for item in planned:
@@ -99,21 +123,40 @@ class ReportFusionAgent:
                         skill = self.skillhub.get(sname)
                         if skill and sname not in seen:
                             seen.add(sname)
-                            skills.append(skill)
+                            model_skills.append(skill)
                             reasons[sname] = reason or "大模型自主调用"
                             await record("skill_invoked_by_llm", skill=sname, reason=reasons[sname])
                     for s in self.skillhub.catalog.values():
                         if s.always and s.name not in seen:
-                            skills.append(s)
+                            seen.add(s.name)
+                            model_skills.append(s)
                             reasons[s.name] = "总编基础审校规范"
-                    if skills:
-                        return skills, reasons
+                    if model_skills:
+                        merged = merge_selection(
+                            model_skills, policy_skills,
+                            limit=FUSION_SKILL_LIMIT,
+                            intent_text=intent_text,
+                        )
+                        merged_reasons: dict[str, str] = {}
+                        for skill in merged.final:
+                            if skill.name in reasons:
+                                merged_reasons[skill.name] = reasons[skill.name]
+                            else:
+                                merged_reasons[skill.name] = policy_reasons.get(
+                                    skill.name, skill.adaptation or "确定性路由补充"
+                                )
+                                await record(
+                                    "skill_routed_by_policy",
+                                    skill=skill.name,
+                                    route_type="fast_skill_router",
+                                    reason=merged_reasons[skill.name],
+                                )
+                        return merged.final, merged_reasons
             except Exception:
                 pass
 
-        default_skills = self.skillhub.select()
-        await record("skill_routed_by_policy", skills=[s.name for s in default_skills], route_type="fast_skill_router", reason="总编审校标准四维规范快速路由")
-        return default_skills, {s.name: s.adaptation or "默认审校规范" for s in default_skills}
+        await record("skill_routed_by_policy", skills=[s.name for s in policy_skills], route_type="fast_skill_router", reason="总编审校标准四维规范快速路由")
+        return policy_skills, policy_reasons
 
     async def run(self,request:ReportFusionRequest,emit:EventEmitter|None=None,save_artifacts:bool=True)->ReportFusionResult:
         run_id=f"report-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}";report_id=f"REPORT-{secrets.token_hex(6).upper()}";artifact_dir=self.settings.output_dir/"runs"/run_id if save_artifacts else None;events=[]

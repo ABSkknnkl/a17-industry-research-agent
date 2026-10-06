@@ -23,9 +23,21 @@ from chapter_writer.outline import DEFAULT_OUTLINE, OUTLINE_VERSION
 from chapter_writer.retriever import DynamicEvidenceRetriever
 from chapter_writer.skillhub import WritingSkillHub
 
+try:
+    from skill_policy import merge_selection
+except ModuleNotFoundError:  # 单包测试或独立运行时 agents_core 不在搜索路径上，按包位置回推
+    import sys as _sys
+
+    _sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from skill_policy import merge_selection
+
 EventEmitter=Callable[[dict[str,Any]],Awaitable[None]]
 NUMBER_RE=re.compile(r"(?<![A-Za-z0-9_-])[-+]?\d+(?:\.\d+)?%?")
 YEAR_OR_ORDINAL_RE=re.compile(r"^(?:19\d\d|20\d\d|[1-9]|10)$")
+
+# 并集合并后单章可挂载的写作规范上限。写作层原本不限量（按章节元数据筛），
+# 合并后设一个上限，避免单章挂载过多规范拖长生成耗时。
+CHAPTER_SKILL_LIMIT = 10
 
 SYSTEM_PROMPT="""你是机构级证券与行业研究报告章节写作智能体。你必须将内容组织成可直接供前端/PDF排版的结构化组件，而不是连续长文章。
 严格要求：
@@ -210,6 +222,31 @@ class ChapterWriterAgent:
         context: dict[str, Any],
         request: ChapterWritingRequest,
     ) -> list[tuple[WritingSkill, str, str]]:
+        # 确定性路由（FastSkillRouter）始终先算一遍：按章节范围给出「该用的写作规范」。
+        # 它与模型规划取并集，模型漏选的本节规范由此补上。
+        policy_skills = self.skillhub.select(outline_chapter.chapter_id)
+        # 写作层技能按「适用章节」匹配（元数据里没有 requires_signal），因此当前不会触发裁剪；
+        # 这里仍按统一接口传入意图文本 —— 将来若给写作技能加上信号门槛，裁剪会自动生效，无需再改调用侧。
+        intent_text = " ".join(
+            part for part in (
+                getattr(getattr(request, "report", None), "subject", ""),
+                getattr(outline_chapter, "title", ""),
+                getattr(outline_chapter, "purpose", "") or "",
+            ) if part
+        )
+        router_reasons = {
+            "CH-01": "依据宏观产业定位与基础规模数据，快速路由宏观与全景写作规范",
+            "CH-02": "依据行业时序与空间测算数据，快速路由财务与测算分析规范",
+            "CH-03": "依据上下游拓扑与价值链分工数据，快速路由产业链拆解规范",
+            "CH-04": "依据竞争企业对标与份额数据，快速路由竞争格局写作规范",
+            "CH-05": "依据重点标的杜邦分解与财报数据，快速路由深度财务透视规范",
+            "CH-06": "依据催化剂与技术驱动，快速路由产业演进与驱动写作规范",
+            "CH-07": "依据敏感性与不确定性指标，快速路由风险情景推演规范",
+        }
+
+        def _policy_reason(skill: WritingSkill) -> str:
+            return router_reasons.get(outline_chapter.chapter_id, skill.adaptation or "章节大纲特征匹配")
+
         if self.llm.is_available and hasattr(self.llm, "plan_skills_with_tools"):
             try:
                 tools = self.skillhub.get_tool_spec()
@@ -234,7 +271,8 @@ class ChapterWriterAgent:
                     CHAPTER_SKILL_PLANNING_PROMPT, user_prompt, tools
                 )
                 if planned:
-                    results: list[tuple[WritingSkill, str, str]] = []
+                    model_skills: list[WritingSkill] = []
+                    reasons: dict[str, str] = {}
                     seen = set()
                     for item in planned:
                         sname = item.get("skill_name", "")
@@ -242,34 +280,32 @@ class ChapterWriterAgent:
                         skill = self.skillhub.get(sname)
                         if skill and sname not in seen:
                             seen.add(sname)
-                            results.append((skill, reason or "模型自主调用", "llm"))
+                            model_skills.append(skill)
+                            reasons[sname] = reason or "模型自主调用"
                     for s in self.skillhub.catalog.values():
                         if s.always and s.name not in seen:
-                            results.append((s, "通用写作基础规范", "llm"))
-                    if results:
-                        return results
+                            seen.add(s.name)
+                            model_skills.append(s)
+                            reasons[s.name] = "通用写作基础规范"
+                    if model_skills:
+                        merged = merge_selection(
+                            model_skills, policy_skills,
+                            limit=CHAPTER_SKILL_LIMIT,
+                            intent_text=intent_text,
+                        )
+                        return [
+                            (
+                                skill,
+                                reasons[skill.name] if skill.name in reasons else _policy_reason(skill),
+                                "llm" if skill.name in reasons else "policy",
+                            )
+                            for skill in merged.final
+                        ]
             except Exception:
                 pass
 
-        # FastSkillRouter (System-1 Task Feature Fast Routing)
-        default_skills = self.skillhub.select(outline_chapter.chapter_id)
-        router_reasons = {
-            "CH-01": "依据宏观产业定位与基础规模数据，快速路由宏观与全景写作规范",
-            "CH-02": "依据行业时序与空间测算数据，快速路由财务与测算分析规范",
-            "CH-03": "依据上下游拓扑与价值链分工数据，快速路由产业链拆解规范",
-            "CH-04": "依据竞争企业对标与份额数据，快速路由竞争格局写作规范",
-            "CH-05": "依据重点标的杜邦分解与财报数据，快速路由深度财务透视规范",
-            "CH-06": "依据催化剂与技术驱动，快速路由产业演进与驱动写作规范",
-            "CH-07": "依据敏感性与不确定性指标，快速路由风险情景推演规范",
-        }
-        return [
-            (
-                s,
-                router_reasons.get(outline_chapter.chapter_id, s.adaptation or "章节大纲特征匹配"),
-                "policy",
-            )
-            for s in default_skills
-        ]
+        # 模型不可用或规划失败：直接用确定性路由结果
+        return [(s, _policy_reason(s), "policy") for s in policy_skills]
 
     async def run(self,request:ChapterWritingRequest,emit:EventEmitter|None=None,save_artifacts:bool=True)->ChapterWritingResult:
         run_id=f"chapters-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}"
