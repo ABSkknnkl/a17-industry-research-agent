@@ -9,7 +9,6 @@ from backend.app.schemas.workflow import (
     AgentSkillGroup,
     SkillCatalogResponse,
     SkillItem,
-    StageName,
 )
 
 logger = logging.getLogger("skills_hub")

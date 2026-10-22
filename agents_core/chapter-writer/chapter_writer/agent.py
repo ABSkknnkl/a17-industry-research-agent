@@ -11,7 +11,6 @@ import re
 import secrets
 from typing import Any
 
-from pydantic import ValidationError
 
 from chapter_writer.config import Settings
 from chapter_writer.llm import ChapterLLM, OpenAICompatibleLLM
@@ -432,11 +431,6 @@ class ChapterWriterAgent:
             (artifact_dir/"chapter_result.json").write_text(result.model_dump_json(indent=2)+"\n",encoding="utf-8")
             (artifact_dir/"events.jsonl").write_text("".join(json.dumps(x,ensure_ascii=False)+"\n" for x in events),encoding="utf-8")
         return result
-
-    def _context(self,request:ChapterWritingRequest,chapter_id:str)->dict[str,Any]:
-        outline=request.outline or DEFAULT_OUTLINE
-        match=next((c for c in outline if c.chapter_id==chapter_id),outline[0])
-        return DynamicEvidenceRetriever(request).retrieve(chapter_id,match)
 
     def _audit_chapter(
         self,

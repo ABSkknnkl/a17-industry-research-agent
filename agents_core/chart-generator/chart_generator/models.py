@@ -74,6 +74,9 @@ class InterpretationReport(BaseModel):
     subject: str
     as_of: date
     status: str
+    # 阶段2 产出的产业链拓扑（老项目 chain_designer 范式：LLM 设计拓扑 + 代码裁判）。
+    # 必须显式声明——本模型 extra="ignore"，不声明会被静默丢弃（改契约坑④）。
+    industry_chain_topology: dict[str, Any] | None = None
     key_metrics: list[KeyMetric] = Field(default_factory=list)
     trends: list[TrendFinding] = Field(default_factory=list)
     insights: list[Insight] = Field(default_factory=list)
@@ -186,21 +189,27 @@ class ChartGenerationRequest(BaseModel):
     report: InterpretationReport
     input_dataset: dict[str, Any] | None = None
     preferences: ChartPreferences = Field(default_factory=ChartPreferences)
+    # 2026-10-21：用户是否**明确**需要产业链图（见 chart_generator.chain_intent）。
+    #   True  → 出产业链图 + 调豆包
+    #   False → **不出产业链图**（改出别的图），也不调豆包
+    #   None  → 按 user_wants_industry_chain() 自动判定
+    # 前端显式开关优先级最高，可 100% 覆盖自动判断。
+    want_industry_chain: bool | None = None
+    # focus_points 是否为系统默认注入（adapters.py 的默认值含"产业链"，
+    # 不该被当成用户意图）。默认 False 即"视为用户自填"。
+    defaulted_focus: bool = False
+    # 产业链图口径（2026-10-21）：
+    #   "entity"   = 企业专属版：主题点名一家公司，品牌卡恰好 1 家（不补竞品）
+    #   "industry" = 行业全景版：主题是一个行业，品牌卡 2-8 家龙头
+    #   None       = 按 chart_generator.chain_scope.detect_subject_kind() 自动判定
+    # 前端显式开关优先级最高，与 want_industry_chain 同路透传。
+    chain_scope: Literal["entity", "industry"] | None = None
 
     @model_validator(mode="after")
     def validate_dataset_consistency(self) -> "ChartGenerationRequest":
         if self.input_dataset and self.report and self.report.subject:
             validate_request_consistency(self.input_dataset, self.report.subject)
         return self
-
-
-class ChartPoint(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    label: str
-    value: float | None
-    series: str = "默认"
-    period: date | None = None
-    evidence_id: str
 
 
 class ChartSpec(BaseModel):
@@ -223,14 +232,26 @@ class ChartSpec(BaseModel):
     subtitle: str | None = None
     source_line: str | None = None
     # AI 产业链生图元数据（render_mode=generated_image 时必填，见前端 ChartSpec 契约）
-    render_mode: Literal["echarts", "generated_image"] = "echarts"
+    # render_mode=svg 时（2026-10-07 新增）：产业链图由确定性模板渲染为 SVG 矢量，
+    # 经 inline_svg 下发，前端内联渲染实现浏览器无损缩放（替代 ECharts canvas 位图）。
+    render_mode: Literal["echarts", "generated_image", "svg"] = "echarts"
+    inline_svg: str | None = None
     image_uri: str | None = None
     image_mime_type: Literal["image/png", "image/webp", "image/jpeg"] | None = None
     generation_prompt: str | None = None
     generation_prompt_model: str | None = None
     generation_image_model: str | None = None
     chain_template: Literal["product_decomposition", "horizontal_flow"] | None = None
+    # 产业链结构（ChainGraphSpec 序列化）。render_mode=svg 时必填：
+    # 审核门按用户意见修改后据此重建 inline_svg（否则前端会渲染改前的过期图）。
     chain_graph: dict[str, Any] | None = None
+    # 补充视图（2026-10-17）：同一份拓扑的「LLM 排 HTML → chromium 截图」版本。
+    # 为什么不顶替主图：HTML 版只有卡片与连线文字标签，**画不出连线与箭头**（用户实测
+    # "连线的节点不见了"），而产业链图的骨架正是连线。故主图恒为确定性 SVG，
+    # HTML 版降为并存的可切换补充视图（信息密度高，适合细读卡片内容）。
+    supplement_image_uri: str | None = None
+    supplement_html_uri: str | None = None
+    supplement_note: str | None = None
 
 
 class SuppressedChart(BaseModel):

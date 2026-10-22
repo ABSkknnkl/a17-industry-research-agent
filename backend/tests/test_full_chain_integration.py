@@ -240,10 +240,22 @@ def test_full_chain_contract_alignment_and_execution(tmp_path):
         view_chart_ids = [c["chart_id"] for c in view_data["charts"]]
         assert len(view_chart_ids) == len(set(view_chart_ids)), "Duplicate chart_ids in view_data['charts']!"
 
-        # 5. Check if CHART-01 is placed in CH-01 or CH-03 (NOT CH-07)
-        c01 = next((c for c in view_data["charts"] if "CHART-01" in c["chart_id"]), None)
-        if c01:
-            assert c01["placement_section_id"].startswith("SEC-01") or c01["placement_section_id"].startswith("SEC-03")
-            assert not c01["placement_section_id"].startswith("SEC-07")
+        # 5. 落位不变量（2026-10-22 修）
+        # 🔴 旧版按**序号**取 "CHART-01" 再断言它落在 SEC-01/SEC-03 ——
+        #    图表集合随选型变化，CHART-01 可能是任何类型。实测
+        #    run-20261022005559：CHART-01 = 「主要企业业务收入横向对比」(bar)，
+        #    放进 CH-04 竞争格局**完全正确**，却被判红。按序号断言等于把测试
+        #    绑死在某一次运行的排序上。
+        #    改成按**语义**断言：产业链图（若有）只能进 CH-01/CH-03；任何图都不进结论章。
+        for c in view_data["charts"]:
+            sec = str(c.get("placement_section_id") or "")
+            assert not sec.startswith("SEC-07"), (
+                f"图表被放进结论章：{c.get('chart_id')} → {sec}")
+        chain_charts = [c for c in view_data["charts"]
+                        if c.get("chart_type") == "industry_chain"]
+        for c in chain_charts:
+            sec = str(c.get("placement_section_id") or "")
+            assert sec.startswith(("SEC-01", "SEC-03")), (
+                f"产业链图落位异常：{c.get('chart_id')} → {sec}（应在行业定义/产业链章）")
 
     asyncio.run(work())

@@ -114,7 +114,12 @@ class OpenAICompatibleLLM:
             "tools": tools,
             "tool_choice": "auto",
         }
-        if self.settings.llm_reasoning_effort:
+        # 2026-10-17：默认关闭思考（LLM_THINKING=disabled）。该端点开启思考时
+        # 同等任务实测 10.4s→5.8s（关闭后），长任务差距更大。thinking 优先，
+        # 未配置时才回退 reasoning_effort，避免两个参数互相打架。
+        if self.settings.llm_thinking:
+            payload["thinking"] = {"type": self.settings.llm_thinking}
+        elif self.settings.llm_reasoning_effort:
             payload["reasoning_effort"] = self.settings.llm_reasoning_effort
         payload["max_tokens"] = self.settings.llm_max_tokens
 
@@ -188,7 +193,12 @@ class OpenAICompatibleLLM:
                 {"role": "user", "content": user_prompt},
             ],
         }
-        if self.settings.llm_reasoning_effort:
+        # 2026-10-17：默认关闭思考（LLM_THINKING=disabled）。该端点开启思考时
+        # 同等任务实测 10.4s→5.8s（关闭后），长任务差距更大。thinking 优先，
+        # 未配置时才回退 reasoning_effort，避免两个参数互相打架。
+        if self.settings.llm_thinking:
+            payload["thinking"] = {"type": self.settings.llm_thinking}
+        elif self.settings.llm_reasoning_effort:
             payload["reasoning_effort"] = self.settings.llm_reasoning_effort
         payload["max_tokens"] = self.settings.llm_max_tokens
 

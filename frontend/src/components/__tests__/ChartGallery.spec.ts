@@ -157,9 +157,9 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-function mountGallery(specs: Partial<ChartSpec>[] = [spec]) {
+function mountGallery(specs: Partial<ChartSpec>[] = [spec], extraProps: Record<string, unknown> = {}) {
   const wrapper = mount(ChartGallery, {
-    props: { specs },
+    props: { specs, ...extraProps },
     global: {
       stubs: {
         'el-dialog': Dialog,
@@ -319,3 +319,138 @@ describe('ChartGallery contract consumption', () => {
   })
 })
 
+
+describe('ChartGallery inline SVG (render_mode=svg, 2026-10-07)', () => {
+  const CHAIN_SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" role="img">' +
+    '<title>低空经济产业链结构</title>' +
+    '<defs><marker id="chainArrow"><polygon points="0,0 10,4 0,8" fill="#475467"/></marker></defs>' +
+    '<rect x="0" y="0" width="800" height="300" fill="#FFFFFF"/>' +
+    '<polygon points="10,10 200,10 210,30 200,50 10,50" fill="#0F766E"/>' +
+    '<text x="20" y="35" font-size="14" fill="#FFFFFF">上游：基础支撑</text>' +
+    '<line x1="220" y1="100" x2="300" y2="100" stroke="#475467" marker-end="url(#chainArrow)"/>' +
+    '</svg>'
+
+  const svgSpec = {
+    chart_id: 'CHART-CHAIN-SVG',
+    title: '低空经济产业链结构',
+    chart_type: 'industry_chain' as const,
+    option: { series: [{ type: 'graph', data: [] }] },
+    evidence_ids: ['E-1'],
+    render_mode: 'svg' as const,
+    inline_svg: CHAIN_SVG,
+  }
+
+  it('renders inline SVG instead of initialising ECharts', async () => {
+    const wrapper = mountGallery([svgSpec])
+    await flushPromises()
+    const host = wrapper.find('.chart-inline-svg')
+    expect(host.exists()).toBe(true)
+    expect(host.html()).toContain('上游：基础支撑')
+    expect(host.find('svg').exists()).toBe(true)
+    // ECharts 不应为该图初始化
+    expect(vi.mocked(echarts.init).mock.calls.length).toBe(0)
+  })
+
+  it('sanitizes event handlers, scripts, hrefs and non-whitelist elements', async () => {
+    const evil =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" onload="alert(1)">' +
+      '<script>alert(2)</script>' +
+      '<rect x="1" y="1" width="10" height="10" onclick="alert(3)"/>' +
+      '<a href="javascript:alert(4)"><text x="5" y="50">安全文本</text></a>' +
+      '<foreignObject><div>html</div></foreignObject>' +
+      '<text x="5" y="80" style="background:url(http://evil)">保留</text>' +
+      '</svg>'
+    const wrapper = mountGallery([{ ...svgSpec, inline_svg: evil }])
+    await flushPromises()
+    const host = wrapper.find('.chart-inline-svg')
+    expect(host.exists()).toBe(true)
+    const html = host.html()
+    expect(html).not.toContain('alert')
+    expect(html).not.toContain('script')
+    expect(html).not.toContain('onload')
+    expect(html).not.toContain('onclick')
+    expect(html).not.toContain('href')
+    expect(html).not.toContain('foreignObject')
+    expect(html).not.toContain('style')
+    // <a> 不在白名单 → 整棵子树（含其中文本）一并移除
+    expect(html).not.toContain('安全文本')
+    expect(html).toContain('保留')
+  })
+
+  it('falls back to ECharts branch when inline_svg is missing', async () => {
+    const wrapper = mountGallery([{ ...svgSpec, inline_svg: null }])
+    await flushPromises()
+    expect(wrapper.find('.chart-inline-svg').exists()).toBe(false)
+    expect(wrapper.find('.chart-surface').exists()).toBe(true)
+  })
+
+  it('shows inline SVG in preview dialog', async () => {
+    const wrapper = mountGallery([svgSpec])
+    await flushPromises()
+    await wrapper.find('.chart-inline-svg').trigger('click')
+    await flushPromises()
+    const dialog = wrapper.find('.chart-inline-svg-dialog')
+    expect(dialog.exists()).toBe(true)
+    expect(dialog.html()).toContain('上游：基础支撑')
+  })
+})
+
+// 2026-10-17：HTML 排版版从「顶替主图」降为「并存补充视图」。
+// 主图必须仍是带连线的确定性 SVG —— 用户实测反馈"连线的节点不见了"。
+describe('ChartGallery supplement view (2026-10-17)', () => {
+  const CHAIN_SVG =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300" role="img">' +
+    '<title>低空经济产业链结构</title>' +
+    '<line x1="220" y1="100" x2="300" y2="100" stroke="#475467"/>' +
+    '<text x="20" y="35" font-size="14">上游：基础支撑</text>' +
+    '</svg>'
+  const supplementSpec = {
+    chart_id: 'CHART-CHAIN-SUPP',
+    title: '低空经济产业链结构',
+    chart_type: 'industry_chain' as const,
+    option: { series: [{ type: 'graph', data: [] }] },
+    evidence_ids: ['E-1'],
+    render_mode: 'svg' as const,
+    inline_svg: CHAIN_SVG,
+    supplement_image_uri:
+      '/Users/u/project/data/runs/run-42/artifacts/images/CHART-CHAIN-SUPP_chain.png',
+    supplement_html_uri: '/Users/u/project/data/runs/run-42/artifacts/charts/CHART-CHAIN-SUPP.html',
+    supplement_note: 'LLM 排版版（卡片信息更细，但不画连线与箭头）',
+  }
+
+  it('keeps the connected SVG as the main chart and only adds an entry', async () => {
+    const wrapper = mountGallery([supplementSpec], { runId: 'run-42' })
+    await flushPromises()
+    // 主图仍是内联 SVG（连线在 SVG 里）
+    const main = wrapper.find('.chart-inline-svg')
+    expect(main.exists()).toBe(true)
+    expect(main.html()).toContain('上游：基础支撑')
+    // 只多一个切换入口，不改主图、不初始化 ECharts
+    expect(wrapper.find('[data-testid="chart-supplement-open"]').exists()).toBe(true)
+    expect(vi.mocked(echarts.init).mock.calls.length).toBe(0)
+  })
+
+  it('renders the supplementary bitmap through the run artifact endpoint', async () => {
+    const wrapper = mountGallery([supplementSpec], { runId: 'run-42' })
+    await flushPromises()
+    await wrapper.find('[data-testid="chart-supplement-open"]').trigger('click')
+    await flushPromises()
+    const img = wrapper.find('[data-testid="chart-supplement-image"]')
+    expect(img.exists()).toBe(true)
+    // 磁盘绝对路径不能直接给浏览器，必须走 run 产物接口（按文件名解析）
+    expect(img.attributes('src')).toBe(
+      '/api/v1/runs/run-42/artifacts/CHART-CHAIN-SUPP_chain.png'
+    )
+    expect(wrapper.html()).toContain('LLM 排版版')
+  })
+
+  it('hides the supplement entry when no supplement is present', async () => {
+    const wrapper = mountGallery([{ ...supplementSpec, supplement_image_uri: null }], {
+      runId: 'run-42',
+    })
+    await flushPromises()
+    expect(wrapper.find('[data-testid="chart-supplement-open"]').exists()).toBe(false)
+    expect(wrapper.find('.chart-inline-svg').exists()).toBe(true)
+  })
+})

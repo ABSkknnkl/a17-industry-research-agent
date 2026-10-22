@@ -1,5 +1,4 @@
 from __future__ import annotations
-import asyncio
 import json
 import logging
 import shutil
@@ -10,9 +9,33 @@ from typing import Any
 from backend.app.core.config import settings
 from backend.app.core.event_hub import event_hub
 from backend.app.core.storage import storage
-from backend.app.schemas.workflow import ArtifactRef, StageResult, WorkflowState
+from backend.app.schemas.workflow import ArtifactRef, StageResult
 
 logger = logging.getLogger("agent_adapters")
+
+
+def _chart_svg_content(chart: Any, report: Any) -> str:
+    """取这张图要落盘的 SVG 文本（2026-10-17）。
+
+    产业链图（``render_mode="svg"``）必须用下发的**确定性产业链 SVG**：它带连线、箭头
+    与环节卡片。历史实现一律调 ``render_svg`` 重画，等于把产业链图换成 ECharts 的
+    「三栏企业列表」（实测 0 条 polyline）——而 report-fusion 正是读这个文件嵌 PDF 的，
+    交付件因此一直没有连线。其它图表类型仍走 ECharts 通用渲染。
+    """
+    inline = getattr(chart, "inline_svg", None)
+    if getattr(chart, "render_mode", "") == "svg" and inline:
+        return inline
+    from chart_generator.render import render_svg
+
+    return render_svg(
+        chart.title,
+        chart.chart_type,
+        chart.option,
+        chart.footnotes or [],
+        figure_number=getattr(chart, "figure_number", None),
+        as_of=str(getattr(report, "as_of", "") or ""),
+        insight_takeaway=getattr(chart, "insight_goal", ""),
+    )
 
 
 def _resolve_delivery_status(art_dir: Path, consistency: Any) -> str:
@@ -881,6 +904,7 @@ class FiveAgentsAdapter:
             llm_model=settings.LLM_MODEL,
             llm_reasoning_effort=settings.LLM_REASONING_EFFORT,
             llm_timeout_seconds=float(settings.LLM_TIMEOUT_SECONDS),
+            llm_thinking=settings.LLM_THINKING,
         )
         agent = ChartGeneratorAgent(settings=chart_settings)
         from chart_generator.models import ChartPreferences
@@ -891,11 +915,39 @@ class FiveAgentsAdapter:
         if isinstance(req_types_input, list) and req_types_input:
             chart_prefs.requested_types = req_types_input
 
+        # 2026-10-21：产业链图意图开关。前端可在 chart_generate_options 里传
+        # want_industry_chain = true/false；不传则按主题词自动判定（chain_intent）。
+        def _as_bool(value: Any) -> bool | None:
+            if value is None:
+                return None
+            if isinstance(value, bool):
+                return value
+            text = str(value).strip().lower()
+            if text in ("true", "1", "yes", "on"):
+                return True
+            if text in ("false", "0", "no", "off"):
+                return False
+            return None
+
+        def _as_scope(value: Any) -> str | None:
+            """产业链图口径覆盖（2026-10-21）：entity=企业专属 / industry=行业全景。"""
+            if value is None:
+                return None
+            text = str(value).strip().lower()
+            return text if text in ("entity", "industry") else None
+
         chart_request = ChartGenerationRequest(
             report=report,
             input_dataset=raw_dataset_dict,
             preferences=chart_prefs,
+            want_industry_chain=_as_bool(chart_opts.get("want_industry_chain")),
+            defaulted_focus=bool(chart_opts.get("defaulted_focus", False)),
+            chain_scope=_as_scope(chart_opts.get("chain_scope")),
         )
+        if chart_request.want_industry_chain is not None:
+            logger.info("[%s] 产业链图意图显式指定：%s", run_id, chart_request.want_industry_chain)
+        if chart_request.chain_scope is not None:
+            logger.info("[%s] 产业链图口径显式指定：%s", run_id, chart_request.chain_scope)
 
         if feedback:
             event_hub.emit(run_id, "chart_generate", "info", f"收到人工协同图表优化需求: {feedback}，正在执行定向选型与重绘...", tool="ChartPlanner")
@@ -1005,6 +1057,9 @@ class FiveAgentsAdapter:
                     chart_request_retry = ChartGenerationRequest(
                         report=report,
                         preferences=chart_request.preferences,
+                        # 口径必须一并带上：补数重绘若丢了这个字段，
+                        # A 版会退回 B 版口径，品牌卡又被灌竞品
+                        chain_scope=chart_request.chain_scope,
                     )
                     result = await agent.run(chart_request_retry, emit=on_chart_event, save_artifacts=False)
                     event_hub.emit(
@@ -1033,21 +1088,12 @@ class FiveAgentsAdapter:
                 )
 
         # 保存生成的 SVG 矢量图到 artifacts/charts 并回填 svg_uri
-        from chart_generator.render import render_svg
         charts_dir = run_dir / "artifacts" / "charts"
         charts_dir.mkdir(parents=True, exist_ok=True)
         chart_svg_artifacts = []
         if hasattr(result, "charts"):
             for c in result.charts:
-                svg_content = render_svg(
-                    c.title,
-                    c.chart_type,
-                    c.option,
-                    c.footnotes or [],
-                    figure_number=c.figure_number,
-                    as_of=str(report.as_of or ""),
-                    insight_takeaway=c.insight_goal,
-                )
+                svg_content = _chart_svg_content(c, report)
                 svg_file = charts_dir / f"{c.chart_id}.svg"
                 svg_file.write_text(svg_content, encoding="utf-8")
                 c.svg_uri = str(svg_file.resolve())
@@ -1065,6 +1111,41 @@ class FiveAgentsAdapter:
                     tool="EChartsEngine",
                     details={"chart_id": c.chart_id, "title": c.title, "chart_type": c.chart_type}
                 )
+
+        # 补充视图落位（2026-10-17）：A3 在本链路是 save_artifacts=False 跑的，
+        # HTML 截图会落到系统临时目录（/var/folders/...），产物接口取不到、重启即失。
+        # 这里搬到 artifacts/images/，并把契约里的路径改写成正式路径（改不到就置空，
+        # 前端据此隐藏入口，绝不发一个必然 404 的地址）。
+        images_dir = run_dir / "artifacts" / "images"
+        for c in result.charts:
+            src_uri = getattr(c, "supplement_image_uri", None)
+            if not src_uri:
+                continue
+            src = Path(src_uri)
+            if not src.exists():
+                c.supplement_image_uri = None
+                c.supplement_html_uri = None
+                continue
+            if run_dir in src.parents:      # 已经在正式产物目录里（save_artifacts=True 的场景）
+                continue
+            try:
+                images_dir.mkdir(parents=True, exist_ok=True)
+                dst = images_dir / f"{c.chart_id}_chain.png"
+                shutil.copy2(src, dst)
+                c.supplement_image_uri = str(dst.resolve())
+            except OSError as copy_err:
+                logger.warning("产业链补充视图搬运失败，入口隐藏：%s", copy_err)
+                c.supplement_image_uri = None
+                c.supplement_html_uri = None
+                continue
+            html_src = getattr(c, "supplement_html_uri", None)
+            if html_src:
+                try:
+                    html_dst = charts_dir / f"{c.chart_id}.html"
+                    shutil.copy2(html_src, html_dst)
+                    c.supplement_html_uri = str(html_dst.resolve())
+                except OSError:
+                    c.supplement_html_uri = None
 
         chart_result_path = run_dir / "artifacts" / "chart_result.json"
         chart_result_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
@@ -1087,6 +1168,10 @@ class FiveAgentsAdapter:
                 "render_mode": getattr(c, "render_mode", "echarts"),
                 "svg_uri": getattr(c, "svg_uri", None),
                 "image_uri": getattr(c, "image_uri", None),
+                # 产业链 SVG 矢量直出（2026-10-07）：render_mode=svg 时前端内联渲染用
+                "inline_svg": getattr(c, "inline_svg", None),
+                # 结构随行下发：审核门改图后据此重建 inline_svg（一致性修复）
+                "chain_graph": getattr(c, "chain_graph", None),
             }
             for c in result.charts
         ]
@@ -1326,7 +1411,6 @@ class FiveAgentsAdapter:
             chapter_res = ChapterResult.model_validate(json.load(f))
 
         # 防御性加固：确保每个图表的 svg_uri 均有效且指向具体 SVG 文件
-        from chart_generator.render import render_svg
         charts_dir = run_dir / "artifacts" / "charts"
         charts_dir.mkdir(parents=True, exist_ok=True)
         for c in (chart_res.charts or []):
@@ -1341,8 +1425,7 @@ class FiveAgentsAdapter:
             if needs_render:
                 svg_file = charts_dir / f"{c.chart_id}.svg"
                 if not svg_file.exists():
-                    svg_content = render_svg(c.title, c.chart_type, c.option, c.footnotes or [])
-                    svg_file.write_text(svg_content, encoding="utf-8")
+                    svg_file.write_text(_chart_svg_content(c, report), encoding="utf-8")
                 c.svg_uri = str(svg_file.resolve())
 
         async def on_fusion_event(event_dict: dict[str, Any]):

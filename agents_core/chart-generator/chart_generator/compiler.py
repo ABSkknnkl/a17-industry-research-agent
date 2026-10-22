@@ -1,6 +1,6 @@
 """Declarative ECharts Compiler (inspired by AntV MCP Server and grammar-of-graphics).
 
-Compiles a NormalizedDataTable and a DeclarativeChartSpec into a robust, publication-grade
+Compiles a NormalizedDataTable into a robust, publication-grade
 ECharts option with collision avoidance, dual-axis zero alignment, and typography tokens.
 """
 
@@ -10,7 +10,6 @@ from enum import Enum
 import math
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
 
 from .data_formulation import AxisType, NormalizedDataTable
 from .render import _calc_dual_ticks
@@ -26,20 +25,6 @@ class ChartArchetype(str, Enum):
     RADAR = "radar"                                    # 多维雷达图
     SCATTER = "scatter"                                # 散点分布图
     INDUSTRY_CHAIN = "industry_chain"                  # 产业链拓扑图
-
-
-class DeclarativeChartSpec(BaseModel):
-    """High-level, constrained visualization specification."""
-    model_config = ConfigDict(extra="forbid")
-
-    archetype: ChartArchetype
-    title: str
-    insight_goal: str
-    x_field: str = "categories"
-    primary_series_name: str
-    secondary_series_name: str | None = None
-    recommended_chapter_id: str = "CH-04"
-    footnotes: list[str] = Field(default_factory=list)
 
 
 # Publication-grade colors (CICC / Top-Tier Institutional Research Inspired)

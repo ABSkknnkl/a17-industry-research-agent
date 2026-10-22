@@ -24,6 +24,32 @@ except ModuleNotFoundError:  # 单包测试或独立运行时 agents_core 不在
 EventEmitter=Callable[[dict[str,Any]],Awaitable[None]]
 NUMBER_RE=re.compile(r"(?<![A-Za-z0-9_-])[-+]?\d+(?:\.\d+)?%?")
 
+_SVG_ROOT_RE=re.compile(r"<svg\b[^>]*>",re.IGNORECASE)
+_SVG_FIXED_W_RE=re.compile(r'\swidth="\d+(?:\.\d+)?(?:px)?"')
+
+def _fit_svg_for_page(svg:str)->str:
+    """把带固定像素宽高的 SVG 根标签改成自适应页宽（2026-10-17）。
+
+    起因：产业链图的确定性 SVG 根标签是 ``width="1440" height="1020"``（前端内联要
+    像素级布局），但报告页在 A4 下的内容宽只有约 6.5in —— 原样嵌入会把右侧两栏裁掉。
+    ECharts 那批 SVG 只写 viewBox 不写 width，天然自适应，所以历史没暴露这个问题。
+
+    只改**根标签**的 width/height，不动 inner 元素与 viewBox（缩放靠 viewBox 完成）。
+    """
+    if not svg:
+        return svg
+    match=_SVG_ROOT_RE.search(svg)
+    if not match:
+        return svg
+    tag=match.group(0)
+    if not _SVG_FIXED_W_RE.search(tag):
+        return svg
+    fixed=re.sub(r'\swidth="[^"]*"',' width="100%"',tag)
+    fixed=re.sub(r'\sheight="[^"]*"','',fixed)
+    if "style=" not in fixed:
+        fixed=fixed[:-1]+' style="max-width:100%;height:auto;display:block;margin:0 auto;">'
+    return svg[:match.start()]+fixed+svg[match.end():]
+
 # 并集合并后可挂载的总编审校规范上限
 FUSION_SKILL_LIMIT = 10
 SYSTEM_PROMPT="""你是行业研究报告总编辑。只能编辑已有内容，不能补充外部事实、数字或来源。skills 只提供编辑方法，绝不是事实来源。
@@ -660,6 +686,9 @@ class ReportFusionAgent:
                 try:svg=Path(chart.svg_uri).read_text(encoding="utf-8")
                 except OSError:warnings.append(f"图表 {cid} 的 SVG 文件不可读")
             if not svg:svg=f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 180"><rect width="100%" height="100%" fill="#f8fafc"/><text x="480" y="90" text-anchor="middle" fill="#64748b">{chart.title}：图表预览不可用</text></svg>'
+            # 固定像素宽高的 SVG（产业链图 1440px）在 A4 页宽下会被裁掉右侧 → 改自适应
+            svg=_fit_svg_for_page(svg)
+
             
             # Re-index canonical figure number strictly in physical reading order
             fig_number = f"{prefix_str} {new_idx}"
