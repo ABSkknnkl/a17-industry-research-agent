@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 from backend.app.core.config import settings
 
 def init_agent_paths() -> None:

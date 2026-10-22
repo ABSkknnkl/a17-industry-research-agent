@@ -7,7 +7,7 @@ dimensionally-homogeneous 2D Data Table before any visual rendering occurs.
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import field
 from datetime import date
 from enum import Enum
 from typing import Any

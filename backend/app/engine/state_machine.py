@@ -12,7 +12,6 @@ from backend.app.core.event_hub import event_hub
 from backend.app.core.storage import storage
 from backend.app.schemas.workflow import (
     STAGE_ORDER,
-    ReviewAction,
     ReviewRequest,
     RunCreateRequest,
     StageName,
@@ -292,6 +291,12 @@ class WorkflowEngine:
                             c_type = spec.get("chart_type", "bar")
                             c_title = spec.get("title", "")
                             c_notes = spec.get("footnotes") or []
+                            # 产业链图跳过通用渲染（2026-10-17）：`render_svg` 画的是三栏
+                            # 企业列表（0 条连线），用它覆盖会把刚落盘的确定性产业链 SVG
+                            # 冲掉——report-fusion 是读 svg_uri 嵌 PDF 的，等于交付件丢连线。
+                            # 这类图的重建统一交给下面的「产业链图一致性修复」块。
+                            if spec.get("chain_graph") or spec.get("inline_svg"):
+                                continue
                             if cid and c_opt:
                                 try:
                                     svg_file = charts_dir / f"{cid}.svg"
@@ -302,6 +307,83 @@ class WorkflowEngine:
                                     logger.warning(f"重新渲染图表 {cid} SVG 失败: {svg_err}")
                     except Exception as imp_err:
                         logger.warning(f"加载 SVG 渲染器失败: {imp_err}")
+
+                    # 产业链图一致性修复（2026-10-07 建立，2026-10-17 扩到 HTML 位图）：
+                    # 审核门用户改图后，inline_svg / 位图仍是改前内容 → 前端渲染过期图。
+                    # 修法：用 spec.chain_graph 里的结构按审核意见重建；
+                    # 重建失败则降级（走 svg → echarts），
+                    #（宁可退回渲染器重画的图，也绝不展示与审核意见不一致的图）。
+                    for spec in req.edited_data["chart_specs"]:
+                        _mode = spec.get("render_mode")
+                        if _mode not in ("svg", "generated_image"):
+                            continue
+                        _rebuilt_svg = False
+                        try:
+                            from chart_generator.chain_graph import (
+                                ChainGraphSpec,
+                                render_chain_svg,
+                            )
+
+                            graph = spec.get("chain_graph")
+                            if not graph:
+                                raise ValueError("spec 无 chain_graph，无法按审核意见重建")
+                            title_value = spec.get("title")
+                            chain_spec = ChainGraphSpec.model_validate(graph)
+                            if isinstance(title_value, str) and title_value:
+                                chain_spec.title = title_value
+                            _new_svg = render_chain_svg(chain_spec)
+                            _rebuilt_svg = True
+                            spec["inline_svg"] = _new_svg
+                            # 落盘文件同步（PDF 读的就是它）：否则改图后 PDF 里还是旧图。
+                            try:
+                                _svg_file = charts_dir / f"{spec.get('chart_id') or 'CHART-CHAIN'}.svg"
+                                _svg_file.write_text(_new_svg, encoding="utf-8")
+                                spec["svg_uri"] = str(_svg_file.resolve())
+                            except Exception as svg_write_err:
+                                logger.warning("产业链 SVG 落盘失败: %s", svg_write_err)
+
+                            # 补充视图（HTML 排版版）同理：结构改了就必须重出图，
+                            # 重不出来就**置空**，绝不留下与审核意见不一致的旧补充图。
+                            # 2026-10-17：HTML 版已从主图降为补充视图，故这里改的是
+                            # supplement_image_uri，不再动 image_uri/render_mode。
+                            if _mode == "generated_image" or spec.get("supplement_image_uri"):
+                                from chart_generator.chain_html import (
+                                    generate_chain_html_image,
+                                )
+                                from chart_generator.chain_render import _stats_line
+                                from chart_generator.config import Settings as _CGSettings
+
+                                _gen = await generate_chain_html_image(
+                                    chain_spec,
+                                    settings=_CGSettings.from_env(),
+                                    artifact_dir=art_dir,
+                                    chart_id=str(spec.get("chart_id") or "CHART-CHAIN"),
+                                    stats_line=_stats_line(chain_spec),
+                                )
+                                if not _gen:
+                                    raise ValueError("HTML 出图未通过门禁，补充图不做更新")
+                                spec["supplement_image_uri"] = _gen.image_uri
+                                spec["supplement_html_uri"] = _gen.html_path
+                                spec["supplement_note"] = (
+                                    "LLM 排版版（卡片信息更细，但不画连线与箭头）")
+                                spec["generation_prompt"] = _gen.generation_prompt
+                                spec["generation_prompt_model"] = _gen.generation_prompt_model
+                        except Exception as chain_err:
+                            logger.warning(
+                                "产业链图按审核意见重建失败，降级处理：chart=%s err=%s",
+                                spec.get("chart_id"), chain_err,
+                            )
+                            # 有刚重画的 SVG 就退回 svg 模式；否则退回 ECharts 并清图。
+                            # 补充视图一律作废：结构已变，旧补充图属于过期内容。
+                            spec["supplement_image_uri"] = None
+                            spec["supplement_html_uri"] = None
+                            if _rebuilt_svg:
+                                spec["render_mode"] = "svg"
+                                spec["image_uri"] = None
+                            else:
+                                spec["render_mode"] = "echarts"
+                                spec["inline_svg"] = None
+                                spec["image_uri"] = None
 
                     if ct_path.exists():
                         try:

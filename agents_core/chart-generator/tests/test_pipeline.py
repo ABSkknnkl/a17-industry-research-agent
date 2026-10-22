@@ -9,7 +9,7 @@ from chart_generator.metric_guard import (
     MetricDimension,
 )
 from chart_generator.data_formulation import DataFormulator, NormalizedDataTable, AxisType
-from chart_generator.compiler import EChartsCompiler, DeclarativeChartSpec, ChartArchetype
+from chart_generator.compiler import EChartsCompiler
 from chart_generator.linter import ChartSkillLinter, ChartLinterViolation
 
 

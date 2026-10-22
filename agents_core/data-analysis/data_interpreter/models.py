@@ -413,6 +413,9 @@ class InterpretationReport(BaseModel):
     content_outline: list[ContentSection] = Field(default_factory=list)
     comps_matrix: PeerCompsMatrix | None = None
     industry_chain_segments: list[IndustryChainSegment] = Field(default_factory=list)
+    # 产业链拓扑（2026-07 移植老项目 chain_designer：LLM 设计拓扑 + 代码裁判）。
+    # 结构比扁平 segments 丰富（四段式/流线语义/核心节点/环节说明），供智能体3 渲染。
+    industry_chain_topology: dict[str, Any] | None = None
     financial_ratios: list[dict[str, Any]] = Field(default_factory=list)
     evidence_index: dict[str, EvidenceRef] = Field(default_factory=dict)
     data_quality: DataQualityAssessment

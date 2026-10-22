@@ -5,9 +5,8 @@ import logging
 import os
 import re
 import mimetypes
-from pathlib import Path
 from fastapi import APIRouter, HTTPException, Query, status
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 logger = logging.getLogger("api_routes")
 

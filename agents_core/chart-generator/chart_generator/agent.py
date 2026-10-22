@@ -20,8 +20,27 @@ from chart_generator.models import (
     AppliedSkill, ChartGenerationRequest, ChartGenerationResult, ChartQualityReport,
     ChartSpec, ChartType, DataSupplementDemand, EvidenceRef, SuppressedChart,
 )
-from chart_generator.compiler import ChartArchetype, DeclarativeChartSpec, EChartsCompiler
-from chart_generator.data_formulation import AxisType, DataFormulator, NormalizedDataTable
+from chart_generator.chain_graph import build_chain_graph_from_segments
+from chart_generator.chain_lint import assert_graph_fidelity, lint_chain_svg
+from chart_generator.chain_render import render_chain_svg
+from chart_generator.chain_intent import user_wants_industry_chain
+from chart_generator.chain_topology import (
+    classify_company_traceability,
+    repair_topology,
+    topology_to_spec,
+    validate_topology,
+    hoist_leading_to_brand_card,
+)
+from chart_generator.websearch import (
+    WebSearchClient,
+    fill_chain_gaps,
+    make_search_client,
+    resolve_web_search_config,
+    supplement_segments_with_web,
+    web_search_available,
+)
+from chart_generator.compiler import EChartsCompiler, PRIMARY_COLOR
+from chart_generator.data_formulation import DataFormulator
 from chart_generator.image_gen import generate_industry_chain_image
 from chart_generator.linter import BAR_TYPES, ChartLinterViolation, ChartSkillLinter
 
@@ -41,7 +60,7 @@ from chart_generator.metric_guard import (
 from chart_generator.render import (
     clean_chart_title, clean_metric_label, render_preview, render_svg, resolve_ticker,
 )
-from chart_generator.skillhub import ChartSkill, ChartSkillHub
+from chart_generator.skillhub import ChartSkillHub
 
 logger = logging.getLogger(__name__)
 EventEmitter = Callable[[dict[str, Any]], Awaitable[None]]
@@ -165,6 +184,44 @@ class ChartGeneratorAgent:
         self.skillhub = skillhub or ChartSkillHub()
         self.llm = llm or OpenAICompatibleLLM(self.settings)
         self.linter = linter or ChartSkillLinter()
+
+    async def _web_extract_llm(self, system: str, user: str) -> str:
+        """产业链联网补漏专用 LLM 归纳调用（2026-10-17）。
+
+        与主链路的 ``run_skill_and_chart_loop`` 分开：这里是**单次无工具**的纯文本归纳，
+        用项目同一个大模型端点，但关闭思考（实测同等任务 10.4s → 5.8s）、
+        单次调用不重试、60s 上限——联网补漏是兜底通道，不能拖慢主链路。
+
+        返回空串表示不可用（无 key / 网络失败），调用方据此退回正则兜底。
+        """
+        import httpx as _httpx
+
+        if not (self.settings.llm_api_key and self.settings.llm_model):
+            return ""
+        payload: dict[str, Any] = {
+            "model": self.settings.llm_model,
+            "messages": [{"role": "system", "content": system},
+                         {"role": "user", "content": user}],
+            "temperature": 0.1,
+            "max_tokens": 1024,
+            "thinking": {"type": "disabled"},
+        }
+        try:
+            async with _httpx.AsyncClient(timeout=60.0, trust_env=False) as client:
+                res = await client.post(
+                    f"{self.settings.llm_base_url}/chat/completions",
+                    headers={"Authorization": f"Bearer {self.settings.llm_api_key}"},
+                    json=payload,
+                )
+                res.raise_for_status()
+                data = res.json()
+        except Exception as exc:
+            logger.warning("产业链联网补漏 LLM 调用失败：%s: %s", type(exc).__name__, exc)
+            return ""
+        choices = (data or {}).get("choices") or []
+        if not choices:
+            return ""
+        return str(((choices[0] or {}).get("message") or {}).get("content") or "")
 
     def _candidate_semantic_key(self, c: _Candidate, evidence_index: dict[str, EvidenceRef]) -> tuple[str, str]:
         """Derives a semantic deduplication key (perspective_family, primary_metric) for a chart candidate.
@@ -461,7 +518,32 @@ class ChartGeneratorAgent:
         selected_macro_count = 0
         max_macro_allowed = 1 if (request.preferences.max_charts and request.preferences.max_charts < 10) else 4
 
+        # 2026-10-21：用户是否**明确**要产业链图（确定性判定，不进 LLM）。
+        # 未明确要 → 不出产业链图（改出别的图）且**不调豆包**，省月度 500 次额度。
+        _req_types = list(getattr(request.preferences, "requested_types", None) or []) or list(
+            getattr(request.report, "requested_types", None) or [])
+        _wants_chain = user_wants_industry_chain(
+            request.report.subject or "",
+            getattr(request, "focus_points", None),
+            explicit=getattr(request, "want_industry_chain", None),
+            defaulted_focus=getattr(request, "defaulted_focus", False),
+            requested_types=_req_types,
+        )
+        if not _wants_chain:
+            logger.info("用户未明确要求产业链图（subject=%s）：不生成产业链图、不调用联网补漏",
+                        request.report.subject)
+
         for item in candidates:
+            # 未明确要产业链图 → 抑制，把名额让给其他图表
+            if item.chart_type == "industry_chain" and not _wants_chain:
+                suppressed.append(SuppressedChart(
+                    title=item.title,
+                    requested_type=item.chart_type,
+                    reason_code="industry_chain_not_requested",
+                    reason="用户未明确要求产业链图，改出其他类型的图表（本次不调用联网补漏）",
+                    evidence_ids=item.evidence_ids,
+                ))
+                continue
             if item.fingerprint in seen:
                 suppressed.append(SuppressedChart(
                     title=item.title,
@@ -553,6 +635,52 @@ class ChartGeneratorAgent:
                     evidence_ids=item.evidence_ids,
                 ))
 
+        # 产业链图是 A3 的招牌交付物（也是对外材料的主图），不能交给"选型运气"：
+        # 2026-10-17 实测同一份 15 节点拓扑，LLM 选型只出 6 张财务图，产业链图整张缺失
+        # （候选数已顶满 max_charts，确定性兜底那条分支进不去）。这里补一张，
+        # 允许**超出 max_charts 一张**——宁可多一张图，不可少掉产业链。
+        if _wants_chain and not any(c.chart_type == "industry_chain" for c in selected):
+            topo = getattr(request.report, "industry_chain_topology", None)
+            has_chain_data = bool(
+                (isinstance(topo, dict) and topo.get("nodes"))
+                or getattr(request.report, "industry_chain_segments", None)
+            )
+            if has_chain_data:
+                fb_cands, _fb_supp = self._deterministic_fallback(request)
+                chain_cand = next(
+                    (c for c in fb_cands if c.chart_type == "industry_chain"), None)
+                if chain_cand is None and isinstance(topo, dict) and topo.get("nodes"):
+                    # 只有拓扑、没有 segments 的报告（兜底映射的输入缺一块）也要出图：
+                    # option 只是 ECharts 兜底用的占位，产业链图由 chain_graph 渲染。
+                    ev_ids = [
+                        str(e) for n in (topo.get("nodes") or [])
+                        for e in (n.get("evidence_ids") or [])
+                    ][:8] or list(request.report.evidence_index)[:1]
+                    if ev_ids:
+                        chain_cand = _Candidate(
+                            title=f"{request.report.subject}产业链结构",
+                            chart_type="industry_chain",
+                            option={"series": []},
+                            evidence_ids=ev_ids,
+                            goal="呈现上中下游环节、代表企业与价值传导关系",
+                            chapter="CH-03",
+                        )
+                if chain_cand is not None and chain_cand.fingerprint not in seen:
+                    # 放在首位：产业链图是研报的骨架图，历来就是 CHART-01（早章节先出现），
+                    # 追加到末尾会把编号/落位顺序整体错位（backend 集成测试按此口径断言）。
+                    selected.insert(0, chain_cand)
+                    seen.add(chain_cand.fingerprint)
+                    suppressed = [
+                        s for s in suppressed
+                        if not (s.reason_code == "preference_limit"
+                                and s.title == chain_cand.title)
+                    ]
+                    await record(
+                        "industry_chain_forced",
+                        chart_title=chain_cand.title,
+                        message="选型未覆盖产业链图，按数据存在性确定性补入（产业链图是核心交付物）",
+                    )
+
         charts: list[ChartSpec] = []
         previews: list[tuple[str, str]] = []
         source_val = "公司公告、同花顺 iFinD、行业公开披露"
@@ -573,6 +701,282 @@ class ChartGeneratorAgent:
                 source=source_val,
                 insight_takeaway=item.goal,
             )
+            # 产业链图矢量直出（2026-10-07）：由 ChainGraphSpec 契约 + 确定性模板渲染
+            # SVG 经 inline_svg 下发，前端内联渲染实现浏览器无损缩放（替代 ECharts canvas）。
+            # 失败只降级不回退：任何异常都落入 ECharts 渲染路径，图表不丢。
+            inline_svg: str | None = None
+            chain_graph_dump: dict[str, Any] | None = None
+            render_mode: str = "echarts"
+            # 生图元数据（render_mode=generated_image 时下发；AI 生图路径仍在用）。
+            # 前端契约要求 generated_image 模式下这 7 个字段**全部非空**（见 types.ts）。
+            image_uri: str | None = None
+            image_mime_type: str | None = None
+            generation_prompt: str | None = None
+            generation_prompt_model: str | None = None
+            generation_image_model: str | None = None
+            html_render_template: str | None = None
+            # 补充视图（2026-10-17）：产业链 HTML 排版版并存，不顶替主图。
+            supplement_image_uri: str | None = None
+            supplement_html_uri: str | None = None
+            supplement_note: str | None = None
+            if item.chart_type == "industry_chain":
+                try:
+                    # 优先用阶段2 产出的拓扑（老项目 chain_designer 范式：LLM 设计 + 代码裁判），
+                    # 信息密度远高于扁平 segments；缺失时回退到 segments 映射，保证有图。
+                    chain_spec = None
+                    topo = getattr(request.report, "industry_chain_topology", None)
+                    # 企业白名单在两条路径（LLM 拓扑 / segments 兜底）都要用，
+                    # 定义在分支外，避免兜底路径引用到未初始化变量（2026-10-17）。
+                    allowed_companies: set[str] = set()
+                    if isinstance(topo, dict) and topo.get("nodes"):
+                        # 渲染前终审（2026-10-08）：产业链 8 条硬规则 + 企业证据白名单。
+                        # 裁判不过 → 不画这张拓扑，回退 segments 映射（宁可有简图，不要错图）。
+                        # 🔴 2026-10-18 F1：**不再把 A2 的 segments 当事实源**。
+                        # segments.representative_companies 是 A2（模型）生成的，拿它做白名单
+                        # 等于"用模型的输出去审模型的输出"——自证循环，白名单校验完全失效：
+                        # 海上风电实测：A2 把许继电气/东方电子/中国宝安写进 segments 中游，
+                        # 它们随即进入白名单被判"可追溯"，名正言顺上了品牌卡；
+                        # 而 A2 在拓扑里写对的 8 家整机龙头（金风/明阳/远景/运达…）
+                        # 不在白名单，反被 repair 当成编造摘光（8 → 0 家）。
+                        # 白名单只认 **A1 事实源**（evidence_index 的 entity），
+                        # 其余企业名按 F1 后半条降级为 industry_common 保留、不删。
+                        # 证据原文（2026-10-16）：LLM 常从研报/资讯摘要文本里读公司名
+                        # （"推荐标的：宁德时代、亿纬锂能"），这些名字不在 evidence_index 的
+                        # entity 字段里，旧白名单会把它们全判成"编造"。按 docstring 原意
+                        # （不在白名单**也不在证据原文中出现**才判违规）把原文也纳入可追溯口径。
+                        evidence_text_parts: list[str] = []
+                        for ev in (request.report.evidence_index or {}).values():
+                            if isinstance(ev, dict):
+                                ent, met, val = ev.get("entity"), ev.get("metric"), ev.get("value")
+                            else:
+                                ent = getattr(ev, "entity", None)
+                                met = getattr(ev, "metric", None)
+                                val = getattr(ev, "value", None)
+                            if ent:
+                                allowed_companies.add(str(ent))
+                            for piece in (ent, met, val):
+                                if piece is not None and str(piece).strip():
+                                    evidence_text_parts.append(str(piece))
+                        evidence_text = "\n".join(evidence_text_parts)
+                        # 企业名可追溯性分层（2026-10-17，必须在裁判/修复之前）：
+                        # 问财只覆盖 A 股，境外/未上市龙头（亿航智能、大疆、极飞、沃飞长空…）
+                        # 结构性取不到证据。旧实现把这类名字当"编造"从节点上摘掉——
+                        # 实测把整机厂从 8 家砍到 2 家、低空空管从 4 家砍到 1 家。
+                        # F5（2026-10-18）：品牌卡龙头上移——LLM 常把龙头拆到同 stage
+                        # 的研发/能力小卡（风电金风/明阳进「机组设计与仿真」、
+                        # 创新药恒瑞/百济进「药物发现」），品牌卡只剩二线，命中率 2/7。
+                        # 命中基准 < 60% 时按确定性规则搬回同 stage 的龙头。
+                        topo, _hoist_notes = hoist_leading_to_brand_card(
+                            topo, request.report.subject or "",
+                        )
+                        if _hoist_notes:
+                            logger.info("产业链龙头上移：%s", _hoist_notes[:3])
+                        # 这里把「环节有据但企业名超出 A 股」的节点降为 industry_common，
+                        # 名字保留、渲染层不画红标，裁判/修复器据此跳过白名单强校验。
+                        topo, _tier_notes = classify_company_traceability(
+                            topo,
+                            allowed_companies=allowed_companies or None,
+                            evidence_text=evidence_text,
+                        )
+                        if _tier_notes:
+                            logger.info("产业链企业名分层：%s", _tier_notes[:3])
+                        # 联网补漏（2026-10-17）：**仅限产业链图**。
+                        # evidence_count 传本轮 industry_chain 域的证据条数：
+                        # 传 0 表示问财没收录该主题（主题词被语义解析器丢弃），
+                        # 此时博查从"补缺口"升级为"整条链的企业名/环节名来源"。
+                        _ws_cfg = resolve_web_search_config()
+                        # 🔴 2026-10-20：改用 provider 判定（原 `_ws_cfg.enabled` 是博查专用，
+                        # 且 client 硬编码 WebSearchClient → SEARCH_PROVIDER=doubao 从未生效）。
+                        # 双保险：循环入口已按 _wants_chain 抑制过产业链图候选，
+                        # 这里再闸一次，确保"用户没要产业链图"时绝不消耗豆包额度。
+                        if web_search_available() and _wants_chain:
+                            _chain_ev = [
+                                ev for ev in (request.report.evidence_index or {}).values()
+                                if str(getattr(ev, "domain", "") or (ev.get("domain") if isinstance(ev, dict) else ""))
+                                == "industry_chain"
+                            ]
+                            try:
+                                topo, _ws_diag = await fill_chain_gaps(
+                                    topo,
+                                    subject=request.report.subject or "",
+                                    whitelist=allowed_companies or None,
+                                    client=make_search_client(),
+                                    call_llm=self._web_extract_llm,
+                                    evidence_count=len(_chain_ev),
+                                )
+                                if _ws_diag.get("notes"):
+                                    logger.info("产业链联网补漏：%s", _ws_diag["notes"][:3])
+                                _uncovered = bool(_ws_diag.get("topic_uncovered"))
+                                await record(
+                                    "chain_web_supplement",
+                                    message=(f"产业链联网补漏 {_ws_diag.get('hits', 0)} 条命中 / "
+                                             f"{len(_ws_diag.get('queries', []))} 条 query"
+                                             + ("（问财未收录该主题，改由联网兜底整条链）"
+                                                if _uncovered else "")),
+                                    payload=_ws_diag,
+                                )
+                            except Exception as exc:
+                                logger.warning("产业链联网补漏失败，按原拓扑出图：%s: %s",
+                                               type(exc).__name__, exc)
+                        # 2026-10-21：把报告主题一路传给裁判/修复链。
+                        # A 版（企业专属）靠它锁定核心、清竞品；不传则回落旧行为。
+                        _subj = str(request.report.subject or "")
+                        topo_errors = validate_topology(
+                            topo,
+                            allowed_companies=allowed_companies or None,
+                            allowed_evidence=set(request.report.evidence_index or {}) or None,
+                            evidence_text=evidence_text,
+                            subject=_subj,
+                        )
+                        # 🔴 2026-10-21 P0：确定性修复**无条件跑**（原来挂在 `if topo_errors:` 里）。
+                        # 旧实现的后果：拓扑一旦"校验通过"就完全不修，于是
+                        # `strengthen_brand_card()` / `fill_empty_capability_cards()` 这两步
+                        # ——它们只在 repair_topology 内部调用——**永远执行不到**。
+                        # 实测 run-20261021183219「宇树科技机器人」：A2 品牌卡只写
+                        # 埃斯顿/汇川技术/新松，校验无错 → repair 跳过 → 宇树科技被漏写，
+                        # 全图唯一出现"宇树"的地方是标题。用户点名要看的公司不在自己的图上。
+                        repaired, repairs = repair_topology(
+                            topo,
+                            allowed_companies=allowed_companies or None,
+                            allowed_evidence=set(request.report.evidence_index or {}) or None,
+                            evidence_text=evidence_text,
+                            subject=_subj,
+                        )
+                        if repairs:
+                            logger.info("产业链拓扑确定性修复 %d 项：%s",
+                                        len(repairs), repairs[:4])
+                        _repaired_errors = validate_topology(
+                            repaired,
+                            allowed_companies=allowed_companies or None,
+                            allowed_evidence=set(request.report.evidence_index or {}) or None,
+                            evidence_text=evidence_text,
+                            subject=_subj,
+                        )
+                        if not _repaired_errors:
+                            topo, topo_errors = repaired, []
+                        elif not topo_errors:
+                            # 修复反而引入了新问题 → 原拓扑本身合法，保守保留原样
+                            logger.info("确定性修复引入 %d 项新问题，保留原拓扑：%s",
+                                        len(_repaired_errors), _repaired_errors[:3])
+                        else:
+                            logger.warning("产业链拓扑修复后仍未通过（%d 项），回退扁平结构：%s",
+                                           len(_repaired_errors), _repaired_errors[:3])
+                        if not topo_errors:
+                            chain_spec = topology_to_spec(
+                                topo, fallback_title=f"{request.report.subject}产业链全景图")
+                    if chain_spec is None:
+                        # 博查补漏（2026-10-17 B13）：**拓扑缺失才正是最需要联网的时候**。
+                        # 旧实现把 fill_chain_gaps 只挂在上面的 topology 分支里，
+                        # A2 未产出拓扑（问财 401 / 主题未收录）→ 走本兜底 → 博查 0 次调用，
+                        # 结果 6 个主题输出同一张三段空壳图。这里先补企业名再建图；
+                        # 失败一律原样返回，绝不因联网问题破坏已有结构。
+                        _segs = list(getattr(request.report, "industry_chain_segments", None) or [])
+                        if web_search_available() and _segs:
+                            try:
+                                _chain_ev2 = [
+                                    ev for ev in (request.report.evidence_index or {}).values()
+                                    if str(getattr(ev, "domain", "")
+                                           or (ev.get("domain") if isinstance(ev, dict) else ""))
+                                    == "industry_chain"
+                                ]
+                                _segs, _ws_diag2 = await supplement_segments_with_web(
+                                    _segs,
+                                    subject=request.report.subject or "",
+                                    whitelist=allowed_companies or None,
+                                    client=make_search_client(),
+                                    call_llm=self._web_extract_llm,
+                                    evidence_count=len(_chain_ev2),
+                                )
+                                await record(
+                                    "chain_web_supplement",
+                                    message=(f"产业链联网补漏（拓扑缺失兜底路径）"
+                                             f"{_ws_diag2.get('hits', 0)} 条命中 / "
+                                             f"{len(_ws_diag2.get('queries', []))} 条 query"),
+                                    payload=_ws_diag2,
+                                )
+                            except Exception as exc:
+                                logger.warning("拓扑缺失路径的联网补漏失败，按原结构出图：%s: %s",
+                                               type(exc).__name__, exc)
+                        chain_spec = build_chain_graph_from_segments(
+                            _segs,
+                            subject=request.report.subject or "",
+                        )
+                    if chain_spec is not None:
+                        inline_svg = render_chain_svg(chain_spec)
+                        # 产物级体检（2026-10-08）：负面约束/流线语义/事实锁死。
+                        # error 级问题（占位符、数值、事实缺失）→ 不发布，降级 ECharts；
+                        # 事实锁死缺失视为渲染管线 bug，记 error 但不阻断（避免整批丢图）。
+                        lint = [i for i in lint_chain_svg(chain_spec, inline_svg)
+                                if i["level"] == "error"]
+                        if lint:
+                            logger.warning("产业链图未通过产物体检，降级 ECharts：%s",
+                                           [i["message"] for i in lint[:3]])
+                            inline_svg = None
+                            render_mode = "echarts"
+                        else:
+                            missing = assert_graph_fidelity(chain_spec, inline_svg)
+                            if missing:
+                                logger.error("产业链图事实锁死缺失（渲染管线缺陷）：%s", missing[:5])
+                            # 拓扑 JSON 单独落盘：可审计「这张图的拓扑是模型设计的，原始 JSON 在这」
+                            if artifact_dir:
+                                try:
+                                    topo_path = artifact_dir / "charts" / f"{chart_id}.chain_topology.json"
+                                    topo_path.parent.mkdir(parents=True, exist_ok=True)
+                                    topo_path.write_text(
+                                        json.dumps(chain_graph_dump or chain_spec.model_dump(),
+                                                   ensure_ascii=False, indent=2),
+                                        encoding="utf-8")
+                                except Exception as topo_err:
+                                    logger.warning("拓扑落盘失败：%s", topo_err)
+                            # 结构随 spec 下发：审核门按用户意见改图后据此重建 inline_svg，
+                            # 否则前端会继续渲染改前的过期图（一致性缺陷）。
+                            chain_graph_dump = chain_spec.model_dump()
+                            render_mode = "svg"
+                            # 落盘与预览也换成确定性产业链 SVG（2026-10-17）。
+                            # 之前这里落的是 ECharts 通用渲染件（`render_svg` 的三栏企业
+                            # 列表：0 条连线、无环节卡片），而 report-fusion 是**读 svg_uri
+                            # 文件**把图嵌进 PDF 的 —— 结果交付出去的 PDF 里产业链图没有
+                            # 连线也没有节点。改这里比改 report-fusion 契约更稳（它的
+                            # ChartSpec 是 extra="ignore"，加 inline_svg 字段容易被漏改）。
+                            svg = inline_svg
+                            # ── HTML 排版版：同一份已过审拓扑交给大模型排成 HTML+CSS，
+                            # 再截图为 PNG。**并存不顶替**（2026-10-17 改）：HTML 版只有
+                            # 卡片与连线文字标签，画不出连线与箭头，主图必须是确定性 SVG；
+                            # HTML 版降为可切换的补充视图（卡片信息密度高，适合细读内容）。
+                            if getattr(self.settings, "enable_industry_chain_html", False):
+                                try:
+                                    from chart_generator.chain_html import (
+                                        generate_chain_html_image,
+                                    )
+                                    from chart_generator.chain_render import _stats_line
+
+                                    gen = await generate_chain_html_image(
+                                        chain_spec,
+                                        settings=self.settings,
+                                        artifact_dir=artifact_dir,
+                                        chart_id=chart_id,
+                                        stats_line=_stats_line(chain_spec),
+                                    )
+                                    if gen:
+                                        supplement_image_uri = gen.image_uri
+                                        supplement_html_uri = gen.html_path
+                                        supplement_note = (
+                                            "LLM 排版版（卡片信息更细，但不画连线与箭头）")
+                                        # 生成留痕：便于回溯这张补充图是哪个提示词/模型产出的。
+                                        # 注意**不改** image_uri/render_mode —— 主图仍是上面的
+                                        # 确定性 SVG（有连线有箭头），这是本次回退的核心。
+                                        generation_prompt = gen.generation_prompt
+                                        generation_prompt_model = gen.generation_prompt_model
+                                        logger.info(
+                                            "产业链图补充 HTML 版已生成：chart=%s "
+                                            "主图仍为确定性 SVG（render_mode=%s）",
+                                            chart_id, render_mode,
+                                        )
+                                except Exception as html_err:
+                                    logger.warning(
+                                        "产业链 HTML 出图异常，保留确定性 SVG：%s", html_err)
+                except Exception as exc:
+                    logger.warning("产业链 SVG 渲染失败，降级 ECharts：%s", exc)
             svg_uri = html_uri = None
             if artifact_dir:
                 charts_dir = artifact_dir / "charts"
@@ -585,13 +989,19 @@ class ChartGeneratorAgent:
                 html_uri = str((artifact_dir / "preview.html").resolve())
 
             sub_title = item.option.get("subtitle") if isinstance(item.option, dict) else None
+            # ChartSpec.evidence_ids 契约要求非空（min_length=1）。A1 取数整体失败时
+            # （实测 run-20261017140617：问财网关一次都没成功，dataset 全 0 条），
+            # candidate 的 evidence_ids 会是空列表，直接构造会抛 ValidationError，
+            # 把整个 chart_generate 阶段打成 failed。这里兜一个占位 id，
+            # 让阶段能跑完并如实降级，而不是崩掉后半条链路。
+            _ev_ids = list(item.evidence_ids) or list(request.report.evidence_index)[:1] or ["CHAIN"]
             charts.append(ChartSpec(
                 chart_id=chart_id,
                 title=title,
                 chart_type=item.chart_type,
                 option=item.option,
-                evidence_ids=item.evidence_ids,
-                point_evidence_ids=item.point_evidence_ids or item.evidence_ids,
+                evidence_ids=_ev_ids,
+                point_evidence_ids=item.point_evidence_ids or _ev_ids,
                 insight_goal=item.goal,
                 recommended_chapter_id=item.chapter,
                 footnotes=item.footnotes,
@@ -601,6 +1011,18 @@ class ChartGeneratorAgent:
                 figure_number=fig_num,
                 subtitle=sub_title,
                 source_line=f"数据来源：{source_val}；经系统审计引擎校验。",
+                render_mode=render_mode,
+                inline_svg=inline_svg,
+                chain_graph=chain_graph_dump,
+                chain_template=html_render_template,
+                image_uri=image_uri,
+                image_mime_type=image_mime_type,
+                generation_prompt=generation_prompt,
+                generation_prompt_model=generation_prompt_model,
+                generation_image_model=generation_image_model,
+                supplement_image_uri=supplement_image_uri,
+                supplement_html_uri=supplement_html_uri,
+                supplement_note=supplement_note,
             ))
             previews.append((title, svg))
             await record("chart_ready", chart_id=chart_id, chart_type=item.chart_type, title=title)
@@ -1027,9 +1449,19 @@ class ChartGeneratorAgent:
                 sup_eids = [str(x) for x in item.get("evidence_ids", []) if str(x) in report.evidence_index]
                 if not sup_eids:
                     sup_eids = self._backfill_suppressed_evidence(sup_title, report)
+                # P0-6：requested_type 必须过白名单——LLM 吐非法值时 pydantic Literal
+                # 会抛 ValidationError，且发生在批量解析循环内 → 整批图表丢失。
+                # 降级为 None（表示"未指定类型"）并留痕，不中断整批解析。
+                raw_req_type = item.get("requested_type")
+                safe_req_type = raw_req_type if raw_req_type in VALID_CHART_TYPES else None
+                if raw_req_type is not None and safe_req_type is None:
+                    logger.warning(
+                        "P0-6 guard: 非法 requested_type=%r 已降级为 None（图表 %r）",
+                        raw_req_type, sup_title,
+                    )
                 suppressed.append(SuppressedChart(
                     title=sup_title,
-                    requested_type=item.get("requested_type"),
+                    requested_type=safe_req_type,
                     reason_code=str(item.get("reason_code", "llm_suppressed")),
                     reason=str(item.get("reason", "经专业技能规则审查，数据不足或口径冲突")),
                     evidence_ids=sup_eids,
@@ -1992,7 +2424,18 @@ class ChartGeneratorAgent:
                         ]
                     }
                     chain_eids = [x.record_id for x in chain[:30]]
-                    candidates.append(_Candidate("产业链结构", "industry_chain", option, chain_eids, "展示已获证据支持的产业链环节", "CH-03", 110, point_evidence_ids=chain_eids))
+                    # 2026-10-21：确定性兜底也不得在"用户没要产业链图"时硬塞一张。
+                    _fb_types = list(getattr(request.preferences, "requested_types", None) or []) or list(
+                        getattr(request.report, "requested_types", None) or [])
+                    _fb_wants = user_wants_industry_chain(
+                        request.report.subject or "",
+                        getattr(request, "focus_points", None),
+                        explicit=getattr(request, "want_industry_chain", None),
+                        defaulted_focus=getattr(request, "defaulted_focus", False),
+                        requested_types=_fb_types,
+                    )
+                    if _fb_wants:
+                        candidates.append(_Candidate("产业链结构", "industry_chain", option, chain_eids, "展示已获证据支持的产业链环节", "CH-03", 110, point_evidence_ids=chain_eids))
 
         # Cross-chapter soft rebalancing for fallback candidates (enforce <= 3 per chapter)
         ch_counts = Counter(c.chapter for c in candidates)
@@ -2215,7 +2658,9 @@ class ChartGeneratorAgent:
                 seen_semantics.add(sem_key)
             filtered.append(c)
 
-        candidates = filtered or candidates
+        # P0-5：过滤为空就是空，不允许 `or candidates` 静默回退——
+        # 否则上面所有质量门（boxplot/radar/treemap/宏观配额/语义去重）在全灭时被整体架空。
+        candidates = filtered
 
         max_charts = request.preferences.max_charts
         is_unlimited = not max_charts or max_charts <= 0

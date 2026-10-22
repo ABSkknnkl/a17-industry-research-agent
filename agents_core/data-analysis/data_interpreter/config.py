@@ -13,6 +13,7 @@ class Settings:
     llm_base_url: str = "https://api.deepseek.com/v1"
     llm_model: str = "deepseek-chat"
     llm_reasoning_effort: str | None = "low"
+    llm_thinking: str = "disabled"
     llm_timeout_seconds: float = 180.0
     skill_concurrency_limit: int = 6
     output_dir: Path = Path("output")
@@ -26,6 +27,7 @@ class Settings:
             llm_base_url=os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1").rstrip("/"),
             llm_model=os.getenv("LLM_MODEL", "deepseek-chat").strip(),
             llm_reasoning_effort=os.getenv("LLM_REASONING_EFFORT") or os.getenv("REASONING_EFFORT") or "low",
+            llm_thinking=os.getenv("LLM_THINKING") or "disabled",
             llm_timeout_seconds=float(os.getenv("LLM_TIMEOUT_SECONDS", "180")),
             skill_concurrency_limit=max(1, int(os.getenv("SKILL_CONCURRENCY_LIMIT", "6"))),
             output_dir=Path(os.getenv("OUTPUT_DIR", "output")),

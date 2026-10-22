@@ -8,9 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-import math
 import re
-from typing import Any
 
 
 class MetricDimension(str, Enum):

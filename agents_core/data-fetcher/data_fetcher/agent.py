@@ -17,7 +17,7 @@ from pydantic import ValidationError
 
 from data_fetcher.config import Settings
 from data_fetcher.fusion import DataFusion
-from data_fetcher.llm import LLMConfigurationError, OpenAICompatibleLLM, PlannerLLM
+from data_fetcher.llm import OpenAICompatibleLLM, PlannerLLM
 from data_fetcher.models import (
     AgentDecision,
     Coverage,
@@ -33,7 +33,7 @@ from data_fetcher.models import (
     SkillTask,
     TraceEvent,
 )
-from data_fetcher.skillhub import IwencaiAuthenticationError, REMOTE_SKILL_DOMAINS, SkillHub, SkillValidationError
+from data_fetcher.skillhub import IwencaiAuthenticationError, SkillHub, SkillValidationError
 
 
 EventEmitter = Callable[[dict[str, Any]], Awaitable[None]]
@@ -103,8 +103,20 @@ planning_methodologies 只用于补全查询维度；它们不是可执行 Skill
      6) 行业板块整体估值 (hithink-industry-query):
         标准语法：针对所属官方大类（优先使用 observation.objective.relevant_industries 中的官方大类行业）：
         "{relevant_industry}行业 估值 市盈率 市净率" 或 "{topic}行业 动态市盈率"
-     7) 产业链供需概况 (hithink-business-query):
-        标准语法："{topic}产业链 上中下游"
+     7) 产业链供需概况（**多角度召回**，必须并行拆成多条单主语 query）:
+        背景：问财对「产业链」类长句召回极差，且**同一 query 里塞多家公司会被截断、只返 1 家**；
+        单一 query 只能捞回"公司×业务×财务"，捞不回"环节—关系"结构。因此产业链必须按角度拆开：
+        (hithink-business-query)：
+          "{topic} 产业链 上游 核心零部件 供应商"
+          "{topic} 产业链 中游 整机制造 代表公司"
+          "{topic} 产业链 下游 应用场景 运营服务商"
+          "{topic} 基础设施 配套保障 代表公司"
+        (hithink-astock-selector)：
+          "{topic} 概念 A股 按总市值降序" (limit=20)
+        铁律：① 每条 query 只出现 1 个主语（公司名或行业词），禁止多公司并列；
+              ② 企业名一律用**全称或官方证券简称**，禁止自造简称与同音字——
+                 实测错字「四川九州」正确写法是「四川九洲」，写错等于图上硬伤；
+              ③ 环节名优先用"零部件/材料/整机/运营/配套"这类通用词，便于下游归一。
    - 铁律约束：首轮严禁在行业估值查询中混入个股选股后缀（如“A股 按总市值降序”），防止偏采。
 
 2. 【第二层：实体锚定 · 估值与财务深度画像】（第 2 轮规划，当 observation.identified_companies 已入池）：
@@ -116,6 +128,13 @@ planning_methodologies 只用于补全查询维度；它们不是可执行 Skill
         针对确权前 3~4 家核心龙头，分别发起："{entity_name} 近5年 营业收入 归母净利润 销售毛利率 销售净利率 ROE 资产负债率 经营活动产生的现金流量净额 研发费用"
      3) 重点龙头主营业务与分产品拆解 (hithink-business-query):
         针对确权前 2~3 家核心龙头，发起："{entity_name} 主营构成 分产品收入占比"
+     4) 公司供应链上下游关系（公告/研报/新闻三检索并集，2026-10-07 新增）:
+        当用户问询涉及产业链、供应链、上下游、供应商、客户或合作伙伴时，针对确权前 2~3 家核心龙头分别发起：
+        - 公告检索 (announcement-search): "{entity_name} 重大合同 采购 销售 战略合作" (limit=5)
+        - 研报检索 (report-search): "{entity_name} 产业链 供应链 上下游" (limit=5)
+        - 新闻检索 (news-search): "{entity_name} 供应商 客户 合作伙伴" (limit=5)
+        铁律：供应链关系（供应商名单/客户名单/合作伙伴）只能从公告、研报、新闻披露中获得，
+        严禁用财务指标查询技能代替；美股/境外标的覆盖弱时如实保留空结果，不得编造关系。
 
 3. 【第三层：纵深拆解与闭环补齐】（第 3 轮+ 规划）：
    - 核心目标：针对 observation.unmet_requirements 中仍未满足的领域或硬性指标进行针对性单点精准补齐。
@@ -1175,15 +1194,35 @@ class DataFetcherAgent:
                     ["operating_cash_flow", "经营活动产生的现金流量净额", "经营现金流"],
                 ],
             ))
-        if "产业链" in text:
+        # 升级（2026-10-07）：供应链关系意图触发词从「产业链」扩到供应商/客户/合作伙伴/上下游，
+        # 且可接受技能从单一 business-query 扩为「公告+研报+新闻」三检索并集——
+        # 公司级供应链关系（供应商名单/客户名单/合作伙伴）主要靠公告、研报、新闻披露获得，
+        # 单一财务查询技能覆盖不了（英伟达/小米类公司锚定查询的第一数据来源）。
+        chain_intent_terms = ("产业链", "供应链", "上下游", "供应商", "客户", "合作伙伴", "配套")
+        if any(term in text for term in chain_intent_terms):
             requirements.append(ResearchRequirement(
                 requirement_id="chain_structure",
                 label="产业链结构或主营构成",
                 domain=Domain.INDUSTRY_CHAIN,
-                acceptable_skill_ids=skill_ids[Domain.INDUSTRY_CHAIN],
+                acceptable_skill_ids=[
+                    "hithink-business-query", "hithink-futures-query",
+                    "announcement-search", "report-search", "news-search",
+                ],
                 expected_metric_groups=[[
                     "chain_segment", "产业链", "main_business", "主营", "business_composition",
                     "分类标准", "项目名称", "参控", "客户", "供应商", "合同",
+                ]],
+            ))
+        supply_relation_terms = ("供应商", "客户", "合作伙伴", "供应链", "上下游")
+        if any(term in text for term in supply_relation_terms):
+            requirements.append(ResearchRequirement(
+                requirement_id="supply_chain_relations",
+                label="供应链上下游关系（供应商/客户/合作伙伴）",
+                domain=Domain.INDUSTRY_CHAIN,
+                acceptable_skill_ids=["announcement-search", "report-search", "news-search"],
+                expected_metric_groups=[[
+                    "供应商", "客户", "合作伙伴", "采购", "销售", "重大合同",
+                    "代工", "OEM", "ODM", "战略合作伙伴",
                 ]],
             ))
         return requirements
