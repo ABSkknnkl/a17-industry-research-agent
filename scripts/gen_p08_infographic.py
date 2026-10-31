@@ -1,4 +1,4 @@
-"""调用智能体3的生图模型（shengsuanyun router / gpt-image-2）生成 P08 信息图。
+"""调用智能体3的生图模型（IMAGE_BASE_URL / IMAGE_MODEL，需自行配置）生成 P08 信息图。
 
 协议与 agents_core/chart-generator/chart_generator/image_gen.py 完全一致：
 POST {base}/tasks/generations -> 202 {"code":"success","data":{"request_id":...}}

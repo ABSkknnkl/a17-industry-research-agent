@@ -7,8 +7,8 @@ def test_generate_industry_chain_image_guard_fast_return():
     """Verify that when IMAGE_API_KEY is not configured, generate_industry_chain_image returns None immediately."""
     settings = ImageGenSettings(
         api_key="",
-        base_url="https://router.shengsuanyun.com/api/v1",
-        model="openai/gpt-image-2",
+        base_url="",
+        model="",
         llm_api_key="mock-llm-key",
     )
     start = time.perf_counter()
