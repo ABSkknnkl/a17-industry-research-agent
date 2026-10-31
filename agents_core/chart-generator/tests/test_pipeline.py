@@ -52,9 +52,16 @@ def test_dimension_guard_families():
     assert compat is True
 
     # Monetary value normalization
+    # R3：缺来源单位不得按量级猜倍率——返回空单位表示「不可比较」，数值不被擅自换算
     val, unit = DimensionGuard.normalize_financial_value(150000000.0, "营业收入")
-    assert val == 1.5
-    assert unit == "亿元"
+    assert val == 150000000.0
+    assert unit == ""
+    # 显式单位路径仍正常换算
+    val_explicit, unit_explicit = DimensionGuard.normalize_financial_value(
+        150000000.0, "营业收入", raw_unit="元"
+    )
+    assert val_explicit == 1.5
+    assert unit_explicit == "亿元"
 
 
 def test_data_formulation_heterogeneous_filter():

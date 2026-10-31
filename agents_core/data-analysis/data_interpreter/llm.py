@@ -85,7 +85,7 @@ class OpenAICompatibleLLM:
                 max_connections=20,
                 keepalive_expiry=30.0,
             )
-            self._client = httpx.AsyncClient(timeout=timeout, limits=limits)
+            self._client = httpx.AsyncClient(timeout=timeout, limits=limits, trust_env=__import__('os').getenv('LLM_TRUST_ENV', '1') != '0')
         return self._client
 
     async def aclose(self) -> None:

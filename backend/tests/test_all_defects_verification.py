@@ -180,7 +180,10 @@ def test_def_07_data_fetcher_deterministic_guard():
     assert "DEF-07" in content, "DEF-07 guard comment present"
     assert "covered_comp_count < target_min" in content
     assert 'decision = decision.model_copy(update={"decision": "continue"})' in content
-    assert "target_min = min(4, len(known_companies))" in content
+    # 守卫内 4 家门槛（变量名随重构调整，判据是"min(4, 已识别公司数)"这一形态）
+    assert "target_min = min(4, len(identified_comps))" in content
+    # R2：覆盖率侧另有一层逐家核验（收入+利润+有效期间）
+    assert "_covered_financial_entities" in content
 
 
 # DEF-08: Metric display names and appendix translation

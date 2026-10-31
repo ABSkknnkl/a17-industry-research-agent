@@ -5,6 +5,7 @@ import logging
 import re
 import secrets
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from backend.app.agents.adapters import FiveAgentsAdapter
@@ -14,12 +15,143 @@ from backend.app.schemas.workflow import (
     STAGE_ORDER,
     ReviewRequest,
     RunCreateRequest,
+    RunExecutionSnapshot,
     StageName,
     StageResult,
     WorkflowState,
 )
 
 logger = logging.getLogger("workflow_engine")
+
+
+class RevisionConflictError(ValueError):
+    """请求携带的 expected_revision 与当前版本不一致（并发冲突）。"""
+
+    def __init__(self, run_id: str, expected: int, actual: int) -> None:
+        self.run_id = run_id
+        self.expected = expected
+        self.actual = actual
+        super().__init__(
+            f"版本冲突：期望 revision={expected}，当前 revision={actual}。请刷新后重试。"
+        )
+
+
+# 编辑源 -> 必须失效的下游阶段（V8 方案 §5.3 表格）
+DOWNSTREAM_INVALIDATION: dict[str, tuple[str, ...]] = {
+    "data_fetch": ("data_interpret", "chart_generate", "chapter_write", "report_fusion"),
+    "data_interpret": ("chart_generate", "chapter_write", "report_fusion"),
+    "chart_generate": ("chapter_write", "report_fusion"),
+    "chapter_write": ("report_fusion",),
+    "report_fusion": (),
+}
+
+
+class StageBlockedError(ValueError):
+    """阶段处于硬阻塞状态，不允许批准放行或跳过推进。
+
+    继承 ValueError 以便既有 API 层 `except ValueError -> 400` 分支原样复用，
+    不新增 HTTP 契约。
+    """
+
+    def __init__(self, run_id: str, stage: str, reason: str) -> None:
+        self.run_id = run_id
+        self.stage = stage
+        self.reason = reason
+        super().__init__(f"阶段 {stage} 处于硬阻塞状态，不可放行：{reason}")
+
+
+# 判定为硬阻塞的 agent_status 取值（A1 原生状态机口径）。
+_BLOCKING_AGENT_STATUS = frozenset({"failed", "blocked"})
+
+# 允许以“定性证据”继续的领域：事件与产业链断言不依赖数值域。
+_QUALITATIVE_DOMAINS = ("events",)
+_QUALITATIVE_CHAIN_KEY = "chain_research"
+
+
+def assess_stage_progression(result: StageResult, stage: str | None = None) -> tuple[bool, str]:
+    """判断某阶段结果是否允许推进到下游。
+
+    这是 S-01 的唯一局部判定入口：`_execute_stage`、`handle_review` 与
+    `resume_run` 共用，避免三处各写一套条件。
+
+    设计约束（对应 V8 方案 §4.2/§4.3）：
+    - 只用结构化字段（status / error / agent_status / domains / chain_research）判断，
+      不对 warning 文案做“致命”关键字匹配。
+    - 一般 warnings 不视为阻塞。
+    - 纯事件或受支持的产业链断言属于合法定性证据路径，不得整体误拦。
+
+    Args:
+        result: 阶段的原始结果（尚未被 review_stages 覆盖状态）。
+
+    Returns:
+        (allowed, reason)。allowed=False 时 reason 为可读的阻塞原因。
+    """
+    status = getattr(result, "status", None)
+    error = getattr(result, "error", None)
+    data = getattr(result, "data", None) or {}
+
+    # 1) 执行失败：原生 failed 一律阻塞，且不得被审核覆盖成 approved/completed。
+    if status == "failed":
+        return False, error or "阶段执行失败"
+
+    # 2) 适配器显式上报的 agent 原生状态。
+    agent_status = str(data.get("agent_status") or "").strip().lower()
+    domains = data.get("domains") if isinstance(data.get("domains"), dict) else {}
+    quantitative = sum(
+        int(domains.get(key) or 0)
+        for key in ("industry", "companies", "financials", "macro", "industry_chain", "reports", "news")
+    )
+    events = int(domains.get("events") or 0)
+    total_records = int(data.get("total_records") or 0) or quantitative + events
+
+    # 3) 产业链受支持断言：属于合法定性证据路径。
+    chain = data.get(_QUALITATIVE_CHAIN_KEY) if isinstance(data.get(_QUALITATIVE_CHAIN_KEY), dict) else {}
+    chain_supported = 0
+    if isinstance(chain, dict):
+        coverage_values = chain.get("coverage_values") or {}
+        if isinstance(coverage_values, dict):
+            try:
+                chain_supported = int(coverage_values.get("supported_assertions") or 0)
+            except (TypeError, ValueError):
+                chain_supported = 0
+        if chain_supported <= 0 and chain.get("release_status") == "verified":
+            chain_supported = 1
+    has_qualitative_evidence = events > 0 or chain_supported > 0
+
+    if agent_status in _BLOCKING_AGENT_STATUS:
+        # 只有“零有效记录”且无任何定性证据才算硬阻塞；
+        # 有事件/受支持产业链断言时按定性路径放行。
+        if total_records <= 0 and not has_qualitative_evidence:
+            return False, error or f"阶段未产出任何有效记录（agent_status={agent_status}）"
+        if quantitative <= 0 and not has_qualitative_evidence:
+            return False, error or "阶段无数值域记录且无定性证据支撑"
+
+    # 4) 「零有效记录」只对**取数阶段**成立。
+    # 章节/图表等阶段的 error 是质量降级说明（如"6 章使用确定性兜底稿"），
+    # 早年实现把它们也按记录数为 0 判阻塞，会把正常降级误停成 awaiting review。
+    if stage == "data_fetch" and error and not has_qualitative_evidence and total_records <= 0:
+        return False, error
+
+    # 正式报告不能把部分格式/不合格内容包装为完整交付；章节兜底仍允许审阅。
+    if stage == "report_fusion":
+        if data.get("hard_blocked") or data.get("delivery_blocked"):
+            return False, error or "报告存在硬性内容错误"
+        if data.get("release_mode") == "draft_with_warnings":
+            return True, ""
+        quality = data.get("quality") or {}
+        delivery = data.get("chain_delivery") or {}
+        if (agent_status == "partial" or quality.get("passed") is False
+                or data.get("delivery_blocked") is True
+                or (delivery.get("requested") and delivery.get("status") != "complete")):
+            return False, error or "报告存在未解决的质量或交付缺口"
+
+    # 5) 其他阶段的硬阻塞只看显式结构化标记（status=failed / hard_blocked）。
+    if stage not in (None, "data_fetch"):
+        if data.get("hard_blocked") is True:
+            return False, error or "阶段标记为硬阻塞"
+        return True, ""
+
+    return True, ""
 
 
 def morph_echarts_option(opt: dict, target_type: str) -> dict:
@@ -89,11 +221,111 @@ def morph_echarts_option(opt: dict, target_type: str) -> dict:
     return o
 
 
+_SNAPSHOT_FILE = "execution_snapshot.json"
+
+
+def resolve_execution_snapshot(req: RunCreateRequest) -> RunExecutionSnapshot:
+    """创建 run 时**解析一次**执行策略（D3 §10.3）。
+
+    解析内容：链路引擎、研究策略、画像 id/版本、主数据发布版本、源政策版本。
+    之后所有阶段与 resume 都读这份快照，不再各自看进程环境——
+
+    旧行为是 A1/A2/A3 各读 `CHAIN_ENGINE`：改一次环境变量会同时改变所有
+    历史 run 的后续阶段行为，且无法解释"同一 run 两个引擎"的产物。
+    """
+    import os
+
+    notes: list[str] = []
+    chain_engine = str(os.environ.get("CHAIN_ENGINE") or "").strip()
+    strategy = "profile_guided"
+    profile_id = None
+    if req.input_data.data_fetch_options:
+        strategy = req.input_data.data_fetch_options.chain_research_strategy
+        profile_id = req.input_data.data_fetch_options.chain_profile_id
+
+    profile_version: str | None = None
+    if chain_engine == "evidence_v2":
+        # 仅在显式启用 V2 时解析画像与主数据版本
+        try:
+            import backend.app.core.setup_env  # noqa: F401
+            from chain_research.profiles import load_profile, resolve_profile
+
+            resolved = None
+            if profile_id:
+                resolved = load_profile(profile_id)
+            else:
+                from chain_research.models import ChainScope
+
+                scope = ChainScope(
+                    scope_id=f"snap-{req.project_id}",
+                    subject=req.input_data.industry_topic,
+                    as_of=(req.input_data.research_as_of or "2026-10-31")[:7],
+                )
+                resolved = resolve_profile(scope, strategy=strategy)
+            if resolved is not None:
+                profile_id = resolved.profile_id
+                profile_version = resolved.version
+                notes.append(f"profile: {profile_id}@{profile_version} status={resolved.status}")
+            else:
+                notes.append("未匹配到专用画像：按通用范围执行")
+        except Exception as exc:  # 画像缺失不应阻断建 run
+            notes.append(f"画像解析失败（按通用范围继续）：{type(exc).__name__}")
+
+    release_id = None
+    try:
+        pointer = Path(__file__).resolve().parents[3] / "data" / "industry_reference" / "current.json"
+        if pointer.exists():
+            release_id = json.loads(pointer.read_text(encoding="utf-8")).get("release_id")
+            notes.append(f"reference_release={release_id}")
+    except Exception:
+        notes.append("主数据发布指针不可读")
+
+    return RunExecutionSnapshot(
+        engine="five_agents",
+        chain_engine=chain_engine,
+        research_strategy=strategy,
+        profile_id=profile_id,
+        profile_version=profile_version,
+        reference_release_id=release_id,
+        source_policy_version="source-policy-v1",
+        notes=notes,
+    )
+
+
+def load_execution_snapshot(run_id: str) -> RunExecutionSnapshot:
+    """读取 run 的执行快照；旧 run 缺文件时返回 legacy 标记（不换引擎）。"""
+    path = storage.get_run_dir(run_id) / _SNAPSHOT_FILE
+    if not path.exists():
+        return RunExecutionSnapshot(engine="legacy", legacy=True, notes=["旧 run 无执行快照，按创建时环境解释"])
+    try:
+        return RunExecutionSnapshot.model_validate_json(path.read_text(encoding="utf-8"))
+    except Exception:
+        return RunExecutionSnapshot(engine="legacy", legacy=True, notes=["执行快照损坏，按 legacy 处理"])
+
+
 class WorkflowEngine:
     """行业研究报告五智能体流水线与人机协同状态机引擎"""
 
     def __init__(self) -> None:
         self._running_tasks: dict[str, asyncio.Task[Any]] = {}
+        # R1：同一 run 的「读状态 → 校验 → 提交」互斥边界。
+        # 边界声明：当前部署为单进程 uvicorn（无 workers），asyncio.Lock 足以覆盖
+        # 本进程内的并发请求与后台任务；若未来改为多 worker，必须换分布式锁，
+        # 不能把这里的进程内锁当成跨进程保护。
+        self._run_locks: dict[str, asyncio.Lock] = {}
+
+    def _lock_for(self, run_id: str) -> asyncio.Lock:
+        # 兼容 object.__new__ 构造的引擎实例（部分旧测试/调用方不经过 __init__）：
+        # 惰性初始化，避免因缺 _run_locks 属性直接 AttributeError。
+        locks = getattr(self, "_run_locks", None)
+        if not isinstance(locks, dict):
+            locks = {}
+            self._run_locks = locks
+        lock = locks.get(run_id)
+        if lock is None:
+            lock = asyncio.Lock()
+            locks[run_id] = lock
+        return lock
 
     def get_next_stage(self, current_stage: StageName) -> StageName | None:
         try:
@@ -130,6 +362,11 @@ class WorkflowEngine:
         run_dir = storage.get_run_dir(run_id)
         input_file = run_dir / "input_data.json"
         input_file.write_text(req.model_dump_json(indent=2), encoding="utf-8")
+        # D3：创建时解析一次执行策略并持久化；后续阶段与 resume 共用
+        snapshot = resolve_execution_snapshot(req)
+        (run_dir / _SNAPSHOT_FILE).write_text(
+            snapshot.model_dump_json(indent=2), encoding="utf-8"
+        )
         storage.save_state(state)
 
         # 执行第一阶段：支持异步驱动
@@ -148,10 +385,440 @@ class WorkflowEngine:
         latest = storage.load_state(run_id)
         return latest or state
 
+    @staticmethod
+    def _merge_chart_specs(existing_specs: list[Any], incoming_specs: list[Any]) -> list[dict[str, Any]]:
+        """以原图列表为基底，按 chart_id 就地合并用户改动，保持原顺序。
+
+        契约（V8 方案 §5.3 第 4 步）：
+        - 未出现在 incoming 中的图原样保留，不当作删除。
+        - incoming 里的 chart_id 必须已存在于原列表；未知 ID 与重复 ID 一律拒绝。
+        - 只覆盖传入字段；未传 option 不等于清空原 option。
+        - 形态变更时按目标类型重写 option，但绝不丢数据。
+
+        Raises:
+            ValueError: 出现未知 chart_id 或重复 chart_id。
+        """
+        if not isinstance(incoming_specs, list):
+            raise ValueError("chart_specs 必须是数组")
+
+        existing_map: dict[str, dict[str, Any]] = {}
+        for spec in existing_specs:
+            if isinstance(spec, dict):
+                cid = spec.get("chart_id")
+                if isinstance(cid, str) and cid:
+                    existing_map[cid] = spec
+
+        patches: dict[str, dict[str, Any]] = {}
+        for incoming in incoming_specs:
+            if not isinstance(incoming, dict):
+                raise ValueError("chart_specs 元素必须是对象")
+            cid = incoming.get("chart_id")
+            if not isinstance(cid, str) or not cid:
+                raise ValueError("chart_specs 元素缺少 chart_id")
+            if cid not in existing_map:
+                raise ValueError(f"未知 chart_id: {cid}（不允许通过编辑接口新增图表）")
+            if cid in patches:
+                raise ValueError(f"重复 chart_id: {cid}")
+            patches[cid] = incoming
+
+        merged: list[dict[str, Any]] = []
+        for spec in existing_specs:
+            if not isinstance(spec, dict):
+                merged.append(spec)
+                continue
+            cid = spec.get("chart_id")
+            patch = patches.get(cid) if isinstance(cid, str) else None
+            if not patch:
+                # 未编辑：深拷贝保留全部字段（含 option / evidence / render_mode / chain_graph）
+                merged.append(json.loads(json.dumps(spec, ensure_ascii=False, default=str)))
+                continue
+
+            base = json.loads(json.dumps(spec, ensure_ascii=False, default=str))
+            base.update(patch)
+            if not patch.get("option") and spec.get("option"):
+                base["option"] = spec["option"]
+            target_type = patch.get("chart_type")
+            if target_type and base.get("option"):
+                base["option"] = morph_echarts_option(base["option"], target_type)
+            merged.append(base)
+        return merged
+
+    async def _apply_direct_edit(
+        self,
+        *,
+        state: WorkflowState,
+        run_dir: Path,
+        art_dir: Path,
+        req: ReviewRequest,
+        edited_chart_ids: set[str],
+        backup: Any,
+    ) -> None:
+        """把编辑内容应用到内存 state 与落盘产物；失败直接抛出（由调用方回滚）。
+
+        所有写文件动作前都先调用 ``backup(path)``，保证异常时能恢复本次影响的旧内容。
+        """
+        cur_data = state.stage_results[req.stage].data or {}
+        edited_data = req.edited_data or {}
+
+        if req.stage == "chart_generate" and "chart_specs" in edited_data:
+            existing_specs = cur_data.get("chart_specs") or cur_data.get("charts") or []
+            merged_specs = self._merge_chart_specs(existing_specs, edited_data["chart_specs"])
+            edited_data = dict(edited_data)
+            edited_data["chart_specs"] = merged_specs
+            # charts 别名必须与 chart_specs 同源，否则状态与文件再次分叉
+            edited_data["charts"] = merged_specs
+            req.edited_data = edited_data
+
+        cur_data.update(edited_data)
+        state.stage_results[req.stage].data = cur_data
+
+        if req.stage == "data_fetch":
+            self._sync_dataset_artifact(art_dir, cur_data, edited_data, backup)
+        elif req.stage == "chapter_write" and "chapters" in edited_data:
+            ch_path = art_dir / "chapter_result.json"
+            if ch_path.exists():
+                backup(ch_path)
+                ch_json = json.loads(ch_path.read_text(encoding="utf-8"))
+                ch_json["chapters"] = edited_data["chapters"]
+                ch_path.write_text(json.dumps(ch_json, ensure_ascii=False, indent=2), encoding="utf-8")
+        elif req.stage == "chart_generate" and "chart_specs" in edited_data:
+            await self._sync_chart_artifacts(
+                state=state,
+                art_dir=art_dir,
+                edited_data=edited_data,
+                edited_chart_ids=edited_chart_ids,
+                backup=backup,
+            )
+        elif req.stage == "data_interpret":
+            ir_path = art_dir / "interpretation_report.json"
+            if ir_path.exists():
+                backup(ir_path)
+                ir_json = json.loads(ir_path.read_text(encoding="utf-8"))
+                ir_json.update(edited_data)
+                ir_path.write_text(json.dumps(ir_json, ensure_ascii=False, indent=2), encoding="utf-8")
+        elif req.stage == "report_fusion":
+            rf_path = art_dir / "report_view.json"
+            if rf_path.exists():
+                backup(rf_path)
+                rf_json = json.loads(rf_path.read_text(encoding="utf-8"))
+                rf_json.update(edited_data)
+                rf_path.write_text(json.dumps(rf_json, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    @staticmethod
+    def _sync_dataset_artifact(
+        art_dir: Path,
+        cur_data: dict[str, Any],
+        edited_data: dict[str, Any],
+        backup: Any,
+    ) -> None:
+        ds_path = art_dir / "dataset.json"
+        deleted_ids = edited_data.get("deleted_record_ids", [])
+        confirmed_scope = edited_data.get("confirmed_scope")
+        confirmed_keywords = edited_data.get("confirmed_keywords")
+        if ds_path.exists():
+            backup(ds_path)
+            ds_json = json.loads(ds_path.read_text(encoding="utf-8"))
+            if deleted_ids:
+                del_set = set(deleted_ids)
+                for list_key, val in ds_json.items():
+                    if isinstance(val, list):
+                        ds_json[list_key] = [
+                            item for item in val
+                            if (item.get("record_id") if isinstance(item, dict) else getattr(item, "record_id", "")) not in del_set
+                        ]
+            if confirmed_scope is not None:
+                ds_json["confirmed_scope"] = confirmed_scope
+            if confirmed_keywords is not None:
+                ds_json["confirmed_keywords"] = confirmed_keywords
+            ds_path.write_text(json.dumps(ds_json, ensure_ascii=False, indent=2), encoding="utf-8")
+        if deleted_ids and "source_records" in cur_data:
+            del_set = set(deleted_ids)
+            cur_data["source_records"] = [
+                r for r in cur_data["source_records"] if r.get("record_id") not in del_set
+            ]
+        if deleted_ids and "record_count" in cur_data:
+            cur_data["record_count"] = max(0, int(cur_data["record_count"]) - len(deleted_ids))
+
+    async def _sync_chart_artifacts(
+        self,
+        *,
+        state: WorkflowState,
+        art_dir: Path,
+        edited_data: dict[str, Any],
+        edited_chart_ids: set[str],
+        backup: Any,
+    ) -> None:
+        """重渲染被编辑的图并同步 chart_result.json；失败向上抛，由调用方回滚。"""
+        from chart_generator.render import render_svg
+
+        charts_dir = art_dir / "charts"
+        charts_dir.mkdir(parents=True, exist_ok=True)
+        specs = edited_data["chart_specs"]
+
+        for spec in specs:
+            cid = spec.get("chart_id")
+            # 只重渲染真正被编辑的图：未编辑图必须保持字节级不变
+            if str(cid) not in edited_chart_ids:
+                continue
+            c_opt = spec.get("option")
+            c_type = spec.get("chart_type", "bar")
+            c_title = spec.get("title", "")
+            c_notes = spec.get("footnotes") or []
+            # 产业链图跳过通用渲染（2026-10-17）：`render_svg` 画的是三栏企业列表（0 条连线），
+            # 用它覆盖会把刚落盘的确定性产业链 SVG 冲掉。这类图交给下面的专用重建块。
+            if spec.get("chain_graph") or spec.get("inline_svg"):
+                continue
+            if cid and c_opt:
+                svg_file = charts_dir / f"{cid}.svg"
+                backup(svg_file)
+                svg_text = render_svg(c_title, c_type, c_opt, c_notes)
+                svg_file.write_text(svg_text, encoding="utf-8")
+                spec["svg_uri"] = str(svg_file.resolve())
+
+        # 产业链图一致性重建（R1 §4.3 步骤 6）：
+        # 主图（结构校验 / 渲染 / 落盘）失败 → 整个请求失败并回滚，
+        # 绝不静默降级成 echarts 后保留上一版 svg_uri 冒充本次成功。
+        # 补充位图（HTML 排版版）是可选视图：失败可降级到本次已成功的主 SVG。
+        for spec in specs:
+            if str(spec.get("chart_id")) not in edited_chart_ids:
+                continue
+            if spec.get("render_mode") not in ("svg", "generated_image"):
+                continue
+
+            # ── 主图：失败直接抛出（由 direct_edit 的 _restore 回滚） ──
+            from chart_generator.chain_graph import ChainGraphSpec
+            from chart_generator.chain_render import render_chain_svg
+
+            graph = spec.get("chain_graph")
+            if not graph:
+                raise ValueError(
+                    f"产业链图 {spec.get('chart_id')} 无 chain_graph，无法按审核意见重建"
+                )
+            title_value = spec.get("title")
+            chain_spec = ChainGraphSpec.model_validate(graph)
+            if isinstance(title_value, str) and title_value:
+                chain_spec.title = title_value
+            new_svg = render_chain_svg(chain_spec)
+            if not new_svg or "<svg" not in new_svg:
+                raise ValueError(f"产业链图 {spec.get('chart_id')} 主图渲染产出为空")
+            spec["inline_svg"] = new_svg
+            svg_file = charts_dir / f"{spec.get('chart_id') or 'CHART-CHAIN'}.svg"
+            backup(svg_file)
+            svg_file.write_text(new_svg, encoding="utf-8")
+            spec["svg_uri"] = str(svg_file.resolve())
+            spec["render_mode"] = "svg"
+            spec["image_uri"] = None
+
+            # ── 补充视图：可选，失败只降级，不影响主图 ──
+            if spec.get("supplement_image_uri"):
+                try:
+                    from chart_generator.chain_html import generate_chain_html_image
+                    from chart_generator.chain_render import _stats_line
+                    from chart_generator.config import Settings as _CGSettings
+
+                    _gen = await generate_chain_html_image(
+                        chain_spec,
+                        settings=_CGSettings.from_env(),
+                        artifact_dir=art_dir,
+                        chart_id=str(spec.get("chart_id") or "CHART-CHAIN"),
+                        stats_line=_stats_line(chain_spec),
+                    )
+                    if not _gen:
+                        raise ValueError("HTML 出图未通过门禁")
+                    spec["supplement_image_uri"] = _gen.image_uri
+                    spec["supplement_html_uri"] = _gen.html_path
+                    spec["supplement_note"] = "LLM 排版版（卡片信息更细，但不画连线与箭头）"
+                    spec["generation_prompt"] = _gen.generation_prompt
+                    spec["generation_prompt_model"] = _gen.generation_prompt_model
+                except Exception as supp_err:
+                    # 结构已变，旧补充图属于过期内容：一律作废；主 SVG 保持本次成功产物。
+                    logger.warning(
+                        "产业链补充视图重建失败，仅作废补充视图（主图不受影响）：chart=%s err=%s",
+                        spec.get("chart_id"), supp_err,
+                    )
+                    spec["supplement_image_uri"] = None
+                    spec["supplement_html_uri"] = None
+
+        ct_path = art_dir / "chart_result.json"
+        if ct_path.exists():
+            backup(ct_path)
+            ct_json = json.loads(ct_path.read_text(encoding="utf-8"))
+            ct_json["charts"] = specs
+            ct_json["chart_specs"] = specs
+            ct_path.write_text(json.dumps(ct_json, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    async def _reexport_fusion_artifacts(self, run_id: str) -> dict[str, Path]:
+        """从**已编辑的 report_view.json** 重新渲染 MD / HTML / PDF（R1 §4.3 步骤 8）。
+
+        与整段融合重跑不同：不调 LLM、不重建内容，只把已持久化的最终视图
+        重新发布为三种格式，使「编辑标题 → 批准」后旧文件不冒充新版。
+        重导出失败由调用方按 StageBlockedError 处理，不吞异常。
+
+        Returns:
+            各格式实际落盘路径。
+        """
+        import backend.app.core.setup_env  # noqa: F401  注册 agents_core 子路径
+        from report_fusion.models import ReportViewModel
+        from report_fusion.pdf import render_pdf
+        from report_fusion.render import render_html, render_markdown
+        from report_fusion.config import Settings as _FusionSettings
+
+        art_dir = storage.get_run_dir(run_id) / "artifacts"
+        view_path = art_dir / "report_view.json"
+        if not view_path.exists():
+            raise FileNotFoundError("缺少 report_view.json，无法重导出（请使用修订重跑）")
+
+        view = ReportViewModel.model_validate_json(view_path.read_text(encoding="utf-8"))
+
+        outputs: dict[str, Path] = {}
+        md_path = art_dir / "report.md"
+        md_path.write_text(render_markdown(view), encoding="utf-8")
+        outputs["markdown"] = md_path
+
+        html_text = render_html(view)
+        html_path = art_dir / "report.html"
+        html_path.write_text(html_text, encoding="utf-8")
+        outputs["html"] = html_path
+
+        settings = _FusionSettings.from_env()
+        pdf_bytes = await render_pdf(html_text, settings.pdf_timeout_seconds)
+        pdf_path = art_dir / "report.pdf"
+        pdf_path.write_bytes(pdf_bytes)
+        outputs["pdf"] = pdf_path
+
+        logger.info(f"[{run_id}] 融合内容重导出完成：{sorted(outputs)}")
+        return outputs
+
+    def _commit_state_with_history(
+        self,
+        run_dir: Path,
+        state: WorkflowState,
+        *,
+        action: str,
+        stage: str,
+        from_revision: int,
+        to_revision: int,
+        comment: str | None,
+        changed_fields: list[str],
+        combined_feedback: str | None = None,
+        edited_data: dict[str, Any] | None = None,
+        snapshot_state: WorkflowState | None = None,
+        backup: Any = None,
+    ) -> None:
+        """一次性提交：历史记录 + 版本快照 + state，任一失败则回滚本次改动。
+
+        R1 提交顺序：**先 state、后历史**。旧顺序（历史成功 → state 失败）会在
+        state 未生效时留下一条"成功历史"，等于伪造审计记录。
+
+        边界声明：保证请求执行期间注入异常的失败回退；进程在任意文件替换
+        瞬间崩溃的跨文件全原子性不在承诺范围内（V8 最终方案 §4.3 步骤 5）。
+
+        Raises:
+            Exception: 历史或 state 写入失败时向上抛出，调用方据此返回失败。
+        """
+        history_file = run_dir / "feedback_history.json"
+        history: list[Any] = []
+        if history_file.exists():
+            try:
+                history = json.loads(history_file.read_text(encoding="utf-8"))
+            except Exception as exc:
+                # 损坏的历史不得按空数组覆盖（会抹掉审计记录）
+                raise RuntimeError(f"协同历史文件损坏，拒绝覆盖: {exc}") from exc
+            if not isinstance(history, list):
+                raise RuntimeError("协同历史文件格式非法（非数组），拒绝覆盖")
+
+        history.append(
+            {
+                "action": action,
+                "stage": stage,
+                "from_revision": from_revision,
+                "to_revision": to_revision,
+                "timestamp": datetime.now().isoformat(),
+                "comment": comment,
+                "changed_fields": changed_fields,
+                "combined_feedback": combined_feedback,
+                "edited_data": edited_data,
+            }
+        )
+
+        # 先把新历史写到临时位置；state 成功后再替换历史。
+        tmp_history = history_file.with_suffix(".json.tmp")
+        tmp_history.write_text(json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        if backup is not None:
+            backup(history_file)
+            backup(run_dir / "state.json")
+            backup(run_dir / "revisions" / f"{to_revision}.json")
+
+        # state 先落盘：state 成功才宣告新版本生效
+        storage.save_state(state)
+        if snapshot_state is not None:
+            snap = run_dir / "revisions" / f"{from_revision}.json"
+            if backup is not None:
+                backup(snap)
+            snap.write_text(snapshot_state.model_dump_json(indent=2), encoding="utf-8")
+
+        # state 已生效，最后发布历史
+        tmp_history.replace(history_file)
+
+    def _invalidate_downstream(self, state: WorkflowState, stage: str) -> list[str]:
+        """把受影响的下游标为待更新；保留旧文件供历史查阅。"""
+        invalidated: list[str] = []
+        for downstream in DOWNSTREAM_INVALIDATION.get(stage, ()):
+            result = state.stage_results.get(downstream)
+            if result is None:
+                continue
+            if result.status in ("approved", "completed", "waiting_review"):
+                result.status = "pending"
+                invalidated.append(downstream)
+        return invalidated
+
     async def handle_review(self, req: ReviewRequest) -> WorkflowState:
+        # R1：整个「读状态 → 校验 → 提交」段持同一把 run 锁。
+        # 锁只覆盖同步决策与落盘；阶段重跑等耗时调用不在锁内（由 _execute_stage 自行管理）。
+        lock = self._lock_for(req.run_id)
+        async with lock:
+            return await self._handle_review_locked(req)
+
+    async def _handle_review_locked(self, req: ReviewRequest) -> WorkflowState:
         state = storage.load_state(req.run_id)
         if not state:
             raise ValueError(f"任务不存在: {req.run_id}")
+
+        # S-02：任何写入与任务派发之前，先校验版本、目标阶段与允许动作。
+        # 同一版本重复 approve 也要被阶段状态拦住，不能只比较 revision。
+        if req.expected_revision is not None and req.expected_revision != state.revision:
+            raise RevisionConflictError(req.run_id, req.expected_revision, state.revision)
+        running_task = self._running_tasks.get(req.run_id)
+        run_busy = (state.status == "running"
+                    or any(sr.status == "running" for sr in state.stage_results.values())
+                    or (running_task is not None and not running_task.done()))
+        if run_busy and req.action != "cancel":
+            # 硬阻塞优先给出原有可读原因；其余忙碌状态按并发冲突拒绝。
+            candidate = state.stage_results.get(req.stage)
+            if candidate is not None and req.action in ("approve", "accept_recommendation", "accept_with_risks"):
+                allowed, reason = assess_stage_progression(candidate, req.stage)
+                if not allowed:
+                    raise StageBlockedError(req.run_id, req.stage, reason)
+            # 适配器会写本 run 的共享产物；后台工作时连上游编辑也会改变其输入。
+            raise RevisionConflictError(req.run_id, req.expected_revision or state.revision, state.revision)
+        target_result = state.stage_results.get(req.stage)
+        if target_result is None:
+            raise ValueError(f"无效的阶段: {req.stage}")
+        if req.action in ("approve", "accept_recommendation", "accept_with_risks", "direct_edit"):
+            if req.action == "direct_edit":
+                # R1：正在执行中的阶段拒绝就地编辑——后台按输入版本提交结果，
+                # 与手工编辑天然冲突；旧实现放行后编辑会被后台写回吞掉。
+                if target_result.status == "running":
+                    raise RevisionConflictError(
+                        req.run_id, req.expected_revision or state.revision, state.revision
+                    )
+                # 就地编辑允许在 waiting_review / approved 状态保存，但必须先有阶段结果
+                if target_result.status == "pending":
+                    raise ValueError(f"阶段 {req.stage} 尚未产出结果，无法就地编辑")
+            elif target_result.status not in ("waiting_review", "running", "rejected"):
+                # 已 approved/completed 的阶段重复批准：拒绝，避免重复派发
+                raise RevisionConflictError(req.run_id, req.expected_revision or state.revision, state.revision)
 
         logger.info(f"[{req.run_id}] 收到人工审核: stage={req.stage}, action={req.action}")
 
@@ -167,6 +834,18 @@ class WorkflowEngine:
                 pass
 
         if req.action in ("approve", "accept_recommendation", "accept_with_risks"):
+            # S-01：三种批准动作共用同一硬阻塞守卫；风险接受不能覆盖硬阻塞。
+            target = state.stage_results.get(req.stage)
+            if target is not None:
+                if req.stage == "report_fusion" and req.release_mode is not None:
+                    target.data = {**target.data, "release_mode": req.release_mode}
+                allowed, block_reason = assess_stage_progression(target, req.stage)
+                if not allowed:
+                    logger.warning(
+                        f"[{req.run_id}] 拒绝批准硬阻塞阶段 {req.stage}（action={req.action}）：{block_reason}"
+                    )
+                    raise StageBlockedError(req.run_id, req.stage, block_reason)
+
             # 批准当前阶段，推进到下一阶段
             current_stage = req.stage
             state.stage_results[current_stage].status = "approved" if current_stage != "report_fusion" else "completed"
@@ -190,236 +869,121 @@ class WorkflowEngine:
                     pass
             else:
                 # 已经是最后阶段 (report_fusion 获批)
-                state.stage_results[current_stage].status = "completed"
+                fusion_result = state.stage_results[current_stage]
+                fusion_data = fusion_result.data or {}
+                # R1 §4.3 步骤 8：融合内容被就地编辑后，批准前必须先重导出，
+                # 否则旧 PDF/MD/HTML 会带着旧标题冒充新版。
+                if fusion_data.get("needs_reexport"):
+                    try:
+                        await self._reexport_fusion_artifacts(req.run_id)
+                    except Exception as export_err:
+                        raise StageBlockedError(
+                            req.run_id,
+                            current_stage,
+                            f"报告重导出失败，请重试或使用修订重跑：{export_err}",
+                        ) from export_err
+                    fusion_data["needs_reexport"] = False
+
+                # R1：批准即当前版本——登记构建代次，供下载资格做比较
+                fusion_result.data = {**fusion_data, "built_at_revision": state.revision}
+                fusion_result.status = "completed"
                 state.status = "completed"
                 state.updated_at = datetime.now().isoformat()
                 storage.save_state(state)
 
         elif req.action == "direct_edit":
-            # 用户就地直接编辑局部数据，无需全量重跑大模型
-            rev_dir = run_dir / "revisions"
-            rev_dir.mkdir(parents=True, exist_ok=True)
-            prev_snapshot = rev_dir / f"{state.revision}.json"
-            try:
-                prev_snapshot.write_text(state.model_dump_json(indent=2), encoding="utf-8")
-            except Exception as e:
-                logger.warning(f"保存版本快照失败: {e}")
+            # 用户就地直接编辑局部数据，无需全量重跑大模型。
+            # S-02：整段走「先备份 → 应用 → 一次性提交」，任一步失败都回滚本次影响。
+            if not (req.edited_data and isinstance(req.edited_data, dict)):
+                raise ValueError("direct_edit 必须提供 edited_data")
 
-            if req.edited_data and isinstance(req.edited_data, dict):
-                cur_data = state.stage_results[req.stage].data or {}
+            prev_revision = state.revision
+            prev_data = json.loads(
+                json.dumps(state.stage_results[req.stage].data or {}, ensure_ascii=False, default=str)
+            )
+            if req.stage == "chart_generate" and "chart_specs" in req.edited_data:
+                edited_chart_ids = {
+                    str(item.get("chart_id"))
+                    for item in req.edited_data["chart_specs"]
+                    if isinstance(item, dict) and item.get("chart_id")
+                }
+            else:
+                edited_chart_ids = set()
 
-                # 针对图表阶段：保护图表规格的完整性，合并变更属性（形态、标题、状态、单位等），绝不丢弃原始 ECharts option 与数据
-                if req.stage == "chart_generate" and "chart_specs" in req.edited_data:
-                    existing_specs = cur_data.get("chart_specs") or cur_data.get("charts") or []
-                    existing_map = {
-                        s.get("chart_id"): s for s in existing_specs if isinstance(s, dict) and s.get("chart_id")
-                    }
-                    merged_specs = []
-                    for incoming in req.edited_data["chart_specs"]:
-                        cid = incoming.get("chart_id")
-                        base = dict(existing_map.get(cid, {}))
-                        base.update(incoming)
-                        if ("option" not in incoming or not incoming.get("option")) and "option" in existing_map.get(cid, {}):
-                            base["option"] = existing_map[cid]["option"]
+            art_dir = run_dir / "artifacts"
+            touched: dict[Path, bytes | None] = {}
 
-                        # 如果形态类型发生变更且存在 option，自动将 option 转为目标形态
-                        target_type = incoming.get("chart_type")
-                        if target_type and base.get("option"):
-                            base["option"] = morph_echarts_option(base["option"], target_type)
+            def _backup(path: Path) -> None:
+                if path not in touched:
+                    touched[path] = path.read_bytes() if path.exists() else None
 
-                        merged_specs.append(base)
-
-                    req.edited_data["chart_specs"] = merged_specs
-
-                cur_data.update(req.edited_data)
-                state.stage_results[req.stage].data = cur_data
-
-                # 同步更新 artifacts 目录下的持久化资产，确保下游阶段与导出立即生效
-                art_dir = run_dir / "artifacts"
-                if req.stage == "data_fetch":
-                    ds_path = art_dir / "dataset.json"
-                    deleted_ids = req.edited_data.get("deleted_record_ids", [])
-                    confirmed_scope = req.edited_data.get("confirmed_scope")
-                    confirmed_keywords = req.edited_data.get("confirmed_keywords")
-                    if ds_path.exists():
-                        try:
-                            ds_json = json.loads(ds_path.read_text(encoding="utf-8"))
-                            if deleted_ids:
-                                del_set = set(deleted_ids)
-                                for list_key, val in ds_json.items():
-                                    if isinstance(val, list):
-                                        ds_json[list_key] = [
-                                            item for item in val
-                                            if (item.get("record_id") if isinstance(item, dict) else getattr(item, "record_id", "")) not in del_set
-                                        ]
-                            if confirmed_scope is not None:
-                                ds_json["confirmed_scope"] = confirmed_scope
-                            if confirmed_keywords is not None:
-                                ds_json["confirmed_keywords"] = confirmed_keywords
-                            ds_path.write_text(json.dumps(ds_json, ensure_ascii=False, indent=2), encoding="utf-8")
-                        except Exception as e:
-                            logger.warning(f"同步更新 dataset.json 失败: {e}")
-                    if deleted_ids and "source_records" in cur_data:
-                        del_set = set(deleted_ids)
-                        cur_data["source_records"] = [
-                            r for r in cur_data["source_records"]
-                            if r.get("record_id") not in del_set
-                        ]
-                    if deleted_ids and "record_count" in cur_data:
-                        cur_data["record_count"] = max(0, int(cur_data["record_count"]) - len(deleted_ids))
-                elif req.stage == "chapter_write" and "chapters" in req.edited_data:
-                    ch_path = art_dir / "chapter_result.json"
-                    if ch_path.exists():
-                        try:
-                            ch_json = json.loads(ch_path.read_text(encoding="utf-8"))
-                            ch_json["chapters"] = req.edited_data["chapters"]
-                            ch_path.write_text(json.dumps(ch_json, ensure_ascii=False, indent=2), encoding="utf-8")
-                        except Exception as e:
-                            logger.warning(f"同步更新 chapter_result.json 失败: {e}")
-                    if "report_fusion" in state.stage_results and state.stage_results["report_fusion"].status in ("approved", "completed"):
-                        state.stage_results["report_fusion"].status = "pending"
-                elif req.stage == "chart_generate" and "chart_specs" in req.edited_data:
-                    ct_path = art_dir / "chart_result.json"
-                    charts_dir = art_dir / "charts"
-                    charts_dir.mkdir(parents=True, exist_ok=True)
-
+            def _restore() -> None:
+                for path, original in touched.items():
                     try:
-                        from chart_generator.render import render_svg
-                        for spec in req.edited_data["chart_specs"]:
-                            cid = spec.get("chart_id")
-                            c_opt = spec.get("option")
-                            c_type = spec.get("chart_type", "bar")
-                            c_title = spec.get("title", "")
-                            c_notes = spec.get("footnotes") or []
-                            # 产业链图跳过通用渲染（2026-10-17）：`render_svg` 画的是三栏
-                            # 企业列表（0 条连线），用它覆盖会把刚落盘的确定性产业链 SVG
-                            # 冲掉——report-fusion 是读 svg_uri 嵌 PDF 的，等于交付件丢连线。
-                            # 这类图的重建统一交给下面的「产业链图一致性修复」块。
-                            if spec.get("chain_graph") or spec.get("inline_svg"):
-                                continue
-                            if cid and c_opt:
-                                try:
-                                    svg_file = charts_dir / f"{cid}.svg"
-                                    svg_text = render_svg(c_title, c_type, c_opt, c_notes)
-                                    svg_file.write_text(svg_text, encoding="utf-8")
-                                    spec["svg_uri"] = str(svg_file.resolve())
-                                except Exception as svg_err:
-                                    logger.warning(f"重新渲染图表 {cid} SVG 失败: {svg_err}")
-                    except Exception as imp_err:
-                        logger.warning(f"加载 SVG 渲染器失败: {imp_err}")
+                        if original is None:
+                            path.unlink(missing_ok=True)
+                        else:
+                            path.write_bytes(original)
+                    except Exception as restore_err:  # 回滚尽力而为，不掩盖主异常
+                        logger.error(f"回滚 {path} 失败: {restore_err}")
+                state.stage_results[req.stage].data = prev_data
+                state.stage_results[req.stage].revision = prev_revision
+                state.revision = prev_revision
 
-                    # 产业链图一致性修复（2026-10-07 建立，2026-10-17 扩到 HTML 位图）：
-                    # 审核门用户改图后，inline_svg / 位图仍是改前内容 → 前端渲染过期图。
-                    # 修法：用 spec.chain_graph 里的结构按审核意见重建；
-                    # 重建失败则降级（走 svg → echarts），
-                    #（宁可退回渲染器重画的图，也绝不展示与审核意见不一致的图）。
-                    for spec in req.edited_data["chart_specs"]:
-                        _mode = spec.get("render_mode")
-                        if _mode not in ("svg", "generated_image"):
-                            continue
-                        _rebuilt_svg = False
-                        try:
-                            from chart_generator.chain_graph import (
-                                ChainGraphSpec,
-                                render_chain_svg,
-                            )
+            try:
+                await self._apply_direct_edit(
+                    state=state,
+                    run_dir=run_dir,
+                    art_dir=art_dir,
+                    req=req,
+                    edited_chart_ids=edited_chart_ids,
+                    backup=_backup,
+                )
 
-                            graph = spec.get("chain_graph")
-                            if not graph:
-                                raise ValueError("spec 无 chain_graph，无法按审核意见重建")
-                            title_value = spec.get("title")
-                            chain_spec = ChainGraphSpec.model_validate(graph)
-                            if isinstance(title_value, str) and title_value:
-                                chain_spec.title = title_value
-                            _new_svg = render_chain_svg(chain_spec)
-                            _rebuilt_svg = True
-                            spec["inline_svg"] = _new_svg
-                            # 落盘文件同步（PDF 读的就是它）：否则改图后 PDF 里还是旧图。
-                            try:
-                                _svg_file = charts_dir / f"{spec.get('chart_id') or 'CHART-CHAIN'}.svg"
-                                _svg_file.write_text(_new_svg, encoding="utf-8")
-                                spec["svg_uri"] = str(_svg_file.resolve())
-                            except Exception as svg_write_err:
-                                logger.warning("产业链 SVG 落盘失败: %s", svg_write_err)
+                changed_fields = sorted(
+                    k for k in req.edited_data.keys() if not k.startswith("__")
+                )
+                invalidated = self._invalidate_downstream(state, req.stage)
+                if invalidated:
+                    data = state.stage_results[req.stage].data
+                    data["downstream_stale"] = True
+                    data["invalidated_stages"] = invalidated
 
-                            # 补充视图（HTML 排版版）同理：结构改了就必须重出图，
-                            # 重不出来就**置空**，绝不留下与审核意见不一致的旧补充图。
-                            # 2026-10-17：HTML 版已从主图降为补充视图，故这里改的是
-                            # supplement_image_uri，不再动 image_uri/render_mode。
-                            if _mode == "generated_image" or spec.get("supplement_image_uri"):
-                                from chart_generator.chain_html import (
-                                    generate_chain_html_image,
-                                )
-                                from chart_generator.chain_render import _stats_line
-                                from chart_generator.config import Settings as _CGSettings
+                # R1 §4.3 步骤 8：融合内容编辑必须先重导出再批准，
+                # 这里打上待重导出标记；approve 分支据此触发 _reexport。
+                if req.stage == "report_fusion" and changed_fields:
+                    data = state.stage_results[req.stage].data
+                    data["needs_reexport"] = True
 
-                                _gen = await generate_chain_html_image(
-                                    chain_spec,
-                                    settings=_CGSettings.from_env(),
-                                    artifact_dir=art_dir,
-                                    chart_id=str(spec.get("chart_id") or "CHART-CHAIN"),
-                                    stats_line=_stats_line(chain_spec),
-                                )
-                                if not _gen:
-                                    raise ValueError("HTML 出图未通过门禁，补充图不做更新")
-                                spec["supplement_image_uri"] = _gen.image_uri
-                                spec["supplement_html_uri"] = _gen.html_path
-                                spec["supplement_note"] = (
-                                    "LLM 排版版（卡片信息更细，但不画连线与箭头）")
-                                spec["generation_prompt"] = _gen.generation_prompt
-                                spec["generation_prompt_model"] = _gen.generation_prompt_model
-                        except Exception as chain_err:
-                            logger.warning(
-                                "产业链图按审核意见重建失败，降级处理：chart=%s err=%s",
-                                spec.get("chart_id"), chain_err,
-                            )
-                            # 有刚重画的 SVG 就退回 svg 模式；否则退回 ECharts 并清图。
-                            # 补充视图一律作废：结构已变，旧补充图属于过期内容。
-                            spec["supplement_image_uri"] = None
-                            spec["supplement_html_uri"] = None
-                            if _rebuilt_svg:
-                                spec["render_mode"] = "svg"
-                                spec["image_uri"] = None
-                            else:
-                                spec["render_mode"] = "echarts"
-                                spec["inline_svg"] = None
-                                spec["image_uri"] = None
+                state.revision = prev_revision + 1
+                state.stage_results[req.stage].revision = state.revision
+                state.updated_at = datetime.now().isoformat()
 
-                    if ct_path.exists():
-                        try:
-                            ct_json = json.loads(ct_path.read_text(encoding="utf-8"))
-                            ct_json["charts"] = req.edited_data["chart_specs"]
-                            ct_json["chart_specs"] = req.edited_data["chart_specs"]
-                            ct_path.write_text(json.dumps(ct_json, ensure_ascii=False, indent=2), encoding="utf-8")
-                        except Exception as e:
-                            logger.warning(f"同步更新 chart_result.json 失败: {e}")
-                elif req.stage == "data_interpret":
-                    ir_path = art_dir / "interpretation_report.json"
-                    if ir_path.exists():
-                        try:
-                            ir_json = json.loads(ir_path.read_text(encoding="utf-8"))
-                            ir_json.update(req.edited_data)
-                            ir_path.write_text(json.dumps(ir_json, ensure_ascii=False, indent=2), encoding="utf-8")
-                        except Exception as e:
-                            logger.warning(f"同步更新 interpretation_report.json 失败: {e}")
-                elif req.stage == "report_fusion":
-                    rf_path = art_dir / "report_view.json"
-                    if rf_path.exists():
-                        try:
-                            rf_json = json.loads(rf_path.read_text(encoding="utf-8"))
-                            rf_json.update(req.edited_data)
-                            rf_path.write_text(json.dumps(rf_json, ensure_ascii=False, indent=2), encoding="utf-8")
-                        except Exception as e:
-                            logger.warning(f"同步更新 report_view.json 失败: {e}")
+                # R1：提交（历史 + 快照 + state）也在同一保护段内。
+                # 之前 _commit_state_with_history 在 try 之外，历史写成功而
+                # state 落盘失败时会留下「假成功历史」。
+                self._commit_state_with_history(
+                    run_dir,
+                    state,
+                    action="direct_edit",
+                    stage=req.stage,
+                    from_revision=prev_revision,
+                    to_revision=state.revision,
+                    comment=req.comment,
+                    changed_fields=changed_fields,
+                    edited_data=req.edited_data,
+                    backup=_backup,
+                )
+            except Exception:
+                _restore()
+                raise
 
-            state.revision += 1
-            state.stage_results[req.stage].revision = state.revision
-            state.updated_at = datetime.now().isoformat()
-            storage.save_state(state)
             event_hub.emit(
                 req.run_id, req.stage, "artifact_created",
-                f"用户已就地保存第 r{state.revision} 版局部修改内容（未触发全量重算）",
-                tool="HumanDirectEdit"
+                f"用户已就地保存第 r{state.revision} 版局部修改内容（未触发全量重算）"
+                + (f"；下游待更新：{'、'.join(invalidated)}" if invalidated else ""),
+                tool="HumanDirectEdit",
+                details={"changed_fields": changed_fields, "invalidated_stages": invalidated},
             )
             return state
 
@@ -809,6 +1373,21 @@ class WorkflowEngine:
             else:
                 break
 
+        # S-01：文件存在不等于内容有效。任一上游阶段处于硬阻塞时，禁止从其下游开始，
+        # 必须回到最早的真实阻塞阶段重试（或拒绝恢复）。
+        for earlier_stage in STAGE_ORDER[: STAGE_ORDER.index(target_stage)]:
+            earlier = state.stage_results.get(earlier_stage)
+            if earlier is None:
+                continue
+            allowed, block_reason = assess_stage_progression(earlier, earlier_stage)
+            if not allowed:
+                logger.warning(
+                    f"[{run_id}] 上游阶段 {earlier_stage} 处于硬阻塞（{block_reason}），"
+                    f"不能从 {target_stage} 开始恢复，回退至 {earlier_stage}"
+                )
+                target_stage = earlier_stage
+                break
+
         # 3. 读取任务配置与人工审核阶段策略
         run_dir = storage.get_run_dir(run_id)
         review_stages = ["data_fetch", "data_interpret", "chart_generate", "chapter_write", "report_fusion"]
@@ -872,6 +1451,8 @@ class WorkflowEngine:
         research_as_of = None
         analysis_depth = "standard"
         chart_options = None
+        chain_research_strategy = "profile_guided"
+        chain_profile_id = None
         selected_skills = []
 
         run_dir = storage.get_run_dir(run_id)
@@ -894,6 +1475,9 @@ class WorkflowEngine:
                 if req_data.input_data.selected_skills:
                     selected_skills = req_data.input_data.selected_skills
                 chart_options = req_data.input_data.chart_generate_options
+                if req_data.input_data.data_fetch_options:
+                    chain_research_strategy = req_data.input_data.data_fetch_options.chain_research_strategy
+                    chain_profile_id = req_data.input_data.data_fetch_options.chain_profile_id
             except Exception:
                 pass
 
@@ -901,6 +1485,10 @@ class WorkflowEngine:
         state.status = "running"
         state.stage_results[stage].status = "running"
         state.updated_at = datetime.now().isoformat()
+        # R1：记录本阶段执行的输入版本。耗时调用返回后以此为基准做 CAS——
+        # 若期间用户保存了编辑（revision 前进），结果合并进**新版本**，而不是
+        # 把整个旧快照写回去吞掉编辑。
+        input_revision = state.revision
         storage.save_state(state)
 
         try:
@@ -916,6 +1504,8 @@ class WorkflowEngine:
                     security_types=security_types,
                     research_as_of=research_as_of,
                     analysis_depth=analysis_depth,
+                    chain_research_strategy=chain_research_strategy,
+                    chain_profile_id=chain_profile_id,
                 )
             elif stage == "data_interpret":
                 # v3：A1 模型生成的指标验收需求随阶段产物透传给解读层
@@ -963,43 +1553,84 @@ class WorkflowEngine:
             else:
                 raise ValueError(f"未知阶段: {stage}")
 
-            # 检查任务是否在中途已被外部取消
-            fresh_state = storage.load_state(run_id)
-            if fresh_state and fresh_state.status == "cancelled":
-                logger.info(f"[{run_id}] 检测到任务已被中途取消，终止写入阶段结果与后续流转")
-                return
+            # ── R1：结果提交段（持锁 + CAS 合并）──────────────────────────────
+            # 耗时调用已结束；从这里开始进入互斥保护区。以**最新落盘状态**为基底
+            # 合并本阶段结果，绝不把整个旧快照写回（旧实现的写入会吞掉执行期间
+            # 保存的人工编辑，并把 revision 写回旧值）。
+            next_stage = self.get_next_stage(stage)
+            lock = self._lock_for(run_id)
+            async with lock:
+                fresh = storage.load_state(run_id)
+                if fresh is None:
+                    logger.warning(f"[{run_id}] 阶段 {stage} 完成但任务不存在，丢弃结果")
+                    return
+                if fresh.status == "cancelled":
+                    logger.info(f"[{run_id}] 检测到任务已被中途取消，终止写入阶段结果与后续流转")
+                    return
 
-            # 保持 revision 同步
-            result.revision = state.revision
-            state.stage_results[stage] = result
+                if fresh.revision != input_revision:
+                    logger.info(
+                        f"[{run_id}] 丢弃阶段 {stage} 的旧输入结果："
+                        f"r{input_revision} != 当前 r{fresh.revision}"
+                    )
+                    return
+                state = fresh  # 后续流转全部基于最新状态
+                result.revision = state.revision
+                state.stage_results[stage] = result
 
-            # 判断下一步流转策略：
-            # 若该阶段在 review_stages 中，则进入 waiting_review 等待人工审核！
-            if stage in review_stages:
-                result.status = "waiting_review"
-                state.status = "waiting_review"
-                state.updated_at = datetime.now().isoformat()
-                storage.save_state(state)
-                logger.info(f"[{run_id}] 阶段 {stage} 完成，暂停等待人工审核 (waiting_review)")
-            else:
-                # 自动通过并进入下一阶段
-                result.status = "approved" if stage != "report_fusion" else "completed"
-                next_stage = self.get_next_stage(stage)
-                if next_stage:
-                    logger.info(f"[{run_id}] 阶段 {stage} 自动通过，流转至下一阶段: {next_stage}")
-                    state.current_stage = next_stage
-                    state.status = "running"
-                    state.stage_results[next_stage].status = "running"
+                # S-01：流转前统一识别终止性失败/硬阻塞。
+                # 必须在 review_stages 覆盖状态**之前**判定，否则 failed 会被改写成 approved。
+                allowed, block_reason = assess_stage_progression(result, stage)
+                if not allowed:
+                    result.status = "failed" if result.status == "failed" else "waiting_review"
+                    result.error = result.error or block_reason
+                    result.data = {**(result.data or {}), "block_reason": block_reason, "blocked": True}
+                    state.status = "waiting_review" if result.status != "failed" else "failed"
+                    state.stage_results[stage] = result
                     state.updated_at = datetime.now().isoformat()
                     storage.save_state(state)
-                    # 递归调用下一阶段
-                    await self._execute_stage(run_id, next_stage, review_stages, feedback=None)
+                    event_hub.emit(
+                        run_id, stage, "error",
+                        f"阶段 {stage} 硬阻塞，已阻止下游生成：{block_reason}",
+                        tool="StageGate",
+                        details={"block_reason": block_reason, "stage": stage},
+                    )
+                    logger.warning(f"[{run_id}] 阶段 {stage} 硬阻塞，停止流转: {block_reason}")
+                    return
+
+                # R1：融合阶段成功时登记「构建版本」——下载资格据此做代次比较，
+                # 替代旧的永久 downstream_stale 布尔（重建后永远不会被消费）。
+                if stage == "report_fusion":
+                    result.data = {**(result.data or {}), "built_at_revision": state.revision}
+                    state.stage_results[stage] = result
+
+                # 判断下一步流转策略：
+                # 若该阶段在 review_stages 中，则进入 waiting_review 等待人工审核！
+                if stage in review_stages:
+                    result.status = "waiting_review"
+                    state.status = "waiting_review"
+                    state.updated_at = datetime.now().isoformat()
+                    storage.save_state(state)
+                    logger.info(f"[{run_id}] 阶段 {stage} 完成，暂停等待人工审核 (waiting_review)")
                 else:
-                    # 全流程结束
-                    state.status = "completed"
-                    state.updated_at = datetime.now().isoformat()
-                    storage.save_state(state)
-                    logger.info(f"[{run_id}] 全流水线执行圆满完成！(completed)")
+                    # 自动通过并进入下一阶段
+                    result.status = "approved" if stage != "report_fusion" else "completed"
+                    if next_stage:
+                        logger.info(f"[{run_id}] 阶段 {stage} 自动通过，流转至下一阶段: {next_stage}")
+                        state.current_stage = next_stage
+                        state.status = "running"
+                        state.stage_results[next_stage].status = "running"
+                        state.updated_at = datetime.now().isoformat()
+                        storage.save_state(state)
+                    else:
+                        # 全流程结束
+                        state.status = "completed"
+                        state.updated_at = datetime.now().isoformat()
+                        storage.save_state(state)
+                        logger.info(f"[{run_id}] 全流水线执行圆满完成！(completed)")
+            # 互斥保护区结束；递归推进在锁外执行，避免长时间占锁
+            if stage not in review_stages and next_stage is not None and state.status == "running":
+                await self._execute_stage(run_id, next_stage, review_stages, feedback=None)
 
         except asyncio.CancelledError:
             logger.info(f"[{run_id}] 阶段 {stage} 收到中止信号并安全退出 (CancelledError)")
@@ -1012,11 +1643,17 @@ class WorkflowEngine:
             return
         except Exception as e:
             logger.exception(f"[{run_id}] 阶段 {stage} 执行出错: {e}")
-            state.status = "failed"
-            state.stage_results[stage].status = "failed"
-            state.stage_results[stage].error = str(e)
-            state.updated_at = datetime.now().isoformat()
-            storage.save_state(state)
+            # R1：失败标记也必须合并进最新状态，不得用旧快照覆盖人工编辑
+            lock = self._lock_for(run_id)
+            async with lock:
+                cur = storage.load_state(run_id) or state
+                if cur.status == "cancelled" or cur.revision != input_revision:
+                    return
+                cur.status = "failed"
+                cur.stage_results[stage].status = "failed"
+                cur.stage_results[stage].error = str(e)
+                cur.updated_at = datetime.now().isoformat()
+                storage.save_state(cur)
         finally:
             if run_id in self._running_tasks and self._running_tasks[run_id].done():
                 self._running_tasks.pop(run_id, None)

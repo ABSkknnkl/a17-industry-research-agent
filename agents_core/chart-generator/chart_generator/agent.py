@@ -9,6 +9,7 @@ from datetime import date, datetime
 import hashlib
 import json
 import logging
+import os
 from pathlib import Path
 import re
 import secrets
@@ -35,7 +36,6 @@ from chart_generator.websearch import (
     WebSearchClient,
     fill_chain_gaps,
     make_search_client,
-    resolve_web_search_config,
     supplement_segments_with_web,
     web_search_available,
 )
@@ -204,6 +204,9 @@ class ChartGeneratorAgent:
                          {"role": "user", "content": user}],
             "temperature": 0.1,
             "max_tokens": 1024,
+            # 火山 ark 私有字段（关闭思考：实测同等任务 10.4s → 5.8s）。
+            # 2026-10-26：非 ark 端点（Azure/OpenAI 兼容网关）会因未知字段直接 400，
+            # 故下面带一次「去掉该字段重试」——不靠域名判断，换端点即可用。
             "thinking": {"type": "disabled"},
         }
         try:
@@ -213,6 +216,15 @@ class ChartGeneratorAgent:
                     headers={"Authorization": f"Bearer {self.settings.llm_api_key}"},
                     json=payload,
                 )
+                if res.status_code == 400 and "thinking" in payload:
+                    logger.info("端点不接受 thinking 字段（%s），去掉后重试一次",
+                                res.text[:120])
+                    retry = {k: v for k, v in payload.items() if k != "thinking"}
+                    res = await client.post(
+                        f"{self.settings.llm_base_url}/chat/completions",
+                        headers={"Authorization": f"Bearer {self.settings.llm_api_key}"},
+                        json=retry,
+                    )
                 res.raise_for_status()
                 data = res.json()
         except Exception as exc:
@@ -783,12 +795,23 @@ class ChartGeneratorAgent:
                         # 联网补漏（2026-10-17）：**仅限产业链图**。
                         # evidence_count 传本轮 industry_chain 域的证据条数：
                         # 传 0 表示问财没收录该主题（主题词被语义解析器丢弃），
-                        # 此时博查从"补缺口"升级为"整条链的企业名/环节名来源"。
-                        _ws_cfg = resolve_web_search_config()
-                        # 🔴 2026-10-20：改用 provider 判定（原 `_ws_cfg.enabled` 是博查专用，
-                        # 且 client 硬编码 WebSearchClient → SEARCH_PROVIDER=doubao 从未生效）。
+                        # 此时联网从"补缺口"升级为"整条链的企业名/环节名来源"。
                         # 双保险：循环入口已按 _wants_chain 抑制过产业链图候选，
                         # 这里再闸一次，确保"用户没要产业链图"时绝不消耗豆包额度。
+                        #
+                        # 🔴 2026-10-25 F18：**删除"清空非核心企业"**——
+                        # 原 `CHAIN_CONTENT_SOURCE=doubao` 分支（2026-10-22 引入）在这里
+                        # 把所有非核心节点的 companies 无条件清空，再由 full_chain 整组回填。
+                        # 那一步的假设是"A2 写的企业名不可信、只有联网可信"，但实测两头都不干净：
+                        # 白酒 A2 写对的 6 家品牌、笔记本 5 家代工被无差别清空，联网又没抓到时
+                        # 14 个槽位全空、只剩一个主题词被当公司名（run-20261025111912）。
+                        # 现改为**证据分层共存**：有据名字（evidence 环节 / A1 白名单 /
+                        # 证据原文可追溯）保留，联网只补空、只顶掉无据名
+                        # （见 websearch.merge_company_tiers）。
+                        # 清空原本要挡的概念股（景兴纸业这类）改由确定性裁判接住：
+                        # 联网回填之后紧跟着 repair_topology，其中 F8 归位器与 F17 知识底座
+                        # （chain_kb 四态裁决）会按主营/环节把串岗企业判掉——
+                        # 不再需要"整片铲平"这种连正确内容一起毁掉的粗放兜底。
                         if web_search_available() and _wants_chain:
                             _chain_ev = [
                                 ev for ev in (request.report.evidence_index or {}).values()
@@ -803,6 +826,22 @@ class ChartGeneratorAgent:
                                     client=make_search_client(),
                                     call_llm=self._web_extract_llm,
                                     evidence_count=len(_chain_ev),
+                                    # full_chain=True → 不挑缺口，上游/中游/下游/配套各发一条检索。
+                                    # 2026-10-25 F18：回填语义由"整组替换"改为
+                                    # "有据保留 + 无据让位"，因此这里不再预先清空 A2 的名单；
+                                    # evidence_text 传下去，让分层判定能用"证据原文可追溯"这条通路
+                                    # （与 F1 classify_company_traceability 同口径）。
+                                    full_chain=True,
+                                    evidence_text=evidence_text,
+                                    # 🔴 2026-10-25：默认值曾是 "6"，而 build_slot_queries 的 body
+                                    # 原顺序是「上游2 中游2 下游2 配套2」→ [:6] 正好把两条**配套**
+                                    # 检索词整个截掉，配套层（运维/渠道/检测认证/软件平台）
+                                    # 一条专属检索都没发过。函数注释里写的额度本来就是 8 次/图
+                                    # （500 ÷ 8 ≈ 62 图/月），"6" 是配置漂移。这里恢复 8，
+                                    # 并同步把 body 轮转（见 _interleaved_bodies），
+                                    # 万一把额度调回 6 也不会再出现"整层零检索"。
+                                    # 想省额度：CHAIN_WEB_MAX_QUERIES=6 即可。
+                                    max_queries=int(os.environ.get("CHAIN_WEB_MAX_QUERIES", "8")),
                                 )
                                 if _ws_diag.get("notes"):
                                     logger.info("产业链联网补漏：%s", _ws_diag["notes"][:3])

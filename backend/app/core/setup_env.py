@@ -6,6 +6,7 @@ def init_agent_paths() -> None:
     subdirs = [
         agents_core,  # 跨包共享模块（如 skill_policy 技能融合器）
         agents_core / "data-fetcher",
+        agents_core / "chain-research",
         agents_core / "data-analysis",
         agents_core / "chart-generator",
         agents_core / "chapter-writer",

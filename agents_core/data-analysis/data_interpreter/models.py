@@ -185,6 +185,7 @@ def validate_request_consistency(dataset: Any, subject: str | None) -> None:
 
 
 class AnalysisRequest(BaseModel):
+    chain_context: dict[str, Any] | None = None
     model_config = ConfigDict(extra="forbid")
 
     subject: str = Field(default="研究主题", min_length=2, max_length=200)
@@ -394,6 +395,7 @@ class IndustryChainSegment(BaseModel):
 
 
 class InterpretationReport(BaseModel):
+    chain_analysis: dict[str, Any] | None = None
     report_id: str
     subject: str
     as_of: date

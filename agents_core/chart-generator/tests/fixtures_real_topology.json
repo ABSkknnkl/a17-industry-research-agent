@@ -1,0 +1,107 @@
+{
+  "title": "低空经济产业链结构",
+  "subtitle": "上中下游核心环节与代表标的分布",
+  "core_product": "低空飞行器及其配套系统与服务",
+  "nodes": [
+    {
+      "id": "UP-1",
+      "label": "基础支撑与核心部件",
+      "companies": [],
+      "key_products": [
+        "汽车零部件",
+        "底盘与发动机系统",
+        "通信"
+      ],
+      "description": "上游基础支撑、核心部件与关键供给，涵盖原材料、零部件及基础软硬件设施，毛利率区间25%-45%。",
+      "stage": "upstream",
+      "is_core": false,
+      "evidence_ids": []
+    },
+    {
+      "id": "MD-1",
+      "label": "核心产品研发与系统集成",
+      "companies": [],
+      "key_products": [
+        "系统集成",
+        "方案交付"
+      ],
+      "description": "中游核心产品研发、算法模型设计、系统集成与一体化方案输出，是产业链技术整合与价值创造的关键节点。",
+      "stage": "midstream",
+      "is_core": true,
+      "evidence_ids": []
+    },
+    {
+      "id": "MD-2",
+      "label": "零部件制造与总装",
+      "companies": [],
+      "key_products": [
+        "汽车零部件",
+        "通信设备"
+      ],
+      "description": "中游制造与总装环节，承接上游部件并完成系统装配，毛利率普遍偏低（约9%-16%），附加值有限。",
+      "stage": "midstream",
+      "is_core": false,
+      "evidence_ids": []
+    },
+    {
+      "id": "DS-1",
+      "label": "场景运营与终端应用",
+      "companies": [
+        "优刻得",
+        "武商集团"
+      ],
+      "key_products": [
+        "IDC及AIDC服务",
+        "政企业务"
+      ],
+      "description": "下游垂直领域商业化推广、多场景终端应用落地、渠道运营与综合服务生态。",
+      "stage": "downstream",
+      "is_core": false,
+      "evidence_ids": [
+        "R-c341aa83f3df1dc5d84d"
+      ]
+    },
+    {
+      "id": "DS-2",
+      "label": "综合服务与商业生态",
+      "companies": [],
+      "key_products": [],
+      "description": "下游配套服务与商业化生态，包括运维、培训、金融等支持性环节。",
+      "stage": "downstream",
+      "is_core": false,
+      "evidence_ids": []
+    }
+  ],
+  "edges": [
+    {
+      "source": "UP-1",
+      "target": "MD-2",
+      "label": "原材料及部件供应",
+      "flow": "material"
+    },
+    {
+      "source": "MD-1",
+      "target": "MD-2",
+      "label": "设计方案与集成指令",
+      "flow": "technical"
+    },
+    {
+      "source": "MD-1",
+      "target": "DS-1",
+      "label": "技术输出与方案授权",
+      "flow": "technical"
+    },
+    {
+      "source": "MD-2",
+      "target": "DS-1",
+      "label": "整机与系统交付",
+      "flow": "material"
+    },
+    {
+      "source": "DS-1",
+      "target": "DS-2",
+      "label": "场景运营反馈",
+      "flow": "service"
+    }
+  ]
+}

@@ -134,6 +134,17 @@ class DataFormulator:
         if ratio_table:
             return ratio_table
 
+        # A known neighbour's unit must never lend a fictitious scale to an
+        # unresolved monetary point. Leave the whole candidate unplottable.
+        for ref in records:
+            dimension = resolve_metric_meta(ref.metric).dimension
+            if (dimension == MetricDimension.CURRENCY_AMOUNT
+                    and ref.unit not in ("元", "万", "万元", "亿", "亿元")):
+                return None
+            if (dimension == MetricDimension.PERCENTAGE_RATIO
+                    and ref.unit not in ("%", "百分比", "小数", "ratio", "decimal")):
+                return None
+
         # 3. Check for specific chart types before generic dimension filtering
         # 3.1 Scatter / Bubble (requires 2 metrics across common entities)
         if target_chart_type in ("scatter", "bubble") or (len(by_metric) >= 2 and target_chart_type not in ("bar", "horizontal_bar", "comparison_bar", "diverging_bar", "combo", "pie", "donut", "line", "area")):
@@ -563,13 +574,23 @@ class DataFormulator:
             pds1, pds2 = [], []
             unit1, unit2 = "", ""
 
+            # S-03：左右轴各自先定一个目标单位，再逐点换算（左右轴不串用单位）
+            recs1_in_range = [dict1[p] for p in common_periods]
+            recs2_in_range = [dict2[p] for p in common_periods]
+            target_unit1 = DataFormulator._resolve_series_target_unit(recs1_in_range)
+            target_unit2 = DataFormulator._resolve_series_target_unit(recs2_in_range)
+
             for p in common_periods:
                 ref1 = dict1[p]
                 ref2 = dict2[p]
                 v1_raw, u1_raw = float(ref1.value), ref1.unit
                 v2_raw, u2_raw = float(ref2.value), ref2.unit
-                v1_norm, unit1 = DimensionGuard.normalize_financial_value(v1_raw, m1, u1_raw)
-                v2_norm, unit2 = DimensionGuard.normalize_financial_value(v2_raw, m2, u2_raw)
+                v1_norm, unit1 = DimensionGuard.normalize_financial_value(
+                    v1_raw, m1, u1_raw, target_unit=target_unit1
+                )
+                v2_norm, unit2 = DimensionGuard.normalize_financial_value(
+                    v2_raw, m2, u2_raw, target_unit=target_unit2
+                )
                 vals1.append(v1_norm)
                 vals2.append(v2_norm)
                 eids1.append(str(getattr(ref1, "record_id", "") or ""))
@@ -650,6 +671,66 @@ class DataFormulator:
         return None
 
     @staticmethod
+    def _resolve_series_target_unit(refs: list[EvidenceRef]) -> str:
+        """为一个系列选定唯一的展示单位（S-03）。
+
+        规则（按优先级）：
+        1. 系列内出现百分比 → '%'（百分比不做倍率换算）。
+        2. 全部为金额：先按来源单位倍率还原到「元」，再看最大绝对值决定 元/万元/亿元；
+           这样 9999 与 10000 万元会同时落在「亿元」档，且逐点用同一 target_unit 换算。
+        3. 无量纲指标（PE 等）沿用原单位或返回空串，不做金额换算。
+
+        为什么不能逐点调用 normalize_financial_value 再取末点单位：
+        该函数会按**单点量级**切换单位，9999→万元、10000→亿元，
+        导致同一系列两点相差 10000 倍（V8 S-03 根因）。
+        """
+        if not refs:
+            return ""
+
+        units = [r.unit for r in refs if getattr(r, "unit", None)]
+        if any(u in ("%", "百分比") for u in units):
+            return "%"
+
+        # 判断是否金额量纲：任一单位是金额单位，或其 metric 被识别为 CURRENCY_AMOUNT
+        amount_units = {"元", "万", "万元", "亿", "亿元"}
+        has_amount_unit = any(u in amount_units for u in units)
+        metrics_amount = any(
+            resolve_metric_meta(r.metric).dimension == MetricDimension.CURRENCY_AMOUNT
+            for r in refs
+        )
+        if not (has_amount_unit or metrics_amount):
+            # 非金额：沿用首个已知单位，避免把 PE 之类标成金额
+            return units[0] if units else ""
+        # R3：金额量纲但**全系列都没有已知单位**时，不能按数值猜倍率——
+        # 返回空单位表示不可比较，交由上游抑制/标注（V8 最终方案 §6.3.5）。
+        if not has_amount_unit:
+            return ""
+
+        base_values: list[float] = []
+        for r in refs:
+            try:
+                v = float(r.value)
+            except (TypeError, ValueError):
+                continue
+            unit = getattr(r, "unit", None)
+            if unit == "亿元" or unit == "亿":
+                base_values.append(v * 1e8)
+            elif unit in ("万元", "万"):
+                base_values.append(v * 1e4)
+            elif unit == "元":
+                base_values.append(v)
+            else:
+                # 单位缺失：量级不可推断，按原值参与，但不据此猜倍率
+                base_values.append(v)
+
+        max_abs = max((abs(v) for v in base_values), default=0.0)
+        if max_abs >= 1e8:
+            return "亿元"
+        if max_abs >= 1e4:
+            return "万元"
+        return "元"
+
+    @staticmethod
     def _formulate_time_series(
         dated_records: list[EvidenceRef],
         unique_periods: list[date],
@@ -678,16 +759,21 @@ class DataFormulator:
         point_eids: dict[str, list[str]] = {}
         point_pds: dict[str, list[str | None]] = {}
 
+        # R3（V8 最终方案 §6.3.2）：**同一根轴**的多系列必须共用同一个目标单位。
+        # 旧实现逐系列各自归一，轴却只取最后一家的单位 → 甲（万元）与乙（亿元）
+        # 同时画在标着「亿元」的轴上，差 1 万倍。
+        all_series_refs = [r for date_map in by_series.values() for r in date_map.values()]
+        shared_target_unit = DataFormulator._resolve_series_target_unit(all_series_refs)
+
         for s_name, date_map in list(by_series.items())[:10]:
             vals = []
             eids: list[str] = []
             pds: list[str | None] = []
-            final_unit = ""
             for p in unique_periods:
                 if p in date_map:
                     ref = date_map[p]
-                    v_norm, final_unit = DimensionGuard.normalize_financial_value(
-                        float(ref.value), ref.metric, ref.unit
+                    v_norm, _ = DimensionGuard.normalize_financial_value(
+                        float(ref.value), ref.metric, ref.unit, target_unit=shared_target_unit
                     )
                     vals.append(v_norm)
                     eids.append(str(getattr(ref, "record_id", "") or ""))
@@ -698,7 +784,7 @@ class DataFormulator:
                     pds.append(None)
             clean_s_name = canonical_metric_label(s_name) if s_name in by_series else s_name
             series_data[clean_s_name] = vals
-            series_units[clean_s_name] = final_unit
+            series_units[clean_s_name] = shared_target_unit
             point_eids[clean_s_name] = eids
             point_pds[clean_s_name] = pds
 
@@ -785,7 +871,13 @@ class DataFormulator:
         elif meta.dimension == MetricDimension.TRADING_VOLUME:
             dest_unit = meta.preferred_unit or "手"
         else:
-            dest_unit = DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+            # R3：金额类但来源单位全缺 → 不猜倍率，标记不可比较（空单位）
+            known_amount_units = [u for u in raw_units if u in ("元", "万元", "亿", "亿元")]
+            dest_unit = (
+                DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+                if known_amount_units
+                else ""
+            )
 
         entity_val_map: dict[str, float] = {}
         used_records: list[EvidenceRef] = []
@@ -848,7 +940,13 @@ class DataFormulator:
         elif meta.dimension == MetricDimension.TRADING_VOLUME:
             dest_unit = meta.preferred_unit or "手"
         else:
-            dest_unit = DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+            # R3：金额类但来源单位全缺 → 不猜倍率，标记不可比较（空单位）
+            known_amount_units = [u for u in raw_units if u in ("元", "万元", "亿", "亿元")]
+            dest_unit = (
+                DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+                if known_amount_units
+                else ""
+            )
         values: list[float | None] = []
         m_name = canonical_metric_label(records[0].metric)
         used_records = records[:25]

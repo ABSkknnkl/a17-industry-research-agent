@@ -91,6 +91,33 @@ def _industry_profile_block(subject: str) -> str:
         return ""
 
 
+def _structure_block(subject: str) -> str:
+    """【本主题结构 + 固定槽位】注入块：与 A3 `chart_generator.chain_structure` **同源，不复制第二份**。
+
+    2026-10-22：产业链的**环节骨架**必须由这里钉住，检索只负责填内容。
+    实测根因（`output/白酒产业链_归因实验_..._20261022.md`）：只给检索素材时，
+    模型会按"素材里出现频次"归类——原粮/包材（有上市公司）挤满上游，
+    "酒曲/陈酿/勾调"（无独立上市公司）系统性消失；宇树的"自研算法"同理消失。
+    不给素材反而能出 4 大类，说明**问题是骨架被素材替代，不是模型能力**。
+
+    路径解析同 `_industry_profile_block`：chart-generator 由 backend setup_env 注入；
+    单包测试场景用文件位置兜底引导。
+    """
+    try:
+        from chart_generator.chain_structure import structure_prompt_block
+    except ImportError:  # pragma: no cover - 单包直跑时的路径兜底
+        import sys
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "chart-generator"))
+        try:
+            from chart_generator.chain_structure import structure_prompt_block
+        except Exception:
+            return ""
+    try:
+        return structure_prompt_block(subject)
+    except Exception:
+        return ""
+
+
 SEMANTIC_SYSTEM_PROMPT = """你是顶级研报数据解读智能体的语义分析模块。
 你的唯一事实来源是输入 JSON 中的 deterministic_findings（含 key_metrics、trends、anomalies、cross_validations、comps_matrix、industry_chain、financial_ratios）和 evidence_index。
 不得补充外部未经证明的事实，不得给出投资建议。每条洞察必须引用输入中真实存在的 evidence_record_ids；证据不足时明确写“证据不足”。百分比小数 0.12 表示 12%。
@@ -113,67 +140,31 @@ SEMANTIC_SYSTEM_PROMPT = """你是顶级研报数据解读智能体的语义分�
    evidence_record_ids、related_metric_ids、related_trend_ids、related_anomaly_ids；
    要求结合财务比率（杜邦分解、毛利率、净现比质量）、同行可比估值溢价与产业链上下游环节进行专业深度归纳；
 4. content_outline：数组，每项仅含 heading、purpose、key_points、evidence_record_ids；
-5. chain_topology：**产业链拓扑（仅当证据里确有产业链环节时输出，否则整段省略）**。按「硬件制造四段式模板」填空（把公司名/环节名换成目标行业的）：
+5. chain_topology：**产业链拓扑（仅当证据里确有产业链环节时输出，否则整段省略）**。
+   🔴 **环节骨架取输入 JSON 的 structure_skeleton（本主题固定槽位表），不得自己另立一套。**
    {"title","subtitle","core_product","nodes":[{"id","label","companies","key_products","description","stage","is_core","bottleneck","phase","buyer","evidence_ids"}],
     "edges":[{"source","target","label","flow"}]}。
-   图的固定形态：四段横向泳道——上游核心零部件 → 中游设计研发与制造 → 整机/核心产品本体 → 下游场景落地，下方一条配套支撑带（虚线挂接）。节点即卡片，每张卡片三行文字：
-     第一行 环节名（≤8 字）；第二行 代表企业（2-4 家真实企业，用 · 分隔）或细分品类；第三行 环节说明（≤20 字：这个环节提供什么、支撑什么，不要复读连线文字）。
-   各段填写要求：
-   - upstream 上游：6-10 个核心零部件/材料/芯片/感知环节；其中真正被"卡"的 1-3 个（国产化率低、依赖进口、产能高度集中）加 "bottleneck": true，不要把瓶颈标成一片；
-   - midstream 中游：**共 4-5 个**，拆成两类角色，不要混在同一个节点里：
-       (a) 研发/算法类（如「飞控算法」「仿真平台」「工业软件」「EDA/IP授权」）—— 只出图纸与授权，
-           **禁止标 is_core**；
-       (b) 整机/本体类（如「整机厂」「电芯厂」「组件厂」「晶圆厂」「药企」「总装集成」）——
-           **这是唯一允许 is_core=true 的节点**，其 companies 即品牌列表。
-           🔴 **数量 2-8 家，由该行业真实存在的整机/终端厂商决定**（2026-10-19 F9：
-           旧版写死"必须给 5-8 个"，模型为凑满格数把上游零部件厂抓进品牌卡——
-           海上风电品牌卡出现东方电缆/中天科技（海缆）、工业机器人出现绿的谐波（减速器）。
-           真实整机厂不足 7 家时直接少排几格，不得补空、不得抓上游。
-           成员资格判定问句：该公司是否「采购零部件、集成后以自有品牌卖整机/终端」？
-           是 → 可进品牌卡；否（卖零部件/材料/服务给整机厂）→ 只能在上游或配套层。）
-      🔴 **中游非核心节点必须 2-3 个**（2026-10-17）：「整机/本体」在渲染时会被拆成独立一列，
-      中游只写「研发算法 + 整机」两个的话，中游列就只剩 1 张卡，图上会塌出 700px 空白。
-      必须补足制造与集成环节——**具体名称取输入 JSON 的 industry_profile（本行业画像），
-      禁止照抄其他行业**（旧版写死「飞控算法与软件 / 整机制造与总装 / 系统集成与调试」，
-      把飞行器词套到了风电、半导体、创新药、机器人 4 张图上）。
-     代码会按「代表企业最多 + 名字像本体」判定核心节点，标错了会被确定性纠正；
-     核心节点企业数不足 3 家时本体盒与品牌列表渲染不出来，等于图上白丢一整栏。
-     🔴 **监管职能不得并入中游环节名**（2026-10-19 F16）：审批/注册/监管/许可/备案/认证
-     属 support，禁止写成「NMPA审批与GMP生产」这种混血中游环节——
-     实测（创新药 run-20261019121206）它会被判成品牌卡，标题写着"审批"、里面却是药企。
-     正确写法：中游写「创新药生产与商业化」，监管另设 support 的「监管与注册服务」。
-   - downstream 下游：**5-6 个**应用场景，只写场景不写公司；每个节点必须给 "phase"（已落地/试点中/示范期/远期）与 "buyer"（采购方类型，如"电网 / 应急 / 能源国企"）；
-   - support 配套：**4-5 个**（软件生态/数据训练/运维回收/渠道集成），禁止放入 downstream。
-   - 🔴 **环节不得语义重叠**（2026-10-21）：同一张图里禁止出现两张"企业群几乎相同"的环节卡。
-     判据：如果你能说"这两张卡的公司基本是同一批"，它们就该合成一张。
-     实测踩坑（宇树机器人 run-20261021181722-fb7ca7）：同时给了「运动控制器」与「运动控制与算法」、
-     「工业软件」与「仿真平台」，两对卡的代表企业完全一样，触发 5 项"一家公司只能出现在一个环节"的 P0；
-     代码只能把重复公司摘到一边，最后两张卡各剩零星企业、语义也说不清。
-     正确做法：合成一张，按主要属性命名（如「运动控制与算法」同时涵盖控制器硬件与算法软件；
-     「工业软件」涵盖仿真/EDA/PLM，不再单列「仿真平台」）。
-   - 【易漏环节自检（出图前逐条过一遍，缺了图上就缺一块）】
-      ① 基础设施与运行保障、检验检测与**认证**——认证词必须取 industry_profile
-         （飞行器＝适航认证，发电装备＝型式认证/并网检测，半导体设备＝工艺验证/产线认证，
-         机器人＝CR/CE 认证，医药＝NMPA 审批/GMP）。旧版写死"适航认证"，
-         导致风电/半导体/创新药/机器人 4 张图同时出现"测试与适航认证"；
-     ② 软件与数据：操作系统/中间件、仿真与训练、数据服务与云平台、网络安全；
-     ③ 流通与后市场：经销渠道、租赁运营、人员培训、运维维修、回收拆解与再制造、保险与金融。
-     不要求全给，但明显属于该产业的关键必选环节不能整块缺失
-     （实测教训：低空经济图里整块漏掉了"低空基础设施与运行保障"层）。
-    - 【上游必查环节清单】**取输入 JSON 的 industry_profile（本行业画像）**。
-      （旧版写死飞行器专属的「机体结构与起落架 / 任务载荷（光电吊舱）」当通用清单，
-      非飞行器产业被塞航空件。飞行器类仍按画像保留这两项。）
-    - 【下游场景清单】**取 industry_profile 的 downstream**。
-      （旧版写死「toG 大场景必须含电力/油气管线巡检」，导致消费级无人机图出现工业级场景。
-      消费级只写 toC 场景，禁止写巡检/行业作业。）
-    - 🔴 **基础设施硬约束（基础设施驱动型产业必须单列）**：若该产业靠基础设施驱动，
-      **必须在配套带单独列出基础设施节点**，不能只给"软件生态/数据/运维"这类软配套。
-      ⚠️ 节点名称与代表企业**取 industry_profile 的 support 字段**——旧版把低空经济三项
-      （空管系统/Vertiport/通导监，代表企业莱斯信息、深城交、四川九洲）写成了通用要求，
-      于是消费无人机图上出现了 vertiport、激光雷达图上出现了显示面板这类硬凑配套。
-      **该行业不存在的配套槽位留空，禁止硬填。**
-   适配判断：先问一句"这个产业有没有装出来的东西？"——有（机器人/车/手机/设备/电池/组件）→ 按上套；没有（纯软件/石油化工/农业/金融/文创，没有物料流）→ 不要硬套四段式，改为"基础设施→技术层→平台层→应用层→用户"或"开采→冶炼→加工→下游"的分层/流程结构，stage 仍用四段词汇归类。
-   规则：stage∈{upstream,midstream,downstream,support}；flow∈{material,technical,service,recycle}；
+   骨架使用规则（2026-10-22 起）：
+     - structure_skeleton 给出的 stage / 环节名 / ★核心标记是**固定槽位**：不得增删、不得改名、不得并段；
+       你的任务是**逐个槽位填内容**（companies / key_products / description / phase / buyer），不是重新设计环节；
+     - 某一槽位证据不足 → 只把 **companies 留空**，**description 仍要写这个环节做什么（≤20 字）**；
+       🔴 禁止把「证据未覆盖 / 待补充 / 暂无数据」这类占位语写进 description——
+       它是给读者看的环节说明，缺企业的状态由渲染层统一表达（2026-10-22 实测：
+       模型把占位语写进 11 个节点，其中 3 个后来已被联网补上企业，出现"3 家企业 + 证据未覆盖"的矛盾卡面）。
+     - 确需补充槽位以外的环节，最多加 2 个，且 description 末尾标「[补充]」；
+     - 🔴 **禁止把骨架替换成"上游核心零部件→中游整机制造→下游场景"这类硬件四段式**：
+       白酒是"农产品→酿造→★品牌运营→渠道"，创新药是"原料药→临床→★生产→医院"，
+       服务类是"供给端→★平台撮合→履约→用户"——全部以 structure_skeleton 为准。
+   卡片与节点规则（与骨架无关，始终生效）：
+     - 每张卡片三行文字：第一行 环节名（≤8 字，用槽位给定的名字）；第二行 代表企业（2-4 家真实企业，用 · 分隔）或细分品类；第三行 环节说明（≤20 字：提供什么、支撑什么，不要复读连线文字）；
+     - **is_core 只能标在 ★ 核心槽位上**，其 companies 即品牌列表；数量由该行业真实存在的整机/终端厂商决定（2-8 家，不足就少排，不得抓上游凑数）。
+       成员资格问句：该公司是否「采购零部件/原料、加工后以自有品牌卖终端产品」？是 → 可进品牌卡；否（卖零部件/材料/服务）→ 只能在上游或配套层；
+     - 🔴 **监管/认证职能不得并入中游环节名**（审批/注册/监管/许可/备案/认证属 support）。实测（创新药 run-20261019121206）写成「NMPA审批与GMP生产」这种混血中游环节，会被判成品牌卡——标题写"审批"，里面却是药企；
+     - downstream 的每个节点必须给 "phase"（已落地/试点中/示范期/远期）与 "buyer"（采购方类型，如"电网 / 应急 / 能源国企"）；
+     - 🔴 **环节不得语义重叠**：同一张图里禁止出现两张"企业群几乎相同"的环节卡。判据：如果你能说出"这两张卡的公司基本是同一批"，就该合成一张。实测（宇树 run-20261021181722）「运动控制器」与「运动控制与算法」企业完全一样，触发 5 项"一家公司只能出现在一个环节"的 P0；
+     - 【易漏环节自检（出图前逐条过一遍）】① 基础设施与运行保障、检验检测与**认证**（认证词取 industry_profile，如机器人＝CR/CE、医药＝NMPA/GMP）；② 软件与数据（OS/中间件、仿真训练、数据与云、安全）；③ 流通与后市场（经销渠道、租赁、培训、运维、回收再制造、保险金融）。明显属于该产业的关键必选环节不能整块缺失。
+     - 【上游必查清单 / 下游场景清单 / 配套带】**一律取 industry_profile 与 structure_skeleton**，禁止沿用其他行业的举例；该行业不存在的槽位留空，不要硬填。
+规则：stage∈{upstream,midstream,downstream,support}；flow∈{material,technical,service,recycle}；
    material（产品实物流）不得指向研发/算法/仿真/软件/EDA/IP 授权类节点，只能指向制造端或下游；
      注意整机/本体节点即使标了 is_core 也**可以**接收物料流——它就是把零部件装成整机的那一环；
    technical（技术/指令流）源必须是 is_core 节点或上游；recycle（逆向物流）目标必须在 support 或 upstream；
@@ -413,7 +404,7 @@ class DataInterpreterAgent:
         # 改造前是互斥替代（模型可用就用模型的、失败才回落规则），每次运行都会丢掉另一侧的信息。
         policy_skills = self.skillhub.select(request, dataset)
 
-        if request.enable_semantic_analysis and self.llm.is_available and hasattr(self.llm, "plan_skills_with_tools"):
+        if request.enable_semantic_analysis and self.llm.is_available and hasattr(self.llm, "plan_skills_with_tools") and not (request.chain_context and not evidence):
             selected_skills = await self._plan_skills(
                 request, dataset, metrics, trends, anomalies, validations, quality, trace,
                 policy_skills=policy_skills,
@@ -434,8 +425,13 @@ class DataInterpreterAgent:
         )
         knowledge_facts: list[KnowledgeFact] = []
         skill_results: list[SkillExecutionResult] = []
+        chain_analysis = None
 
         if request.enable_semantic_analysis and self.llm.is_available and evidence:
+            # 语义通道的两个产出先置空：except 分支要在失败时如实报告「拓扑有没有拿到」，
+            # 若等到 try 内赋值再引用，异常路径会直接 NameError 盖掉真实错因。
+            chain_segments: list[Any] | None = None
+            chain_topology: dict[str, Any] | None = None
             try:
                 skill_results = await self._execute_skills(
                     selected_skills, request, metrics, trends, anomalies, validations,
@@ -510,10 +506,15 @@ class DataInterpreterAgent:
                     SEMANTIC_SYSTEM_PROMPT,
                     json.dumps({
                         "request": request.model_dump(mode="json"),
+                        "chain_context": request.chain_context,
                         # 2026-10-18 F3：按主题注入【本行业画像】——中游能力卡标题、
                         # 认证词、上/下游清单、配套清单、禁用词、龙头基准全部按行业给，
                         # 取代提示词里被写死的低空经济举例（跨行业硬套的根因）。
                         "industry_profile": _industry_profile_block(
+                            getattr(request, "subject", "") or ""),
+                        # 2026-10-22 骨架插电：固定槽位表放**payload 末尾附近**（近因效应），
+                        # A2 只能填内容、不能改骨架。与 A3 走同一个 structure_prompt_block()。
+                        "structure_skeleton": _structure_block(
                             getattr(request, "subject", "") or ""),
                         "deterministic_findings": {
                             "key_metrics": [item.model_dump(mode="json") for item in metrics],
@@ -579,12 +580,48 @@ class DataInterpreterAgent:
                 }))
             except Exception as exc:
                 semantic_status = "failed"
-                warnings.append(f"语义分析失败，已保留确定性分析结果：{exc}")
-                trace.append(AnalysisTraceEvent(event="semantic_fusion_failed", details={"error": str(exc)}))
+                # 🔴 2026-10-26：**空消息异常必须带类型名**。
+                # ``httpx.ReadTimeout`` / ``asyncio.TimeoutError`` 的 ``str()`` 是空串，
+                # 只记 ``exc`` 会让日志显示「语义分析失败：」——事后完全无法区分
+                # 是超时、解析失败还是鉴权失败。run-20261026020406 就栽在这上面：
+                # 拓扑整段丢失（``industry_chain_topology=None``），图表只能退回
+                # 3 节点 segments 骨架，而 warning 里一个字都看不出来。
+                _err = str(exc) or type(exc).__name__
+                warnings.append(f"语义分析失败，已保留确定性分析结果：{_err}")
+                trace.append(AnalysisTraceEvent(event="semantic_fusion_failed", details={
+                    "error": _err,
+                    "error_type": type(exc).__name__,
+                    # 拓扑是否产出决定产业链图画什么，必须落在轨迹里可查。
+                    "chain_topology_returned": chain_topology is not None,
+                    "chain_segments_returned": chain_segments is not None,
+                }))
         elif request.enable_semantic_analysis and not self.llm.is_available:
             warnings.append("未配置模型，语义深化已跳过；报告仍包含确定性指标、趋势、异常与交叉验证结果")
 
-        if quality.record_count == 0:
+        if request.enable_semantic_analysis and request.chain_context and not evidence and self.llm.is_available:
+            try:
+                context = request.chain_context
+                raw_chain = await self.llm.generate_json(
+                    '只解读提供的产业链已核事实。不得补企业、供货关系或数值。输出JSON '
+                    '{"observations":[{"assertion_ids":["原始断言ID"],"explanation":"与引用断言一致的简洁解读"}]}。最多8项。',
+                    json.dumps(context, ensure_ascii=False))
+                allowed = {a['assertion_id'] for a in context.get('facts', [])}
+                observations = [o for o in raw_chain.get('observations', [])
+                    if isinstance(o, dict) and o.get('assertion_ids') and
+                    set(o['assertion_ids']) <= allowed and isinstance(o.get('explanation'), str)]
+                chain_analysis = {'observations': observations, 'quality': context.get('quality'),
+                                  'numeric_data_available': False}
+                executive_summary = '\n'.join(o['explanation'] for o in observations)
+                semantic_status = 'completed' if observations else 'failed'
+                trace.append(AnalysisTraceEvent(event='chain_semantic_completed', details={
+                    'observations': len(observations), 'assertion_references_validated': True}))
+            except Exception as exc:
+                semantic_status = 'failed'
+                warnings.append('产业链独立解读失败：'+(str(exc) or type(exc).__name__))
+        if quality.record_count == 0 and request.chain_context and request.chain_context.get('facts'):
+            status = "partial"
+            warnings.append('量化记录缺失；产业链分析使用独立研究证据包，不生成缺乏数据的量化结论。')
+        elif quality.record_count == 0:
             status = "failed"
         elif quality.analyzability_score < 0.35:
             status = "partial"
@@ -614,6 +651,7 @@ class DataInterpreterAgent:
             skill_results=skill_results,
             execution_trace=trace,
             executive_summary=executive_summary,
+            chain_analysis=chain_analysis,
             key_metrics=metrics,
             trends=trends,
             anomalies=anomalies,

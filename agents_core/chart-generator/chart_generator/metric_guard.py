@@ -390,17 +390,31 @@ class DimensionGuard:
         metric_name: str,
         raw_unit: str | None = None,
         target_unit: str | None = None,
+        precision: int | None = None,
     ) -> tuple[float, str]:
         """Normalizes raw monetary or ratio values to legible, dimensionally safe units.
 
         Fixes:
         1. If raw_unit is already '%' or '百分比', never multiply by 100 (e.g. 0.85% must stay 0.85%).
         2. Respects target_unit if provided to ensure series-wide unit homogeneity.
+        3. S-03: 精度与显示分离。默认（precision=None）只在显式 target_unit 时保留
+           可还原原值的精度，不把 0.9999 亿元四舍五入成 1，从而抹掉与 1 亿元的差异。
         """
         meta = resolve_metric_meta(metric_name)
 
+        def _round(v: float) -> float:
+            """按需舍入：未指定 precision 时保留能还原原值的精度（至多 6 位）。"""
+            if precision is None:
+                return round(v, 6)
+            return round(v, precision)
+
         if meta.dimension == MetricDimension.CURRENCY_AMOUNT:
-            # If target_unit is explicitly specified, strictly adhere to it
+            # R3（V8 最终方案 §6.3.5）：缺单位不得按数值量级猜倍率。
+            # 150000000 可能是「元」也可能是「万元」——猜测会把量级写错 1 万倍，
+            # 而且不留痕。返回空单位表示"不可比较"，由上游抑制或标注。
+            if not raw_unit and not target_unit:
+                return value, ""
+
             dest_unit = target_unit
             if not dest_unit:
                 if raw_unit in ("亿元", "亿"):
@@ -414,39 +428,49 @@ class DimensionGuard:
                 else:
                     dest_unit = "元"
 
+            # 缺来源单位却指定了目标单位：无法可靠换算，保持不可比较
+            if not raw_unit:
+                return value, ""
+
             # Convert from raw_unit into dest_unit
             if dest_unit == "亿元":
                 if raw_unit in ("亿元", "亿"):
-                    return round(value, 2), "亿元"
+                    return _round(value), "亿元"
                 if raw_unit in ("万元", "万"):
-                    return round(value / 10000.0, 2), "亿元"
-                return round(value / 1e8, 2), "亿元"
+                    return _round(value / 10000.0), "亿元"
+                return _round(value / 1e8), "亿元"
             elif dest_unit == "万元":
                 if raw_unit in ("亿元", "亿"):
-                    return round(value * 10000.0, 2), "万元"
+                    return _round(value * 10000.0), "万元"
                 if raw_unit in ("万元", "万"):
-                    return round(value, 2), "万元"
-                return round(value / 1e4, 2), "万元"
+                    return _round(value), "万元"
+                return _round(value / 1e4), "万元"
             else:
                 if raw_unit in ("亿元", "亿"):
-                    return round(value * 1e8, 2), "元"
+                    return _round(value * 1e8), "元"
                 if raw_unit in ("万元", "万"):
-                    return round(value * 1e4, 2), "元"
-                return round(value, 2), "元"
+                    return _round(value * 1e4), "元"
+                return _round(value), "元"
 
         if meta.dimension == MetricDimension.PERCENTAGE_RATIO:
             # If raw_unit already explicitly indicates percentage (%, 百分比), DO NOT multiply by 100!
             # E.g. 0.85% margin is already 0.85; multiplying by 100 would corrupt it to 85.0%.
             if raw_unit in ("%", "百分比"):
-                return round(value, 2), "%"
+                return _round(value), "%"
 
-            # Only convert decimal ratio (e.g. 0.1544 -> 15.44%) if unit is missing or explicitly decimal
-            if not raw_unit or raw_unit in ("小数", "ratio", "decimal", "倍"):
+            # R3：仅当来源**明确标注**为小数/比例时才乘 100。
+            # 缺单位时不得凭「数值 ≤ 1」推断是比例（0.85 也可能就是 0.85 个单位）。
+            if raw_unit in ("小数", "ratio", "decimal"):
+                return _round(value * 100.0), "%"
+            if raw_unit == "倍":
                 if 0 < abs(value) <= 1.0:
-                    return round(value * 100.0, 2), "%"
+                    return _round(value * 100.0), "%"
+                return _round(value), "%"
+            if not raw_unit:
+                return value, ""
 
         if meta.dimension == MetricDimension.VALUATION_MULTIPLE or target_unit in ("倍", "x", "X"):
-            return round(value, 2), target_unit or meta.preferred_unit or "倍"
+            return _round(value), target_unit or meta.preferred_unit or "倍"
 
-        return round(value, 2), target_unit or raw_unit or meta.preferred_unit
+        return _round(value), target_unit or raw_unit or meta.preferred_unit
 

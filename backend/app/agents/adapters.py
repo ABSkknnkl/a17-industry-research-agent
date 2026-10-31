@@ -14,6 +14,27 @@ from backend.app.schemas.workflow import ArtifactRef, StageResult
 logger = logging.getLogger("agent_adapters")
 
 
+def _requested_chain(input_data: dict[str, Any], chart_request: Any) -> bool:
+    """Resolve user intent before disabling the legacy renderer for V2."""
+    from chart_generator.chain_intent import user_wants_industry_chain
+
+    return user_wants_industry_chain(
+        chart_request.report.subject or "",
+        input_data.get("focus_questions") or [],
+        explicit=chart_request.want_industry_chain,
+        defaulted_focus=chart_request.defaulted_focus,
+        requested_types=chart_request.preferences.requested_types,
+    )
+
+
+def _report_chain_delivery(run_id: str) -> dict[str, Any]:
+    """Carry the current chart-stage release decision into final report gates."""
+    state = storage.load_state(run_id)
+    chart = state.stage_results.get("chart_generate") if state else None
+    delivery = (chart.data or {}).get("chain_delivery") if chart else None
+    return dict(delivery) if isinstance(delivery, dict) else {}
+
+
 def _chart_svg_content(chart: Any, report: Any) -> str:
     """取这张图要落盘的 SVG 文本（2026-10-17）。
 
@@ -240,6 +261,8 @@ class FiveAgentsAdapter:
         security_types: list[str] | None = None,
         research_as_of: str | None = None,
         analysis_depth: str = "standard",
+        chain_research_strategy: str = "profile_guided",
+        chain_profile_id: str | None = None,
     ) -> StageResult:
         """阶段 1: 数据获取智能体 (Data Fetcher)"""
         import backend.app.core.setup_env
@@ -370,8 +393,34 @@ class FiveAgentsAdapter:
                     details=details,
                 )
 
+        chain_bundle = None
+        chain_error = None
+        # D3（V8 最终方案 §10.3）：引擎与画像**读 run 执行快照**，不再看进程环境。
+        # 旧实现每个阶段各读 CHAIN_ENGINE：中途改环境会让同一 run 的 A1/A2/A3
+        # 走不同引擎，历史 run 的行为也会被悄悄改变。
+        from backend.app.engine.state_machine import load_execution_snapshot
+        _snapshot = load_execution_snapshot(run_id)
+        _chain_v2 = _snapshot.chain_engine == "evidence_v2"
+        if _chain_v2 and '产业链' in (industry + ' '.join(map(str, foci))):
+            from chain_research.project import research_project
+            try:
+                chain_bundle = await research_project(run_id, industry, research_as_of or __import__('datetime').date.today().isoformat(), storage.get_run_dir(run_id), emit=on_fetch_event,
+                    research_strategy=_snapshot.research_strategy, profile_id=_snapshot.profile_id,
+                    resume_cache=__import__('os').environ.get('CHAIN_RESEARCH_RESUME') == '1')
+            except Exception as exc:
+                chain_error = type(exc).__name__ + ': ' + str(exc)[:250]
+                event_hub.emit(run_id, 'data_fetch', 'warn', '产业链研究失败：'+chain_error, tool='ChainResearch')
         agent = DataFetcherAgent()
-        run_res = await agent.run(request, emit=on_fetch_event, save_artifacts=False)
+        try:
+            run_res = await agent.run(request, emit=on_fetch_event, save_artifacts=False)
+        except Exception as exc:
+            if not chain_bundle:
+                raise
+            from data_fetcher.models import ResearchRunResult, StructuredResearchDataset, Coverage, RunError
+            run_res = ResearchRunResult(run_id=run_id, status='blocked', stop_reason='numeric_branch_exception',
+                dataset=StructuredResearchDataset(subject=industry),
+                coverage=Coverage(required_domains=[], covered_domains=[], missing_domains=[], score=0, complete=False),
+                errors=[RunError(stage='execution', message='数值分支失败：'+type(exc).__name__)])
         dataset = run_res.dataset
         dataset.subject = industry
 
@@ -382,7 +431,7 @@ class FiveAgentsAdapter:
         ]
         blocking_issues = [e.message for e in fetch_errors]
         stage_error = None
-        if run_res.status == "blocked" and not dataset.all_records():
+        if run_res.status == "blocked" and not dataset.all_records() and not (chain_bundle and chain_bundle.supported_assertions()):
             stage_error = "数据获取阶段未命中任何有效记录（empty_dataset），已阻止下游生成量化结论；请调整研究主题或检索词后重试。"
             if not blocking_issues:
                 blocking_issues = [stage_error]
@@ -455,6 +504,9 @@ class FiveAgentsAdapter:
 
         data: dict[str, Any] = {
             "source_records": source_records,
+            "chain_research": chain_bundle.quality.model_dump() if chain_bundle else (
+                {'release_status': 'failed', 'error': chain_error} if chain_error else None),
+            "numeric_status": run_res.status,
             "total_records": len(all_records) + len(dataset.events),
             "evidence_count": len(all_records) + len(dataset.events),
             "topic": industry,
@@ -514,7 +566,9 @@ class FiveAgentsAdapter:
             status="waiting_review",
             revision=1,
             data=data,
-            artifacts=artifacts,
+            artifacts=artifacts + ([ArtifactRef(artifact_id='chain_bundle_v2', kind='chain_bundle',
+                uri=str(storage.get_run_dir(run_id)/'artifacts'/'chain'/'v2'/'bundle.json'), revision=chain_bundle.revision)]
+                if chain_bundle else []),
             evidence_sources=sorted(list(evidence_sources)),
             error=stage_error,
         )
@@ -680,6 +734,16 @@ class FiveAgentsAdapter:
                 succ = details.get("successful_skills", 0)
                 event_hub.emit(run_id, "data_interpret", "agent_decision", f"语义深度融合完成: 成功应用 {succ} 项投研专业方法论", tool="SemanticFusion", details=details)
 
+        chain_bundle_path = run_dir / 'artifacts' / 'chain' / 'v2' / 'bundle.json'
+        cb = None
+        from backend.app.engine.state_machine import load_execution_snapshot as _load_snap
+        if _load_snap(run_id).chain_engine == 'evidence_v2' and chain_bundle_path.exists():
+            from chain_research.models import ChainKnowledgeBundle
+            cb = ChainKnowledgeBundle.model_validate_json(chain_bundle_path.read_text(encoding='utf-8'))
+            analysis_kwargs['chain_context'] = {'quality': cb.quality.model_dump(),
+                'entities': [e.model_dump() for e in cb.entities],
+                'facts': [a.model_dump() for a in cb.supported_assertions()],
+                'evidence': [e.model_dump() for e in cb.evidence]}
         agent = DataInterpreterAgent()
         report = await agent.run(dataset, AnalysisRequest(**analysis_kwargs), emit=on_interpret_event, save_artifacts=False)
 
@@ -705,6 +769,14 @@ class FiveAgentsAdapter:
             {"dimension": "risk", "status": "covered", "dimension_label": "风险提示", "reason": "已提取离群异常与不确定性事项"},
         ]
 
+        if analysis_kwargs.get('chain_context'):
+            cq = analysis_kwargs['chain_context'].get('quality', {})
+            for dim in dim_coverage:
+                if dim['dimension'] == 'industry_chain':
+                    dim.update(status='covered' if cq.get('release_status') == 'verified' else 'partial',
+                               reason='依据独立产业链证据包；结构完整性尚未认证')
+                elif not dataset.all_records():
+                    dim.update(status='missing', reason='缺少对应数值记录，不声明已覆盖')
         risks = []
         if hasattr(report, "anomalies") and report.anomalies:
             for ano in report.anomalies:
@@ -715,8 +787,43 @@ class FiveAgentsAdapter:
             for k, v in report.evidence_index.items():
                 ev_index_dict[k] = v.model_dump() if hasattr(v, "model_dump") else v
 
+        # D3（V8 最终方案 §10.4 步骤 3/4）：把 V2 受支持断言实际引用的证据投影成
+        # chain2: 命名空间，写入**产物目录**供 A4/A5 引用。
+        # 不塞进 report.evidence_index 的类型化模型：那是 EvidenceRef，
+        # chain2 条目带 source 明细（URL/定位/hash/来源家族），塞进去会被模型丢掉。
+        chain_conflicts: list[str] = []
+        if cb is not None:
+            try:
+                from chain_research.evidence_bridge import merge_into_evidence_index
+
+                merged_index, chain_conflicts = merge_into_evidence_index(ev_index_dict, cb)
+                added = len(merged_index) - len(ev_index_dict)
+                if added:
+                    ev_index_dict = merged_index
+                    report_dict = json.loads(report_path.read_text(encoding="utf-8"))
+                    report_dict["evidence_index"] = ev_index_dict
+                    report_path.write_text(
+                        json.dumps(report_dict, ensure_ascii=False, indent=2), encoding="utf-8"
+                    )
+                    event_hub.emit(
+                        run_id, "data_interpret", "info",
+                        f"产业链证据桥：并入 {added} 条 chain2 证据引用",
+                        tool="ChainEvidenceBridge",
+                        details={"conflicts": chain_conflicts},
+                    )
+                if chain_conflicts:
+                    event_hub.emit(
+                        run_id, "data_interpret", "warn",
+                        f"产业链证据桥发现 {len(chain_conflicts)} 条同 ID 不同内容冲突（保留原记录）",
+                        tool="ChainEvidenceBridge",
+                        details={"conflicts": chain_conflicts},
+                    )
+            except Exception as bridge_err:
+                logger.warning(f"[{run_id}] 产业链证据桥失败（不阻断解读）：{bridge_err}")
+
         data: dict[str, Any] = {
             "summary": report.executive_summary,
+            "chain_analysis": report.chain_analysis,
             "executive_summary": report.executive_summary,
             "knowledge_facts": [f.model_dump() for f in report.knowledge_facts],
             "insights": [ins.model_dump() for ins in report.insights],
@@ -944,6 +1051,13 @@ class FiveAgentsAdapter:
             defaulted_focus=bool(chart_opts.get("defaulted_focus", False)),
             chain_scope=_as_scope(chart_opts.get("chain_scope")),
         )
+        chain_requested = _requested_chain(input_data, chart_request)
+        v2_bundle_path = run_dir / 'artifacts' / 'chain' / 'v2' / 'bundle.json'
+        from backend.app.engine.state_machine import load_execution_snapshot as _load_snap_chart
+        use_chain_v2 = _load_snap_chart(run_id).chain_engine == 'evidence_v2'
+        if use_chain_v2:
+            # The v2 graph is compiled below; legacy must not fetch or repair it.
+            chart_request.want_industry_chain = False
         if chart_request.want_industry_chain is not None:
             logger.info("[%s] 产业链图意图显式指定：%s", run_id, chart_request.want_industry_chain)
         if chart_request.chain_scope is not None:
@@ -968,7 +1082,7 @@ class FiveAgentsAdapter:
         result = await agent.run(chart_request, emit=on_chart_event, save_artifacts=False)
 
         # 跨智能体协同补数闭环：检测图表智能体是否提出数据增补诉求（Stage 3 -> Stage 1 反馈回路）
-        if getattr(result, "data_demands", None) and len(result.charts) < 4:
+        if getattr(result, "data_demands", None) and len(result.charts) < 4 and not use_chain_v2:
             demands = result.data_demands[:2]
             logger.info(f"[{run_id}] 图表严重不足 ({len(result.charts)} 张)，检测到 {len(demands)} 项关键数据增补诉求，启动跨智能体协同补数...")
             event_hub.emit(
@@ -1087,6 +1201,83 @@ class FiveAgentsAdapter:
                     tool="ChartAgentCollaborator",
                 )
 
+        # D3（V8 最终方案 §10.1 第 6 条）：链图交付资格由 chain_quality 决定，
+        # 不再"图存在就算成功"。用户显式要求链图但证据包缺失/失败时，
+        # 必须给出结构化原因，不能把其它财务图的数量当成链图交付。
+        chain_delivery: dict[str, Any] = {
+            "requested": chain_requested,
+            "engine": "evidence_v2" if use_chain_v2 else "legacy",
+            "bundle_present": v2_bundle_path.exists(),
+            "status": "not_requested",
+            "reason": "",
+        }
+
+        if use_chain_v2 and chain_requested and v2_bundle_path.exists():
+            from chain_research.models import ChainKnowledgeBundle
+            from chain_research.view import compile_chain_view, render_bundle, render_evidence
+            from chain_research.evidence_bridge import project_supported_evidence
+            from dataclasses import asdict
+            from chart_generator.models import ChartSpec
+            import hashlib
+            cb = ChainKnowledgeBundle.model_validate_json(v2_bundle_path.read_text(encoding='utf-8'))
+            # 辅助视图（V2 自带四栏文字版）：保留为证据视图 / evidence.html
+            aux_svg, mapping = render_bundle(cb)
+            # 主图必须走**研报级模板**（lane_grid：分列卡网格 + 画像列头 + 品牌卡），
+            # 而不是把 V2 四栏文字清单当成交付图。
+            from chain_research.graph_spec import bundle_to_chain_spec
+            from chart_generator.chain_render import render_chain_svg
+
+            chain_spec = bundle_to_chain_spec(cb, subject=report.subject)
+            svg = render_chain_svg(chain_spec)
+            mapping = {**mapping, 'graph_spec': chain_spec.model_dump(mode='json')}
+            result.chain_quality = cb.quality.model_dump()
+            (v2_bundle_path.parent/'preview.svg').write_text(svg, encoding='utf-8')
+            (v2_bundle_path.parent/'aux_view.svg').write_text(aux_svg, encoding='utf-8')
+            (v2_bundle_path.parent/'evidence.html').write_text(render_evidence(cb, aux_svg), encoding='utf-8')
+            (v2_bundle_path.parent/'view_model.json').write_text(
+                json.dumps(asdict(compile_chain_view(cb)), ensure_ascii=False, indent=2), encoding='utf-8')
+            admitted_companies = sum(len(node.companies) for node in chain_spec.nodes)
+            chain_delivery["accepted_participations"] = admitted_companies
+            if cb.supported_assertions() and cb.quality.release_status in ('partial', 'verified'):
+                result.charts = [c for c in result.charts if c.chart_type != 'industry_chain']
+                result.charts.append(ChartSpec(chart_id='chain-evidence-v2', title=chain_spec.title or (report.subject+'（部分覆盖）'),
+                    chart_type='industry_chain', option={}, render_mode='svg', inline_svg=svg,
+                    chain_graph=chain_spec.model_dump(mode='json'),
+                    evidence_ids=[item['record_id'] for item in project_supported_evidence(cb)],
+                    insight_goal='证据支持的产业环节与企业参与',
+                    footnotes=['完整性未认证；未获支持的候选不计入代表企业。'],
+                    source_line='原文证据与关系见 artifacts/chain/v2/bundle.json',
+                    data_fingerprint=hashlib.sha256(svg.encode()).hexdigest()))
+                result.status = 'partial'
+                result.quality.ready_count = len(result.charts)
+                (v2_bundle_path.parent/'view_mapping.json').write_text(json.dumps(mapping,ensure_ascii=False,indent=2),encoding='utf-8')
+                # 覆盖度映射：partial/verified 分别对应"受限草稿"与"范围内已核验"
+                if cb.quality.release_status == 'verified' and admitted_companies > 0:
+                    chain_delivery["status"] = "complete"
+                    chain_delivery["reason"] = "范围内已核验（结构完整性仍以 policy 为准）"
+                else:
+                    chain_delivery["status"] = "partial"
+                    chain_delivery["reason"] = (
+                        "未核实任何活动归属；仅供结构审阅，不构成已核产业链"
+                        if admitted_companies == 0 else
+                        "部分覆盖：" + ",".join(cb.quality.reason_codes or [])
+                    )
+            else:
+                chain_delivery["status"] = "failed"
+                chain_delivery["reason"] = (
+                    "无受支持断言或 release_status 未达 partial：链图不成立"
+                    f"（status={cb.quality.release_status}, supported={len(cb.supported_assertions())}）"
+                )
+                result.warnings.append("产业链证据包未产出受支持断言，链图不计入正式交付。")
+                if chain_requested:
+                    result.status = 'partial'
+        elif use_chain_v2 and chain_requested:
+            result.chain_quality = {'release_status': 'failed', 'reason_codes': ['chain_bundle_missing']}
+            result.warnings.append('v2证据包缺失；未回退到旧产业链图。')
+            chain_delivery["status"] = "failed"
+            chain_delivery["reason"] = "chain_bundle_missing：用户要求产业链图但证据包缺失"
+            if chain_requested:
+                result.status = 'partial'
         # 保存生成的 SVG 矢量图到 artifacts/charts 并回填 svg_uri
         charts_dir = run_dir / "artifacts" / "charts"
         charts_dir.mkdir(parents=True, exist_ok=True)
@@ -1178,6 +1369,10 @@ class FiveAgentsAdapter:
 
         data: dict[str, Any] = {
             "chart_specs": chart_specs,
+            "chain_quality": result.chain_quality,
+            # D3：链图交付资格（requested/status/reason）随阶段产物透传，
+            # 前端与评审核对"用户要的链图到底交付到什么程度"。
+            "chain_delivery": chain_delivery,
             "charts": chart_refs,
             "quality": result.quality.model_dump() if result.quality else {
                 "passed": True,
@@ -1326,21 +1521,54 @@ class FiveAgentsAdapter:
             })
 
         event_hub.emit(run_id, "chapter_write", "artifact_created", "已生成 7 章 21 节研报结构化产物 (chapter_result.json)", tool="ChapterWriter")
-        event_hub.emit(run_id, "chapter_write", "stage_completed", "阶段 4 章节撰写完成，7 章 21 节券商深度专题全部生成完毕（0 Fallback 交付）", tool="ChapterWriterAgent")
 
         # D-04 修复：章节/节数基准从 DEFAULT_OUTLINE 推导，不得写死 7/21
         expected_chapter_count, expected_section_count = _expected_outline_units()
+
+        # S-01：透传 A4 的真实 status / quality / issues / fallback，不再固定 passed=True、
+        # 也不再对外宣称“0 Fallback 交付”。旧行为会让质量卡片永远显示绿色通过。
+        a4_status = str(getattr(result, "status", "") or "")
+        a4_quality = getattr(result, "quality", None)
+        a4_passed = bool(getattr(a4_quality, "passed", False))
+        a4_issues = list(getattr(a4_quality, "issues", []) or [])
+        a4_fallbacks = list(getattr(a4_quality, "fallback_chapter_ids", []) or [])
+        a4_warnings = list(getattr(result, "warnings", []) or [])
+        fallback_count = len(a4_fallbacks)
+        stage_error: str | None = None
+        if a4_status == "failed":
+            stage_error = (
+                "章节撰写失败：" + ("；".join(a4_issues[:3]) if a4_issues else "模型未产出可用章节")
+            )
+        elif a4_status == "partial" or fallback_count:
+            stage_error = (
+                f"章节撰写部分降级：{fallback_count} 章使用确定性兜底稿"
+                + (f"；{'；'.join(a4_issues[:2])}" if a4_issues else "")
+            )
+
+        fallback_note = f"{fallback_count} Fallback" if fallback_count else "0 Fallback"
+        event_hub.emit(
+            run_id, "chapter_write", "stage_completed",
+            f"阶段 4 章节撰写完成，{len(chapters_data)} 章 "
+            f"{sum(len(c.get('sections', [])) for c in chapters_data)} 节"
+            f"（{fallback_note}，质检{'通过' if a4_passed else '未通过'}）",
+            tool="ChapterWriterAgent",
+        )
 
         data: dict[str, Any] = {
             "chapters": chapters_data,
             "chapter_count": len(chapters_data),
             "expected_chapter_count": expected_chapter_count,
             "expected_section_count": expected_section_count,
+            "agent_status": a4_status or "unknown",
             "quality": {
-                "passed": True,
+                "passed": a4_passed,
                 "chapter_count": len(chapters_data),
                 "expected_chapter_count": expected_chapter_count,
                 "expected_section_count": expected_section_count,
+                "issues": a4_issues,
+                "fallback_chapter_ids": a4_fallbacks,
+                "fallback_count": fallback_count,
+                "warnings": a4_warnings,
             },
         }
 
@@ -1355,12 +1583,12 @@ class FiveAgentsAdapter:
 
         return StageResult(
             stage="chapter_write",
-            status="waiting_review",
+            status="failed" if a4_status == "failed" else "waiting_review",
             revision=1,
             data=data,
             artifacts=artifacts,
             evidence_sources=["chapter_writer_7x21"],
-            error=None,
+            error=stage_error,
         )
 
     @classmethod
@@ -1601,7 +1829,12 @@ class FiveAgentsAdapter:
                 fusion_issues.append(w)
 
         clean_issues = _deduplicate_warnings(fusion_issues)
-        fusion_passed = not any("阻断" in str(iss) or "致命" in str(iss) or "failed" in str(iss).lower() for iss in clean_issues)
+        # S-05：质量判定以**原生结构字段**为准，不做字符串命中推断。
+        # 旧实现 `not any("failed" in iss ...)` 会因为“曾经 failed 后重试成功”这类
+        # 技术提示把通过的融合判成不通过，也会漏掉真正的结构性问题。
+        native_status = str(getattr(result, "status", "") or "").lower()
+        consistency_passed = bool(getattr(consistency, "passed", True))
+        fusion_passed = native_status == "completed" and consistency_passed
 
         penalty = 0.0
         for iss in clean_issues:
@@ -1626,6 +1859,9 @@ class FiveAgentsAdapter:
             "market_scope": market_scope or ["中国 A 股", "港股", "美股", "中国 B 股"],
             "security_types": security_types or ["股票"],
             "reporting_currency": reporting_currency,
+            "agent_status": native_status or "unknown",
+            "hard_blocked": not consistency_passed,
+            "chain_delivery": _report_chain_delivery(run_id),
             "delivery_status": _resolve_delivery_status(art_dir, consistency),
             # 交付格式以实际产物为准，避免对外展示并未生成的格式
             "formats": delivered_formats,
@@ -1669,10 +1905,20 @@ class FiveAgentsAdapter:
 
         return StageResult(
             stage="report_fusion",
-            status="completed",
+            # S-05：原生 partial（缺格式 / 有实质问题）必须显式表达，
+            # 由状态机按 S-01 的暂停语义处理，不能被悄悄升格成正式完成。
+            status="failed" if native_status == "failed" else ("waiting_review" if native_status == "partial" else "completed"),
             revision=1,
             data=data,
             artifacts=artifacts,
             evidence_sources=["report_fusion_reviewers"],
-            error=None,
+            error=(
+                "研报融合失败：" + ("；".join(clean_issues[:3]) if clean_issues else "所有交付格式均未成功导出")
+                if native_status == "failed"
+                else (
+                    "研报融合部分交付：" + ("；".join(clean_issues[:3]) if clean_issues else "存在缺失格式或未解决项")
+                    if native_status == "partial"
+                    else None
+                )
+            ),
         )

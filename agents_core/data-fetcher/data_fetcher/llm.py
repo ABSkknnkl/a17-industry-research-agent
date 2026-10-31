@@ -85,7 +85,7 @@ class OpenAICompatibleLLM:
                 connect=30.0,
                 read=self.settings.fetch_timeout_seconds * 3,
             )
-            self._client = httpx.AsyncClient(timeout=timeout)
+            self._client = httpx.AsyncClient(timeout=timeout, trust_env=__import__('os').getenv('LLM_TRUST_ENV', '1') != '0')
         return self._client
 
     async def close(self) -> None:

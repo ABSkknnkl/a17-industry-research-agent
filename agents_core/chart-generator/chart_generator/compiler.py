@@ -53,6 +53,25 @@ class EChartsCompiler:
     """Deterministic compiler turning structured tables into safe, elegant ECharts options."""
 
     @staticmethod
+    def _resolve_axis_unit(table: NormalizedDataTable) -> str:
+        """返回共享轴的唯一单位；同轴出现多种单位时拒绝编译（R3 §6.3.3）。
+
+        旧实现（`_compile_bar` 等）在循环里不断覆盖 `unit`，最终用**最后一个
+        系列**的单位给整根轴命名——甲是万元、乙是亿元时，轴标「亿元」而甲的
+        数值仍是万元，差 1 万倍。这里要求同轴单位必须一致，否则明确报错，
+        由上游在 formulation 层统一单位后重试。
+        """
+        units = {
+            str(u) for u in (table.series_units or {}).values() if str(u or "").strip()
+        }
+        if len(units) > 1:
+            raise ValueError(
+                f"同一根轴出现多种单位 {sorted(units)}，拒绝按最后一个系列命名轴；"
+                "请先在 data_formulation 层统一目标单位"
+            )
+        return next(iter(units)) if units else ""
+
+    @staticmethod
     def compile(
         table: NormalizedDataTable,
         chart_type: str | ChartArchetype,
@@ -290,9 +309,8 @@ class EChartsCompiler:
     def _compile_bar(table: NormalizedDataTable, title: str, grid: dict[str, Any]) -> dict[str, Any]:
         """Compiles single or multi-series vertical bar chart."""
         series_list = []
-        unit = ""
+        unit = EChartsCompiler._resolve_axis_unit(table)
         for i, (s_name, s_data) in enumerate(table.series_data.items()):
-            unit = table.series_units.get(s_name, unit)
             series_list.append({
                 "name": s_name,
                 "type": "bar",
@@ -347,9 +365,9 @@ class EChartsCompiler:
     def _compile_line(table: NormalizedDataTable, title: str, grid: dict[str, Any], area: bool = False) -> dict[str, Any]:
         """Compiles single or multi-series line/area chart."""
         series_list = []
-        unit = ""
+        # R3：轴单位统一解析（同轴混合单位直接拒绝，不取最后一个系列）
+        unit = EChartsCompiler._resolve_axis_unit(table)
         for i, (s_name, s_data) in enumerate(table.series_data.items()):
-            unit = table.series_units.get(s_name, unit)
             s_dict: dict[str, Any] = {
                 "name": s_name,
                 "type": "line",

@@ -12,7 +12,7 @@ logger = logging.getLogger("api_routes")
 
 from backend.app.core.event_hub import event_hub
 from backend.app.core.storage import storage
-from backend.app.engine.state_machine import engine
+from backend.app.engine.state_machine import RevisionConflictError, engine
 from backend.app.schemas.workflow import (
     AgentTraceEvent,
     RevisionListResponse,
@@ -68,6 +68,10 @@ async def get_revision_endpoint(run_id: str, revision: int) -> WorkflowState:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"未找到版本快照: run_id={run_id}, revision={revision}",
         )
+    # S-02：历史实现漏了 return，正常路径实际返回 500（响应体为 null）
+    return state
+
+
 @router.get("/runs/{run_id}/feedback-history")
 async def get_feedback_history_endpoint(run_id: str):
     """获取指定任务的人机协同反馈与优化历史记录"""
@@ -87,6 +91,9 @@ async def submit_review_endpoint(run_id: str, req: ReviewRequest) -> WorkflowSta
         req.run_id = run_id
     try:
         return await engine.handle_review(req)
+    except RevisionConflictError as e:
+        # S-02：版本冲突必须是独立 409，不能被 ValueError→400 或通用异常→500 吞掉
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
@@ -193,6 +200,64 @@ async def download_artifact_endpoint(run_id: str, artifact_id: str):
     run_dir = storage.get_run_dir(run_id)
     artifacts_dir = run_dir / "artifacts"
 
+    # 0. S-02：报告类产物必须先通过「当前版本资格」检查，
+    #    不能只判断文件存在——编辑后旧 PDF 仍留在磁盘上供历史查阅，
+    #    但不得再从固定 ID / 原文件名入口当作当前版本返回。
+    _REPORT_ARTIFACT_IDS = {
+        "report_markdown": ".md",
+        "report_html": ".html",
+        "report_pdf": ".pdf",
+    }
+    is_report_artifact = artifact_id in _REPORT_ARTIFACT_IDS or artifact_id in (
+        "report.md",
+        "report.html",
+        "report.pdf",
+    )
+    draft_download = False
+    if is_report_artifact:
+        state = storage.load_state(run_id)
+        fusion = state.stage_results.get("report_fusion") if state else None
+        fusion_data = fusion.data if (fusion and isinstance(fusion.data, dict)) else {}
+
+        # R1：下载资格按「构建代次 vs 当前版本」判定，替代旧的永久
+        # downstream_stale 布尔（重建后永不被消费 → 永久 409）。
+        #
+        # - 新 run：融合完成时登记 built_at_revision；此后任何编辑都会使
+        #   state.revision 前进 → 代次不一致 → 409；重建/重导出后重新登记 → 恢复。
+        # - 历史 run（无 built_at_revision）：退化为旧口径——融合获批且无
+        #   未消费的 stale 标记即可下载，保持既有报告可访问。
+        built_at = fusion_data.get("built_at_revision")
+        status_ok = bool(fusion and fusion.status in ("approved", "completed"))
+        if built_at is not None:
+            try:
+                generation_ok = int(built_at) == state.revision
+            except (TypeError, ValueError):
+                generation_ok = False
+            eligible = status_ok and generation_ok and not fusion_data.get("delivery_blocked")
+        else:
+            stale_any = any(
+                (sr.data or {}).get("downstream_stale")
+                for sr in (state.stage_results.values() if state else [])
+                if isinstance(sr.data, dict)
+            )
+            eligible = status_ok and not stale_any and not fusion_data.get("delivery_blocked")
+
+        draft_download = fusion_data.get("release_mode") == "draft_with_warnings"
+        if built_at is not None:
+            quality = fusion_data.get("quality") or {}
+            content_ok = not fusion_data.get("hard_blocked")
+            formal_ok = (fusion_data.get("agent_status") != "partial"
+                         and quality.get("passed") is not False)
+            chain = fusion_data.get("chain_delivery") or {}
+            if chain.get("requested") and chain.get("status") != "complete":
+                formal_ok = False
+            eligible = eligible and content_ok and (draft_download or formal_ok)
+        if not eligible:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="当前报告产物已失效（内容已编辑待重建，或融合未获批），请重建后再下载",
+            )
+
     # 1. 常见固定 ID 映射
     id_map = {
         "report_markdown": "report.md",
@@ -239,7 +304,8 @@ async def download_artifact_endpoint(run_id: str, artifact_id: str):
     return FileResponse(
         path=str(target_path),
         media_type=mime_type,
-        filename=target_path.name,
+        filename=("draft-" + target_path.name) if draft_download else target_path.name,
+        headers={"X-Report-Release-Mode": "draft_with_warnings" if draft_download else "formal"},
     )
 
 

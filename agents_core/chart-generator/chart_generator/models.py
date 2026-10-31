@@ -293,6 +293,7 @@ class AppliedSkill(BaseModel):
 
 
 class ChartGenerationResult(BaseModel):
+    chain_quality: dict[str, Any] | None = None
     model_config = ConfigDict(extra="forbid")
     run_id: str
     source_report_id: str

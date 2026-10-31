@@ -30,12 +30,15 @@ from data_fetcher.skillhub import SkillHub
 
 
 _ETC_NOISE_RE = re.compile(r"等[\u4e00-\u9fa5]{0,4}(?=\s|$)")
+# R2：显式后缀证券代码（300070.SZ）里的 "." 是代码组成部分，不是标点噪声；
+# 判据先摘除合法代码 token 再检查标点，避免把「保留交易所信息」判成"含标点"。
+_CODE_TOKEN_RE = re.compile(r"(?<![0-9A-Z])\d{4,6}\.(?:SH|SZ|BJ|HK|SS|NO)(?![0-9A-Z])", re.IGNORECASE)
 
 
 def _compile_reasons(q: str) -> list[str]:
     """按验收口径返回未通过的判据原因（空列表 = 通过）。"""
     reasons: list[str] = []
-    if _PUNCT_RE.search(q):
+    if _PUNCT_RE.search(_CODE_TOKEN_RE.sub(" ", q)):
         reasons.append("含标点")
     if any(f in q for f in _FIELD_NAME_NOISE):
         reasons.append("含返回字段名")
@@ -149,7 +152,8 @@ def test_validate_tasks_compiles_query_before_signature():
         successful_task_ids=set(),
     )
     assert accepted
-    assert accepted[0].arguments["query"] == "碧水源 300070 SZ"
+    # R2：显式后缀证券代码原样保留（交易所信息不得被标点清理吃掉）
+    assert accepted[0].arguments["query"] == "碧水源 300070.SZ"
     assert not errors
 
 
