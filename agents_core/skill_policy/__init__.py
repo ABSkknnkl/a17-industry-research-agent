@@ -30,7 +30,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable
 
 # 来源标注取值
 SOURCE_MODEL = "model"

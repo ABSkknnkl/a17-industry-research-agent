@@ -1,7 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 StageName = Literal[
     "data_fetch",
@@ -120,6 +120,8 @@ class RevisionListResponse(BaseModel):
 
 
 class DataFetchOptions(BaseModel):
+    chain_research_strategy: Literal["profile_guided", "explore"] = "profile_guided"
+    chain_profile_id: str | None = None
     keywords: list[str] | None = None
     industry_scope: list[str] | None = None
     time_range: list[str] | None = None
@@ -137,6 +139,9 @@ class ResearchBrief(BaseModel):
 
 
 class ChartGenerationOptions(BaseModel):
+    want_industry_chain: bool | None = None
+    defaulted_focus: bool = False
+    chain_scope: Literal["entity", "industry"] | None = None
     chart_mode: str | None = None
     chart_type: str | None = None
     requested_chart_count: int | None = None
@@ -163,6 +168,29 @@ class ResearchInput(BaseModel):
     research_brief: ResearchBrief | None = None
     chart_generate_options: ChartGenerationOptions | None = None
     selected_skills: list[str] = Field(default_factory=list)
+
+
+class RunExecutionSnapshot(BaseModel):
+    """run 级执行快照（D3 §10.3）：创建时解析一次，后续阶段与 resume 共用。
+
+    目的：不让 A1/A2/A3 各自读进程环境变量重新选路——那会导致同一 run
+    里引擎/画像/主数据版本不一致，且中途改环境会改变已有 run 的行为。
+
+    兼容旧 run：缺该快照时显式标记 legacy，不默认换引擎、不套新名单。
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    engine: str = "legacy"
+    chain_engine: str = ""              # 空 = 未启用 V2；evidence_v2 = 显式启用
+    research_strategy: str = "profile_guided"
+    profile_id: str | None = None
+    profile_version: str | None = None
+    reference_release_id: str | None = None
+    source_policy_version: str | None = None
+    resolved_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    legacy: bool = False
+    notes: list[str] = Field(default_factory=list)
 
 
 class RunCreateRequest(BaseModel):

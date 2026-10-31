@@ -11,7 +11,6 @@ import re
 import secrets
 from typing import Any
 
-from pydantic import ValidationError
 
 from chapter_writer.config import Settings
 from chapter_writer.llm import ChapterLLM, OpenAICompatibleLLM
@@ -433,11 +432,6 @@ class ChapterWriterAgent:
             (artifact_dir/"events.jsonl").write_text("".join(json.dumps(x,ensure_ascii=False)+"\n" for x in events),encoding="utf-8")
         return result
 
-    def _context(self,request:ChapterWritingRequest,chapter_id:str)->dict[str,Any]:
-        outline=request.outline or DEFAULT_OUTLINE
-        match=next((c for c in outline if c.chapter_id==chapter_id),outline[0])
-        return DynamicEvidenceRetriever(request).retrieve(chapter_id,match)
-
     def _audit_chapter(
         self,
         chapter: ChapterDraft,
@@ -520,8 +514,13 @@ class ChapterWriterAgent:
                 nums = extract_numbers(para.text)
                 substantive_nums = [n for n in nums if not YEAR_OR_ORDINAL_RE.match(n.strip())]
 
+                # R4（V8 最终方案 §7.2）：**假设说明不能为已发生的事实数字提供依据**。
+                # 旧实现的 `or para.assumption_note` 让模型自填任意一句"综合测算"
+                # 就能豁免缺证据检查。现在只有 kind 维度（scenario/risk/methodology/
+                # transition）保留窄通道；assumption_note 一律不构成豁免。
                 if substantive_nums and not para.evidence_ids and not (
-                    para.kind in ("scenario", "risk", "methodology", "transition") or para.assumption_note
+                    para.kind in ("scenario", "risk", "methodology", "transition")
+                    and bool(re.search(r"假设|情景|如果|若|设定|敏感性", para.text))
                 ):
                     matched_eids: list[str] = []
                     for eid, rec in evidence_dict.items():
@@ -537,13 +536,13 @@ class ChapterWriterAgent:
                                 matched_eids.append(eid)
                     if matched_eids:
                         para.evidence_ids = list(dict.fromkeys(matched_eids))
-                    else:
-                        para.assumption_note = "基于产业公开资料及研报上下文综合测算"
 
-                if extract_numbers(para.text) and not para.evidence_ids and not (
-                    para.kind in ("scenario", "risk", "methodology", "transition") or para.assumption_note
+                # R4：第二道检查与第一道同口径；assumption_note 不再是豁免项。
+                if substantive_nums and not para.evidence_ids and not (
+                    para.kind in ("scenario", "risk", "methodology", "transition")
+                    and bool(re.search(r"假设|情景|如果|若|设定|敏感性", para.text))
                 ):
-                    issues.append(f"{para.paragraph_id} 数字缺少证据或假设说明")
+                    issues.append(f"{para.paragraph_id} 数字缺少证据支撑（假设说明不能替代证据）")
 
                 normalized = "".join(para.text.split())
                 if normalized in seen_text:
@@ -570,6 +569,14 @@ class ChapterWriterAgent:
                     if getattr(mc, "evidence_ids", None):
                         _note_dropped("指标卡 ", set(mc.evidence_ids) - allowed)
                         mc.evidence_ids = [e for e in mc.evidence_ids if e in allowed]
+                    # R4（V8 最终方案 §7.1）：指标卡是证据承载对象——
+                    # 承载数值却无任何合法证据绑定，必须计入审计问题，
+                    # 不能因为"看起来结构化"就默认可信。
+                    mc_value = str(getattr(mc, "value", "") or "")
+                    if mc_value and extract_numbers(mc_value) and not getattr(mc, "evidence_ids", None):
+                        issues.append(
+                            f"{section.section_id} 指标卡「{getattr(mc, 'label', '')}」数值缺少证据绑定"
+                        )
                     if global_facts and global_facts.get("market_cap_wan_yi") and "市值" in mc.label:
                         cw = global_facts["market_cap_wan_yi"]
                         if "22.14" in str(mc.value):
@@ -579,6 +586,24 @@ class ChapterWriterAgent:
             if section.comparison_table and getattr(section.comparison_table, "evidence_ids", None):
                 _note_dropped("对比表 ", set(section.comparison_table.evidence_ids) - allowed)
                 section.comparison_table.evidence_ids = [e for e in section.comparison_table.evidence_ids if e in allowed]
+            # R4：对比表同样承载数值——行内含实质数字却无证据绑定，记为审计问题
+            if section.comparison_table is not None:
+                table_rows = getattr(section.comparison_table, "rows", None) or []
+                table_eids = getattr(section.comparison_table, "evidence_ids", None) or []
+                row_nums: list[str] = []
+                for row in table_rows:
+                    cells = row if isinstance(row, (list, tuple)) else (
+                        list(row.values()) if isinstance(row, dict) else [row]
+                    )
+                    for cell in cells:
+                        row_nums.extend(
+                            n for n in extract_numbers(str(cell))
+                            if not YEAR_OR_ORDINAL_RE.match(n.strip())
+                        )
+                if row_nums and not table_eids:
+                    issues.append(
+                        f"{section.section_id} 对比表数值缺少证据绑定"
+                    )
             if section.callouts:
                 for co in section.callouts:
                     if getattr(co, "evidence_ids", None):

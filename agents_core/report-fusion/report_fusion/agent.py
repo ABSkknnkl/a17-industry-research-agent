@@ -24,6 +24,145 @@ except ModuleNotFoundError:  # 单包测试或独立运行时 agents_core 不在
 EventEmitter=Callable[[dict[str,Any]],Awaitable[None]]
 NUMBER_RE=re.compile(r"(?<![A-Za-z0-9_-])[-+]?\d+(?:\.\d+)?%?")
 
+_SVG_ROOT_RE=re.compile(r"<svg\b[^>]*>",re.IGNORECASE)
+_SVG_FIXED_W_RE=re.compile(r'\swidth="\d+(?:\.\d+)?(?:px)?"')
+
+def _rewrite(artifact_dir: Path | None, name: str, data: bytes) -> None:
+    """按最终视图就地重写文本格式（Markdown / HTML）。
+
+    S-05：delivery_status 在导出后由最终事实决定，正文里嵌的值必须与之一致，
+    否则读者看到“ready”但文件清单缺格式。只做原地覆盖，不新增产物。
+    """
+    if artifact_dir is None:
+        return
+    path = artifact_dir / name
+    if path.exists():
+        path.write_bytes(data)
+
+
+def _check_final_view(
+    chapters: list[Any], embedded: list[Any], request: "ReportFusionRequest", summary: Any = None
+) -> tuple[list[str], list[str]]:
+    """对**最终要导出的对象**做校验，而不是复用编辑前的输入诊断。
+
+    覆盖（V8 方案 §8.3 第 3 步）：
+    - 未知证据引用（按最终章节的 evidence_ids 与新证据目录比对）
+    - 图表挂载位置与 ready 状态
+    - 关键图的 SVG 是否真实可读
+
+    Returns:
+        (blocking, warnings)。blocking 非空即不得宣告正式完成。
+    """
+    blocking: list[str] = []
+    warnings: list[str] = []
+    allowed = set(request.report.evidence_index)
+
+    def check_references(value: Any, location: str) -> None:
+        if hasattr(value, "model_dump"):
+            value = value.model_dump(mode="json")
+        if isinstance(value, dict):
+            for key, child in value.items():
+                if key in ("evidence_ids", "evidence_record_ids", "point_evidence_ids") and isinstance(child, list):
+                    unknown = {item for item in child if isinstance(item, str) and item} - allowed
+                    if unknown:
+                        blocking.append(f"{location} 含未知证据引用 {sorted(unknown)}")
+                else:
+                    check_references(child, f"{location}.{key}")
+        elif isinstance(value, (list, tuple)):
+            for index, child in enumerate(value):
+                check_references(child, f"{location}[{index}]")
+
+    # 包括摘要、指标卡、表格与 callout，不能只检查段落的引用。
+    check_references(chapters, "chapters")
+    check_references(summary, "summary")
+
+    for chapter in chapters:
+        for section in getattr(chapter, "sections", []):
+            for para in getattr(section, "paragraphs", []):
+                unknown = set(getattr(para, "evidence_ids", []) or []) - allowed
+                if unknown:
+                    pid = getattr(para, "paragraph_id", "?")
+                    blocking.append(f"{pid} 含未知证据引用 {sorted(unknown)}")
+
+    embedded_map = {
+        getattr(chart, "chart_id", ""): chart for chart in embedded
+    }
+    # 声明为 ready 但没能进入 embedded 的图（缺可读图形）同样阻断正式交付
+    declared_ready = {
+        c.chart_id
+        for c in (request.charts.charts if request.charts else [])
+        if getattr(c, "status", "") == "ready"
+    }
+    dropped = declared_ready - set(embedded_map)
+    for cid in sorted(dropped):
+        blocking.append(f"{cid} 声明为 ready 但缺少可读图形，未进入正式交付")
+    for chapter in chapters:
+        for section in getattr(chapter, "sections", []):
+            for cid in getattr(section, "chart_ids", []) or []:
+                if cid not in embedded_map:
+                    warnings.append(f"{getattr(section, 'section_id', '?')} 引用的图表 {cid} 未就绪")
+
+    for chart in embedded:
+        cid = getattr(chart, "chart_id", "?")
+        unknown = set(getattr(chart, "evidence_ids", []) or []) - allowed
+        if unknown:
+            blocking.append(f"{cid} 含未知证据引用 {sorted(unknown)}")
+        render_mode = getattr(chart, "render_mode", "") or ""
+        # EmbeddedChart 的正文字段就叫 `svg`（不是 inline_svg）；
+        # 兼容 image_uri 承载位图的 generated_image 模式。
+        svg_payload = getattr(chart, "svg", None)
+        readable = False
+        if isinstance(svg_payload, str) and svg_payload.strip():
+            if 'data-placeholder="true"' in svg_payload:
+                # 占位图不是真实图形，不得计入 ready
+                readable = False
+            elif svg_payload.lstrip().startswith("<svg"):
+                readable = True
+            else:
+                try:
+                    readable = Path(svg_payload).is_file() and Path(svg_payload).stat().st_size > 0
+                except OSError:
+                    readable = False
+        if render_mode == "generated_image":
+            image_uri = getattr(chart, "image_uri", None)
+            if isinstance(image_uri, str) and image_uri:
+                try:
+                    readable = Path(image_uri).is_file() and Path(image_uri).stat().st_size > 0
+                except OSError:
+                    readable = False
+        if not readable:
+            # 关键图 SVG 不可读：不得计入 ready，也不生成占位图冒充成功
+            blocking.append(f"{cid} 的 SVG 文件不可读")
+            try:
+                chart.status = "failed"
+            except Exception:
+                pass
+    return list(dict.fromkeys(blocking)), list(dict.fromkeys(warnings))
+
+
+def _fit_svg_for_page(svg:str)->str:
+    """把带固定像素宽高的 SVG 根标签改成自适应页宽（2026-10-17）。
+
+    起因：产业链图的确定性 SVG 根标签是 ``width="1440" height="1020"``（前端内联要
+    像素级布局），但报告页在 A4 下的内容宽只有约 6.5in —— 原样嵌入会把右侧两栏裁掉。
+    ECharts 那批 SVG 只写 viewBox 不写 width，天然自适应，所以历史没暴露这个问题。
+
+    只改**根标签**的 width/height，不动 inner 元素与 viewBox（缩放靠 viewBox 完成）。
+    """
+    if not svg:
+        return svg
+    match=_SVG_ROOT_RE.search(svg)
+    if not match:
+        return svg
+    tag=match.group(0)
+    if not _SVG_FIXED_W_RE.search(tag):
+        return svg
+    fixed=re.sub(r'\swidth="[^"]*"',' width="100%"',tag)
+    fixed=re.sub(r'\sheight="[^"]*"','',fixed)
+    if "style=" not in fixed:
+        fixed=fixed[:-1]+' style="max-width:100%;height:auto;display:block;margin:0 auto;">'
+    return svg[:match.start()]+fixed+svg[match.end():]
+
 # 并集合并后可挂载的总编审校规范上限
 FUSION_SKILL_LIMIT = 10
 SYSTEM_PROMPT="""你是行业研究报告总编辑。只能编辑已有内容，不能补充外部事实、数字或来源。skills 只提供编辑方法，绝不是事实来源。
@@ -189,6 +328,12 @@ class ReportFusionAgent:
         else:
             await record("skill_linter_checked", passed=not issues, issues=issues)
         embedded=self._embed_charts(request,chapters,warnings)
+        # S-05：输入诊断（_check_inputs）只作内部审计基线；真正的交付判定
+        # 必须针对**归位后的最终章节与嵌入图**再校验一次。
+        final_blocking, final_warnings = _check_final_view(chapters, embedded, request, summary)
+        for w in final_warnings:
+            if w not in warnings:
+                warnings.append(w)
         used_evidence = {
             evidence_id
             for chapter in chapters
@@ -226,6 +371,9 @@ class ReportFusionAgent:
         elif hasattr(cm_obj, "model_dump"):
             cm_dict = cm_obj.model_dump(mode="json")
 
+        # S-05 + R4：delivery_status 先按**已知**事实取一个确定性初值，
+        # 导出后若事实变化再统一重渲染三格式，保证 MD/HTML/PDF 来自同一最终视图。
+        provisional_limits = bool(issues or final_blocking)
         view=ReportViewModel(
             report_id=report_id,
             title=f"{request.report.subject}行业研究报告",
@@ -235,7 +383,7 @@ class ReportFusionAgent:
             report_depth=request.options.report_depth,
             visual_style=request.options.visual_style,
             chart_mode=getattr(request.options, "chart_mode", "auto") or "auto",
-            delivery_status="ready" if not all_warnings else "ready_with_limits",
+            delivery_status="ready_with_limits" if provisional_limits else "ready",
             executive_summary=summary,
             chapters=chapters,
             charts=embedded,
@@ -259,14 +407,110 @@ class ReportFusionAgent:
                 else:await save("pdf","report.pdf",await self.pdf_renderer(html,self.settings.pdf_timeout_seconds))
             except Exception as exc:
                 warnings.append(f"{fmt} 导出失败：{str(exc)[:300]}");await record("format_failed",format=fmt,error=str(exc)[:300])
-        status="failed" if not successful else "partial" if len(successful)<len(request.options.formats) or issues or rejected else "completed"
+
+        # S-05：状态与交付资格由**最终事实**决定——实际成功格式数、最终校验结论、
+        # 以及真实产出文件，不再依赖“失败字符串里有没有 failed”这类推断。
+        missing_formats = [f for f in request.options.formats if f not in successful]
+        empty_outputs = []
+        for entry in artifacts:
+            try:
+                if Path(entry.uri).stat().st_size <= 0:
+                    empty_outputs.append(entry.kind)
+            except OSError:
+                empty_outputs.append(entry.kind)
+        final_blocking = list(dict.fromkeys([*issues, *final_blocking]))
+        consistency.passed = not final_blocking
+        consistency.issues = list(final_blocking)
+        if missing_formats:
+            warnings.append(f"缺失交付格式：{'、'.join(missing_formats)}（非完整交付）")
+        if empty_outputs:
+            warnings.append(f"导出文件为空：{'、'.join(empty_outputs)}")
+            final_blocking.append(f"导出文件为空：{'、'.join(empty_outputs)}")
+
+        if not successful:
+            status = "failed"
+        elif missing_formats or final_blocking or rejected:
+            status = "partial"
+        else:
+            status = "completed"
+
+        # delivery_status 反映最终的正式交付能力：
+        # - failed / partial / 缺格式 / 仍有阻塞项  → ready_with_limits
+        # - 仅剩非阻断的技术性提示                  → ready
+        has_substantive_limit = bool(
+            missing_formats or final_blocking or empty_outputs or rejected or not successful
+        )
+        final_delivery = "ready_with_limits" if has_substantive_limit else "ready"
+        previous_delivery = view.delivery_status
+
+        # R4（V8 最终方案 §7.3 步骤 6）：三种格式必须来自**同一最终视图**。
+        # 只要交付状态相对初值发生变化，MD/HTML/PDF 全部按新视图重出；
+        # 任一格式重出失败就撤销该格式的发布资格（不能留旧文件冒充满分交付）。
+        if final_delivery != previous_delivery:
+            view.delivery_status = final_delivery
+            revoked: list[str] = []
+            if "markdown" in successful:
+                try:
+                    md = render_markdown(view)
+                    _rewrite(artifact_dir, "report.md", md.encode())
+                except Exception as exc:
+                    revoked.append("markdown")
+                    warnings.append(f"markdown 重渲染失败：{str(exc)[:200]}")
+                    await record("format_failed", format="markdown", error=str(exc)[:200])
+            if "html" in successful:
+                try:
+                    html = render_html(view)
+                    _rewrite(artifact_dir, "report.html", html.encode())
+                except Exception as exc:
+                    revoked.append("html")
+                    warnings.append(f"html 重渲染失败：{str(exc)[:200]}")
+                    await record("format_failed", format="html", error=str(exc)[:200])
+            if "pdf" in successful:
+                # PDF 由 HTML 渲染而来：PDF 必须基于重渲染后的最终 HTML
+                try:
+                    pdf_bytes = await self.pdf_renderer(html, self.settings.pdf_timeout_seconds)
+                    _rewrite(artifact_dir, "report.pdf", pdf_bytes)
+                except Exception as exc:
+                    revoked.append("pdf")
+                    warnings.append(f"pdf 重渲染失败：{str(exc)[:200]}")
+                    await record("format_failed", format="pdf", error=str(exc)[:200])
+
+            if revoked:
+                # 撤销发布资格：从可交付格式中移除，并把状态降为部分交付
+                successful = [f for f in successful if f not in revoked]
+                artifacts = [a for a in artifacts if a.kind not in revoked]
+                for fmt in revoked:
+                    try:
+                        (artifact_dir / {"markdown": "report.md", "html": "report.html", "pdf": "report.pdf"}[fmt]).unlink(missing_ok=True)
+                    except OSError:
+                        pass
+                status = "failed" if not successful else "partial"
+                verdict_blocked = True
+            else:
+                verdict_blocked = False
+        else:
+            view.delivery_status = final_delivery
+            verdict_blocked = False
+
+        # 重渲染/撤销阶段的警告也必须进入最终清单（此前在重渲染前就定稿会漏掉）
+        pending_warnings = list(dict.fromkeys([*all_warnings, *warnings]))
+
         if artifact_dir:
             view_path=artifact_dir/"report_view.json";view_data=(view.model_dump_json(indent=2)+"\n").encode();view_path.write_bytes(view_data);artifacts.append(ArtifactEntry(kind="json",uri=str(view_path.resolve()),sha256=_sha(view_data),size_bytes=len(view_data)))
             consistency_path=artifact_dir/"consistency_report.json";consistency_data=(consistency.model_dump_json(indent=2)+"\n").encode();consistency_path.write_bytes(consistency_data);artifacts.append(ArtifactEntry(kind="json",uri=str(consistency_path.resolve()),sha256=_sha(consistency_data),size_bytes=len(consistency_data)))
-            manifest={"report_id":report_id,"generated_at":datetime.now().astimezone().isoformat(),"artifacts":[x.model_dump(mode="json") for x in artifacts]}
-            manifest_data=(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n").encode();manifest_path=artifact_dir/"manifest.json";manifest_path.write_bytes(manifest_data);artifacts.append(ArtifactEntry(kind="json",uri=str(manifest_path.resolve()),sha256=_sha(manifest_data),size_bytes=len(manifest_data)))
-        result=ReportFusionResult(run_id=run_id,report_id=report_id,subject=request.report.subject,status=status,formats=successful,applied_skills=[AppliedSkill(name=s.name,description=s.description,source=s.source,adaptation=skill_reasons.get(s.name, s.adaptation)) for s in skills],artifacts=artifacts,consistency=consistency,warnings=list(dict.fromkeys([*all_warnings,*warnings])),artifact_dir=str(artifact_dir.resolve()) if artifact_dir else None)
-        await record("fusion_completed",status=status,formats=successful)
+            # manifest 最后生成，保证 sha256/size 对应真实落盘内容（重渲染后已变化）
+            refreshed = []
+            for entry in artifacts:
+                try:
+                    data = Path(entry.uri).read_bytes()
+                except OSError:
+                    continue
+                refreshed.append(ArtifactEntry(kind=entry.kind, uri=entry.uri, sha256=_sha(data), size_bytes=len(data)))
+            manifest={"report_id":report_id,"generated_at":datetime.now().astimezone().isoformat(),"artifacts":[x.model_dump(mode="json") for x in refreshed]}
+            manifest_data=(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n").encode();manifest_path=artifact_dir/"manifest.json";manifest_path.write_bytes(manifest_data);refreshed.append(ArtifactEntry(kind="json",uri=str(manifest_path.resolve()),sha256=_sha(manifest_data),size_bytes=len(manifest_data)))
+            artifacts = refreshed
+        result=ReportFusionResult(run_id=run_id,report_id=report_id,subject=request.report.subject,status=status,formats=successful,applied_skills=[AppliedSkill(name=s.name,description=s.description,source=s.source,adaptation=skill_reasons.get(s.name, s.adaptation)) for s in skills],artifacts=artifacts,consistency=consistency,warnings=pending_warnings,artifact_dir=str(artifact_dir.resolve()) if artifact_dir else None)
+        await record("fusion_completed",status=status,formats=successful,missing_formats=missing_formats)
         if artifact_dir:(artifact_dir/"events.jsonl").write_text("".join(json.dumps(x,ensure_ascii=False)+"\n" for x in events),encoding="utf-8")
         return result
 
@@ -659,7 +903,20 @@ class ReportFusionAgent:
             if not svg and chart.svg_uri:
                 try:svg=Path(chart.svg_uri).read_text(encoding="utf-8")
                 except OSError:warnings.append(f"图表 {cid} 的 SVG 文件不可读")
-            if not svg:svg=f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 180"><rect width="100%" height="100%" fill="#f8fafc"/><text x="480" y="90" text-anchor="middle" fill="#64748b">{chart.title}：图表预览不可用</text></svg>'
+            if not svg:
+                # S-05：缺图时**保留图位与编号**（编号重排依赖图位存在），
+                # 但插入的占位图带 data-placeholder 标记，最终校验据此判为不可交付，
+                # 不再像旧实现那样用一张灰色占位图冒充“图表正常”。
+                warnings.append(f"图表 {cid} 缺少可读图形（svg_uri 不可用），不计入正式交付")
+                svg=(
+                    f'<svg xmlns="http://www.w3.org/2000/svg" data-placeholder="true" '
+                    f'viewBox="0 0 960 180"><rect width="100%" height="100%" fill="#f8fafc"/>'
+                    f'<text x="480" y="90" text-anchor="middle" fill="#64748b">'
+                    f'{chart.title}：图表预览不可用</text></svg>'
+                )
+            # 固定像素宽高的 SVG（产业链图 1440px）在 A4 页宽下会被裁掉右侧 → 改自适应
+            svg=_fit_svg_for_page(svg)
+
             
             # Re-index canonical figure number strictly in physical reading order
             fig_number = f"{prefix_str} {new_idx}"

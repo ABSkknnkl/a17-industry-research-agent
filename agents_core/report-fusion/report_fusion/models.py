@@ -69,6 +69,10 @@ class ChartSpec(BaseModel):
     render_mode:str="echarts";image_uri:str|None=None;image_mime_type:str|None=None
     generation_prompt:str|None=None;generation_prompt_model:str|None=None;generation_image_model:str|None=None
     chain_template:str|None=None;chain_graph:dict[str,Any]|None=None
+    # 补充视图（2026-10-17）：产业链「HTML 排版版」与主图（确定性 SVG）并存。
+    # 与 A3 侧 ChartSpec 同名同义，两份契约必须同步加字段——这一份是 extra="ignore"，
+    # 漏加会静默丢字段（契约副本坑）。PDF 仍只嵌主图（有连线），不嵌补充版。
+    supplement_image_uri:str|None=None;supplement_html_uri:str|None=None;supplement_note:str|None=None
 
 class ChartResult(BaseModel):
     model_config=ConfigDict(extra="ignore")

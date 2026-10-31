@@ -1,0 +1,78 @@
+{
+  "name": "ChainKnowledgeGraph（A股产业链知识底座）",
+  "source": "https://github.com/lansky79/ChainKnowledgeGraph",
+  "local_origin": "~/Downloads/ChainKnowledgeGraph-main/data/*.json",
+  "imported_at": "2026-10-25",
+  "data_as_of": "2021-10（以 company.json 的 time 字段为准；2022 年后更名靠别名表兜）",
+  "update_policy": {
+    "why": "底座是历史快照：2021 年之后上市/更名/转型的公司都不在里面，且申万分类会滞后（双环传动归「底盘与发动机系统」而主业是 RV 减速器）。所以它只能做「放行依据」，不能做「唯一依据」——不命中不等于错。",
+    "trigger": [
+      "同一行业连续 2 次真跑出现 kb_missing 占比 > 60%（说明底座覆盖不动这个行业）",
+      "上游仓库 ChainKnowledgeGraph 有 release 更新（检查 company.json 的 time 字段是否晚于 2021-10）",
+      "新增画像（chart 画像超过 30 个）需要新的行业锚点"
+    ],
+    "steps": [
+      "1. 从 ~/Downloads/ChainKnowledgeGraph-main/data/ 重新导出 4 张表的 JSONL（company / company_industry / company_product / product）",
+      "2. 覆盖 chart_kb/*.jsonl，**不要**动 industry_up 与 product_product（已实测弃用，见 unusable_tables）",
+      "3. 更新本文件的 imported_at / data_as_of / counts",
+      "4. 跑 ./.venv/bin/python scripts/verify_chain_kb.py —— 金标准集必须仍是「品牌误杀 0、供应商拦截 ≥60%」",
+      "5. 跑 scripts/score_chain_baseline.py 对比 KB 命中率有没有下降"
+    ],
+    "do_not": "不要为了让命中率好看而放宽 _role_of 的词表——2019 年以前那种「文本重合」判据的后果是 86 项里只对 48 项、误杀 4 个真品牌（见 chain_kb 模块文档）。"
+  },
+  "format": "JSONL（每行一个 JSON 对象）",
+  "counts": {
+    "company": 4654,
+    "industry": 511,
+    "product": 95559,
+    "company_industry": 4430,
+    "company_product": 53785,
+    "industry_industry": 480,
+    "industry_up": 335,
+    "product_product": 110153
+  },
+  "used_tables": ["company", "company_industry", "company_product", "product"],
+  "unusable_tables": {
+    "industry_up": "所谓「上游行业」是企业多元化经营共现，不是产业链上游：全部上游边只有 10.1% 落在同一申万一级门类内；「白酒Ⅲ」的上游是「电机Ⅲ/地面兵装Ⅲ/钾肥」，「锂电池」的上游是「果蔬加工/氮肥」。本模块不加载。",
+    "product_product": "关系来自菜品/配料语料（to_entity 前几位是 冰糖/大米/蛋黄/金针菇），与工业产业链无关。本模块不加载。",
+    "industry": "仅申万编码，当前无调用方；文件保留备查。",
+    "industry_industry": "仅申万层级树，当前无调用方；文件保留备查。"
+  },
+  "apis": {
+    "company_profile(name)": "企业画像：全称/代码/所属行业/主营产品（按营收权重降序）。逐级剥后缀 + 别名表 + 唯一前缀容错。",
+    "company_fit(company, slot_text, role)": "四态归属裁决：kb_backed / kb_missing / kb_unknown / kb_mismatch。只有 kb_mismatch 允许据此改图。",
+    "slot_companies(slot_text)": "按具体品类反查候选企业（泛词不返回）。仅作候选池，不是权威名单。",
+    "industry_companies(industry)": "同申万细分行业的公司（品牌卡兜底/同业对标）。",
+    "match_slots(company, labels)": "把放错位置的企业归位到它更像在干的环节。",
+    "is_product_word(name)": "判断该词是产品/品类而不是公司（P1 主题词进品牌卡的通用判据）。",
+    "industry_names()": "KB 里出现过的申万行业名集合（只做「这个环节名是不是真实品类」的校验，不做环节生成）。",
+    "coverage(names)": "一批企业名的 KB 命中率。",
+    "stats()": "底座规模与可用性。"
+  },
+  "consumers": {
+    "chain_topology.apply_company_fit": "F17 品牌卡归属裁决（repair 0.25 步），只用 kb_mismatch 改图",
+    "chain_topology.classify_company_traceability": "F1 企业名分层，靠 known_company_names 避让画像已裁决的名字",
+    "chain_profile.known_company_names": "KB 的避让名单：画像说了算的名字，KB 不参与否定",
+    "chain_ontology": "环节命名：**只校验不生成**（用行业名反推上游会得到「平衡项目/配件/贸易」，实测不可用）"
+  },
+  "coverage_caveats": [
+    "仅覆盖 A 股上市公司；境外主体（如波士顿动力）与未上市公司（宇树科技、大疆、联想）无记录，命中不到时不得据此删除",
+    "数据时间以 company.json 的 time 字段为准（2021-10），属于历史底座；2022 年后更名（隆基绿能←隆基股份、TCL中环←中环股份）靠别名表兜，新增公司与业务变化以联网检索为准",
+    "rel_weight 来自年报'按经营产品统计的营收占比'，同一份年报的分期口径可能使权重之和大于 1；权重只用于排序，不作精确占比引用",
+    "申万行业分类有滞后：双环传动归「底盘与发动机系统」（实际主业 RV 减速器）、生益科技归「印制电路板」（主业覆铜板）→ 行业命中只作**放行**依据，不命中才看产品，两者都不命中才可能判 kb_mismatch",
+    "已知漏放边界：申万把绿的谐波/雷赛智能等零部件厂也归进「机器人」，行业名层面无法与埃斯顿区分 → 这类一律放行，宁可漏放、不可误杀",
+    "实测：8 行业金标准集品牌位 0 误杀 / 供应商拦截 31/45（69%）；笔记本图这类消费电子主题 5/5 全部 kb_missing（品牌多为境外/未上市）"
+  ],
+  "acceptance": {
+    "script": "scripts/verify_chain_kb.py",
+    "baseline_scorecard": "scripts/score_chain_baseline.py（历史产物离线打分，含覆盖率/泛词/结构命中/KB 命中）",
+    "golden_set": "agents_core/chart-generator/tests/golden/chain_brand_golden.json",
+    "tests": [
+      "agents_core/chart-generator/tests/test_chain_kb_20261025.py",
+      "agents_core/chart-generator/tests/test_chain_company_fit_20261025.py",
+      "agents_core/chart-generator/tests/test_chain_tier_coexist_20261025.py",
+      "agents_core/chart-generator/tests/test_chain_ontology_20261025.py",
+      "agents_core/chart-generator/tests/test_chain_role_slots_20261025.py"
+    ]
+  }
+}

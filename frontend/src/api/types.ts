@@ -223,6 +223,14 @@ interface ChartSpecBase extends ChartMetadata {
   source_name?: string | null
   updated_at?: string | null
   svg_uri?: string | null
+  /**
+   * 补充视图（2026-10-17）：产业链图的「LLM 排版版」截图，与主图并存。
+   * 主图恒为确定性 SVG（有连线与箭头），补充版只有卡片与连线文字标签，
+   * 因此它**不能顶替主图**，只作为可切换的细读视图。
+   */
+  supplement_image_uri?: string | null
+  supplement_html_uri?: string | null
+  supplement_note?: string | null
 }
 
 interface ChartImageMetadata {
@@ -241,6 +249,9 @@ export type ChartSpec = ChartSpecBase &
     | ({ render_mode: 'generated_image'; chart_type: 'industry_chain' } & {
         [K in keyof ChartImageMetadata]-?: NonNullable<ChartImageMetadata[K]>
       })
+    // 产业链 SVG 矢量直出（2026-10-07）：后端确定性模板渲染的 SVG 经 inline_svg 下发，
+    // 前端消毒后内联渲染，浏览器无损缩放（替代 ECharts canvas 位图）。
+    | ({ render_mode: 'svg'; inline_svg?: string | null } & ChartImageMetadata)
   )
 
 interface ChartReferenceBase extends ChartMetadata {

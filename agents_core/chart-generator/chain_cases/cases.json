@@ -1,0 +1,64 @@
+{
+  "version": 2,
+  "note": "用户提供的 50 个 2026 热门行业主题。level 为期望覆盖等级：L2 龙头+禁配齐备、L1 只有龙头、L0 走通用降级。category 对应原始赛道分类。",
+  "cases": [
+    {"id": "SEMI-01", "subject": "先进逻辑芯片（CPU/GPU）", "category": "半导体与电子信息", "quadrant": "A", "level": "L1"},
+    {"id": "SEMI-02", "subject": "半导体存储芯片（DRAM/NAND）", "category": "半导体与电子信息", "quadrant": "A", "level": "L1"},
+    {"id": "SEMI-03", "subject": "光刻设备", "category": "半导体与电子信息", "quadrant": "A", "level": "L2"},
+    {"id": "SEMI-04", "subject": "半导体核心材料", "category": "半导体与电子信息", "quadrant": "A", "level": "L1"},
+    {"id": "SEMI-05", "subject": "先进封装与Chiplet", "category": "半导体与电子信息", "quadrant": "A", "level": "L1"},
+    {"id": "SEMI-06", "subject": "AI服务器", "category": "半导体与电子信息", "quadrant": "A", "level": "L1"},
+    {"id": "SEMI-07", "subject": "光模块与光通信", "category": "半导体与电子信息", "quadrant": "A", "level": "L1"},
+    {"id": "SEMI-08", "subject": "智能手机消费电子", "category": "半导体与电子信息", "quadrant": "A", "level": "L1"},
+    {"id": "SEMI-09", "subject": "OLED/MiniLED显示面板", "category": "半导体与电子信息", "quadrant": "A", "level": "L1"},
+    {"id": "SEMI-10", "subject": "功率半导体与模拟芯片", "category": "半导体与电子信息", "quadrant": "A", "level": "L1"},
+
+    {"id": "NEWE-01", "subject": "光伏全产业链（硅料→电站）", "category": "新能源与电力设备", "quadrant": "A", "level": "L1"},
+    {"id": "NEWE-02", "subject": "海上风电", "category": "新能源与电力设备", "quadrant": "A", "level": "L2"},
+    {"id": "NEWE-03", "subject": "电化学储能系统", "category": "新能源与电力设备", "quadrant": "A", "level": "L1"},
+    {"id": "NEWE-04", "subject": "动力锂电池", "category": "新能源与电力设备", "quadrant": "A", "level": "L1"},
+    {"id": "NEWE-05", "subject": "特高压与智能电网", "category": "新能源与电力设备", "quadrant": "A", "level": "L1"},
+    {"id": "NEWE-06", "subject": "氢能制储运用", "category": "新能源与电力设备", "quadrant": "A", "level": "L1"},
+    {"id": "NEWE-07", "subject": "光伏逆变器", "category": "新能源与电力设备", "quadrant": "A", "level": "L1"},
+    {"id": "NEWE-08", "subject": "核电装备", "category": "新能源与电力设备", "quadrant": "A", "level": "L1"},
+
+    {"id": "MFG-01", "subject": "工业机器人", "category": "高端制造与工业", "quadrant": "A", "level": "L2"},
+    {"id": "MFG-02", "subject": "人形机器人", "category": "高端制造与工业", "quadrant": "B", "level": "L2"},
+    {"id": "MFG-03", "subject": "高端数控机床", "category": "高端制造与工业", "quadrant": "A", "level": "L1"},
+    {"id": "MFG-04", "subject": "工程机械", "category": "高端制造与工业", "quadrant": "A", "level": "L1"},
+    {"id": "MFG-05", "subject": "工业激光设备", "category": "高端制造与工业", "quadrant": "A", "level": "L1"},
+    {"id": "MFG-06", "subject": "智能传感器", "category": "高端制造与工业", "quadrant": "A", "level": "L1"},
+    {"id": "MFG-07", "subject": "增材制造（3D打印）", "category": "高端制造与工业", "quadrant": "A", "level": "L1"},
+
+    {"id": "AUTO-01", "subject": "新能源汽车整车", "category": "汽车与交通出行", "quadrant": "A", "level": "L1"},
+    {"id": "AUTO-02", "subject": "智能驾驶（自动驾驶）", "category": "汽车与交通出行", "quadrant": "A", "level": "L1"},
+    {"id": "AUTO-03", "subject": "汽车电子", "category": "汽车与交通出行", "quadrant": "A", "level": "L1"},
+    {"id": "AUTO-04", "subject": "动力电池回收与梯次利用", "category": "汽车与交通出行", "quadrant": "A", "level": "L1"},
+    {"id": "AUTO-05", "subject": "商用车", "category": "汽车与交通出行", "quadrant": "A", "level": "L1"},
+    {"id": "AUTO-06", "subject": "电动航空（eVTOL）", "category": "汽车与交通出行", "quadrant": "B", "level": "L2"},
+
+    {"id": "PHAR-01", "subject": "创新药研发生产", "category": "医药与生物科技", "quadrant": "A", "level": "L2"},
+    {"id": "PHAR-02", "subject": "高端医疗器械", "category": "医药与生物科技", "quadrant": "A", "level": "L1"},
+    {"id": "PHAR-03", "subject": "医药CXO外包服务", "category": "医药与生物科技", "quadrant": "A", "level": "L1"},
+    {"id": "PHAR-04", "subject": "体外诊断（IVD）", "category": "医药与生物科技", "quadrant": "A", "level": "L1"},
+    {"id": "PHAR-05", "subject": "ADC与抗体药物", "category": "医药与生物科技", "quadrant": "A", "level": "L1"},
+    {"id": "PHAR-06", "subject": "现代中药", "category": "医药与生物科技", "quadrant": "A", "level": "L1"},
+
+    {"id": "CONS-01", "subject": "新式茶饮", "category": "消费与零售", "quadrant": "D", "level": "L0"},
+    {"id": "CONS-02", "subject": "预制菜", "category": "消费与零售", "quadrant": "D", "level": "L0"},
+    {"id": "CONS-03", "subject": "美妆护肤", "category": "消费与零售", "quadrant": "C", "level": "L0"},
+    {"id": "CONS-04", "subject": "白色家电", "category": "消费与零售", "quadrant": "A", "level": "L1"},
+    {"id": "CONS-05", "subject": "跨境电商", "category": "消费与零售", "quadrant": "D", "level": "L0"},
+
+    {"id": "SOFT-01", "subject": "大模型与AI Agent", "category": "软件与数字经济", "quadrant": "C", "level": "L0"},
+    {"id": "SOFT-02", "subject": "企业级SaaS", "category": "软件与数字经济", "quadrant": "C", "level": "L0"},
+    {"id": "SOFT-03", "subject": "游戏研运", "category": "软件与数字经济", "quadrant": "C", "level": "L0"},
+    {"id": "SOFT-04", "subject": "信创产业", "category": "软件与数字经济", "quadrant": "C", "level": "L0"},
+
+    {"id": "MAT-01", "subject": "碳纤维复合材料", "category": "新材料", "quadrant": "A", "level": "L1"},
+    {"id": "MAT-02", "subject": "新能源电池核心材料", "category": "新材料", "quadrant": "A", "level": "L1"},
+
+    {"id": "SPACE-01", "subject": "商业航天", "category": "航空航天与太空经济", "quadrant": "B", "level": "L1"},
+    {"id": "SPACE-02", "subject": "卫星互联网", "category": "航空航天与太空经济", "quadrant": "B", "level": "L1"}
+  ]
+}

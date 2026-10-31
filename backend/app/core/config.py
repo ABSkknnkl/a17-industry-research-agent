@@ -55,6 +55,12 @@ class Settings(BaseModel):
     LLM_REASONING_EFFORT: str = Field(
         default_factory=lambda: os.getenv("LLM_REASONING_EFFORT", "low")
     )
+    # 思考开关（2026-10-17）：默认 **关闭** 推理（thinking={"type":"disabled"}）。
+    # 实测该端点开启思考时同等任务 10.4s → 5.8s（关闭后），长任务差距更大。
+    # 需要恢复思考置 LLM_THINKING=auto/enabled；置空串则回退 reasoning_effort。
+    LLM_THINKING: str = Field(
+        default_factory=lambda: os.getenv("LLM_THINKING", "disabled")
+    )
     LLM_TIMEOUT_SECONDS: int = Field(
         default_factory=lambda: int(os.getenv("LLM_TIMEOUT_SECONDS", "180"))
     )
@@ -88,6 +94,7 @@ class Settings(BaseModel):
         os.environ["LLM_BASE_URL"] = self.LLM_BASE_URL
         os.environ["LLM_MODEL"] = self.LLM_MODEL
         os.environ["LLM_REASONING_EFFORT"] = self.LLM_REASONING_EFFORT
+        os.environ["LLM_THINKING"] = self.LLM_THINKING
         os.environ["LLM_TIMEOUT_SECONDS"] = str(self.LLM_TIMEOUT_SECONDS)
         os.environ["LLM_MAX_TOKENS"] = str(self.LLM_MAX_TOKENS)
         os.environ["IWENCAI_API_KEY"] = self.IWENCAI_API_KEY

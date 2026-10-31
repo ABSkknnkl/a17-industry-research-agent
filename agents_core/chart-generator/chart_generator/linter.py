@@ -8,10 +8,10 @@ Enforces:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-from .metric_guard import DimensionGuard, resolve_metric_meta
+from .metric_guard import DimensionGuard
 
 
 @dataclass

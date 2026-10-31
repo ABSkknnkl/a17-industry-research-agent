@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 import re
-from html import escape
 from pathlib import Path
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
 from report_fusion.models import ReportViewModel
+
+logger = logging.getLogger(__name__)
 
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 STYLES_DIR = Path(__file__).resolve().parent / "styles"
@@ -452,8 +454,14 @@ def render_html(view: ReportViewModel) -> str:
     env = _jinja_for(mode)
     try:
         tpl = env.get_template("report.html")
-    except Exception:
-        tpl = _jinja_env.get_template("report.html")
+    except Exception as exc:
+        # 根模板（templates/*.html）已随死代码清理移除，原「降级到根模板」兜底不再存在，
+        # 此处只记录上下文后向上抛出，避免静默降级为错误版式。
+        logger.error(
+            "report.html 模板加载失败（chart_mode=%s，目录=%s）: %s",
+            mode, getattr(env.loader, "searchpath", None), exc,
+        )
+        raise
     return tpl.render(
         view=norm_view,
         charts_by_section=charts_by_section,

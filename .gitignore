@@ -80,3 +80,26 @@ remotion/node_modules/
 remotion/.remotion/
 remotion/dist/
 remotion/out/
+
+# ── 本地实验区（临时脚本、调试日志、预览截图，不入库）──────
+/scratch/
+
+# ── 测试与评测运行数据（单次跑批产物，可重跑再生）─────────
+/eval/runs/
+
+# ── 代码索引与工具缓存 ────────────────────────────────────
+.codebase-memory/
+.cbmignore
+
+# ── 第三方技能包与其运行产物（开发期辅助，非项目源码）─────
+/agent/
+.archify/
+.agents/
+.cw_skill/
+.claude/
+.trae/
+# data/skills 下是指向 .agents/skills 的符号链接，目标不入库，链接单独提交即为死链
+data/skills/
+
+# ── 本地运行状态（含配额/额度信息）────────────────────────
+.doubao_quota.json

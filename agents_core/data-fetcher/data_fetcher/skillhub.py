@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
+import json                     # ⚠️ 必须保留：record_query_telemetry 用它写遥测账本
 from pathlib import Path
 import re
 import secrets
@@ -646,7 +647,33 @@ class SkillHub:
                 if pending:
                     raise SkillValidationError("no executable tasks remain")
                 break
-            batch = await asyncio.gather(*(run_one(task) for task in ready))
+            # ⚠️ 异常隔离（2026-10-17 B12）：旧实现是 ``gather`` 不带 return_exceptions，
+            # 任一任务抛 IwencaiAuthenticationError（问财 401）会把**整批**任务一起带走——
+            # 实测 12 个任务因 1 次 401 全部丢失，且 on_result 从未回调（事件流 0 条
+            # tool_result / 0 条 warn），A1 只报「执行问财技能调度 0 次」，失败完全静默。
+            # 这里把异常收敛成 success=False 的 SkillResult，保证「一条失败 ≠ 整批归零」。
+            raw = await asyncio.gather(*(run_one(task) for task in ready),
+                                       return_exceptions=True)
+            batch = []
+            for task, item in zip(ready, raw):
+                if isinstance(item, BaseException):
+                    spec = self.catalog[task.skill_name]
+                    item = SkillResult(
+                        task_id=task.task_id,
+                        skill_name=task.skill_name,
+                        skill_id=spec.skill_id,
+                        skill_version=spec.version,
+                        domain=spec.domain,
+                        query=str(task.arguments.get("query", "")),
+                        trace_id=secrets.token_hex(32),
+                        attempt_trace_ids=[],
+                        retrieved_at=datetime.now(timezone.utc),
+                        success=False,
+                        attempts=1,
+                        records=[],
+                        error=f"{type(item).__name__}: {item}",
+                    )
+                batch.append(item)
             for result in batch:
                 results.append(result)
                 pending.pop(result.task_id)

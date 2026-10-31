@@ -20,7 +20,7 @@ def report_payload():
 def test_selects_signed_bar_and_time_series(tmp_path):
     agent=ChartGeneratorAgent()
     agent.settings=type(agent.settings)(output_dir=tmp_path)
-    result=asyncio.run(agent.run(ChartGenerationRequest(report=report_payload())))
+    result=asyncio.run(agent.run(ChartGenerationRequest(want_industry_chain=True, report=report_payload())))
     types={item.chart_type for item in result.charts}
     assert "comparison_bar" in types
     assert "line" in types
@@ -31,7 +31,7 @@ def test_selects_signed_bar_and_time_series(tmp_path):
 
 def test_empty_evidence_does_not_fabricate_chart():
     report=InterpretationReport(report_id="A2",subject="空行业",as_of=date.today(),status="partial")
-    result=asyncio.run(ChartGeneratorAgent().run(ChartGenerationRequest(report=report),save_artifacts=False))
+    result=asyncio.run(ChartGeneratorAgent().run(ChartGenerationRequest(want_industry_chain=True, report=report),save_artifacts=False))
     assert result.status == "partial"
     assert result.charts == []
     assert result.suppressed_charts[0].reason_code == "no_numeric_evidence"
@@ -54,7 +54,7 @@ def test_supports_composition_radar_chain_and_advanced_families():
         evidence[rid]={"record_id":rid,"domain":"industry_chain","entity":label,"metric":label,"value":value}
     report=InterpretationReport.model_validate({"report_id":"ADV","subject":"先进制造","as_of":"2026-09-01","status":"completed","evidence_index":evidence})
     requested=["pie","radar","industry_chain","area","combo","bubble","heatmap","boxplot","treemap"]
-    result=asyncio.run(ChartGeneratorAgent().run(ChartGenerationRequest(report=report,preferences={"max_charts":30,"requested_types":requested}),save_artifacts=False))
+    result=asyncio.run(ChartGeneratorAgent().run(ChartGenerationRequest(want_industry_chain=True, report=report,preferences={"max_charts":30,"requested_types":requested}),save_artifacts=False))
     types={chart.chart_type for chart in result.charts}
     assert {"pie","radar","industry_chain","area","combo","bubble","heatmap","boxplot","treemap"} <= types
     assert "industry-chain-visualization" in {item.name for item in result.applied_skills}
@@ -110,7 +110,7 @@ def test_llm_driven_chart_generation_with_tool_calling(tmp_path):
     mock_llm = MockLLM()
     agent = ChartGeneratorAgent(llm=mock_llm)
     agent.settings = type(agent.settings)(output_dir=tmp_path)
-    result = asyncio.run(agent.run(ChartGenerationRequest(report=report_payload())))
+    result = asyncio.run(agent.run(ChartGenerationRequest(want_industry_chain=True, report=report_payload())))
 
     assert len(result.charts) == 1
     chart = result.charts[0]
@@ -298,7 +298,7 @@ def test_self_healing_reflection_loop_on_linter_violation(tmp_path):
     mock_llm = ReflectiveMockLLM()
     agent = ChartGeneratorAgent(llm=mock_llm)
     agent.settings = type(agent.settings)(output_dir=tmp_path)
-    result = asyncio.run(agent.run(ChartGenerationRequest(report=report_payload()), emit=record_event))
+    result = asyncio.run(agent.run(ChartGenerationRequest(want_industry_chain=True, report=report_payload()), emit=record_event))
 
     assert mock_llm.call_count == 2  # Proves reflection loop was triggered!
     event_names = [e["event"] for e in events]
@@ -320,7 +320,7 @@ def test_deterministic_records_policy_routing_and_linter_audit(tmp_path):
 
     agent = ChartGeneratorAgent()
     agent.settings = type(agent.settings)(output_dir=tmp_path)
-    result = asyncio.run(agent.run(ChartGenerationRequest(report=report_payload()), emit=record_event))
+    result = asyncio.run(agent.run(ChartGenerationRequest(want_industry_chain=True, report=report_payload()), emit=record_event))
 
     event_names = [e["event"] for e in events]
     # Verify honest auditing: deterministic uses skill_routed_by_policy, NOT skill_invoked_by_llm
@@ -496,7 +496,7 @@ def test_llm_chart_spec_with_empty_option_synthesizes_automatically(tmp_path):
 
     agent = ChartGeneratorAgent(llm=LightweightMockLLM())
     agent.settings = type(agent.settings)(output_dir=tmp_path)
-    result = asyncio.run(agent.run(ChartGenerationRequest(report=report_payload())))
+    result = asyncio.run(agent.run(ChartGenerationRequest(want_industry_chain=True, report=report_payload())))
 
     assert len(result.charts) == 2
     for chart in result.charts:
@@ -574,8 +574,7 @@ def test_chart_data_demands_generation():
         "evidence_index": evidence,
         "comps_matrix": [{"entity_name": "隆基绿能"}, {"entity_name": "通威股份"}],
     })
-    req = ChartGenerationRequest(
-        report=report,
+    req = ChartGenerationRequest(want_industry_chain=True, report=report,
         preferences=ChartPreferences(requested_types=["combo", "industry_chain", "donut"])
     )
     agent = ChartGeneratorAgent()
@@ -603,7 +602,7 @@ def test_metric_level_deduplication_prevents_redundant_charts():
         "status": "completed",
         "evidence_index": evidence,
     })
-    req = ChartGenerationRequest(report=report)
+    req = ChartGenerationRequest(want_industry_chain=True, report=report)
     agent = ChartGeneratorAgent()
     res = asyncio.run(agent.run(req, save_artifacts=False))
     bar_charts = [c for c in res.charts if c.chart_type in ("bar", "horizontal_bar", "comparison_bar", "diverging_bar")]
@@ -666,7 +665,7 @@ def test_deterministic_fallback_scatter_bubble_option_structure():
         "E9": {"record_id": "E9", "domain": "financials", "entity": "公司C", "metric": "研发费用", "value": 18.0, "unit": "亿元"},
     }
     report = InterpretationReport.model_validate({"report_id": "BUBBLE_TEST", "subject": "散点测试", "as_of": "2026-09-01", "status": "completed", "evidence_index": evidence})
-    req = ChartGenerationRequest(report=report, preferences=ChartPreferences(include_advanced=True))
+    req = ChartGenerationRequest(want_industry_chain=True, report=report, preferences=ChartPreferences(include_advanced=True))
     cands, _ = agent._deterministic_fallback(req)
 
     scat_cand = next((c for c in cands if c.chart_type in ("scatter", "bubble")), None)
@@ -704,12 +703,12 @@ def test_chart_generation_request_rejects_mismatched_dataset():
         "industry": [{"metric": "industry_name", "value": "低空经济"}],
     }
     with pytest.raises(ValueError, match="输入数据集行业.*低空经济.*请求分析主题.*商业航天.*不一致"):
-        ChartGenerationRequest(report=report, input_dataset=mismatched_dataset)
+        ChartGenerationRequest(want_industry_chain=True, report=report, input_dataset=mismatched_dataset)
 
     # Matched dataset
     matched_dataset = {
         "sources": [{"query": "商业航天 运载火箭 龙头"}],
         "industry": [{"metric": "industry_name", "value": "商业航天"}],
     }
-    req = ChartGenerationRequest(report=report, input_dataset=matched_dataset)
+    req = ChartGenerationRequest(want_industry_chain=True, report=report, input_dataset=matched_dataset)
     assert req.report.subject == "商业航天"

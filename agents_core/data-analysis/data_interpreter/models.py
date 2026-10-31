@@ -185,6 +185,7 @@ def validate_request_consistency(dataset: Any, subject: str | None) -> None:
 
 
 class AnalysisRequest(BaseModel):
+    chain_context: dict[str, Any] | None = None
     model_config = ConfigDict(extra="forbid")
 
     subject: str = Field(default="研究主题", min_length=2, max_length=200)
@@ -394,6 +395,7 @@ class IndustryChainSegment(BaseModel):
 
 
 class InterpretationReport(BaseModel):
+    chain_analysis: dict[str, Any] | None = None
     report_id: str
     subject: str
     as_of: date
@@ -413,6 +415,9 @@ class InterpretationReport(BaseModel):
     content_outline: list[ContentSection] = Field(default_factory=list)
     comps_matrix: PeerCompsMatrix | None = None
     industry_chain_segments: list[IndustryChainSegment] = Field(default_factory=list)
+    # 产业链拓扑（2026-07 移植老项目 chain_designer：LLM 设计拓扑 + 代码裁判）。
+    # 结构比扁平 segments 丰富（四段式/流线语义/核心节点/环节说明），供智能体3 渲染。
+    industry_chain_topology: dict[str, Any] | None = None
     financial_ratios: list[dict[str, Any]] = Field(default_factory=list)
     evidence_index: dict[str, EvidenceRef] = Field(default_factory=dict)
     data_quality: DataQualityAssessment

@@ -181,6 +181,11 @@ def test_core_industry_requirement_cannot_be_masked_by_sector_records():
 
 
 def test_leader_financial_task_must_target_ranked_candidate():
+    """R2：龙头需求不再限制财务查询资格——评分只影响排序与补采优先级。
+
+    旧断言（无评分公司被拒）编码的是 V8 方案 §5.1 明确列为「未真正解耦」的
+    缺陷行为；现按 §5.3.7 改为：只要有身份即可查询，龙头需求不构成拦阻。
+    """
     agent = DataFetcherAgent(llm=FakeLLM(), skillhub=SkillHub(gateway=FakeGateway()))
     request = ResearchRequest(industry="人工智能", focus_points=["龙头财务"])
     requirements = agent._baseline_requirements(request, list(Domain))
@@ -200,14 +205,26 @@ def test_leader_financial_task_must_target_ranked_candidate():
     ])
     accepted, errors = agent._validate_tasks(
         [SkillTask(
-            task_id="finance", skill_name="financial_data",
-            arguments={"query": "普通乙营业收入"},
+            task_id="finance", skill_name="hithink-finance-query",
+            arguments={"query": "普通乙 营业收入 归母净利润"},
         )],
         dataset=dataset, remaining=5, used_task_ids=set(), completed_signatures=set(),
         successful_task_ids=set(), requirements=requirements,
     )
-    assert not accepted
-    assert "eligible identified company" in errors[0].message
+    # 有身份即可查询：不得因 leader_score 为空被拒
+    assert [t.task_id for t in accepted] == ["finance"], [e.message for e in errors]
+
+    # 但无关公司（无身份、非指名）仍应被拒
+    rejected, reject_errors = agent._validate_tasks(
+        [SkillTask(
+            task_id="finance2", skill_name="hithink-finance-query",
+            arguments={"query": "无关丙 营业收入 归母净利润"},
+        )],
+        dataset=dataset, remaining=5, used_task_ids=set(), completed_signatures=set(),
+        successful_task_ids=set(), requirements=requirements,
+    )
+    assert not rejected
+    assert any("eligible identified company" in e.message for e in reject_errors)
 
 
 class EmptyGateway:
@@ -341,12 +358,27 @@ def test_deterministic_guard_enforces_four_company_financials():
     assert not coverage.passed
     assert any("需覆盖至少 4 家" in m for m in coverage.missing)
 
-    # 补充其余 3 家财务后应通过
-    dataset.financials.extend([
-        ResearchRecord(record_id="R-f2", domain=Domain.FINANCIALS, entity_name="企业二", entity_code="000002.SZ", metric="revenue", value=80, source=source),
-        ResearchRecord(record_id="R-f3", domain=Domain.FINANCIALS, entity_name="企业三", entity_code="000003.SZ", metric="revenue", value=60, source=source),
-        ResearchRecord(record_id="R-f4", domain=Domain.FINANCIALS, entity_name="企业四", entity_code="000004.SZ", metric="revenue", value=40, source=source),
-    ])
+    # 补充其余 3 家的收入+利润+有效期间后应通过
+    # （R2 起覆盖按规范主体逐家核验：收入、利润、报告期缺一不可）
+    from datetime import date as _d
+
+    def _fin(rid, name, code, metric, value):
+        return ResearchRecord(
+            record_id=rid, domain=Domain.FINANCIALS, entity_name=name,
+            entity_code=code, metric=metric, value=value, source=source,
+            period_end=_d(2025, 12, 31),
+        )
+
+    dataset.financials = [
+        _fin("R-f1", "企业一", "000001.SZ", "revenue", 100),
+        _fin("R-f1p", "企业一", "000001.SZ", "parent_net_profit", 50),
+        _fin("R-f2", "企业二", "000002.SZ", "revenue", 80),
+        _fin("R-f2p", "企业二", "000002.SZ", "parent_net_profit", 40),
+        _fin("R-f3", "企业三", "000003.SZ", "revenue", 60),
+        _fin("R-f3p", "企业三", "000003.SZ", "parent_net_profit", 30),
+        _fin("R-f4", "企业四", "000004.SZ", "revenue", 40),
+        _fin("R-f4p", "企业四", "000004.SZ", "parent_net_profit", 20),
+    ]
     coverage2 = agent._evaluate_requirement(dataset, req)
     assert coverage2.passed
 

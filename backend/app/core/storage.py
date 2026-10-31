@@ -3,7 +3,6 @@ import json
 import re
 import shutil
 from pathlib import Path
-from typing import Any
 from backend.app.core.config import settings
 from backend.app.schemas.workflow import (
     WorkflowState,
@@ -218,6 +217,14 @@ class StorageManager:
             clean_id = artifact_id[:-4] if artifact_id.endswith("_svg") else artifact_id
             for p in charts_dir.iterdir():
                 if p.is_file() and (p.name == artifact_id or p.stem == artifact_id or p.stem == clean_id or clean_id in p.name):
+                    return p
+        # 3. 检查 images 子目录（2026-10-17）：产业链「HTML 排版版」截图与 AI 生图位图
+        # 落在 artifacts/images/ 下，之前只认 charts/，导致这些位图在产物接口里 404，
+        # 前端拿不到图只能显示"未内联"。
+        images_dir = art_dir / "images"
+        if images_dir.exists():
+            for p in images_dir.iterdir():
+                if p.is_file() and (p.name == artifact_id or p.stem == artifact_id):
                     return p
         return None
 

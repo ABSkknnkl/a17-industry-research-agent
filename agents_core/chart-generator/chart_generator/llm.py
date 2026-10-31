@@ -132,7 +132,12 @@ class OpenAICompatibleLLM:
             "tool_choice": "auto",
             "max_tokens": self.settings.llm_max_tokens,
         }
-        if self.settings.llm_reasoning_effort:
+        # 2026-10-17：默认关闭思考（LLM_THINKING=disabled）。该端点开启思考时
+        # 同等任务实测 10.4s→5.8s（关闭后），长任务差距更大。thinking 优先，
+        # 未配置时才回退 reasoning_effort，避免两个参数互相打架。
+        if self.settings.llm_thinking:
+            payload["thinking"] = {"type": self.settings.llm_thinking}
+        elif self.settings.llm_reasoning_effort:
             payload["reasoning_effort"] = self.settings.llm_reasoning_effort
 
         async with httpx.AsyncClient(timeout=self.settings.llm_timeout_seconds) as client:
@@ -195,7 +200,12 @@ class OpenAICompatibleLLM:
                     "response_format": {"type": "json_object"},
                     "max_tokens": self.settings.llm_max_tokens,
                 }
-                if self.settings.llm_reasoning_effort:
+                # 2026-10-17：默认关闭思考（LLM_THINKING=disabled）。该端点开启思考时
+                # 同等任务实测 10.4s→5.8s（关闭后），长任务差距更大。thinking 优先，
+                # 未配置时才回退 reasoning_effort，避免两个参数互相打架。
+                if self.settings.llm_thinking:
+                    payload2["thinking"] = {"type": self.settings.llm_thinking}
+                elif self.settings.llm_reasoning_effort:
                     payload2["reasoning_effort"] = self.settings.llm_reasoning_effort
 
                 res2 = await self._post_with_retry(client, payload2)

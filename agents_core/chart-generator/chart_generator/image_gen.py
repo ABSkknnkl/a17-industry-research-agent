@@ -3,10 +3,14 @@
 合并自同花顺项目 Agent3 的「证据约束图谱 → 确定性正文 → LLM 编译 → 拓扑/纯度门禁 → 生图」链路。
 只有 Agent 3 可以调用本模块；整条流水线默认只允许成功生成 1 张产业链图。
 
-Live protocol (shengsuanyun router):
+Live protocol (OpenAI-compatible async image task API):
 
     POST {base}/tasks/generations              -> 202 {"code":"success","data":{"request_id":...}}
     GET  {base}/tasks/generations/{request_id} -> data.status until COMPLETED | FAILED
+
+注意：本模块不内置任何第三方网关地址。`IMAGE_BASE_URL` / `IMAGE_API_KEY` 未配置时
+（默认即如此），`generate_industry_chain_image` 直接返回 None，产业链主图走
+确定性 SVG 渲染，不依赖位图生图。
 """
 
 from __future__ import annotations
@@ -105,7 +109,7 @@ class ImageGenSettings:
                 logger.warning("IMAGE_EXTRA_FIELDS 不是合法 JSON，忽略")
         return cls(
             api_key=os.getenv("IMAGE_API_KEY", "").strip(),
-            base_url=os.getenv("IMAGE_BASE_URL", "https://router.shengsuanyun.com/api/v1").rstrip("/"),
+            base_url=os.getenv("IMAGE_BASE_URL", "").strip().rstrip("/"),
             model=os.getenv("IMAGE_MODEL", "openai/gpt-image-2").strip(),
             timeout_seconds=float(os.getenv("IMAGE_TIMEOUT_SECONDS", "30")),
             size=os.getenv("IMAGE_SIZE", "auto").strip() or "auto",

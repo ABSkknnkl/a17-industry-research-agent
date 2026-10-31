@@ -111,6 +111,10 @@ def make_test_data():
 
 def test_chart_placement_routing_and_single_placement_lock(tmp_path):
     report, chap_res, charts = make_test_data()
+    for chart in charts.charts:
+        graphic = tmp_path / f"{chart.chart_id}.svg"
+        graphic.write_text('<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>')
+        chart.svg_uri = str(graphic)
     agent = ReportFusionAgent(settings=Settings(output_dir=tmp_path))
     result = asyncio.run(agent.run(ReportFusionRequest(
         report=report,

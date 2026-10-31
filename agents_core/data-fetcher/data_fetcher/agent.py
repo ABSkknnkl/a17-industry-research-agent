@@ -7,6 +7,7 @@ from collections import defaultdict
 from collections.abc import Awaitable, Callable
 from datetime import datetime
 import json
+import logging
 from pathlib import Path
 import re
 import secrets
@@ -17,7 +18,7 @@ from pydantic import ValidationError
 
 from data_fetcher.config import Settings
 from data_fetcher.fusion import DataFusion
-from data_fetcher.llm import LLMConfigurationError, OpenAICompatibleLLM, PlannerLLM
+from data_fetcher.llm import OpenAICompatibleLLM, PlannerLLM
 from data_fetcher.models import (
     AgentDecision,
     Coverage,
@@ -33,10 +34,12 @@ from data_fetcher.models import (
     SkillTask,
     TraceEvent,
 )
-from data_fetcher.skillhub import IwencaiAuthenticationError, REMOTE_SKILL_DOMAINS, SkillHub, SkillValidationError
+from data_fetcher.skillhub import IwencaiAuthenticationError, SkillHub, SkillValidationError
 
 
 EventEmitter = Callable[[dict[str, Any]], Awaitable[None]]
+
+logger = logging.getLogger("data_fetcher.agent")
 
 INTENT_SYSTEM_PROMPT = """你是数据获取智能体的需求理解与实体抽取模块。
 你负责深入理解用户的投研意图、行业赛道、研究焦点与指定重点公司。
@@ -103,8 +106,20 @@ planning_methodologies 只用于补全查询维度；它们不是可执行 Skill
      6) 行业板块整体估值 (hithink-industry-query):
         标准语法：针对所属官方大类（优先使用 observation.objective.relevant_industries 中的官方大类行业）：
         "{relevant_industry}行业 估值 市盈率 市净率" 或 "{topic}行业 动态市盈率"
-     7) 产业链供需概况 (hithink-business-query):
-        标准语法："{topic}产业链 上中下游"
+     7) 产业链供需概况（**多角度召回**，必须并行拆成多条单主语 query）:
+        背景：问财对「产业链」类长句召回极差，且**同一 query 里塞多家公司会被截断、只返 1 家**；
+        单一 query 只能捞回"公司×业务×财务"，捞不回"环节—关系"结构。因此产业链必须按角度拆开：
+        (hithink-business-query)：
+          "{topic} 产业链 上游 核心零部件 供应商"
+          "{topic} 产业链 中游 整机制造 代表公司"
+          "{topic} 产业链 下游 应用场景 运营服务商"
+          "{topic} 基础设施 配套保障 代表公司"
+        (hithink-astock-selector)：
+          "{topic} 概念 A股 按总市值降序" (limit=20)
+        铁律：① 每条 query 只出现 1 个主语（公司名或行业词），禁止多公司并列；
+              ② 企业名一律用**全称或官方证券简称**，禁止自造简称与同音字——
+                 实测错字「四川九州」正确写法是「四川九洲」，写错等于图上硬伤；
+              ③ 环节名优先用"零部件/材料/整机/运营/配套"这类通用词，便于下游归一。
    - 铁律约束：首轮严禁在行业估值查询中混入个股选股后缀（如“A股 按总市值降序”），防止偏采。
 
 2. 【第二层：实体锚定 · 估值与财务深度画像】（第 2 轮规划，当 observation.identified_companies 已入池）：
@@ -116,6 +131,13 @@ planning_methodologies 只用于补全查询维度；它们不是可执行 Skill
         针对确权前 3~4 家核心龙头，分别发起："{entity_name} 近5年 营业收入 归母净利润 销售毛利率 销售净利率 ROE 资产负债率 经营活动产生的现金流量净额 研发费用"
      3) 重点龙头主营业务与分产品拆解 (hithink-business-query):
         针对确权前 2~3 家核心龙头，发起："{entity_name} 主营构成 分产品收入占比"
+     4) 公司供应链上下游关系（公告/研报/新闻三检索并集，2026-10-07 新增）:
+        当用户问询涉及产业链、供应链、上下游、供应商、客户或合作伙伴时，针对确权前 2~3 家核心龙头分别发起：
+        - 公告检索 (announcement-search): "{entity_name} 重大合同 采购 销售 战略合作" (limit=5)
+        - 研报检索 (report-search): "{entity_name} 产业链 供应链 上下游" (limit=5)
+        - 新闻检索 (news-search): "{entity_name} 供应商 客户 合作伙伴" (limit=5)
+        铁律：供应链关系（供应商名单/客户名单/合作伙伴）只能从公告、研报、新闻披露中获得，
+        严禁用财务指标查询技能代替；美股/境外标的覆盖弱时如实保留空结果，不得编造关系。
 
 3. 【第三层：纵深拆解与闭环补齐】（第 3 轮+ 规划）：
    - 核心目标：针对 observation.unmet_requirements 中仍未满足的领域或硬性指标进行针对性单点精准补齐。
@@ -186,16 +208,36 @@ observation.coverage.requirement_coverage 中 passed=false 且 requirement_id �
 
 # ── P0-2: query 编译层（把「需求描述式」query 编译为「检索关键词串」）────────────
 # 设计原则：编译只做「减法 + 重排 + 语义转移」，不发明新词，保证与原始意图一致、可审计。
-_FIELD_NAME_NOISE: tuple[str, ...] = (
-    "证券代码", "证券简称", "股票代码", "总市值", "流通市值", "营业收入", "归母净利润",
-    "销售毛利率", "销售净利率", "ROE", "资产负债率", "经营活动产生的现金流量净额",
-    "研发费用", "所属行业", "所属概念", "基本信息", "主营业务构成", "分行业", "分产品",
+#
+# R2（V8 最终方案 §5.3.1）把旧「字段噪声表」拆成三类，按技能域处理：
+# - 返回元字段：证券代码/简称等，只是期望回包形状，不是检索语义 → 各域一律清理。
+# - 财务检索指标：营业收入/归母净利润等，是 FINANCIALS 域的**检索语义本身**——
+#   旧表把它们一并删除，导致「五粮液 近5年 营业收入 归母净利润」被编译成
+#   「五粮液 近5年」，网关按协议只吃 query → 拿回一堆行情字段。财务域必须保留。
+# - 形状/说明噪声：主营业务构成、说明性文字等 → 非 FINANCIALS 域清理。
+_RETURN_METADATA_FIELDS: tuple[str, ...] = (
+    "证券代码", "证券简称", "股票代码", "基本信息", "所属行业", "所属概念",
+)
+_SHAPE_NOISE_FIELDS: tuple[str, ...] = (
+    "总市值", "流通市值", "主营业务构成", "分行业", "分产品", "主营业务",
+)
+# FINANCIALS 域的检索指标词（保留在 query；也是语义完整性校验的依据）
+_FINANCIAL_METRIC_TERMS: tuple[str, ...] = (
+    "营业收入", "归母净利润", "销售毛利率", "销售净利率", "ROE",
+    "资产负债率", "经营活动产生的现金流量净额", "研发费用",
+    "营业总收入", "净利润", "毛利率", "净利率", "负债率", "现金流",
 )
 _DESC_NOISE: tuple[str, ...] = (
     "重点关注", "用于评估", "旨在", "有助于", "判断", "分析", "梳理", "测算", "评估",
     "时间范围", "研究报告", "研究提纲", "包括", "等数据", "等指标", "等各", "等信息",
     "等，", "等。", "最新动态", "近一年资讯", "查询", "筛选", "排序", "从大到小",
     "从小到大", "降序", "升序", "家企业", "的收入", "的业务", "各业务板块", "主营业务",
+)
+# 向后兼容别名（旧测试/外部脚本仍按 _FIELD_NAME_NOISE 判断"返回字段名"）：
+# = 元字段 + 形状噪声 + 财务指标词。语义上代表「非检索主体、可安全剔除的词」——
+# 只有 FINANCIALS 域需要额外保留其中的财务指标部分。
+_FIELD_NAME_NOISE: tuple[str, ...] = (
+    _RETURN_METADATA_FIELDS + _SHAPE_NOISE_FIELDS + _FINANCIAL_METRIC_TERMS
 )
 # “等X”通用清理的白名单：等技术术语（等静压 / 等高线 / 等温…）不得被误删。
 _EQ_PROTECTED: tuple[str, ...] = (
@@ -216,15 +258,29 @@ _LIMIT_AND_SORT_RE = re.compile(
 _CONJ_RE = re.compile(r"[及与]")
 
 
-def _compile_query(raw: str, *, max_tokens: int = 6) -> tuple[str, dict[str, Any]]:
-    """把「需求描述式」query 编译为「检索关键词串」（P0-2）。
+def _compile_query(
+    raw: str,
+    *,
+    max_tokens: int = 6,
+    domain: Domain | None = None,
+    expected_fields: list[str] | None = None,
+) -> tuple[str, dict[str, Any]]:
+    """把「需求描述式」query 编译为「检索关键词串」（P0-2 + R2 语义保全）。
 
-    规则：去标点 → 去返回字段名 → 去说明性文字 → 去重 → 年份移末尾 → 截断主体词数；
-    同时把「取前N家 / 按…从大到小排序」语义转移到返回的 extra（sort_by/limit）。
+    构造顺序（V8 最终方案 §5.3.2）：识别目标 → 确认需求指标 →
+    保留/合并期间 → 去说明性噪声 → 校验语义完整 → 输出。
+
+    R2 变化：
+    - 按技能域决定噪声表：FINANCIALS 域保留财务指标词，不再被
+      「字段噪声表」误删（旧实现是「财务仅 1 家覆盖」的直接根因之一）。
+    - FINANCIALS 域若 query 缺指标，从 expected_fields 做一次**有界恢复**
+      （最多 3 个）；expected_fields 为空则不发明指标，由校验层明确拒绝。
 
     Args:
         raw: LLM 产出的原始 query。
         max_tokens: 主体部分保留的最大词数（默认 6）。
+        domain: 技能所属数据域；None 表示域未知（按最严格口径处理）。
+        expected_fields: 任务声明的预期返回字段（可能承载检索指标语义）。
 
     Returns:
         (compiled, extra)。compiled 为编译后的关键词串（为空时原样返回 ``raw``）；
@@ -232,6 +288,7 @@ def _compile_query(raw: str, *, max_tokens: int = 6) -> tuple[str, dict[str, Any
     """
     text = str(raw or "")
     extra: dict[str, Any] = {}
+    is_financials = domain == Domain.FINANCIALS
 
     def _drop_semantics(m: re.Match[str]) -> str:
         seg = m.group(0)
@@ -247,9 +304,51 @@ def _compile_query(raw: str, *, max_tokens: int = 6) -> tuple[str, dict[str, Any
         return " "
 
     text = _LIMIT_AND_SORT_RE.sub(_drop_semantics, text)
+    # R2：显式后缀证券代码（600519.SH）里的 "." 会被标点清理吃掉，
+    # 变成「600519 SH」→ 交易所信息丢失 → 匹配退化为裸代码。
+    # 先占位保护，编译末尾再还原。
+    _code_placeholders: dict[str, str] = {}
+
+    def _protect_code(m: re.Match[str]) -> str:
+        token = m.group(0).upper()
+        holder = f"__CODE{len(_code_placeholders)}__"
+        _code_placeholders[holder] = token
+        return f" {holder} "
+
+    text = re.sub(
+        r"(?<![0-9A-Z])(\d{4,6})\.(SH|SZ|BJ|HK|SS|NO)(?![0-9A-Z])",
+        _protect_code,
+        text,
+        flags=re.IGNORECASE,
+    )
     text = _PUNCT_RE.sub(" ", text)
-    for noise in _FIELD_NAME_NOISE + _DESC_NOISE:
+
+    # R2：先摘出财务指标词（保护名单），再做噪声清理，最后放回。
+    # 这样即便某指标词撞上说明噪声表也不会丢语义。
+    protected_metrics: list[str] = []
+    if is_financials:
+        for term in _FINANCIAL_METRIC_TERMS:
+            if term in text:
+                protected_metrics.append(term)
+                text = text.replace(term, " ")
+    # expected_fields 承载的指标语义：缺指标时的有界恢复来源
+    if is_financials and not protected_metrics:
+        for field in (expected_fields or [])[:3]:
+            field_str = str(field or "").strip()
+            if field_str and field_str in _FINANCIAL_METRIC_TERMS and field_str not in protected_metrics:
+                protected_metrics.append(field_str)
+
+    for noise in _DESC_NOISE:
         text = text.replace(noise, " ")
+    for noise in _RETURN_METADATA_FIELDS:
+        text = text.replace(noise, " ")
+    # 非财务域：财务指标词与形状词一律视为噪声（保持历史编译行为，
+    # 避免把「营业收入」这类字段名留在新闻/行业查询里）。
+    if not is_financials:
+        for noise in _SHAPE_NOISE_FIELDS:
+            text = text.replace(noise, " ")
+        for noise in _FINANCIAL_METRIC_TERMS:
+            text = text.replace(noise, " ")
 
     def _strip_etc(m: re.Match[str]) -> str:
         seg = m.group(0)
@@ -272,8 +371,22 @@ def _compile_query(raw: str, *, max_tokens: int = 6) -> tuple[str, dict[str, Any
         else:
             body.append(t)
     body = body[:max_tokens]
+    # 放回被保护的财务指标（去重、保持出现顺序）
+    for metric in protected_metrics:
+        if metric not in body:
+            body.append(metric)
     compiled = " ".join(body + years).strip()
+    # 还原被保护的显式后缀代码
+    for holder, token in _code_placeholders.items():
+        if holder in compiled:
+            compiled = compiled.replace(holder, token)
     return compiled or str(raw or ""), extra
+
+
+def _query_has_financial_metrics(compiled: str) -> bool:
+    """校验财务 query 的语义完整性：必须能识别出至少一个财务检索指标。"""
+    text = str(compiled or "")
+    return any(term in text for term in _FINANCIAL_METRIC_TERMS)
 
 
 # ── P0-1: 空数据集硬风控（0 条结果 → blocked + 显式上报）────────────────────────
@@ -617,6 +730,27 @@ class DataFetcherAgent:
                         stage="skill_execution", message=result.error or "skill failed",
                         task_id=result.task_id, retryable=False,
                     ))
+            # R2（V8 最终方案 §5.3.6）：财务响应按目标指标验收。
+            # 只返回行情字段（最新价/涨跌幅/市值/PE）的成功响应不能计入财务满足——
+            # 打上结构化原因，让下一轮规划能据此换查询方式，而不是误以为已满足。
+            task_by_id = {t.task_id: t for t in accepted}
+            for result in iteration_results:
+                task_ref = task_by_id.get(result.task_id)
+                spec_ref = self.skillhub.catalog.get(task_ref.skill_name) if task_ref else None
+                if (
+                    result.success
+                    and spec_ref is not None
+                    and spec_ref.domain == Domain.FINANCIALS
+                    and not self._financial_result_has_target_metrics(result, task_ref)
+                ):
+                    result.error = (
+                        "only_market_fields: 响应仅含行情/元字段，缺目标财务指标"
+                        "（应收指标须写入 query，见第六铁律）"
+                    )
+                    logger.info(
+                        "[finance-audit] task=%s 响应缺目标指标（records=%d），已标记 only_market_fields",
+                        result.task_id, len(result.records),
+                    )
             dataset = self.fusion.fuse(
                 all_results,
                 request.as_of,
@@ -882,6 +1016,9 @@ class DataFetcherAgent:
         plan_ids = {task.task_id for task in tasks}
         companies_known = bool(dataset.companies)
         company_context = self._company_context(dataset)
+        # S-04：查询资格与排名展示解耦。资格来自**所有已识别公司**，
+        # 不受 leader_score 为空或 leader_context 只取前 20 的影响。
+        query_eligible = self._build_query_eligible_entities(dataset)
         leader_required = any(
             item.requirement_id == "leader_identification" for item in requirements or []
         )
@@ -893,18 +1030,43 @@ class DataFetcherAgent:
         domain_accepted_counts: dict[Domain, int] = defaultdict(int)
         for task in tasks:
             reason: str | None = None
-            # P0-2: query 模板编译（自然语言 → 检索关键词串）。
+            # P0-2 + R2: query 模板编译（自然语言 → 检索关键词串）。
             # 在 signature 计算之前统一改写，保证去重与后续校验均基于编译后的 query；
             # 排序/条数语义转移至 arguments.sort_by / arguments.limit。
+            # R2：编译必须感知技能域与 expected_fields——财务指标词不得被
+            # 噪声表误删；缺指标时按 expected_fields 有界恢复，仍缺则拒绝。
             raw_query = str(task.arguments.get("query", "") or "")
             if raw_query.strip():
-                compiled_query, extra_args = _compile_query(raw_query)
-                if compiled_query != raw_query or extra_args:
+                _spec_probe = self.skillhub.catalog.get(task.skill_name)
+                _domain_probe = _spec_probe.domain if _spec_probe else None
+                compiled_query, extra_args = _compile_query(
+                    raw_query,
+                    domain=_domain_probe,
+                    expected_fields=list(task.expected_fields or []),
+                )
+                if _domain_probe == Domain.FINANCIALS and not _query_has_financial_metrics(compiled_query):
+                    # 有界修复失败：宁可拒绝也不发出"主体+期间"的残缺 query
+                    # （网关按协议只消费 query，会拿回一堆行情字段冒充财务数据）。
+                    reason = (
+                        "financial task lacks identifiable metrics in query "
+                        "(raw query and expected_fields both carry none)"
+                    )
+                    logger.info(
+                        "[query-audit] reject financial task=%s raw=%r compiled=%r expected=%r",
+                        task.task_id, raw_query, compiled_query, task.expected_fields,
+                    )
+                elif compiled_query != raw_query or extra_args:
                     merged_arguments = dict(task.arguments)
                     merged_arguments["query"] = compiled_query
                     for key, value in extra_args.items():
                         merged_arguments.setdefault(key, value)
                     task = task.model_copy(update={"arguments": merged_arguments})
+                    if compiled_query != raw_query:
+                        logger.info(
+                            "[query-audit] compile task=%s skill=%s domain=%s raw=%r -> gateway_query=%r",
+                            task.task_id, task.skill_name,
+                            getattr(_domain_probe, "value", None), raw_query, compiled_query,
+                        )
 
             # 自动规整行业查询：若行业查询混入了股票筛选排序词（如 '按总市值降序'），自动清洗防止语义冲突
             if task.skill_name == "hithink-industry-query":
@@ -946,19 +1108,22 @@ class DataFetcherAgent:
                 and self.skillhub.catalog[task.skill_name].domain == Domain.FINANCIALS
                 and (companies_known or must_include_entities)
             ):
-                eligible = [item for item in company_context if item.get("leader_score") is not None]
-                query = str(task.arguments.get("query", "")).casefold()
-                must_include_cf = [str(x).casefold() for x in (must_include_entities or [])]
-                matches_must_include = any(token and token in query for token in must_include_cf)
-
-                if not eligible and not matches_must_include:
-                    reason = "financial_data requires identified companies in dataset"
-                elif not matches_must_include and not any(
-                    token and str(token).casefold() in query
-                    for item in eligible
-                    for token in (item["name"], item["code"], str(item["code"] or "").split(".")[0])
-                ):
-                    reason = "financial_data target is not an eligible identified company"
+                # R2（V8 最终方案 §5.3.7）：合法实体资格与评分**彻底解耦**。
+                # 资格只来自已识别公司记录；leader_score 为空不构成无资格；
+                # leader_identification 需求只影响排序与补采优先级，
+                # 不恢复「部分有评分时只准 ranked_candidates」的旧限制
+                # （旧限制会把同一批已识别公司再次误拒）。
+                matched, match_reason = self._match_query_entity(
+                    str(task.arguments.get("query", "")),
+                    query_eligible,
+                    list(must_include_entities or []),
+                )
+                if not matched:
+                    reason = (
+                        "financial_data requires identified companies in dataset"
+                        if not query_eligible
+                        else f"financial_data target is not an eligible identified company（{match_reason}）"
+                    )
                 elif set(task.depends_on) - plan_ids - successful_task_ids:
                     reason = "task contains unknown dependency"
             elif set(task.depends_on) - plan_ids - successful_task_ids:
@@ -1001,6 +1166,143 @@ class DataFetcherAgent:
     @staticmethod
     def _task_signature(task: SkillTask) -> str:
         return f"{task.skill_name}:{json.dumps(task.arguments, sort_keys=True, ensure_ascii=False, default=str)}"
+
+    @staticmethod
+    def _split_security_code(code: str | None) -> tuple[str, str]:
+        """拆分证券代码为 (裸代码, 交易所后缀)。
+
+        600519.SH → ('600519', 'SH')；600519 → ('600519', '')。
+        .SS 归一为 .SH（上交所两种写法）。
+        """
+        if not code:
+            return "", ""
+        text = str(code).strip().upper()
+        for suffix in (".SH", ".SZ", ".BJ", ".HK", ".SS", ".NO"):
+            if text.endswith(suffix):
+                bare = text[: -len(suffix)].strip()
+                exchange = "SH" if suffix == ".SS" else suffix.lstrip(".")
+                return bare, exchange
+        return text, ""
+
+    @staticmethod
+    def _normalize_security_code(code: str | None) -> str:
+        """规范化证券代码为裸代码（R2 保留兼容；匹配请改用 _split_security_code）。
+
+        600519 / 600519.SH / 600519.SS / 600519.sh 统一为 '600519'。
+        """
+        bare, _ = DataFetcherAgent._split_security_code(code)
+        return bare
+
+    @staticmethod
+    def _build_query_eligible_entities(dataset: Any) -> dict[str, dict[str, Any]]:
+        """从**已识别公司记录**建立财务查询资格集合（S-04 + R2 交易所感知）。
+
+        与 `_company_context` 的关键区别：
+        - 后者用于**排名展示**，按 leader_score 排序并截断前 20，不能作为查询资格。
+        - 本集合包含所有出现过身份的实体，不受 leader_score 为空或排名截断影响。
+
+        R2：键改为「裸代码@交易所」，同一裸代码在不同交易所各自成键；
+        同时维护裸代码 → 交易所集合，裸代码只在唯一交易所时可裸匹配。
+
+        Returns:
+            键 -> {"name", "code", "bare", "exchange"}。无法取到代码时以
+            `name:` 前缀作键。另含特殊键 "__bare_exchanges__"：
+            {裸代码: set(交易所)}，供 _match_query_entity 做唯一性判定。
+        """
+        eligible: dict[str, dict[str, Any]] = {}
+        bare_exchanges: dict[str, set[str]] = {}
+        for item in getattr(dataset, "companies", []) or []:
+            name = (getattr(item, "entity_name", None) or "").strip()
+            code = (getattr(item, "entity_code", None) or "").strip()
+            if not name and not code:
+                continue
+            bare, exchange = DataFetcherAgent._split_security_code(code)
+            if bare:
+                key = f"{bare}@{exchange}" if exchange else bare
+                bare_exchanges.setdefault(bare, set()).add(exchange)
+            else:
+                key = f"name:{name.casefold()}"
+            eligible.setdefault(key, {"name": name, "code": code, "bare": bare, "exchange": exchange})
+        # 裸代码唯一性信息放特殊键下，不与实体键冲突（实体键不可能含 "@__"）
+        eligible["__bare_exchanges__"] = bare_exchanges  # type: ignore[assignment]
+        return eligible
+
+    @staticmethod
+    def _match_query_entity(
+        query: str,
+        eligible: dict[str, dict[str, Any]],
+        must_include: list[str],
+    ) -> tuple[bool, str]:
+        """判断查询串是否命中某个已识别实体（R2 交易所感知版）。
+
+        匹配优先级（逐级放宽，但每级都要求边界成立）：
+        1. 用户明确指名的标的（must_include_entities）出现在 query 中。
+        2. **带显式交易所后缀**的代码（600519.SH）：精确匹配同交易所候选；
+           后缀与候选不一致 → 拒绝（显式信息优先，不做模糊放行）。
+        3. **裸代码**（600519）：仅当该裸代码在候选中只对应一个交易所时匹配；
+           同号多交易所 → 拒绝（不能替用户猜市场）。
+        4. 完整公司名称出现，且不会把更长的名称当成短名称（防止
+           “贵州茅台酒业集团”被“贵州茅台”冒认）。
+
+        Returns:
+            (matched, reason)。matched=False 时 reason 说明原因。
+        """
+        query_cf = str(query or "").casefold().strip()
+        if not query_cf:
+            return False, "query 为空"
+
+        for token in must_include:
+            token_cf = str(token or "").casefold().strip()
+            if token_cf and token_cf in query_cf:
+                return True, "用户指名标的"
+
+        bare_exchanges = eligible.get("__bare_exchanges__") or {}
+        entities = {k: v for k, v in eligible.items() if not k.startswith("__")}
+        if not entities:
+            return False, "dataset 中没有任何已识别公司"
+
+        query_upper = str(query or "").upper()
+
+        # 2) 显式后缀代码：精确匹配 (bare, exchange)
+        explicit = re.findall(r"(?<!\d)(\d{4,6})\.(SH|SZ|BJ|HK|SS|NO)(?![A-Z0-9])", query_upper)
+        for bare, suffix in explicit:
+            exchange = "SH" if suffix == "SS" else suffix
+            key = f"{bare}@{exchange}"
+            if key in entities:
+                return True, f"代码命中 {entities[key]['code']}"
+            if bare in bare_exchanges and bare_exchanges[bare]:
+                return False, f"显式后缀 .{exchange} 与候选交易所不一致（候选：{sorted(bare_exchanges[bare])}）"
+            return False, f"显式后缀代码 {bare}.{exchange} 不在已识别候选中"
+
+        # 3) 裸代码：只在唯一交易所时匹配
+        bare_hits = re.findall(r"(?<!\d)(\d{4,6})(?!\d)", query_upper)
+        for bare in bare_hits:
+            exchanges = bare_exchanges.get(bare) or set()
+            if len(exchanges) == 0:
+                continue
+            if len(exchanges) == 1:
+                key = f"{bare}@{next(iter(exchanges))}" if exchanges != {""} else bare
+                target = entities.get(key) or entities.get(bare)
+                if target is not None:
+                    return True, f"代码命中 {target['code']}"
+                return True, f"代码命中 {bare}"
+            return False, f"裸代码 {bare} 对应多个交易所（{sorted(exchanges)}），需显式指定"
+
+        # 4) 完整名称匹配，且排除“更长名称被短名称冒认”
+        matched_names = []
+        for item in entities.values():
+            name_cf = item["name"].casefold()
+            if len(name_cf) >= 2 and name_cf in query_cf:
+                matched_names.append(name_cf)
+        if matched_names:
+            longest = max(matched_names, key=len)
+            idx = query_cf.find(longest)
+            tail = query_cf[idx + len(longest) : idx + len(longest) + 8]
+            if any(tail.startswith(sfx) for sfx in ("酒业", "集团", "控股", "有限公司", "股份公司", "实业")):
+                return False, f"查询指向更长的实体名称，不能按「{longest}」放行"
+            return True, "名称命中"
+
+        return False, "target is not an eligible identified company"
 
     @staticmethod
     def _company_context(dataset: Any) -> list[dict[str, Any]]:
@@ -1077,6 +1379,111 @@ class DataFetcherAgent:
         )
 
     @staticmethod
+    def _canonical_entity_key(entity_name: str | None, entity_code: str | None) -> str:
+        """规范主体键：优先 (裸代码@交易所)，其次裸代码，最后名称小写。
+
+        R2（V8 最终方案 §5.3.9）：覆盖必须按规范主体去重——
+        名称和代码只是属性；「五粮液」+「000858.SZ」是同一家，不得算两家。
+        """
+        bare, exchange = DataFetcherAgent._split_security_code(entity_code)
+        if bare:
+            return f"{bare}@{exchange}" if exchange else bare
+        return f"name:{(entity_name or '').strip().casefold()}"
+
+    @staticmethod
+    def _covered_financial_entities(dataset: Any) -> int:
+        """统计**同时**具备收入、利润与有效期间的规范主体数（R2 §5.3.9）。
+
+        与旧口径的区别：旧实现把名称集合与代码集合相加——同一公司算两家；
+        且只查全域是否出现过收入/利润，不逐家核对。本方法逐家要求：
+        - 至少一条收入类指标（revenue/营业收入/营业总收入）
+        - 至少一条利润类指标（parent_net_profit/归母净利润/净利润）
+        - 且这些记录带 period_end（有效报告期）
+        缺任一项的公司不计入覆盖。
+        """
+        revenue_terms = ("revenue", "营业收入", "营业总收入", "营收")
+        profit_terms = ("parent_net_profit", "归母净利润", "净利润", "net_profit", "profit")
+
+        per_entity: dict[str, dict[str, bool]] = {}
+        for rec in getattr(dataset, "financials", []) or []:
+            name = getattr(rec, "entity_name", None)
+            code = getattr(rec, "entity_code", None)
+            if not name and not code:
+                continue
+            key = DataFetcherAgent._canonical_entity_key(name, code)
+            entry = per_entity.setdefault(key, {"revenue": False, "profit": False})
+            metric_cf = str(getattr(rec, "metric", "") or "").casefold()
+            if getattr(rec, "period_end", None) is None:
+                continue  # 无期间的记录不满足"有效财务数据"要求
+            # Growth and margin percentages are not revenue/profit amounts.
+            if any(t in metric_cf for t in (
+                "率", "同比", "环比", "增长", "margin", "growth", "yoy", "qoq", "ratio",
+            )):
+                continue
+            value = getattr(rec, "value", None)
+            if value is None or isinstance(value, bool):
+                continue
+            try:
+                number = float(str(value).replace(",", ""))
+            except (ValueError, TypeError):
+                continue
+            if number != number or abs(number) == float("inf"):
+                continue
+            if any(t.casefold() in metric_cf for t in revenue_terms):
+                entry["revenue"] = True
+            if any(t.casefold() in metric_cf for t in profit_terms):
+                entry["profit"] = True
+
+        return sum(1 for e in per_entity.values() if e["revenue"] and e["profit"])
+
+    @staticmethod
+    def _financial_result_has_target_metrics(result: Any, task: SkillTask) -> bool:
+        """校验财务技能响应是否包含目标指标（R2 §5.3.6）。
+
+        只返回行情字段（最新价/涨跌幅/市值/PE）即便 records 非空，
+        也不能满足财务需求——这正是"仅 1 家覆盖"的静默根因之一。
+
+        Args:
+            result: SkillResult。
+            task: 对应任务（用 expected_fields 与 query 提供目标指标）。
+
+        Returns:
+            响应中含至少一个目标指标键 → True；仅行情/元字段 → False。
+        """
+        records = getattr(result, "records", None) or []
+        if not records:
+            return False
+
+        # 目标指标词：expected_fields 优先，其次 query 中的指标词
+        target_terms: list[str] = []
+        for field in (getattr(task, "expected_fields", None) or []):
+            text = str(field or "").strip()
+            if text and _query_has_financial_metrics(text):
+                target_terms.append(text)
+        query_text = str((getattr(task, "arguments", {}) or {}).get("query", "") or "")
+        target_terms.extend(t for t in _FINANCIAL_METRIC_TERMS if t in query_text)
+        if not target_terms:
+            target_terms = list(_FINANCIAL_METRIC_TERMS)
+
+        for raw in records:
+            if not isinstance(raw, dict):
+                continue
+            for key, value in raw.items():
+                if value is None or isinstance(value, bool):
+                    continue
+                try:
+                    number = float(str(value).replace(",", ""))
+                except (ValueError, TypeError):
+                    continue
+                if number != number or abs(number) == float("inf"):
+                    continue
+                key_str = str(key)
+                for term in target_terms:
+                    if term and (term in key_str or term.casefold() in key_str.casefold()):
+                        return True
+        return False
+
+    @staticmethod
     def _evaluate_requirement(dataset: Any, requirement: ResearchRequirement) -> RequirementCoverage:
         records = list(dataset.records_for(requirement.domain))
         if requirement.acceptable_skill_ids:
@@ -1097,20 +1504,24 @@ class DataFetcherAgent:
             if not any(any(token.casefold() in metric for token in group) for metric in metrics):
                 missing.append("缺少指标组：" + "/".join(group))
         if requirement.domain == Domain.FINANCIALS:
-            known_companies = {
-                c.entity_name for c in getattr(dataset, "companies", []) if c.entity_name
-            } | {
-                c.entity_code for c in getattr(dataset, "companies", []) if c.entity_code
-            }
-            if len(known_companies) >= 4:
-                fin_entities = {
-                    r.entity_name for r in records if r.entity_name
-                } | {
-                    r.entity_code for r in records if r.entity_code
-                }
-                target_min = min(4, len(known_companies))
-                if len(fin_entities) < target_min:
-                    missing.append(f"财务三表需覆盖至少 {target_min} 家核心标的（当前仅覆盖 {len(fin_entities)} 家）")
+            # R2（V8 最终方案 §5.3.9）：覆盖按规范主体去重计数，逐家核对
+            # 收入+利润+有效期间；不再用「名称集合并代码集」相加（同一公司双计）。
+            identified_count = len({
+                DataFetcherAgent._canonical_entity_key(
+                    (getattr(c, "entity_name", None) or "").strip() or None,
+                    getattr(c, "entity_code", None),
+                )
+                for c in getattr(dataset, "companies", []) or []
+                if (getattr(c, "entity_name", None) or getattr(c, "entity_code", None))
+            })
+            if identified_count >= 4:
+                covered_entities = DataFetcherAgent._covered_financial_entities(dataset)
+                target_min = min(4, identified_count)
+                if covered_entities < target_min:
+                    missing.append(
+                        f"财务三表需覆盖至少 {target_min} 家核心标的"
+                        f"（当前仅逐家核验通过 {covered_entities} 家：收入+利润+有效期间齐备）"
+                    )
         return RequirementCoverage(
             requirement_id=requirement.requirement_id,
             label=requirement.label,
@@ -1175,15 +1586,35 @@ class DataFetcherAgent:
                     ["operating_cash_flow", "经营活动产生的现金流量净额", "经营现金流"],
                 ],
             ))
-        if "产业链" in text:
+        # 升级（2026-10-07）：供应链关系意图触发词从「产业链」扩到供应商/客户/合作伙伴/上下游，
+        # 且可接受技能从单一 business-query 扩为「公告+研报+新闻」三检索并集——
+        # 公司级供应链关系（供应商名单/客户名单/合作伙伴）主要靠公告、研报、新闻披露获得，
+        # 单一财务查询技能覆盖不了（英伟达/小米类公司锚定查询的第一数据来源）。
+        chain_intent_terms = ("产业链", "供应链", "上下游", "供应商", "客户", "合作伙伴", "配套")
+        if any(term in text for term in chain_intent_terms):
             requirements.append(ResearchRequirement(
                 requirement_id="chain_structure",
                 label="产业链结构或主营构成",
                 domain=Domain.INDUSTRY_CHAIN,
-                acceptable_skill_ids=skill_ids[Domain.INDUSTRY_CHAIN],
+                acceptable_skill_ids=[
+                    "hithink-business-query", "hithink-futures-query",
+                    "announcement-search", "report-search", "news-search",
+                ],
                 expected_metric_groups=[[
                     "chain_segment", "产业链", "main_business", "主营", "business_composition",
                     "分类标准", "项目名称", "参控", "客户", "供应商", "合同",
+                ]],
+            ))
+        supply_relation_terms = ("供应商", "客户", "合作伙伴", "供应链", "上下游")
+        if any(term in text for term in supply_relation_terms):
+            requirements.append(ResearchRequirement(
+                requirement_id="supply_chain_relations",
+                label="供应链上下游关系（供应商/客户/合作伙伴）",
+                domain=Domain.INDUSTRY_CHAIN,
+                acceptable_skill_ids=["announcement-search", "report-search", "news-search"],
+                expected_metric_groups=[[
+                    "供应商", "客户", "合作伙伴", "采购", "销售", "重大合同",
+                    "代工", "OEM", "ODM", "战略合作伙伴",
                 ]],
             ))
         return requirements

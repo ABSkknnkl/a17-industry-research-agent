@@ -850,6 +850,86 @@ function resolveChartSvgUrl(spec: ChartSpecLoose | null): string | null {
   return null
 }
 
+/**
+ * 补充视图（HTML 排版版）的可访问 URL（2026-10-17）。
+ * 后端给的是磁盘绝对路径，前端不能直接拼，统一走 run 产物接口；
+ * 产物接口已支持在 artifacts/images/ 下按文件名查找。
+ */
+function resolveSupplementUrl(spec: ChartSpecLoose | null): string | null {
+  const raw = spec?.supplement_image_uri
+  if (!raw) return null
+  if (/^(https?:|data:)/.test(raw)) return raw
+  const fileName = raw.split('/').pop()
+  if (!fileName) return null
+  const rId =
+    props.runId ||
+    (typeof window !== 'undefined'
+      ? window.location.pathname.match(/\/runs\/([^/]+)/)?.[1]
+      : null)
+  return rId ? `/api/v1/runs/${rId}/artifacts/${fileName}` : null
+}
+
+function hasSupplement(spec: ChartSpecLoose | null): boolean {
+  return Boolean(resolveSupplementUrl(spec))
+}
+
+// ---- 产业链 SVG 内联渲染（2026-10-07）：白名单消毒后 v-html，浏览器无损缩放 ----
+// 与后端 chain_svg_guard 同口径：12 元素白名单；剥事件属性/href/style/script 类危险内容。
+const INLINE_SVG_WHITELIST = new Set([
+  'svg', 'g', 'rect', 'text', 'line', 'polyline', 'polygon',
+  'circle', 'ellipse', 'defs', 'marker', 'title',
+])
+const inlineSvgCache = new Map<string, string | null>()
+
+function sanitizeInlineSvg(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  try {
+    const doc = new DOMParser().parseFromString(raw, 'image/svg+xml')
+    const root = doc.documentElement
+    if (!root || root.tagName.toLowerCase() !== 'svg') return null
+    if (root.querySelector('parsererror')) return null
+    const walk = (el: Element): void => {
+      for (const child of Array.from(el.children)) {
+        const tag = child.tagName.toLowerCase()
+        if (!INLINE_SVG_WHITELIST.has(tag)) {
+          child.remove()
+          continue
+        }
+        for (const attr of Array.from(child.attributes)) {
+          const name = attr.name.toLowerCase()
+          if (
+            name.startsWith('on') ||
+            name === 'href' ||
+            name === 'xlink:href' ||
+            name === 'style' ||
+            /url\s*\(/i.test(attr.value) && name !== 'marker-end' && name !== 'marker-start' && name !== 'fill'
+          ) {
+            child.removeAttribute(attr.name)
+          }
+        }
+        walk(child)
+      }
+    }
+    walk(root)
+    for (const attr of Array.from(root.attributes)) {
+      const name = attr.name.toLowerCase()
+      if (name.startsWith('on') || name === 'style') root.removeAttribute(attr.name)
+    }
+    return root.outerHTML
+  } catch {
+    return null
+  }
+}
+
+function sanitizedChainSvg(spec: ChartSpecLoose | null): string | null {
+  if (!spec || spec.render_mode !== 'svg') return null
+  const key = spec.chart_id ?? spec.title ?? ''
+  if (inlineSvgCache.has(key)) return inlineSvgCache.get(key) ?? null
+  const clean = sanitizeInlineSvg(spec.inline_svg)
+  inlineSvgCache.set(key, clean)
+  return clean
+}
+
 // ---- 缩略图渲染 ----
 const thumbsRef = ref<HTMLElement[]>([])
 const thumbInstances: echarts.ECharts[] = []
@@ -951,7 +1031,7 @@ function renderThumbs(): void {
   requestAnimationFrame(() => {
     ordered.value.forEach((spec, index) => {
       const el = thumbsRef.value[index]
-      if (!el || !spec.option || spec.render_mode === 'generated_image') return
+      if (!el || !spec.option || spec.render_mode === 'generated_image' || spec.render_mode === 'svg') return
       const instance = echarts.init(el)
       instance.setOption(sanitizedOption(spec) ?? spec.option)
       thumbInstances.push(instance)
@@ -989,14 +1069,30 @@ let dialogInstance: echarts.ECharts | null = null
 
 const activeSpec = computed(() => ordered.value[activeIndex.value] ?? null)
 
-function openChart(index: number): void {
+// 主图 / 补充视图切换（2026-10-17）：产业链图主图恒为确定性 SVG（有连线与箭头），
+// HTML 排版版只作为并存的可切换补充视图，绝不顶替主图。
+const viewMode = ref<'main' | 'supplement'>('main')
+
+function openChart(index: number, mode: 'main' | 'supplement' = 'main'): void {
   activeIndex.value = index
   previewMode.value = 'echarts'
+  viewMode.value = mode
   dialogVisible.value = true
+}
+
+function openSupplement(index: number): void {
+  openChart(index, 'supplement')
 }
 
 function onPreviewModeChange(): void {
   if (previewMode.value === 'echarts') {
+    nextTickRenderDialog()
+  }
+}
+
+function onViewModeChange(): void {
+  // 切回主图时按需重新挂载 ECharts 实例（补充视图是位图，不需要）
+  if (viewMode.value === 'main') {
     nextTickRenderDialog()
   }
 }
@@ -1016,7 +1112,14 @@ watch(activeSpec, async () => {
 async function nextTickRenderDialog(): Promise<void> {
   await new Promise((resolve) => requestAnimationFrame(resolve))
   if (!dialogRef.value || !activeSpec.value?.option) return
-  if (activeSpec.value.render_mode === 'generated_image' || previewMode.value === 'svg') return
+  // 补充视图是位图，不需要（也不能）初始化 ECharts 实例
+  if (viewMode.value === 'supplement') return
+  if (
+    activeSpec.value.render_mode === 'generated_image' ||
+    activeSpec.value.render_mode === 'svg' ||
+    previewMode.value === 'svg'
+  )
+    return
   dialogInstance?.dispose()
   dialogInstance = echarts.init(dialogRef.value)
   dialogInstance.setOption(sanitizedOption(activeSpec.value, true) ?? activeSpec.value.option)
@@ -1134,9 +1237,21 @@ export default { name: 'ChartGallery' }
             <span v-if="updatedAtLabel(spec)">{{ updatedAtLabel(spec) }}</span>
           </div>
         </div>
+        <!-- 产业链 SVG 矢量内联渲染（render_mode=svg，无损缩放） -->
+        <div
+          v-if="spec.render_mode === 'svg' && sanitizedChainSvg(spec)"
+          class="chart-thumb chart-inline-svg"
+          role="button"
+          tabindex="0"
+          :aria-label="chartPreviewLabel(spec)"
+          @click="openChart(index)"
+          @keydown.enter="openChart(index)"
+          @keydown.space.prevent="openChart(index)"
+          v-html="sanitizedChainSvg(spec)"
+        />
         <!-- echarts 渲染 -->
         <div
-          v-if="spec.render_mode !== 'generated_image'"
+          v-else-if="spec.render_mode !== 'generated_image'"
           class="chart-surface chart-thumb"
           role="button"
           tabindex="0"
@@ -1160,9 +1275,23 @@ export default { name: 'ChartGallery' }
           />
           <div v-else class="chart-img-missing muted">AI 生成图未内联，请从产出物下载查看</div>
         </div>
-        <!-- 产业链拓扑图矢量呈现与生图降级轻量提示 -->
+        <!-- 补充视图入口（HTML 排版版）：主图仍是上面的矢量图，这里只多一个切换入口 -->
+        <div v-if="hasSupplement(spec)" class="chain-fallback-notice">
+          <span class="notice-icon">🅷</span>
+          <span>另附 HTML 排版版（卡片更细，不画连线）</span>
+          <el-button
+            link
+            type="primary"
+            size="small"
+            data-testid="chart-supplement-open"
+            @click="openSupplement(index)"
+          >
+            查看
+          </el-button>
+        </div>
+        <!-- 产业链拓扑图矢量呈现与生图降级轻量提示（render_mode=svg 时已是矢量直出，不再提示） -->
         <div
-          v-if="spec.chart_type === 'industry_chain' && spec.render_mode !== 'generated_image'"
+          v-if="spec.chart_type === 'industry_chain' && spec.render_mode !== 'generated_image' && spec.render_mode !== 'svg'"
           class="chain-fallback-notice"
         >
           <span class="notice-icon">ℹ️</span>
@@ -1188,15 +1317,36 @@ export default { name: 'ChartGallery' }
       data-testid="chart-preview-dialog"
       @opened="nextTickRenderDialog"
     >
-      <div v-if="resolveChartSvgUrl(activeSpec)" class="dialog-toolbar">
+      <div v-if="hasSupplement(activeSpec)" class="dialog-toolbar">
+        <el-radio-group v-model="viewMode" size="small" @change="onViewModeChange">
+          <el-radio-button value="main">主图（矢量·含连线）</el-radio-button>
+          <el-radio-button value="supplement">HTML 排版版（细读卡片）</el-radio-button>
+        </el-radio-group>
+      </div>
+      <div v-if="viewMode === 'main' && resolveChartSvgUrl(activeSpec)" class="dialog-toolbar">
         <el-radio-group v-model="previewMode" size="small" @change="onPreviewModeChange">
           <el-radio-button value="echarts">交互图表 (ECharts)</el-radio-button>
           <el-radio-button value="svg">出版级矢量图 (SVG)</el-radio-button>
         </el-radio-group>
       </div>
-
+      <div v-if="viewMode === 'supplement'" class="chart-svg-preview">
+        <img
+          :src="resolveSupplementUrl(activeSpec) || ''"
+          :alt="activeSpec?.title ?? ''"
+          class="chart-svg-img"
+          data-testid="chart-supplement-image"
+        />
+        <div class="chart-goal muted">
+          {{ activeSpec?.supplement_note || 'LLM 排版版：卡片信息更细，但不画连线与箭头' }}
+        </div>
+      </div>
       <div
-        v-if="
+        v-else-if="activeSpec?.render_mode === 'svg' && sanitizedChainSvg(activeSpec)"
+        class="chart-svg-preview chart-inline-svg-dialog"
+        v-html="sanitizedChainSvg(activeSpec)"
+      />
+      <div
+        v-else-if="
           (activeSpec?.render_mode === 'generated_image' && activeSpec.image_uri) ||
           previewMode === 'svg'
         "
@@ -1323,6 +1473,26 @@ export default { name: 'ChartGallery' }
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+/* 产业链 SVG 矢量内联（2026-10-07）：自适应容器宽度，高度随 viewBox 等比，浏览器无损缩放 */
+.chart-thumb.chart-inline-svg,
+.chart-chain .chart-thumb.chart-inline-svg {
+  cursor: pointer;
+  background: var(--rp-paper);
+  height: auto;
+  min-height: 120px;
+  padding: 8px;
+}
+.chart-inline-svg :deep(svg) {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.chart-inline-svg-dialog :deep(svg) {
+  width: 100%;
+  height: auto;
+  max-height: 520px;
+  display: block;
 }
 .chart-img-missing {
   font-size: 12px;

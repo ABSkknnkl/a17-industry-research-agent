@@ -227,7 +227,11 @@ def test_handle_review_direct_edit_updates_state_and_artifacts(tmp_path, monkeyp
 
 
 def test_report_fusion_review_and_approval_flow(tmp_path, monkeypatch):
-    """验证阶段五（报告融合）进入 waiting_review 人工审核、支持 direct_edit 并最终批准完结"""
+    """验证阶段五（报告融合）进入 waiting_review 人工审核、支持 direct_edit 并最终批准完结
+
+    R1 之后：融合内容编辑会在批准时触发重导出（report_view → MD/HTML/PDF），
+    夹具因此需要一份完整合法的 ReportViewModel；PDF 渲染以 stub 替代（单测不起 chromium）。
+    """
     async def _test():
         monkeypatch.setattr(storage, "base_dir", tmp_path)
         engine = WorkflowEngine()
@@ -236,10 +240,30 @@ def test_report_fusion_review_and_approval_flow(tmp_path, monkeypatch):
         art_dir = run_dir / "artifacts"
         art_dir.mkdir(parents=True, exist_ok=True)
 
+        # 完整合法的 ReportViewModel（R1：批准时按此重导出三格式）
+        view_payload = {
+            "report_id": "RPT-TEST",
+            "title": "原始报告标题",
+            "subject": "低空经济",
+            "as_of": "2026-10-31",
+            "tone": "professional",
+            "report_depth": "standard",
+            "visual_style": "deep_research",
+            "delivery_status": "ready",
+            "executive_summary": {"headline": "核心研判", "conclusions": []},
+            "chapters": [],
+        }
         (art_dir / "report_view.json").write_text(
-            json.dumps({"title": "原始报告标题", "summary": "初版摘要"}, ensure_ascii=False),
+            json.dumps(view_payload, ensure_ascii=False),
             encoding="utf-8"
         )
+
+        # 重导出不启动真实 chromium：stub 掉 PDF 渲染
+        async def _stub_pdf(html, timeout):
+            return b"%PDF-reexported"
+
+        import backend.app.engine.state_machine as sm
+        monkeypatch.setattr("report_fusion.pdf.render_pdf", _stub_pdf)
 
         input_req = RunCreateRequest(
             project_id="test_proj",
@@ -300,6 +324,10 @@ def test_report_fusion_review_and_approval_flow(tmp_path, monkeypatch):
         res2 = await engine.handle_review(approve_req)
         assert res2.status == "completed"
         assert res2.stage_results["report_fusion"].status == "completed"
+        # R1：批准触发了重导出——MD 里的标题是编辑后的新标题
+        md_text = (art_dir / "report.md").read_text(encoding="utf-8")
+        assert "2026年低空经济产业深度专题报告" in md_text
+        assert (art_dir / "report.pdf").read_bytes() == b"%PDF-reexported"
 
     asyncio.run(_test())
 
