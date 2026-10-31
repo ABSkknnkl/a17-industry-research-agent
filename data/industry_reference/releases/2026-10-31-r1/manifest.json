@@ -1,0 +1,30 @@
+{
+  "release_id": "2026-10-31-r1",
+  "created_at": "2026-10-31T18:30:44.347471",
+  "source_hashes": {
+    "data/industry_reference/raw/2026-10-31/core_whitelist.json": "fca6dc2b3ffc4a9a25394b25bda113a204bee5ff206411471a5cb3cbabf0009b",
+    "data/industry_reference/raw/2026-10-31/sw_industry.json": "f099f2d9fde13fc34dba81c6b60d49fa84cde299fba525d986763ccbd36ff59e"
+  },
+  "source_declared": {
+    "core_as_of": "2026-10-31",
+    "sw_as_of": "2026-10-31"
+  },
+  "counts": {
+    "organizations": 591,
+    "securities": 615,
+    "classifications": 5221,
+    "role_candidates": 652,
+    "conflicts": 37
+  },
+  "dispositions": {
+    "candidate": 1834,
+    "accepted": 27,
+    "conflict": 12,
+    "pending_review": 22
+  },
+  "notes": [
+    "身份已确认不代表角色已确认；角色候选仍须走证据发现。",
+    "rank/weight 为申万成分口径，不生成 leader_score 或市场份额。",
+    "冲突与名称差异不自动和解，逐条保留 disposition 供人工核验。"
+  ]
+}
