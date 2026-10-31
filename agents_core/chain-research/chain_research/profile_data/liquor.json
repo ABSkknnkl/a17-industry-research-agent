@@ -1,0 +1,210 @@
+{
+  "profile_id": "liquor",
+  "version": "2026-10-31.2",
+  "status": "draft",
+  "subject": "白酒",
+  "aliases": [
+    "白酒酿造"
+  ],
+  "as_of": "2026-10-30",
+  "review_after": "2027-01-30",
+  "source_refs": [
+    "legacy:chart_profiles/liquor.json",
+    "output/产业链图比赛版最终修改方案_画像与归属规则_20261030.md#5",
+    "policy-draft:迁移结构，待原始资料审阅；不迁移企业支持状态"
+  ],
+  "categories": [
+    {
+      "category_id": "grain",
+      "name": "酿造原料",
+      "aliases": [
+        "酿酒高粱",
+        "酿酒粮食"
+      ],
+      "application_terms": [
+        "白酒",
+        "酿酒"
+      ],
+      "source_refs": [
+        "legacy:liquor/upstream_anchor;unreviewed"
+      ]
+    },
+    {
+      "category_id": "packaging",
+      "name": "酒类包装",
+      "aliases": [
+        "白酒包装",
+        "酒瓶",
+        "酒类包装材料"
+      ],
+      "application_terms": [
+        "白酒",
+        "酒类"
+      ],
+      "source_refs": [
+        "legacy:liquor/cap_pool;unreviewed"
+      ]
+    },
+    {
+      "category_id": "liquor",
+      "name": "白酒产品",
+      "aliases": [
+        "白酒",
+        "酱香型白酒",
+        "浓香型白酒",
+        "清香型白酒"
+      ],
+      "application_terms": [
+        "白酒"
+      ],
+      "source_refs": [
+        "legacy:liquor;unreviewed"
+      ]
+    },
+    {
+      "category_id": "distribution",
+      "name": "酒类流通服务",
+      "aliases": [
+        "白酒经销服务",
+        "酒类零售服务"
+      ],
+      "application_terms": [
+        "白酒",
+        "酒类"
+      ],
+      "source_refs": [
+        "legacy:liquor/support;unreviewed"
+      ]
+    },
+    {
+      "category_id": "service",
+      "name": "第三方配套服务",
+      "aliases": [
+        "白酒检测服务",
+        "酒类仓储服务",
+        "白酒物流服务"
+      ],
+      "application_terms": [
+        "白酒",
+        "酒类"
+      ],
+      "source_refs": [
+        "legacy:liquor/support;unreviewed"
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "activity_key": "grain",
+      "name": "粮食与酿造原料",
+      "stage": "upstream",
+      "activity_kind": "input",
+      "category_ids": [
+        "grain"
+      ],
+      "allowed_roles": [
+        "原料供应商"
+      ],
+      "search_terms": [
+        "白酒 酿酒高粱 原料供应商 官方 业务"
+      ]
+    },
+    {
+      "activity_key": "packaging",
+      "name": "包装材料",
+      "stage": "upstream",
+      "activity_kind": "input",
+      "category_ids": [
+        "packaging"
+      ],
+      "allowed_roles": [
+        "包装供应商"
+      ],
+      "search_terms": [
+        "白酒 包装 酒瓶 厂商 官方 业务"
+      ]
+    },
+    {
+      "activity_key": "fermentation",
+      "name": "制曲与糖化发酵",
+      "stage": "midstream",
+      "activity_kind": "process",
+      "default_execution_mode": "internal",
+      "company_display_policy": "process",
+      "description": "画像默认作为厂商内建工艺；实际执行方式允许证据覆盖"
+    },
+    {
+      "activity_key": "aging",
+      "name": "蒸馏与陈酿老熟",
+      "stage": "midstream",
+      "activity_kind": "process",
+      "default_execution_mode": "internal",
+      "company_display_policy": "process",
+      "description": "蒸馏取酒与陈酿老熟；不因没有外部供应商而删除"
+    },
+    {
+      "activity_key": "blending",
+      "name": "勾调灌装与内部品控",
+      "stage": "midstream",
+      "activity_kind": "process",
+      "default_execution_mode": "internal",
+      "company_display_policy": "process",
+      "description": "厂内勾调、灌装与检验，与第三方检测服务分开"
+    },
+    {
+      "activity_key": "brand",
+      "name": "白酒品牌与产品",
+      "stage": "midstream",
+      "activity_kind": "brand",
+      "category_ids": [
+        "liquor"
+      ],
+      "allowed_roles": [
+        "白酒品牌",
+        "生产商"
+      ],
+      "search_terms": [
+        "白酒 品牌 官网 产品 年报"
+      ]
+    },
+    {
+      "activity_key": "channels",
+      "name": "经销零售与电商渠道",
+      "stage": "downstream",
+      "activity_kind": "channel",
+      "category_ids": [
+        "distribution"
+      ],
+      "allowed_roles": [
+        "渠道商",
+        "零售商"
+      ],
+      "search_terms": [
+        "白酒 经销 零售 电商 官方 业务"
+      ]
+    },
+    {
+      "activity_key": "use",
+      "name": "消费场景",
+      "stage": "downstream",
+      "activity_kind": "scenario",
+      "company_display_policy": "scenario",
+      "description": "宴请、礼赠与自饮等消费场景；不填入品牌同业充当客户"
+    },
+    {
+      "activity_key": "service",
+      "name": "第三方检测物流与配套",
+      "stage": "support",
+      "activity_kind": "service",
+      "category_ids": [
+        "service"
+      ],
+      "allowed_roles": [
+        "服务机构"
+      ],
+      "search_terms": [
+        "白酒 检测 仓储 物流 服务机构 官网"
+      ]
+    }
+  ]
+}

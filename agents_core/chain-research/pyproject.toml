@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chain-research"
+version = "0.2.0"
+description = "Shared chain research contract and evidence pipeline for A1 (v2)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.7,<3", "httpx", "PyMuPDF"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio"]
+
+[tool.setuptools.packages.find]
+include = ["chain_research*"]
+
+[tool.setuptools.package-data]
+chain_research = ["profile_data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

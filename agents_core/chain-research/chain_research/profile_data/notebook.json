@@ -1,0 +1,36 @@
+{
+  "profile_id": "notebook", "version": "2026-10-30.1", "status": "draft",
+  "subject": "笔记本电脑", "aliases": ["笔记本", "笔记本计算机", "notebook computer", "laptop"],
+  "as_of": "2026-10-30", "review_after": "2027-01-30",
+  "source_refs": ["output/产业链图比赛版最终修改方案_画像与归属规则_20261030.md#6", "policy-draft:待原始资料核对；无企业名单或供货事实"],
+  "categories": [
+    {"category_id":"cpu","name":"笔记本处理器","aliases":["CPU","处理器","笔记本处理器","笔记本CPU","laptop processor"],"application_terms":["笔记本","laptop","notebook"],"excluded_terms":["仅用于服务器","不适用于笔记本"],"source_refs":["policy-draft:notebook/cpu"]},
+    {"category_id":"gpu","name":"笔记本图形处理","aliases":["GPU","笔记本显卡","图形处理器"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/gpu"]},
+    {"category_id":"dram","name":"DRAM与内存","aliases":["DRAM","内存","内存条","DDR5内存"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/dram"]},
+    {"category_id":"ssd","name":"NAND与SSD","aliases":["SSD","NAND","固态硬盘","SSD固态硬盘"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/ssd"]},
+    {"category_id":"display","name":"显示模组","aliases":["显示模组","笔记本显示屏","显示面板"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/display"]},
+    {"category_id":"battery","name":"电池与电源","aliases":["笔记本电池","电池组","电源适配器"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/battery"]},
+    {"category_id":"mechanical","name":"结构与散热","aliases":["笔记本结构件","散热模组","连接器"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/mechanical"]},
+    {"category_id":"odm","name":"整机代工服务","aliases":["笔记本代工服务","笔记本ODM","笔记本电脑代工"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/odm"]},
+    {"category_id":"notebook","name":"笔记本整机","aliases":["笔记本电脑","笔记本计算机","laptop","notebook computer"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/brand"]},
+    {"category_id":"channel","name":"电脑零售服务","aliases":["笔记本零售服务","笔记本经销服务"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/channel"]},
+    {"category_id":"ecosystem","name":"软件与生态服务","aliases":["笔记本操作系统","笔记本驱动软件"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/ecosystem"]},
+    {"category_id":"service","name":"售后与第三方服务","aliases":["笔记本维修服务","笔记本回收服务","笔记本检测认证服务"],"application_terms":["笔记本","laptop","notebook"],"source_refs":["policy-draft:notebook/service"]}
+  ],
+  "activities": [
+    {"activity_key":"compute","name":"处理器与计算平台","stage":"upstream","activity_kind":"input","category_ids":["cpu"],"allowed_roles":["部件供应商","芯片设计商"],"search_terms":["笔记本 处理器 原厂 产品 官网"],"description":"处理器与计算平台产品"},
+    {"activity_key":"graphics","name":"图形处理","stage":"upstream","activity_kind":"input","category_ids":["gpu"],"allowed_roles":["部件供应商","芯片设计商"],"search_terms":["笔记本 GPU 原厂 产品 官网"]},
+    {"activity_key":"memory","name":"DRAM与内存","stage":"upstream","activity_kind":"input","category_ids":["dram"],"allowed_roles":["部件供应商","存储厂商"],"search_terms":["笔记本 DRAM 内存 原厂 官网"]},
+    {"activity_key":"storage","name":"NAND与SSD存储","stage":"upstream","activity_kind":"input","category_ids":["ssd"],"allowed_roles":["部件供应商","存储厂商"],"search_terms":["笔记本 SSD NAND 原厂 官网"]},
+    {"activity_key":"display","name":"显示模组","stage":"upstream","activity_kind":"input","category_ids":["display"],"allowed_roles":["部件供应商","显示厂商"],"search_terms":["笔记本 显示模组 面板 厂商 官网"]},
+    {"activity_key":"power","name":"电池与电源","stage":"upstream","activity_kind":"input","category_ids":["battery"],"allowed_roles":["部件供应商"],"search_terms":["笔记本 电池 电源适配器 厂商 官网"]},
+    {"activity_key":"mechanical","name":"结构件与散热连接","stage":"upstream","activity_kind":"input","category_ids":["mechanical"],"allowed_roles":["部件供应商"],"search_terms":["笔记本 散热模组 结构件 厂商 官网"]},
+    {"activity_key":"design","name":"产品设计与工程验证","stage":"midstream","activity_kind":"process","company_display_policy":"process","default_execution_mode":"mixed","description":"产品定义、工程验证与制造协同；组织方式因企业而异"},
+    {"activity_key":"odm","name":"ODM与整机制造","stage":"midstream","activity_kind":"process","category_ids":["odm"],"allowed_roles":["代工制造商","ODM"],"search_terms":["笔记本 ODM 代工 制造 公司 官网"]},
+    {"activity_key":"brand","name":"整机品牌与产品","stage":"midstream","activity_kind":"brand","category_ids":["notebook"],"allowed_roles":["整机品牌"],"search_terms":["笔记本电脑 品牌 官方 产品目录"]},
+    {"activity_key":"channel","name":"零售与分销渠道","stage":"downstream","activity_kind":"channel","category_ids":["channel"],"allowed_roles":["渠道商","零售商"],"search_terms":["笔记本电脑 零售 经销 官方 业务"]},
+    {"activity_key":"use","name":"办公学习与专业应用","stage":"downstream","activity_kind":"scenario","company_display_policy":"scenario","description":"办公、学习、创作与专业计算；属于应用客群，不是供应商名单"},
+    {"activity_key":"ecosystem","name":"系统软件与生态","stage":"support","activity_kind":"service","category_ids":["ecosystem"],"allowed_roles":["软件提供方"],"search_terms":["笔记本 操作系统 驱动软件 官方 产品"]},
+    {"activity_key":"service","name":"检测售后与回收","stage":"support","activity_kind":"service","category_ids":["service"],"allowed_roles":["服务机构"],"search_terms":["笔记本 维修 回收 检测 服务机构 官网"]}
+  ]
+}
