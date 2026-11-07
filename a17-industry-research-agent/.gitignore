@@ -1,0 +1,111 @@
+# ── 隐私与凭证 (绝不上云) ─────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+user_settings.json
+
+# ── pytest 沙箱临时目录（basetemp，每次跑用全新后缀名） ──
+.pytest_tmp*
+
+# ── Python 虚拟环境与依赖 ────────────────────────────────
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+build/
+dist/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ── Node.js 前端依赖与打包 ───────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+frontend/dist/
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+*.tsbuildinfo
+
+# ── 运行时日志与测试缓存 ──────────────────────────────────
+*.log
+backend.log
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── 研报运行产物与用户数据 (保留空目录占位) ───────────────
+data/runs/*
+!data/runs/.gitkeep
+# output/ 为本地交付物/汇报材料，按用户裁决不纳入本仓库
+output/*
+!output/.gitkeep
+!output/runs/.gitkeep
+agents_core/*/output/*
+!agents_core/*/output/.gitkeep
+
+# ── 系统与 IDE 杂项 ───────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── 本地打包文件 ──────────────────────────────────────────
+*.zip
+*.tar.gz
+
+# ── 工作区工具数据与迁移留档（不随项目分发）────────────────
+.workbuddy/
+.migration-removed-*/
+.migration-backup-*/
+production/*
+!production/.gitkeep
+
+# ── Remotion 视频工程依赖与产物 ───────────────────────────
+remotion/node_modules/
+remotion/.remotion/
+remotion/dist/
+remotion/out/
+
+# ── 本地实验区（临时脚本、调试日志、预览截图，不入库）──────
+/scratch/
+
+# ── 测试与评测运行数据（单次跑批产物，可重跑再生）─────────
+/eval/runs/
+
+# ── 代码索引与工具缓存 ────────────────────────────────────
+.codebase-memory/
+.cbmignore
+
+# ── 第三方技能包与其运行产物（开发期辅助，非项目源码）─────
+/agent/
+.archify/
+.agents/
+.cw_skill/
+.claude/
+.trae/
+# data/skills 下是指向 .agents/skills 的符号链接，目标不入库，链接单独提交即为死链
+data/skills/
+
+# ── 本地运行状态（含配额/额度信息）────────────────────────
+.doubao_quota.json
+
+# ── 本地脚本工具元数据与前端端到端结果 ──
+.ace-tool/
+frontend/test-results/
+frontend/playwright-report/
+frontend/test_current_state.png

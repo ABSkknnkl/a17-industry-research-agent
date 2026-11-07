@@ -1,0 +1,5 @@
+{
+  "always": true,
+  "source": "skills包/投行材料质检/SKILL.md; skills包/公司画像页/SKILL.md",
+  "adaptation": "保留层级、对齐、图表和脚注可读性；改写为报告多格式导出规则，移除幻灯片模板与人工确认。"
+}

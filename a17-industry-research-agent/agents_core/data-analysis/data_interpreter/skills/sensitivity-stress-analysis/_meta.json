@@ -1,0 +1,7 @@
+{
+  "domains": ["financials", "industry", "companies"],
+  "keywords": ["敏感性", "弹性", "压力测试", "原材料价格", "成本变动", "出厂价", "销量变动", "利润弹性"],
+  "requires_signal": true,
+  "source": "skills包/回报敏感性分析/SKILL.md",
+  "adaptation": "建立关键经营变量（如原材料价格、产品出厂价、销量）对样本公司毛利与净利润的敏感性弹性测算；移除杠杆收购收益与资本退出模型。"
+}

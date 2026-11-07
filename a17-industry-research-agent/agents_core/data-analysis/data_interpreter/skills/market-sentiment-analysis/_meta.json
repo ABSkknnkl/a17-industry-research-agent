@@ -1,0 +1,1 @@
+{"domains":["industry","companies","news","reports"],"keywords":["情绪","舆情","资金流","融资融券","北向资金","恐慌","贪婪","Put-Call","PCR"],"requires_signal":true,"source":"skills包/市场情绪分析/sentiment-analysis/SKILL.md","adaptation":"保留多维情绪与背离验证；移除综合打分到交易操作的映射。"}

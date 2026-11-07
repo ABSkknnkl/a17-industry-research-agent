@@ -1,0 +1,60 @@
+# ── 隐私与凭证（绝不上云；适用于所有层级）─────────────────
+.env
+.env.*
+!.env.example
+user_settings.json
+*.pem
+*.key
+.doubao_quota.json
+*quota*.json
+
+# ── 本地运行状态与运行产物 ────────────────────────────────
+data/runs/*
+!data/runs/.gitkeep
+**/data/runs/*
+output/*
+!output/.gitkeep
+!output/runs/.gitkeep
+**/output/runs/*
+production/*
+*.log
+.pytest_cache/
+.pytest_tmp*/
+.coverage
+htmlcov/
+
+# ── 依赖、构建与缓存 ──────────────────────────────────────
+.venv/
+venv/
+env/
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+frontend/dist/
+*.tsbuildinfo
+frontend/test-results/
+frontend/playwright-report/
+
+# ── 工具内部数据 / 会话数据（不随项目公开）─────────────────
+.workbuddy/
+.qoder-input-files/
+.codebase-memory/
+.archify/
+.agents/
+.claude/
+.cw_skill/
+.trae/
+.ace-tool/
+scratch/
+/agent/
+
+# ── 系统与归档 ────────────────────────────────────────────
+.DS_Store
+._*
+Thumbs.db
+*.swp
+*.zip
+*.tar.gz

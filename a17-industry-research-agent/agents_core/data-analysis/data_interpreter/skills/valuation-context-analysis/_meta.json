@@ -1,0 +1,1 @@
+{"domains":["companies","financials","industry"],"keywords":["估值","市盈率","PE","市净率","PB","EV/EBITDA","DCF","SOTP"],"requires_signal":true,"source":"skills包/估值模型方法论/valuation-model/SKILL.md","adaptation":"保留估值方法选择、相对比较和陷阱检查；移除目标价与投资评级。"}

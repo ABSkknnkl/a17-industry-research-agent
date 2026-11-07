@@ -1,0 +1,7 @@
+{
+  "domains": ["industry", "companies", "financials", "macro", "industry_chain"],
+  "keywords": ["趋势", "比较", "构成", "分布", "矩阵", "规模", "增长"],
+  "always": true,
+  "source": "skills包/公司画像页/SKILL.md; skills包/行业概览/SKILL.md",
+  "adaptation": "保留图表选型、系列数量和真实数据要求；移除幻灯片工作流、外部取数、审批与投资判断。"
+}

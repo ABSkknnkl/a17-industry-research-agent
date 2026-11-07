@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "references": [
+    {
+      "entity_code": "002074.SZ",
+      "entity_name": "国轩高科",
+      "period_end": "2023-12-31",
+      "period_type": "annual",
+      "scope": "consolidated",
+      "currency": "CNY",
+      "metric": "gross_margin",
+      "unit": "%",
+      "published_at": "2025-04-24",
+      "revenue_yuan": "31605490020.32",
+      "original_cost_yuan": "26257211896.71",
+      "adjustment_yuan": "363418904.40",
+      "restated_cost_yuan": "26620630801.11",
+      "source_url": "https://disc.static.szse.cn/disc/disk03/finalpage/2025-04-24/f8cb55cb-b4b2-420a-bdf7-d354f7b8cf88.PDF",
+      "source_locator": "2024年年报全文 PDF 第93页、132页",
+      "basis": "2024年会计政策变更追溯调整2023年营业成本；按合并营业收入及调整后营业成本计算"
+    },
+    {
+      "entity_code": "300750.SZ",
+      "entity_name": "宁德时代",
+      "period_end": "2023-12-31",
+      "period_type": "annual",
+      "scope": "consolidated",
+      "currency": "CNY",
+      "metric": "gross_margin",
+      "unit": "%",
+      "published_at": "2025-03-15",
+      "revenue_yuan": "400917045000",
+      "original_cost_yuan": "309070434000",
+      "adjustment_yuan": "14911696000",
+      "restated_cost_yuan": "323982130000",
+      "source_url": "https://disc.static.szse.cn/download/disc/disk03/finalpage/2025-03-14/60f3502e-72d6-4b20-9f9f-026c73a57c83.PDF",
+      "source_aliases": ["http://static.cninfo.com.cn/finalpage/2025-03-15/1222806982.PDF"],
+      "source_locator": "2024年年报全文 PDF 第9页、163页",
+      "basis": "企业会计准则解释第18号追溯调整2023年合并营业成本；按合并营业收入及调整后营业成本计算"
+    },
+    {
+      "entity_code": "300750.SZ",
+      "entity_name": "宁德时代",
+      "period_end": "2024-12-31",
+      "period_type": "annual",
+      "scope": "consolidated",
+      "currency": "CNY",
+      "metric": "gross_margin",
+      "unit": "%",
+      "published_at": "2025-03-15",
+      "revenue_yuan": "362012554000",
+      "original_cost_yuan": "261676353000",
+      "adjustment_yuan": "11842606000",
+      "restated_cost_yuan": "273518959000",
+      "source_url": "https://disc.static.szse.cn/download/disc/disk03/finalpage/2025-03-14/60f3502e-72d6-4b20-9f9f-026c73a57c83.PDF",
+      "source_aliases": ["http://static.cninfo.com.cn/finalpage/2025-03-15/1222806982.PDF"],
+      "source_locator": "2024年年报全文 PDF 第9页、119页、162页",
+      "basis": "2024年合并营业成本列报影响11842606000元；由列报后成本减去影响复算列报前成本，并按同口径收入计算毛利率"
+    }
+  ]
+}

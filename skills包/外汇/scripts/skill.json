@@ -1,0 +1,65 @@
+{
+  "name": "currency-skills",
+  "version": "1.0.0",
+  "description": "提供货币汇率查询与金额转换的标准 Vercel AI SDK Tools（rateLookup 与 convertCurrency），基于 Frankfurter 外汇 API。",
+  "entry": "./dist/ai/tools/currency.js",
+  "schema": {
+    "tools": {
+      "rateLookup": {
+        "description": "根据基准货币查询最新外汇汇率表（Frankfurter API）",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "baseCurrency": {
+              "type": "string",
+              "description": "三位货币代码（ISO 4217），例如 USD、EUR、CNY"
+            }
+          },
+          "required": ["baseCurrency"],
+          "additionalProperties": false
+        }
+      },
+      "convertCurrency": {
+        "description": "根据实时汇率将金额从一种货币转换为另一种货币",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string",
+              "description": "源货币代码，例如 USD"
+            },
+            "to": {
+              "type": "string",
+              "description": "目标货币代码，例如 CNY"
+            },
+            "amount": {
+              "type": "number",
+              "description": "需要转换的金额，必须为正数",
+              "minimum": 0
+            }
+          },
+          "required": ["from", "to", "amount"],
+          "additionalProperties": false
+        }
+      }
+    }
+  },
+  "permissions": {
+    "network": {
+      "outbound": [
+        "https://api.frankfurter.dev/v1/*"
+      ]
+    },
+    "filesystem": {
+      "read": [],
+      "write": []
+    }
+  },
+  "metadata": {
+    "author": "",
+    "repository": "",
+    "keywords": ["currency", "fx", "exchange-rate", "vercel-ai-sdk", "tool"],
+    "maturity": "experimental"
+  }
+}
+

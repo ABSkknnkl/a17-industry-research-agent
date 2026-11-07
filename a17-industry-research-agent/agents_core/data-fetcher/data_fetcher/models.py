@@ -1,0 +1,327 @@
+"""Stable contracts shared by the agent, SkillHub, fusion, and CLI layers."""
+
+from __future__ import annotations
+
+from datetime import date, datetime, timezone
+from enum import Enum
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+
+class Domain(str, Enum):
+    INDUSTRY = "industry"
+    COMPANIES = "companies"
+    FINANCIALS = "financials"
+    MACRO = "macro"
+    INDUSTRY_CHAIN = "industry_chain"
+    REPORTS = "reports"
+    NEWS = "news"
+
+
+class ResearchRequest(BaseModel):
+    """The only user-facing research input contract."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    industry: str = Field(min_length=2, max_length=200)
+    focus_points: list[str] = Field(default_factory=list, max_length=20)
+    data_requirements: list[str] = Field(default_factory=list, max_length=30)
+    must_include_entities: list[str] = Field(default_factory=list, max_length=20)
+    as_of: date = Field(default_factory=date.today)
+    max_iterations: int = Field(default=6, ge=1, le=15)
+    max_skill_calls: int = Field(default=24, ge=1, le=100)
+    max_execution_seconds: float = Field(default=600.0, ge=0.01, le=3600.0)
+
+    @field_validator("industry")
+    @classmethod
+    def strip_industry(cls, value: str) -> str:
+        value = value.strip()
+        if len(value) < 2:
+            raise ValueError("industry must contain at least two characters")
+        return value
+
+    @field_validator("focus_points", "data_requirements", "must_include_entities")
+    @classmethod
+    def strip_list(cls, values: list[str]) -> list[str]:
+        return [item.strip() for item in values if item and item.strip()]
+
+
+class ResearchRequirement(BaseModel):
+    """A deterministic acceptance criterion derived from the user's request."""
+
+    requirement_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+    label: str
+    domain: Domain
+    hard: bool = True
+    min_records: int = Field(default=1, ge=1)
+    expected_metric_groups: list[list[str]] = Field(default_factory=list)
+    requires_entity_code: bool = False
+    requires_period_end: bool = False
+    requires_published_at: bool = False
+    acceptable_skill_ids: list[str] = Field(default_factory=list)
+    entity_names: list[str] = Field(default_factory=list)
+    period_ends: list[date] = Field(default_factory=list)
+    comparison_baseline: bool = False
+    metric_families: list[str] = Field(default_factory=list)
+    max_age_days: int | None = Field(default=None, ge=0)
+
+
+class ResearchObjective(BaseModel):
+    industry: str
+    focus_points: list[str] = Field(default_factory=list)
+    data_requirements: list[str] = Field(default_factory=list)
+    must_include_entities: list[str] = Field(default_factory=list)
+    comparison_entities: list[str] = Field(default_factory=list)
+    industry_candidate_slots: list[dict[str, Any]] = Field(default_factory=list)
+    core_subsectors: list[str] = Field(default_factory=list)
+    relevant_industries: list[str] = Field(default_factory=list)
+    excluded_industries: list[str] = Field(default_factory=list)
+    required_domains: list[Domain] = Field(default_factory=lambda: list(Domain))
+    requirements: list[ResearchRequirement] = Field(default_factory=list)
+    # 模型从用户问询中直接推导的指标验收需求（v3 接线：INTENT 提示词产出，
+    # 代码只做白名单校验，不做内容决策）。是 requirements 的子集（排在最前）。
+    model_requirements: list[ResearchRequirement] = Field(default_factory=list)
+    # 模型产出但校验不通过、被退化为不参与验收的条目及原因（审计用）。
+    rejected_metric_requirements: list[str] = Field(default_factory=list)
+    as_of: date
+
+
+class SkillTask(BaseModel):
+    model_config = ConfigDict(extra="ignore", coerce_numbers_to_str=True)
+
+    task_id: str = Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+    skill_name: str
+    arguments: dict[str, Any]
+    depends_on: list[str] = Field(default_factory=list)
+    purpose: str = ""
+    requirement_ids: list[str] = Field(default_factory=list)
+    expected_fields: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_task_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "task_id" in data and not isinstance(data["task_id"], str):
+                data["task_id"] = str(data["task_id"])
+            if "depends_on" in data and isinstance(data["depends_on"], list):
+                data["depends_on"] = [str(x) for x in data["depends_on"]]
+        return data
+
+
+class AgentDecision(BaseModel):
+    model_config = ConfigDict(extra="ignore", coerce_numbers_to_str=True)
+
+    decision: Literal["continue", "stop", "blocked"]
+    assessment: str = ""
+    tasks: list[SkillTask] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_decision_tasks(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "tasks" in data and isinstance(data["tasks"], list):
+            for t in data["tasks"]:
+                if isinstance(t, dict):
+                    if "task_id" in t and not isinstance(t["task_id"], str):
+                        t["task_id"] = str(t["task_id"])
+                    if "depends_on" in t and isinstance(t["depends_on"], list):
+                        t["depends_on"] = [str(x) for x in t["depends_on"]]
+        return data
+
+
+class SkillSpec(BaseModel):
+    name: str
+    skill_id: str
+    version: str = "1.0.0"
+    domain: Domain
+    endpoint: str
+    description: str = ""
+    source_path: str | None = None
+    response_list_keys: tuple[str, ...] = ("datas", "data", "items", "result", "results", "records", "list")
+    required_arguments: tuple[str, ...] = ("query",)
+
+
+class SkillResult(BaseModel):
+    task_id: str
+    skill_name: str
+    skill_id: str
+    skill_version: str
+    domain: Domain
+    query: str
+    trace_id: str
+    attempt_trace_ids: list[str] = Field(default_factory=list)
+    retrieved_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    success: bool
+    invocation_outcome: Literal["records", "success_empty", "failed"] | None = None
+    attempts: int = 1
+    elapsed_ms: float | None = None
+    cache_hit: bool = False
+    records: list[dict[str, Any]] = Field(default_factory=list)
+    raw_payload: Any = None
+    error: str | None = None
+
+
+class SourceRef(BaseModel):
+    task_id: str
+    skill_id: str
+    skill_version: str
+    query: str
+    trace_id: str
+    retrieved_at: datetime
+    raw_record_index: int | None = None
+    status: str | None = None
+    record_count: int | None = None
+
+
+class ResearchRecord(BaseModel):
+    record_id: str
+    domain: Domain
+    entity_name: str | None = None
+    entity_code: str | None = None
+    metric: str
+    value: Any = None
+    unit: str | None = None
+    # AB-1：单位来源。区分"原始单位"与"推断单位"，使下游金额比较/比率/量化覆盖
+    # 能排除尺度不可信的记录。取值：
+    #   source_field   —— 列头括号或行级单位字段（可信）
+    #   source_schema  —— 指标语义确定的定义性单位（比率=%、倍数=倍，可信）
+    #   unknown        —— 金额缺来源单位，尺度歧义（元/万元/亿元），不参与量化
+    #   legacy_unknown —— 旧产物序列化时无此字段，默认待核
+    unit_provenance: str = "legacy_unknown"
+    period_end: date | None = None
+    period_start: date | None = None
+    period_type: str = "unknown"
+    period_provenance: str = "unknown"
+    scope: str = "consolidated"
+    currency: str = "CNY"
+    published_at: date | None = None
+    source: SourceRef
+    raw_fields: dict[str, Any] = Field(default_factory=dict)
+    issues: list[str] = Field(default_factory=list)
+
+
+class EventRecord(BaseModel):
+    """结构化事件/公告记录（类D P-06 修复：事件四要素独立 Schema）。
+
+    与 ResearchRecord 平行存在：事件不是指标——禁止把 event_type 塞进 metric、
+    把公告日期塞进 period_end。来源限定 announcement-search / hithink-event-query，
+    或含事件特征字段（事件类型/公告标题等）的记录。
+    """
+
+    record_id: str
+    entity_name: str | None = None
+    entity_code: str | None = None
+    title: str | None = None
+    event_type: str | None = None
+    announce_date: date | None = None
+    body: str | None = None
+    source: SourceRef
+    raw_fields: dict[str, Any] = Field(default_factory=dict)
+    issues: list[str] = Field(default_factory=list)
+
+
+class ConflictRecord(BaseModel):
+    conflict_key: str
+    entity: str
+    metric: str
+    period: date | None = None
+    values: list[Any]
+    record_ids: list[str]
+
+
+class SampleRole(BaseModel):
+    """AB-2/S02 轻量样本角色映射（开放主题业务资格核验结果）。
+
+    role 三类（方案 AB-2.2）：
+      - core_verified        已核业务样本：具备主题业务证据，进入核心财务比较；
+      - concept_background   概念背景：仅概念标签关联，保留上下文但不入核心比较；
+      - pending_verification 待核候选：参考库候选或无证据样本，缺格保留待补。
+    判定必须给出原因与证据 record_id；旧产物缺该字段时列表为空（下游不过滤）。
+    """
+
+    entity_name: str
+    role: str
+    reason: str
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
+class StructuredResearchDataset(BaseModel):
+    subject: str | None = None
+    research_as_of: date | None = None
+    industry: list[ResearchRecord] = Field(default_factory=list)
+    companies: list[ResearchRecord] = Field(default_factory=list)
+    financials: list[ResearchRecord] = Field(default_factory=list)
+    macro: list[ResearchRecord] = Field(default_factory=list)
+    industry_chain: list[ResearchRecord] = Field(default_factory=list)
+    reports: list[ResearchRecord] = Field(default_factory=list)
+    news: list[ResearchRecord] = Field(default_factory=list)
+    events: list[EventRecord] = Field(default_factory=list)
+    sources: list[SourceRef] = Field(default_factory=list)
+    conflicts: list[ConflictRecord] = Field(default_factory=list)
+    sample_roles: list[SampleRole] = Field(default_factory=list)
+    quality_summary: dict[str, Any] = Field(default_factory=dict)
+
+    def records_for(self, domain: Domain) -> list[ResearchRecord]:
+        return getattr(self, domain.value)
+
+    def all_records(self) -> list[ResearchRecord]:
+        return [
+            *self.industry, *self.companies, *self.financials, *self.macro,
+            *self.industry_chain, *self.reports, *self.news,
+        ]
+
+    def all_records_with_events(self) -> list[ResearchRecord | EventRecord]:
+        return [*self.all_records(), *self.events]
+
+    @property
+    def total_record_count(self) -> int:
+        return len(self.all_records()) + len(self.events)
+
+
+class RequirementCoverage(BaseModel):
+    requirement_id: str
+    label: str
+    domain: Domain
+    hard: bool
+    passed: bool
+    evidence_count: int = 0
+    evidence_record_ids: list[str] = Field(default_factory=list)
+    rejected_evidence: dict[str, list[str]] = Field(default_factory=dict)
+    missing: list[str] = Field(default_factory=list)
+
+
+class Coverage(BaseModel):
+    required_domains: list[Domain]
+    covered_domains: list[Domain]
+    missing_domains: list[Domain]
+    score: float = Field(ge=0.0, le=1.0)
+    complete: bool
+    requirement_coverage: list[RequirementCoverage] = Field(default_factory=list)
+
+
+class RunError(BaseModel):
+    stage: str
+    message: str
+    task_id: str | None = None
+    retryable: bool = False
+
+
+class TraceEvent(BaseModel):
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    event: str
+    iteration: int | None = None
+    task_id: str | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class ResearchRunResult(BaseModel):
+    run_id: str
+    status: Literal["completed", "partial", "blocked", "failed"]
+    stop_reason: str
+    dataset: StructuredResearchDataset
+    coverage: Coverage
+    errors: list[RunError] = Field(default_factory=list)
+    execution_trace: list[TraceEvent] = Field(default_factory=list)
+    # 模型生成的指标验收需求（透传给下游解读层：解读重点围绕这些指标组织）。
+    model_requirements: list[ResearchRequirement] = Field(default_factory=list)
+    artifact_dir: str | None = None

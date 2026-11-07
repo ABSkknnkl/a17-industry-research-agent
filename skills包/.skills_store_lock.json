@@ -1,0 +1,965 @@
+{
+  "version": 1,
+  "skills": {
+    "news-search": {
+      "name": "news-search",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=news-search",
+      "source": "skillhub",
+      "version": ""
+    },
+    "announcement-search": {
+      "name": "announcement-search",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=announcement-search",
+      "source": "skillhub",
+      "version": ""
+    },
+    "report-search": {
+      "name": "report-search",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=report-search",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-zhishu-query": {
+      "name": "hithink-zhishu-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-zhishu-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-sector-selector": {
+      "name": "hithink-sector-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-sector-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-management-query": {
+      "name": "hithink-management-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-management-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-macro-query": {
+      "name": "hithink-macro-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-macro-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-usstock-selector": {
+      "name": "hithink-usstock-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-usstock-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-market-query": {
+      "name": "hithink-market-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-market-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-insresearch-query": {
+      "name": "hithink-insresearch-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-insresearch-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-industry-query": {
+      "name": "hithink-industry-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-industry-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-hkstock-selector": {
+      "name": "hithink-hkstock-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-hkstock-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-futures-selector": {
+      "name": "hithink-futures-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-futures-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-futures-query": {
+      "name": "hithink-futures-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-futures-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-fund-selector": {
+      "name": "hithink-fund-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-fund-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-fundmanager-selector": {
+      "name": "hithink-fundmanager-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-fundmanager-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-fundcompany-selector": {
+      "name": "hithink-fundcompany-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-fundcompany-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-fund-query": {
+      "name": "hithink-fund-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-fund-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-finance-query": {
+      "name": "hithink-finance-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-finance-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-event-query": {
+      "name": "hithink-event-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-event-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-business-query": {
+      "name": "hithink-business-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-business-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-etf-selector": {
+      "name": "hithink-etf-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-etf-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-cb-selector": {
+      "name": "hithink-cb-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-cb-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-astock-selector": {
+      "name": "hithink-astock-selector",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-astock-selector",
+      "source": "skillhub",
+      "version": ""
+    },
+    "hithink-basicinfo-query": {
+      "name": "hithink-basicinfo-query",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=hithink-basicinfo-query",
+      "source": "skillhub",
+      "version": ""
+    },
+    "模拟炒股": {
+      "name": "模拟炒股",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%A8%A1%E6%8B%9F%E7%82%92%E8%82%A1",
+      "source": "skillhub",
+      "version": ""
+    },
+    "波动率策略": {
+      "name": "波动率策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%B3%A2%E5%8A%A8%E7%8E%87%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "基础技术指标信号引擎": {
+      "name": "基础技术指标信号引擎",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%9F%BA%E7%A1%80%E6%8A%80%E6%9C%AF%E6%8C%87%E6%A0%87%E4%BF%A1%E5%8F%B7%E5%BC%95%E6%93%8E",
+      "source": "skillhub",
+      "version": ""
+    },
+    "策略生成与优化": {
+      "name": "策略生成与优化",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%AD%96%E7%95%A5%E7%94%9F%E6%88%90%E4%B8%8E%E4%BC%98%E5%8C%96",
+      "source": "skillhub",
+      "version": ""
+    },
+    "社交媒体情报分析": {
+      "name": "社交媒体情报分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%A4%BE%E4%BA%A4%E5%AA%92%E4%BD%93%E6%83%85%E6%8A%A5%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "聪明钱概念信号引擎": {
+      "name": "聪明钱概念信号引擎",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%81%AA%E6%98%8E%E9%92%B1%E6%A6%82%E5%BF%B5%E4%BF%A1%E5%8F%B7%E5%BC%95%E6%93%8E",
+      "source": "skillhub",
+      "version": ""
+    },
+    "季节性与日历效应策略": {
+      "name": "季节性与日历效应策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%AD%A3%E8%8A%82%E6%80%A7%E4%B8%8E%E6%97%A5%E5%8E%86%E6%95%88%E5%BA%94%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "配对交易策略": {
+      "name": "配对交易策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%85%8D%E5%AF%B9%E4%BA%A4%E6%98%93%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "期权盈亏分析": {
+      "name": "期权盈亏分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%9C%9F%E6%9D%83%E7%9B%88%E4%BA%8F%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "多因子选股策略": {
+      "name": "多因子选股策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%A4%9A%E5%9B%A0%E5%AD%90%E9%80%89%E8%82%A1%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "机器学习策略": {
+      "name": "机器学习策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "分钟级数据分析": {
+      "name": "分钟级数据分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%88%86%E9%92%9F%E7%BA%A7%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "一目均衡表信号引擎": {
+      "name": "一目均衡表信号引擎",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%B8%80%E7%9B%AE%E5%9D%87%E8%A1%A1%E8%A1%A8%E4%BF%A1%E5%8F%B7%E5%BC%95%E6%93%8E",
+      "source": "skillhub",
+      "version": ""
+    },
+    "沪深港通资金流分析": {
+      "name": "沪深港通资金流分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%B2%AA%E6%B7%B1%E6%B8%AF%E9%80%9A%E8%B5%84%E9%87%91%E6%B5%81%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "谐波形态信号引擎": {
+      "name": "谐波形态信号引擎",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%B0%90%E6%B3%A2%E5%BD%A2%E6%80%81%E4%BF%A1%E5%8F%B7%E5%BC%95%E6%93%8E",
+      "source": "skillhub",
+      "version": ""
+    },
+    "基本面因子筛选": {
+      "name": "基本面因子筛选",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%9F%BA%E6%9C%AC%E9%9D%A2%E5%9B%A0%E5%AD%90%E7%AD%9B%E9%80%89",
+      "source": "skillhub",
+      "version": ""
+    },
+    "地缘政治风险分析": {
+      "name": "地缘政治风险分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%9C%B0%E7%BC%98%E6%94%BF%E6%B2%BB%E9%A3%8E%E9%99%A9%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "K线形态识别": {
+      "name": "K线形态识别",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=K%E7%BA%BF%E5%BD%A2%E6%80%81%E8%AF%86%E5%88%AB",
+      "source": "skillhub",
+      "version": ""
+    },
+    "信用与固收分析": {
+      "name": "信用与固收分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%BF%A1%E7%94%A8%E4%B8%8E%E5%9B%BA%E6%94%B6%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "相关性与协整分析": {
+      "name": "相关性与协整分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%9B%B8%E5%85%B3%E6%80%A7%E4%B8%8E%E5%8D%8F%E6%95%B4%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "ADR／H股／A股比价分析": {
+      "name": "ADR／H股／A股比价分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=ADR%EF%BC%8FH%E8%82%A1%EF%BC%8FA%E8%82%A1%E6%AF%94%E4%BB%B7%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "估值模型方法论": {
+      "name": "估值模型方法论",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%BC%B0%E5%80%BC%E6%A8%A1%E5%9E%8B%E6%96%B9%E6%B3%95%E8%AE%BA",
+      "source": "skillhub",
+      "version": ""
+    },
+    "美国 ETF 资金流分析": {
+      "name": "美国 ETF 资金流分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%BE%8E%E5%9B%BD%20ETF%20%E8%B5%84%E9%87%91%E6%B5%81%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "稳定币流向分析": {
+      "name": "稳定币流向分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%A8%B3%E5%AE%9A%E5%B8%81%E6%B5%81%E5%90%91%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "行业轮动分析": {
+      "name": "行业轮动分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%A1%8C%E4%B8%9A%E8%BD%AE%E5%8A%A8%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "市场情绪分析": {
+      "name": "市场情绪分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%B8%82%E5%9C%BA%E6%83%85%E7%BB%AA%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "金融监管知识库": {
+      "name": "金融监管知识库",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%87%91%E8%9E%8D%E7%9B%91%E7%AE%A1%E7%9F%A5%E8%AF%86%E5%BA%93",
+      "source": "skillhub",
+      "version": ""
+    },
+    "风险分析与压力测试": {
+      "name": "风险分析与压力测试",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%A3%8E%E9%99%A9%E5%88%86%E6%9E%90%E4%B8%8E%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95",
+      "source": "skillhub",
+      "version": ""
+    },
+    "Pine Script 转换与生成": {
+      "name": "Pine Script 转换与生成",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=Pine%20Script%20%E8%BD%AC%E6%8D%A2%E4%B8%8E%E7%94%9F%E6%88%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "量化统计方法": {
+      "name": "量化统计方法",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%87%8F%E5%8C%96%E7%BB%9F%E8%AE%A1%E6%96%B9%E6%B3%95",
+      "source": "skillhub",
+      "version": ""
+    },
+    "永续资金费率与基差分析": {
+      "name": "永续资金费率与基差分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%B0%B8%E7%BB%AD%E8%B5%84%E9%87%91%E8%B4%B9%E7%8E%87%E4%B8%8E%E5%9F%BA%E5%B7%AE%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "业绩归因分析": {
+      "name": "业绩归因分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%B8%9A%E7%BB%A9%E5%BD%92%E5%9B%A0%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "期权策略框架": {
+      "name": "期权策略框架",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%9C%9F%E6%9D%83%E7%AD%96%E7%95%A5%E6%A1%86%E6%9E%B6",
+      "source": "skillhub",
+      "version": ""
+    },
+    "高级期权策略": {
+      "name": "高级期权策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%AB%98%E7%BA%A7%E6%9C%9F%E6%9D%83%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "链上数据分析": {
+      "name": "链上数据分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%93%BE%E4%B8%8A%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "市场微观结构分析": {
+      "name": "市场微观结构分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%B8%82%E5%9C%BA%E5%BE%AE%E8%A7%82%E7%BB%93%E6%9E%84%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "宏观周期分析": {
+      "name": "宏观周期分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%AE%8F%E8%A7%82%E5%91%A8%E6%9C%9F%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "爆仓热力图分析": {
+      "name": "爆仓热力图分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%88%86%E4%BB%93%E7%83%AD%E5%8A%9B%E5%9B%BE%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "对冲策略设计": {
+      "name": "对冲策略设计",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%AF%B9%E5%86%B2%E7%AD%96%E7%95%A5%E8%AE%BE%E8%AE%A1",
+      "source": "skillhub",
+      "version": ""
+    },
+    "全球宏观分析框架": {
+      "name": "全球宏观分析框架",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%85%A8%E7%90%83%E5%AE%8F%E8%A7%82%E5%88%86%E6%9E%90%E6%A1%86%E6%9E%B6",
+      "source": "skillhub",
+      "version": ""
+    },
+    "财务报表深度解读": {
+      "name": "财务报表深度解读",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%B4%A2%E5%8A%A1%E6%8A%A5%E8%A1%A8%E6%B7%B1%E5%BA%A6%E8%A7%A3%E8%AF%BB",
+      "source": "skillhub",
+      "version": ""
+    },
+    "基金分析与筛选": {
+      "name": "基金分析与筛选",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%9F%BA%E9%87%91%E5%88%86%E6%9E%90%E4%B8%8E%E7%AD%9B%E9%80%89",
+      "source": "skillhub",
+      "version": ""
+    },
+    "执行模型": {
+      "name": "执行模型",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%89%A7%E8%A1%8C%E6%A8%A1%E5%9E%8B",
+      "source": "skillhub",
+      "version": ""
+    },
+    "因子研究框架": {
+      "name": "因子研究框架",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%9B%A0%E5%AD%90%E7%A0%94%E7%A9%B6%E6%A1%86%E6%9E%B6",
+      "source": "skillhub",
+      "version": ""
+    },
+    "ETF 分析": {
+      "name": "ETF 分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=ETF%20%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "事件驱动策略": {
+      "name": "事件驱动策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "艾略特波浪信号引擎": {
+      "name": "艾略特波浪信号引擎",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%89%BE%E7%95%A5%E7%89%B9%E6%B3%A2%E6%B5%AA%E4%BF%A1%E5%8F%B7%E5%BC%95%E6%93%8E",
+      "source": "skillhub",
+      "version": ""
+    },
+    "SEC 文件分析": {
+      "name": "SEC 文件分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=SEC%20%E6%96%87%E4%BB%B6%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "盈利预期修正分析": {
+      "name": "盈利预期修正分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%9B%88%E5%88%A9%E9%A2%84%E6%9C%9F%E4%BF%AE%E6%AD%A3%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "盈利预测与一致预期分析": {
+      "name": "盈利预测与一致预期分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%9B%88%E5%88%A9%E9%A2%84%E6%B5%8B%E4%B8%8E%E4%B8%80%E8%87%B4%E9%A2%84%E6%9C%9F%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "DeFi 收益分析": {
+      "name": "DeFi 收益分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=DeFi%20%E6%94%B6%E7%9B%8A%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "加密衍生品策略": {
+      "name": "加密衍生品策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%8A%A0%E5%AF%86%E8%A1%8D%E7%94%9F%E5%93%81%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "公司事件驱动分析": {
+      "name": "公司事件驱动分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%85%AC%E5%8F%B8%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "可转债分析": {
+      "name": "可转债分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%8F%AF%E8%BD%AC%E5%80%BA%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "大宗商品分析": {
+      "name": "大宗商品分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%A4%A7%E5%AE%97%E5%95%86%E5%93%81%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "缠论形态识别": {
+      "name": "缠论形态识别",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%BC%A0%E8%AE%BA%E5%BD%A2%E6%80%81%E8%AF%86%E5%88%AB",
+      "source": "skillhub",
+      "version": ""
+    },
+    "行为金融分析": {
+      "name": "行为金融分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%A1%8C%E4%B8%BA%E9%87%91%E8%9E%8D%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "资产配置与组合优化": {
+      "name": "资产配置与组合优化",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%B5%84%E4%BA%A7%E9%85%8D%E7%BD%AE%E4%B8%8E%E7%BB%84%E5%90%88%E4%BC%98%E5%8C%96",
+      "source": "skillhub",
+      "version": ""
+    },
+    "流程函": {
+      "name": "流程函",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%B5%81%E7%A8%8B%E5%87%BD",
+      "source": "skillhub",
+      "version": ""
+    },
+    "融资摘要": {
+      "name": "融资摘要",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%9E%8D%E8%B5%84%E6%91%98%E8%A6%81",
+      "source": "skillhub",
+      "version": ""
+    },
+    "外汇套息交易分析": {
+      "name": "外汇套息交易分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%A4%96%E6%B1%87%E5%A5%97%E6%81%AF%E4%BA%A4%E6%98%93%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "投行材料质检": {
+      "name": "投行材料质检",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8A%95%E8%A1%8C%E6%9D%90%E6%96%99%E8%B4%A8%E6%A3%80",
+      "source": "skillhub",
+      "version": ""
+    },
+    "《股票大作手》交易哲学": {
+      "name": "《股票大作手》交易哲学",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E3%80%8A%E8%82%A1%E7%A5%A8%E5%A4%A7%E4%BD%9C%E6%89%8B%E3%80%8B%E4%BA%A4%E6%98%93%E5%93%B2%E5%AD%A6",
+      "source": "skillhub",
+      "version": ""
+    },
+    "首次覆盖报告": {
+      "name": "首次覆盖报告",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%A6%96%E6%AC%A1%E8%A6%86%E7%9B%96%E6%8A%A5%E5%91%8A",
+      "source": "skillhub",
+      "version": ""
+    },
+    "杠杆收购模型": {
+      "name": "杠杆收购模型",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%9D%A0%E6%9D%86%E6%94%B6%E8%B4%AD%E6%A8%A1%E5%9E%8B",
+      "source": "skillhub",
+      "version": ""
+    },
+    "晨会纪要": {
+      "name": "晨会纪要",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%99%A8%E4%BC%9A%E7%BA%AA%E8%A6%81",
+      "source": "skillhub",
+      "version": ""
+    },
+    "路演材料填充": {
+      "name": "路演材料填充",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%B7%AF%E6%BC%94%E6%9D%90%E6%96%99%E5%A1%AB%E5%85%85",
+      "source": "skillhub",
+      "version": ""
+    },
+    "期权波动率分析": {
+      "name": "期权波动率分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%9C%9F%E6%9D%83%E6%B3%A2%E5%8A%A8%E7%8E%87%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "量化因子选股": {
+      "name": "量化因子选股",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%87%8F%E5%8C%96%E5%9B%A0%E5%AD%90%E9%80%89%E8%82%A1",
+      "source": "skillhub",
+      "version": ""
+    },
+    "市场情绪偏离分析": {
+      "name": "市场情绪偏离分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%B8%82%E5%9C%BA%E6%83%85%E7%BB%AA%E5%81%8F%E7%A6%BB%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "公司单页": {
+      "name": "公司单页",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%85%AC%E5%8F%B8%E5%8D%95%E9%A1%B5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "捕捉公司事件机会": {
+      "name": "捕捉公司事件机会",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8D%95%E6%8D%89%E5%85%AC%E5%8F%B8%E4%BA%8B%E4%BB%B6%E6%9C%BA%E4%BC%9A",
+      "source": "skillhub",
+      "version": ""
+    },
+    "现金流折现估值模型": {
+      "name": "现金流折现估值模型",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%8E%B0%E9%87%91%E6%B5%81%E6%8A%98%E7%8E%B0%E4%BC%B0%E5%80%BC%E6%A8%A1%E5%9E%8B",
+      "source": "skillhub",
+      "version": ""
+    },
+    "外汇": {
+      "name": "外汇",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%A4%96%E6%B1%87",
+      "source": "skillhub",
+      "version": ""
+    },
+    "桥水基金决策术": {
+      "name": "桥水基金决策术",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%A1%A5%E6%B0%B4%E5%9F%BA%E9%87%91%E5%86%B3%E7%AD%96%E6%9C%AF",
+      "source": "skillhub",
+      "version": ""
+    },
+    "催化剂日历": {
+      "name": "催化剂日历",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%82%AC%E5%8C%96%E5%89%82%E6%97%A5%E5%8E%86",
+      "source": "skillhub",
+      "version": ""
+    },
+    "富爸爸财商课": {
+      "name": "富爸爸财商课",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%AF%8C%E7%88%B8%E7%88%B8%E8%B4%A2%E5%95%86%E8%AF%BE",
+      "source": "skillhub",
+      "version": ""
+    },
+    "指数投资鼻祖视野": {
+      "name": "指数投资鼻祖视野",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8C%87%E6%95%B0%E6%8A%95%E8%B5%84%E9%BC%BB%E7%A5%96%E8%A7%86%E9%87%8E",
+      "source": "skillhub",
+      "version": ""
+    },
+    "交易心理通关秘籍": {
+      "name": "交易心理通关秘籍",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%BA%A4%E6%98%93%E5%BF%83%E7%90%86%E9%80%9A%E5%85%B3%E7%A7%98%E7%B1%8D",
+      "source": "skillhub",
+      "version": ""
+    },
+    "全球资管旗舰策略": {
+      "name": "全球资管旗舰策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%85%A8%E7%90%83%E8%B5%84%E7%AE%A1%E6%97%97%E8%88%B0%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "方舟颠覆性投资前瞻": {
+      "name": "方舟颠覆性投资前瞻",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%96%B9%E8%88%9F%E9%A2%A0%E8%A6%86%E6%80%A7%E6%8A%95%E8%B5%84%E5%89%8D%E7%9E%BB",
+      "source": "skillhub",
+      "version": ""
+    },
+    "价值创造计划": {
+      "name": "价值创造计划",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%BB%B7%E5%80%BC%E5%88%9B%E9%80%A0%E8%AE%A1%E5%88%92",
+      "source": "skillhub",
+      "version": ""
+    },
+    "单元经济模型": {
+      "name": "单元经济模型",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%8D%95%E5%85%83%E7%BB%8F%E6%B5%8E%E6%A8%A1%E5%9E%8B",
+      "source": "skillhub",
+      "version": ""
+    },
+    "投资逻辑跟踪": {
+      "name": "投资逻辑跟踪",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8A%95%E8%B5%84%E9%80%BB%E8%BE%91%E8%B7%9F%E8%B8%AA",
+      "source": "skillhub",
+      "version": ""
+    },
+    "低估值好股搜寻": {
+      "name": "低估值好股搜寻",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%BD%8E%E4%BC%B0%E5%80%BC%E5%A5%BD%E8%82%A1%E6%90%9C%E5%AF%BB",
+      "source": "skillhub",
+      "version": ""
+    },
+    "匿名项目预告": {
+      "name": "匿名项目预告",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%8C%BF%E5%90%8D%E9%A1%B9%E7%9B%AE%E9%A2%84%E5%91%8A",
+      "source": "skillhub",
+      "version": ""
+    },
+    "科技炒作与基本面": {
+      "name": "科技炒作与基本面",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%A7%91%E6%8A%80%E7%82%92%E4%BD%9C%E4%B8%8E%E5%9F%BA%E6%9C%AC%E9%9D%A2",
+      "source": "skillhub",
+      "version": ""
+    },
+    "税损收割": {
+      "name": "税损收割",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%A8%8E%E6%8D%9F%E6%94%B6%E5%89%B2",
+      "source": "skillhub",
+      "version": ""
+    },
+    "掉期曲线策略": {
+      "name": "掉期曲线策略",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8E%89%E6%9C%9F%E6%9B%B2%E7%BA%BF%E7%AD%96%E7%95%A5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "公司画像页": {
+      "name": "公司画像页",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%85%AC%E5%8F%B8%E7%94%BB%E5%83%8F%E9%A1%B5",
+      "source": "skillhub",
+      "version": ""
+    },
+    "投资者风险评估": {
+      "name": "投资者风险评估",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8A%95%E8%B5%84%E8%80%85%E9%A3%8E%E9%99%A9%E8%AF%84%E4%BC%B0",
+      "source": "skillhub",
+      "version": ""
+    },
+    "小盘成长股挖掘": {
+      "name": "小盘成长股挖掘",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%B0%8F%E7%9B%98%E6%88%90%E9%95%BF%E8%82%A1%E6%8C%96%E6%8E%98",
+      "source": "skillhub",
+      "version": ""
+    },
+    "行业轮动监控": {
+      "name": "行业轮动监控",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%A1%8C%E4%B8%9A%E8%BD%AE%E5%8A%A8%E7%9B%91%E6%8E%A7",
+      "source": "skillhub",
+      "version": ""
+    },
+    "行业概览": {
+      "name": "行业概览",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%A1%8C%E4%B8%9A%E6%A6%82%E8%A7%88",
+      "source": "skillhub",
+      "version": ""
+    },
+    "风险收益优化配置": {
+      "name": "风险收益优化配置",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%A3%8E%E9%99%A9%E6%94%B6%E7%9B%8A%E4%BC%98%E5%8C%96%E9%85%8D%E7%BD%AE",
+      "source": "skillhub",
+      "version": ""
+    },
+    "回报敏感性分析": {
+      "name": "回报敏感性分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%9B%9E%E6%8A%A5%E6%95%8F%E6%84%9F%E6%80%A7%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "演示文稿模板技能创建": {
+      "name": "演示文稿模板技能创建",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%BC%94%E7%A4%BA%E6%96%87%E7%A8%BF%E6%A8%A1%E6%9D%BF%E6%8A%80%E8%83%BD%E5%88%9B%E5%BB%BA",
+      "source": "skillhub",
+      "version": ""
+    },
+    "股票研究": {
+      "name": "股票研究",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%82%A1%E7%A5%A8%E7%A0%94%E7%A9%B6",
+      "source": "skillhub",
+      "version": ""
+    },
+    "财报前瞻报告测试版": {
+      "name": "财报前瞻报告测试版",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%B4%A2%E6%8A%A5%E5%89%8D%E7%9E%BB%E6%8A%A5%E5%91%8A%E6%B5%8B%E8%AF%95%E7%89%88",
+      "source": "skillhub",
+      "version": ""
+    },
+    "组合再平衡": {
+      "name": "组合再平衡",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%BB%84%E5%90%88%E5%86%8D%E5%B9%B3%E8%A1%A1",
+      "source": "skillhub",
+      "version": ""
+    },
+    "投后监控": {
+      "name": "投后监控",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8A%95%E5%90%8E%E7%9B%91%E6%8E%A7",
+      "source": "skillhub",
+      "version": ""
+    },
+    "投资组合诊断": {
+      "name": "投资组合诊断",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8A%95%E8%B5%84%E7%BB%84%E5%90%88%E8%AF%8A%E6%96%AD",
+      "source": "skillhub",
+      "version": ""
+    },
+    "模型更新": {
+      "name": "模型更新",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%A8%A1%E5%9E%8B%E6%9B%B4%E6%96%B0",
+      "source": "skillhub",
+      "version": ""
+    },
+    "并购模型": {
+      "name": "并购模型",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%B9%B6%E8%B4%AD%E6%A8%A1%E5%9E%8B",
+      "source": "skillhub",
+      "version": ""
+    },
+    "宏观利率监控": {
+      "name": "宏观利率监控",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%AE%8F%E8%A7%82%E5%88%A9%E7%8E%87%E7%9B%91%E6%8E%A7",
+      "source": "skillhub",
+      "version": ""
+    },
+    "监管内幕交易追踪": {
+      "name": "监管内幕交易追踪",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%9B%91%E7%AE%A1%E5%86%85%E5%B9%95%E4%BA%A4%E6%98%93%E8%BF%BD%E8%B8%AA",
+      "source": "skillhub",
+      "version": ""
+    },
+    "投资提案": {
+      "name": "投资提案",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8A%95%E8%B5%84%E6%8F%90%E6%A1%88",
+      "source": "skillhub",
+      "version": ""
+    },
+    "投委会备忘录": {
+      "name": "投委会备忘录",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8A%95%E5%A7%94%E4%BC%9A%E5%A4%87%E5%BF%98%E5%BD%95",
+      "source": "skillhub",
+      "version": ""
+    },
+    "投资想法生成": {
+      "name": "投资想法生成",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8A%95%E8%B5%84%E6%83%B3%E6%B3%95%E7%94%9F%E6%88%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "高分红股挑选": {
+      "name": "高分红股挑选",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%AB%98%E5%88%86%E7%BA%A2%E8%82%A1%E6%8C%91%E9%80%89",
+      "source": "skillhub",
+      "version": ""
+    },
+    "固定收益组合分析": {
+      "name": "固定收益组合分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%9B%BA%E5%AE%9A%E6%94%B6%E7%9B%8A%E7%BB%84%E5%90%88%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "上市公司财报体检": {
+      "name": "上市公司财报体检",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%B8%8A%E5%B8%82%E5%85%AC%E5%8F%B8%E8%B4%A2%E6%8A%A5%E4%BD%93%E6%A3%80",
+      "source": "skillhub",
+      "version": ""
+    },
+    "财务规划": {
+      "name": "财务规划",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%B4%A2%E5%8A%A1%E8%A7%84%E5%88%92",
+      "source": "skillhub",
+      "version": ""
+    },
+    "环境社会治理投资筛选": {
+      "name": "环境社会治理投资筛选",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%8E%AF%E5%A2%83%E7%A4%BE%E4%BC%9A%E6%B2%BB%E7%90%86%E6%8A%95%E8%B5%84%E7%AD%9B%E9%80%89",
+      "source": "skillhub",
+      "version": ""
+    },
+    "财报前瞻": {
+      "name": "财报前瞻",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E8%B4%A2%E6%8A%A5%E5%89%8D%E7%9E%BB",
+      "source": "skillhub",
+      "version": ""
+    },
+    "演示文稿刷新": {
+      "name": "演示文稿刷新",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%BC%94%E7%A4%BA%E6%96%87%E7%A8%BF%E5%88%B7%E6%96%B0",
+      "source": "skillhub",
+      "version": ""
+    },
+    "项目跟踪": {
+      "name": "项目跟踪",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%A1%B9%E7%9B%AE%E8%B7%9F%E8%B8%AA",
+      "source": "skillhub",
+      "version": ""
+    },
+    "项目拓源": {
+      "name": "项目拓源",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%A1%B9%E7%9B%AE%E6%8B%93%E6%BA%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "项目初筛": {
+      "name": "项目初筛",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E9%A1%B9%E7%9B%AE%E5%88%9D%E7%AD%9B",
+      "source": "skillhub",
+      "version": ""
+    },
+    "尽调会议准备": {
+      "name": "尽调会议准备",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%B0%BD%E8%B0%83%E4%BC%9A%E8%AE%AE%E5%87%86%E5%A4%87",
+      "source": "skillhub",
+      "version": ""
+    },
+    "尽调清单": {
+      "name": "尽调清单",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%B0%BD%E8%B0%83%E6%B8%85%E5%8D%95",
+      "source": "skillhub",
+      "version": ""
+    },
+    "投委会数据包构建": {
+      "name": "投委会数据包构建",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%8A%95%E5%A7%94%E4%BC%9A%E6%95%B0%E6%8D%AE%E5%8C%85%E6%9E%84%E5%BB%BA",
+      "source": "skillhub",
+      "version": ""
+    },
+    "可比公司分析": {
+      "name": "可比公司分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%8F%AF%E6%AF%94%E5%85%AC%E5%8F%B8%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "竞争格局分析": {
+      "name": "竞争格局分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%AB%9E%E4%BA%89%E6%A0%BC%E5%B1%80%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "客户回顾会材料": {
+      "name": "客户回顾会材料",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%AE%A2%E6%88%B7%E5%9B%9E%E9%A1%BE%E4%BC%9A%E6%9D%90%E6%96%99",
+      "source": "skillhub",
+      "version": ""
+    },
+    "客户业绩报告": {
+      "name": "客户业绩报告",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%AE%A2%E6%88%B7%E4%B8%9A%E7%BB%A9%E6%8A%A5%E5%91%8A",
+      "source": "skillhub",
+      "version": ""
+    },
+    "债券期货基差分析": {
+      "name": "债券期货基差分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%80%BA%E5%88%B8%E6%9C%9F%E8%B4%A7%E5%9F%BA%E5%B7%AE%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "电子表格数据清洗": {
+      "name": "电子表格数据清洗",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%94%B5%E5%AD%90%E8%A1%A8%E6%A0%BC%E6%95%B0%E6%8D%AE%E6%B8%85%E6%B4%97",
+      "source": "skillhub",
+      "version": ""
+    },
+    "三表模型": {
+      "name": "三表模型",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%B8%89%E8%A1%A8%E6%A8%A1%E5%9E%8B",
+      "source": "skillhub",
+      "version": ""
+    },
+    "保密信息备忘录构建": {
+      "name": "保密信息备忘录构建",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%BF%9D%E5%AF%86%E4%BF%A1%E6%81%AF%E5%A4%87%E5%BF%98%E5%BD%95%E6%9E%84%E5%BB%BA",
+      "source": "skillhub",
+      "version": ""
+    },
+    "潜在买方清单": {
+      "name": "潜在买方清单",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E6%BD%9C%E5%9C%A8%E4%B9%B0%E6%96%B9%E6%B8%85%E5%8D%95",
+      "source": "skillhub",
+      "version": ""
+    },
+    "债券相对价值分析": {
+      "name": "债券相对价值分析",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E5%80%BA%E5%88%B8%E7%9B%B8%E5%AF%B9%E4%BB%B7%E5%80%BC%E5%88%86%E6%9E%90",
+      "source": "skillhub",
+      "version": ""
+    },
+    "电子表格审计": {
+      "name": "电子表格审计",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E7%94%B5%E5%AD%90%E8%A1%A8%E6%A0%BC%E5%AE%A1%E8%AE%A1",
+      "source": "skillhub",
+      "version": ""
+    },
+    "人工智能就绪度评估": {
+      "name": "人工智能就绪度评估",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%BA%BA%E5%B7%A5%E6%99%BA%E8%83%BD%E5%B0%B1%E7%BB%AA%E5%BA%A6%E8%AF%84%E4%BC%B0",
+      "source": "skillhub",
+      "version": ""
+    },
+    "产业链解读": {
+      "name": "产业链解读",
+      "zip_url": "http://ms.10jqka.com.cn/gateway/market/api/v1/skills/square/download?name=%E4%BA%A7%E4%B8%9A%E9%93%BE%E8%A7%A3%E8%AF%BB",
+      "source": "skillhub",
+      "version": ""
+    }
+  }
+}

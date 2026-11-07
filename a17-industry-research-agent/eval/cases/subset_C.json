@@ -1,0 +1,98 @@
+[
+  {
+    "id": "E-03",
+    "group": "intercept",
+    "input": "储能未来三年市场空间大概有多大",
+    "industry_topic": "储能",
+    "expected_outcome": "intercept",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-07",
+    "group": "full",
+    "input": "锂、钴、镍近一年价格走势",
+    "industry_topic": "锂电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-11",
+    "group": "full",
+    "input": "国内风电整机厂商订单量、交付能力对比",
+    "industry_topic": "风电",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-23",
+    "group": "full",
+    "input": "光伏产业链硅料、硅片、电池、组件各环节盈利变化",
+    "industry_topic": "光伏",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-27",
+    "group": "full",
+    "input": "宁德时代近四年营收、归母净利、毛利率、各项费用率并梳理主营业务结构",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-31",
+    "group": "full",
+    "input": "先看动力电池行业规模，再补一个CR5",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-35",
+    "group": "intercept",
+    "input": "算一下宁德时代氢能业务市占率",
+    "industry_topic": "动力电池",
+    "expected_outcome": "intercept",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-39",
+    "group": "full",
+    "input": "对比特斯拉和宁德时代估值",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-43",
+    "group": "full",
+    "input": "筛选动力电池板块成分股并按营收排序",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-47",
+    "group": "full",
+    "input": "动力电池产业链各环节盈利分配与议价能力",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "S-E01",
+    "group": "intercept",
+    "input": "（溯源）证据缺失致断链",
+    "industry_topic": "动力电池",
+    "expected_outcome": "specialized",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "S-E05",
+    "group": "intercept",
+    "input": "（溯源）证据链跨章断链",
+    "industry_topic": "动力电池",
+    "expected_outcome": "specialized",
+    "source": "V8/cases_v7.json"
+  }
+]

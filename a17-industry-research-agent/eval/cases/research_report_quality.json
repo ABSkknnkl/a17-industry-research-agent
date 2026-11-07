@@ -1,0 +1,297 @@
+[
+  {
+    "id": "embodied-baseline",
+    "source_run_id": "run-20261106221050-ec4d63cc962f",
+    "request": {
+      "project_id": "offline-embodied-baseline",
+      "input_data": {
+        "industry_topic": "具身智能",
+        "market_scope": [
+          "中国 A 股"
+        ],
+        "security_types": [
+          "股票"
+        ],
+        "reporting_currency": "CNY",
+        "research_as_of": "2026-11-06",
+        "focus_questions": [
+          "具身智能产业链核心环节（上游核心原料/关键零部件、中游专业装备制造、下游核心应用场景与运营服务）代表性上市公司与产业分工",
+          "具身智能核心A股标的的营收规模、盈利质量、毛利率、净利率、ROE、资产负债率及估值水平",
+          "具身智能行业发展驱动因素、政策催化、市场规模演进与潜在投资风险"
+        ],
+        "data_fetch_options": null,
+        "analysis_depth": "standard",
+        "risk_preference": "balanced",
+        "research_brief": null,
+        "chart_generate_options": null,
+        "selected_skills": [],
+        "sensitivity_scenarios": []
+      },
+      "review_stages": []
+    },
+    "expected": {
+      "companies": [
+        "三花智控",
+        "拓普集团",
+        "绿的谐波",
+        "鸣志电器"
+      ],
+      "years": {},
+      "metrics": [
+        "营业收入",
+        "毛利率",
+        "净利润"
+      ],
+      "chart_types": [
+        "line",
+        "combo",
+        "industry_chain"
+      ]
+    }
+  },
+  {
+    "id": "liquor-2",
+    "source_question": 2,
+    "request": {
+      "project_id": "offline-liquor-2",
+      "input_data": {
+        "industry_topic": "白酒",
+        "research_as_of": "2026-11-06",
+        "focus_questions": [
+          "贵州茅台、五粮液、泸州老窖和山西汾酒在2023—2025年的营业收入、归母净利润、毛利率和经营活动现金流净额有何差异？请展示同比变化、企业横向比较，并标注数据来源和统计口径。"
+        ]
+      },
+      "review_stages": [
+        "chapter_write"
+      ]
+    },
+    "expected": {
+      "companies": [
+        "贵州茅台",
+        "五粮液",
+        "泸州老窖",
+        "山西汾酒"
+      ],
+      "years": {
+        "company_annual": [
+          2023,
+          2024,
+          2025
+        ]
+      },
+      "metrics": [
+        "营业收入",
+        "归母净利润",
+        "毛利率",
+        "经营活动现金流净额",
+        "同比"
+      ],
+      "chart_types": [
+        "line",
+        "comparison_bar"
+      ]
+    }
+  },
+  {
+    "id": "liquor-1",
+    "source_question": 1,
+    "request": {
+      "project_id": "offline-liquor-1",
+      "input_data": {
+        "industry_topic": "白酒",
+        "research_as_of": "2026-11-06",
+        "focus_questions": [
+          "贵州茅台、五粮液、泸州老窖和山西汾酒四家公司的经营现金流与净利润之间有何差异？这些差异有哪些可核验的解释？"
+        ]
+      },
+      "review_stages": [
+        "chapter_write"
+      ]
+    },
+    "expected": {
+      "companies": [
+        "贵州茅台",
+        "五粮液",
+        "泸州老窖",
+        "山西汾酒"
+      ],
+      "years": {},
+      "metrics": [
+        "经营活动现金流净额",
+        "归母净利润",
+        "合同负债",
+        "应收款项",
+        "存货"
+      ],
+      "chart_types": []
+    }
+  },
+  {
+    "id": "semi-1",
+    "source_question": 1,
+    "request": {
+      "project_id": "offline-semi-1",
+      "input_data": {
+        "industry_topic": "半导体设备",
+        "research_as_of": "2026-11-06",
+        "focus_questions": [
+          "刻蚀、薄膜沉积和清洗设备在晶圆制造中的作用及技术壁垒有何差异？请结合北方华创、中微公司、拓荆科技和盛美上海的主要产品及2023—2025年研发投入数据，分析国内半导体设备企业的技术布局与竞争优势，并区分已验证事实和推测。"
+        ]
+      },
+      "review_stages": [
+        "chapter_write"
+      ]
+    },
+    "expected": {
+      "companies": [
+        "北方华创",
+        "中微公司",
+        "拓荆科技",
+        "盛美上海"
+      ],
+      "years": {
+        "company_annual": [
+          2023,
+          2024,
+          2025
+        ]
+      },
+      "metrics": [
+        "研发投入",
+        "主要产品",
+        "客户验证"
+      ],
+      "chart_types": []
+    }
+  },
+  {
+    "id": "pv-1",
+    "source_question": 1,
+    "request": {
+      "project_id": "offline-pv-1",
+      "input_data": {
+        "industry_topic": "光伏产业链",
+        "research_as_of": "2026-11-06",
+        "focus_questions": [
+          "2021—2025年中国光伏新增装机量如何变化？通威股份、隆基绿能、晶澳科技和阳光电源在产业链中分别处于哪些环节，其2023—2025年的营业收入和毛利率有何差异？请生成产业链结构图、装机趋势图和企业对比图。"
+        ]
+      },
+      "review_stages": [
+        "chapter_write"
+      ]
+    },
+    "expected": {
+      "companies": [
+        "通威股份",
+        "隆基绿能",
+        "晶澳科技",
+        "阳光电源"
+      ],
+      "years": {
+        "industry_annual": [
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "company_annual": [
+          2023,
+          2024,
+          2025
+        ]
+      },
+      "metrics": [
+        "中国光伏新增装机量",
+        "营业收入",
+        "毛利率"
+      ],
+      "chart_types": [
+        "industry_chain",
+        "line",
+        "comparison_bar"
+      ]
+    }
+  },
+  {
+    "id": "low-altitude-1",
+    "source_question": 1,
+    "request": {
+      "project_id": "offline-low-altitude-1",
+      "input_data": {
+        "industry_topic": "低空经济",
+        "research_as_of": "2026-11-06",
+        "focus_questions": [
+          "中国低空经济产业链中，工业级无人机、eVTOL、低空运营服务和基础设施分别包含哪些业务？请根据公开主营业务证据识别代表性上市公司，区分实际经营企业与仅有概念关联的企业，并构建可供人工审核修订的产业链结构。"
+        ]
+      },
+      "review_stages": [
+        "chart_generate",
+        "chapter_write"
+      ]
+    },
+    "expected": {
+      "companies": [],
+      "years": {},
+      "metrics": [
+        "主营业务",
+        "工业级无人机",
+        "eVTOL",
+        "低空运营服务",
+        "基础设施"
+      ],
+      "chart_types": [
+        "industry_chain"
+      ]
+    }
+  },
+  {
+    "id": "nev-1",
+    "source_question": 1,
+    "request": {
+      "project_id": "offline-nev-1",
+      "input_data": {
+        "industry_topic": "新能源汽车",
+        "research_as_of": "2026-11-06",
+        "focus_questions": [
+          "2021—2025年中国新能源汽车销量及市场渗透率如何变化？请比较比亚迪、长安汽车和赛力斯在2023—2025年的营业收入、毛利率及经营现金流，并分析整车与动力电池产业链的主要关系，形成包含数据表、趋势图、产业链结构和证据来源的完整行业研究报告。"
+        ]
+      },
+      "review_stages": [
+        "chapter_write"
+      ]
+    },
+    "expected": {
+      "companies": [
+        "比亚迪",
+        "长安汽车",
+        "赛力斯"
+      ],
+      "years": {
+        "industry_annual": [
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "company_annual": [
+          2023,
+          2024,
+          2025
+        ]
+      },
+      "metrics": [
+        "中国新能源汽车销量",
+        "市场渗透率",
+        "营业收入",
+        "毛利率",
+        "经营活动现金流净额"
+      ],
+      "chart_types": [
+        "industry_chain",
+        "line"
+      ]
+    }
+  }
+]

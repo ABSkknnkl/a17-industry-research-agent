@@ -1,0 +1,181 @@
+{
+  "_说明": "确定性计算10组基准（EVALUATION_PLAN §5.3）。expected 为从黄金样本真实生产输出回填后锁定的基准值；禁止凭空编造业务数值（否则会掩盖真实缺陷、报告失真）。expected=null 时，C1 判定按「无基准值」跳过。",
+  "baselines": [
+    {
+      "key": "dupont_roe",
+      "calculation_type": "dupont_roe",
+      "inputs": [
+        "净利润",
+        "营业收入",
+        "总资产",
+        "净资产"
+      ],
+      "expected": 10.5,
+      "source": {
+        "run_id": "run-20260926022235-107",
+        "artifact": "interpretation_report.json",
+        "pointer": "/financial_ratios/3/roe_pct",
+        "row_index": 3,
+        "entity": "亿纬锂能",
+        "caliber": "最新披露期·样本仅给 ROE 单值（非杜邦三因子分解）"
+      }
+    },
+    {
+      "key": "cr3",
+      "calculation_type": "cr3",
+      "inputs": [
+        "市场份额"
+      ],
+      "expected": 25.6437,
+      "minimum_samples": 3,
+      "source": {
+        "run_id": "run-20260926022235-107",
+        "artifact": "interpretation_report.json",
+        "pointer": "/comps_matrix/entries(market_cap top3)",
+        "row_index": null,
+        "entity": "market_cap-based CR3",
+        "caliber": "market_cap 代理口径（样本无市场份额字段）；comps 20 条"
+      }
+    },
+    {
+      "key": "cr5",
+      "calculation_type": "cr5",
+      "inputs": [
+        "市场份额"
+      ],
+      "expected": 37.4705,
+      "minimum_samples": 5,
+      "source": {
+        "run_id": "run-20260926022235-107",
+        "artifact": "interpretation_report.json",
+        "pointer": "/comps_matrix/entries(market_cap top5)",
+        "row_index": null,
+        "entity": "market_cap-based CR5",
+        "caliber": "market_cap 代理口径（样本无市场份额字段）；comps 20 条"
+      }
+    },
+    {
+      "key": "revenue_yoy",
+      "calculation_type": "revenue_yoy",
+      "inputs": [
+        "营业收入"
+      ],
+      "expected": 0.26442849981292105,
+      "source": {
+        "run_id": "run-20260926022235-107",
+        "artifact": "interpretation_report.json",
+        "pointer": "/key_metrics/change_pct",
+        "row_index": null,
+        "entity": "亿纬锂能",
+        "metric": "revenue",
+        "caliber": "小数率量纲（0.2644 表示 26.44%）"
+      }
+    },
+    {
+      "key": "net_profit_yoy",
+      "calculation_type": "net_profit_yoy",
+      "inputs": [
+        "归母净利润"
+      ],
+      "expected": 0.014407350704986319,
+      "source": {
+        "run_id": "run-20260926022235-107",
+        "artifact": "interpretation_report.json",
+        "pointer": "/key_metrics/change_pct",
+        "row_index": null,
+        "entity": "亿纬锂能",
+        "metric": "parent_net_profit",
+        "caliber": "小数率量纲（0.0144 表示 1.44%）"
+      }
+    },
+    {
+      "key": "inventory_turnover",
+      "calculation_type": "inventory_turnover",
+      "inputs": [
+        "营业成本",
+        "期初存货",
+        "期末存货"
+      ],
+      "expected": null
+    },
+    {
+      "key": "receivables_turnover",
+      "calculation_type": "receivables_turnover",
+      "inputs": [
+        "营业收入",
+        "期初应收账款",
+        "期末应收账款"
+      ],
+      "expected": null
+    },
+    {
+      "key": "capacity_utilization",
+      "calculation_type": "capacity_utilization",
+      "inputs": [
+        "实际产能",
+        "设计产能"
+      ],
+      "expected": null
+    },
+    {
+      "key": "gross_margin",
+      "calculation_type": "gross_margin",
+      "inputs": [
+        "营业收入",
+        "营业成本"
+      ],
+      "expected": 16.17,
+      "source": {
+        "run_id": "run-20260926022235-107",
+        "artifact": "interpretation_report.json",
+        "pointer": "/financial_ratios/3/gross_margin_pct",
+        "row_index": 3,
+        "entity": "亿纬锂能",
+        "caliber": "最新披露期·百分数量纲（16.17 表示 16.17%）"
+      }
+    },
+    {
+      "key": "net_margin",
+      "calculation_type": "net_margin",
+      "inputs": [
+        "归母净利润",
+        "营业收入"
+      ],
+      "expected": 7.0,
+      "source": {
+        "run_id": "run-20260926022235-107",
+        "artifact": "interpretation_report.json",
+        "pointer": "/financial_ratios/3/net_margin_pct",
+        "row_index": 3,
+        "entity": "亿纬锂能",
+        "caliber": "最新披露期·百分数量纲（7.0 表示 7.0%）"
+      }
+    }
+  ],
+  "_backfill": {
+    "run_id": "run-20260926022235-107",
+    "filled": [
+      "cr3",
+      "cr5",
+      "dupont_roe",
+      "gross_margin",
+      "net_margin",
+      "net_profit_yoy",
+      "revenue_yoy"
+    ],
+    "unresolved": [
+      "capacity_utilization",
+      "inventory_turnover",
+      "receivables_turnover"
+    ],
+    "note": "expected 仅来自黄金样本的真实生产输出；CR3/CR5 为 market_cap 代理口径",
+    "refreeze_2026-09-26": {
+      "trigger": "P0/P1/P2 缺陷(D-02…D-11)修复后，用真实 LLM + 同花顺 iwencai 重跑全链路重新冻结黄金快照（报告 §9.3 既定恢复条件）",
+      "old_run_id": "run-20260923094843-353",
+      "new_run_id": "run-20260926022235-107",
+      "target_entity_change": "中电港(旧样本) → 亿纬锂能(新样本，旧样本实体未出现在新链路)",
+      "method": "新基准逐条取自新黄金样本 interpretation_report.json 的真实生产输出（financial_ratios / comps_matrix / key_metrics），并经 DeterministicAnalysisEngine 在同一 dataset.json 上重算逐位吻合（gross/net/roe=16.17/7.0/10.5，CR3/CR5=25.6437/37.4705）；非编造",
+      "image_gen": "本轮禁用生图(IMAGE_API_KEY 置空)；图表走确定性路径，不影响 C1 计算基准"
+    }
+  }
+}

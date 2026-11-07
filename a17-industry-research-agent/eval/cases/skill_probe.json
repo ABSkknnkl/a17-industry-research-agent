@@ -1,0 +1,18 @@
+[
+  {
+    "id": "P-01",
+    "group": "full",
+    "input": "宁德时代未来三年盈利预测与市场一致预期的差异有多大，分析师评级近半年有哪些调整",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "技能库可达性体检｜为 earnings-expectation-analysis（盈利预期分析）定制，语句含其全部触发词：盈利预测 / 一致预期 / 评级"
+  },
+  {
+    "id": "P-02",
+    "group": "full",
+    "input": "用 VaR 和压力测试分析动力电池行业的尾部风险与回撤特征，当前波动率处于什么水平",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "技能库可达性体检｜为 risk-stress-analysis（风险压力测试）定制，语句含其触发词：VaR / 压力测试 / 尾部 / 回撤 / 波动率 / 风险"
+  }
+]

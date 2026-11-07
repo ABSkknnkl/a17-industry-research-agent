@@ -1,0 +1,7 @@
+{
+  "domains": ["reports", "financials", "companies"],
+  "keywords": ["一致预期", "预期修正", "上调", "下调", "超预期", "业绩意外", "SUE", "预测", "指引", "业绩预告", "分析师"],
+  "requires_signal": true,
+  "source": "skills包/盈利预期修正分析/earnings-revision/SKILL.md",
+  "adaptation": "跟踪卖方一致预期修正广度与幅度，结合财报实际业绩识别超预期差与景气先导动能；移除事件套利与交易时钟策略。"
+}

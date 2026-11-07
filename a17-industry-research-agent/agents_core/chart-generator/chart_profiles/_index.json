@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "note": "profile 顺序 = detect_profile 首个命中优先级；新行业追加到 order 末尾",
+  "order": [
+    "aircraft",
+    "power_equipment",
+    "semiconductor_equipment",
+    "robot",
+    "pharma",
+    "lidar",
+    "vehicle",
+    "machine_tool",
+    "battery",
+    "semiconductor_chip",
+    "semiconductor_material",
+    "ivd",
+    "display_panel",
+    "consumer_electronics",
+    "ai_server",
+    "optical_communication",
+    "construction_machinery",
+    "industrial_laser",
+    "sensor",
+    "additive_manufacturing",
+    "carbon_fiber",
+    "home_appliance",
+    "liquor"
+  ],
+  "generic": "_generic.json"
+}

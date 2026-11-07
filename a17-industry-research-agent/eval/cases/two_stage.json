@@ -1,0 +1,34 @@
+[
+  {
+    "id": "E-06",
+    "group": "full",
+    "input": "动力电池行业近5年市场规模、增速",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "提示词A/B｜历史用例原文（full 组）｜已知基线：模型选 7、规则补 3"
+  },
+  {
+    "id": "E-13",
+    "group": "core_calc",
+    "input": "宁德时代2023-2025财报做三步杜邦ROE拆解",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "提示词A/B｜历史用例原文（core_calc 组）｜确定性计算密集"
+  },
+  {
+    "id": "T-03",
+    "group": "tool_planning",
+    "input": "当前新能源车板块PE、PB及历史分位",
+    "industry_topic": "新能源车",
+    "expected_outcome": "completed",
+    "source": "提示词A/B｜历史用例原文（tool_planning 组）｜多指标编排"
+  },
+  {
+    "id": "I-C01",
+    "group": "intent_routing",
+    "input": "光伏逆变器国内外厂商市占率及海外政策影响",
+    "industry_topic": "光伏逆变器",
+    "expected_outcome": "completed",
+    "source": "提示词A/B｜历史用例原文（intent_routing 组）｜跨维度复合问询"
+  }
+]

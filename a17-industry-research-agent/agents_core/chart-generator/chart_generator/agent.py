@@ -1,0 +1,3001 @@
+"""LLM-driven chart selection, autonomous skill invocation, validation, rendering and artifact persistence."""
+
+from __future__ import annotations
+
+import asyncio
+from collections import Counter, defaultdict
+from collections.abc import Awaitable, Callable
+from datetime import date, datetime
+import hashlib
+import json
+import logging
+import os
+from pathlib import Path
+import re
+import secrets
+from typing import Any
+
+from chart_generator.config import Settings
+from chart_generator.llm import ChartLLM, OpenAICompatibleLLM
+from chart_generator.models import (
+    AppliedSkill, ChartGenerationRequest, ChartGenerationResult, ChartQualityReport,
+    ChartSpec, ChartType, DataSupplementDemand, EvidenceRef, SuppressedChart,
+)
+from chart_generator.chain_graph import build_chain_graph_from_segments
+from chart_generator.chain_lint import assert_graph_fidelity, lint_chain_svg
+from chart_generator.chain_render import render_chain_svg
+from chart_generator.chain_intent import user_wants_industry_chain
+from chart_generator.chain_topology import (
+    classify_company_traceability,
+    repair_topology,
+    topology_to_spec,
+    validate_topology,
+    hoist_leading_to_brand_card,
+)
+from chart_generator.websearch import (
+    WebSearchClient,
+    fill_chain_gaps,
+    make_search_client,
+    supplement_segments_with_web,
+    web_search_available,
+)
+from chart_generator.compiler import EChartsCompiler, PRIMARY_COLOR
+from chart_generator.data_formulation import DataFormulator
+from chart_generator.image_gen import generate_industry_chain_image
+from chart_generator.linter import BAR_TYPES, ChartLinterViolation, ChartSkillLinter
+
+try:
+    from skill_policy import screen_policy_skills
+except ModuleNotFoundError:  # 单包测试或独立运行时 agents_core 不在搜索路径上，按包位置回推
+    import sys as _sys
+
+    _sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+    from skill_policy import screen_policy_skills
+from chart_generator.metric_guard import (
+    DimensionGuard,
+    MetricDimension,
+    canonical_metric_label,
+    resolve_metric_meta,
+)
+from chart_generator.render import (
+    clean_chart_title, clean_metric_label, render_preview, render_svg, resolve_ticker,
+)
+from chart_generator.skillhub import ChartSkillHub
+
+logger = logging.getLogger(__name__)
+EventEmitter = Callable[[dict[str, Any]], Awaitable[None]]
+
+VALID_CHART_TYPES = {
+    "line", "bar", "comparison_bar", "horizontal_bar", "diverging_bar", "pie", "donut", "radar", "industry_chain",
+    "combo", "area", "scatter", "bubble", "heatmap", "boxplot", "treemap",
+}
+
+CHART_AGENT_SYSTEM_PROMPT = """你是顶级金融与产业研报图表设计智能体（ChartGeneratorAgent）。
+你的职责是根据《数据解读报告》中的事实证据、关键指标、趋势和章节结构，设计具有高学术与出版品质的可视化图表。
+
+【核心原则】
+1. 事实依据（Grounding）：图表中的每一个数据点必须严格来自输入的事实证据，严禁捏造虚假数值，严禁引用不存在的 evidence_id。
+2. 图表多样性与表现力（Diversity）：严禁整篇研报图表形态单一（严禁通篇只使用简单柱状图）！必须根据分析场景组合搭配多样化的高级图表类型：
+   - 双轴组合图 (combo)：同时展示金额规模（左轴柱状）与同比增速/比率（右轴折线）；
+   - 四象限定位图 (scatter / bubble)：展示企业在两个关键维度（如体量 vs 盈利能力）下的相对竞争位置与分化；
+   - 发散/正负偏离条形图 (diverging_bar)：清晰展示正负分化指标（如经营活动现金流、净利润正负增长）；
+   - 环形构成图 (donut / pie)：展示关键环节构成或份额占比，中心标明总规模；
+   - 多维雷达图 (radar)：呈现核心标的与产业链标杆企业的多维度能力对比；
+   - 产业链拓扑图 (industry_chain)：清晰呈现上下游供需及毛利/价值链分布；
+   - 排序对比柱/条形图 (bar / horizontal_bar)：用于直观排名。
+   生成的一套图表必须至少涵盖 4 种以上不同形态！
+3. 自主技能调用：你拥有专业的图表技能库（SkillHub），包含：
+   - chart-selection: 根据证据形态和分析目的选型（组合双轴、四象限散点、发散条形、环形构成、多指标雷达等）
+   - chart-readability: 校验标题、单位、坐标轴、图例、配色、负值零轴与图例防遮挡
+   - financial-charting: 财务指标同口径对比、营收/利润/现金流双轴组合、负利润零轴不截断、历史与预测不混线
+   - industry-chain-visualization: 将产业链证据组织为上游、中游、下游节点与拓扑关系图
+   在正式设计图表前，你必须根据当前研报的数据特征，自主通过 invoke_skill 工具调用所需的相关技能，加载具体设计规范并说明调用理由。
+4. 严谨性与抑制（Suppression）：若某种图表形式缺乏必要数据支持（如没有连续时序却画折线、没有完整结构却画饼图、不同估值口径强行混画、或用户请求的图表类型无对应数据），必须予以主动抑制，并在 suppressed_charts 中说明专业原因。
+5. 输出合规的 ECharts Option：图表的 option 字段必须为完全合法的 ECharts 配置字典，包含 xAxis, yAxis, series, tooltip, legend 等基础结构；雷达图包含 radar/series；关系拓扑图包含 series (type=graph, data/links)；树图包含 series (type=treemap)。
+6. 章节合理分布（Chapter Distribution）：研报采用券商标准 7 大章节架构：
+   - CH-01 行业定义与研究基础（行业定位、宏观全景）
+   - CH-02 市场规模与成长性（时序规模、预测增速、复合增长率）
+   - CH-03 产业链与利润分配（产业链上下游拓扑、价值链毛利分布）
+   - CH-04 竞争格局（市场份额分布、横向横截面梯队排名、集中度）
+   - CH-05 财务质量与估值参照（重点公司三表质量、多维能力雷达、估值-成长四象限定位）
+   - CH-06 宏观、政策与技术催化（政策与催化演进）
+   - CH-07 情景、风险与研究结论（情景敏感度）
+   严禁将所有图表堆积在单一章节（如全部塞进 CH-04 或 CH-05）！规划的图表集必须均衡分布于上述各章节中，单章节图表数建议控制在 2~4 张以内。
+"""
+
+
+def _fingerprint(payload: object) -> str:
+    return hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str).encode()).hexdigest()
+
+
+class _Candidate:
+    def __init__(
+        self,
+        title: str,
+        chart_type: ChartType,
+        option: dict[str, Any],
+        evidence_ids: list[str],
+        goal: str,
+        chapter: str,
+        score: int = 100,
+        footnotes: list[str] | None = None,
+        point_evidence_ids: list[str] | None = None,
+        sample_group: str = "",
+        audit_notes: list[str] | None = None,
+    ):
+        self.title = title
+        self.chart_type = chart_type
+        self.option = option
+        self.evidence_ids = evidence_ids
+        self.goal = goal
+        self.chapter = chapter
+        self.score = score
+        self.footnotes = footnotes or []
+        self.point_evidence_ids = point_evidence_ids or []
+        # AB-3/C02：同一指标的样本拆图组（如 12 家拆 2 张线图）——语义去重键
+        # 纳入该组别，避免第二张拆图被当成同指标冗余图抑制。
+        self.sample_group = sample_group
+        # AB-3：确定性审计注（两期观察、未对齐主体缺口等）——与模型拟议注
+        # （footnotes，核验时整体重建）分离，核验后并入最终呈现。
+        self.audit_notes = audit_notes or []
+        self.fingerprint = _fingerprint({"type": chart_type, "option": option, "evidence": sorted(evidence_ids)})
+
+
+class ChartGeneratorAgent:
+    # 抑制图表标题 → 证据 metric 反查词表（_backfill_suppressed_evidence）
+    # 合并版：中文别名（本地） + 英文字段别名（源码包）取并集，键序保持稳定。
+    # 注：合入他人版本时保留本仓 33 条全集版（对方版本仅 18 条，语义上是本表的真子集）。
+    _SUPPRESS_METRIC_TOKENS: tuple[tuple[str, tuple[str, ...]], ...] = (
+        ("营收", ("revenue", "营业收入", "营收", "收入", "主营业务收入")),
+        ("收入", ("revenue", "营业收入", "营收", "收入", "主营业务收入")),
+        ("净利", ("profit", "net_profit", "归母净利润", "净利润", "净利")),
+        ("利润", ("profit", "net_profit", "归母净利润", "净利润", "利润总额", "利润")),
+        ("毛利", ("gross_margin", "毛利率", "毛利")),
+        ("roe", ("roe", "净资产收益率", "ROE")),
+        ("roa", ("roa", "总资产收益率", "ROA")),
+        ("增速", ("growth", "同比", "增长率", "增速", "CAGR")),
+        ("成长", ("growth", "增长率", "增速", "CAGR")),
+        ("增长", ("growth", "同比", "增速", "增长率")),
+        ("现金流", ("operating_cash_flow", "经营性现金流", "经营现金流", "现金流", "经营活动现金流")),
+        ("负债", ("debt", "total_liabilities", "资产负债率", "负债率", "有息负债", "总负债")),
+        ("资产", ("asset", "total_assets", "总资产")),
+        ("研发", ("rd_expense", "研发费用", "研发支出", "研发投入")),
+        ("产能", ("产能", "产量", "开工率", "产能利用率")),
+        ("价格", ("close_price", "价格", "均价", "价差", "单价", "收盘价", "股价")),
+        ("成交", ("trade_volume", "成交量", "成交额")),
+        ("份额", ("share", "市场份额", "份额", "市占率", "占比")),
+        ("市值", ("market_cap", "总市值", "A股总市值", "市值")),
+        ("市盈率", ("pe_ratio", "市盈率", "pe")),
+        ("市净率", ("pb_ratio", "市净率", "pb")),
+        ("估值", ("pe_ratio", "pb_ratio", "市盈率", "市净率", "PE", "PB", "估值")),
+        ("装机", ("装机量", "装机", "出货量")),
+        ("出货", ("出货量", "出货", "销量")),
+        ("出口", ("出口量", "出口", "出口额")),
+        ("渗透", ("渗透率", "渗透")),
+        ("国产", ("国产化率", "国产替代", "国产化")),
+        ("产业链", ("产业链", "上游", "中游", "下游", "环节")),
+        ("供需", ("供需", "供给", "需求", "供需平衡")),
+        ("成本", ("成本", "单位成本", "原材料")),
+        ("毛利率", ("毛利率", "毛利")),
+        ("集中度", ("集中度", "CR3", "CR5", "CR10")),
+    )
+
+    def __init__(
+        self,
+        *,
+        settings: Settings | None = None,
+        skillhub: ChartSkillHub | None = None,
+        llm: ChartLLM | None = None,
+        linter: ChartSkillLinter | None = None,
+    ) -> None:
+        self.settings = settings or Settings.from_env()
+        self.skillhub = skillhub or ChartSkillHub()
+        self.llm = llm or OpenAICompatibleLLM(self.settings)
+        self.linter = linter or ChartSkillLinter()
+
+    async def _web_extract_llm(self, system: str, user: str) -> str:
+        """产业链联网补漏专用 LLM 归纳调用（2026-10-17）。
+
+        与主链路的 ``run_skill_and_chart_loop`` 分开：这里是**单次无工具**的纯文本归纳，
+        用项目同一个大模型端点，但关闭思考（实测同等任务 10.4s → 5.8s）、
+        单次调用不重试、60s 上限——联网补漏是兜底通道，不能拖慢主链路。
+
+        返回空串表示不可用（无 key / 网络失败），调用方据此退回正则兜底。
+        """
+        import httpx as _httpx
+
+        if not (self.settings.llm_api_key and self.settings.llm_model):
+            return ""
+        payload: dict[str, Any] = {
+            "model": self.settings.llm_model,
+            "messages": [{"role": "system", "content": system},
+                         {"role": "user", "content": user}],
+            "temperature": 0.1,
+            "max_tokens": 1024,
+            # 火山 ark 私有字段（关闭思考：实测同等任务 10.4s → 5.8s）。
+            # 2026-10-26：非 ark 端点（Azure/OpenAI 兼容网关）会因未知字段直接 400，
+            # 故下面带一次「去掉该字段重试」——不靠域名判断，换端点即可用。
+            "thinking": {"type": "disabled"},
+        }
+        try:
+            async with _httpx.AsyncClient(timeout=60.0, trust_env=False) as client:
+                res = await client.post(
+                    f"{self.settings.llm_base_url}/chat/completions",
+                    headers={"Authorization": f"Bearer {self.settings.llm_api_key}"},
+                    json=payload,
+                )
+                if res.status_code == 400 and "thinking" in payload:
+                    logger.info("端点不接受 thinking 字段（%s），去掉后重试一次",
+                                res.text[:120])
+                    retry = {k: v for k, v in payload.items() if k != "thinking"}
+                    res = await client.post(
+                        f"{self.settings.llm_base_url}/chat/completions",
+                        headers={"Authorization": f"Bearer {self.settings.llm_api_key}"},
+                        json=retry,
+                    )
+                res.raise_for_status()
+                data = res.json()
+        except Exception as exc:
+            logger.warning("产业链联网补漏 LLM 调用失败：%s: %s", type(exc).__name__, exc)
+            return ""
+        choices = (data or {}).get("choices") or []
+        if not choices:
+            return ""
+        return str(((choices[0] or {}).get("message") or {}).get("content") or "")
+
+    def _candidate_semantic_key(self, c: _Candidate, evidence_index: dict[str, EvidenceRef]) -> tuple[str, str]:
+        """Derives a semantic deduplication key (perspective_family, primary_metric) for a chart candidate.
+
+        Distinguishes between cross-sectional entity rankings, timeseries historical curves,
+        and segment compositions, preventing false deduplication across different analytical perspectives
+        while still suppressing redundant charts within the same perspective.
+        """
+        if c.chart_type == "industry_chain":
+            return ("topology", "industry_chain")
+
+        if c.chart_type == "radar":
+            entities = [evidence_index[eid].entity for eid in c.evidence_ids if eid in evidence_index and evidence_index[eid].entity]
+            ent = entities[0] if entities else c.title
+            return ("radar", str(ent))
+
+        if c.chart_type in ("scatter", "bubble"):
+            metrics = sorted({canonical_metric_label(evidence_index[eid].metric) for eid in c.evidence_ids if eid in evidence_index and evidence_index[eid].metric})
+            return ("multivariate", ":".join(metrics) if metrics else c.title)
+
+        if c.chart_type == "combo":
+            metrics = sorted({canonical_metric_label(evidence_index[eid].metric) for eid in c.evidence_ids if eid in evidence_index and evidence_index[eid].metric})
+            entities = sorted({str(evidence_index[eid].entity) for eid in c.evidence_ids if eid in evidence_index and evidence_index[eid].entity})
+            return ("combo", f"{':'.join(entities)}|{':'.join(metrics)}")
+
+        if c.chart_type == "heatmap":
+            return ("matrix", c.title)
+
+        # Determine analysis perspective: timeseries vs cross_sectional vs composition
+        is_timeseries = False
+        if c.chart_type in ("line", "area"):
+            is_timeseries = True
+        elif isinstance(c.option, dict):
+            x_data = c.option.get("xAxis", {}).get("data", []) if isinstance(c.option.get("xAxis"), dict) else []
+            if x_data and any(re.search(r"\d{4}", str(item)) for item in x_data):
+                is_timeseries = True
+
+        # Chart family grouping with perspective
+        if c.chart_type == "treemap":
+            family = "segmentation_treemap"
+        elif c.chart_type in ("pie", "donut"):
+            family = "composition_pie"
+        elif c.chart_type in ("line", "area"):
+            family = "timeseries_curve"
+        elif c.chart_type in ("bar", "comparison_bar", "horizontal_bar", "diverging_bar"):
+            family = "timeseries_bar" if is_timeseries else "cross_section_bar"
+        else:
+            family = f"{'timeseries' if is_timeseries else 'cross_section'}_{c.chart_type}"
+
+        metrics = [canonical_metric_label(evidence_index[eid].metric) for eid in c.evidence_ids if eid in evidence_index and evidence_index[eid].metric]
+        if metrics:
+            primary_metric = Counter(metrics).most_common(1)[0][0]
+        else:
+            primary_metric = clean_metric_label(c.title)
+
+        # AB-3/C02：样本拆图组别进键，拆出的后续图不作同指标冗余图抑制。
+        sample_group = getattr(c, "sample_group", "")
+        if sample_group:
+            primary_metric = f"{primary_metric}::{sample_group}"
+        return (family, primary_metric)
+
+    @staticmethod
+    def _is_macro_candidate(c: _Candidate, evidence_index: dict[str, EvidenceRef]) -> bool:
+        if any(k in c.title for k in ("宏观", "社融", "工业增加值", "国内生产总值", "GDP", "CPI", "PMI", "M2")):
+            return True
+        for eid in c.evidence_ids:
+            if eid in evidence_index:
+                ref = evidence_index[eid]
+                if getattr(ref, "domain", None) == "macro":
+                    return True
+                ent = str(getattr(ref, "entity", "") or "").strip()
+                if ent in ("宏观", "宏观经济", "全国", "中国"):
+                    return True
+                met = str(getattr(ref, "metric", "") or "")
+                if any(k in met for k in ("社融", "社会融资", "工业增加值", "GDP", "CPI", "PPI", "PMI", "M2", "广义货币")):
+                    return True
+        return False
+
+    @staticmethod
+    def _resolve_chart_as_of(
+        c: Any,
+        report: InterpretationReport,
+    ) -> str:
+        """Return a common evidenced date only when every point has that date.
+
+        Research cutoff and model-supplied axis labels are never observation dates.
+        A partially undated cohort cannot be stamped as a same-date snapshot.
+        """
+        eids = getattr(c, "point_evidence_ids", None) or getattr(c, "evidence_ids", []) or []
+        refs = [report.evidence_index.get(str(eid)) for eid in eids]
+        if not refs or any(ref is None or ref.period is None for ref in refs):
+            return ""
+        periods = {ref.period for ref in refs}
+        return next(iter(periods)).isoformat() if len(periods) == 1 else ""
+
+    async def run(
+        self,
+        request: ChartGenerationRequest,
+        emit: EventEmitter | None = None,
+        save_artifacts: bool = True,
+    ) -> ChartGenerationResult:
+        run_id = f"charts-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}"
+        artifact_dir = self.settings.output_dir / "runs" / run_id if save_artifacts else None
+        events: list[dict[str, Any]] = []
+
+        async def record(event: str, **details: Any) -> None:
+            item = {"timestamp": datetime.now().astimezone().isoformat(), "event": event, "details": details}
+            events.append(item)
+            if emit:
+                try:
+                    await emit(item)
+                except Exception:
+                    pass
+
+        await record("chart_generation_started", source_report_id=request.report.report_id)
+
+        # Check if we have evidence to work with
+        has_evidence = bool(request.report.evidence_index)
+        has_numeric_or_chain = any(
+            isinstance(item.value, (int, float)) and not isinstance(item.value, bool)
+            or item.domain == "industry_chain"
+            for item in request.report.evidence_index.values()
+        )
+
+        applied_skills: list[AppliedSkill] = []
+        candidates: list[_Candidate] = []
+        suppressed: list[SuppressedChart] = []
+
+        if not has_evidence or not has_numeric_or_chain:
+            suppressed.append(SuppressedChart(
+                title="数据可视化",
+                reason_code="no_numeric_evidence",
+                reason="分析报告中没有可用于图表的数值或结构化产业链证据",
+            ))
+        elif self.llm.is_available:
+            llm_failed = False
+            llm_settings = getattr(self.llm, "settings", None)
+            cfg_timeout = float(getattr(llm_settings, "llm_timeout_seconds", 180.0) or 180.0)
+            llm_timeout = max(120.0, min(180.0, cfg_timeout))
+            try:
+                called_skills, candidates, suppressed = await asyncio.wait_for(
+                    self._run_llm_generation(request, record),
+                    timeout=llm_timeout,
+                )
+            except Exception as e:
+                logger.warning(f"ChartGeneratorAgent LLM generation failed or timed out ({llm_timeout}s): {type(e).__name__}")
+                llm_failed = True
+                called_skills, candidates, suppressed = [], [], []
+
+            if not candidates and has_numeric_or_chain:
+                llm_failed = True
+                await record("skill_routed_by_policy", skills=["chart-selection", "financial-charting"], reason="大模型未产出合规落地图表，自动激活确定性数据适配选型保底")
+                fb_cands, fb_supp = self._deterministic_fallback(request)
+                candidates = fb_cands
+                suppressed.extend(fb_supp)
+            elif candidates and request.preferences.max_charts and has_numeric_or_chain:
+                valid_candidates = [c for c in candidates if not self._verify_numeric_candidate(c, request.report)]
+                valid_keys = {self._candidate_semantic_key(c, request.report.evidence_index) for c in valid_candidates}
+                missing_types = set(request.preferences.requested_types) - {c.chart_type for c in valid_candidates}
+                if len(valid_keys) >= request.preferences.max_charts and not missing_types:
+                    valid_candidates = []  # No fallback is needed when the requested capacity is already valid.
+                    fb_cands, fb_supp = [], []
+                else:
+                    fb_cands, fb_supp = self._deterministic_fallback(request)
+                existing_keys = {self._candidate_semantic_key(c, request.report.evidence_index) for c in valid_candidates}
+                for fc in fb_cands:
+                    fk = self._candidate_semantic_key(fc, request.report.evidence_index)
+                    if fk not in existing_keys:
+                        candidates.append(fc)
+                        existing_keys.add(fk)
+                suppressed.extend(fb_supp)
+
+            verified_candidates = []
+            for candidate in candidates:
+                problem = self._verify_numeric_candidate(candidate, request.report)
+                if problem:
+                    suppressed.append(SuppressedChart(title=candidate.title, requested_type=candidate.chart_type,
+                        reason_code="measurement_contract", reason=problem, evidence_ids=candidate.evidence_ids))
+                else:
+                    verified_candidates.append(candidate)
+            candidates = verified_candidates
+
+            # Map called skills to AppliedSkill models
+            applied_map: dict[str, AppliedSkill] = {}
+            for cs in called_skills:
+                sname = cs.get("skill_name", "")
+                reason = cs.get("reason", "")
+                skill_obj = self.skillhub.get(sname)
+                if skill_obj:
+                    applied_map[sname] = AppliedSkill(
+                        name=skill_obj.name,
+                        description=skill_obj.description,
+                        source=skill_obj.source,
+                        adaptation=reason or skill_obj.adaptation,
+                    )
+            # Always ensure chart-selection and chart-readability are recorded
+            for base_skill_name in ("chart-selection", "chart-readability"):
+                if base_skill_name not in applied_map:
+                    base_skill = self.skillhub.get(base_skill_name)
+                    if base_skill:
+                        applied_map[base_skill_name] = AppliedSkill(
+                            name=base_skill.name,
+                            description=base_skill.description,
+                            source=base_skill.source,
+                            adaptation="作为基础可视化原则全程应用",
+                        )
+            applied_skills = list(applied_map.values())
+            await record("skills_applied", skills=[skill.name for skill in applied_skills])
+
+            # Hard Linter & Reflection Loop
+            violations = self.linter.lint(candidates, request.report.evidence_index)
+            await record("skill_linter_checked", passed=not violations, violations=[v.to_dict() for v in violations])
+            if violations:
+                await record("skill_correction_triggered", attempt=1, violations=[v.to_dict() for v in violations])
+                if not llm_failed:
+                    try:
+                        repaired_cand, repaired_supp = await asyncio.wait_for(
+                            self._repair_charts_with_llm(candidates, violations, request, record),
+                            timeout=45.0,
+                        )
+                    except Exception as e:
+                        logger.warning(f"ChartGeneratorAgent LLM repair failed: {type(e).__name__}")
+                        repaired_cand, repaired_supp = [], []
+                    if repaired_cand:
+                        candidates = repaired_cand
+                        suppressed.extend(repaired_supp)
+                        new_violations = self.linter.lint(candidates, request.report.evidence_index)
+                        await record("skill_correction_resolved", passed=not new_violations, remaining_violations=[v.to_dict() for v in new_violations])
+                        if new_violations:
+                            candidates = self._conform_diversity_deterministically(candidates, request)
+                    else:
+                        candidates = self._conform_diversity_deterministically(candidates, request)
+                else:
+                    candidates = self._conform_diversity_deterministically(candidates, request)
+            elif candidates:
+                candidates = self._conform_diversity_deterministically(candidates, request)
+        else:
+            # Deterministic fallback when LLM is unavailable (e.g. offline testing)
+            selected_skills = self.skillhub.select(request)
+            applied_skills = [
+                AppliedSkill(name=s.name, description=s.description, source=s.source, adaptation=s.adaptation)
+                for s in selected_skills
+            ]
+            await record("skill_routed_by_policy", skills=[s.name for s in selected_skills], reason="离线模式或未配置模型，基于报告数据特征路由技能")
+            await record("skills_applied", skills=[skill.name for skill in applied_skills])
+            candidates, suppressed = self._deterministic_fallback(request)
+            violations = self.linter.lint(candidates, request.report.evidence_index)
+            await record("skill_linter_checked", passed=not violations, violations=[v.to_dict() for v in violations])
+            if violations:
+                candidates = self._conform_diversity_deterministically(candidates, request)
+
+        # Filter and rank candidates
+        requested = set(request.preferences.requested_types)
+        if requested:
+            present = {item.chart_type for item in candidates}
+            for chart_type in sorted(requested - present):
+                suppressed.append(SuppressedChart(
+                    title=f"请求的{chart_type}图",
+                    requested_type=chart_type,
+                    reason_code="no_compatible_data",
+                    reason="当前证据中没有适配该图表类型的数据",
+                ))
+            representatives: list[_Candidate] = []
+            for chart_type in request.preferences.requested_types:
+                match = next((item for item in candidates if item.chart_type == chart_type), None)
+                if match is not None and match not in representatives:
+                    representatives.append(match)
+            candidates = [*representatives, *(item for item in candidates if item not in representatives)]
+        elif len(candidates) >= 4:
+            candidates = self._conform_diversity_deterministically(candidates, request)
+
+        # Explicit annual cells take precedence over generic chart diversity.
+        # A trend is eligible only if every required point survives formulation.
+        if not requested:
+            matrix = request.report.data_quality_appendix.get("requirement_evidence_matrix") or []
+            required: dict[str, set[str]] = {}
+            incomplete: set[str] = set()
+            for row in matrix:
+                requirement, coverage = row.get("requirement") or {}, row.get("coverage") or {}
+                if (not str(requirement.get("requirement_id", "")).startswith("annual_")
+                        or requirement.get("comparison_baseline") or not requirement.get("hard")):
+                    continue
+                for family in requirement.get("metric_families") or []:
+                    required.setdefault(family, set()).update(coverage.get("evidence_record_ids") or [])
+                    if not coverage.get("passed") or not coverage.get("evidence_record_ids"):
+                        incomplete.add(family)
+            if required:
+                alternatives, _ = self._deterministic_fallback(request)
+                preferred = []
+                for family, ids in required.items():
+                    if family in incomplete or not ids:
+                        continue
+                    for candidate in alternatives:
+                        if candidate.chart_type != "line" or not ids.issubset(candidate.evidence_ids):
+                            continue
+                        if self._verify_numeric_candidate(candidate, request.report) or not ids.issubset(candidate.evidence_ids):
+                            continue
+                        preferred.append(candidate)
+                        break
+                if preferred:
+                    candidates = preferred + candidates
+                    await record("required_financial_charts_prioritized", count=len(preferred))
+
+        selected: list[_Candidate] = []
+        seen: set[str] = set()
+        seen_semantics: set[tuple[str, str]] = set()
+        rep_set = set(representatives) if request.preferences.requested_types else set()
+        is_industry_rep = "宏观" not in (request.report.subject or "")
+        selected_macro_count = 0
+        max_macro_allowed = 1 if (request.preferences.max_charts and request.preferences.max_charts < 10) else 4
+
+        # 2026-10-21：用户是否**明确**要产业链图（确定性判定，不进 LLM）。
+        # 未明确要 → 不出产业链图（改出别的图）且**不调豆包**，省月度 500 次额度。
+        _req_types = list(getattr(request.preferences, "requested_types", None) or []) or list(
+            getattr(request.report, "requested_types", None) or [])
+        _wants_chain = user_wants_industry_chain(
+            request.report.subject or "",
+            getattr(request, "focus_points", None),
+            explicit=getattr(request, "want_industry_chain", None),
+            defaulted_focus=getattr(request, "defaulted_focus", False),
+            requested_types=_req_types,
+        )
+        if not _wants_chain:
+            logger.info("用户未明确要求产业链图（subject=%s）：不生成产业链图、不调用联网补漏",
+                        request.report.subject)
+
+        for item in candidates:
+            contract_error = self._verify_numeric_candidate(item, request.report)
+            if contract_error:
+                suppressed.append(SuppressedChart(title=item.title, requested_type=item.chart_type,
+                    reason_code="measurement_contract", reason=contract_error, evidence_ids=item.evidence_ids))
+                continue
+            # 未明确要产业链图 → 抑制，把名额让给其他图表
+            if item.chart_type == "industry_chain" and not _wants_chain:
+                suppressed.append(SuppressedChart(
+                    title=item.title,
+                    requested_type=item.chart_type,
+                    reason_code="industry_chain_not_requested",
+                    reason="用户未明确要求产业链图，改出其他类型的图表（本次不调用联网补漏）",
+                    evidence_ids=item.evidence_ids,
+                ))
+                continue
+            if item.fingerprint in seen:
+                suppressed.append(SuppressedChart(
+                    title=item.title,
+                    requested_type=item.chart_type,
+                    reason_code="duplicate",
+                    reason="相同数据和表达目的的图表已生成",
+                    evidence_ids=item.evidence_ids,
+                ))
+                continue
+            seen.add(item.fingerprint)
+
+            # 1. Non-additive metric guard for Treemap
+            if item.chart_type == "treemap":
+                non_additive_keywords = (
+                    "价", "价格", "price", "率", "比", "ratio", "pe", "pb", "ps",
+                    "roe", "roa", "eps", "每股", "收益率", "增速", "增长率", "margin"
+                )
+                title_lower = item.title.lower()
+                cand_metrics = [
+                    str(request.report.evidence_index[eid].metric).lower()
+                    for eid in item.evidence_ids
+                    if eid in request.report.evidence_index and getattr(request.report.evidence_index[eid], "metric", None)
+                ]
+                if any(k in title_lower for k in non_additive_keywords) or any(
+                    any(k in m for k in non_additive_keywords) for m in cand_metrics
+                ):
+                    suppressed.append(SuppressedChart(
+                        title=item.title,
+                        requested_type=item.chart_type,
+                        reason_code="treemap_non_additive_metric",
+                        reason="矩形树图仅支持市值/营收等加总型广延指标，不可用于价格或比率指标",
+                        evidence_ids=item.evidence_ids,
+                    ))
+                    continue
+
+            # 2. Dimensions guard for Radar
+            if item.chart_type == "radar":
+                indicators = []
+                if isinstance(item.option, dict):
+                    r_cfg = item.option.get("radar", {})
+                    if isinstance(r_cfg, dict):
+                        indicators = r_cfg.get("indicator", [])
+                    elif isinstance(r_cfg, list) and r_cfg and isinstance(r_cfg[0], dict):
+                        indicators = r_cfg[0].get("indicator", [])
+                if 1 <= len(indicators) < 3:
+                    suppressed.append(SuppressedChart(
+                        title=item.title,
+                        requested_type=item.chart_type,
+                        reason_code="radar_insufficient_dimensions",
+                        reason="雷达图必须具备至少3个互补评价维度，指标过少导致几何图形退化",
+                        evidence_ids=item.evidence_ids,
+                    ))
+                    continue
+
+            # 3. Macro quota guard in vertical industry reports
+            if is_industry_rep and self._is_macro_candidate(item, request.report.evidence_index):
+                if selected_macro_count >= max_macro_allowed:
+                    suppressed.append(SuppressedChart(
+                        title=item.title,
+                        requested_type=item.chart_type,
+                        reason_code="macro_quota_limit",
+                        reason="行业研报中宏观图表配额已达上限，优先保障核心产业链与微观企业财务图表",
+                        evidence_ids=item.evidence_ids,
+                    ))
+                    continue
+                selected_macro_count += 1
+
+            sem_key = self._candidate_semantic_key(item, request.report.evidence_index)
+            if item not in rep_set and sem_key in seen_semantics:
+                suppressed.append(SuppressedChart(
+                    title=item.title,
+                    requested_type=item.chart_type,
+                    reason_code="duplicate_metric",
+                    reason=f"指标【{sem_key[1]}】的同类图表已生成，抑制同指标冗余展示",
+                    evidence_ids=item.evidence_ids,
+                ))
+                continue
+            seen_semantics.add(sem_key)
+
+            is_unlimited = not request.preferences.max_charts or request.preferences.max_charts <= 0
+            if is_unlimited or len(selected) < request.preferences.max_charts:
+                selected.append(item)
+            else:
+                suppressed.append(SuppressedChart(
+                    title=item.title,
+                    requested_type=item.chart_type,
+                    reason_code="preference_limit",
+                    reason="超过本次可配置的建议图表数",
+                    evidence_ids=item.evidence_ids,
+                ))
+
+        # 产业链图是 A3 的招牌交付物（也是对外材料的主图），不能交给"选型运气"：
+        # 2026-10-17 实测同一份 15 节点拓扑，LLM 选型只出 6 张财务图，产业链图整张缺失
+        # （候选数已顶满 max_charts，确定性兜底那条分支进不去）。这里补一张，
+        # 允许**超出 max_charts 一张**——宁可多一张图，不可少掉产业链。
+        if _wants_chain and not any(c.chart_type == "industry_chain" for c in selected):
+            topo = getattr(request.report, "industry_chain_topology", None)
+            has_chain_data = bool(
+                (isinstance(topo, dict) and topo.get("nodes"))
+                or getattr(request.report, "industry_chain_segments", None)
+            )
+            if has_chain_data:
+                fb_cands, _fb_supp = self._deterministic_fallback(request)
+                chain_cand = next(
+                    (c for c in fb_cands if c.chart_type == "industry_chain"), None)
+                if chain_cand is None and isinstance(topo, dict) and topo.get("nodes"):
+                    # 只有拓扑、没有 segments 的报告（兜底映射的输入缺一块）也要出图：
+                    # option 只是 ECharts 兜底用的占位，产业链图由 chain_graph 渲染。
+                    ev_ids = [
+                        str(e) for n in (topo.get("nodes") or [])
+                        for e in (n.get("evidence_ids") or [])
+                    ][:8] or list(request.report.evidence_index)[:1]
+                    if ev_ids:
+                        chain_cand = _Candidate(
+                            title=f"{request.report.subject}产业链结构",
+                            chart_type="industry_chain",
+                            option={"series": []},
+                            evidence_ids=ev_ids,
+                            goal="呈现上中下游环节、代表企业与价值传导关系",
+                            chapter="CH-03",
+                        )
+                if chain_cand is not None and chain_cand.fingerprint not in seen:
+                    # 放在首位：产业链图是研报的骨架图，历来就是 CHART-01（早章节先出现），
+                    # 追加到末尾会把编号/落位顺序整体错位（backend 集成测试按此口径断言）。
+                    selected.insert(0, chain_cand)
+                    seen.add(chain_cand.fingerprint)
+                    suppressed = [
+                        s for s in suppressed
+                        if not (s.reason_code == "preference_limit"
+                                and s.title == chain_cand.title)
+                    ]
+                    await record(
+                        "industry_chain_forced",
+                        chart_title=chain_cand.title,
+                        message="选型未覆盖产业链图，按数据存在性确定性补入（产业链图是核心交付物）",
+                    )
+
+        charts: list[ChartSpec] = []
+        previews: list[tuple[str, str]] = []
+        source_val = "公司公告、同花顺 iFinD、行业公开披露"
+        for index, item in enumerate(selected, start=1):
+            fig_num = f"图 {index}"
+            chart_id = f"CHART-{index:02d}-{item.fingerprint[:8].upper()}"
+            title = clean_chart_title(item.title)
+            chart_as_of = self._resolve_chart_as_of(item, request.report)
+            if isinstance(item.option, dict):
+                item.option["as_of"] = chart_as_of
+            svg = render_svg(
+                title,
+                item.chart_type,
+                item.option,
+                item.footnotes,
+                figure_number=fig_num,
+                as_of=chart_as_of,
+                source=source_val,
+                insight_takeaway=item.goal,
+            )
+            # 产业链图矢量直出（2026-10-07）：由 ChainGraphSpec 契约 + 确定性模板渲染
+            # SVG 经 inline_svg 下发，前端内联渲染实现浏览器无损缩放（替代 ECharts canvas）。
+            # 失败只降级不回退：任何异常都落入 ECharts 渲染路径，图表不丢。
+            inline_svg: str | None = None
+            chain_graph_dump: dict[str, Any] | None = None
+            render_mode: str = "echarts"
+            # 生图元数据（render_mode=generated_image 时下发；AI 生图路径仍在用）。
+            # 前端契约要求 generated_image 模式下这 7 个字段**全部非空**（见 types.ts）。
+            image_uri: str | None = None
+            image_mime_type: str | None = None
+            generation_prompt: str | None = None
+            generation_prompt_model: str | None = None
+            generation_image_model: str | None = None
+            html_render_template: str | None = None
+            # 补充视图（2026-10-17）：产业链 HTML 排版版并存，不顶替主图。
+            supplement_image_uri: str | None = None
+            supplement_html_uri: str | None = None
+            supplement_note: str | None = None
+            if item.chart_type == "industry_chain":
+                try:
+                    # 优先用阶段2 产出的拓扑（老项目 chain_designer 范式：LLM 设计 + 代码裁判），
+                    # 信息密度远高于扁平 segments；缺失时回退到 segments 映射，保证有图。
+                    chain_spec = None
+                    topo = getattr(request.report, "industry_chain_topology", None)
+                    # 企业白名单在两条路径（LLM 拓扑 / segments 兜底）都要用，
+                    # 定义在分支外，避免兜底路径引用到未初始化变量（2026-10-17）。
+                    allowed_companies: set[str] = set()
+                    if isinstance(topo, dict) and topo.get("nodes"):
+                        # 渲染前终审（2026-10-08）：产业链 8 条硬规则 + 企业证据白名单。
+                        # 裁判不过 → 不画这张拓扑，回退 segments 映射（宁可有简图，不要错图）。
+                        # 🔴 2026-10-18 F1：**不再把 A2 的 segments 当事实源**。
+                        # segments.representative_companies 是 A2（模型）生成的，拿它做白名单
+                        # 等于"用模型的输出去审模型的输出"——自证循环，白名单校验完全失效：
+                        # 海上风电实测：A2 把许继电气/东方电子/中国宝安写进 segments 中游，
+                        # 它们随即进入白名单被判"可追溯"，名正言顺上了品牌卡；
+                        # 而 A2 在拓扑里写对的 8 家整机龙头（金风/明阳/远景/运达…）
+                        # 不在白名单，反被 repair 当成编造摘光（8 → 0 家）。
+                        # 白名单只认 **A1 事实源**（evidence_index 的 entity），
+                        # 其余企业名按 F1 后半条降级为 industry_common 保留、不删。
+                        # 证据原文（2026-10-16）：LLM 常从研报/资讯摘要文本里读公司名
+                        # （"推荐标的：宁德时代、亿纬锂能"），这些名字不在 evidence_index 的
+                        # entity 字段里，旧白名单会把它们全判成"编造"。按 docstring 原意
+                        # （不在白名单**也不在证据原文中出现**才判违规）把原文也纳入可追溯口径。
+                        evidence_text_parts: list[str] = []
+                        for ev in (request.report.evidence_index or {}).values():
+                            if isinstance(ev, dict):
+                                ent, met, val = ev.get("entity"), ev.get("metric"), ev.get("value")
+                            else:
+                                ent = getattr(ev, "entity", None)
+                                met = getattr(ev, "metric", None)
+                                val = getattr(ev, "value", None)
+                            if ent:
+                                allowed_companies.add(str(ent))
+                            for piece in (ent, met, val):
+                                if piece is not None and str(piece).strip():
+                                    evidence_text_parts.append(str(piece))
+                        evidence_text = "\n".join(evidence_text_parts)
+                        # 企业名可追溯性分层（2026-10-17，必须在裁判/修复之前）：
+                        # 问财只覆盖 A 股，境外/未上市龙头（亿航智能、大疆、极飞、沃飞长空…）
+                        # 结构性取不到证据。旧实现把这类名字当"编造"从节点上摘掉——
+                        # 实测把整机厂从 8 家砍到 2 家、低空空管从 4 家砍到 1 家。
+                        # F5（2026-10-18）：品牌卡龙头上移——LLM 常把龙头拆到同 stage
+                        # 的研发/能力小卡（风电金风/明阳进「机组设计与仿真」、
+                        # 创新药恒瑞/百济进「药物发现」），品牌卡只剩二线，命中率 2/7。
+                        # 命中基准 < 60% 时按确定性规则搬回同 stage 的龙头。
+                        topo, _hoist_notes = hoist_leading_to_brand_card(
+                            topo, request.report.subject or "",
+                        )
+                        if _hoist_notes:
+                            logger.info("产业链龙头上移：%s", _hoist_notes[:3])
+                        # 这里把「环节有据但企业名超出 A 股」的节点降为 industry_common，
+                        # 名字保留、渲染层不画红标，裁判/修复器据此跳过白名单强校验。
+                        topo, _tier_notes = classify_company_traceability(
+                            topo,
+                            allowed_companies=allowed_companies or None,
+                            evidence_text=evidence_text,
+                        )
+                        if _tier_notes:
+                            logger.info("产业链企业名分层：%s", _tier_notes[:3])
+                        # 联网补漏（2026-10-17）：**仅限产业链图**。
+                        # evidence_count 传本轮 industry_chain 域的证据条数：
+                        # 传 0 表示问财没收录该主题（主题词被语义解析器丢弃），
+                        # 此时联网从"补缺口"升级为"整条链的企业名/环节名来源"。
+                        # 双保险：循环入口已按 _wants_chain 抑制过产业链图候选，
+                        # 这里再闸一次，确保"用户没要产业链图"时绝不消耗豆包额度。
+                        #
+                        # 🔴 2026-10-25 F18：**删除"清空非核心企业"**——
+                        # 原 `CHAIN_CONTENT_SOURCE=doubao` 分支（2026-10-22 引入）在这里
+                        # 把所有非核心节点的 companies 无条件清空，再由 full_chain 整组回填。
+                        # 那一步的假设是"A2 写的企业名不可信、只有联网可信"，但实测两头都不干净：
+                        # 白酒 A2 写对的 6 家品牌、笔记本 5 家代工被无差别清空，联网又没抓到时
+                        # 14 个槽位全空、只剩一个主题词被当公司名（run-20261025111912）。
+                        # 现改为**证据分层共存**：有据名字（evidence 环节 / A1 白名单 /
+                        # 证据原文可追溯）保留，联网只补空、只顶掉无据名
+                        # （见 websearch.merge_company_tiers）。
+                        # 清空原本要挡的概念股（景兴纸业这类）改由确定性裁判接住：
+                        # 联网回填之后紧跟着 repair_topology，其中 F8 归位器与 F17 知识底座
+                        # （chain_kb 四态裁决）会按主营/环节把串岗企业判掉——
+                        # 不再需要"整片铲平"这种连正确内容一起毁掉的粗放兜底。
+                        if web_search_available() and _wants_chain:
+                            _chain_ev = [
+                                ev for ev in (request.report.evidence_index or {}).values()
+                                if str(getattr(ev, "domain", "") or (ev.get("domain") if isinstance(ev, dict) else ""))
+                                == "industry_chain"
+                            ]
+                            try:
+                                topo, _ws_diag = await fill_chain_gaps(
+                                    topo,
+                                    subject=request.report.subject or "",
+                                    whitelist=allowed_companies or None,
+                                    client=make_search_client(),
+                                    call_llm=self._web_extract_llm,
+                                    evidence_count=len(_chain_ev),
+                                    # full_chain=True → 不挑缺口，上游/中游/下游/配套各发一条检索。
+                                    # 2026-10-25 F18：回填语义由"整组替换"改为
+                                    # "有据保留 + 无据让位"，因此这里不再预先清空 A2 的名单；
+                                    # evidence_text 传下去，让分层判定能用"证据原文可追溯"这条通路
+                                    # （与 F1 classify_company_traceability 同口径）。
+                                    full_chain=True,
+                                    evidence_text=evidence_text,
+                                    # 🔴 2026-10-25：默认值曾是 "6"，而 build_slot_queries 的 body
+                                    # 原顺序是「上游2 中游2 下游2 配套2」→ [:6] 正好把两条**配套**
+                                    # 检索词整个截掉，配套层（运维/渠道/检测认证/软件平台）
+                                    # 一条专属检索都没发过。函数注释里写的额度本来就是 8 次/图
+                                    # （500 ÷ 8 ≈ 62 图/月），"6" 是配置漂移。这里恢复 8，
+                                    # 并同步把 body 轮转（见 _interleaved_bodies），
+                                    # 万一把额度调回 6 也不会再出现"整层零检索"。
+                                    # 想省额度：CHAIN_WEB_MAX_QUERIES=6 即可。
+                                    max_queries=int(os.environ.get("CHAIN_WEB_MAX_QUERIES", "8")),
+                                )
+                                if _ws_diag.get("notes"):
+                                    logger.info("产业链联网补漏：%s", _ws_diag["notes"][:3])
+                                _uncovered = bool(_ws_diag.get("topic_uncovered"))
+                                await record(
+                                    "chain_web_supplement",
+                                    message=(f"产业链联网补漏 {_ws_diag.get('hits', 0)} 条命中 / "
+                                             f"{len(_ws_diag.get('queries', []))} 条 query"
+                                             + ("（问财未收录该主题，改由联网兜底整条链）"
+                                                if _uncovered else "")),
+                                    payload=_ws_diag,
+                                )
+                            except Exception as exc:
+                                logger.warning("产业链联网补漏失败，按原拓扑出图：%s: %s",
+                                               type(exc).__name__, exc)
+                        # 2026-10-21：把报告主题一路传给裁判/修复链。
+                        # A 版（企业专属）靠它锁定核心、清竞品；不传则回落旧行为。
+                        _subj = str(request.report.subject or "")
+                        topo_errors = validate_topology(
+                            topo,
+                            allowed_companies=allowed_companies or None,
+                            allowed_evidence=set(request.report.evidence_index or {}) or None,
+                            evidence_text=evidence_text,
+                            subject=_subj,
+                        )
+                        # 🔴 2026-10-21 P0：确定性修复**无条件跑**（原来挂在 `if topo_errors:` 里）。
+                        # 旧实现的后果：拓扑一旦"校验通过"就完全不修，于是
+                        # `strengthen_brand_card()` / `fill_empty_capability_cards()` 这两步
+                        # ——它们只在 repair_topology 内部调用——**永远执行不到**。
+                        # 实测 run-20261021183219「宇树科技机器人」：A2 品牌卡只写
+                        # 埃斯顿/汇川技术/新松，校验无错 → repair 跳过 → 宇树科技被漏写，
+                        # 全图唯一出现"宇树"的地方是标题。用户点名要看的公司不在自己的图上。
+                        repaired, repairs = repair_topology(
+                            topo,
+                            allowed_companies=allowed_companies or None,
+                            allowed_evidence=set(request.report.evidence_index or {}) or None,
+                            evidence_text=evidence_text,
+                            subject=_subj,
+                        )
+                        if repairs:
+                            logger.info("产业链拓扑确定性修复 %d 项：%s",
+                                        len(repairs), repairs[:4])
+                        _repaired_errors = validate_topology(
+                            repaired,
+                            allowed_companies=allowed_companies or None,
+                            allowed_evidence=set(request.report.evidence_index or {}) or None,
+                            evidence_text=evidence_text,
+                            subject=_subj,
+                        )
+                        if not _repaired_errors:
+                            topo, topo_errors = repaired, []
+                        elif not topo_errors:
+                            # 修复反而引入了新问题 → 原拓扑本身合法，保守保留原样
+                            logger.info("确定性修复引入 %d 项新问题，保留原拓扑：%s",
+                                        len(_repaired_errors), _repaired_errors[:3])
+                        else:
+                            logger.warning("产业链拓扑修复后仍未通过（%d 项），回退扁平结构：%s",
+                                           len(_repaired_errors), _repaired_errors[:3])
+                        if not topo_errors:
+                            chain_spec = topology_to_spec(
+                                topo, fallback_title=f"{request.report.subject}产业链全景图")
+                    if chain_spec is None:
+                        # 博查补漏（2026-10-17 B13）：**拓扑缺失才正是最需要联网的时候**。
+                        # 旧实现把 fill_chain_gaps 只挂在上面的 topology 分支里，
+                        # A2 未产出拓扑（问财 401 / 主题未收录）→ 走本兜底 → 博查 0 次调用，
+                        # 结果 6 个主题输出同一张三段空壳图。这里先补企业名再建图；
+                        # 失败一律原样返回，绝不因联网问题破坏已有结构。
+                        _segs = list(getattr(request.report, "industry_chain_segments", None) or [])
+                        if web_search_available() and _segs:
+                            try:
+                                _chain_ev2 = [
+                                    ev for ev in (request.report.evidence_index or {}).values()
+                                    if str(getattr(ev, "domain", "")
+                                           or (ev.get("domain") if isinstance(ev, dict) else ""))
+                                    == "industry_chain"
+                                ]
+                                _segs, _ws_diag2 = await supplement_segments_with_web(
+                                    _segs,
+                                    subject=request.report.subject or "",
+                                    whitelist=allowed_companies or None,
+                                    client=make_search_client(),
+                                    call_llm=self._web_extract_llm,
+                                    evidence_count=len(_chain_ev2),
+                                )
+                                await record(
+                                    "chain_web_supplement",
+                                    message=(f"产业链联网补漏（拓扑缺失兜底路径）"
+                                             f"{_ws_diag2.get('hits', 0)} 条命中 / "
+                                             f"{len(_ws_diag2.get('queries', []))} 条 query"),
+                                    payload=_ws_diag2,
+                                )
+                            except Exception as exc:
+                                logger.warning("拓扑缺失路径的联网补漏失败，按原结构出图：%s: %s",
+                                               type(exc).__name__, exc)
+                        chain_spec = build_chain_graph_from_segments(
+                            _segs,
+                            subject=request.report.subject or "",
+                        )
+                    if chain_spec is not None:
+                        inline_svg = render_chain_svg(chain_spec)
+                        # 产物级体检（2026-10-08）：负面约束/流线语义/事实锁死。
+                        # error 级问题（占位符、数值、事实缺失）→ 不发布，降级 ECharts；
+                        # 事实锁死缺失视为渲染管线 bug，记 error 但不阻断（避免整批丢图）。
+                        lint = [i for i in lint_chain_svg(chain_spec, inline_svg)
+                                if i["level"] == "error"]
+                        if lint:
+                            logger.warning("产业链图未通过产物体检，降级 ECharts：%s",
+                                           [i["message"] for i in lint[:3]])
+                            inline_svg = None
+                            render_mode = "echarts"
+                        else:
+                            missing = assert_graph_fidelity(chain_spec, inline_svg)
+                            if missing:
+                                logger.error("产业链图事实锁死缺失（渲染管线缺陷）：%s", missing[:5])
+                            # 拓扑 JSON 单独落盘：可审计「这张图的拓扑是模型设计的，原始 JSON 在这」
+                            if artifact_dir:
+                                try:
+                                    topo_path = artifact_dir / "charts" / f"{chart_id}.chain_topology.json"
+                                    topo_path.parent.mkdir(parents=True, exist_ok=True)
+                                    topo_path.write_text(
+                                        json.dumps(chain_graph_dump or chain_spec.model_dump(),
+                                                   ensure_ascii=False, indent=2),
+                                        encoding="utf-8")
+                                except Exception as topo_err:
+                                    logger.warning("拓扑落盘失败：%s", topo_err)
+                            # 结构随 spec 下发：审核门按用户意见改图后据此重建 inline_svg，
+                            # 否则前端会继续渲染改前的过期图（一致性缺陷）。
+                            chain_graph_dump = chain_spec.model_dump()
+                            render_mode = "svg"
+                            # 落盘与预览也换成确定性产业链 SVG（2026-10-17）。
+                            # 之前这里落的是 ECharts 通用渲染件（`render_svg` 的三栏企业
+                            # 列表：0 条连线、无环节卡片），而 report-fusion 是**读 svg_uri
+                            # 文件**把图嵌进 PDF 的 —— 结果交付出去的 PDF 里产业链图没有
+                            # 连线也没有节点。改这里比改 report-fusion 契约更稳（它的
+                            # ChartSpec 是 extra="ignore"，加 inline_svg 字段容易被漏改）。
+                            svg = inline_svg
+                            # ── HTML 排版版：同一份已过审拓扑交给大模型排成 HTML+CSS，
+                            # 再截图为 PNG。**并存不顶替**（2026-10-17 改）：HTML 版只有
+                            # 卡片与连线文字标签，画不出连线与箭头，主图必须是确定性 SVG；
+                            # HTML 版降为可切换的补充视图（卡片信息密度高，适合细读内容）。
+                            if getattr(self.settings, "enable_industry_chain_html", False):
+                                try:
+                                    from chart_generator.chain_html import (
+                                        generate_chain_html_image,
+                                    )
+                                    from chart_generator.chain_render import _stats_line
+
+                                    gen = await generate_chain_html_image(
+                                        chain_spec,
+                                        settings=self.settings,
+                                        artifact_dir=artifact_dir,
+                                        chart_id=chart_id,
+                                        stats_line=_stats_line(chain_spec),
+                                    )
+                                    if gen:
+                                        supplement_image_uri = gen.image_uri
+                                        supplement_html_uri = gen.html_path
+                                        supplement_note = (
+                                            "LLM 排版版（卡片信息更细，但不画连线与箭头）")
+                                        # 生成留痕：便于回溯这张补充图是哪个提示词/模型产出的。
+                                        # 注意**不改** image_uri/render_mode —— 主图仍是上面的
+                                        # 确定性 SVG（有连线有箭头），这是本次回退的核心。
+                                        generation_prompt = gen.generation_prompt
+                                        generation_prompt_model = gen.generation_prompt_model
+                                        logger.info(
+                                            "产业链图补充 HTML 版已生成：chart=%s "
+                                            "主图仍为确定性 SVG（render_mode=%s）",
+                                            chart_id, render_mode,
+                                        )
+                                except Exception as html_err:
+                                    logger.warning(
+                                        "产业链 HTML 出图异常，保留确定性 SVG：%s", html_err)
+                except Exception as exc:
+                    logger.warning("产业链 SVG 渲染失败，降级 ECharts：%s", exc)
+            svg_uri = html_uri = None
+            if artifact_dir:
+                charts_dir = artifact_dir / "charts"
+                charts_dir.mkdir(parents=True, exist_ok=True)
+                json_path = charts_dir / f"{chart_id}.json"
+                svg_path = charts_dir / f"{chart_id}.svg"
+                json_path.write_text(json.dumps(item.option, ensure_ascii=False, indent=2, default=str) + "\n", encoding="utf-8")
+                svg_path.write_text(svg, encoding="utf-8")
+                svg_uri = str(svg_path.resolve())
+                html_uri = str((artifact_dir / "preview.html").resolve())
+
+            sub_title = item.option.get("subtitle") if isinstance(item.option, dict) else None
+            # ChartSpec.evidence_ids 契约要求非空（min_length=1）。A1 取数整体失败时
+            # （实测 run-20261017140617：问财网关一次都没成功，dataset 全 0 条），
+            # candidate 的 evidence_ids 会是空列表，直接构造会抛 ValidationError，
+            # 把整个 chart_generate 阶段打成 failed。这里兜一个占位 id，
+            # 让阶段能跑完并如实降级，而不是崩掉后半条链路。
+            _ev_ids = list(item.evidence_ids) or list(request.report.evidence_index)[:1] or ["CHAIN"]
+            charts.append(ChartSpec(
+                chart_id=chart_id,
+                title=title,
+                chart_type=item.chart_type,
+                option=item.option,
+                evidence_ids=_ev_ids,
+                point_evidence_ids=item.point_evidence_ids or _ev_ids,
+                data_contract=getattr(item, "data_contract", {}),
+                insight_goal=item.goal,
+                recommended_chapter_id=item.chapter,
+                footnotes=item.footnotes,
+                svg_uri=svg_uri,
+                html_uri=html_uri,
+                data_fingerprint=item.fingerprint,
+                figure_number=fig_num,
+                subtitle=sub_title,
+                source_line=f"数据来源：{source_val}；数值按证据换算，业务解释仍须复核。",
+                render_mode=render_mode,
+                inline_svg=inline_svg,
+                chain_graph=chain_graph_dump,
+                chain_template=html_render_template,
+                image_uri=image_uri,
+                image_mime_type=image_mime_type,
+                generation_prompt=generation_prompt,
+                generation_prompt_model=generation_prompt_model,
+                generation_image_model=generation_image_model,
+                supplement_image_uri=supplement_image_uri,
+                supplement_html_uri=supplement_html_uri,
+                supplement_note=supplement_note,
+            ))
+            previews.append((title, svg))
+            await record("chart_ready", chart_id=chart_id, chart_type=item.chart_type, title=title)
+
+        # ── 产业链 AI 生图（**默认关闭**，独立于六种 ECharts 风格，全链路最多成功 1 次）──
+        # 数据来源：阶段2 解读产出的 industry_chain_segments；无该数据则不触发，避免无谓扣费。
+        #
+        # 为什么默认关闭：产业链结构已由本地确定性 ECharts 渲染成「产业链结构」图
+        # （上中下游三栏 + 代表企业 + 证据注），信息量与可追溯性都更强且零外部依赖；
+        # AI 生图则要额外调外部模型，单次可达数分钟、曾造成阶段三长时间无响应，
+        # 且产出的位图无法被 report_fusion 逐点校验。
+        # 需要恢复 AI 配图时置 ENABLE_INDUSTRY_CHAIN_IMAGE=1。
+        segments = list(getattr(request.report, "industry_chain_segments", None) or [])
+        if segments and not self.settings.enable_industry_chain_image:
+            # 显式留痕：否则「为什么没有产业链 AI 图」会变成排查黑洞。
+            await record(
+                "image_generation_skipped",
+                message="产业链 AI 生图已关闭（默认），产业链图由本地 ECharts 渲染的「产业链结构」承担",
+            )
+        if segments and self.settings.enable_industry_chain_image:
+            chain_id = f"CHART-CHAIN-{secrets.token_hex(3).upper()}"
+            chain_title = f"{request.report.subject}产业链结构"
+            await record(
+                "image_generation_start",
+                chart_id=chain_id,
+                message="智能体3调度生图模型生成产业链拓扑图（六图之外的 AI 配图，仅 1 次）",
+            )
+            gen_img = await generate_industry_chain_image(
+                subject=request.report.subject,
+                title=chain_title,
+                option={},
+                artifact_dir=artifact_dir,
+                chart_id=chain_id,
+                segments=segments,
+                prompt_model=self.settings.llm_model,
+            )
+            if gen_img:
+                mime = gen_img.image_mime_type
+                if mime not in ("image/png", "image/webp", "image/jpeg"):
+                    mime = "image/png"
+                chain_evidence = list((request.report.evidence_index or {}).keys())[:1] or ["CHAIN"]
+                charts.append(ChartSpec(
+                    chart_id=chain_id,
+                    title=chain_title,
+                    chart_type="industry_chain",
+                    option={"series": [{"type": "graph",
+                                        "data": gen_img.chain_graph.get("nodes") or [],
+                                        "links": gen_img.chain_graph.get("links") or []}]},
+                    evidence_ids=chain_evidence,
+                    point_evidence_ids=chain_evidence,
+                    insight_goal="展示产业链上中下游价值传导结构",
+                    recommended_chapter_id="CH-03",
+                    footnotes=["本图为智能体3生图模型生成的产业链示意图"],
+                    data_fingerprint=_fingerprint(gen_img.chain_graph),
+                    figure_number=f"图 {len(charts) + 1}",
+                    subtitle=None,
+                    source_line="数据来源：智能体3生图模型生成；数值按证据换算，业务解释仍须复核。",
+                    render_mode="generated_image",
+                    image_uri=gen_img.image_uri,
+                    image_mime_type=mime,
+                    generation_prompt=gen_img.generation_prompt,
+                    generation_prompt_model=gen_img.generation_prompt_model,
+                    generation_image_model=gen_img.generation_image_model,
+                    chain_template=gen_img.chain_template,
+                    chain_graph=gen_img.chain_graph,
+                ))
+                await record(
+                    "image_generation_completed",
+                    chart_id=chain_id,
+                    image_uri=gen_img.image_uri,
+                    image_model=gen_img.generation_image_model,
+                )
+            else:
+                await record(
+                    "image_generation_skipped",
+                    chart_id=chain_id,
+                    message="生图模型未启用/失败/预算已用尽，产业链 AI 图跳过",
+                )
+
+        warnings = list(request.report.warnings)
+        if not charts:
+            warnings.append("当前数据不足以生成可靠图表；未为凑数而生成图表")
+        if suppressed:
+            warnings.append(f"有 {len(suppressed)} 个候选图表未生成，原因已记录")
+
+        demands = self._extract_data_demands(request, suppressed) if suppressed else []
+
+        result = ChartGenerationResult(
+            run_id=run_id,
+            source_report_id=request.report.report_id,
+            subject=request.report.subject,
+            as_of=request.report.as_of,
+            status="completed" if charts else "partial",
+            applied_skills=applied_skills,
+            charts=charts,
+            suppressed_charts=suppressed,
+            data_demands=demands,
+            quality=ChartQualityReport(
+                passed=bool(charts),
+                ready_count=len(charts),
+                suppressed_count=len(suppressed),
+                issues=warnings,
+            ),
+            warnings=warnings,
+            artifact_dir=str(artifact_dir.resolve()) if artifact_dir else None,
+        )
+        await record("chart_generation_completed", ready=len(charts), suppressed=len(suppressed))
+
+        if artifact_dir:
+            artifact_dir.mkdir(parents=True, exist_ok=True)
+            (artifact_dir / "request.json").write_text(request.model_dump_json(indent=2) + "\n", encoding="utf-8")
+            (artifact_dir / "chart_result.json").write_text(result.model_dump_json(indent=2) + "\n", encoding="utf-8")
+            (artifact_dir / "preview.html").write_text(render_preview(request.report.subject, previews), encoding="utf-8")
+            (artifact_dir / "events.jsonl").write_text("".join(json.dumps(e, ensure_ascii=False) + "\n" for e in events), encoding="utf-8")
+
+        return result
+
+    def _extract_data_demands(
+        self,
+        request: ChartGenerationRequest,
+        suppressed: list[SuppressedChart],
+    ) -> list[DataSupplementDemand]:
+        demands: list[DataSupplementDemand] = []
+        subject = request.report.subject or "目标行业"
+
+        entities: list[str] = []
+        if request.report.comps_matrix:
+            cm = request.report.comps_matrix
+            entries = cm.get("entries", []) if isinstance(cm, dict) else (cm if isinstance(cm, list) else [])
+            for item in entries:
+                name = item.get("entity_name") or item.get("name") if isinstance(item, dict) else getattr(item, "entity_name", None)
+                if name and str(name) not in entities and str(name) != "行业平均":
+                    entities.append(str(name))
+        if not entities:
+            for ev in request.report.evidence_index.values():
+                if ev.entity and str(ev.entity) not in entities and str(ev.entity) not in ("宏观", "行业平均"):
+                    entities.append(str(ev.entity))
+
+        top_entities = entities[:8]
+        seen_demand_types: set[str] = set()
+
+        for s in suppressed:
+            rc = (s.reason_code or "").lower()
+            rtype = str(s.requested_type or "").lower()
+
+            if (rc in ("temporal_mismatch", "no_time_series", "missing_time_series", "no_numeric_evidence") or "time" in rc or "combo" in rtype or "line" in rtype) and "financial_time_series" not in seen_demand_types:
+                seen_demand_types.add("financial_time_series")
+                ent_str = "、".join(top_entities[:5]) if top_entities else subject
+                demands.append(DataSupplementDemand(
+                    demand_id=f"DMD-TIME-{secrets.token_hex(3)}",
+                    target_chart_type="combo",
+                    target_title=f"{subject}核心龙头多期财务走势",
+                    entities=top_entities[:8],
+                    metrics=["revenue", "parent_net_profit", "gross_margin", "debt_ratio"],
+                    domain="financials",
+                    query_hint=f"查询{ent_str}近3年各季度营业收入、归母净利润、销售毛利率、资产负债率",
+                    reason="生成时序走势与规模效益双轴组合图所需多期财务报表数据",
+                ))
+            elif (rc in ("missing_chain_classification", "no_chain_data", "no_industry_chain") or "chain" in rc or "industry_chain" in rtype) and "industry_chain" not in seen_demand_types:
+                seen_demand_types.add("industry_chain")
+                demands.append(DataSupplementDemand(
+                    demand_id=f"DMD-CHAIN-{secrets.token_hex(3)}",
+                    target_chart_type="industry_chain",
+                    target_title=f"{subject}产业链拓扑结构",
+                    entities=top_entities[:8],
+                    metrics=["industry_chain", "upstream", "midstream", "downstream"],
+                    domain="industry_chain",
+                    query_hint=f"查询{subject}行业产业链上中下游环节划分、核心产品与龙头代表企业",
+                    reason="生成产业链上中下游拓扑图所需结构化产业链数据",
+                ))
+            elif (rc in ("no_compositional_data", "missing_composition") or "donut" in rtype or "pie" in rtype) and "composition" not in seen_demand_types:
+                seen_demand_types.add("composition")
+                ent_str = top_entities[0] if top_entities else subject
+                demands.append(DataSupplementDemand(
+                    demand_id=f"DMD-COMP-{secrets.token_hex(3)}",
+                    target_chart_type="donut",
+                    target_title=f"{subject}代表企业主营业务构成",
+                    entities=top_entities[:5],
+                    metrics=["business_composition", "revenue_share"],
+                    domain="financials",
+                    query_hint=f"查询{ent_str}主营业务构成与产品营收占比",
+                    reason="生成主营业务构成环形图所需细分业务占比数据",
+                ))
+
+        return demands
+
+    def _infer_chart_chapter(
+        self,
+        title: str = "",
+        chart_type: str = "",
+        domain: str = "",
+        metrics: list[str] | None = None,
+    ) -> str:
+        m_str = " ".join(metrics or [])
+        text = f"{title} {m_str} {domain} {chart_type}".lower()
+        # 1. 风险、情景与敏感性推演
+        if any(k in text for k in ("情景", "风险", "敏感性", "推演", "压力测试", "弹性", "回撤")):
+            return "CH-07"
+        # 2. 宏观、政策与外部传导 (精准匹配，避免“利率”误触“净利率”)
+        if domain == "macro" or any(k in text for k in ("gdp", "宏观", "cpi", "ppi", "pmi", "进出口", "政策", "监管", "基准利率", "lpr", "国债收益率")):
+            return "CH-06"
+        # 3. 产业链拓扑与上下游供需
+        if chart_type == "industry_chain" or any(k in text for k in ("产业链", "供应链", "上游", "中游", "下游", "环节", "拓扑")):
+            return "CH-03"
+        # 4. 行业总市值或产业宏观基准全景归入 CH-01
+        if any(k in text for k in ("全景", "概览", "产业基础", "行业概况", "行业定位", "产业定位", "研究边界", "行业定义", "市值集中度", "市值分布")):
+            return "CH-01"
+        # 5. 竞争格局、份额与横向同业对标 (同业横向对比与排名归入竞争格局)
+        if any(k in text for k in (
+            "份额", "集中度", "cr4", "cr8", "排名", "出货量", "市占率", "竞争格局",
+            "横向比较", "横向对比", "横向热力", "竞争梯队", "格局"
+        )):
+            return "CH-04"
+        # 6. 规模、成长性与中微观景气趋势
+        if any(k in text for k in (
+            "规模", "复合增长", "cagr", "市场空间", "产值", "增速",
+            "增长率趋势", "增速趋势", "营收趋势", "收入趋势", "规模趋势", "净利率趋势", "毛利率趋势"
+        )):
+            return "CH-02"
+        # 7. 财务质量、资产负债、现金流与估值定位 (企业三表质量、雷达与四象限定位)
+        if any(k in text for k in (
+            "负债", "debt", "毛利", "gross_margin", "净利", "net_profit", "roe", "roa",
+            "pe", "pb", "ps", "估值", "市盈率", "市净率", "市销率", "偿债", "现金流", "周转",
+            "雷达", "四象限", "定位", "财务质量"
+        )):
+            return "CH-05"
+        return "CH-01"
+
+    def _bin_evidence_for_prompt(self, evidence_records: list[EvidenceRef], max_total: int = 100) -> list[dict[str, Any]]:
+        chain_records = [it for it in evidence_records if it.domain == "industry_chain"]
+        time_series_records = [it for it in evidence_records if it.domain != "industry_chain" and it.period]
+        other_records = [it for it in evidence_records if it.domain != "industry_chain" and not it.period]
+
+        selected: list[EvidenceRef] = []
+        # 1. Preserve industry chain records (up to 20)
+        selected.extend(chain_records[:20])
+
+        # 2. Group timeseries by (domain, entity, metric) to keep curves unbroken and prevent domain starvation
+        ts_groups: dict[tuple[str, str, str], list[EvidenceRef]] = defaultdict(list)
+        for r in time_series_records:
+            dom = str(r.domain or "unknown")
+            ent = str(r.entity or "行业")
+            met = canonical_metric_label(r.metric)
+            ts_groups[(dom, ent, met)].append(r)
+
+        # Ensure multi-domain timeseries diversity: macro, industry, and financials
+        macro_ts = [grp for key, grp in ts_groups.items() if key[0] == "macro"]
+        industry_ts = [grp for key, grp in ts_groups.items() if key[0] == "industry"]
+        other_ts = [grp for key, grp in ts_groups.items() if key[0] not in ("macro", "industry")]
+
+        ts_selected: list[EvidenceRef] = []
+        # Add macro timeseries (up to 4 groups)
+        for grp in macro_ts[:4]:
+            ts_selected.extend(sorted(grp, key=lambda x: str(x.period or "")))
+        # Add industry timeseries (up to 4 groups)
+        for grp in industry_ts[:4]:
+            ts_selected.extend(sorted(grp, key=lambda x: str(x.period or "")))
+        # Fill remaining timeseries budget (up to 75% of max_total, keeping groups atomic)
+        ts_limit = max(60, int(max_total * 0.75))
+        for grp in other_ts:
+            grp_sorted = sorted(grp, key=lambda x: str(x.period or ""))
+            if len(ts_selected) + len(grp_sorted) <= ts_limit:
+                ts_selected.extend(grp_sorted)
+            else:
+                # Do not slice a group partially, keep timeseries unbroken!
+                continue
+        selected.extend(ts_selected)
+
+        # 3. Fill remaining quota with cross-sectional and market records
+        rem_quota = max_total - len(selected)
+        if rem_quota > 0:
+            selected.extend(other_records[:rem_quota])
+
+        seen_ids = set()
+        payload = []
+        for item in selected:
+            if item.record_id not in seen_ids:
+                seen_ids.add(item.record_id)
+                payload.append({
+                    "record_id": item.record_id,
+                    "domain": item.domain,
+                    "entity": item.entity,
+                    "metric": item.metric,
+                    "value": item.value,
+                    "unit": item.unit,
+                    "period": item.period.isoformat() if hasattr(item.period, "isoformat") else (str(item.period) if item.period else None),
+                })
+        return payload
+
+    async def _run_llm_generation(
+        self,
+        request: ChartGenerationRequest,
+        record: Callable[..., Awaitable[None]],
+    ) -> tuple[list[dict[str, str]], list[_Candidate], list[SuppressedChart]]:
+        report = request.report
+        evidence_records = [
+            item for item in report.evidence_index.values()
+            if (isinstance(item.value, (int, float)) and not isinstance(item.value, bool))
+            or item.domain == "industry_chain"
+        ]
+
+        # Extract structured overview for LLM with Evidence Binning (preserves unbroken curves and topology)
+        evidence_payload = self._bin_evidence_for_prompt(evidence_records, max_total=120)
+
+        chart_limit_clause = f"不超过 {request.preferences.max_charts} 张" if (request.preferences.max_charts and request.preferences.max_charts > 0) else "不设数量上限，充分基于数据特征生成全部有价值的"
+        max_charts_display = str(request.preferences.max_charts) if (request.preferences.max_charts and request.preferences.max_charts > 0) else "不设上限（全面呈现全部可用维度）"
+
+        user_prompt = f"""【研报主题】: {report.subject} (基准日期: {report.as_of})
+
+【研报标准章节规划框架】:
+- CH-01 行业定义与研究基础（行业定位、宏观全景、数据底座，适合宏观/产值/定位图表）
+- CH-02 市场规模与成长性（市场总规模时序、预测增速、复合增长率，适合时序组合/折线图）
+- CH-03 产业链与利润分配（产业链上下游拓扑、价值链毛利率分布，适合产业链拓扑/供需图）
+- CH-04 竞争格局（核心环节企业市场份额、出货/营收横向排名、头部集中度，适合环形份额图、对比条形/柱图）
+- CH-05 财务质量与估值参照（重点标的财务三表透视、多维能力雷达、估值-成长四象限散点，适合散点图、雷达图）
+- CH-06 宏观、政策与技术催化（宏观周期传导、关键技术与产业催化，适合催化/周期图）
+- CH-07 情景、风险与研究结论（情景演化分析、主要风险敞口）
+
+【章节细化要点参考】:
+{json.dumps([{"heading": s.heading, "purpose": s.purpose} for s in report.content_outline], ensure_ascii=False, indent=2)}
+
+【关键指标概要】:
+{json.dumps([{"name": m.name, "entity": m.entity, "value": m.value, "unit": m.unit} for m in report.key_metrics[:15]], ensure_ascii=False, indent=2)}
+
+【事实证据清单】(共 {len(evidence_records)} 条，精选分箱 {len(evidence_payload)} 条):
+{json.dumps(evidence_payload, ensure_ascii=False, indent=2)}
+
+【用户配置偏好】:
+- 最大图表数: {max_charts_display}
+- 指定请求图表类型: {request.preferences.requested_types or "自动选型"}
+- 主题风格: {request.preferences.theme}
+- 包含进阶图表: {request.preferences.include_advanced}
+
+【任务要求】:
+1. 请先审查上述数据特征与研报需求，自主调用 `invoke_skill` 工具加载所需的技能规范；
+2. 加载规范后，严格遵循规范，生成{chart_limit_clause}专业金融研报图表；
+3. 【数据适配度与图表选型原则（按数据特征自然选型，严禁为追求形式而生搬硬套）】：
+   - 数据适配优先：必须基于数据维度、量纲与样本量选择最清晰直观的表达形态。
+     - 单指标横向对比（5~15家企业）：优先使用水平条形图（horizontal_bar）或柱状图（bar/comparison_bar）；严禁在样本量少于15时滥用箱线图（boxplot）；严禁在少量实体无分级时硬套矩形树图（treemap）；
+     - 规模与增速双指标：采用双轴组合图（combo: 柱状规模 + 折线增速）；
+     - 双变量跨实体对标：采用四象限散点图（scatter/bubble）；
+     - 存在正负指标分化：采用发散条形图（diverging_bar）；
+     - 单实体多维能力（>=3项指标）：采用多维雷达图（radar）；
+     - 上中下游拓扑传导：采用产业链拓扑图（industry_chain）；
+     - 时间序列分析：采用折线图（line），严禁对同一指标重复生成折线图和面积图。
+   - 自然多样性：在数据维度天然支持的前提下，积极组合上述适配类型，避免图表库形式单一。
+   - 【章节均衡分布原则】：所规划的图表集必须合理分布在研报的各个章节（重点覆盖 CH-01、CH-02、CH-03、CH-04、CH-05 等），单章节图表数建议控制在 2~4 张以内，严禁所有图表扎堆在个别章节！
+4. 输出合法的 JSON 格式，包含:
+   - "charts": 列表，每项包含:
+     - "title": 专业学术标题（体现对象、维度与口径）
+     - "chart_type": 必须为 "combo"|"scatter"|"bubble"|"diverging_bar"|"donut"|"radar"|"industry_chain"|"horizontal_bar"|"comparison_bar"|"bar"|"line"|"area" 之一
+     - "insight_goal": 该图表的核心分析目的与研报价值
+     - "recommended_chapter_id": 建议归属的章节编号（必须在 CH-01, CH-02, CH-03, CH-04, CH-05, CH-06, CH-07 中选择并保持各章合理分布）
+     - "evidence_ids": 列表，必须严格来自上述事实证据的真实 record_id
+     - "footnotes": 说明列表（单位、口径、数据来源或归一化说明）
+     - "option": (可选) 完整合规的 ECharts option 配置对象；亦可置为 {{}} 由系统基于真实证据高精度自动合成（推荐留空以提升生成速度）
+   - "suppressed_charts": 列表，记录因数据不足、口径冲突、单点无法成趋势或请求类型不匹配而被抑制的图表，说明 reason_code 与 reason。
+"""
+        tools = self.skillhub.get_tool_spec()
+
+        def skill_resolver(name: str) -> str | None:
+            skill = self.skillhub.get(name)
+            if not skill:
+                return None
+            return f"# Skill: {skill.name}\n## Description: {skill.description}\n\n{skill.instructions}"
+
+        try:
+            called_skills, llm_data = await self.llm.run_skill_and_chart_loop(
+                system_prompt=CHART_AGENT_SYSTEM_PROMPT,
+                user_prompt=user_prompt,
+                tools=tools,
+                skill_resolver=skill_resolver,
+            )
+            for cs in called_skills:
+                await record("skill_invoked_by_llm", skill=cs.get("skill_name"), reason=cs.get("reason"))
+
+            # 与确定性路由取并集：模型在工具循环里没调用、但按图表数据特征该用的技能在此补上。
+            # 本层的数据形态是 dict 列表（不是技能对象），因此不走统一融合器，直接按名去重合并；
+            # 但「与本次意图无关的条件技能不补」这条准入规则仍然适用（图表技能带信号门槛）。
+            policy_all = self.skillhub.select(request)
+            report_obj = getattr(request, "report", None)
+            intent_text = " ".join(
+                part for part in (
+                    getattr(report_obj, "subject", ""),
+                    getattr(report_obj, "title", ""),
+                    getattr(report_obj, "industry", ""),
+                ) if part
+            )
+            policy_skills, screened = screen_policy_skills(policy_all, intent_text)
+            if screened:
+                await record(
+                    "skill_screened_out",
+                    skills=screened,
+                    reason="与本次图表意图无关，规则补入前裁掉",
+                )
+            model_skill_names = {cs.get("skill_name") for cs in called_skills}
+            rescued = [s for s in policy_skills if s.name not in model_skill_names]
+            if rescued:
+                called_skills = list(called_skills) + [
+                    {"skill_name": s.name, "reason": s.adaptation or "确定性路由补充：图表数据特征匹配"}
+                    for s in rescued
+                ]
+                await record(
+                    "skill_routed_by_policy",
+                    skills=[s.name for s in rescued],
+                    reason="模型未调用的图表数据特征匹配技能，由确定性路由补充",
+                )
+        except Exception as e:
+            logger.warning(f"LLM chart generation failed: {type(e).__name__}. Falling back to deterministic pipeline.")
+            await record("llm_generation_error", error=type(e).__name__)
+            selected_skills = self.skillhub.select(request)
+            called_skills = [{"skill_name": s.name, "reason": s.adaptation} for s in selected_skills]
+            cand, supp = self._deterministic_fallback(request)
+            return called_skills, cand, supp
+
+        candidates: list[_Candidate] = []
+        suppressed: list[SuppressedChart] = []
+
+        # Parse suppressed charts from LLM
+        for item in llm_data.get("suppressed_charts", []):
+            if isinstance(item, dict):
+                sup_title = str(item.get("title", "未命名图表"))
+                # 仅采纳真实存在于证据库的 ID（grounding）；LLM 漏填时按标题指标确定性兜底（D-07）。
+                sup_eids = [str(x) for x in item.get("evidence_ids", []) if str(x) in report.evidence_index]
+                if not sup_eids:
+                    sup_eids = self._backfill_suppressed_evidence(sup_title, report)
+                # P0-6：requested_type 必须过白名单——LLM 吐非法值时 pydantic Literal
+                # 会抛 ValidationError，且发生在批量解析循环内 → 整批图表丢失。
+                # 降级为 None（表示"未指定类型"）并留痕，不中断整批解析。
+                raw_req_type = item.get("requested_type")
+                safe_req_type = raw_req_type if raw_req_type in VALID_CHART_TYPES else None
+                if raw_req_type is not None and safe_req_type is None:
+                    logger.warning(
+                        "P0-6 guard: 非法 requested_type=%r 已降级为 None（图表 %r）",
+                        raw_req_type, sup_title,
+                    )
+                suppressed.append(SuppressedChart(
+                    title=sup_title,
+                    requested_type=safe_req_type,
+                    reason_code=str(item.get("reason_code", "llm_suppressed")),
+                    reason=str(item.get("reason", "经专业技能规则审查，数据不足或口径冲突")),
+                    evidence_ids=sup_eids,
+                ))
+
+        # Parse and validate generated charts from LLM (Grounding Check)
+        for chart_dict in llm_data.get("charts", []):
+            if not isinstance(chart_dict, dict):
+                continue
+            title = str(chart_dict.get("title", "")).strip()
+            chart_type = chart_dict.get("chart_type") or chart_dict.get("type", "bar")
+            if chart_type not in VALID_CHART_TYPES:
+                chart_type = "bar"
+
+            raw_eids = (
+                chart_dict.get("evidence_ids")
+                or chart_dict.get("evidence_record_ids")
+                or chart_dict.get("records")
+                or []
+            )
+            valid_eids = [str(eid) for eid in raw_eids if str(eid) in report.evidence_index]
+
+            if not valid_eids:
+                # Suppress hallucinated or ungrounded charts
+                suppressed.append(SuppressedChart(
+                    title=title or "未命名图表",
+                    requested_type=chart_type,
+                    reason_code="hallucinated_evidence",
+                    reason="图表所引用的证据ID在真实证据库中不存在或未提供有效证据引用",
+                    evidence_ids=[],
+                ))
+                continue
+
+            option = chart_dict.get("option") or chart_dict.get("echarts_option") or {}
+            table = DataFormulator.formulate(valid_eids, report, target_chart_type=chart_type)
+            if table and (not isinstance(option, dict) or not option or self._has_option_defects(option, chart_type)):
+                option = EChartsCompiler.compile(table, chart_type, title)
+            elif not isinstance(option, dict) or not option or self._has_option_defects(option, chart_type):
+                option = self._synthesize_option_from_evidence(chart_type, valid_eids, title, report)
+
+            if not isinstance(option, dict) or not option:
+                suppressed.append(SuppressedChart(
+                    title=title,
+                    requested_type=chart_type,
+                    reason_code="invalid_echarts_option",
+                    reason="无法基于引用证据合成有效图表配置（量纲不相容或数据点缺失）",
+                    evidence_ids=valid_eids,
+                ))
+                continue
+
+            goal = str(chart_dict.get("insight_goal") or chart_dict.get("description") or title)
+            rec_ch = chart_dict.get("recommended_chapter_id")
+            if not rec_ch or rec_ch not in ("CH-01", "CH-02", "CH-03", "CH-04", "CH-05", "CH-06", "CH-07"):
+                domain_val = ""
+                metrics_val = []
+                for eid in valid_eids:
+                    ev = report.evidence_index.get(eid) if report and getattr(report, "evidence_index", None) else None
+                    if ev:
+                        domain_val = domain_val or getattr(ev, "domain", "") or ""
+                        if getattr(ev, "metric", None):
+                            metrics_val.append(str(ev.metric))
+                chapter = self._infer_chart_chapter(title=title, chart_type=chart_type, domain=domain_val, metrics=metrics_val)
+            else:
+                chapter = str(rec_ch)
+            footnotes = [str(f) for f in chart_dict.get("footnotes", [])]
+
+            flat_point_eids = []
+            if table and getattr(table, "point_evidence_ids", None):
+                for pe_list in table.point_evidence_ids.values():
+                    for eid in pe_list:
+                        if eid and eid not in flat_point_eids:
+                            flat_point_eids.append(eid)
+
+            candidates.append(_Candidate(
+                title=title,
+                chart_type=chart_type,
+                option=option,
+                evidence_ids=valid_eids,
+                goal=goal,
+                chapter=chapter,
+                score=100,
+                footnotes=footnotes,
+                point_evidence_ids=flat_point_eids or valid_eids,
+            ))
+
+        # Cross-chapter soft rebalancing: if a chapter (like CH-04) hoards > 3 charts while others have 0 or few,
+        # relocate charts whose semantic nature fits better in another chapter.
+        ch_counts = Counter(c.chapter for c in candidates)
+        for cand in candidates:
+            if ch_counts[cand.chapter] > 3:
+                domain_val = ""
+                metrics_val = []
+                for eid in cand.evidence_ids:
+                    ev = report.evidence_index.get(eid) if report and getattr(report, "evidence_index", None) else None
+                    if ev:
+                        domain_val = domain_val or getattr(ev, "domain", "") or ""
+                        if getattr(ev, "metric", None):
+                            metrics_val.append(str(ev.metric))
+                better_ch = self._infer_chart_chapter(title=cand.title, chart_type=cand.chart_type, domain=domain_val, metrics=metrics_val)
+                if better_ch != cand.chapter and ch_counts[better_ch] < 3:
+                    ch_counts[cand.chapter] -= 1
+                    cand.chapter = better_ch
+                    ch_counts[better_ch] += 1
+
+        return called_skills, candidates, suppressed
+
+    def _backfill_suppressed_evidence(self, title: str, report: Any, cap: int = 12) -> list[str]:
+        """按抑制图表标题的指标语义，从 evidence_index 确定性反查候选证据 ID（D-07）。
+
+        只在 LLM 未提供 evidence_ids 时兜底；无明确指标命中则返回空（不强行附会，
+        避免把无关证据挂到抑制记录上造成误导）。
+        """
+        text = (title or "").casefold()
+        if not text:
+            return []
+        needles: list[str] = []
+        for tok, metrics in self._SUPPRESS_METRIC_TOKENS:
+            if tok.casefold() in text:
+                for m in metrics:
+                    if m not in needles:
+                        needles.append(m)
+        if not needles:
+            return []
+        eids: list[str] = []
+        for eid, ref in report.evidence_index.items():
+            raw_metric = ref.get("metric", "") if isinstance(ref, dict) else getattr(ref, "metric", "")
+            metric = str(raw_metric or "").casefold()
+            if any(n.casefold() in metric for n in needles):
+                eids.append(str(eid))
+                if len(eids) >= cap:
+                    break
+        return eids
+
+    def _has_option_defects(self, option: dict[str, Any], chart_type: str = "") -> bool:
+        """Detects whether an option contains obvious quality defects like raw slugs or duplicate labels."""
+        if not isinstance(option, dict) or not option:
+            return True
+        series = option.get("series")
+        if not series:
+            return True
+        if chart_type == "industry_chain":
+            s0 = series[0] if (isinstance(series, list) and series and isinstance(series[0], dict)) else {}
+            if s0.get("type") != "graph" or not s0.get("data"):
+                return True
+        x_axis = option.get("xAxis")
+        raw_axes = x_axis if isinstance(x_axis, list) else [x_axis] if x_axis else []
+        for ax in raw_axes:
+            if isinstance(ax, dict):
+                data = ax.get("data", [])
+                if isinstance(data, list):
+                    for d in data:
+                        if isinstance(d, str) and d.lower() in (
+                            "close_price", "change_pct", "trade_volume", "volume", "turnover", "open_price", "high_price", "low_price"
+                        ):
+                            return True
+                    if len(data) > 1 and len(set(data)) == 1:
+                        return True
+        return False
+
+    @staticmethod
+    def _format_chain_nodes_and_links(
+        raw_nodes: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        stage_x = {"上游": 180, "中游": 500, "下游": 820}
+        counts: dict[str, int] = {"上游": 0, "中游": 0, "下游": 0}
+        for n in raw_nodes:
+            cat = str(n.get("category", "中游"))
+            counts[cat] = counts.get(cat, 0) + 1
+
+        cur_idx: dict[str, int] = {"上游": 0, "中游": 0, "下游": 0}
+        nodes: list[dict[str, Any]] = []
+        for n in raw_nodes:
+            cat = str(n.get("category", "中游"))
+            k = counts.get(cat, 1)
+            step_y = 0 if k <= 1 else min(75, 260 / (k - 1))
+            start_y = 210 if k <= 1 else 105 + (260 - (k - 1) * step_y) / 2
+            y = int(start_y + cur_idx.get(cat, 0) * step_y)
+            cur_idx[cat] = cur_idx.get(cat, 0) + 1
+
+            node_copy = dict(n)
+            node_copy["x"] = stage_x.get(cat, 500)
+            node_copy["y"] = y
+            node_copy["symbol"] = "roundRect"
+            node_copy["symbolSize"] = [180, 48]
+            nodes.append(node_copy)
+
+        links: list[dict[str, Any]] = []
+        up_ids = [n["id"] for n in nodes if n.get("category") == "上游"]
+        mid_ids = [n["id"] for n in nodes if n.get("category") == "中游"]
+        down_ids = [n["id"] for n in nodes if n.get("category") == "下游"]
+
+        if up_ids and mid_ids:
+            min_up_mid = min(len(up_ids), len(mid_ids))
+            for i in range(min_up_mid):
+                links.append({"source": up_ids[i], "target": mid_ids[i], "lineStyle": {"color": "#cbd5e1", "width": 1.5, "curveness": 0.0}})
+        if mid_ids and down_ids:
+            min_mid_down = min(len(mid_ids), len(down_ids))
+            for i in range(min_mid_down):
+                links.append({"source": mid_ids[i], "target": down_ids[i], "lineStyle": {"color": "#cbd5e1", "width": 1.5, "curveness": 0.0}})
+        elif up_ids and down_ids and not mid_ids:
+            min_up_down = min(len(up_ids), len(down_ids))
+            for i in range(min_up_down):
+                links.append({"source": up_ids[i], "target": down_ids[i], "lineStyle": {"color": "#cbd5e1", "width": 1.5, "curveness": 0.0}})
+        return nodes, links
+
+    def _verify_numeric_candidate(self, item: _Candidate, report: Any) -> str | None:
+        """Compile the deliverable from evidence; model-supplied numbers are not a source."""
+        if item.chart_type == "industry_chain":
+            return None
+        if item.chart_type in ("heatmap", "boxplot", "treemap"):
+            return "此候选缺少可核验的聚合或统计变换定义，已抑制"
+        from .evidence_policy import isolate_anomalous_evidence
+        included_ids, excluded_points = isolate_anomalous_evidence(item.evidence_ids, report)
+        matrix = getattr(report, "data_quality_appendix", {}).get("requirement_evidence_matrix", [])
+        from agents_core.financial_semantics import metric_family
+
+        annual_ids: dict[str, set[str]] = defaultdict(set)
+        incomplete = set()
+        for row in matrix:
+            requirement, coverage = row.get("requirement", {}), row.get("coverage", {})
+            if (not str(requirement.get("requirement_id", "")).startswith("annual_")
+                    or requirement.get("comparison_baseline") or not requirement.get("hard")):
+                continue
+            for family in requirement.get("metric_families", []):
+                annual_ids[family].update(coverage.get("evidence_record_ids", []))
+                if not coverage.get("passed"):
+                    incomplete.add(family)
+        if annual_ids:
+            selected_families = {
+                metric_family(report.evidence_index[rid].metric) for rid in included_ids
+                if rid in report.evidence_index
+            }
+            if item.chart_type in ("line", "area", "combo") and selected_families & incomplete:
+                return "指定年度数据有缺口，未交付完整时序图"
+            included_ids = [
+                rid for rid in included_ids if rid in report.evidence_index and (
+                    (family := metric_family(report.evidence_index[rid].metric)) not in annual_ids
+                    or rid in annual_ids[family]
+                )
+            ]
+        table = DataFormulator.formulate(included_ids, report, target_chart_type=item.chart_type)
+        if table is None:
+            return "缺少可比、可逐点追溯的数据，不能生成此图"
+        if not set(table.raw_evidence_ids).issubset(included_ids):
+            return "图表格式化重新引入已排除或未授权证据，已抑制"
+        names = list(table.series_data)
+        metrics = [report.evidence_index[e].metric for e in table.raw_evidence_ids if e in report.evidence_index]
+        growth_requested = any(w in item.title for w in ("增长", "增速", "成长"))
+        has_growth = any(any(w in m.lower() for w in ("同比", "增长", "增速", "yoy", "growth")) for m in metrics)
+        if item.chart_type in ("combo", "scatter", "bubble") and growth_requested and not has_growth:
+            return "图表声称包含增长指标，但可用证据没有增长坐标或系列"
+        if item.chart_type == "combo" and (not table.secondary_series_name or len(names) < 2):
+            return "双轴图缺少第二个有据系列，已抑制"
+        if item.chart_type in ("scatter", "bubble") and (len(names) < 2 or not table.secondary_series_name):
+            return "散点图缺少两个可追溯坐标"
+        if item.chart_type in ("line", "area") and table.axis_type.value != "time_series":
+            item.chart_type = "bar"
+        points = []
+        for series_name, values in table.series_data.items():
+            ids = table.point_evidence_ids.get(series_name, [])
+            for i, value in enumerate(values):
+                if value is None:
+                    continue
+                rid = ids[i] if i < len(ids) else ""
+                ref = report.evidence_index.get(rid)
+                if ref is None:
+                    return "存在缺少证据的数据点，不能发布图表"
+                points.append(dict(series=series_name, index=i, category=table.categories[i], value=value,
+                    unit=table.series_units.get(series_name), record_id=rid, entity=ref.entity,
+                    metric=ref.metric, period=str(ref.period) if ref.period else None,
+                    period_start=str(ref.period_start) if ref.period_start else None,
+                    period_provenance=ref.period_provenance,
+                    period_type=ref.period_type, scope=ref.scope, currency=ref.currency))
+        from agents_core.financial_semantics import chart_comparability_issues
+        selected_refs = [report.evidence_index[point["record_id"]] for point in points]
+        requested_entities = {report.evidence_index[e].entity for e in included_ids
+                              if e in report.evidence_index and report.evidence_index[e].entity}
+        selected_entities = {ref.entity for ref in selected_refs if ref.entity}
+        if table.axis_type.value != "time_series" and len(requested_entities) > 1 and len(selected_entities) < 2:
+            return "缺少至少两个同口径可比较的主体，不能生成横向比较"
+        problems = chart_comparability_issues(selected_refs, temporal=table.axis_type.value == "time_series")
+        if problems:
+            return "；".join(problems)
+        periods = sorted({p["period"] for p in points if p["period"]})
+        period_label = "至".join([periods[0], periods[-1]]) if len(periods) > 1 else (periods[0] if periods else "期间未明确")
+        shape = "趋势" if table.axis_type.value == "time_series" else "样本对比"
+        source_metrics = list(dict.fromkeys(clean_metric_label(m) for m in metrics))
+        metric_label = "与".join(source_metrics[:2]) if table.axis_type.value == "time_series" else "与".join(names[:2])
+        item.title = f"{getattr(report, 'subject', '')}{metric_label}{shape}（{period_label}）"
+        item.goal = f"展示{len(table.categories)}个样本的{'、'.join(names[:2])}；仅描述图中有据观测，不推断因果。"
+        try:
+            item.option = EChartsCompiler.compile(table, item.chart_type, item.title)
+        except ValueError as exc:
+            return f"数据量纲无法安全编译：{exc}"
+        if item.chart_type in ("pie", "donut") and item.option.get("series", [{}])[0].get("type") != "pie":
+            item.chart_type = "bar"
+        item.evidence_ids = list(dict.fromkeys(p["record_id"] for p in points))
+        item.point_evidence_ids = [p["record_id"] for p in points]
+        missing_dates = sum(p["period"] is None for p in points)
+        comparison_eligible = not missing_dates and (
+            table.axis_type.value == "time_series" or len(periods) == 1)
+        research_as_of = str(getattr(report, "as_of", "") or "")
+        item.option["research_as_of"] = research_as_of
+        item.option["observation_as_of"] = periods[0] if len(periods) == 1 and not missing_dates else None
+        item.data_contract = dict(schema_version="1", axis_type=table.axis_type.value, categories=table.categories,
+            series_units=table.series_units, series_order=list(table.series_data), points=points,
+            research_as_of=research_as_of, comparison_eligible=comparison_eligible,
+            excluded_points=excluded_points, exclusion_policy="analysis_anomaly_record_ids")
+        # Final geometry and verified evidence determine commentary. Model notes may
+        # describe a rejected donut or other unverified transformation.
+        # AB-3：候选的确定性审计注（两期观察、未对齐主体缺口）并入最终呈现，
+        # 与模型拟议注（footnotes，整体重建）分离。
+        notes = list(table.quality_notes) + [
+            f"研究基准日：{research_as_of or '未提供'}；不代表数据观测日期。",
+            "各数据点的实体、指标、期间、单位及原始证据见图表数据契约；缺失值不填零。",
+        ] + list(getattr(item, "audit_notes", []) or [])
+        if missing_dates:
+            notes.append(f"观测日期缺失：{missing_dates}/{len(points)}个数据点；仅作描述性样本展示，不作正式时点比较。")
+        elif not comparison_eligible:
+            notes.append("观测期间不一致：仅作描述性样本展示，不作正式同期比较。")
+        for point in excluded_points:
+            notes.append(f"异常观测单列（不纳入主图与比较基准）：{point['entity']} / {point['metric']} = "
+                         f"{point['value']} {point['unit'] or ''}；观测日期：{point['period'] or '缺失'}；"
+                         f"证据：{point['record_id']}；{point['reason']}")
+        item.footnotes = list(dict.fromkeys(notes))
+        return None
+
+    def _synthesize_option_from_evidence(
+        self,
+        chart_type: str,
+        eids: list[str],
+        title: str,
+        report: Any,
+    ) -> dict[str, Any]:
+        records = [report.evidence_index[eid] for eid in eids if eid in report.evidence_index]
+        if not records:
+            return {}
+
+        # 1. Industry chain
+        if chart_type == "industry_chain":
+            raw_nodes: list[dict[str, Any]] = []
+            if getattr(report, "industry_chain_segments", None):
+                stage_map = {"upstream": "上游", "midstream": "中游", "downstream": "下游"}
+                for seg in report.industry_chain_segments:
+                    cat = stage_map.get(seg.get("stage"), "中游")
+                    for c in seg.get("representative_companies", []):
+                        c_name = resolve_ticker(str(c))
+                        if c_name and c_name != "宏观" and not any(n["name"] == c_name for n in raw_nodes):
+                            raw_nodes.append({"id": f"N{len(raw_nodes)+1}", "name": str(c_name)[:14], "category": cat})
+            if len(raw_nodes) < 3:
+                chain = [r for r in records if r.domain == "industry_chain"] or records
+                raw_nodes = []
+                seen = set()
+                for r in chain[:18]:
+                    label = str(r.entity or r.value or r.metric)[:30]
+                    if label in seen:
+                        continue
+                    seen.add(label)
+                    text = f"{r.metric} {r.value}"
+                    cat = "上游" if "上游" in text else "下游" if "下游" in text else "中游"
+                    raw_nodes.append({"id": f"N{len(raw_nodes)+1}", "name": label, "category": cat})
+
+            nodes, links = self._format_chain_nodes_and_links(raw_nodes)
+            return {
+                "series": [
+                    {
+                        "type": "graph",
+                        "layout": "none",
+                        "data": nodes,
+                        "links": links,
+                        "categories": [{"name": "上游"}, {"name": "中游"}, {"name": "下游"}],
+                        "edgeSymbol": ["circle", "arrow"],
+                        "edgeSymbolSize": [3.5, 8],
+                    }
+                ],
+            }
+
+        # 2. Data Formulation + EChartsCompiler (guarantees dimensional homogeneity & formatting)
+        table = DataFormulator.formulate(eids, report, target_chart_type=chart_type)
+        if table:
+            return EChartsCompiler.compile(table, chart_type, title)
+
+        num_records = [r for r in records if isinstance(r.value, (int, float)) and not isinstance(r.value, bool)]
+        if not num_records:
+            return {}
+
+        unit = next((r.unit for r in num_records if r.unit), "")
+
+        # 2. Line / Area
+        if chart_type in ("line", "area"):
+            dated = [r for r in num_records if r.period]
+            if len({r.period for r in dated}) >= 2:
+                periods = sorted({r.period for r in dated})
+                labels = [p.isoformat() if hasattr(p, "isoformat") else str(p) for p in periods]
+                by_series: dict[str, dict[Any, float]] = defaultdict(dict)
+                for r in dated:
+                    s_name = clean_metric_label(r.entity or r.metric or "数值")
+                    by_series[s_name][r.period] = float(r.value)
+                series = []
+                for s_name, mapping in list(by_series.items())[:5]:
+                    s_dict: dict[str, Any] = {
+                        "name": s_name,
+                        "type": "line",
+                        "connectNulls": False,
+                        "data": [mapping.get(p) for p in periods],
+                    }
+                    if chart_type == "area":
+                        s_dict["areaStyle"] = {}
+                    series.append(s_dict)
+                return {
+                    "tooltip": {"trigger": "axis"},
+                    "legend": {"data": [s["name"] for s in series]},
+                    "xAxis": {"type": "category", "data": labels},
+                    "yAxis": {"type": "value", "name": unit},
+                    "series": series,
+                }
+            labels = [clean_metric_label(r.entity or (r.period.isoformat() if hasattr(r.period, "isoformat") else str(r.period)) if r.period else r.metric or f"项{i+1}") for i, r in enumerate(num_records[:15])]
+            if len(labels) > 1 and len(set(labels)) == 1:
+                labels = [f"{lbl} #{i+1}" for i, lbl in enumerate(labels)]
+            vals = [float(r.value) for r in num_records[:15]]
+            s_dict = {"name": clean_metric_label(title), "type": "line", "data": vals}
+            if chart_type == "area":
+                s_dict["areaStyle"] = {}
+            return {
+                "tooltip": {"trigger": "axis"},
+                "xAxis": {"type": "category", "data": labels},
+                "yAxis": {"type": "value", "name": unit},
+                "series": [s_dict],
+            }
+
+        # 3. Pie / Donut
+        if chart_type in ("pie", "donut"):
+            data = [
+                {"name": clean_metric_label(r.entity or r.metric or f"项{i+1}"), "value": abs(float(r.value))}
+                for i, r in enumerate(num_records[:10])
+            ]
+            radius = ["36%", "68%"] if chart_type == "donut" else [0, "68%"]
+            return {
+                "tooltip": {"trigger": "item"},
+                "legend": {"orient": "horizontal", "bottom": "bottom"},
+                "series": [{"type": "pie", "radius": radius, "data": data}],
+            }
+
+        # 4. Radar
+        if chart_type == "radar":
+            labels = [clean_metric_label(r.metric or r.entity or f"维度{i+1}") for i, r in enumerate(num_records[:8])]
+            vals = [float(r.value) for r in num_records[:8]]
+            # 各维度独立上限，避免大金额指标吞噬百分比比率指标
+            indicators = [
+                {"name": lbl, "max": round(max(abs(v) * 1.25, 10.0), 2)}
+                for lbl, v in zip(labels, vals)
+            ]
+            ent_name = num_records[0].entity or "主体"
+            return {
+                "tooltip": {"trigger": "item"},
+                "radar": {"indicator": indicators},
+                "series": [{"type": "radar", "data": [{"name": ent_name, "value": vals}]}],
+            }
+
+        # 5. Combo
+        if chart_type == "combo":
+            by_metric: dict[str, dict[Any, float]] = defaultdict(dict)
+            has_period = any(r.period for r in num_records)
+            group_key_fn = (lambda r: r.period) if has_period and len({r.period for r in num_records if r.period}) >= 2 else (lambda r: r.entity)
+            for r in num_records:
+                gk = group_key_fn(r)
+                if gk:
+                    by_metric[r.metric][gk] = float(r.value)
+            metric_keys = [m for m, pts in by_metric.items() if len(pts) >= 2]
+            if len(metric_keys) >= 2:
+                m1, m2 = metric_keys[0], metric_keys[1]
+                groups = sorted(set(by_metric[m1]) & set(by_metric[m2]))
+                if len(groups) >= 2:
+                    labels = [g.isoformat() if hasattr(g, "isoformat") else str(g) for g in groups]
+                    l1, l2 = clean_metric_label(m1), clean_metric_label(m2)
+                    u1 = next((r.unit for r in num_records if r.metric == m1 and r.unit), "")
+                    u2 = next((r.unit for r in num_records if r.metric == m2 and r.unit), "")
+
+                    is_mc_ratio = ("总市值" in m1 or "market_cap" in m1.lower()) and ("流通" in m2 or "float" in m2.lower())
+                    if is_mc_ratio:
+                        l2 = "流通市值占比"
+                        u2 = "%"
+                        vals2 = [round((by_metric[m2].get(g, 0) / max(by_metric[m1].get(g, 1), 0.001)) * 100, 2) for g in groups]
+                    else:
+                        vals2 = [by_metric[m2].get(g) for g in groups]
+
+                    return {
+                        "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
+                        "legend": {"data": [l1, l2]},
+                        "xAxis": {"type": "category", "data": labels},
+                        "yAxis": [
+                            {"type": "value", "name": u1},
+                            {"type": "value", "name": u2},
+                        ],
+                        "series": [
+                            {"name": l1, "type": "bar", "yAxisIndex": 0, "data": [by_metric[m1].get(g) for g in groups]},
+                            {"name": l2, "type": "line", "yAxisIndex": 1, "data": vals2},
+                        ],
+                    }
+
+        # 6. Scatter / Bubble
+        if chart_type in ("scatter", "bubble"):
+            by_m: dict[str, dict[str, float]] = defaultdict(dict)
+            for r in num_records:
+                if r.entity and isinstance(r.value, (int, float)):
+                    by_m[r.metric][r.entity] = float(r.value)
+            m_keys = list(by_m.keys())
+            if len(m_keys) >= 2:
+                m1, m2 = m_keys[0], m_keys[1]
+                common = sorted(set(by_m[m1].keys()) & set(by_m[m2].keys()))
+                if common:
+                    points = []
+                    for ent in common:
+                        points.append({
+                            "name": ent,
+                            "value": [by_m[m1][ent], by_m[m2][ent], ent],
+                        })
+                    u1 = next((r.unit for r in num_records if r.metric == m1 and r.unit), "")
+                    u2 = next((r.unit for r in num_records if r.metric == m2 and r.unit), "")
+                    l1, l2 = clean_metric_label(m1), clean_metric_label(m2)
+                    return {
+                        "tooltip": {
+                            "trigger": "item",
+                            "formatter": "{b}<br/>" + f"{l1}: " + "{c[0]}" + (f" {u1}" if u1 else "") + "<br/>" + f"{l2}: " + "{c[1]}" + (f" {u2}" if u2 else ""),
+                        },
+                        "xAxis": {"type": "value", "name": f"{l1} ({u1})" if u1 else l1, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}},
+                        "yAxis": {"type": "value", "name": f"{l2} ({u2})" if u2 else l2, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}},
+                        "series": [{
+                            "name": clean_metric_label(title),
+                            "type": "scatter",
+                            "symbolSize": 14,
+                            "data": points,
+                            "itemStyle": {"color": PRIMARY_COLOR},
+                            "label": {"show": True, "position": "right", "formatter": "{b}", "fontSize": 11},
+                            "markLine": {
+                                "lineStyle": {"type": "dashed", "color": "#94a3b8", "width": 1},
+                                "data": [
+                                    {"type": "average", "name": f"均值线 ({l2})", "valueIndex": 1},
+                                    {"type": "average", "name": f"均值线 ({l1})", "valueIndex": 0},
+                                ],
+                            },
+                        }],
+                    }
+            points = []
+            for i, r in enumerate(num_records[:20]):
+                points.append({
+                    "name": r.entity or f"样本{i+1}",
+                    "value": [i + 1, float(r.value), r.entity or f"样本{i+1}"],
+                })
+            return {
+                "tooltip": {"trigger": "item"},
+                "xAxis": {"type": "value", "name": "样本序号"},
+                "yAxis": {"type": "value", "name": unit},
+                "series": [{"type": "scatter", "symbolSize": 12, "data": points}],
+            }
+
+        # 7. Bar / Horizontal Bar / Comparison Bar / Diverging Bar
+        distinct_periods = [r.period for r in num_records if r.period]
+        if len(set(distinct_periods)) >= 2 and len(distinct_periods) == len(num_records[:15]):
+            labels = [r.period.isoformat() if hasattr(r.period, "isoformat") else str(r.period) for r in num_records[:15]]
+        else:
+            labels = [clean_metric_label(r.entity or (r.period.isoformat() if hasattr(r.period, "isoformat") else str(r.period)) if r.period else r.metric or f"项{i+1}") for i, r in enumerate(num_records[:15])]
+
+        if len(labels) > 1 and len(set(labels)) == 1:
+            labels = [f"{lbl} #{i+1}" for i, lbl in enumerate(labels)]
+        vals = [float(r.value) for r in num_records[:15]]
+        min_v = min(vals) if vals else 0
+        min_y = min(0, min_v)
+
+        if chart_type == "horizontal_bar":
+            return {
+                "tooltip": {"trigger": "axis"},
+                "yAxis": {"type": "category", "data": labels},
+                "xAxis": {"type": "value", "name": unit, "min": min_y},
+                "series": [{"name": clean_metric_label(title), "type": "bar", "data": vals}],
+            }
+        else:
+            return {
+                "tooltip": {"trigger": "axis"},
+                "xAxis": {"type": "category", "data": labels},
+                "yAxis": {"type": "value", "name": unit, "min": min_y},
+                "series": [{"name": clean_metric_label(title), "type": "bar", "data": vals}],
+            }
+
+    def _deterministic_fallback(
+        self, request: ChartGenerationRequest,
+    ) -> tuple[list[_Candidate], list[SuppressedChart]]:
+        """Minimal deterministic fallback ensuring offline unit tests and disconnected runs succeed."""
+        report = request.report
+        evidence = [
+            item for item in report.evidence_index.values()
+            if isinstance(item.value, (int, float)) and not isinstance(item.value, bool)
+        ]
+        by_metric: dict[str, list[EvidenceRef]] = defaultdict(list)
+        by_entity: dict[str, list[EvidenceRef]] = defaultdict(list)
+        for item in evidence:
+            by_metric[item.metric].append(item)
+            if item.entity:
+                by_entity[item.entity].append(item)
+
+        candidates: list[_Candidate] = []
+        suppressed: list[SuppressedChart] = []
+        req_types = set(request.preferences.requested_types)
+
+        for metric, rows in by_metric.items():
+            m_label = clean_metric_label(metric)
+            rows = sorted(rows, key=lambda x: (x.period or request.report.as_of, x.entity or ""))
+            
+            # 统一确定指标的规范量纲与单位
+            meta = resolve_metric_meta(metric)
+            raw_vals: list[float] = []
+            raw_units: list[str | None] = []
+            for x in rows:
+                if x.value is not None:
+                    try:
+                        raw_vals.append(float(x.value))
+                        raw_units.append(x.unit)
+                    except (ValueError, TypeError):
+                        pass
+
+            m_lower = metric.lower()
+            if (
+                meta.dimension == MetricDimension.VALUATION_MULTIPLE
+                or any(k in m_lower for k in ("pe", "pb", "ps", "市盈率", "市净率", "市销率", "倍数"))
+                or any(u in ("倍", "x", "X") for u in raw_units if u)
+            ):
+                unit = "倍"
+            elif (
+                meta.dimension == MetricDimension.PERCENTAGE_RATIO
+                or any(k in m_lower for k in ("pct", "率", "比", "增速", "增长率", "涨跌幅", "份额", "占比"))
+                or any(u in ("%", "百分比") for u in raw_units if u)
+            ):
+                unit = "%"
+            elif (
+                meta.dimension == MetricDimension.TRADING_PRICE
+                or any(k in m_lower for k in ("price", "股价", "最新价", "收盘价", "最高价", "最低价", "开盘价"))
+            ):
+                unit = meta.preferred_unit or "元"
+            elif meta.dimension == MetricDimension.TRADING_VOLUME:
+                unit = meta.preferred_unit or "手"
+            elif (
+                meta.dimension == MetricDimension.CURRENCY_AMOUNT
+                or any(k in m_lower for k in ("cap", "市值", "收入", "营收", "利润", "净利", "费用", "现金", "资产", "负债"))
+            ):
+                unit = DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+            else:
+                raw_u = next((x.unit for x in rows if x.unit), None)
+                unit = raw_u or DimensionGuard.determine_series_currency_unit(raw_vals, raw_units)
+
+            footnotes = [] if unit else ["原始数据未提供统一单位，跨实体比较需谨慎"]
+            ids = [x.record_id for x in rows]
+
+            # 研报主体前缀修饰
+            subj = (request.report.subject or "").strip()
+            def _with_subject(title_tmpl: str) -> str:
+                if subj and subj not in title_tmpl:
+                    return f"{subj}{title_tmpl}"
+                return title_tmpl
+
+            # Time series
+            dated_entities: dict[str, list[EvidenceRef]] = defaultdict(list)
+            for row in rows:
+                if row.period:
+                    dated_entities[row.entity or "行业"].append(row)
+            usable_series = {k: v for k, v in dated_entities.items() if len({x.period for x in v}) >= 2}
+            if usable_series:
+                periods = sorted({x.period for group in usable_series.values() for x in group if x.period})
+                # AB-3/C03：两期同口径有效数据允许出变化图（注明仅两期观察），
+                # 不得据此宣称长期趋势。
+                if len(periods) >= 2:
+                    labels = [x.isoformat() for x in periods]
+                    two_period_note = (
+                        ["样本仅覆盖两个观测期：只作有限变化对比，不构成持续趋势结论"]
+                        if len(periods) == 2 else []
+                    )
+                    # AB-3/C02：指定主体超过单图容量（10 系列）按确定顺序拆图，
+                    # 同一指标同一单位；显式要求不得静默截断。
+                    series_names = list(usable_series.keys())
+                    chunk_size = 10
+                    chunks = [series_names[i:i + chunk_size] for i in range(0, len(series_names), chunk_size)]
+                    multi_chunk = len(chunks) > 1
+                    chunk_numbering = "一二三四五六七八九十"
+                    for chunk_index, chunk in enumerate(chunks):
+                        series = []
+                        chunk_eids: list[str] = []
+                        for entity in chunk:
+                            group = usable_series[entity]
+                            mapping = {}
+                            for x in group:
+                                v_norm, _ = DimensionGuard.normalize_financial_value(
+                                    float(x.value), metric, x.unit, target_unit=unit
+                                )
+                                mapping[x.period] = v_norm
+                                chunk_eids.append(x.record_id)
+                            series.append({"name": entity, "type": "line", "connectNulls": False, "data": [mapping.get(p) for p in periods]})
+                        option = {"tooltip": {"trigger": "axis"}, "legend": {"data": [s["name"] for s in series]}, "xAxis": {"type": "category", "data": labels}, "yAxis": {"type": "value", "name": unit or ""}, "series": series}
+                        ts_title = _with_subject(f"核心标的{m_label}走势")
+                        if multi_chunk:
+                            suffix = chunk_numbering[chunk_index] if chunk_index < len(chunk_numbering) else str(chunk_index + 1)
+                            ts_title = f"{ts_title}（{suffix}）"
+                        ts_ch = self._infer_chart_chapter(title=ts_title, chart_type="line", domain=rows[0].domain if rows else "", metrics=[metric])
+                        if ts_ch == "CH-01" and not any(k in m_label for k in ("全景", "概览", "产业基础", "行业概况", "定位")):
+                            ts_ch = "CH-02"
+                        sample_group = f"split-{chunk_index}" if multi_chunk else ""
+                        if request.preferences.include_advanced and len(periods) >= 4 and ("area" in req_types or ("累计" in metric and "line" not in req_types)):
+                            area = json.loads(json.dumps(option))
+                            area["series"][0]["areaStyle"] = {}
+                            area_title = _with_subject(f"核心标的{m_label}累计趋势")
+                            candidates.append(_Candidate(area_title, "area", area, chunk_eids, f"突出{m_label}的累计变化轮廓", ts_ch, 95, footnotes=footnotes, point_evidence_ids=chunk_eids, sample_group=sample_group, audit_notes=two_period_note))
+                        else:
+                            candidates.append(_Candidate(ts_title, "line", option, chunk_eids, f"观察{m_label}的时间变化", ts_ch, 100, footnotes=footnotes, point_evidence_ids=chunk_eids, sample_group=sample_group, audit_notes=two_period_note))
+
+            # Cross-sectional comparison
+            # AB-3/C04：横截面对齐共同可比期——不把各实体不同披露期拼进同一张
+            # 对比图；无共同期时保留各实体最新期并显式注明不可比。
+            period_entity_counts: dict[Any, set[str]] = defaultdict(set)
+            entity_periods: dict[str, list[EvidenceRef]] = defaultdict(list)
+            for row in rows:
+                if row.period and row.entity:
+                    period_entity_counts[row.period].add(row.entity)
+                    entity_periods[row.entity].append(row)
+            target_period = None
+            if period_entity_counts:
+                ordered_periods = sorted(
+                    period_entity_counts, key=lambda p: (len(period_entity_counts[p]), p), reverse=True
+                )
+                if len(period_entity_counts[ordered_periods[0]]) >= 2:
+                    target_period = ordered_periods[0]
+            cross_extra_notes: list[str] = []
+            if target_period is not None:
+                aligned: dict[str, EvidenceRef] = {}
+                for entity, group in entity_periods.items():
+                    hit = next((x for x in group if x.period == target_period), None)
+                    if hit is not None:
+                        aligned[entity] = hit
+                comparable = list(aligned.values())[:30]
+                dropped_entities = sorted(set(entity_periods) - set(aligned))
+                if dropped_entities:
+                    cross_extra_notes.append(
+                        f"未纳入同期对比（缺{target_period.isoformat()}共同期）：{'、'.join(dropped_entities[:8])}"
+                    )
+            else:
+                latest: dict[str, EvidenceRef] = {}
+                for row in rows:
+                    key = row.entity or row.metric
+                    if key not in latest or (row.period or request.report.as_of) >= (latest[key].period or request.report.as_of):
+                        latest[key] = row
+                comparable = list(latest.values())[:30]
+                if len({x.period for x in comparable if x.period}) > 1:
+                    cross_extra_notes.append("各实体披露期不一致：仅作描述性样本展示，不作正式同期比较")
+            if len(comparable) >= 3 and len({x.entity for x in comparable if x.entity}) >= 3:
+                labels = [x.entity or clean_metric_label(x.metric) for x in comparable]
+                vals = [
+                    DimensionGuard.normalize_financial_value(float(x.value), metric, x.unit, target_unit=unit)[0]
+                    for x in comparable
+                ]
+                comp_eids = [x.record_id for x in comparable]
+                signed = min(vals) < 0 < max(vals)
+                option = {"tooltip": {"trigger": "axis"}, "xAxis": {"type": "category", "data": labels}, "yAxis": {"type": "value", "name": unit or "", "min": min(0, min(vals))}, "series": [{"name": m_label, "type": "bar", "data": vals}]}
+                if signed:
+                    c_type: ChartType = "diverging_bar" if ("diverging_bar" in req_types and "comparison_bar" not in req_types) else "comparison_bar"
+                    c_title = _with_subject(f"主要企业{m_label}发散对比" if c_type == "diverging_bar" else f"主要企业{m_label}横向比较")
+                    c_goal = f"清晰呈现不同实体的{m_label}正负分化" if c_type == "diverging_bar" else f"比较不同实体的{m_label}"
+                    c_ch = self._infer_chart_chapter(title=c_title, chart_type=c_type, domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(c_title, c_type, option, comp_eids, c_goal, c_ch, 90, footnotes, point_evidence_ids=comp_eids, audit_notes=cross_extra_notes))
+                else:
+                    bar_type: ChartType = "horizontal_bar" if any(len(str(l)) > 4 for l in labels) else "bar"
+                    bar_title = _with_subject(f"主要企业{m_label}横向对比")
+                    b_ch = self._infer_chart_chapter(title=bar_title, chart_type=bar_type, domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(bar_title, bar_type, option, comp_eids, f"比较不同实体的{m_label}", b_ch, 90, footnotes, point_evidence_ids=comp_eids, audit_notes=cross_extra_notes))
+
+                is_explicit_share = any(k in metric.lower() for k in ("占比", "份额", "构成", "share", "市占率"))
+                non_additive = (not is_explicit_share) and (
+                    any(k in m_label.lower() for k in ("率", "比", "价", "price", "pe", "pb", "ps", "roe", "roa", "eps", "每股", "收益率", "增速", "增长率", "margin", "ratio", "yoy"))
+                    or any(k in metric.lower() for k in ("price", "ratio", "margin", "pe", "pb", "ps", "rate", "yoy", "growth"))
+                )
+                is_additive = any(k in m_label for k in ("市值", "收入", "营收", "利润", "净利", "资产", "规模", "出货", "装机", "销量", "产能", "金额", "支出")) and not non_additive
+
+                total_val = sum(vals)
+                max_share = (max(vals) / total_val) if total_val > 0 else 0.0
+                # 若单一企业占总样本份额超过90%且非显式市占率，说明样本失衡/受巨型混业标的干扰，不生成失真的集中度环形图；且严禁率值/非加性指标进入环形图
+                is_top_concentration = all(v > 0 for v in vals) and (len(vals) >= 3) and is_additive and (max_share < 0.90)
+                # 环形图语义防泛滥：
+                # 1. 对非显式占比指标，集中度环形图仅保留核心市值/规模集中度，严禁对营业收入、净利润等非总体概念多重生成
+                # 2. 对总市值与流通市值，若已存在市值集中度环形图，跳过流通市值重复生成
+                if is_top_concentration and not is_explicit_share:
+                    has_concentration_pie = any(
+                        c.chart_type in ("donut", "pie") and ("集中度" in c.title or "分布" in c.title)
+                        for c in candidates
+                    )
+                    # 仅允许“市值”指标或首个规模指标生成集中度环形图，且全局最多保留1个集中度环形图
+                    if has_concentration_pie or not any(k in m_label for k in ("市值", "资产", "规模")):
+                        is_top_concentration = False
+                if ((all(v > 0 for v in vals) and is_explicit_share) or is_top_concentration):
+                    paired = sorted(zip(labels, vals, strict=True), key=lambda x: x[1], reverse=True)
+                    if len(paired) > 6:
+                        top_items = paired[:5]
+                        other_val = round(sum(v for _, v in paired[5:]), 2)
+                        pie_data = [{"name": n, "value": v} for n, v in top_items] + [{"name": "其他样本企业", "value": other_val}]
+                    else:
+                        pie_data = [{"name": n, "value": v} for n, v in paired]
+                    pie = {"tooltip": {"trigger": "item"}, "series": [{"type": "pie", "radius": ["36%", "68%"], "data": pie_data}]}
+                    pie_type: ChartType = "pie" if ("pie" in req_types and "donut" not in req_types) else "donut"
+                    pie_title = _with_subject(f"{m_label}构成" if is_explicit_share else f"核心企业{m_label}集中度分布")
+                    pie_prio = 95 if is_explicit_share else 88
+                    pie_ch = self._infer_chart_chapter(title=pie_title, chart_type=pie_type, domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(pie_title, pie_type, pie, comp_eids, f"展示{m_label}的结构构成与头部集中度", pie_ch, pie_prio, footnotes, point_evidence_ids=comp_eids))
+                if request.preferences.include_advanced and is_additive and all(v >= 0 for v in vals) and (("treemap" in req_types) or len(vals) >= 8):
+                    tree = {"series": [{"type": "treemap", "data": [{"name": n, "value": v} for n, v in zip(labels, vals, strict=True)]}]}
+                    tree_title = _with_subject(f"{m_label}规模矩形树")
+                    tree_ch = self._infer_chart_chapter(title=tree_title, chart_type="treemap", domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(tree_title, "treemap", tree, comp_eids, f"同时观察{m_label}的规模和集中度", tree_ch, 48, footnotes, point_evidence_ids=comp_eids))
+                if request.preferences.include_advanced and (len(vals) >= 15 or "boxplot" in req_types):
+                    ordered = sorted(vals)
+                    def q(p: float) -> float:
+                        return ordered[round((len(ordered) - 1) * p)]
+                    box = {"xAxis": {"type": "category", "data": [m_label]}, "yAxis": {"type": "value"}, "series": [{"type": "boxplot", "data": [[min(vals), q(0.25), q(0.5), q(0.75), max(vals)]]}]}
+                    box_title = _with_subject(f"{m_label}样本分布")
+                    box_ch = self._infer_chart_chapter(title=box_title, chart_type="boxplot", domain=comparable[0].domain if comparable else "", metrics=[metric])
+                    candidates.append(_Candidate(box_title, "boxplot", box, comp_eids, f"展示{m_label}的样本分布与分位数", box_ch, 42, footnotes, point_evidence_ids=comp_eids))
+
+        # Collect core entities and suppressed/outlier entities
+        cm_data = getattr(report, "comps_matrix", None) or getattr(report, "comps_table", None)
+        core_entities: set[str] = set()
+        core_entity_rank: dict[str, int] = {}
+        if cm_data:
+            if isinstance(cm_data, dict):
+                entries = cm_data.get("entries", []) or cm_data.get("comps", []) or []
+            elif isinstance(cm_data, list):
+                entries = cm_data
+            else:
+                entries = getattr(cm_data, "entries", None) or getattr(cm_data, "comps", []) or []
+            for rank_idx, e in enumerate(entries):
+                if isinstance(e, dict):
+                    name = e.get("company_name") or e.get("entity_name") or e.get("name") or ""
+                    tkr = e.get("ticker") or e.get("code") or ""
+                else:
+                    name = getattr(e, "company_name", None) or getattr(e, "entity_name", None) or getattr(e, "name", "") or ""
+                    tkr = getattr(e, "ticker", None) or getattr(e, "code", "") or ""
+                if name:
+                    core_entities.add(str(name).strip())
+                    if str(name).strip() not in core_entity_rank:
+                        core_entity_rank[str(name).strip()] = rank_idx
+                if tkr:
+                    core_entities.add(str(tkr).strip())
+                    if str(tkr).strip() not in core_entity_rank:
+                        core_entity_rank[str(tkr).strip()] = rank_idx
+
+        suppressed_entities: set[str] = set()
+        for a in getattr(report, "anomalies", []):
+            guidance = a.get("charting_guidance") if isinstance(a, dict) else getattr(a, "charting_guidance", None)
+            ent = a.get("entity", "") if isinstance(a, dict) else getattr(a, "entity", "")
+            if guidance == "suppress_or_isolate" and ent:
+                suppressed_entities.add(ent)
+
+        # Radar for multi-metric entity
+        for entity, rows in by_entity.items():
+            ent_name = resolve_ticker(entity) or entity
+            if (ent_name in suppressed_entities) or (entity in suppressed_entities):
+                continue
+            latest_by_metric: dict[str, EvidenceRef] = {}
+            for row in rows:
+                if row.metric not in latest_by_metric or (row.period or report.as_of) >= (latest_by_metric[row.metric].period or report.as_of):
+                    latest_by_metric[row.metric] = row
+            metrics = list(latest_by_metric.values())[:8]
+            if len(metrics) >= 3:
+                normalized = []
+                for x in metrics:
+                    peer_rows = by_metric.get(x.metric, [])
+                    peer_vals = [float(p.value) for p in peer_rows if p.value is not None]
+                    v = float(x.value)
+                    if peer_vals and len(peer_vals) >= 2:
+                        p_low, p_high = min(peer_vals), max(peer_vals)
+                        if p_high > p_low:
+                            norm_v = round(min(96.0, max(20.0, (v - p_low) / (p_high - p_low) * 70 + 20)), 1)
+                        else:
+                            norm_v = 60.0
+                    else:
+                        # 单样本或无同行对比指标，按比率/成长通用分位合理映射
+                        m_str = str(x.metric).lower()
+                        if any(k in m_str for k in ("率", "roe", "roa", "margin", "ratio")):
+                            norm_v = round(min(92.0, max(25.0, v * 1.5 if v < 40 else v)), 1)
+                        elif any(k in m_str for k in ("增", "growth", "同比")):
+                            norm_v = round(min(92.0, max(25.0, v * 1.1 if v < 50 else v)), 1)
+                        else:
+                            norm_v = 60.0
+                    normalized.append(norm_v)
+                radar = {"radar": {"indicator": [{"name": clean_metric_label(x.metric), "max": 100} for x in metrics]}, "series": [{"type": "radar", "data": [{"name": ent_name, "value": normalized}]}]}
+                m_eids = [x.record_id for x in metrics]
+                is_core = (ent_name in core_entities or entity in core_entities)
+                rank = min(core_entity_rank.get(ent_name, 999), core_entity_rank.get(entity, 999))
+                if is_core:
+                    radar_prio = max(86, 96 - min(rank, 10))
+                else:
+                    radar_prio = 75
+                candidates.append(_Candidate(f"{ent_name}多指标雷达", "radar", radar, m_eids, f"比较{ent_name}多项指标的相对位置与行业分位", "CH-05", radar_prio, ["各指标采用行业可比样本 0—100 分位对齐"], point_evidence_ids=m_eids))
+
+        if request.preferences.include_advanced:
+            cross: list[tuple[str, dict[str, EvidenceRef]]] = []
+            for metric, rows in by_metric.items():
+                latest = {}
+                for row in rows:
+                    if row.entity:
+                        if row.entity not in latest or (row.period or report.as_of) >= (latest[row.entity].period or report.as_of):
+                            latest[row.entity] = row
+                if len(latest) >= 3:
+                    cross.append((metric, latest))
+            cross.sort(key=lambda item: (-len(item[1]), item[0]))
+            if len(cross) >= 2:
+                x_name, x_rows = cross[0]
+                y_name, y_rows = cross[1]
+                x_label = clean_metric_label(x_name)
+                y_label = clean_metric_label(y_name)
+                common = sorted(set(x_rows) & set(y_rows))[:20]
+                if len(common) >= 3:
+                    third = cross[2] if len(cross) >= 3 else None
+                    bubble = bool(third and len(set(common) & set(third[1])) >= 3)
+                    usable = [name for name in common if not bubble or name in third[1]]
+                    points = []
+                    ids = []
+                    sizes = [max(float(third[1][name].value), 0.0) for name in usable if bubble and third and name in third[1]] if bubble and third else []
+                    min_sz, max_sz = (min(sizes), max(sizes)) if sizes else (0.0, 0.0)
+                    span_sz = max_sz - min_sz or 1.0
+
+                    for name in usable:
+                        xv = float(x_rows[name].value)
+                        yv = float(y_rows[name].value)
+                        ids.extend([x_rows[name].record_id, y_rows[name].record_id])
+                        sz_val = max(float(third[1][name].value), 0.0) if bubble and third and name in third[1] else None
+                        if sz_val is not None:
+                            ids.append(third[1][name].record_id)
+                            r = round(10.0 + ((sz_val - min_sz) / span_sz) * 16.0, 1)
+                        else:
+                            r = 14.0
+                        points.append({
+                            "name": name,
+                            "value": [xv, yv, sz_val if sz_val is not None else r],
+                            "symbolSize": r,
+                            "label": {"show": True, "position": "right", "formatter": "{b}", "fontSize": 11},
+                        })
+                    kind: ChartType = "bubble" if bubble else "scatter"
+                    option = {
+                        "tooltip": {
+                            "trigger": "item",
+                            "formatter": "{b}<br/>" + f"{x_label}: " + "{c[0]}<br/>" + f"{y_label}: " + "{c[1]}",
+                        },
+                        "xAxis": {"type": "value", "name": x_label, "scale": True, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}},
+                        "yAxis": {"type": "value", "name": y_label, "scale": True, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}},
+                        "series": [{
+                            "name": f"{x_label}与{y_label}定位",
+                            "type": "scatter",
+                            "data": points,
+                            "markLine": {
+                                "silent": True,
+                                "symbol": "none",
+                                "lineStyle": {"type": "dashed", "color": "#94a3b8", "width": 1},
+                                "data": [
+                                    {"type": "average", "name": "均值", "valueIndex": 0},
+                                    {"type": "average", "name": "均值", "valueIndex": 1},
+                                ],
+                            },
+                        }],
+                    }
+                    unique_scat_ids = list(dict.fromkeys(ids))
+                    scat_ch = self._infer_chart_chapter(title=f"{x_label}与{y_label}定位", chart_type=kind, domain="financials", metrics=[x_name, y_name])
+                    candidates.append(_Candidate(f"{x_label}与{y_label}定位", kind, option, unique_scat_ids, f"观察实体在{x_label}和{y_label}维度的位置", scat_ch, 85, ["仅展示两个指标均有数据的实体"], point_evidence_ids=unique_scat_ids))
+            if len(cross) >= 3:
+                matrix_metrics = cross[:5]
+                entities = sorted(set.intersection(*(set(rows) for _, rows in matrix_metrics)))[:12]
+                if len(entities) >= 3:
+                    cells = []
+                    ids = []
+                    for y, (metric, rows) in enumerate(matrix_metrics):
+                        values = [float(rows[e].value) for e in entities]
+                        # 生产级分位数位序归一化 (Percentile Ranking)，杜绝极值压缩正常标的色阶
+                        n_ent = len(entities)
+                        indexed_vals = sorted(enumerate(values), key=lambda it: it[1])
+                        ranks = [0.0] * n_ent
+                        i = 0
+                        while i < n_ent:
+                            j = i
+                            while j < n_ent - 1 and indexed_vals[j + 1][1] == indexed_vals[j][1]:
+                                j += 1
+                            avg_rank = (i + j) / 2.0
+                            for k in range(i, j + 1):
+                                orig_idx = indexed_vals[k][0]
+                                norm_score = 10.0 + (avg_rank / max(n_ent - 1, 1)) * 80.0
+                                ranks[orig_idx] = round(norm_score, 1)
+                            i = j + 1
+
+                        for x in range(n_ent):
+                            cells.append([x, y, ranks[x]])
+                            ids.append(rows[entities[x]].record_id)
+                    option = {"tooltip": {"position": "top"}, "xAxis": {"type": "category", "data": entities}, "yAxis": {"type": "category", "data": [clean_metric_label(m) for m, _ in matrix_metrics]}, "visualMap": {"min": 0, "max": 100}, "series": [{"type": "heatmap", "data": cells}]}
+                    unique_heat_ids = list(dict.fromkeys(ids))
+                    heat_ch = self._infer_chart_chapter(title="多指标横向热力图", chart_type="heatmap", domain="financials", metrics=[m for m, _ in matrix_metrics])
+                    candidates.append(_Candidate("多指标横向热力图", "heatmap", option, unique_heat_ids, "以各指标样本内分位数位序比较实体相对梯队", heat_ch, 52, ["每行指标以样本内分位数位序标准化（10—90分位）"], point_evidence_ids=unique_heat_ids))
+
+            # Combo (规模与增速 / 双指标联动)
+            combo_count = 0
+            for entity, rows in by_entity.items():
+                if combo_count >= 3:
+                    break
+                series_by_metric: dict[str, dict[Any, EvidenceRef]] = defaultdict(dict)
+                for row in rows:
+                    if row.period:
+                        series_by_metric[row.metric][row.period] = row
+                eligible = [(metric, values) for metric, values in series_by_metric.items() if len(values) >= 2]
+                eligible.sort(key=lambda item: resolve_metric_meta(item[0]).dimension != MetricDimension.CURRENCY_AMOUNT)
+                found = False
+                for left_index, (left_name, left_rows) in enumerate(eligible):
+                    for right_name, right_rows in eligible[left_index + 1:]:
+                        if not DimensionGuard.is_dual_axis_compatible(left_name, right_name)[0]:
+                            continue
+                        periods = sorted(set(left_rows) & set(right_rows))
+                        if len(periods) < 2:
+                            continue
+                        ids = [left_rows[p].record_id for p in periods] + [right_rows[p].record_id for p in periods]
+                        left_label = clean_metric_label(left_name)
+                        right_label = clean_metric_label(right_name)
+                        option = {
+                            "tooltip": {"trigger": "axis"},
+                            "legend": {"data": [left_label, right_label]},
+                            "xAxis": {"type": "category", "data": [p.isoformat() for p in periods]},
+                            "yAxis": [{"type": "value", "name": left_rows[periods[0]].unit or left_label}, {"type": "value", "name": right_rows[periods[0]].unit or right_label}],
+                            "series": [{"name": left_label, "type": "bar", "yAxisIndex": 0, "data": [float(left_rows[p].value) for p in periods]}, {"name": right_label, "type": "line", "yAxisIndex": 1, "data": [float(right_rows[p].value) for p in periods]}],
+                        }
+                        ent_display = resolve_ticker(entity) or entity
+                        combo_ch = self._infer_chart_chapter(title=f"{ent_display}{left_label}与{right_label}", chart_type="combo", domain="financials", metrics=[left_name, right_name])
+                        candidates.append(_Candidate(f"{ent_display}{left_label}与{right_label}", "combo", option, ids, f"联合观察{ent_display}的{left_label}和{right_label}", combo_ch, 92, point_evidence_ids=ids))
+                        found = True
+                        break
+                    if found:
+                        combo_count += 1
+                        break
+
+        # Industry chain: prefer structured industry_chain_segments from data-analysis
+        if report.industry_chain_segments:
+            nodes = []
+            links = []
+            ev_ids = []
+            stage_map = {"upstream": "上游", "midstream": "中游", "downstream": "下游"}
+            for seg in report.industry_chain_segments:
+                cat = stage_map.get(seg.get("stage"), "中游")
+                comps = seg.get("representative_companies", [])
+                margin = seg.get("gross_margin_range") or ""
+                ev_ids.extend(seg.get("evidence_record_ids", []))
+                for c in comps:
+                    c_name = resolve_ticker(str(c))
+                    if c_name and c_name != "宏观" and not any(n["name"] == c_name for n in nodes):
+                        node_dict = {"id": f"N{len(nodes)+1}", "name": str(c_name)[:14], "category": cat}
+                        # 仅当实体确有独立归属数据时才标注个股毛利，严禁全量广播相同值
+                        if margin and (c_name == resolve_ticker(report.subject) or c_name in str(report.subject)):
+                            ent_margin = margin if "%" in margin else f"{margin}%"
+                            node_dict["margin"] = f"毛利:{ent_margin}"
+                        else:
+                            node_dict["margin"] = "代表企业"
+                        nodes.append(node_dict)
+                        if sum(1 for n in nodes if n["category"] == cat) >= 6:
+                            break
+
+                # If stage has < 3 companies, supplement with key applications / products if available
+                if sum(1 for n in nodes if n["category"] == cat) < 3:
+                    for kp in seg.get("key_products", []):
+                        kp_clean = str(kp).strip(" []'\"【】")
+                        if (
+                            kp_clean
+                            and 2 <= len(kp_clean) <= 14
+                            and not kp_clean.replace(".", "").isdigit()
+                            and not any(n["name"] == kp_clean for n in nodes)
+                            and not any(bad in kp_clean for bad in ("携手", "投放", "第一批", "截至", "签约", "月", "年", "超", "亿元", "万元", "企业", "公司", "品牌", "合作", "阶段", "报告期"))
+                        ):
+                            node_dict = {
+                                "id": f"N{len(nodes)+1}",
+                                "name": kp_clean[:14],
+                                "category": cat,
+                                "margin": "重点环节",  # 明确标识为产业链环节/赛道，绝不克隆个股毛利
+                            }
+                            nodes.append(node_dict)
+                            if sum(1 for n in nodes if n["category"] == cat) >= 6:
+                                break
+
+            if len(nodes) >= 2:
+                up_ids = [n["id"] for n in nodes if n["category"] == "上游"]
+                mid_ids = [n["id"] for n in nodes if n["category"] == "中游"]
+                down_ids = [n["id"] for n in nodes if n["category"] == "下游"]
+                if up_ids and mid_ids:
+                    min_up_mid = min(len(up_ids), len(mid_ids))
+                    for i in range(min_up_mid):
+                        links.append({"source": up_ids[i], "target": mid_ids[i], "lineStyle": {"color": "#cbd5e1", "width": 1.5, "curveness": 0.0}})
+                if mid_ids and down_ids:
+                    min_mid_down = min(len(mid_ids), len(down_ids))
+                    for i in range(min_mid_down):
+                        links.append({"source": mid_ids[i], "target": down_ids[i], "lineStyle": {"color": "#cbd5e1", "width": 1.5, "curveness": 0.0}})
+                elif up_ids and down_ids and not mid_ids:
+                    min_up_down = min(len(up_ids), len(down_ids))
+                    for i in range(min_up_down):
+                        links.append({"source": up_ids[i], "target": down_ids[i], "lineStyle": {"color": "#cbd5e1", "width": 1.5, "curveness": 0.0}})
+                option = {"legend": {"data": ["上游", "中游", "下游"]}, "series": [{"type": "graph", "layout": "none", "data": nodes, "links": links}]}
+                chain_eids = [eid for eid in dict.fromkeys(ev_ids) if str(eid) in report.evidence_index][:30] or [x.record_id for x in report.evidence_index.values() if x.domain == "industry_chain"][:30] or list(report.evidence_index.keys())[:30]
+                candidates.append(_Candidate(
+                    "产业链结构",
+                    "industry_chain",
+                    option,
+                    chain_eids,
+                    "展示已获证据支持的产业链环节与核心代表企业",
+                    "CH-03",
+                    110,
+                    point_evidence_ids=chain_eids,
+                ))
+        else:
+            chain = [x for x in report.evidence_index.values() if x.domain == "industry_chain"]
+            if chain:
+                raw_nodes = []
+                seen_names = set()
+                for i, row in enumerate(chain[:30]):
+                    label = str(row.entity or row.value or row.metric)[:30]
+                    if label in seen_names:
+                        continue
+                    seen_names.add(label)
+                    text = f"{row.metric} {row.value}"
+                    category = "上游" if "上游" in text else "下游" if "下游" in text else "中游"
+                    raw_nodes.append({"id": f"N{len(raw_nodes)+1}", "name": label, "category": category})
+                if raw_nodes:
+                    nodes, links = self._format_chain_nodes_and_links(raw_nodes)
+                    option = {
+                        "series": [
+                            {
+                                "type": "graph",
+                                "layout": "none",
+                                "data": nodes,
+                                "links": links,
+                                "categories": [{"name": "上游"}, {"name": "中游"}, {"name": "下游"}],
+                                "edgeSymbol": ["circle", "arrow"],
+                                "edgeSymbolSize": [3.5, 8],
+                            }
+                        ]
+                    }
+                    chain_eids = [x.record_id for x in chain[:30]]
+                    # 2026-10-21：确定性兜底也不得在"用户没要产业链图"时硬塞一张。
+                    _fb_types = list(getattr(request.preferences, "requested_types", None) or []) or list(
+                        getattr(request.report, "requested_types", None) or [])
+                    _fb_wants = user_wants_industry_chain(
+                        request.report.subject or "",
+                        getattr(request, "focus_points", None),
+                        explicit=getattr(request, "want_industry_chain", None),
+                        defaulted_focus=getattr(request, "defaulted_focus", False),
+                        requested_types=_fb_types,
+                    )
+                    if _fb_wants:
+                        candidates.append(_Candidate("产业链结构", "industry_chain", option, chain_eids, "展示已获证据支持的产业链环节", "CH-03", 110, point_evidence_ids=chain_eids))
+
+        # Cross-chapter soft rebalancing for fallback candidates (enforce <= 3 per chapter)
+        ch_counts = Counter(c.chapter for c in candidates)
+        for cand in candidates:
+            if ch_counts[cand.chapter] > 3:
+                domain_val = ""
+                metrics_val = []
+                for eid in cand.evidence_ids:
+                    ev = report.evidence_index.get(eid) if report and getattr(report, "evidence_index", None) else None
+                    if ev:
+                        domain_val = domain_val or getattr(ev, "domain", "") or ""
+                        if getattr(ev, "metric", None):
+                            metrics_val.append(str(ev.metric))
+                better_ch = self._infer_chart_chapter(title=cand.title, chart_type=cand.chart_type, domain=domain_val, metrics=metrics_val)
+                if better_ch != cand.chapter and ch_counts[better_ch] < 3:
+                    ch_counts[cand.chapter] -= 1
+                    cand.chapter = better_ch
+                    ch_counts[better_ch] += 1
+
+        return candidates, suppressed
+
+    async def _repair_charts_with_llm(
+        self,
+        candidates: list[_Candidate],
+        violations: list[ChartLinterViolation],
+        request: ChartGenerationRequest,
+        record: Callable[..., Awaitable[None]],
+    ) -> tuple[list[_Candidate], list[SuppressedChart]]:
+        report = request.report
+        feedback_lines = "\n".join(f"- [{v.code}] {v.message}" for v in violations)
+        repair_prompt = f"""【图表质量规则拦截 (Hard Linter Violations)】
+上一次生成的图表未能通过机构级研报质量硬规则检查，拦截原因如下：
+{feedback_lines}
+
+【修正目标】：
+1. 数据适配优先：必须基于数据维度、量纲与样本量选择最清晰直观的表达形态。
+   - 严禁在样本量少于15时滥用箱线图（boxplot）；
+   - 严禁在少量无分级实体上硬套矩形树图（treemap）；
+   - 严禁对同一时序指标重复生成折线图和面积图；
+   - 单指标横向对比优先使用水平条形图（horizontal_bar）或柱状图（bar）；
+2. 挖掘高阶形态：在数据天然支持的前提下，积极采用更专业的多维图表：
+   - 规模与增速结合 ➔ 双轴组合图 (combo: 规模柱状 + 增速折线)；
+   - 单企业多维能力画像 (>=3指标) ➔ 多维雷达图 (radar)；
+   - 结构占比 ➔ 环形图 (donut)；
+   - 收益/现金流正负分化 ➔ 发散条形图 (diverging_bar)；
+   - 估值与收益双维度对标 ➔ 四象限散点图 (scatter)；
+   - 产业链供需环节 ➔ 产业链拓扑图 (industry_chain)。
+3. 严禁捏造不存在的 evidence_id，严禁截断负值零轴。
+请根据研报原始数据，重新输出符合要求的完整 JSON (包含 "charts" 和 "suppressed_charts")。"""
+
+        try:
+            tools = self.skillhub.get_tool_spec()
+
+            def skill_resolver(name: str) -> str | None:
+                skill = self.skillhub.get(name)
+                return f"# Skill: {skill.name}\n\n{skill.instructions}" if skill else None
+
+            called_skills, llm_data = await self.llm.run_skill_and_chart_loop(
+                system_prompt=CHART_AGENT_SYSTEM_PROMPT,
+                user_prompt=repair_prompt,
+                tools=tools,
+                skill_resolver=skill_resolver,
+            )
+            for cs in called_skills:
+                await record("skill_invoked_by_llm", skill=cs.get("skill_name"), reason=f"自愈修正: {cs.get('reason')}")
+
+            new_candidates: list[_Candidate] = []
+            new_suppressed: list[SuppressedChart] = []
+            for chart_dict in llm_data.get("charts", []):
+                if not isinstance(chart_dict, dict):
+                    continue
+                title = str(chart_dict.get("title", "")).strip()
+                chart_type = chart_dict.get("chart_type") or chart_dict.get("type", "bar")
+                if chart_type not in VALID_CHART_TYPES:
+                    chart_type = "bar"
+                raw_eids = (
+                    chart_dict.get("evidence_ids")
+                    or chart_dict.get("evidence_record_ids")
+                    or chart_dict.get("records")
+                    or []
+                )
+                valid_eids = [str(eid) for eid in raw_eids if str(eid) in report.evidence_index]
+                if not valid_eids:
+                    continue
+                option = chart_dict.get("option") or chart_dict.get("echarts_option") or {}
+                table = DataFormulator.formulate(valid_eids, report, target_chart_type=chart_type)
+                if table and (not isinstance(option, dict) or not option or self._has_option_defects(option, chart_type)):
+                    option = EChartsCompiler.compile(table, chart_type, title)
+                elif not isinstance(option, dict) or not option or self._has_option_defects(option, chart_type):
+                    option = self._synthesize_option_from_evidence(chart_type, valid_eids, title, report)
+                if not isinstance(option, dict) or not option:
+                    continue
+                goal = str(chart_dict.get("insight_goal") or chart_dict.get("description") or title)
+                rec_ch = chart_dict.get("recommended_chapter_id")
+                if not rec_ch or rec_ch not in ("CH-01", "CH-02", "CH-03", "CH-04", "CH-05", "CH-06", "CH-07"):
+                    domain_val = ""
+                    metrics_val = []
+                    for eid in valid_eids:
+                        ev = report.evidence_index.get(eid) if report and getattr(report, "evidence_index", None) else None
+                        if ev:
+                            domain_val = domain_val or getattr(ev, "domain", "") or ""
+                            if getattr(ev, "metric", None):
+                                metrics_val.append(str(ev.metric))
+                    chapter = self._infer_chart_chapter(title=title, chart_type=chart_type, domain=domain_val, metrics=metrics_val)
+                else:
+                    chapter = str(rec_ch)
+                footnotes = [str(f) for f in chart_dict.get("footnotes", [])]
+                flat_point_eids = []
+                if table and getattr(table, "point_evidence_ids", None):
+                    for pe_list in table.point_evidence_ids.values():
+                        for eid in pe_list:
+                            if eid and eid not in flat_point_eids:
+                                flat_point_eids.append(eid)
+
+                new_candidates.append(_Candidate(
+                    title=title,
+                    chart_type=chart_type,
+                    option=option,
+                    evidence_ids=valid_eids,
+                    goal=goal,
+                    chapter=chapter,
+                    score=100,
+                    footnotes=footnotes,
+                    point_evidence_ids=flat_point_eids or valid_eids,
+                ))
+            if new_candidates:
+                return new_candidates, new_suppressed
+        except Exception as e:
+            logger.warning(f"LLM chart repair failed: {type(e).__name__}")
+        return [], []
+
+    def _conform_diversity_deterministically(
+        self,
+        candidates: list[_Candidate],
+        request: ChartGenerationRequest,
+    ) -> list[_Candidate]:
+        """Filters and orders candidates strictly by Data-Fitness without forcing unnatural chart types,
+        while reserving essential quotas for core investment research bar charts and constraining macro redundancy."""
+        if len(candidates) < 4:
+            return candidates
+
+        req_types = set(request.preferences.requested_types)
+
+        # 1. Prune candidates that violate Data-Fitness rules
+        filtered: list[_Candidate] = []
+        seen_line_area_eids: dict[frozenset[str], str] = {}
+        seen_semantics: set[tuple[str, str]] = set()
+
+        is_industry = "宏观" not in (request.report.subject or "")
+        macro_combo_metrics: set[str] = set()
+        macro_cands_count = 0
+        max_macro = 1 if (request.preferences.max_charts and request.preferences.max_charts < 10) else 4
+
+        # Identify metrics covered in combo charts for macro redundancy suppression
+        for c in candidates:
+            if c.chart_type == "combo" and self._is_macro_candidate(c, request.report.evidence_index):
+                for eid in c.evidence_ids:
+                    if eid in request.report.evidence_index:
+                        macro_combo_metrics.add(str(request.report.evidence_index[eid].metric))
+
+        for c in candidates:
+            # Boxplot requires >= 15 sample points unless explicitly requested
+            if c.chart_type == "boxplot" and "boxplot" not in req_types and len(c.evidence_ids) < 15:
+                continue
+
+            # Radar requires >= 3 dimensions
+            if c.chart_type == "radar" and "radar" not in req_types:
+                indicators = []
+                if isinstance(c.option, dict):
+                    r_cfg = c.option.get("radar", {})
+                    if isinstance(r_cfg, dict):
+                        indicators = r_cfg.get("indicator", [])
+                    elif isinstance(r_cfg, list) and r_cfg and isinstance(r_cfg[0], dict):
+                        indicators = r_cfg[0].get("indicator", [])
+                if 1 <= len(indicators) < 3:
+                    continue
+
+            # Treemap requires >= 8 items and strictly additive metric
+            if c.chart_type == "treemap":
+                data_items = c.option.get("series", [{}])[0].get("data", []) if isinstance(c.option, dict) else []
+                if len(data_items) < 8 and "treemap" not in req_types:
+                    continue
+                non_additive_keywords = (
+                    "价", "价格", "price", "率", "比", "ratio", "pe", "pb", "ps",
+                    "roe", "roa", "eps", "每股", "收益率", "增速", "增长率", "margin"
+                )
+                title_lower = c.title.lower()
+                cand_metrics = [
+                    str(request.report.evidence_index[eid].metric).lower()
+                    for eid in c.evidence_ids
+                    if eid in request.report.evidence_index and getattr(request.report.evidence_index[eid], "metric", None)
+                ]
+                if any(k in title_lower for k in non_additive_keywords) or any(
+                    any(k in m for k in non_additive_keywords) for m in cand_metrics
+                ):
+                    continue
+
+            # Deduplicate line and area for identical evidence
+            if c.chart_type in ("line", "area") and "area" not in req_types:
+                key = frozenset(c.evidence_ids)
+                if key in seen_line_area_eids:
+                    continue
+                seen_line_area_eids[key] = c.chart_type
+
+            # In industry research report, constrain macro charts and suppress redundant macro metrics
+            if is_industry and self._is_macro_candidate(c, request.report.evidence_index):
+                if c.chart_type in ("line", "area"):
+                    cand_m = {str(request.report.evidence_index[eid].metric) for eid in c.evidence_ids if eid in request.report.evidence_index}
+                    if cand_m and cand_m.issubset(macro_combo_metrics):
+                        continue
+                if macro_cands_count >= max_macro:
+                    continue
+                macro_cands_count += 1
+
+            # Semantic deduplication: if same perspective & primary metric, keep the first (highest-ranked)
+            if not req_types:
+                sem_key = self._candidate_semantic_key(c, request.report.evidence_index)
+                if sem_key in seen_semantics:
+                    continue
+                seen_semantics.add(sem_key)
+            filtered.append(c)
+
+        # P0-5：过滤为空就是空，不允许 `or candidates` 静默回退——
+        # 否则上面所有质量门（boxplot/radar/treemap/宏观配额/语义去重）在全灭时被整体架空。
+        candidates = filtered
+
+        max_charts = request.preferences.max_charts
+        is_unlimited = not max_charts or max_charts <= 0
+        if is_unlimited:
+            max_bars = 9999
+            max_pies = 9999
+        else:
+            max_bars = min(3, max(1, int(max_charts * 0.38))) if max_charts >= 5 else max_charts
+            max_pies = 2 if not req_types else 9999
+
+        # Categorize
+        bars = [c for c in candidates if c.chart_type in BAR_TYPES]
+        non_bars = [c for c in candidates if c.chart_type not in BAR_TYPES]
+
+        bars.sort(key=lambda c: -c.score)
+        by_type: dict[str, list[_Candidate]] = defaultdict(list)
+        for c in non_bars:
+            by_type[c.chart_type].append(c)
+        for ctype in by_type:
+            by_type[ctype].sort(key=lambda c: -c.score)
+
+        conformed: list[_Candidate] = []
+
+        # Balanced Institutional Assembly:
+        # Guarantee priority slots for essential financial comparison bar charts (eliminate reverse elimination)
+        # Slot 1: Industry Chain (topology)
+        if by_type.get("industry_chain"):
+            conformed.append(by_type["industry_chain"].pop(0))
+
+        # Slot 2: Priority Bar 1 (e.g. Revenue YoY or scale comparison)
+        if bars:
+            conformed.append(bars.pop(0))
+
+        # Slot 3: Market Concentration / Structure (donut / pie)
+        for pt in ("donut", "pie"):
+            if by_type.get(pt):
+                conformed.append(by_type[pt].pop(0))
+                break
+
+        # Slot 4: Priority Bar 2 (e.g. Net profit YoY or diverging comparison)
+        current_bars = sum(1 for c in conformed if c.chart_type in BAR_TYPES)
+        if bars and (is_unlimited or (len(conformed) < max_charts and current_bars < max_bars)):
+            conformed.append(bars.pop(0))
+
+        # Slot 5: Multivariate Positioning (bubble / scatter)
+        for st in ("bubble", "scatter"):
+            if by_type.get(st):
+                conformed.append(by_type[st].pop(0))
+                break
+
+        # Slot 6: Macro Benchmark or Industry Trend (combo)
+        if by_type.get("combo"):
+            conformed.append(by_type["combo"].pop(0))
+
+        # Slot 7: Priority Bar 3 (if budget permits)
+        current_bars = sum(1 for c in conformed if c.chart_type in BAR_TYPES)
+        if bars and (is_unlimited or (len(conformed) < max_charts and current_bars < max_bars)):
+            conformed.append(bars.pop(0))
+
+        # Slot 8: Timeseries curve (line / area)
+        for lt in ("line", "area"):
+            if by_type.get(lt):
+                conformed.append(by_type[lt].pop(0))
+                break
+
+        # Additional non-bars (heatmap, radar, etc.)
+        for ctype in sorted(by_type.keys(), key=lambda t: (t != "heatmap", t != "radar", t != "treemap", t != "boxplot", t)):
+            if by_type[ctype]:
+                conformed.append(by_type[ctype].pop(0))
+
+        # Fill remaining allowable bars
+        current_bars = sum(1 for c in conformed if c.chart_type in BAR_TYPES)
+        while bars and (is_unlimited or current_bars < max_bars):
+            conformed.append(bars.pop(0))
+            current_bars += 1
+
+        # Fill remaining non-bars (observing max_pies limit for donut/pie)
+        current_pies = sum(1 for c in conformed if c.chart_type in ("donut", "pie"))
+        for ctype, items in by_type.items():
+            if ctype in ("donut", "pie"):
+                for it in items:
+                    if current_pies < max_pies:
+                        conformed.append(it)
+                        current_pies += 1
+            else:
+                conformed.extend(items)
+
+        # Fill remaining bars
+        conformed.extend(bars)
+
+        if not is_unlimited and max_charts:
+            return conformed[:max_charts]
+        return conformed

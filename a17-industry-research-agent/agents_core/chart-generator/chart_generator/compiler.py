@@ -1,0 +1,656 @@
+"""Declarative ECharts Compiler (inspired by AntV MCP Server and grammar-of-graphics).
+
+Compiles a NormalizedDataTable into a robust, publication-grade
+ECharts option with collision avoidance, dual-axis zero alignment, and typography tokens.
+"""
+
+from __future__ import annotations
+
+from enum import Enum
+import math
+from typing import Any
+
+
+from .data_formulation import AxisType, NormalizedDataTable
+from .render import _calc_dual_ticks
+
+
+class ChartArchetype(str, Enum):
+    RANKING_HORIZONTAL_BAR = "ranking_horizontal_bar"  # 规模横向梯级排序柱状图
+    COMPARISON_BAR = "comparison_bar"                  # 截面横向对比柱状图
+    TIME_SERIES_LINE = "time_series_line"              # 时序走势折线图
+    DUAL_AXIS_COMBO = "dual_axis_combo"                # 规模-效益双轴组合图
+    DIVERGING_BAR = "diverging_bar"                    # 正负偏离/涨跌幅分布图
+    STRUCTURE_DONUT = "structure_donut"                # 结构环形图
+    RADAR = "radar"                                    # 多维雷达图
+    SCATTER = "scatter"                                # 散点分布图
+    INDUSTRY_CHAIN = "industry_chain"                  # 产业链拓扑图
+
+
+# Publication-grade colors (CICC / Top-Tier Institutional Research Inspired)
+PRIMARY_COLOR = "#1B365D"       # CICC Deep Blue
+ACCENT_COLOR = "#D52B1E"        # HSBC Brick Red
+AMBER_COLOR = "#D97706"         # Resilient Amber / Gold
+SECONDARY_COLOR = "#0f766e"     # Deep Teal
+NEUTRAL_COLOR = "#64748B"       # Slate Grey
+PURPLE_COLOR = "#6941c6"        # Deep Violet
+NEGATIVE_COLOR = "#D52B1E"      # Risk / Deficit Red
+PALETTE = [PRIMARY_COLOR, ACCENT_COLOR, AMBER_COLOR, SECONDARY_COLOR, NEUTRAL_COLOR, PURPLE_COLOR]
+
+
+def _safe_min(vals: list[Any], default: float = 0.0) -> float:
+    valid = [float(v) for v in vals if v is not None and isinstance(v, (int, float))]
+    return min(valid) if valid else default
+
+
+def _safe_max(vals: list[Any], default: float = 100.0) -> float:
+    valid = [float(v) for v in vals if v is not None and isinstance(v, (int, float))]
+    return max(valid) if valid else default
+
+
+
+def _category_labels(count: int, *, horizontal: bool = False) -> dict[str, Any]:
+    """Keep each bar identifiable in live ECharts as well as exported SVG."""
+    return dict(interval=0, fontSize=12, lineHeight=16, hideOverlap=False,
+                width=120 if horizontal else max(35, 720 / max(count, 1) - 5), overflow="break")
+
+
+class EChartsCompiler:
+    """Deterministic compiler turning structured tables into safe, elegant ECharts options."""
+
+    @staticmethod
+    def _resolve_axis_unit(table: NormalizedDataTable) -> str:
+        """返回共享轴的唯一单位；同轴出现多种单位时拒绝编译（R3 §6.3.3）。
+
+        旧实现（`_compile_bar` 等）在循环里不断覆盖 `unit`，最终用**最后一个
+        系列**的单位给整根轴命名——甲是万元、乙是亿元时，轴标「亿元」而甲的
+        数值仍是万元，差 1 万倍。这里要求同轴单位必须一致，否则明确报错，
+        由上游在 formulation 层统一单位后重试。
+        """
+        units = {
+            str(u) for u in (table.series_units or {}).values() if str(u or "").strip()
+        }
+        if len(units) > 1:
+            raise ValueError(
+                f"同一根轴出现多种单位 {sorted(units)}，拒绝按最后一个系列命名轴；"
+                "请先在 data_formulation 层统一目标单位"
+            )
+        return next(iter(units)) if units else ""
+
+    @staticmethod
+    def compile(
+        table: NormalizedDataTable,
+        chart_type: str | ChartArchetype,
+        title: str,
+    ) -> dict[str, Any]:
+        """Compiles NormalizedDataTable into full publication-grade ECharts option."""
+        # Clean canonical type string
+        t_str = chart_type.value if isinstance(chart_type, ChartArchetype) else str(chart_type).lower()
+
+        base_grid = {
+            "containLabel": True,
+            "left": 50,
+            "right": 32,
+            "top": 38,
+            "bottom": 28,
+        }
+
+        # 1. Dual-Axis Combo
+        if t_str in ("combo", "dual_axis_combo", "dual_axis"):
+            return EChartsCompiler._compile_combo(table, title, base_grid)
+
+        # 2. Horizontal Bar (Ranking)
+        if t_str in ("horizontal_bar", "ranking_horizontal_bar"):
+            return EChartsCompiler._compile_horizontal_bar(table, title, base_grid)
+
+        # 3. Diverging Bar (e.g. positive/negative returns)
+        if t_str in ("diverging_bar", "diverging"):
+            return EChartsCompiler._compile_diverging_bar(table, title, base_grid)
+
+        # 4. Standard Bar / Comparison Bar
+        if t_str in ("bar", "comparison_bar"):
+            return EChartsCompiler._compile_bar(table, title, base_grid)
+
+        # 5. Line / Area / Time-Series Line
+        if t_str in ("line", "area", "time_series_line"):
+            is_area = t_str == "area"
+            return EChartsCompiler._compile_line(table, title, base_grid, area=is_area)
+
+        # 6. Donut / Pie
+        if t_str in ("pie", "donut", "structure_donut"):
+            metric_check = f"{table.primary_series_name or ''} {title}".lower()
+            is_non_additive = any(k in metric_check for k in ("率", "比", "价", "price", "pe", "pb", "ps", "roe", "roa", "eps", "每股", "收益率", "增速", "增长率", "margin", "ratio", "yoy", "growth"))
+            if is_non_additive:
+                # 严格拦截率值/比率指标进入环形图，自动安全降级为对比柱状图 (DEF-02)
+                return EChartsCompiler._compile_bar(table, title, base_grid)
+            return EChartsCompiler._compile_pie_donut(table, title, donut=(t_str in ("donut", "structure_donut")))
+
+        # 7. Radar
+        if t_str == "radar":
+            return EChartsCompiler._compile_radar(table, title)
+
+        # 8. Scatter / Bubble (2D quadrant positioning)
+        if t_str in ("scatter", "bubble"):
+            return EChartsCompiler._compile_scatter(table, title, base_grid)
+
+        # 9. Industry Chain (Graph layout)
+        if t_str in ("industry_chain", "graph"):
+            return EChartsCompiler._compile_industry_chain(table, title)
+
+        # Fallback to bar or line
+        if table.axis_type == AxisType.TIME_SERIES:
+            return EChartsCompiler._compile_line(table, title, base_grid)
+        return EChartsCompiler._compile_bar(table, title, base_grid)
+
+    @staticmethod
+    def _compile_combo(table: NormalizedDataTable, title: str, grid: dict[str, Any]) -> dict[str, Any]:
+        """Compiles dual-axis combo with synchronized zero line."""
+        series_names = list(table.series_data.keys())
+        s1_name = table.primary_series_name or series_names[0]
+        s2_name = table.secondary_series_name or (series_names[1] if len(series_names) > 1 else None)
+
+        # If second series is missing or identical, fallback to clean bar chart to avoid duplicate lines
+        if not s2_name or s1_name == s2_name:
+            return EChartsCompiler._compile_bar(table, title, grid)
+
+        data1 = table.series_data.get(s1_name, [])
+        data2 = table.series_data.get(s2_name, [])
+        unit1 = table.series_units.get(s1_name, "")
+        unit2 = table.series_units.get(s2_name, "")
+
+        min1, max1 = _safe_min(data1, 0.0), _safe_max(data1, 100.0)
+        min2, max2 = _safe_min(data2, 0.0), _safe_max(data2, 100.0)
+
+        l_ticks, r_ticks = _calc_dual_ticks(min1, max1, min2, max2, 4)
+        step1 = round(l_ticks[1] - l_ticks[0], 6) if len(l_ticks) > 1 else 1.0
+        step2 = round(r_ticks[1] - r_ticks[0], 6) if len(r_ticks) > 1 else 1.0
+
+        # Ensure sensible bounds with synchronized zero line
+        y_axis_1: dict[str, Any] = {
+            "type": "value",
+            "name": unit1,
+            "min": l_ticks[0],
+            "max": l_ticks[-1],
+            "interval": step1,
+            "splitNumber": len(l_ticks) - 1,
+            "axisLine": {"show": True, "lineStyle": {"color": "#94a3b8"}},
+            "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}},
+        }
+        y_axis_2: dict[str, Any] = {
+            "type": "value",
+            "name": unit2,
+            "min": r_ticks[0],
+            "max": r_ticks[-1],
+            "interval": step2,
+            "splitNumber": len(r_ticks) - 1,
+            "axisLine": {"show": True, "lineStyle": {"color": "#94a3b8"}},
+            "splitLine": {"show": False},
+        }
+
+        return {
+            "tooltip": {"trigger": "axis", "axisPointer": {"type": "cross"}},
+            "legend": {"data": [s1_name, s2_name], "top": 4},
+            "grid": grid,
+            "xAxis": {
+                "type": "category",
+                "data": table.categories,
+                "axisLabel": _category_labels(len(table.categories)),
+            },
+            "yAxis": [y_axis_1, y_axis_2],
+            "series": [
+                {
+                    "name": s1_name,
+                    "type": "bar",
+                    "yAxisIndex": 0,
+                    "data": data1,
+                    "itemStyle": {"color": PRIMARY_COLOR, "borderRadius": [3, 3, 0, 0]},
+                },
+                {
+                    "name": s2_name,
+                    "type": "line",
+                    "yAxisIndex": 1,
+                    "connectNulls": False,
+                    "data": data2,
+                    "itemStyle": {"color": ACCENT_COLOR},
+                    "lineStyle": {"width": 2.5},
+                    "symbol": "circle",
+                    "symbolSize": 6,
+                },
+            ],
+        }
+
+
+    @staticmethod
+    def _compile_horizontal_bar(table: NormalizedDataTable, title: str, grid: dict[str, Any]) -> dict[str, Any]:
+        """Compiles ranking horizontal bar."""
+        series_name = table.primary_series_name
+        data = table.series_data.get(series_name, [])
+        unit = table.series_units.get(series_name, "")
+        min_v = _safe_min(data, 0.0)
+
+        pos_vals = sorted([v for v in data if isinstance(v, (int, float)) and v > 0])
+        has_extreme_outlier = False
+        if len(pos_vals) >= 4:
+            median_v = pos_vals[len(pos_vals) // 2]
+            max_v = pos_vals[-1]
+            if median_v > 0 and max_v > 5 * median_v and max_v >= 100:
+                has_extreme_outlier = True
+
+        series_item: dict[str, Any] = {
+            "name": series_name,
+            "type": "bar",
+            "data": data,
+            "itemStyle": {"color": PRIMARY_COLOR, "borderRadius": [0, 4, 4, 0]},
+        }
+        if has_extreme_outlier:
+            series_item["markPoint"] = {
+                "data": [{"type": "max", "name": "离群极值"}],
+                "symbol": "pin",
+                "symbolSize": 36,
+                "label": {"fontSize": 10, "color": "#ffffff"},
+                "itemStyle": {"color": "#e11d48"},
+            }
+
+        return {
+            "tooltip": {"trigger": "axis"},
+            "grid": grid,
+            "yAxis": {
+                "type": "category",
+                "data": table.categories,
+                "inverse": True,
+                "axisLabel": _category_labels(len(table.categories), horizontal=True),
+                "axisLine": {"lineStyle": {"color": "#94a3b8"}},
+            },
+            "xAxis": {
+                "type": "value",
+                "name": unit,
+                "min": min(0.0, min_v),
+                "splitNumber": 4,
+                "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}},
+            },
+            "series": [series_item],
+        }
+
+    @staticmethod
+    def _compile_diverging_bar(table: NormalizedDataTable, title: str, grid: dict[str, Any]) -> dict[str, Any]:
+        """Compiles diverging bar with positive (green/blue) and negative (red) color coding."""
+        series_name = table.primary_series_name
+        data = table.series_data.get(series_name, [])
+        unit = table.series_units.get(series_name, "%")
+
+        colored_data = []
+        for v in data:
+            if v is None:
+                colored_data.append({"value": None})
+            else:
+                color = PRIMARY_COLOR if v >= 0 else NEGATIVE_COLOR
+                colored_data.append({"value": v, "itemStyle": {"color": color, "borderRadius": [2, 2, 2, 2]}})
+
+        min_v = _safe_min(data, 0.0)
+
+        return {
+            "tooltip": {"trigger": "axis"},
+            "grid": grid,
+            "xAxis": {
+                "type": "category",
+                "data": table.categories,
+                "axisLine": {"onZero": True, "lineStyle": {"color": "#64748b"}},
+                "axisLabel": _category_labels(len(table.categories)),
+            },
+            "yAxis": {
+                "type": "value",
+                "name": unit,
+                "min": min(0.0, min_v),
+                "splitNumber": 4,
+                "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}},
+            },
+            "series": [
+                {
+                    "name": series_name,
+                    "type": "bar",
+                    "data": colored_data,
+                }
+            ],
+        }
+
+    @staticmethod
+    def _compile_bar(table: NormalizedDataTable, title: str, grid: dict[str, Any]) -> dict[str, Any]:
+        """Compiles single or multi-series vertical bar chart."""
+        series_list = []
+        unit = EChartsCompiler._resolve_axis_unit(table)
+        for i, (s_name, s_data) in enumerate(table.series_data.items()):
+            series_list.append({
+                "name": s_name,
+                "type": "bar",
+                "data": s_data,
+                "itemStyle": {"color": PALETTE[i % len(PALETTE)], "borderRadius": [3, 3, 0, 0]},
+            })
+
+        all_vals = [v for s_data in table.series_data.values() for v in s_data if isinstance(v, (int, float))]
+        min_v = _safe_min(all_vals, 0.0)
+
+        # 极值离群点自动标注与保护（当样本量 >= 4 且最大值 > 5 倍中位数且 >= 100 时，添加 markPoint 标注）
+        pos_vals = sorted([v for v in all_vals if v > 0])
+        has_extreme_outlier = False
+        if len(pos_vals) >= 4:
+            median_v = pos_vals[len(pos_vals) // 2]
+            max_v = pos_vals[-1]
+            if median_v > 0 and max_v > 5 * median_v and max_v >= 100:
+                has_extreme_outlier = True
+
+        if has_extreme_outlier and series_list:
+            series_list[0]["markPoint"] = {
+                "data": [{"type": "max", "name": "离群极值"}],
+                "symbol": "pin",
+                "symbolSize": 36,
+                "label": {"fontSize": 10, "color": "#ffffff"},
+                "itemStyle": {"color": "#e11d48"},
+            }
+
+        opt: dict[str, Any] = {
+            "tooltip": {"trigger": "axis"},
+            "grid": grid,
+            "xAxis": {
+                "type": "category",
+                "data": table.categories,
+                "axisLine": {"lineStyle": {"color": "#94a3b8"}},
+                "axisLabel": _category_labels(len(table.categories)),
+            },
+            "yAxis": {
+                "type": "value",
+                "name": unit,
+                "min": min(0, min_v),
+                "splitNumber": 4,
+                "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}},
+            },
+            "series": series_list,
+        }
+        if len(series_list) > 1:
+            opt["legend"] = {"data": [s["name"] for s in series_list], "top": 4}
+        return opt
+
+    @staticmethod
+    def _compile_line(table: NormalizedDataTable, title: str, grid: dict[str, Any], area: bool = False) -> dict[str, Any]:
+        """Compiles single or multi-series line/area chart."""
+        series_list = []
+        # R3：轴单位统一解析（同轴混合单位直接拒绝，不取最后一个系列）
+        unit = EChartsCompiler._resolve_axis_unit(table)
+        for i, (s_name, s_data) in enumerate(table.series_data.items()):
+            s_dict: dict[str, Any] = {
+                "name": s_name,
+                "type": "line",
+                "data": s_data,
+                "connectNulls": False,
+                "itemStyle": {"color": PALETTE[i % len(PALETTE)]},
+                "lineStyle": {"width": 2.2},
+                "symbol": "circle",
+                "symbolSize": 5,
+            }
+            if area:
+                s_dict["areaStyle"] = {"opacity": 0.15}
+            series_list.append(s_dict)
+
+        opt: dict[str, Any] = {
+            "tooltip": {"trigger": "axis"},
+            "grid": grid,
+            "xAxis": {
+                "type": "category",
+                "data": table.categories,
+                "axisLine": {"lineStyle": {"color": "#94a3b8"}},
+            },
+            "yAxis": {
+                "type": "value",
+                "name": unit,
+                "splitNumber": 4,
+                "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}},
+            },
+            "series": series_list,
+        }
+        if len(series_list) > 1:
+            opt["legend"] = {"data": [s["name"] for s in series_list], "top": 4}
+        return opt
+
+    @staticmethod
+    def _compile_pie_donut(table: NormalizedDataTable, title: str, donut: bool = True) -> dict[str, Any]:
+        """Compiles structure donut/pie chart."""
+        series_name = table.primary_series_name
+        data = table.series_data.get(series_name, [])
+        pie_data = [{"name": cat, "value": abs(v)} for cat, v in zip(table.categories, data) if v is not None]
+        radius = ["36%", "68%"] if donut else [0, "68%"]
+
+        return {
+            "tooltip": {"trigger": "item"},
+            "legend": {"orient": "horizontal", "bottom": "bottom", "itemWidth": 12, "itemHeight": 8},
+            "series": [
+                {
+                    "name": series_name,
+                    "type": "pie",
+                    "radius": radius,
+                    "data": pie_data,
+                    "color": PALETTE,
+                    "label": {"show": True, "formatter": "{b}: {d}%"},
+                }
+            ],
+        }
+
+    @staticmethod
+    def _compile_radar(table: NormalizedDataTable, title: str) -> dict[str, Any]:
+        """Compiles multi-dimensional radar chart."""
+        indicators = []
+        for i, cat in enumerate(table.categories):
+            cat_vals = [
+                vals[i] for vals in table.series_data.values()
+                if i < len(vals) and vals[i] is not None
+            ]
+            max_v = max([abs(v) for v in cat_vals]) if cat_vals else 100
+            ind_max = 100 if all(0 <= v <= 100 for v in cat_vals) and max_v <= 100 else round(max(max_v * 1.25, 10), 2)
+            indicators.append({"name": cat, "max": ind_max})
+
+        series_data = []
+        for idx, (ent, vals) in enumerate(table.series_data.items()):
+            color = PALETTE[idx % len(PALETTE)]
+            series_data.append({
+                "name": ent,
+                "value": vals,
+                "itemStyle": {"color": color},
+                "areaStyle": {"opacity": 0.2},
+            })
+
+        return {
+            "tooltip": {"trigger": "item"},
+            "legend": {"data": list(table.series_data.keys()), "top": 4},
+            "radar": {"indicator": indicators},
+            "series": [
+                {
+                    "name": title,
+                    "type": "radar",
+                    "data": series_data,
+                }
+            ],
+        }
+
+    @staticmethod
+    def _compile_scatter(table: NormalizedDataTable, title: str, grid: dict[str, Any]) -> dict[str, Any]:
+        """Compiles 2D quadrant scatter positioning chart with crosshair references."""
+        series_names = list(table.series_data.keys())
+        x_metric = table.primary_series_name or (series_names[0] if series_names else "X轴")
+        y_metric = table.secondary_series_name or (series_names[1] if len(series_names) > 1 else x_metric)
+
+        x_vals = table.series_data.get(x_metric, [])
+        y_vals = table.series_data.get(y_metric, [])
+        x_unit = table.series_units.get(x_metric, "")
+        y_unit = table.series_units.get(y_metric, "")
+
+        scatter_data = []
+        for i, cat in enumerate(table.categories):
+            xv = x_vals[i] if i < len(x_vals) else None
+            yv = y_vals[i] if i < len(y_vals) else None
+            if xv is not None and yv is not None:
+                scatter_data.append({
+                    "name": cat,
+                    "value": [xv, yv, cat],
+                })
+
+        x_nums = [d["value"][0] for d in scatter_data]
+        y_nums = [d["value"][1] for d in scatter_data]
+        x_min = min(x_nums) if x_nums else 0
+        x_max = max(x_nums) if x_nums else 100
+        y_min = min(y_nums) if y_nums else 0
+        y_max = max(y_nums) if y_nums else 100
+
+        x_pad = max((x_max - x_min) * 0.15, 1.0)
+        y_pad = max((y_max - y_min) * 0.15, 1.0)
+
+        return {
+            "tooltip": {
+                "trigger": "item",
+                "formatter": "{b}<br/>"
+                + f"{x_metric}: "
+                + "{c[0]}"
+                + (f" {x_unit}" if x_unit else "")
+                + "<br/>"
+                + f"{y_metric}: "
+                + "{c[1]}"
+                + (f" {y_unit}" if y_unit else ""),
+            },
+            "grid": grid,
+            "xAxis": {
+                "type": "value",
+                "name": f"{x_metric} ({x_unit})" if x_unit else x_metric,
+                "min": math.floor(x_min - x_pad if x_min < 0 else max(0, x_min - x_pad)),
+                "max": math.ceil(x_max + x_pad),
+                "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}},
+            },
+            "yAxis": {
+                "type": "value",
+                "name": f"{y_metric} ({y_unit})" if y_unit else y_metric,
+                "min": math.floor(y_min - y_pad if y_min < 0 else max(0, y_min - y_pad)),
+                "max": math.ceil(y_max + y_pad),
+                "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}},
+            },
+            "series": [
+                {
+                    "name": title,
+                    "type": "scatter",
+                    "symbolSize": 14,
+                    "data": scatter_data,
+                    "itemStyle": {"color": PRIMARY_COLOR},
+                    "label": {
+                        "show": True,
+                        "position": "right",
+                        "formatter": "{b}",
+                        "fontSize": 11,
+                        "color": "#344054",
+                    },
+                    "markLine": {
+                        "lineStyle": {"type": "dashed", "color": "#94a3b8", "width": 1},
+                        "data": [
+                            {"type": "average", "name": f"均值线 ({y_metric})", "valueIndex": 1},
+                            {"type": "average", "name": f"均值线 ({x_metric})", "valueIndex": 0},
+                        ],
+                    },
+                }
+            ],
+        }
+
+    @staticmethod
+    def _compile_industry_chain(table: NormalizedDataTable, title: str) -> dict[str, Any]:
+        """Compiles industry chain topology graph option with coordinates and categories."""
+        cats = table.categories or []
+        nodes = []
+        links = []
+        n = len(cats)
+        stage_x = {"上游": 180, "中游": 500, "下游": 820}
+        counts: dict[str, int] = {"上游": 0, "中游": 0, "下游": 0}
+
+        cat_assignments: list[str] = []
+        for i, c in enumerate(cats):
+            c_text = str(c).lower()
+            if any(k in c_text for k in ("上游", "原料", "材料", "元器件", "核心部件", "供给", "供应", "设备", "芯片", "资源", "研发", "原药", "基建", "零部件", "饲料", "育种", "晶圆", "电池", "正极", "负极", "电解液", "隔膜")):
+                cat_name = "上游"
+            elif any(k in c_text for k in ("中游", "制造", "加工", "系统", "集成", "组装", "整机", "生产", "成套", "装备", "代工", "平台", "模型", "产品", "器件", "本体", "整车", "主机厂")):
+                cat_name = "中游"
+            elif any(k in c_text for k in ("下游", "应用", "场景", "运营", "服务", "渠道", "销售", "终端", "分销", "零售", "商业", "消费", "交付", "客户", "出行", "充换电")):
+                cat_name = "下游"
+            else:
+                cat_name = "上游" if i < max(1, n // 3) else ("下游" if i >= 2 * n // 3 else "中游")
+            cat_assignments.append(cat_name)
+            counts[cat_name] += 1
+
+        # Rebalance if any stage is completely empty and total items >= 3
+        if n >= 3:
+            for target_stage in ["下游", "上游", "中游"]:
+                if counts[target_stage] == 0:
+                    donor_stage = max(counts, key=lambda s: counts[s])
+                    if counts[donor_stage] >= 2:
+                        for idx in range(n - 1, -1, -1):
+                            if cat_assignments[idx] == donor_stage:
+                                cat_assignments[idx] = target_stage
+                                counts[donor_stage] -= 1
+                                counts[target_stage] += 1
+                                break
+
+        cur_idx: dict[str, int] = {"上游": 0, "中游": 0, "下游": 0}
+        for i, c in enumerate(cats):
+            cat_name = cat_assignments[i]
+            s_val = None
+            if table.primary_series_name and table.series_data.get(table.primary_series_name):
+                s_val = table.series_data[table.primary_series_name][i] if i < len(table.series_data[table.primary_series_name]) else None
+
+            k = counts[cat_name]
+            step_y = 0 if k <= 1 else min(75, 260 / (k - 1))
+            start_y = 210 if k <= 1 else 105 + (260 - (k - 1) * step_y) / 2
+            y = int(start_y + cur_idx[cat_name] * step_y)
+            cur_idx[cat_name] += 1
+
+            node_dict: dict[str, Any] = {
+                "id": f"N{i+1}",
+                "name": str(c)[:16],
+                "category": cat_name,
+                "x": stage_x.get(cat_name, 500),
+                "y": y,
+                "symbol": "roundRect",
+                "symbolSize": [180, 48],
+            }
+            if s_val is not None:
+                p_name = str(table.primary_series_name or "").lower()
+                is_margin_metric = any(k in p_name for k in ("毛利", "margin", "净利", "扣非", "收益率"))
+                if is_margin_metric:
+                    val_str = f"{s_val:.1f}%" if isinstance(s_val, (int, float)) else str(s_val)
+                    node_dict["margin"] = val_str if val_str.endswith("%") else f"{val_str}%"
+                else:
+                    node_dict["margin"] = "核心供给" if cat_name == "上游" else ("核心制造" if cat_name == "中游" else "终端应用")
+            nodes.append(node_dict)
+
+        up_ids = [n["id"] for n in nodes if n.get("category") == "上游"]
+        mid_ids = [n["id"] for n in nodes if n.get("category") == "中游"]
+        down_ids = [n["id"] for n in nodes if n.get("category") == "下游"]
+
+        if up_ids and mid_ids:
+            min_up_mid = min(len(up_ids), len(mid_ids))
+            for i in range(min_up_mid):
+                links.append({"source": up_ids[i], "target": mid_ids[i], "lineStyle": {"color": "#cbd5e1", "width": 1.5, "curveness": 0.0}})
+        if mid_ids and down_ids:
+            min_mid_down = min(len(mid_ids), len(down_ids))
+            for i in range(min_mid_down):
+                links.append({"source": mid_ids[i], "target": down_ids[i], "lineStyle": {"color": "#cbd5e1", "width": 1.5, "curveness": 0.0}})
+        elif up_ids and down_ids and not mid_ids:
+            min_up_down = min(len(up_ids), len(down_ids))
+            for i in range(min_up_down):
+                links.append({"source": up_ids[i], "target": down_ids[i], "lineStyle": {"color": "#cbd5e1", "width": 1.5, "curveness": 0.0}})
+
+        return {
+            "title": {"text": title},
+            "series": [
+                {
+                    "type": "graph",
+                    "layout": "none",
+                    "data": nodes,
+                    "links": links,
+                    "categories": [{"name": "上游"}, {"name": "中游"}, {"name": "下游"}],
+                    "edgeSymbol": ["circle", "arrow"],
+                    "edgeSymbolSize": [3.5, 8],
+                }
+            ],
+        }
+

@@ -1,0 +1,1 @@
+{"domains":["financials","companies"],"keywords":["财务体检","造假","法证","Z值","M值","营运资本","偿债","应收","存货","商誉","红旗"],"requires_signal":true,"source":"skills包/上市公司财报体检/SKILL.md","adaptation":"作为单公司法证财务专题补充，避免与通用三表 Skill 同时重复展开。"}

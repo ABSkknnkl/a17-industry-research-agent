@@ -1,0 +1,5 @@
+{
+  "always": true,
+  "source": "skills包/投行材料质检/SKILL.md",
+  "adaptation": "保留数字、叙事、语言和格式一致性检查；移除人工审批和演示文稿操作。"
+}

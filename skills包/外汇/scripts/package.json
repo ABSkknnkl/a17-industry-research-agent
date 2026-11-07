@@ -1,0 +1,22 @@
+{
+  "name": "currency-skills",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^25.5.0",
+    "ai": "^6.0.116",
+    "typescript": "^5.9.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "vitest": "^4.1.0"
+  }
+}

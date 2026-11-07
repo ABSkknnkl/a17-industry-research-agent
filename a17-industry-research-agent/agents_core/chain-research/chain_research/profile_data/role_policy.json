@@ -1,0 +1,209 @@
+{
+  "schema": "activity-role-policy/1",
+  "reviewed_at": "2026-10-31",
+  "scope_note": "本轮只复核活动级角色政策（允许角色、品牌/代工隔离、种子上限）。不核验企业业务事实；role_status 仍为 candidate。",
+  "registry_release": "2026-10-31-r1",
+  "profiles": {
+    "liquor": {
+      "theme_id": "theme-白酒",
+      "brand_odm_split": {
+        "brand_activity": "brand",
+        "contract_activity": null,
+        "note": "白酒以自建产能与品牌为主，无独立 ODM 活动；若未来引入代工须单列 activity，不得并入 brand"
+      },
+      "activities": {
+        "grain": {
+          "allowed_role_tokens": [
+            "raw_material_supplier"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 6,
+          "review_notes": "上游原料（高粱/小麦/大米等）供应商；名单里 tier=龙头/核心 的主体不得直接当作原料供应商"
+        },
+        "packaging": {
+          "allowed_role_tokens": [
+            "packaging_supplier"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 6,
+          "review_notes": "包装材料（瓶/盖/盒）独立于酿造，不与 brand 混用"
+        },
+        "fermentation": {
+          "allowed_role_tokens": [],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 0,
+          "review_notes": "厂内制曲与糖化发酵工序，无独立外部供应商；保留结构位置、不填公司"
+        },
+        "aging": {
+          "allowed_role_tokens": [],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 0,
+          "review_notes": "厂内蒸馏与陈酿老熟工序，无外部主体"
+        },
+        "blending": {
+          "allowed_role_tokens": [],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 0,
+          "review_notes": "厂内勾调、灌装与内部品控工序；包装材料归 packaging"
+        },
+        "brand": {
+          "allowed_role_tokens": [
+            "brand"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 8,
+          "review_notes": "品牌与生产商归此活动；旧名单把茅台/五粮液列 downstream 是视角差异，按活动归位而非全局 stage 替换"
+        },
+        "channels": {
+          "allowed_role_tokens": [
+            "channel",
+            "retailer"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 6,
+          "review_notes": "渠道/零售独立；不把品牌方算作渠道"
+        },
+        "use": {
+          "allowed_role_tokens": [],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 0,
+          "review_notes": "消费场景：无企业主体，不填公司"
+        },
+        "service": {
+          "allowed_role_tokens": [
+            "service_provider"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 4,
+          "review_notes": "检测/仓储/回收等服务方；不与生产商混用"
+        }
+      }
+    },
+    "notebook": {
+      "theme_id": "theme-消费电子",
+      "brand_odm_split": {
+        "brand_activity": "brand",
+        "contract_activity": "odm",
+        "note": "联想/苹果/戴尔等为整机品牌；华勤技术/龙旗等为 ODM/代工执行者，必须分列，不得混为「整机制造与总装」"
+      },
+      "activities": {
+        "compute": {
+          "allowed_role_tokens": [
+            "component_supplier",
+            "chip_designer"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 6,
+          "review_notes": "CPU/平台；芯片设计商与整机品牌不混用"
+        },
+        "graphics": {
+          "allowed_role_tokens": [
+            "component_supplier",
+            "chip_designer"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 6,
+          "review_notes": "GPU；独立显卡与核显均归此活动"
+        },
+        "memory": {
+          "allowed_role_tokens": [
+            "component_supplier",
+            "storage_vendor"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 6,
+          "review_notes": "DRAM；存储原厂与模组厂区分"
+        },
+        "storage": {
+          "allowed_role_tokens": [
+            "component_supplier",
+            "storage_vendor"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 6,
+          "review_notes": "NAND/SSD"
+        },
+        "display": {
+          "allowed_role_tokens": [
+            "component_supplier",
+            "display_vendor"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 6,
+          "review_notes": "显示模组/面板"
+        },
+        "power": {
+          "allowed_role_tokens": [
+            "component_supplier"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 5,
+          "review_notes": "电池与电源适配器"
+        },
+        "mechanical": {
+          "allowed_role_tokens": [
+            "component_supplier"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 5,
+          "review_notes": "结构件/散热/连接器"
+        },
+        "design": {
+          "allowed_role_tokens": [],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 0,
+          "review_notes": "设计验证为厂内/服务环节，无独立主体时不填"
+        },
+        "odm": {
+          "allowed_role_tokens": [
+            "odm"
+          ],
+          "policy_status": "reviewed_structure",
+          "brand_odm_isolation": true,
+          "seed_limit": 6,
+          "review_notes": "ODM/代工执行者；品牌方不得进入此活动"
+        },
+        "brand": {
+          "allowed_role_tokens": [
+            "brand"
+          ],
+          "policy_status": "reviewed_structure",
+          "brand_odm_isolation": true,
+          "seed_limit": 8,
+          "review_notes": "整机品牌；ODM 不得进入此活动"
+        },
+        "channel": {
+          "allowed_role_tokens": [
+            "channel",
+            "retailer"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 5,
+          "review_notes": "零售与分销"
+        },
+        "use": {
+          "allowed_role_tokens": [],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 0,
+          "review_notes": "办公学习/专业应用场景，无企业主体"
+        },
+        "ecosystem": {
+          "allowed_role_tokens": [
+            "software_vendor"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 4,
+          "review_notes": "系统软件与生态"
+        },
+        "service": {
+          "allowed_role_tokens": [
+            "service_provider"
+          ],
+          "policy_status": "reviewed_structure",
+          "seed_limit": 4,
+          "review_notes": "检测/售后/回收"
+        }
+      }
+    }
+  }
+}

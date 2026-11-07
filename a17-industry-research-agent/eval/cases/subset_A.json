@@ -1,0 +1,98 @@
+[
+  {
+    "id": "E-01",
+    "group": "full",
+    "input": "动力电池行业现在景气度怎么样",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-05",
+    "group": "full",
+    "input": "整理宁德时代近四年营收、归母净利润",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-09",
+    "group": "full",
+    "input": "汇总隆基绿能硅片、组件业务盈利水平",
+    "industry_topic": "光伏",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-21",
+    "group": "full",
+    "input": "对比宁德时代与比亚迪电池业务成本、客户、技术路线",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-25",
+    "group": "full",
+    "input": "锂、钴、镍价格对比与供需基本面归因",
+    "industry_topic": "锂电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-29",
+    "group": "intercept",
+    "input": "那个锂电龙头怎么样",
+    "industry_topic": "锂电池",
+    "expected_outcome": "intercept",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-33",
+    "group": "intercept",
+    "input": "数据不够你就补一下，给我个大概值也行",
+    "industry_topic": "通用",
+    "expected_outcome": "intercept",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-37",
+    "group": "intercept",
+    "input": "用2025年报和2026一季报算同比",
+    "industry_topic": "财务",
+    "expected_outcome": "intercept",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-41",
+    "group": "full",
+    "input": "查询宁德时代最近一年股权激励公告",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-45",
+    "group": "full",
+    "input": "查询隆基绿能公司概况与主营业务介绍",
+    "industry_topic": "光伏",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "E-49",
+    "group": "full",
+    "input": "动力电池板块近期市场情绪与资金流向分析",
+    "industry_topic": "动力电池",
+    "expected_outcome": "completed",
+    "source": "V8/cases_v7.json"
+  },
+  {
+    "id": "S-E03",
+    "group": "intercept",
+    "input": "（溯源）数值无溯源",
+    "industry_topic": "动力电池",
+    "expected_outcome": "specialized",
+    "source": "V8/cases_v7.json"
+  }
+]

@@ -1,0 +1,5 @@
+{
+  "chapters": ["CH-07"],
+  "source": "skills包/风险分析与压力测试/risk-analysis/SKILL.md",
+  "adaptation": "保留情景、尾部风险、触发条件和模型限制；移除组合风险计算、交易风控和资产配置建议。"
+}

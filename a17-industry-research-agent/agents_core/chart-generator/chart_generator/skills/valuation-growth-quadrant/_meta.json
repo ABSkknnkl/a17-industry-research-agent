@@ -1,0 +1,7 @@
+{
+  "domains": ["financials", "companies"],
+  "keywords": ["象限", "散点", "估值", "增速", "气泡", "性价比", "市盈率", "PE", "PEG"],
+  "requires_signal": true,
+  "source": "skills包/科技炒作与基本面/SKILL.md",
+  "adaptation": "规范以复合增速为X轴、估值倍数为Y轴的四象限散点图呈现，明确中枢分割线与象限金融语义标签；移除个股推荐指令。"
+}
