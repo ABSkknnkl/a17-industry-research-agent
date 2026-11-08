@@ -116,3 +116,78 @@ describe('ReportPreviewView 报告导出功能', () => {
     expect(router.currentRoute.value.name).toBe('report-download')
   })
 })
+
+describe('ReportPreviewView 受限交付状态', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.downloadArtifact.mockResolvedValue({
+      blob: new Blob(['fake content']),
+      filename: 'report.html',
+    })
+  })
+
+  function limitedState(): WorkflowState {
+    const state = makeState()
+    state.stage_results.report_fusion!.data = {
+      title: '低空经济行业研究报告',
+      industry_topic: '低空经济',
+      delivery_status: 'ready_with_limits',
+      draft_available: true,
+      draft_sanitized: true,
+      quality: { passed: false, issues: ['审校防幻觉拦截 2 处未获授权的编辑'] },
+      quality_issues: [
+        { code: 'unsupported_quantity', claim: '9150亿元' },
+        { code: 'unsupported_direction_claim', claim: '行业未来将持续增长' },
+      ],
+    }
+    return state
+  }
+
+  async function mountWith(state: WorkflowState) {
+    mocks.getRun.mockResolvedValue(state)
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/runs/:runId/preview', name: 'report-preview', component: ReportPreviewView },
+        {
+          path: '/runs/:runId/download',
+          name: 'report-download',
+          component: { template: '<div />' },
+        },
+        { path: '/runs/:runId', name: 'review', component: { template: '<div />' } },
+      ],
+    })
+    await router.push('/runs/run-1/preview')
+    await router.isReady()
+    const wrapper = mount(ReportPreviewView, {
+      global: { plugins: [createPinia(), router, ElementPlus], components: { ...Icons } },
+    })
+    await flushPromises()
+    return wrapper
+  }
+
+  it('shows the audit details for limited delivery', async () => {
+    const wrapper = await mountWith(limitedState())
+
+    const banner = wrapper.find('[data-testid="limited-delivery-banner"]')
+    expect(banner.exists()).toBe(true)
+    expect(banner.text()).toContain('受限')
+
+    const toggle = wrapper.find('[data-testid="audit-details-toggle"]')
+    expect(toggle.exists()).toBe(true)
+    expect(wrapper.find('[data-testid="audit-details"]').exists()).toBe(false)
+
+    await toggle.trigger('click')
+    await flushPromises()
+
+    const details = wrapper.find('[data-testid="audit-details"]')
+    expect(details.exists()).toBe(true)
+    expect(details.text()).toContain('2')
+    expect(details.text()).toContain('行业未来将持续增长')
+  })
+
+  it('hides the limited banner once the report is ready', async () => {
+    const wrapper = await mountWith(makeState())
+    expect(wrapper.find('[data-testid="limited-delivery-banner"]').exists()).toBe(false)
+  })
+})

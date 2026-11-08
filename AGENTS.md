@@ -7,7 +7,7 @@
 - Tests live in `backend/tests/`, `agents_core/*/tests/`, `eval/tests/`, frontend `__tests__/` directories, and `frontend/e2e/`.
 - `skills包/` holds shared financial skills and supporting resources.
 - Report templates/styles live under `agents_core/report-fusion/report_fusion/`; runtime artifacts belong in `data/runs/` or `output/`.
-- Documentation: root `项目全景技术深度解析.md` provides the comprehensive architecture and engineering whitepaper; `a17-industry-research-agent/docs/` holds competition submission drafts, test reports, and archived audits (`PROJECT_AUDIT.md`, `PROJECT_REPAIR_STATUS.md`).
+- Documentation: root `项目全景技术深度解析.md` provides the comprehensive architecture and engineering whitepaper. It is the only project-level document in this workspace.
 
 ## Build, Test, and Development Commands
 

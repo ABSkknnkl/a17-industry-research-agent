@@ -217,6 +217,22 @@ const approveLabel = computed(() => {
   return map[props.stage] || (isFusionStage.value ? '通过并完成研究' : '通过并继续')
 })
 
+/**
+ * 当前待审阶段的「下一步」说明。
+ *
+ * 为什么放在控制区顶部：审核人打开工作台的第一件事是判断「我现在该做什么」。
+ * 只给通过按钮而不说明通过后会进入哪个阶段，会把流程语义留给用户自己猜；
+ * 渠道里出现过「停在章节审核不知道下一步」的反馈（计划 T5）。
+ */
+const NEXT_STEP_HINTS: Record<StageName, string> = {
+  data_fetch: '下一步：进入数据解读，分析指标变化与跨来源一致性',
+  data_interpret: '下一步：进入图表生成，按已核验证据选择图表',
+  chart_generate: '下一步：进入章节撰写，生成七章正文',
+  chapter_write: '下一步：进入报告融合，生成摘要、核验与 PDF 交付',
+  report_fusion: '下一步：完成交付，可在下载页获取正式或受限文件',
+}
+const nextStepHint = computed(() => NEXT_STEP_HINTS[props.stage] ?? '')
+
 const stageTitle = computed(() => {
   const map: Record<StageName, string> = {
     data_fetch: '【阶段一：数据获取智能体】审核确认检索范围与关键词',
@@ -326,6 +342,10 @@ async function onStageDirectEditSubmit(payload: {
           <span class="step-text">AI改进生效</span>
         </div>
       </div>
+
+      <p v-if="nextStepHint" class="next-step-hint" data-testid="next-step-hint">
+        {{ nextStepHint }}
+      </p>
 
       <div class="intervention-header">
         <div class="header-left">
@@ -547,6 +567,8 @@ async function onStageDirectEditSubmit(payload: {
     </el-dialog>
   </div>
 </template>
+
+.next-step-hint { margin: 0 0 12px; color: var(--el-text-color-secondary); font-size: 13px; }
 
 <style scoped>
 .action-title {

@@ -168,3 +168,53 @@ describe('ReportDownloadView', () => {
     expect(wrapper.text()).toContain('执行中')
   })
 })
+
+describe('ReportDownloadView 四种交付状态', () => {
+  it('正式：通过审核且版本一致时可下载全部', async () => {
+    const wrapper = await mountView(makeRun('completed', { report_fusion: stageResult() }))
+    expect(
+      wrapper.find('[data-testid="report-download-all"]').attributes('disabled')
+    ).toBeUndefined()
+    expect(wrapper.text()).toContain('下载全部报告文件')
+  })
+
+  it('受限：质量门未通过时只提供受限草稿下载', async () => {
+    const limited = stageResult({
+      data: {
+        title: '动力电池行业研究报告',
+        validation_version: 'report-integrity-1',
+        delivery_status: 'ready_with_limits',
+        draft_available: true,
+        draft_sanitized: true,
+        quality: { passed: false },
+      },
+    })
+    const wrapper = await mountView(makeRun('waiting_review', { report_fusion: limited }))
+    expect(wrapper.text()).toContain('受限草稿')
+    expect(wrapper.text()).toContain('下载全部草稿文件')
+    expect(
+      wrapper.find('[data-testid="report-download-all"]').attributes('disabled')
+    ).toBeUndefined()
+  })
+
+  it('重建：编辑后版本不一致时禁止下载并提示重新生成', async () => {
+    const rebuilt = stageResult({
+      data: {
+        title: '动力电池行业研究报告',
+        validation_version: 'report-integrity-1',
+        built_at_revision: 1,
+      },
+    })
+    const run = makeRun('completed', { report_fusion: rebuilt })
+    run.revision = 2
+    const wrapper = await mountView(run)
+    expect(wrapper.find('[data-testid="report-download-all"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('重新生成')
+  })
+
+  it('失败：任务失败时不可下载并说明原因', async () => {
+    const wrapper = await mountView(makeRun('failed', { report_fusion: stageResult() }))
+    expect(wrapper.find('[data-testid="report-download-all"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('任务执行失败')
+  })
+})

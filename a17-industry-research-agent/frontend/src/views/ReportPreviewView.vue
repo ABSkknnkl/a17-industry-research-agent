@@ -16,7 +16,18 @@ import {
  * 独立报告预览页（阶段五「预览完整报告」入口）。
  *
  * 取数：GET /runs/{runId} → stage_results.report_fusion 的产物与元信息。
- * 渲染：HTML 产物走 iframe + blob URL（报告自带 <style>，必须隔离，不能插进 Vue 模板）。
+ * 渲染：HTML 产物走 iframe + blob URL（报告自带 .limited-delivery {
+  margin-bottom: 12px;
+}
+
+.audit-details {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
+}
+
+<style>，必须隔离，不能插进 Vue 模板）。
  *       报告 HTML 实测为纯静态（无 <script>、无外链资源），因此用最严格的 sandbox=""。
  */
 const route = useRoute()
@@ -73,6 +84,35 @@ async function exportSingle(kind: 'pdf' | 'html' | 'markdown'): Promise<void> {
 function goToDownloadAll(): void {
   router.push({ name: 'report-download', params: { runId: runId.value } })
 }
+
+/**
+ * 受限交付状态与审计入口。
+ *
+ * 为什么单独成块：受限稿的正文本身是干净的（未核验内容已被隔离），
+ * 但审核人仍需知道「为什么受限、有多少项、具体是哪几项」。把明细
+ * 收进可展开区，既不打扰阅读，也不隐瞒限制（计划 T5）。
+ */
+const limitedDelivery = computed(() => {
+  const data = fusion.value
+  if (!data) return false
+  return (
+    data.delivery_status === 'ready_with_limits' ||
+    data.quality?.passed === false ||
+    Boolean(data.draft_available)
+  )
+})
+const qualityNotices = computed<string[]>(() => {
+  const quality = fusion.value?.quality
+  const issues = quality?.issues
+  return Array.isArray(issues) ? issues.map((item) => String(item)) : []
+})
+const qualityIssueRows = computed<Array<{ code: string; claim: string }>>(() =>
+  (fusion.value?.quality_issues ?? []).slice(0, 20).map((item) => ({
+    code: String((item as Record<string, unknown>).code ?? '未分类'),
+    claim: String((item as Record<string, unknown>).claim ?? ''),
+  }))
+)
+const auditDetailsVisible = ref(false)
 
 const title = computed(() => fusion.value?.title ?? '报告预览')
 
@@ -211,6 +251,35 @@ onBeforeUnmount(revokeFrame)
     :title="loadError"
     style="margin-bottom: 12px"
   />
+
+  <div v-if="limitedDelivery" class="limited-delivery" data-testid="limited-delivery-banner">
+    <el-alert
+      type="warning"
+      show-icon
+      :closable="false"
+      title="受限草稿 · 未通过正式质量门禁"
+      description="以下为已核验内容与明确的数据局限，仅供检查；正式交付前需重新融合并完成质检。"
+    />
+    <el-button
+      link
+      type="primary"
+      data-testid="audit-details-toggle"
+      style="margin-top: 6px"
+      @click="auditDetailsVisible = !auditDetailsVisible"
+    >
+      {{ auditDetailsVisible ? '收起核验明细' : '展开核验明细' }}
+    </el-button>
+    <div v-if="auditDetailsVisible" data-testid="audit-details" class="audit-details">
+      <p class="muted">待核验项 {{ qualityIssueRows.length }} 条（最多展示 20 条）</p>
+      <ul v-if="qualityNotices.length || qualityIssueRows.length">
+        <li v-for="(notice, index) in qualityNotices" :key="`notice-${index}`">{{ notice }}</li>
+        <li v-for="(row, index) in qualityIssueRows" :key="`issue-${index}`">
+          {{ row.code }}：{{ row.claim }}
+        </li>
+      </ul>
+      <p v-else class="muted">后端未返回逐项明细，完整诊断见报告附录一。</p>
+    </div>
+  </div>
 
   <el-card class="page-card report-card" shadow="never" v-loading="loading || frameLoading">
     <template #header>

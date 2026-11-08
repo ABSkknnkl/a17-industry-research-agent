@@ -204,3 +204,89 @@ def test_incomplete_report_requires_explicit_draft_release(client):
     state.stage_results["report_fusion"].data["hard_blocked"] = True
     storage.save_state(state)
     assert client.get(f"/api/v1/runs/{run_id}/artifacts/report_pdf").status_code == 409
+
+
+def _chain_graph(*, include_concept: bool) -> dict:
+    nodes = [
+        {"node_id": "A", "name": "核心部件", "stage": "upstream", "companies": ["正式公司"]},
+        {"node_id": "C", "name": "整机", "stage": "downstream", "companies": ["整机公司"]},
+    ]
+    if include_concept:
+        nodes.insert(1, {"node_id": "B", "name": "概念标的", "stage": "upstream",
+                         "companies": ["概念公司"]})
+    return {
+        "title": "低空经济产业链",
+        "stages": [{"stage_id": "upstream", "title": "上游"},
+                   {"stage_id": "downstream", "title": "下游"}],
+        "nodes": nodes,
+        "edges": [],
+        "source": "v2_bundle",
+    }
+
+
+def test_chain_review_rebuild_invalidates_old_formal_artifact(tmp_path, monkeypatch, client):
+    """审核剔除概念公司 → 新版图与 SVG 一致、旧正式下载失效、重复提交不重复生成。"""
+    from fastapi import HTTPException
+
+    from backend.app.engine.state_machine import RevisionConflictError
+
+    run_id = "run-r1-chain-review"
+    run_dir = storage.get_run_dir(run_id)
+    art = run_dir / "artifacts"
+    art.mkdir(parents=True, exist_ok=True)
+    (art / "report.md").write_text("旧正式报告", encoding="utf-8")
+    (art / "report.html").write_text("<html>旧正式报告</html>", encoding="utf-8")
+    (art / "report.pdf").write_bytes(b"%PDF-old")
+
+    charts = [{"chart_id": "CHAIN-1", "title": "低空经济产业链", "chart_type": "industry_chain",
+               "status": "ready", "chain_graph": _chain_graph(include_concept=True),
+               "render_mode": "svg", "option": {}, "evidence_ids": []}]
+    (art / "chart_result.json").write_text(
+        json.dumps({"charts": charts, "chart_specs": charts}, ensure_ascii=False), encoding="utf-8")
+    results = {s: StageResult(stage=s, status="approved", revision=1) for s in STAGE_ORDER}
+    results["chart_generate"] = StageResult(
+        stage="chart_generate", status="waiting_review", revision=1,
+        data={"chart_specs": charts, "charts": charts})
+    results["report_fusion"] = StageResult(
+        stage="report_fusion", status="completed", revision=1,
+        data={"built_at_revision": 1, "formats": ["markdown", "html", "pdf"]})
+    storage.save_state(WorkflowState(
+        project_id="p", run_id=run_id, current_stage="chart_generate",
+        status="waiting_review", revision=1, stage_results=results,
+        created_at="2026-11-08T00:00:00", updated_at="2026-11-08T00:00:00"))
+
+    engine = WorkflowEngine()
+    edit = ReviewRequest(
+        run_id=run_id, stage="chart_generate", action="direct_edit", expected_revision=1,
+        comment="剔除只具概念关联的公司",
+        edited_data={"chart_specs": [{"chart_id": "CHAIN-1",
+                                      "chain_graph": _chain_graph(include_concept=False),
+                                      "title": "低空经济产业链"}]},
+    )
+    state = asyncio.run(engine.handle_review(edit))
+    assert state.revision == 2
+
+    rebuilt = json.loads((art / "chart_result.json").read_text(encoding="utf-8"))["charts"][0]
+    names = [name for node in rebuilt["chain_graph"]["nodes"] for name in node.get("companies", [])]
+    assert names == ["正式公司", "整机公司"], names
+    svg_path = art / "charts" / "CHAIN-1.svg"
+    svg = svg_path.read_text(encoding="utf-8")
+    assert "正式公司" in svg and "概念公司" not in svg
+    assert rebuilt["svg_uri"] == str(svg_path.resolve())
+
+    # 旧正式 PDF 不得再作为当前版本交付
+    assert client.get(f"/api/v1/runs/{run_id}/artifacts/report_pdf").status_code == 409
+
+    # 同版重复提交：版本已前进，必须被拒且不产生第二次生成
+    before = (art / "charts" / "CHAIN-1.svg").read_text(encoding="utf-8")
+    with pytest.raises(RevisionConflictError):
+        asyncio.run(engine.handle_review(edit))
+    assert storage.load_state(run_id).revision == 2
+    assert (art / "charts" / "CHAIN-1.svg").read_text(encoding="utf-8") == before
+
+    # 旧版请求：明确拒绝，不静默套用到当前状态
+    stale = ReviewRequest(run_id=run_id, stage="chart_generate", action="direct_edit",
+                          expected_revision=1, edited_data={"chart_specs": charts})
+    with pytest.raises(RevisionConflictError):
+        asyncio.run(engine.handle_review(stale))
+    assert storage.load_state(run_id).revision == 2

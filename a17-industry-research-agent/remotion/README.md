@@ -13,4 +13,4 @@ npm run build               # 构建 Remotion bundle
 
 `package.json` 提供 `render:overview`、`render:fetcher`、`render:interpreter`、`render:chart`、`render:writer`、`render:fusion`，以及依次执行这些任务的 `render:all`。渲染输出路径为项目的 `output/videos/`；运行前请确认路径和已有文件。渲染依赖及浏览器环境需按本机情况准备，本次文档更新未重新渲染视频。
 
-动画中的系统事实、数字和演示画面应在发布前与[当前版本说明](../docs/当前版本说明.md)及实际运行结果核对。
+动画中的系统事实、数字和演示画面应在发布前与实际运行结果核对。

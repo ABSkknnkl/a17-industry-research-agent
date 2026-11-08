@@ -157,3 +157,14 @@ describe('ReviewActions 提交与事件契约', () => {
     expect(payload.action).toBe('cancel')
   })
 })
+
+describe('ReviewActions 审核待办与下一步', () => {
+  it('shows the next action while chapter review is pending', () => {
+    const wrapper = mountComponent('chapter_write')
+    const hint = wrapper.find('[data-testid="next-step-hint"]')
+    expect(hint.exists()).toBe(true)
+    expect(hint.text()).toContain('下一步')
+    expect(hint.text()).toContain('报告融合')
+    expect(wrapper.find('[data-testid="btn-approve"]').exists()).toBe(true)
+  })
+})

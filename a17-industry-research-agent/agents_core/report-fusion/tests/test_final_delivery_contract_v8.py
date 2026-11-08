@@ -264,3 +264,118 @@ def test_final_view_checks_summary_and_nested_carriers():
     blocking, _ = _check_final_view(req.chapters.chapters, [], req, summary)
     assert any("GHOST-SUMMARY" in problem for problem in blocking)
     assert any("GHOST-CARD" in problem for problem in blocking)
+
+
+# ── T4：证据约束与阅读语言（2026-11-07 行业研报体验计划）─────────────────────
+
+def _forecast_chapters() -> list:
+    """有效历史事实 + 无来源的预测数字、增长方向与因果断言。"""
+    from report_fusion.models import ChapterDraft, ParagraphDraft, SectionDraft
+
+    texts = {
+        "P-01": "2025年测试行业市场规模为100亿元。",
+        "P-02": "预计2026年全球人形机器人出货量将突破6万台。",
+        "P-03": "国内具身智能全产业链市场规模有望在2026年达到9150亿元。",
+        "P-04": "行业未来将持续增长。",
+        "P-05": "出货量增长导致上游零部件需求扩张。",
+    }
+    chapters = []
+    for i in range(1, 8):
+        sections = []
+        for j in (1, 2, 3):
+            pid = f"P-0{i}" if i <= 5 and j == 1 else f"P-{i:02d}-0{j}"
+            sections.append(SectionDraft(
+                section_id=f"SEC-{i:02d}-0{j}",
+                title=f"节{j}",
+                purpose="目的",
+                key_points=[],
+                paragraphs=[ParagraphDraft(
+                    paragraph_id=pid, kind="analysis",
+                    text=texts.get(pid, "2025年测试行业市场规模为100亿元。"),
+                    evidence_ids=["R1"],
+                )],
+            ))
+        chapters.append(ChapterDraft(
+            chapter_id=f"CH-{i:02d}",
+            title=f"第{i}章",
+            summary="本章依据已核验资料说明行业规模。",
+            sections=sections,
+        ))
+    return chapters
+
+
+def test_unverified_forecast_is_not_republished_as_trend():
+    """无来源的预测数字、增长方向与因果断言不得进入公开正文。"""
+    req = _request(formats=("markdown", "html"))
+    req.chapters.chapters = _forecast_chapters()
+    req.report.evidence_index["R1"] = req.report.evidence_index["R1"].model_copy(
+        update={"period": date(2025, 12, 31)}
+    )
+    req.report.data_quality_appendix = {"limitations": ["预计2026年出货量将突破6万台。"]}
+    result = _run(req)
+    root = Path(result.artifact_dir)
+
+    for name in ("report.md", "report.html"):
+        content = (root / name).read_text(encoding="utf-8")
+        assert "100亿元" in content or "100.00 亿元" in content, name
+        for unsourced in ("9150", "6万台", "6 万台", "未来将持续增长", "导致上游零部件需求扩张"):
+            assert unsourced not in content, f"{name} 仍保留无来源断言: {unsourced}"
+
+    audit = json.loads((root / "fact_audit.json").read_text(encoding="utf-8"))
+    located = {(item["code"], item["location"]) for item in audit["quality_issues"]}
+    assert ("unsupported_direction_claim", "P-04") in located
+    assert ("unsupported_quantity", "P-03") in located
+    assert ("unsupported_quantity", "P-02") in located
+    assert ("unsupported_causal_claim", "P-05") in located
+    isolated = {item["location"] for item in audit["content_audit"]}
+    assert {"P-02", "P-03", "P-04", "P-05"} <= isolated
+    assert result.consistency.passed is True
+
+
+def test_rendered_financial_language_preserves_audited_values():
+    """阅读文本使用中文期间与口径，原值与引用编号保持不变。"""
+    from report_fusion.models import ChapterDraft, ParagraphDraft, SectionDraft
+
+    req = _request(formats=("markdown", "html"))
+    req.report.evidence_index = {
+        "R1": req.report.evidence_index["R1"].model_copy(update={
+            "entity": "深圳华强", "metric": "gross_margin", "value": 8.1987, "unit": "%",
+            "period": date(2025, 12, 31), "period_type": "annual", "scope": "consolidated"}),
+        "R2": req.report.evidence_index["R1"].model_copy(update={
+            "record_id": "R2", "entity": "深圳华强", "metric": "gross_margin", "value": 5.8487,
+            "unit": "%", "period": date(2024, 12, 31), "period_type": "annual",
+            "scope": "consolidated"}),
+        "R3": req.report.evidence_index["R1"].model_copy(update={
+            "record_id": "R3", "entity": "深圳华强", "metric": "gross_margin", "value": 8.30,
+            "unit": "%", "period": date(2025, 6, 30), "period_type": "half_year",
+            "scope": "parent"}),
+    }
+    req.chapters.chapters = _forecast_chapters()[:1]
+    req.chapters.chapters[0].sections = [SectionDraft(
+        section_id="SEC-01-01", title="毛利率", purpose="目的", key_points=[],
+        paragraphs=[
+            ParagraphDraft(paragraph_id="P-LANG-01", evidence_ids=["R1"],
+                           text="深圳华强（000062.SZ）2025-12-31（annual，consolidated）gross_margin为8.1987%。"),
+            ParagraphDraft(paragraph_id="P-LANG-02", evidence_ids=["R1", "R2"],
+                           text="深圳华强2025-12-31（rate_observation_change）销售毛利率较上年同期上升2.35个百分点。"),
+        ],
+    )]
+    result = _run(req)
+    root = Path(result.artifact_dir)
+
+    for name in ("report.md", "report.html"):
+        content = (root / name).read_text(encoding="utf-8")
+        assert "2025年合并财务报表" in content, name
+        assert "销售毛利率" in content, name
+        assert "8.20%" in content, name
+        assert "8.1987%" not in content, name
+        assert "000062.SZ" in content, name
+        assert "比率观测值变化" in content, name
+        assert "2.35个百分点" in content, name
+        for raw in ("annual", "consolidated", "gross_margin", "rate_observation_change"):
+            assert raw not in content, f"{name} 仍含内部字段 {raw}"
+
+    view = json.loads((root / "report_view.json").read_text(encoding="utf-8"))
+    assert view["evidence_catalog"][0]["value"] == 8.1987
+    assert view["evidence_catalog"][0]["record_id"] == "R1"
+    assert view["chapters"][0]["sections"][0]["paragraphs"], "有据段落被误删"

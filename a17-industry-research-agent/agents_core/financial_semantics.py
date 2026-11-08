@@ -280,7 +280,8 @@ CLAIM_METRICS = {
     '流通市值': 'circulating_market_cap', '总市值': 'market_cap', '资产负债率': 'debt_ratio',
     'ROE': 'roe', '净资产收益率': 'roe', '最新价': 'latest_price', '股价': 'latest_price',
 }
-QUANTITY_RE = re.compile(r'(?<![\dA-Za-z])([-+−]?\d[\d,]*(?:\.\d+)?)\s*(万亿元|亿元|万元|元|%|％|倍|家|万辆|辆|万吨|吨|GWh|GW|个百分点)?')
+QUANTITY_RE = re.compile(r'(?<![\dA-Za-z])([-+−]?\d[\d,]*(?:\.\d+)?)\s*'
+                         r'(万亿元|亿元|万元|万台|亿台|万套|亿套|元|%|％|倍|家|万辆|辆|万吨|吨|台|套|人次|GWh|GW|个百分点)?')
 
 
 def _as_dict(value: Any) -> dict:
@@ -517,6 +518,22 @@ def _verified_change(context: str, local_prefix: str, refs: list[dict], family: 
     return change
 
 
+_SECURITY_CODE = re.compile(r'\d{6}(?:\.(?:SZ|SH|BJ))?', re.I)
+
+
+def _is_security_code(text: str, match: 're.Match[str]') -> bool:
+    """A six-digit ticker is an identifier, never a measured quantity."""
+    if match.group(2):
+        return False
+    raw = match.group(1).replace(',', '')
+    if raw.startswith(('+', '-', '−')) or not (raw.isdigit() and len(raw) == 6):
+        return False
+    after = text[match.end():]
+    if re.match(r'\s*\.(?:SZ|SH|BJ)(?![A-Za-z])', after, re.I):
+        return True
+    return bool(re.search(r'[（(]\s*$', text[:match.start()]))
+
+
 def quantity_issues(text: str, evidence: list[Any], *, universe: list[Any] = (),
                     assumption_note: str | None = None, kind: str = '', location: str = '') -> list[dict]:
     """Fail closed on a numeric claim without matching measurement semantics.
@@ -573,6 +590,8 @@ def quantity_issues(text: str, evidence: list[Any], *, universe: list[Any] = (),
                     suggestion="补充同口径观测，或明确区分已观察变化与待验证假设。"))
     for match in QUANTITY_RE.finditer(text):
         if any(start <= match.start() < end for start, end, _ in iso_dates):
+            continue
+        if _is_security_code(text, match):
             continue
         raw, unit = match.groups()
         raw = raw.replace(',', '').replace('−', '-')

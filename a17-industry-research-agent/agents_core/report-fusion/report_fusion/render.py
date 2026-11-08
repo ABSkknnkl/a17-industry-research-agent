@@ -292,6 +292,25 @@ _READING_PATTERN = re.compile(
 )
 
 
+# 日期 + 口径的机器写法（如 `2025-12-31（annual，consolidated）`）先合成为
+# 投研读者惯用的期间表述，避免只替换单词后留下 "2025-12-31（年度，合并报表）"。
+_PERIOD_BASIS = re.compile(
+    r'(?P<date>20\d{2}-\d{2}-\d{2})\s*[（(]\s*'
+    r'(?P<period>annual|half_year|ytd_q3|quarter)'
+    r'(?:\s*[，,]\s*(?P<scope>consolidated|parent))?\s*[）)]'
+)
+_QUARTER_LABELS = {"annual": "年", "half_year": "年半年度", "ytd_q3": "年前三季度", "quarter": "年单季度"}
+_SCOPE_LABELS = {"consolidated": "合并财务报表", "parent": "母公司财务报表"}
+
+
+def _period_phrase(match: re.Match) -> str:
+    year = match["date"][:4]
+    scope = match["scope"]
+    if scope:
+        return f"{year}年{_SCOPE_LABELS[scope]}"
+    return f"{year}{_QUARTER_LABELS[match['period']]}"
+
+
 def _reading_text(text: str) -> str:
     def replace(match: re.Match) -> str:
         if match["protected"]:
@@ -301,6 +320,7 @@ def _reading_text(text: str) -> str:
         unit = "%" if match["unit"] in ("%", "％") else "个百分点"
         return format_report_rate(match["value"], unit)
 
+    text = _PERIOD_BASIS.sub(_period_phrase, text)
     return _READING_PATTERN.sub(replace, text)
 
 
