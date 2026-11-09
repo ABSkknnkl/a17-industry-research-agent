@@ -222,6 +222,8 @@ def metric_family(metric: str) -> str:
         '研发费用占营业收入的比例': 'rd_ratio', '研发投入占营业收入比例': 'rd_investment_ratio',
         '研发投入占比': 'rd_investment_ratio',
         '光伏新增装机量': 'pv_new_capacity', '中国光伏新增装机量': 'pv_new_capacity',
+        '新增装机量': 'pv_new_capacity', '新增装机容量': 'pv_new_capacity',
+        '光伏装机': 'pv_new_capacity', '新增光伏装机': 'pv_new_capacity',
         '中国光伏新增装机容量': 'pv_new_capacity', '光伏新增装机容量': 'pv_new_capacity',
         '新增光伏装机容量': 'pv_new_capacity',
         '新能源汽车销量': 'nev_sales', '中国新能源汽车销量': 'nev_sales',

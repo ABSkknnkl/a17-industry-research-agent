@@ -431,8 +431,10 @@ class FiveAgentsAdapter:
             foci.append(f"用户修订需求:{feedback}")
 
         is_deep = analysis_depth == "deep"
-        max_iters = 10 if is_deep else 8
-        max_calls = 32 if is_deep else 24
+        max_iters = 12 if is_deep else 10
+        # 48 格年度财务 + 产业链主营构成 + 公告/资讯，24 次在真实源上必然被预算截断；
+        # 标准深度给到 32 次，仍受 FETCH_STAGE_TIMEOUT_SECONDS 约束。
+        max_calls = 40 if is_deep else 32
 
         req_kwargs: dict[str, Any] = {
             "industry": industry,
@@ -1246,6 +1248,10 @@ class FiveAgentsAdapter:
         if use_chain_v2:
             # The v2 graph is compiled below; legacy must not fetch or repair it.
             chart_request.want_industry_chain = False
+        elif chart_snapshot.chain_requested:
+            # legacy 路径同样要把“用户明确要求链图”传给图表智能体，
+            # 否则会被判成 industry_chain_not_requested 而抑制。
+            chart_request.want_industry_chain = True
         if chart_request.want_industry_chain is not None:
             logger.info("[%s] 产业链图意图显式指定：%s", run_id, chart_request.want_industry_chain)
         if chart_request.chain_scope is not None:
@@ -1268,6 +1274,28 @@ class FiveAgentsAdapter:
                 chart_request.preferences.requested_types = user_types
 
         result = await agent.run(chart_request, emit=on_chart_event, save_artifacts=False)
+
+        # 跨期拼接/口径不一致的图表不得进入交付：在融合前直接降级为 suppressed，
+        # 保留图表位与原因，而不是让整篇报告因一张可选图被阻断。
+        try:
+            from report_fusion.agent import (
+                _chart_comparability_issues as _chart_compare_issues,
+                _chart_contract_issues as _chart_contract_problems,
+            )
+            for chart_spec in getattr(result, "charts", []) or []:
+                if getattr(chart_spec, "status", "") != "ready":
+                    continue
+                problems = [
+                    *_chart_compare_issues(chart_spec, report.evidence_index),
+                    *_chart_contract_problems(chart_spec, report.evidence_index),
+                ]
+                if problems:
+                    chart_spec.status = "suppressed"
+                    result.warnings.append(
+                        f"图表 {chart_spec.chart_id} 因比较口径不一致未交付：{'；'.join(problems)}"
+                    )
+        except Exception as exc:  # noqa: BLE001 - 审计失败不阻断出图
+            logger.warning("[%s] 图表可比性预检失败：%s", run_id, exc)
 
         # D3（V8 最终方案 §10.1 第 6 条）：链图交付资格由 chain_quality 决定，
         # 不再"图存在就算成功"。用户显式要求链图但证据包缺失/失败时，
@@ -1353,7 +1381,9 @@ class FiveAgentsAdapter:
                 result.status = 'partial'
         elif chain_requested:
             classified = any(chart.chart_type == "industry_chain" and chart.status == "ready" for chart in result.charts)
-            chain_delivery["status"] = "partial" if classified else "failed"
+            # 题目只要求“产业链结构图”时，环节分类图即满足结构交付；
+            # 工序关系是否核验另由 chain_quality 记录，不再把分类图判为未交付。
+            chain_delivery["status"] = "classified" if classified else "failed"
             chain_delivery["reason"] = (
                 "当前仅提供产业环节分类，具体工序关系待核验" if classified else "未生成可交付的产业环节分类图"
             )
@@ -1721,6 +1751,28 @@ class FiveAgentsAdapter:
             chart_res = ChartResult.model_validate(json.load(f))
         with open(chapter_path, "r", encoding="utf-8") as f:
             chapter_res = ChapterResult.model_validate(json.load(f))
+
+        # 融合前剔除口径不可比/契约不完整的图表，保留图表位与原因。
+        try:
+            from report_fusion.agent import (
+                _chart_comparability_issues as _chart_compare_issues,
+                _chart_contract_issues as _chart_contract_problems,
+            )
+            for chart_spec in chart_res.charts or []:
+                if getattr(chart_spec, "status", "") != "ready":
+                    continue
+                problems = [
+                    *_chart_compare_issues(chart_spec, report.evidence_index),
+                    *_chart_contract_problems(chart_spec, report.evidence_index),
+                ]
+                if problems:
+                    chart_spec.status = "suppressed"
+                    if hasattr(chart_res, "warnings"):
+                        chart_res.warnings.append(
+                            f"图表 {chart_spec.chart_id} 未交付：{'；'.join(problems)}"
+                        )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("[%s] 融合前图表审计失败：%s", run_id, exc)
 
         chain_delivery = _report_chain_delivery(run_id)
         if chain_delivery:

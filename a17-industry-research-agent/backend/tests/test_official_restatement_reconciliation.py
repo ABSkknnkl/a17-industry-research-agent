@@ -57,7 +57,7 @@ def test_verified_catl_alias_only_clears_the_verified_restatement_cell():
  source=SourceRef(task_id='notice',skill_id='announcement-search',skill_version='1',query='',trace_id='t',
   retrieved_at=datetime(2026,1,1,tzinfo=timezone.utc))
  dataset.events=[EventRecord(record_id='clue',entity_name='宁德时代',entity_code='300750.SZ',
-  title='2024年年度报告',body='2023年财务报表追溯调整',announce_date=date(2025,3,15),source=source,
+  title='2024年年度报告',body='2023年财务报表追溯调整：调整前营业收入400,000,000,000元，调整后400,917,045,000元',announce_date=date(2025,3,15),source=source,
   raw_fields={'url':'http://static.cninfo.com.cn/finalpage/2025-03-15/1222806982.PDF'})]
  DataFusion._mark_unverified_restatement_clues(dataset,date(2026,11,1),dataset.quality_summary['restatement_adjustments'])
  margin=next(r for r in dataset.financials if r.metric=='gross_margin')

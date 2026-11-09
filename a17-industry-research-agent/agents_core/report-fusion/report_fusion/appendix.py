@@ -25,13 +25,18 @@ def audit_appendix(report: Any) -> tuple[dict, list[dict]]:
     issues: list[dict] = []
     index = report.evidence_index
 
-    def problem(location: str, claim: Any, ids: list[str] | None = None) -> None:
-        issues.append(dict(code="appendix_fact", severity="error", location=location,
+    def problem(location: str, claim: Any, ids: list[str] | None = None, severity: str = "error") -> None:
+        issues.append(dict(code="appendix_fact", severity=severity, location=location,
             claim=str(claim), evidence_ids=ids or [], suggestion="按同主体、指标、期间和来源重新核验附录。"))
 
-    def safe_text(text: Any, ids: list[str], location: str) -> bool:
+    def safe_text(text: Any, ids: list[str], location: str, methodology: bool = False) -> bool:
         if not isinstance(text, str):
             return True
+        # 局限/边界/不外推说明是方法论陈述，不是对事实的定量断言；
+        # 其中的“4家公司、3个年度”等样本描述无需逐条证据即可保留。
+        if methodology and re.search(r"有限|不足以|未进行|未充分|未覆盖|未披露|仅|局限|边界|谨慎|待验证|样本|不外推|异常|需核实|需注意|时间错位|截至|不完整|冲突|口径不一致|缺失", text):
+            # 局限/边界类陈述不逐条要求数值证据，但未知证据引用仍要拦截。
+            return not (set(ids) - set(index))
         refs = [index[rid] for rid in ids if rid in index]
         found = quantity_issues(text, refs, universe=list(index.values()), location=location)
         causal = (re.search(r"表明|说明|意味着|体现|导致|驱动|源于|由于|反映", text)
@@ -69,10 +74,10 @@ def audit_appendix(report: Any) -> tuple[dict, list[dict]]:
             sample[key] = value
     if "limitations" in sample:
         sample["limitations"] = [s for i, s in enumerate(sample["limitations"])
-            if safe_text(s, [], f"appendix.sample_info.limitations[{i}]")]
+            if safe_text(s, [], f"appendix.sample_info.limitations[{i}]", methodology=True)]
     if "non_extrapolation_disclaimers" in clean:
         clean["non_extrapolation_disclaimers"] = [s for i, s in enumerate(clean["non_extrapolation_disclaimers"])
-            if safe_text(s, [], f"appendix.boundaries[{i}]")]
+            if safe_text(s, [], f"appendix.boundaries[{i}]", methodology=True)]
 
     for kind in ("outlier_items", "conflict_items"):
         accepted = []
@@ -89,17 +94,22 @@ def audit_appendix(report: Any) -> tuple[dict, list[dict]]:
                 periods = {str(r.period) for r in candidates if r.period}
                 if len(periods) == 1:
                     item["period"] = next(iter(periods))
-                else:
+                elif len(periods) > 1:
+                    # 多个可选期间才无法唯一归属；所有候选都无期间时保留候选
+                    # （估值快照类指标本身没有报告期）。
                     candidates = []
             if kind == "outlier_items":
                 value = _number(item.get("observed_value"))
-                matches = [r for r in candidates if value is not None and _number(r.value) == value]
+                matches = [r for r in candidates if value is not None and _number(r.value) is not None
+                           and abs(_number(r.value) - value) <= max(1e-6, abs(value) * 1e-6)]
                 units = {r.unit for r in matches}
                 if not matches or len(units) != 1 or (item.get("unit") and item["unit"] not in units):
                     problem(location, "异常观察值的主体、指标、期间、单位或数值无法匹配来源", ids)
                     continue
                 item["unit"] = matches[0].unit
-                if any(measurement_period(r) is None for r in matches):
+                # 只有附录项声明了报告期时才要求来源也有完整期间；估值快照类
+                # 指标（PE/市值/股价）本身没有报告期。
+                if item.get("period") and any(measurement_period(r) is None for r in matches):
                     problem(location, "观察期间存在冲突或未知定义，不能构造同期间范围", ids)
                     continue
                 semantic_keys = {(measurement_period(r), r.scope, r.currency, r.unit) for r in matches}

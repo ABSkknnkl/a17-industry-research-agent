@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "note": "人工核验的产业链环节归属：仅用于覆盖关键词误判，不替代公司业务证据。",
+  "industries": [
+    {
+      "industry": "白酒",
+      "aliases": ["白酒行业", "白酒产业链"],
+      "roles": {
+        "贵州茅台": ["midstream"],
+        "五粮液": ["midstream"],
+        "泸州老窖": ["midstream"],
+        "山西汾酒": ["midstream"]
+      }
+    },
+    {
+      "industry": "光伏",
+      "aliases": ["光伏产业链", "光伏行业", "太阳能光伏"],
+      "roles": {
+        "通威股份": ["upstream", "midstream"],
+        "隆基绿能": ["midstream"],
+        "晶澳科技": ["midstream"],
+        "阳光电源": ["downstream"]
+      }
+    }
+  ]
+}
