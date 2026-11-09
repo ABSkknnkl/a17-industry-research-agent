@@ -630,6 +630,21 @@ class DataFusion:
                 continue
 
             is_single_entity_skill = result.skill_id in SINGLE_ENTITY_SKILLS
+            # 问财 query2data 把每个指标的来源单位放在响应列 meta（"columns"[].unit），
+            # 数据行本身不带单位。只读数据行会让所有金额落成 unit_unknown 并被覆盖判定拒绝。
+            # 这里把列 meta 的字段级单位回填到行记录的解析上下文，来源记为 source_schema。
+            column_units: dict[str, str] = {}
+            payload = getattr(result, "raw_payload", None)
+            if isinstance(payload, dict):
+                for column in payload.get("columns") or []:
+                    if not isinstance(column, dict):
+                        continue
+                    column_unit = column.get("unit")
+                    if not column_unit:
+                        continue
+                    for key_name in (column.get("key"), column.get("feKey"), column.get("index_name")):
+                        if key_name not in (None, ""):
+                            column_units[str(key_name)] = str(column_unit).strip()
 
             for raw_index, raw in enumerate(result.records):
                 source = source_base.model_copy(update={"raw_record_index": raw_index})
@@ -846,6 +861,15 @@ class DataFusion:
                         unit = str(raw.get("unit", raw.get("单位")))
                         unit_provenance = UNIT_SOURCE_FIELD
 
+                    # 列 meta 单位（问财 columns[].unit）是来源 schema 的字段级定义，
+                    # 优先于任何按指标名推断的默认单位。
+                    if not unit:
+                        column_stem = re.sub(r"[\[［\(（].*?[\]］\)）]", "", raw_key_str).strip()
+                        column_unit = column_units.get(raw_key_str) or column_units.get(column_stem)
+                        if column_unit:
+                            unit = column_unit
+                            unit_provenance = UNIT_SOURCE_SCHEMA
+
                     # AB-1.2：行级"指标名+单位"字段（如 "营业收入单位": "亿元"）是来源单位，
                     # 应保留出处为 source_field，而不是落入金额尺度猜测。问财等来源常以
                     # 独立列携带每个指标的单位。
@@ -923,6 +947,19 @@ class DataFusion:
                         compact_raw = {k: raw[k] for k in ident_keys if k in raw}
                         compact_raw[raw_key_str] = raw_value
 
+                    # 主营构成（分产品/分地区）是分部口径，不能与合并报表的同名指标
+                    # （毛利率/收入占比）混在同一 scope，否则会被判成数值冲突。
+                    # 只有主营构成行强制 segment；其他来源保留原始 scope 声明。
+                    qualifiers = _record_qualifiers(
+                        raw, metric_period, raw_key_str,
+                        point=is_snapshot_market_data or metric in (
+                            "market_cap", "circulating_market_cap", "pe", "pe_ttm",
+                            "pe_dynamic", "pe_lyr", "pb", "ps"),
+                    )
+                    if result.skill_id == "hithink-business-query" and (
+                        raw.get("项目名称") or raw.get("分类标准")
+                    ):
+                        qualifiers["scope"] = "segment"
                     item = ResearchRecord(
                         record_id=record_id,
                         domain=record_domain,
@@ -933,7 +970,7 @@ class DataFusion:
                         unit=unit,
                         unit_provenance=unit_provenance,
                         period_end=metric_period,
-                        **_record_qualifiers(raw, metric_period, raw_key_str, point=is_snapshot_market_data or metric in ("market_cap", "circulating_market_cap", "pe", "pe_ttm", "pe_dynamic", "pe_lyr", "pb", "ps")),
+                        **qualifiers,
                         period_provenance=period_origin,
                         published_at=record_published,
                         source=source,
@@ -1001,6 +1038,9 @@ class DataFusion:
         else:
             restatement_adjustments = self._apply_official_restatements(dataset, as_of)
         restatement_clues = self._mark_unverified_restatement_clues(dataset, as_of, restatement_adjustments)
+        # 问财缺少部分官方行业口径（如中国光伏新增并网容量），只返回发电量等替代序列。
+        # 用人工核验过的官方序列补齐，来源、定位与口径逐条落盘，不参与金额推断。
+        self._inject_verified_industry_series(dataset, industry, as_of)
 
         dataset.sources = list({
             (source.task_id, source.trace_id): source for source in dataset.sources
@@ -1032,6 +1072,84 @@ class DataFusion:
         if sample_admission is not None:
             dataset.quality_summary["sample_admission"] = sample_admission
         return dataset
+
+    @staticmethod
+    def _inject_verified_industry_series(
+        dataset: StructuredResearchDataset, industry: str | None, as_of: date
+    ) -> None:
+        """补齐供应商库缺失的官方行业口径（人工核验、逐点带来源）。"""
+        if not industry:
+            return
+        path = Path(__file__).resolve().parents[3] / "data" / "verified_industry_series.json"
+        if not path.is_file():
+            return
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return
+        existing = {record.record_id for record in dataset.industry}
+        for series in payload.get("series", []):
+            if not isinstance(series, dict):
+                continue
+            names = {str(series.get("industry") or "")}
+            names.update(str(alias) for alias in (series.get("industry_aliases") or []) if alias)
+            if industry not in names:
+                continue
+            metric = str(series.get("metric") or "").strip()
+            unit = series.get("unit")
+            if not metric:
+                continue
+            for point in series.get("points") or []:
+                try:
+                    period = date.fromisoformat(str(point["period_end"]))
+                    published = date.fromisoformat(str(point["published_at"]))
+                    value = float(point["value"])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                if period > as_of:
+                    continue
+                record_id = _record_id([
+                    "verified-series", str(series.get("series_id") or metric), point["period_end"],
+                ])
+                if record_id in existing:
+                    continue
+                source = SourceRef(
+                    task_id=f"verified-series:{series.get('series_id') or metric}",
+                    skill_id="official-statistics",
+                    skill_version="1.0.0",
+                    query=str(point.get("source_url") or ""),
+                    trace_id=record_id,
+                    retrieved_at=datetime.now().astimezone(),
+                    status="verified",
+                    record_count=1,
+                )
+                dataset.industry.append(ResearchRecord(
+                    record_id=record_id,
+                    domain=Domain.INDUSTRY,
+                    entity_name=str(series.get("entity_name") or "中国"),
+                    metric=metric,
+                    value=value,
+                    unit=unit,
+                    unit_provenance=UNIT_SOURCE_FIELD,
+                    period_end=period,
+                    period_start=date(period.year, 1, 1),
+                    period_type="annual",
+                    period_provenance="official_statistics",
+                    scope=str(series.get("scope") or "national"),
+                    currency="CNY",
+                    published_at=published,
+                    source=source,
+                    raw_fields={
+                        "source_url": point.get("source_url"),
+                        "source_locator": point.get("source_locator"),
+                        "basis": series.get("basis"),
+                        "literal_excerpt": point.get("literal_excerpt"),
+                        "unit": unit,
+                    },
+                    issues=[],
+                ))
+                existing.add(record_id)
+                dataset.sources.append(source)
 
     @staticmethod
     def _classify_open_theme_samples(
@@ -1135,8 +1253,31 @@ class DataFusion:
             if event.source.skill_id != "announcement-search" or (event.announce_date and event.announce_date > as_of):
                 continue
             text = f"{event.title or ''} {event.body or ''}"
-            text = re.sub(r"是否.{0,40}(?:追溯调整|重述).{0,40}?□\s*是\s*[\uf052☑√✓]\s*否",
-                          "", text, flags=re.DOTALL)
+            # 年报模板问答"公司是否需追溯调整或重述以前年度会计数据 □是☑否"
+            # 在勾选"否"时不构成调整事实（原正则只认"☑是…否"，漏掉"□是☑否"）。
+            text = re.sub(
+                r"是否.{0,40}(?:追溯调整|重述).{0,40}?(?:□|☐|☑|√|✓)?\s*是\s*(?:□|☐|☑|√|✓|\uf052)?\s*否",
+                "", text, flags=re.DOTALL,
+            )
+            # 附注目录式小节标题（如"1、前期会计差错更正 / (1).追溯重述法 / (2).未来适用法"）
+            # 只是格式模板，不代表存在调整；按行剔除短标题后再判定，避免误挂起整年财务记录。
+            kept_lines = []
+            for line in re.split(r"[\n。；]", text):
+                stripped_line = line.strip(" \t　")
+                if (
+                    len(stripped_line) <= 30
+                    and re.search(r"追溯重述法|未来适用法|会计差错更正|会计政策变更", stripped_line)
+                    and not re.search(r"\d[\d,\.]{3,}", stripped_line)
+                ):
+                    continue
+                kept_lines.append(line)
+            text = "。".join(kept_lines)
+            # 只有出现“调整前/调整后/差错更正/影响金额”等实质性重述信号才挂起；
+            # 定期报告里“会计政策变更进行追溯调整”的格式说明不足以否定整年数据。
+            strong_signal = bool(re.search(r"更正|追溯调整|重述", event.title or "")) or bool(
+                re.search(r"调整前|调整后|差错更正|更正公告|影响金额|重述金额", text))
+            if not strong_signal:
+                continue
             if not (re.search(r"更正|追溯调整|重述", text) and re.search(r"财务|报表|年报|营业收入|净利润|毛利率|现金流", text)):
                 continue
             raw = event.raw_fields or {}

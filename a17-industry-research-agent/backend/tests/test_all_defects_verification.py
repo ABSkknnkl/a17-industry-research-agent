@@ -337,8 +337,8 @@ def test_new_04_and_08_adapters_budget_and_iterations():
     from backend.app.agents.adapters import FiveAgentsAdapter
 
     source = inspect.getsource(FiveAgentsAdapter.run_data_fetcher)
-    assert "max_calls = 32 if is_deep else 24" in source, "NEW-08: Budget must be 24 for standard, 32 for deep"
-    assert "max_iters = 10 if is_deep else 8" in source, "NEW-08: Iterations must be 8 for standard, 10 for deep"
+    assert "max_calls = 40 if is_deep else 32" in source, "NEW-08: Budget must be 32 for standard, 40 for deep"
+    assert "max_iters = 12 if is_deep else 10" in source, "NEW-08: Iterations must be 10 for standard, 12 for deep"
 
 
 # NEW-05: Industry chain ignores concept announcement prose and non-chain metadata

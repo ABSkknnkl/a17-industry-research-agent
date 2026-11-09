@@ -216,6 +216,7 @@ def reconcile_text(text: str, facts: dict, checks: list[dict], location: str) ->
         eligible = period_observations(sentence, scope_pool)
         entities = {r["entity"] for r in pool if r["entity"] and r["entity"] in sentence}
         is_rank = bool(re.search(r"唯一|最高|领先|第一|最快", sentence))
+
         is_coverage = bool(re.search(r"年度|年报|全年", sentence) and re.search(r"序列|观察|覆盖|缺失|缺乏|没有", sentence))
         replacement_parts = []
         used_ids: set[str] = set()
@@ -227,20 +228,44 @@ def reconcile_text(text: str, facts: dict, checks: list[dict], location: str) ->
                 used_ids.update(rank["evidence_record_ids"])
                 replacement_parts.append(f"{rank['period_start']}至{rank['period']}（{_reading_basis(rank['period_type'])}，{_reading_basis(rank['scope'])}，{rank['currency']}，{rank['unit'] or '单位未明'}）已覆盖样本{rank['sample_size']}家，{_reading_metric(rank['metric'])}最高为{'、'.join(rank['highest_entities'])}，负值企业为{'、'.join(rank['negative_entities']) or '无'}（仅限该期间、范围和币种的已覆盖样本）")
         elif is_coverage:
+            # 覆盖说明按指标聚合一次，不按公司逐条重复（否则 4 家公司会出现 4 条同义句）。
+            cov_groups: dict[tuple[str, str, str], dict[str, Any]] = {}
             for cov in facts["coverage"]:
-                if cov["metric"] in metrics and (not entities or cov["entity"] in entities):
-                    same_group = lambda r: all(r.get(k) == cov.get(k) for k in ("entity", "metric", "scope", "currency", "unit"))
-                    if not any(same_group(r) for r in scope_pool):
-                        continue
-                    annual = [r for r in eligible if same_group(r) and r["period_type"] == "annual" and r["record_id"] in cov["evidence_record_ids"]]
-                    years = sorted({int(r["period"][:4]) for r in annual})
-                    requested_years = claim_years(sentence)
-                    expected = requested_years or (set(range(years[0], years[-1]+1)) if years else set())
-                    missing = sorted(expected - set(years))
-                    used_ids.update(r["record_id"] for r in annual)
-                    replacement_parts.append(f"{cov['entity'] or ''}{_reading_metric(cov['metric'])}（{_reading_basis(cov['scope'])}，{cov['currency']}，{cov['unit'] or '单位未明'}）有{len(annual)}个年度观察值，年度为{'、'.join(map(str, years)) or '无'}；{'指定年份' if requested_years else '已观察年份区间内'}缺年为{'、'.join(map(str, missing)) or '无'}，覆盖范围以所列年份为限")
+                if cov["metric"] not in metrics or (entities and cov["entity"] not in entities):
+                    continue
+                same_group = lambda r: all(r.get(k) == cov.get(k) for k in ("entity", "metric", "scope", "currency", "unit"))
+                if not any(same_group(r) for r in scope_pool):
+                    continue
+                annual = [r for r in eligible if same_group(r) and r["period_type"] == "annual" and r["record_id"] in cov["evidence_record_ids"]]
+                if not annual:
+                    continue
+                years = {int(r["period"][:4]) for r in annual}
+                requested_years = claim_years(sentence)
+                key = (cov["metric"], cov.get("scope") or "", cov.get("unit") or "")
+                group = cov_groups.setdefault(key, {"entities": [], "years": set(), "requested": requested_years})
+                if cov["entity"]:
+                    group["entities"].append(cov["entity"])
+                group["years"].update(years)
+                used_ids.update(r["record_id"] for r in annual)
+            for (metric, scope, unit), group in cov_groups.items():
+                years = sorted(group["years"])
+                requested_years = group["requested"]
+                expected = requested_years or (set(range(years[0], years[-1] + 1)) if years else set())
+                missing = sorted(expected - set(years))
+                who = "、".join(dict.fromkeys(group["entities"])) or "样本"
+                replacement_parts.append(f"{who}的{_reading_metric(metric)}（{_reading_basis(scope)}，CNY，{unit or '单位未明'}）有{len(years)}个年度观察值（覆盖{'、'.join(map(str, years)) or '无'}年）；{'指定年份' if requested_years else '已观察年份区间内'}缺年为{'、'.join(map(str, missing)) or '无'}，覆盖范围以所列年份为限")
         else:
             pool = [r for r in eligible if not entities or r["entity"] in entities]
+            if not entities and not claim_years(sentence):
+                # 概括句既没点名主体也没点名期间：每个指标只取最新一期、最多 6 条，
+                # 避免全样本×全期间枚举把摘要写成数据倾倒；点名了期间的句子保留
+                # 该期间的全部观测（正确性优先）。
+                latest: dict[tuple[str, str], dict[str, Any]] = {}
+                for observation in pool:
+                    key = (observation["metric"], observation["entity"] or "")
+                    if key not in latest or observation["period"] > latest[key]["period"]:
+                        latest[key] = observation
+                pool = sorted(latest.values(), key=lambda r: (r["metric"], r["entity"] or ""))[:6]
             for obs in sorted(pool, key=lambda r: (r["entity"] or "", r["metric"], r["period"])):
                 used_ids.add(obs["record_id"])
                 qualifier = "来源观测值" if obs.get("conflicted") else ""

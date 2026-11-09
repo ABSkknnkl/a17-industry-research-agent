@@ -444,6 +444,21 @@ class IwencaiGateway:
                     continue
                 raise last_auth_error
 
+            # 问财额度用尽时返回 200 + 纯文本“您今天的次数已用完…”，
+            # 不是 JSON 也不是 429；必须把它当作配额错误并轮换到备用 key。
+            if response.status_code < 400:
+                try:
+                    response.json()
+                except ValueError:
+                    body_text = response.text or ""
+                    if any(marker in body_text for marker in ("次数已用完", "升级权益", "额度不足", "quota")):
+                        last_auth_error = IwencaiAuthenticationError(
+                            f"Iwencai quota exhausted (key {self._key_index + 1}/{num_keys})"
+                        )
+                        if num_keys > 1 and attempt_idx < num_keys - 1:
+                            self._key_index = (self._key_index + 1) % num_keys
+                            continue
+                        raise last_auth_error
             response.raise_for_status()
             data = response.json()
             if isinstance(data, dict):

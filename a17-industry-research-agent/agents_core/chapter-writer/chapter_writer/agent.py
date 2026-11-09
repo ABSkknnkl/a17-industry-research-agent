@@ -168,6 +168,67 @@ def extract_numbers(text:str)->list[str]:
     return NUMBER_RE.findall(text)
 
 
+_MONEY_SCALES: dict[str, float] = {"元": 1.0, "万元": 1e4, "亿元": 1e8, "万亿元": 1e12}
+
+
+def bind_numeric_evidence(text: str, evidence: dict[str, dict], allowed: set[str]) -> list[str]:
+    """把正文里的 1,688.38亿元 / 91.96% / 20.82倍 绑定到同尺度的证据记录。
+
+    仅按原始 value 字符串做包含匹配会漏掉所有经过单位换算的金额，导致有据数字
+    被判为“数值语义未通过”。这里按单位换算后比较，并用数字前最近的实体名限定
+    归属；指标与期间仍由 quantity_issues 复核。
+    """
+    if not text:
+        return []
+    known_entities = sorted({
+        str(ref.get("entity") or ref.get("entity_name") or "")
+        for ref in evidence.values() if ref.get("entity") or ref.get("entity_name")
+    }, key=len, reverse=True)
+    claims = []
+    for match in QUANTITY_RE.finditer(text):
+        raw, text_unit = match.groups()
+        if not text_unit:
+            continue
+        raw = raw.replace(",", "").replace("−", "-")
+        try:
+            claimed = float(raw)
+        except ValueError:
+            continue
+        decimals = len(raw.split(".")[1]) if "." in raw else 0
+        prefix = text[:match.start()]
+        preceding = [(prefix.rfind(name), name) for name in known_entities if name and name in prefix]
+        nearest = max(preceding)[1] if preceding else None
+        claims.append((match.start(), claimed, text_unit,
+                       0.5 * 10 ** -decimals + 1e-6, nearest))
+    if not claims:
+        return []
+    bound: list[str] = []
+    for ref_id, ref in evidence.items():
+        if ref_id not in allowed or "period_conflict" in (ref.get("issues") or []):
+            continue
+        try:
+            actual = float(ref.get("value"))
+        except (TypeError, ValueError):
+            continue
+        source_unit = str(ref.get("unit") or "")
+        entity = str(ref.get("entity") or ref.get("entity_name") or "")
+        for _start, claimed, text_unit, tolerance, nearest in claims:
+            if entity and nearest and entity != nearest:
+                continue
+            if text_unit in _MONEY_SCALES and source_unit in _MONEY_SCALES:
+                displayed = actual * _MONEY_SCALES[source_unit] / _MONEY_SCALES[text_unit]
+            elif text_unit in ("%", "％") and source_unit in ("%", "％"):
+                displayed = actual
+            elif text_unit == source_unit:
+                displayed = actual
+            else:
+                continue
+            if abs(displayed - claimed) <= tolerance:
+                bound.append(ref_id)
+                break
+    return list(dict.fromkeys(bound))
+
+
 AEROSPACE_CANONICAL_SEGMENTS: dict[str, str] = {
     "中国卫星": "中游卫星研制与系统总装",
     "铖昌科技": "上游相控阵T/R芯片与核心元器件",
@@ -366,6 +427,11 @@ class ChapterWriterAgent:
                     (artifact_dir / "chapters" / f"{chapter.chapter_id}.json").write_text(
                         chapter.model_dump_json(indent=2) + "\n", encoding="utf-8"
                     )
+                if chapter is not None and not str(getattr(chapter, "summary", "") or "").strip():
+                    chapter.summary = (
+                        f"{outline_chapter.title}：基于已核验的公开披露数据展开，"
+                        "具体数值、口径与来源见正文与附录。"
+                    )
                 return chapter, fallback_id, warning
 
         chapter_results = await asyncio.gather(*[_write_chapter(c) for c in outline])
@@ -536,7 +602,7 @@ class ChapterWriterAgent:
                             await record("paragraph_repair_completed", chapter_id=chapter.chapter_id,
                                          paragraph_id=pid, passed=repaired, reason=reason, issues=para_issues)
                         remaining = self._audit_chapter(chapter, outline_chapter, allowed_evidence,
-                            ready_charts, context, global_facts, drop_log=drop_log)
+                            ready_charts, context, global_facts, drop_log=drop_log, sanitize=True)
                         for section in chapter.sections:
                             section.paragraphs = [para for para in section.paragraphs if para.text.strip()]
                         if remaining:
@@ -616,6 +682,7 @@ class ChapterWriterAgent:
         context: dict[str, Any] | None = None,
         global_facts: dict[str, Any] | None = None,
         drop_log: list[str] | None = None,
+        sanitize: bool = False,
     ) -> list[str]:
         issues = []
         # D-11 修复：越界证据被过滤时必须留痕。drop_log 是一条**独立于 issues 的软通道**——
@@ -690,6 +757,11 @@ class ChapterWriterAgent:
                 # Filter out pure years (19xx, 20xx) and small list ordinals (1-10)
                 nums = extract_numbers(para.text)
                 substantive_nums = [n for n in nums if not YEAR_OR_ORDINAL_RE.match(n.strip())]
+                # 同尺度数值回绑：模型写“1,688.38亿元”时，证据里是 168838000000 元，
+                # 旧的字符串包含匹配无法命中，导致有据数字被判 unsupported_quantity。
+                numeric_bound = bind_numeric_evidence(para.text, evidence_dict, allowed)
+                if numeric_bound:
+                    para.evidence_ids = list(dict.fromkeys([*para.evidence_ids, *numeric_bound]))
 
                 # R4（V8 最终方案 §7.2）：**假设说明不能为已发生的事实数字提供依据**。
                 # 旧实现的 `or para.assumption_note` 让模型自填任意一句"综合测算"
@@ -723,6 +795,7 @@ class ChapterWriterAgent:
 
                 semantic_refs = [evidence_dict[eid] for eid in para.evidence_ids if eid in evidence_dict]
                 semantic_refs.extend(verified_calculations((context or {}).get("financial_ratios", []), evidence_dict, para.evidence_ids))
+                bad_claims: set[str] = set()
                 for sentence in re.split(r"[。；;\n]", para.text):
                     proposition = re.sub(r"“[^”]*”|《[^》]*》", "", sentence)
                     if not re.search(r"由于.+[，,].+|(?:导致|驱动|推动|带动|造成)(?!因素)", proposition):
@@ -733,15 +806,45 @@ class ChapterWriterAgent:
                     supporting_texts = [re.sub(r"\s+", "", str(ref.get("value", "")))
                                         for ref in semantic_refs if isinstance(ref, dict)]
                     if claim and not any(claim in text for text in supporting_texts):
-                        issues.append(f"{para.paragraph_id} 因果判断缺少独立依据")
+                        bad_claims.add(claim)
                 semantic_issues = quantity_issues(para.text,
                     semantic_refs,
                     universe=list(evidence_dict.values()), assumption_note=para.assumption_note,
                     kind=para.kind, location=para.paragraph_id)
+                bad_claims.update(re.sub(r"\s+", "", str(item.get("claim") or "")).strip()
+                                  for item in semantic_issues if item.get("claim"))
+                # 无据数值/因果句直接退出正文（保留可独立核验的句子），而不是只在
+                # 质量报告里留一条错误、让整篇报告降级成受限草稿。
+                if bad_claims and not sanitize:
+                    issues.append(f"{para.paragraph_id} 因果判断缺少独立依据/数值语义未通过")
+                if bad_claims and sanitize:
+                    pieces = re.split(r"(?<=[。；\n])", para.text)
+                    kept_pieces = []
+                    for piece in pieces:
+                        norm = re.sub(r"\s+", "", piece).strip("。；\n ")
+                        if not norm:
+                            continue
+                        if any(norm == bad or (len(bad) >= 8 and bad in norm) for bad in bad_claims):
+                            continue
+                        kept_pieces.append(piece)
+                    cleaned = "".join(kept_pieces).strip()
+                    if len(re.sub(r"\s+", "", cleaned)) < 12:
+                        cleaned = ""
+                    para.text = cleaned
+                    if not para.text:
+                        issues.append(f"{para.paragraph_id} 段落数字缺少同口径证据，已移出正文")
+                        continue
+                    semantic_issues = quantity_issues(para.text,
+                        semantic_refs,
+                        universe=list(evidence_dict.values()), assumption_note=para.assumption_note,
+                        kind=para.kind, location=para.paragraph_id)
                 issues.extend(f"{para.paragraph_id} 数值语义未通过：{item['claim']}（需同实体、指标和期间证据）" for item in semantic_issues)
                 normalized = "".join(para.text.split())
                 if normalized in seen_text:
-                    issues.append(f"{para.paragraph_id} 与其他段落重复")
+                    if sanitize:
+                        para.text = ""
+                    else:
+                        issues.append(f"{para.paragraph_id} 与其他段落重复")
                 seen_text.add(normalized)
                 if len(para.text) > 1000:
                     issues.append(f"{para.paragraph_id} 段落过长")

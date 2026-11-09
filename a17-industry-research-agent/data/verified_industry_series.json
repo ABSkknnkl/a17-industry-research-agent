@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "note": "人工核验的官方行业序列。仅在问财等数据源缺少该口径时使用；每条数据点必须带可访问来源、定位与口径说明。",
+  "series": [
+    {
+      "series_id": "cn-pv-new-capacity",
+      "industry": "光伏",
+      "industry_aliases": ["光伏产业链", "光伏行业", "太阳能光伏"],
+      "metric": "pv_new_capacity",
+      "label": "中国光伏新增并网容量",
+      "entity_name": "中国",
+      "unit": "万千瓦",
+      "scope": "national",
+      "basis": "国家能源局《光伏发电建设情况》当年新增并网容量（万千瓦），统计范围为全国累计并网口径；2024 年按国家能源局累计装机差额（88666−60949）核对，2025 年为国家能源局 2025 年光伏发电建设情况。",
+      "points": [
+        {
+          "period_end": "2021-12-31",
+          "value": 5488.0,
+          "published_at": "2022-03-09",
+          "source_url": "http://www.nea.gov.cn/2022-03/09/c_1310508114.htm",
+          "source_locator": "《2021年光伏发电建设运行情况》附表「总计—2021年新增并网容量」，单位：万千瓦",
+          "literal_excerpt": "总计 5488.0"
+        },
+        {
+          "period_end": "2022-12-31",
+          "value": 8740.8,
+          "published_at": "2023-02-17",
+          "source_url": "https://www.nea.gov.cn/2023-02/17/c_1310698128.htm",
+          "source_locator": "《2022年光伏发电建设运行情况》附表「总计—2022年新增并网容量」，单位：万千瓦",
+          "literal_excerpt": "总计 8740.8"
+        },
+        {
+          "period_end": "2023-12-31",
+          "value": 21630.0,
+          "published_at": "2024-02-28",
+          "source_url": "https://www.nea.gov.cn/2024-02/28/c_1310765696.htm",
+          "source_locator": "《2023年光伏发电建设情况》附表「总计—2023年新增并网容量」，单位：万千瓦",
+          "literal_excerpt": "总计 21630.0"
+        },
+        {
+          "period_end": "2024-12-31",
+          "value": 27717.0,
+          "published_at": "2025-01-27",
+          "source_url": "http://www.nea.gov.cn/20250221/f04452701c914d51a89d0c0ea6f4acd1/c.html",
+          "source_locator": "《2024年光伏发电建设情况》附表；并以国家能源局 2024 年电力工业统计数据核对：88666−60949=27717 万千瓦",
+          "literal_excerpt": "2024年新增光伏装机27717万千瓦"
+        },
+        {
+          "period_end": "2025-12-31",
+          "value": 31657.4,
+          "published_at": "2026-02-21",
+          "source_url": "https://m.gmw.cn/2026-02/21/content_1304350363.htm",
+          "source_locator": "国家能源局《2025年光伏发电建设情况》：2025年新增并网容量31657.4万千瓦（央视网转发）",
+          "literal_excerpt": "2025年新增并网容量31657.4万千瓦"
+        }
+      ]
+    }
+  ]
+}

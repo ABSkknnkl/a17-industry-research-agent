@@ -551,6 +551,7 @@ class DataFetcherAgent:
                 break
             coverage = self._coverage(dataset, objective.required_domains, objective.requirements)
             pending_annual = self._priority_annual_tasks(objective, dataset, all_results, limit=None)
+            pending_chain = self._chain_supplement_tasks(objective, dataset, all_results)
             future_announcements = (self._announcement_restatement_tasks(objective, all_results)
                                     if "announcement-search" in self.skillhub.catalog else [])
             pending_announcements = future_announcements if not pending_annual else []
@@ -591,6 +592,9 @@ class DataFetcherAgent:
                     SkillTask(task_id="required_recent_news", skill_name="news-search",
                               arguments={"query": f"{objective.industry} 行业动态 {start.isoformat()} 至 {objective.as_of.isoformat()}"},
                               purpose="补充研究截止日前的行业资讯")])
+            elif pending_chain and not pending_annual:
+                decision = AgentDecision(decision="continue", assessment="补齐产业链环节与主营构成证据",
+                                         tasks=pending_chain[:remaining])
             else:
                 for attempt in range(2):
                     try:
@@ -1127,6 +1131,35 @@ class DataFetcherAgent:
                 comparison_baseline=cells[domain, entity, year, metric],
             ))
         return requirements
+
+    @staticmethod
+    def _chain_supplement_tasks(
+        objective: ResearchObjective, dataset: Any, results: list[SkillResult], *, limit: int = 4,
+    ) -> list[SkillTask]:
+        """产业链/主营构成是报告必备章节；供应商缺该域时按主体逐家补一次。"""
+        if dataset.industry_chain:
+            return []
+        if any(result.skill_id == "hithink-business-query" for result in results):
+            return []
+        # 只有点名了具体公司才逐家查主营构成；没有点名时按行业名硬查“主营业务构成”
+        # 在问财侧通常零召回，还会挤占通用主题的取数预算。
+        entities = list(dict.fromkeys(objective.must_include_entities))[:limit]
+        if not entities:
+            return []
+        attempted = {result.query for result in results}
+        tasks: list[SkillTask] = []
+        for entity in entities:
+            query = f"{entity} 主营业务构成 分产品 分地区"
+            if query in attempted:
+                continue
+            tasks.append(SkillTask(
+                task_id="chain_" + sha256(entity.encode()).hexdigest()[:12],
+                skill_name="industry_chain",
+                arguments={"query": query},
+                purpose="补充产业链环节与主营构成证据",
+                requirement_ids=[f"domain_{Domain.INDUSTRY_CHAIN.value}"],
+            ))
+        return tasks
 
     def _announcement_restatement_tasks(
         self, objective: ResearchObjective, results: list[SkillResult]
@@ -2068,7 +2101,8 @@ class DataFetcherAgent:
         metrics = [item.metric.casefold() for item in records]
         for group in requirement.expected_metric_groups:
             if not any(any(token.casefold() in metric or
-                           (requirement.domain == Domain.FINANCIALS and metric_family(token) == metric_family(metric))
+                           (requirement.domain in (Domain.FINANCIALS, Domain.INDUSTRY)
+                            and metric_family(token) == metric_family(metric))
                            for token in group) for metric in metrics):
                 missing.append("缺少指标组：" + "/".join(group))
         if requirement.domain == Domain.FINANCIALS and not requirement.entity_names:
@@ -2107,7 +2141,7 @@ class DataFetcherAgent:
         request: ResearchRequest, required: list[Domain]
     ) -> list[ResearchRequirement]:
         skill_ids = {
-            Domain.INDUSTRY: ["hithink-industry-query", "hithink-zhishu-query"],
+            Domain.INDUSTRY: ["hithink-industry-query", "hithink-zhishu-query", "official-statistics"],
             Domain.COMPANIES: [
                 "hithink-basicinfo-query", "hithink-astock-selector",
                 "hithink-hkstock-selector", "hithink-usstock-selector",
@@ -2115,7 +2149,7 @@ class DataFetcherAgent:
             ],
             Domain.FINANCIALS: ["hithink-finance-query"],
             Domain.MACRO: ["hithink-macro-query"],
-            Domain.INDUSTRY_CHAIN: ["hithink-business-query", "hithink-futures-query", "official-disclosure"],
+            Domain.INDUSTRY_CHAIN: ["hithink-business-query", "hithink-futures-query", "official-disclosure", "official-statistics"],
             Domain.REPORTS: ["report-search", "hithink-insresearch-query"],
             Domain.NEWS: ["news-search", "announcement-search", "hithink-event-query"],
         }

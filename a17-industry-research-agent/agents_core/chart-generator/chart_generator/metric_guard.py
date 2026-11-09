@@ -247,6 +247,15 @@ METRIC_REGISTRY: dict[str, MetricMeta] = {
         aliases=("成交额", "成交金额", "amount"),
     ),
 
+    # --- 4b. 行业规模序列 (COUNT_OR_SCALE) ---
+    "pv_new_capacity": MetricMeta(
+        code="pv_new_capacity",
+        canonical_name="光伏新增装机容量",
+        dimension=MetricDimension.COUNT_OR_SCALE,
+        preferred_unit="万千瓦",
+        aliases=("光伏新增装机", "新增光伏装机", "光伏新增装机量", "新增并网容量", "光伏新增并网容量"),
+    ),
+
     # --- 5. 估值与每股指标 (VALUATION_MULTIPLE) ---
     "pe": MetricMeta(
         code="pe",

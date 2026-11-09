@@ -5,7 +5,9 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import date
 from hashlib import sha256
+import json
 import math
+from pathlib import Path
 import re
 from statistics import median
 from typing import Any, Iterable
@@ -910,6 +912,18 @@ class DeterministicAnalysisEngine:
                     item["records"][m_key] = r
                 item["evidence_ids"].append(r.record_id)
 
+        # 点名样本（comparison_scope）之外的公司不得进入核心可比矩阵：
+        # 行业选股接口会带回同行业其他公司（如白酒里的洋河），它们只有估值快照、
+        # 没有指定期间的财务数据，混入后会污染样本口径与图表。
+        scope = getattr(dataset, "quality_summary", {}).get("comparison_scope") or {}
+        allowed_names = set(scope.get("names") or [])
+        allowed_codes = set(scope.get("codes") or [])
+        if allowed_names or allowed_codes:
+            company_data = {
+                key: value for key, value in company_data.items()
+                if value.get("name") in allowed_names or value.get("code") in allowed_codes
+            }
+
         entries: list[PeerCompsEntry] = []
         for ent, d in company_data.items():
             m = d["metrics"]
@@ -1053,9 +1067,9 @@ class DeterministicAnalysisEngine:
         gms = [e.gross_margin for e in benchmark_entries if e.gross_margin is not None]
         nms = [e.net_margin for e in benchmark_entries if e.net_margin is not None]
         # Sum unrounded, same-definition observations; missing entities stay in the denominator.
-        mcs = [self._normalize_money(company_data[e.company_name]["metrics"]["market_cap"][0],
-                                    company_data[e.company_name]["metrics"]["market_cap"][1])
-               for e in entries if e.market_cap is not None]
+        # entries 已保存归一化后的市值（亿元）；不再回查 company_data["market_cap"]，
+        # 因为市值可能来自行情快照或流通市值派生，company_data 里未必有同名键。
+        mcs = [e.market_cap for e in entries if e.market_cap is not None]
 
         tier_note = (
             f"样本包含 {len(pe_profitable)} 家盈利成熟标的与 {len(entries) - len(pe_profitable)} 家早期/亏损/极高估值标的。"
@@ -1086,6 +1100,23 @@ class DeterministicAnalysisEngine:
         comps_matrix: PeerCompsMatrix | None = None,
     ) -> list[IndustryChainSegment]:
         records = dataset.all_records()
+        # 点名样本之外的公司不进入产业链环节归属：行业选股接口会带回同行业
+        # 其他公司（如白酒里的均瑶健康/维维股份），它们没有业务证据，混入会形成错误归属。
+        scope = getattr(dataset, "quality_summary", {}).get("comparison_scope") or {}
+        allowed_names = set(scope.get("names") or [])
+        allowed_codes = set(scope.get("codes") or [])
+        role_overrides: dict[str, list[str]] = {}
+        try:
+            role_path = Path(__file__).resolve().parents[3] / "data" / "verified_industry_chain_roles.json"
+            if role_path.is_file():
+                payload = json.loads(role_path.read_text(encoding="utf-8"))
+                for entry in payload.get("industries", []):
+                    names = {str(entry.get("industry") or ""), *(entry.get("aliases") or [])}
+                    if subject in names:
+                        role_overrides = {str(k): list(v) for k, v in (entry.get("roles") or {}).items()}
+                        break
+        except (OSError, ValueError):
+            role_overrides = {}
         chain_data: dict[str, dict[str, Any]] = {
             "upstream": {"companies": set(), "evidence": [], "products": []},
             "midstream": {"companies": set(), "evidence": [], "products": []},
@@ -1173,6 +1204,8 @@ class DeterministicAnalysisEngine:
 
         for r in records:
             ent = _entity(r, context_map=dyn_tickers)
+            if (allowed_names or allowed_codes) and ent and ent not in allowed_names and r.entity_code not in allowed_codes:
+                continue
             text = str(r.value or "")
             m_name = r.metric.casefold()
             raw_seg = str(r.raw_fields.get("产业链环节") or r.raw_fields.get("环节") or "").casefold()
@@ -1193,6 +1226,13 @@ class DeterministicAnalysisEngine:
             is_up = "上游" in raw_seg or any(k in combined for k in upstream_kw)
             is_down = "下游" in raw_seg or any(k in combined for k in downstream_kw)
             is_mid = "中游" in raw_seg or any(k in combined for k in midstream_kw)
+            # 人工核验的角色优先于关键词：白酒四家都是中游品牌酿造，
+            # 光伏通威（硅料+电池）、隆基/晶澳（硅片/组件）、阳光电源（逆变器/系统）。
+            verified_role = role_overrides.get(str(ent or "").strip())
+            if verified_role is not None:
+                is_up = "upstream" in verified_role
+                is_mid = "midstream" in verified_role
+                is_down = "downstream" in verified_role
 
             # Product extraction helper: only extract from concise product/business fields, never from narrative concept/announcement text
             is_product_field = (
@@ -1238,6 +1278,13 @@ class DeterministicAnalysisEngine:
                     company_scores[clean_ent]["midstream"] += 1 + sum(1 for k in midstream_kw if k in combined)
                 if is_down:
                     company_scores[clean_ent]["downstream"] += 1 + sum(1 for k in downstream_kw if k in combined)
+                if verified_role is not None:
+                    # 人工核验角色优先：覆盖关键词累计分，避免被“原料/渠道”等词带偏。
+                    company_scores[clean_ent] = {
+                        "upstream": 100 if is_up else 0,
+                        "midstream": 100 if is_mid else 0,
+                        "downstream": 100 if is_down else 0,
+                    }
 
             if is_up:
                 if clean_ent: chain_data["upstream"]["companies"].add(clean_ent)
@@ -1302,7 +1349,8 @@ class DeterministicAnalysisEngine:
             stage_assigned[best].append(c)
 
         # Rebalance across stages if any stage is empty and total companies >= 3, ensuring strictly disjoint assignments
-        if len(all_candidate_comps) >= 3:
+        # 已有人工核验角色时不强行凑满三段：白酒四家同属中游是正确结构。
+        if len(all_candidate_comps) >= 3 and not role_overrides:
             for target_stage in ["upstream", "downstream", "midstream"]:
                 if not stage_assigned[target_stage]:
                     donor = max(stage_assigned, key=lambda s: len(stage_assigned[s]))
@@ -1500,16 +1548,8 @@ class DeterministicAnalysisEngine:
                 "observed_values": [str(v) for v in c.values],
                 "arbitration_rule": "优先采纳最新法定审计年报/中报公告数据；多口径预测数据保留区间范围",
             })
-        for v in validations:
-            if v.status == "contradicted" and v.kind == "source_consistency":
-                conflict_items.append({
-                    "entity": "多源交叉验证标的",
-                    "metric": v.claim,
-                    "period": "-",
-                    "evidence_record_ids": list(v.evidence_record_ids),
-                    "observed_values": [f"涉及来源: {', '.join(v.sources)}"],
-                    "arbitration_rule": v.explanation or "交叉核验相对偏差超过容差阈值，保留差异标注供穿透核查",
-                })
+        # 交叉核验结论已进入 knowledge_facts/insights；不要伪装成“同主体、同指标、
+        # 同期间的不同数值记录”塞进 conflict_items——附录审计会（正确地）判其不成立。
 
         non_extrapolation_disclaimers = [
             "【样本边界】量化样本仅包含本次实际取得且定义明确的公开记录；未知主营归属不作为行业估值基准，集团口径不得当作细分业务口径。",
