@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新能源汽车专题 · 智能体3图表交付</title>
+<script src="echarts.min.js"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#f5f7fa; color:#334155;
+         font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; }
+  .wrap { max-width:1240px; margin:0 auto; padding:32px 24px 64px; }
+  header h1 { font-size:24px; margin:0 0 8px; color:#1B365D; }
+  header p { margin:0; color:#64748B; font-size:13px; line-height:1.8; }
+  .panel { background:#fff; border:1px solid #e2e8f0; border-radius:10px;
+            padding:20px 24px; margin:20px 0; }
+  .panel h3 { margin:0 0 12px; font-size:15px; color:#1B365D; }
+  .stats { display:flex; gap:28px; flex-wrap:wrap; margin-bottom:14px; }
+  .stat b { display:block; font-size:26px; color:#1B365D; line-height:1.2; }
+  .stat span { font-size:12px; color:#64748B; }
+  .tag { display:inline-block; padding:2px 9px; border-radius:4px; font-size:11px;
+          margin:0 6px 5px 0; background:#eef2f7; color:#334155; }
+  .tag.type { background:#1B365D; color:#fff; }
+  .tag.chapter { background:#0f766e; color:#fff; }
+  .tag.unit { background:#fff7ed; color:#9a5b13; border:1px solid #fed7aa; }
+  ul.caliber { margin:0; padding-left:20px; font-size:13px; line-height:2; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(520px,1fr)); gap:20px; }
+  .card { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:18px 20px 16px; }
+  .card-head { display:flex; gap:12px; align-items:flex-start; }
+  .idx { font-size:13px; font-weight:700; color:#fff; background:#1B365D;
+          border-radius:6px; padding:5px 8px; flex:none; }
+  .card h2 { font-size:15px; margin:2px 0 8px; line-height:1.5; color:#1B365D; }
+  .goal { font-size:12.5px; color:#64748B; line-height:1.7; margin:10px 0 6px; }
+  .chart { width:100%; height:360px; }
+  .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px;
+                font-size:12px; margin:8px 0 6px; }
+  .meta-grid .k { color:#94a3b8; display:block; }
+  .meta-grid .v { color:#334155; }
+  details.notes { border-top:1px dashed #e2e8f0; padding-top:8px; margin-top:8px;
+                   font-size:12px; color:#475569; }
+  details.notes summary { cursor:pointer; color:#0f766e; }
+  details.notes ul { margin:8px 0 0; padding-left:18px; line-height:1.8; }
+  .evid-list { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+  .evid-list code { font-size:10.5px; background:#f1f5f9; padding:2px 5px; border-radius:3px; }
+  table.supp { width:100%; border-collapse:collapse; font-size:12.5px; }
+  table.supp th, table.supp td { border-bottom:1px solid #e2e8f0; padding:8px 10px;
+                                  text-align:left; vertical-align:top; line-height:1.6; }
+  table.supp th { color:#64748B; font-weight:600; background:#f8fafc; }
+  table.supp code { background:#f1f5f9; padding:1px 5px; border-radius:3px; }
+  .muted { color:#94a3b8; font-size:13px; }
+  footer { margin-top:28px; font-size:12px; color:#94a3b8; line-height:1.9; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>新能源汽车专题 · 智能体3图表交付</h1>
+    <p>图表类型由智能体3（ChartGeneratorAgent）内部大模型选型推荐；全部 ECharts option 实现代码由主智能体按清单逐一编写。<br>
+       数据源：A1 dataset.json（research_as_of 2026-11-09）与 A2 interpretation_report.json；未做任何外推。</p>
+  </header>
+
+  <section class="panel">
+    <h3>交付概览</h3>
+    <div class="stats">
+      <div class="stat"><b>9</b><span>图表张数</span></div>
+      <div class="stat"><b>9</b><span>图表种类</span></div>
+      <div class="stat"><b>6</b><span>主动抑制</span></div>
+      <div class="stat"><b>84</b><span>引用证据 ID 次</span></div>
+    </div>
+    <div><span class='tag type'>combo</span><span class='tag type'>line</span><span class='tag type'>area</span><span class='tag type'>comparison_bar</span><span class='tag type'>horizontal_bar</span><span class='tag type'>scatter</span><span class='tag type'>radar</span><span class='tag type'>donut</span><span class='tag type'>diverging_bar</span></div>
+  </section>
+
+  <section class="panel">
+    <h3>口径红线（引用前必读）</h3>
+    <ul class="caliber"><li>2026 年前三季度 ≠ 2025 全年，禁止并列或相加。</li><li>渗透率只有 2025 年，无法构建 2021—2025 年度序列。</li><li>rd_ratio（研发费用率）缺失，不得用研发费用金额代替研发强度。</li><li>产业链 200 条记录为行情/概念字段，不构成上中下游环节归属证据。</li><li>销量为累计值、渗透率为国内零售口径、出口为年度值，三者不得混用或相加。</li><li>金额类 unit 多为 null/unknown，按量级判断为元并换算亿元，原始值以 dataset.json 为准。</li></ul>
+  </section>
+
+  <div class="grid">
+    <article class="card">
+      <div class="card-head">
+        <span class="idx">01</span>
+        <div>
+          <h2>2021—2025 新能源汽车销量累计规模与同比增速：总量扩张与增速换挡</h2>
+          <div class="tags">
+            <span class="tag type">combo</span>
+            <span class="tag chapter">CH-02</span>
+            <span class="tag unit">单位 万辆 / %</span>
+          </div>
+        </div>
+      </div>
+      <p class="goal">验证 INS-001 / KF-001 销量累计 +368.3%、CAGR≈47.1% 的规模扩张与增速换挡，为『增长动能由内需转向出口』提供规模基线</p>
+      <div class="chart" id="chart-1"></div>
+      <div class="meta-grid">
+        <div><span class="k">对应结论</span><span class="v">INS-001、KF-001</span></div>
+        <div><span class="k">数据域 / 字段</span><span class="v">industry · 新能源汽车:销量:累计值</span></div>
+      </div>
+      <details class="notes">
+        <summary>口径与数据限制（6 条）</summary>
+        <ul><li>A1 销量为累计值（period_type=ytd_month，单位 辆），除以 1e4 换算为万辆。</li><li>同比由 A1 相邻年度累计值直接计算（非外部预测）：95.6% → 28.2%，增速逐年放缓；累计 +368.3%，CAGR 约 47.1%（KF-001）。</li><li>2021/2022 无上年 A1 观测，首个同比位保持断点，不以 0 填补。</li><li>口径红线：销量为 ytd_month 累计值口径，各年取 12 月累计≈全年；严禁与『国内零售渗透率』『出口量年度值』混用或相加。</li><li>单位说明：原始单位为辆，÷10000 换算万辆；右轴同比为派生计算值，非 dataset 原生字段，不得当作官方公布增速。</li><li>数据缺口：A1 未提供 2021—2025 销量当月值/月度同比，同比仅由 5 个年度累计点推算，不能反映年内波动；2026 前三季度数据另属 macro 域，禁止与本序列并列或拼接。</li></ul>
+      </details>
+      <details class="notes evid">
+        <summary>证据 ID（5 条，全部来自 A1 dataset.json）</summary>
+        <div class="evid-list"><code>R-9cddc099c323e8ecff3c</code><code>R-500738f1a3279ca3de7c</code><code>R-8b9033fad828bd6daae9</code><code>R-83cefc8c2660853a6696</code><code>R-ce1dae9585ee140f09e0</code></div>
+      </details>
+    </article>
+    
+    <article class="card">
+      <div class="card-head">
+        <span class="idx">02</span>
+        <div>
+          <h2>2025 年国内零售渗透率是否已进入高位平台：年内观测序列 51.1%→59.3%</h2>
+          <div class="tags">
+            <span class="tag type">line</span>
+            <span class="tag chapter">CH-01</span>
+            <span class="tag unit">单位 %</span>
+          </div>
+        </div>
+      </div>
+      <p class="goal">验证 INS-001 / INS-011 / KF-002 渗透率站上 50% 后进入高位平台、内需边际见顶，支撑『增长动能由内需转向出口』的判断</p>
+      <div class="chart" id="chart-2"></div>
+      <div class="meta-grid">
+        <div><span class="k">对应结论</span><span class="v">INS-001、INS-011、KF-002</span></div>
+        <div><span class="k">数据域 / 字段</span><span class="v">industry · 国内零售渗透率:新能源汽车:当月值</span></div>
+      </div>
+      <details class="notes">
+        <summary>口径与数据限制（5 条）</summary>
+        <ul><li>渗透率为国内零售口径，仅 2025 年有数据；10 条观测的 period_type 混杂（month / q1 / half_year / ytd_q3 / annual），点位按报告期排序，仅作年内位置展示。</li><li>3 月 51.1% → 全年 59.1%，11 月峰值 59.3%（KF-002）；2021—2024 年度序列缺失，禁止外推多年趋势（INS-011）。</li><li>口径红线：本指标为『国内零售』口径，与销量累计值(累计口径)、出口年度值三者不得混用或相加。</li><li>注意 period_type 混杂：10 条记录含 month/q1/half_year/ytd_q3/annual，末点为『12月/全年』累计口径，非等间隔可比的纯月度时序；折线仅表示 2025 年内观测走向，严禁解读为逐月环比或趋势外推。</li><li>数据缺口：仅 2025 年有值，按 A1 红线禁止绘制 2021—2025 多年渗透率趋势(INS-011)，多年趋势图已列入 suppressed_charts；无 2026 年渗透率数据。</li></ul>
+      </details>
+      <details class="notes evid">
+        <summary>证据 ID（10 条，全部来自 A1 dataset.json）</summary>
+        <div class="evid-list"><code>R-1dbfe60db8d522d78696</code><code>R-5d20852b9d028c17ef77</code><code>R-3349f40ea8f4700ae096</code><code>R-68bb01ddf140e50bf20c</code><code>R-1b31accc584946e36d29</code><code>R-e5c77dad219509fc999d</code><code>R-2f8aef227565fb2a6e56</code><code>R-bd8d92d1aac6dff21ab2</code><code>R-34216298f293556a28fd</code><code>R-2ae2e10425356de79f2a</code></div>
+      </details>
+    </article>
+    
+    <article class="card">
+      <div class="card-head">
+        <span class="idx">03</span>
+        <div>
+          <h2>2021—2025 新能源汽车出口量年度规模：内需换挡下的外需动能切换</h2>
+          <div class="tags">
+            <span class="tag type">area</span>
+            <span class="tag chapter">CH-02</span>
+            <span class="tag unit">单位 万辆</span>
+          </div>
+        </div>
+      </div>
+      <p class="goal">验证 INS-001 / INS-012 / KF-003 出口累计 +640.9%、2025 年 +102.8%，与 C01 内需增速换挡对照，支撑『增长动能由内需转向出口』</p>
+      <div class="chart" id="chart-3"></div>
+      <div class="meta-grid">
+        <div><span class="k">对应结论</span><span class="v">INS-001、INS-012、KF-003</span></div>
+        <div><span class="k">数据域 / 字段</span><span class="v">industry · 新能源汽车:出口量</span></div>
+      </div>
+      <details class="notes">
+        <summary>口径与数据限制（6 条）</summary>
+        <ul><li>A1 出口量为年度值（period_type=annual，单位 辆），除以 1e4 换算为万辆。</li><li>出口累计 +640.9%，2025 年同比 +102.8%（KF-003 / INS-012）；同比由 A1 相邻年度值计算。</li><li>出口为年度值，销量为累计值、渗透率为国内零售口径，三者不得相加或混用。</li><li>口径红线：出口量为 annual 年度值，与『销量累计值』(ytd_month 累计)、『国内零售渗透率』口径不同，三者不得混用或相加。</li><li>单位说明：原始单位为辆，÷10000 换算万辆。</li><li>数据缺口：2026 仅有『出口数量:累计同比』(macro 域 1—9 月)，属不同期间与不同口径，严禁与 2021—2025 年度值并列/拼接；本图不含 2026 数据，海外风险(INS-012)无量化情景值，仅作正文定性陈述。</li></ul>
+      </details>
+      <details class="notes evid">
+        <summary>证据 ID（5 条，全部来自 A1 dataset.json）</summary>
+        <div class="evid-list"><code>R-edbb6e144668d79d8037</code><code>R-e000ce370a61ec50870e</code><code>R-04d35bda646d76dff5e5</code><code>R-6d58848443b2cbdba045</code><code>R-ceaba431b055c5db8754</code></div>
+      </details>
+    </article>
+    
+    <article class="card">
+      <div class="card-head">
+        <span class="idx">04</span>
+        <div>
+          <h2>2025 年样本企业营收规模与归母净利对照：以量取胜与以利取胜的分化</h2>
+          <div class="tags">
+            <span class="tag type">comparison_bar</span>
+            <span class="tag chapter">CH-04</span>
+            <span class="tag unit">单位 亿元</span>
+          </div>
+        </div>
+      </div>
+      <p class="goal">验证 INS-002 整车盈利分化（比亚迪营收居首但盈利承压、赛力斯以价取胜）与 INS-003 宁德时代归母净利领先，落实核心企业财务对比保底席位</p>
+      <div class="chart" id="chart-4"></div>
+      <div class="meta-grid">
+        <div><span class="k">对应结论</span><span class="v">INS-002、INS-003、KF-004</span></div>
+        <div><span class="k">数据域 / 字段</span><span class="v">financials · revenue、parent_net_profit</span></div>
+      </div>
+      <details class="notes">
+        <summary>口径与数据限制（5 条）</summary>
+        <ul><li>A1 金额类记录 unit=null / unit_provenance=unknown，按数值量级判断为「元」，本图除以 1e8 换算为亿元；原始值以 dataset.json 的 value 为准。</li><li>两系列同为 2025 年度金额流量（亿元），共享单一金额轴，不做归一化、不相加、不启用双轴。</li><li>单位红线：金额类 unit=null、unit_provenance=unknown，按量级判断为『元』并 ÷1e8 换算亿元；换算仅为展示处理，不改变原值；比率与金额不做无解释相加或归一化。</li><li>口径说明：仅 2025 年度值，5 家公司同一会计期间；两系列量级差异大，共享单一金额轴以免双轴误导。</li><li>数据缺口：赛力斯 2023 归母净利为负(R-f21b29643b0d42107933)，属不同期间，未纳入 2025 截面；净利率 net_margin 仅宁德时代/亿纬锂能 2 家有值，本图未使用，缺失保持断点不补齐。</li></ul>
+      </details>
+      <details class="notes evid">
+        <summary>证据 ID（10 条，全部来自 A1 dataset.json）</summary>
+        <div class="evid-list"><code>R-2850b52306edde896670</code><code>R-439658738fbc270bf00f</code><code>R-75932763a5e752cedc44</code><code>R-f5a837da7f0378a237fb</code><code>R-b9c2bd098377eeaede64</code><code>R-86899599c1bce98993a4</code><code>R-0d84f32b243973dbc9e3</code><code>R-f274adc626b7374d6c16</code><code>R-63e026d9ead3d5f02201</code><code>R-2f32d8e20d274383daeb</code></div>
+      </details>
+    </article>
+    
+    <article class="card">
+      <div class="card-head">
+        <span class="idx">05</span>
+        <div>
+          <h2>2025 年五家样本企业毛利率横向排名：整车与电池环节的利润分配格局</h2>
+          <div class="tags">
+            <span class="tag type">horizontal_bar</span>
+            <span class="tag chapter">CH-03</span>
+            <span class="tag unit">单位 %</span>
+          </div>
+        </div>
+      </div>
+      <p class="goal">验证 INS-002 / INS-007 / KF-006 毛利率最高为赛力斯、宁德时代次之，呈现 CH-03 利润分配中『整车与电池毛利率相近』的截面证据</p>
+      <div class="chart" id="chart-5"></div>
+      <div class="meta-grid">
+        <div><span class="k">对应结论</span><span class="v">INS-002、INS-007、KF-006</span></div>
+        <div><span class="k">数据域 / 字段</span><span class="v">financials · gross_margin</span></div>
+      </div>
+      <details class="notes">
+        <summary>口径与数据限制（4 条）</summary>
+        <ul><li>横截面统一为 2025 年度、合并报表（scope=consolidated）、CNY 口径。</li><li>口径红线：gross_margin 为比率(%)，与金额类指标不可相加、不归一化；仅 2025 单一截面，不得与 2026 前三季度数据并列。</li><li>口径红线：毛利率不含期间费用与研发投入，不得据此直接推断净利率或研发强度；本图以『利润分配』替代被抑制的 industry_chain 拓扑，不使用环节归属结论。</li><li>数据缺口：KF-006 提及 2023 年毛利率最高为比亚迪，但本图仅取 2025 截面，跨年毛利率变化未在图中展开；净利率 net_margin 仅 2 家有值，不得以毛利率代替净利率结论，缺失保持断点不补齐。</li></ul>
+      </details>
+      <details class="notes evid">
+        <summary>证据 ID（5 条，全部来自 A1 dataset.json）</summary>
+        <div class="evid-list"><code>R-41f976fdb583554f5bbe</code><code>R-5af428dfec95be77a3ef</code><code>R-c50316c56bec8123caeb</code><code>R-5569a84cfc21d79dad02</code><code>R-15095f53dd293b4b7fef</code></div>
+      </details>
+    </article>
+    
+    <article class="card">
+      <div class="card-head">
+        <span class="idx">06</span>
+        <div>
+          <h2>2025 年样本企业『盈利性—成长性』四象限定位：毛利率 × 营收同比与中位数十字线</h2>
+          <div class="tags">
+            <span class="tag type">scatter</span>
+            <span class="tag chapter">CH-04</span>
+            <span class="tag unit">单位 % / %</span>
+          </div>
+        </div>
+      </div>
+      <p class="goal">验证 INS-002 / INS-007 / INS-003 跨实体二维分化：高毛利低成长与低毛利高成长并存，为 CH-04 竞争格局分类提供定位依据</p>
+      <div class="chart" id="chart-6"></div>
+      <div class="meta-grid">
+        <div><span class="k">对应结论</span><span class="v">INS-002、INS-007、INS-003</span></div>
+        <div><span class="k">数据域 / 字段</span><span class="v">financials · gross_margin、revenue_yoy</span></div>
+      </div>
+      <details class="notes">
+        <summary>口径与数据限制（8 条）</summary>
+        <ul><li>两轴均为 2025 年度比率（%），经济含义不同，仅作相对定位，不相加、不回归。</li><li>分割线取样本内中位数，仅代表 5 家样本相对位置，不代表行业基准。</li><li>net_margin 仅 2 家有值，盈利性维度改用 5 家全覆盖的 gross_margin，缺失不补齐。</li><li>选型依据：scatter 取自 chart-selection 规范『跨实体截面比较两核心维度 + 中位数十字参考线划分四象限』，本图 5 实体 × 2 维均有 A1 实值支撑、证据充分；该类型不在智能体3 直出枚举内，特此说明。</li><li>口径红线：两轴同为比率(%)，但毛利率(存量盈利)与营收同比(增速)经济含义不同，仅作四象限定位，不做相加、不做无解释归一化或回归。</li><li>注意数据缺口：原欲用『营收体量 vs 净利率』，但 net_margin 仅宁德时代/亿纬锂能 2 家有值，缺失保持断点不补齐，故盈利性维度改用 5 家全覆盖的 gross_margin，绝不伪造其余 3 家净利率。</li><li>极值提示：赛力斯 2024 营收同比 305.04%(R-ff94b56e31de3e228a08)、宁德时代 2024 -9.70%(R-05e528b6f49cbc410492) 属不同期间，不纳入 2025 截面。</li><li>口径红线：历史值与预测值不得混线；A1 无任何预测值，本图不含预测点。</li></ul>
+      </details>
+      <details class="notes evid">
+        <summary>证据 ID（10 条，全部来自 A1 dataset.json）</summary>
+        <div class="evid-list"><code>R-41f976fdb583554f5bbe</code><code>R-5af428dfec95be77a3ef</code><code>R-c50316c56bec8123caeb</code><code>R-5569a84cfc21d79dad02</code><code>R-15095f53dd293b4b7fef</code><code>R-ab43c127a70311c9f9b4</code><code>R-6ee20254fc4b3ee71771</code><code>R-8b7ed58ac163b00115eb</code><code>R-fe789b78bb4745b076f2</code><code>R-6a14d87cd8c2adc719c9</code></div>
+      </details>
+    </article>
+    
+    <article class="card">
+      <div class="card-head">
+        <span class="idx">07</span>
+        <div>
+          <h2>2025 年样本企业财务质量五维画像：规模、盈利、成长、现金与利润的样本内标准化对比</h2>
+          <div class="tags">
+            <span class="tag type">radar</span>
+            <span class="tag chapter">CH-05</span>
+            <span class="tag unit">单位 0—100 标准化分值（原始：亿元 / %）</span>
+          </div>
+        </div>
+      </div>
+      <p class="goal">验证 INS-003 动力电池盈利韧性优于整车与 INS-004 比亚迪经营现金流连续两年下滑的截面位置，提供多维互补的财务质量参照（非估值参照）</p>
+      <div class="chart" id="chart-7"></div>
+      <div class="meta-grid">
+        <div><span class="k">对应结论</span><span class="v">INS-003、INS-004、KF-007</span></div>
+        <div><span class="k">数据域 / 字段</span><span class="v">financials · revenue、gross_margin、revenue_yoy、operating_cash_flow、parent_net_profit</span></div>
+      </div>
+      <details class="notes">
+        <summary>口径与数据限制（8 条）</summary>
+        <ul><li>标准化方法：各维度独立按 5 家样本内 min-max 线性映射，score = 100 × (x − min) / (max − min)。</li><li>金额类（亿元）与比率类（%）分别标准化，严禁跨量纲相加；0 或 100 是排名结果而非缺失。</li><li>不含 PE / PB / 市值等估值单点，不做估值判断（INS-006 越界）。</li><li>选型依据：radar 满足 ≥3 个互补独立维度(规模/盈利/成长/现金/利润)，并标注样本内 0—100 min-max 标准化方法，非 1—2 指标硬拼。</li><li>单位红线：金额类 unit=null/unknown，按量级判为元→÷1e8 亿元；比率类为 %。两类分别标准化，不做无解释相加或混一量纲归一化。</li><li>口径红线：min-max 为样本内相对位置，不代表绝对优劣；单维取值为 0 或 100 属排名结果而非缺失；net_margin 仅 2 家有值故不入维度，缺失保持断点不补齐。</li><li>范围红线：INS-006 估值结论越界，本图不含 PE/PB/市值(industry_chain 域单点)，不做任何估值判断；行业指数 PE 30.508309 仅 2026-11-09 单点、comps_matrix 中位数全 null，估值图已列入 suppressed_charts。</li><li>数据缺口：INS-004『经营现金流连续两年下滑』的完整序列(比亚迪 2023/2024/2025)以正文陈述，本 radar 仅取 2025 截面，不构造跨年折线。</li></ul>
+      </details>
+      <details class="notes evid">
+        <summary>证据 ID（25 条，全部来自 A1 dataset.json）</summary>
+        <div class="evid-list"><code>R-2850b52306edde896670</code><code>R-439658738fbc270bf00f</code><code>R-75932763a5e752cedc44</code><code>R-f5a837da7f0378a237fb</code><code>R-b9c2bd098377eeaede64</code><code>R-41f976fdb583554f5bbe</code><code>R-5af428dfec95be77a3ef</code><code>R-c50316c56bec8123caeb</code><code>R-5569a84cfc21d79dad02</code><code>R-15095f53dd293b4b7fef</code><code>R-ab43c127a70311c9f9b4</code><code>R-6ee20254fc4b3ee71771</code><code>R-8b7ed58ac163b00115eb</code><code>R-fe789b78bb4745b076f2</code><code>R-6a14d87cd8c2adc719c9</code><code>R-2418d5a9d80646e9f228</code><code>R-ac6feef0e7241fa25965</code><code>R-85a057fb0eb59fa9c62b</code><code>R-ca20cf2859da1042468c</code><code>R-fbe3a644a93ca4be2cb0</code><code>R-86899599c1bce98993a4</code><code>R-0d84f32b243973dbc9e3</code><code>R-f274adc626b7374d6c16</code><code>R-63e026d9ead3d5f02201</code><code>R-2f32d8e20d274383daeb</code></div>
+      </details>
+    </article>
+    
+    <article class="card">
+      <div class="card-head">
+        <span class="idx">08</span>
+        <div>
+          <h2>2025 年样本企业归母净利价值量分布：动力电池龙头份额与整车盈利构成</h2>
+          <div class="tags">
+            <span class="tag type">donut</span>
+            <span class="tag chapter">CH-03</span>
+            <span class="tag unit">单位 亿元</span>
+          </div>
+        </div>
+      </div>
+      <p class="goal">验证 INS-003 / KF-007 宁德时代归母净利 722.01 亿元居首、动力电池盈利韧性优于整车，以构成份额形式承载 CH-03 利润分配结论</p>
+      <div class="chart" id="chart-8"></div>
+      <div class="meta-grid">
+        <div><span class="k">对应结论</span><span class="v">INS-003、INS-002、KF-007</span></div>
+        <div><span class="k">数据域 / 字段</span><span class="v">financials · parent_net_profit</span></div>
+      </div>
+      <details class="notes">
+        <summary>口径与数据限制（8 条）</summary>
+        <ul><li>A1 金额类记录 unit=null / unit_provenance=unknown，按数值量级判断为「元」，本图除以 1e8 换算为亿元；原始值以 dataset.json 的 value 为准。</li><li>横截面统一为 2025 年度、合并报表（scope=consolidated）、CNY 口径。</li><li>分母为 5 家样本 2025 归母净利合计，非全行业利润总额；占比为派生值，非 A1 原生字段。</li><li>仅使用可加总广延量，PE / 毛利率 / 增速等强度指标不入环形构成图。</li><li>构成口径：分母为『5 家样本企业 2025 归母净利合计』，非全行业利润总额；中心总量仅代表样本，不得解读为行业利润总规模。</li><li>选型依据：donut 用于可加总广延量(归母净利)的价值量分布并中心标总规模；treemap 红线同样只允广延量，本图未使用任何强度指标，强度指标树图已列入 suppressed_charts。</li><li>单位红线：金额 unit=null/unknown，按量级判为元→÷1e8 亿元；构成份额为派生占比，非 A1 原生字段。</li><li>数据缺口：赛力斯 2023 归母净利为负(-24.50 亿元, R-f21b29643b0d42107933)，属不同期间且为负值，未纳入 2025 正值构成；2025 五家均为正，无需零轴分化处理；其余 3 家净利率 net_margin 缺失，保持断点不补齐。</li></ul>
+      </details>
+      <details class="notes evid">
+        <summary>证据 ID（5 条，全部来自 A1 dataset.json）</summary>
+        <div class="evid-list"><code>R-86899599c1bce98993a4</code><code>R-0d84f32b243973dbc9e3</code><code>R-f274adc626b7374d6c16</code><code>R-63e026d9ead3d5f02201</code><code>R-2f32d8e20d274383daeb</code></div>
+      </details>
+    </article>
+    
+    <article class="card">
+      <div class="card-head">
+        <span class="idx">09</span>
+        <div>
+          <h2>2026 年 1—9 月新能源汽车销量当月同比的零轴分化：负增长月与回落中的正增长</h2>
+          <div class="tags">
+            <span class="tag type">diverging_bar</span>
+            <span class="tag chapter">CH-06</span>
+            <span class="tag unit">单位 %</span>
+          </div>
+        </div>
+      </div>
+      <p class="goal">验证 INS-005 / KF-011 2026 前三季度增速波动（2 月 -14.2%、7 月峰值 23.7%、9 月回落 13.6%），为 CH-06 宏观催化与风险提供严格切分期间的时序证据</p>
+      <div class="chart" id="chart-9"></div>
+      <div class="meta-grid">
+        <div><span class="k">对应结论</span><span class="v">INS-005、KF-011</span></div>
+        <div><span class="k">数据域 / 字段</span><span class="v">macro · 新能源汽车:销量:当月同比</span></div>
+      </div>
+      <details class="notes">
+        <summary>口径与数据限制（6 条）</summary>
+        <ul><li>2026 年为 1—9 月观测，与 2025 全年口径不同，禁止并列或相加。</li><li>9 月观测 period_type=ytd_q3；出口为累计同比，销量为当月同比，两者量纲含义不同。</li><li>选型依据：diverging_bar 取自 chart-selection 规范『含正负分化指标必须带清晰零轴基线』；本序列 2 月 -14.2% 为负、其余为正，证据充分；该类型不在智能体3 直出枚举内，特此说明。</li><li>注意期间红线：本图为 2026 前三季度(1—9 月)『当月同比』，与 2025 全年销量累计值/出口年度值不同期间、不同口径，严禁并列、相加或拼接，以纠正 A2 已认定的『2026 混入 2025 结论』(INS-001 未切分期间)质量问题。</li><li>宏观配额：本报告仅此 1 张取自 macro 域的宏观图(1/9≈11%，≤25% 且满足上限 1 张)；『出口数量:累计同比』为当月同比之外的另一口径，未在本图叠加，亦不另出单线/面积图，已列入 suppressed_charts。</li><li>数据缺口：macro 域仅 2026 年 1—9 月，无 10—12 月及年度值；无 2021—2025 月度同比，故不能延长为多年月度趋势；无政策事件/技术催化的量化时间戳，CH-06 不造因果叠加图。</li></ul>
+      </details>
+      <details class="notes evid">
+        <summary>证据 ID（9 条，全部来自 A1 dataset.json）</summary>
+        <div class="evid-list"><code>R-a65c613495b562fab7da</code><code>R-22243f778af54c2cb35c</code><code>R-f9ea7aed9ad99d669701</code><code>R-548477058bbfd08dc899</code><code>R-efc4d1e804b153e6a6e0</code><code>R-ac647211aac087be014f</code><code>R-17c78b9808b50eb258a1</code><code>R-9ae0c100ce3fe077306b</code><code>R-bd5ac9d27e41ee534d11</code></div>
+      </details>
+    </article>
+    </div>
+
+  <section class="panel">
+    <h3>主动抑制的候选图表（证据不足 / 越界）</h3>
+    
+    <table class="supp">
+      <thead><tr><th>被抑制图表</th><th>请求类型</th><th>原因码</th><th>专业理由</th></tr></thead>
+      <tbody><tr><td>新能源汽车产业链上中下游有向拓扑与环节利润归属（CH-03）</td><td><code>industry_chain</code></td><td>insufficient_evidence</td><td>A1 industry_chain 域 200 条仅含 20 个实体的行情与概念信息(latest_price / concept_name / 纳入概念原因 / market_cap / pe_dynamic / pb)，不构成上下游环节归属证据，且三家整车 0 条；A2 INS-008 亦认定产业链证据不足、三段归属大面积错误(宁德时代被误列上游)、存在行情/概念弱证据撑高置信度的自我循环。按 Suppression 规则主动抑制，禁止据此绘制上中下游拓扑；CH-03 改由 C05(毛利率排名)与 C08(归母净利价值量分布)以『利润分配』承载。所列 R- ID 仅为估值/行情单点，非环节归属证据。</td></tr><tr><td>样本企业估值可比散点（PE × PB，气泡=市值）与『估值高位』结论图</td><td><code>scatter</code></td><td>out_of_scope</td><td>A2 审核认定 INS-006『估值高位』越界，技能规范禁止估值判断；A1 仅有 2026-11-09 行业指数 PE 单点 30.508309 与宁德时代/比亚迪 2 家 PE/PB/市值单点，comps_matrix 中位数全 null，无时序、无同业完整可比样本，无法构成有效估值参照且属不同口径单点，强行画图即伪造可比性。主动抑制全部估值类图，C07 明确不含 PE/PB/市值且声明不做估值判断。</td></tr><tr><td>2023—2025 五家企业研发费用率（研发强度）对比图</td><td><code>bar</code></td><td>insufficient_evidence</td><td>A1 rd_ratio(研发费用率) 0 条，按口径红线『不得用研发费用金额代替研发强度』，禁止绘制研发费用率图；仅 rd_expense 金额 6 条(宁德时代、亿纬锂能 2023—2025)，无法构成 5 家可比的强度指标，亦不可用金额÷营收自行派生冒充 A1 指标。INS-010 / KF-008 的研发投入差距改由正文与脚注以绝对金额陈述，不造图、不伪造其余 3 家研发数据。</td></tr><tr><td>2021—2025 国内零售渗透率多年趋势线</td><td><code>line</code></td><td>insufficient_evidence</td><td>渗透率仅 2025 年 10 条(A1 口径红线、INS-011)，2021—2024 完全无值；『无连续时序却画折线』必须抑制，严禁伪造多年序列。改由 C02 仅呈现 2025 年内观测序列，并声明 period_type 混杂与末点全年口径。</td></tr><tr><td>2026 年 1—9 月新能源汽车出口数量累计同比单线／面积走势图</td><td><code>line</code></td><td>macro_quota_exceeded</td><td>chart-selection 规定宏观图表配额上限 1 张(至多 2 张且占比≤25%)，本报告唯一宏观席位已由 C09(销量当月同比 diverging_bar)占用；且『当月同比』与『累计同比』口径不同，按『宏观组合图里已呈现的指标严禁再单独出单线/面积图』及『不同口径不强行混画』主动抑制。KF-012 / INS-012 的出口高增长结论由 C03(2021—2025 出口年度值)与正文陈述，2026 前三季度严格不与 2025 全年并列或相加。</td></tr><tr><td>五家样本企业 PE / 毛利率 / 营收同比强度指标树图</td><td><code>treemap</code></td><td>invalid_metric_type</td><td>treemap 红线：只用于可加总广延量(市值、总收入、资产总额)，严禁用于 PE、毛利率、增速等不可加总强度指标；本拟图主体为强度指标，且市值仅宁德时代/比亚迪 2 家有值、无完整结构，『无完整结构却画构成图』亦须抑制。价值量分布需求已由合法的 C08 donut(归母净利，广延量)满足。</td></tr></tbody>
+    </table>
+    
+  </section>
+
+  <footer>
+    选型依据：智能体3 CHART_AGENT_SYSTEM_PROMPT + chart-selection / chart-readability / financial-charting 技能规范。<br>
+    配色与结构对齐 chart-generator/compiler.py（CICC Deep Blue #1B365D / Brick Red #D52B1E / Amber #D97706 / Teal #0f766e）。<br>
+    本页为静态预览，引用数值请以 A1 dataset.json 的 value 与 unit_provenance 为准。
+  </footer>
+</div>
+<script>
+const CHART_OPTIONS = [{"backgroundColor": "#FFFFFF", "color": ["#1B365D", "#D52B1E", "#D97706", "#0f766e", "#64748B", "#6941c6"], "title": {"text": "2021—2025 新能源汽车销量累计规模与同比增速：总量扩张与增速换挡", "left": "center", "top": 8, "textStyle": {"fontSize": 15, "fontWeight": 600, "color": "#334155"}}, "tooltip": {"trigger": "axis", "textStyle": {"fontSize": 12}, "backgroundColor": "rgba(255,255,255,0.96)", "borderColor": "#e2e8f0", "borderWidth": 1, "axisPointer": {"type": "cross"}}, "legend": {"data": ["销量累计值", "销量同比"], "top": 4, "textStyle": {"fontSize": 12, "color": "#334155"}, "itemWidth": 14, "itemHeight": 9}, "grid": {"containLabel": true, "left": 50, "right": 32, "top": 38, "bottom": 28}, "xAxis": {"type": "category", "data": ["2021", "2022", "2023", "2024", "2025"], "axisLine": {"lineStyle": {"color": "#94a3b8"}}, "axisTick": {"show": false}, "axisLabel": {"interval": 0, "fontSize": 12, "lineHeight": 16, "color": "#334155", "hideOverlap": false, "width": 139.0, "overflow": "break"}}, "yAxis": [{"type": "value", "name": "销量累计值（万辆）", "nameTextStyle": {"fontSize": 12, "color": "#64748B"}, "axisLine": {"show": true, "lineStyle": {"color": "#94a3b8"}}, "axisLabel": {"fontSize": 12, "color": "#334155"}, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}}, {"type": "value", "name": "销量同比（%）", "nameTextStyle": {"fontSize": 12, "color": "#64748B"}, "axisLine": {"show": true, "lineStyle": {"color": "#94a3b8"}}, "axisLabel": {"fontSize": 12, "color": "#334155"}, "splitLine": {"show": false}, "min": 0, "max": 100, "interval": 25}], "series": [{"name": "销量累计值", "type": "bar", "data": [352.1, 688.7, 949.5, 1286.6, 1649.0], "itemStyle": {"color": "#1B365D", "borderRadius": [3, 3, 0, 0]}, "barMaxWidth": 34, "connectNulls": false, "yAxisIndex": 0, "label": {"show": true, "position": "top", "fontSize": 10, "color": "#334155"}}, {"name": "销量同比", "type": "line", "data": [null, 95.6, 37.87, 35.5, 28.17], "connectNulls": false, "itemStyle": {"color": "#D52B1E"}, "lineStyle": {"width": 2.5, "color": "#D52B1E"}, "symbol": "circle", "symbolSize": 6, "yAxisIndex": 1, "label": {"show": true, "position": "top", "fontSize": 10, "formatter": "{c}%", "color": "#D52B1E"}}], "chart_meta": {"chart_id": "C01", "chart_type": "combo", "title": "2021—2025 新能源汽车销量累计规模与同比增速：总量扩张与增速换挡", "insight_goal": "验证 INS-001 / KF-001 销量累计 +368.3%、CAGR≈47.1% 的规模扩张与增速换挡，为『增长动能由内需转向出口』提供规模基线", "recommended_chapter_id": "CH-02", "insight_refs": ["INS-001", "KF-001"], "data_binding": {"domain": "industry", "metrics": ["新能源汽车:销量:累计值"], "entities": ["中国"], "periods": ["2021-12-31", "2022-12-31", "2023-12-31", "2024-12-31", "2025-12-31"], "value_transform": "辆 ÷ 10000 = 万辆；右轴同比由相邻年度累计值计算（当年/上年-1），非 A1 原生增速字段；左轴柱为规模量纲、右轴线为比率量纲，双轴组合", "unit": "万辆 / %"}, "evidence_ids": ["R-9cddc099c323e8ecff3c", "R-500738f1a3279ca3de7c", "R-8b9033fad828bd6daae9", "R-83cefc8c2660853a6696", "R-ce1dae9585ee140f09e0"], "unit": "万辆 / %", "footnotes": ["A1 销量为累计值（period_type=ytd_month，单位 辆），除以 1e4 换算为万辆。", "同比由 A1 相邻年度累计值直接计算（非外部预测）：95.6% → 28.2%，增速逐年放缓；累计 +368.3%，CAGR 约 47.1%（KF-001）。", "2021/2022 无上年 A1 观测，首个同比位保持断点，不以 0 填补。", "口径红线：销量为 ytd_month 累计值口径，各年取 12 月累计≈全年；严禁与『国内零售渗透率』『出口量年度值』混用或相加。", "单位说明：原始单位为辆，÷10000 换算万辆；右轴同比为派生计算值，非 dataset 原生字段，不得当作官方公布增速。", "数据缺口：A1 未提供 2021—2025 销量当月值/月度同比，同比仅由 5 个年度累计点推算，不能反映年内波动；2026 前三季度数据另属 macro 域，禁止与本序列并列或拼接。"]}}, {"backgroundColor": "#FFFFFF", "color": ["#1B365D", "#D52B1E", "#D97706", "#0f766e", "#64748B", "#6941c6"], "title": {"text": "2025 年国内零售渗透率是否已进入高位平台：年内观测序列 51.1%→59.3%", "left": "center", "top": 8, "textStyle": {"fontSize": 15, "fontWeight": 600, "color": "#334155"}}, "tooltip": {"trigger": "axis", "textStyle": {"fontSize": 12}, "backgroundColor": "rgba(255,255,255,0.96)", "borderColor": "#e2e8f0", "borderWidth": 1, "axisPointer": {"type": "cross"}}, "legend": {"data": ["国内零售渗透率"], "top": 4, "textStyle": {"fontSize": 12, "color": "#334155"}, "itemWidth": 14, "itemHeight": 9}, "grid": {"containLabel": true, "left": 50, "right": 32, "top": 38, "bottom": 28}, "xAxis": {"type": "category", "data": ["3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"], "axisLine": {"lineStyle": {"color": "#94a3b8"}}, "axisTick": {"show": false}, "axisLabel": {"interval": 0, "fontSize": 12, "lineHeight": 16, "color": "#334155", "hideOverlap": false, "width": 67.0, "overflow": "break"}}, "yAxis": {"type": "value", "name": "国内零售渗透率（%）", "nameTextStyle": {"fontSize": 12, "color": "#64748B"}, "axisLine": {"show": true, "lineStyle": {"color": "#94a3b8"}}, "axisLabel": {"fontSize": 12, "color": "#334155"}, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}, "min": 45, "max": 65, "interval": 5}, "series": [{"name": "国内零售渗透率", "type": "line", "data": [51.1, 51.5, 52.9, 53.3, 54.0, 55.2, 57.8, 57.2, 59.3, 59.1], "connectNulls": false, "itemStyle": {"color": "#1B365D"}, "lineStyle": {"width": 2.5, "color": "#1B365D"}, "symbol": "circle", "symbolSize": 6, "smooth": false, "label": {"show": true, "position": "top", "fontSize": 10, "formatter": "{c}%", "color": "#334155"}, "markLine": {"silent": true, "symbol": "none", "lineStyle": {"type": "dashed", "color": "#D97706", "width": 1.5}, "label": {"formatter": "50% 关口", "color": "#D97706", "fontSize": 10}, "data": [{"yAxis": 50}]}}], "chart_meta": {"chart_id": "C02", "chart_type": "line", "title": "2025 年国内零售渗透率是否已进入高位平台：年内观测序列 51.1%→59.3%", "insight_goal": "验证 INS-001 / INS-011 / KF-002 渗透率站上 50% 后进入高位平台、内需边际见顶，支撑『增长动能由内需转向出口』的判断", "recommended_chapter_id": "CH-01", "insight_refs": ["INS-001", "INS-011", "KF-002"], "data_binding": {"domain": "industry", "metrics": ["国内零售渗透率:新能源汽车:当月值"], "entities": ["中国"], "periods": ["2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12"], "value_transform": "原值(%)直接取用，按观测顺序连线；空值保持断点、不补零、不插值、不拟合、不外推", "unit": "%"}, "evidence_ids": ["R-1dbfe60db8d522d78696", "R-5d20852b9d028c17ef77", "R-3349f40ea8f4700ae096", "R-68bb01ddf140e50bf20c", "R-1b31accc584946e36d29", "R-e5c77dad219509fc999d", "R-2f8aef227565fb2a6e56", "R-bd8d92d1aac6dff21ab2", "R-34216298f293556a28fd", "R-2ae2e10425356de79f2a"], "unit": "%", "footnotes": ["渗透率为国内零售口径，仅 2025 年有数据；10 条观测的 period_type 混杂（month / q1 / half_year / ytd_q3 / annual），点位按报告期排序，仅作年内位置展示。", "3 月 51.1% → 全年 59.1%，11 月峰值 59.3%（KF-002）；2021—2024 年度序列缺失，禁止外推多年趋势（INS-011）。", "口径红线：本指标为『国内零售』口径，与销量累计值(累计口径)、出口年度值三者不得混用或相加。", "注意 period_type 混杂：10 条记录含 month/q1/half_year/ytd_q3/annual，末点为『12月/全年』累计口径，非等间隔可比的纯月度时序；折线仅表示 2025 年内观测走向，严禁解读为逐月环比或趋势外推。", "数据缺口：仅 2025 年有值，按 A1 红线禁止绘制 2021—2025 多年渗透率趋势(INS-011)，多年趋势图已列入 suppressed_charts；无 2026 年渗透率数据。"]}}, {"backgroundColor": "#FFFFFF", "color": ["#1B365D", "#D52B1E", "#D97706", "#0f766e", "#64748B", "#6941c6"], "title": {"text": "2021—2025 新能源汽车出口量年度规模：内需换挡下的外需动能切换", "left": "center", "top": 8, "textStyle": {"fontSize": 15, "fontWeight": 600, "color": "#334155"}}, "tooltip": {"trigger": "axis", "textStyle": {"fontSize": 12}, "backgroundColor": "rgba(255,255,255,0.96)", "borderColor": "#e2e8f0", "borderWidth": 1, "axisPointer": {"type": "cross"}}, "legend": {"data": ["出口量"], "top": 4, "textStyle": {"fontSize": 12, "color": "#334155"}, "itemWidth": 14, "itemHeight": 9}, "grid": {"containLabel": true, "left": 50, "right": 32, "top": 38, "bottom": 28}, "xAxis": {"type": "category", "data": ["2021", "2022", "2023", "2024", "2025"], "axisLine": {"lineStyle": {"color": "#94a3b8"}}, "axisTick": {"show": false}, "axisLabel": {"interval": 0, "fontSize": 12, "lineHeight": 16, "color": "#334155", "hideOverlap": false, "width": 139.0, "overflow": "break"}}, "yAxis": {"type": "value", "name": "出口量（万辆）", "nameTextStyle": {"fontSize": 12, "color": "#64748B"}, "axisLine": {"show": true, "lineStyle": {"color": "#94a3b8"}}, "axisLabel": {"fontSize": 12, "color": "#334155"}, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}}, "series": [{"name": "出口量", "type": "line", "data": [34.88, 67.5, 115.26, 127.44, 258.43], "connectNulls": false, "itemStyle": {"color": "#1B365D"}, "lineStyle": {"width": 2.5, "color": "#1B365D"}, "symbol": "circle", "symbolSize": 6, "areaStyle": {"color": "rgba(27,54,93,0.18)"}, "label": {"show": true, "position": "top", "fontSize": 10, "color": "#334155"}}], "chart_meta": {"chart_id": "C03", "chart_type": "area", "title": "2021—2025 新能源汽车出口量年度规模：内需换挡下的外需动能切换", "insight_goal": "验证 INS-001 / INS-012 / KF-003 出口累计 +640.9%、2025 年 +102.8%，与 C01 内需增速换挡对照，支撑『增长动能由内需转向出口』", "recommended_chapter_id": "CH-02", "insight_refs": ["INS-001", "INS-012", "KF-003"], "data_binding": {"domain": "industry", "metrics": ["新能源汽车:出口量"], "entities": ["中国"], "periods": ["2021", "2022", "2023", "2024", "2025"], "value_transform": "辆 ÷ 10000 = 万辆；annual 年度值原值取用，无平滑、无插值、不与累计值相加", "unit": "万辆"}, "evidence_ids": ["R-edbb6e144668d79d8037", "R-e000ce370a61ec50870e", "R-04d35bda646d76dff5e5", "R-6d58848443b2cbdba045", "R-ceaba431b055c5db8754"], "unit": "万辆", "footnotes": ["A1 出口量为年度值（period_type=annual，单位 辆），除以 1e4 换算为万辆。", "出口累计 +640.9%，2025 年同比 +102.8%（KF-003 / INS-012）；同比由 A1 相邻年度值计算。", "出口为年度值，销量为累计值、渗透率为国内零售口径，三者不得相加或混用。", "口径红线：出口量为 annual 年度值，与『销量累计值』(ytd_month 累计)、『国内零售渗透率』口径不同，三者不得混用或相加。", "单位说明：原始单位为辆，÷10000 换算万辆。", "数据缺口：2026 仅有『出口数量:累计同比』(macro 域 1—9 月)，属不同期间与不同口径，严禁与 2021—2025 年度值并列/拼接；本图不含 2026 数据，海外风险(INS-012)无量化情景值，仅作正文定性陈述。"]}}, {"backgroundColor": "#FFFFFF", "color": ["#1B365D", "#D52B1E", "#D97706", "#0f766e", "#64748B", "#6941c6"], "title": {"text": "2025 年样本企业营收规模与归母净利对照：以量取胜与以利取胜的分化", "left": "center", "top": 8, "textStyle": {"fontSize": 15, "fontWeight": 600, "color": "#334155"}}, "tooltip": {"trigger": "axis", "textStyle": {"fontSize": 12}, "backgroundColor": "rgba(255,255,255,0.96)", "borderColor": "#e2e8f0", "borderWidth": 1, "axisPointer": {"type": "cross"}}, "legend": {"data": ["营业收入", "归母净利润"], "top": 4, "textStyle": {"fontSize": 12, "color": "#334155"}, "itemWidth": 14, "itemHeight": 9}, "grid": {"containLabel": true, "left": 50, "right": 32, "top": 38, "bottom": 28}, "xAxis": {"type": "category", "data": ["比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"], "axisLine": {"lineStyle": {"color": "#94a3b8"}}, "axisTick": {"show": false}, "axisLabel": {"interval": 0, "fontSize": 12, "lineHeight": 16, "color": "#334155", "hideOverlap": false, "width": 139.0, "overflow": "break"}}, "yAxis": {"type": "value", "name": "金额（亿元）", "nameTextStyle": {"fontSize": 12, "color": "#64748B"}, "axisLine": {"show": true, "lineStyle": {"color": "#94a3b8"}}, "axisLabel": {"fontSize": 12, "color": "#334155"}, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}}, "series": [{"name": "营业收入", "type": "bar", "data": [8039.6496, 1639.998, 1650.5364, 4237.0183, 614.6963], "itemStyle": {"color": "#1B365D", "borderRadius": [3, 3, 0, 0]}, "barMaxWidth": 34, "connectNulls": false, "barGap": "10%"}, {"name": "归母净利润", "type": "bar", "data": [326.1902, 40.7522, 59.5679, 722.0128, 41.343], "itemStyle": {"color": "#D52B1E", "borderRadius": [3, 3, 0, 0]}, "barMaxWidth": 34, "connectNulls": false}], "chart_meta": {"chart_id": "C04", "chart_type": "comparison_bar", "title": "2025 年样本企业营收规模与归母净利对照：以量取胜与以利取胜的分化", "insight_goal": "验证 INS-002 整车盈利分化（比亚迪营收居首但盈利承压、赛力斯以价取胜）与 INS-003 宁德时代归母净利领先，落实核心企业财务对比保底席位", "recommended_chapter_id": "CH-04", "insight_refs": ["INS-002", "INS-003", "KF-004"], "data_binding": {"domain": "financials", "metrics": ["revenue", "parent_net_profit"], "entities": ["比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"], "periods": ["2025"], "value_transform": "元 ÷ 1e8 = 亿元；两指标同为金额流量、同单位，按公司做双系列分组柱，共享单一金额轴，不做归一化、不相加、不启用双轴", "unit": "亿元"}, "evidence_ids": ["R-2850b52306edde896670", "R-439658738fbc270bf00f", "R-75932763a5e752cedc44", "R-f5a837da7f0378a237fb", "R-b9c2bd098377eeaede64", "R-86899599c1bce98993a4", "R-0d84f32b243973dbc9e3", "R-f274adc626b7374d6c16", "R-63e026d9ead3d5f02201", "R-2f32d8e20d274383daeb"], "unit": "亿元", "footnotes": ["A1 金额类记录 unit=null / unit_provenance=unknown，按数值量级判断为「元」，本图除以 1e8 换算为亿元；原始值以 dataset.json 的 value 为准。", "两系列同为 2025 年度金额流量（亿元），共享单一金额轴，不做归一化、不相加、不启用双轴。", "单位红线：金额类 unit=null、unit_provenance=unknown，按量级判断为『元』并 ÷1e8 换算亿元；换算仅为展示处理，不改变原值；比率与金额不做无解释相加或归一化。", "口径说明：仅 2025 年度值，5 家公司同一会计期间；两系列量级差异大，共享单一金额轴以免双轴误导。", "数据缺口：赛力斯 2023 归母净利为负(R-f21b29643b0d42107933)，属不同期间，未纳入 2025 截面；净利率 net_margin 仅宁德时代/亿纬锂能 2 家有值，本图未使用，缺失保持断点不补齐。"]}}, {"backgroundColor": "#FFFFFF", "color": ["#1B365D", "#D52B1E", "#D97706", "#0f766e", "#64748B", "#6941c6"], "title": {"text": "2025 年五家样本企业毛利率横向排名：整车与电池环节的利润分配格局", "left": "center", "top": 8, "textStyle": {"fontSize": 15, "fontWeight": 600, "color": "#334155"}}, "tooltip": {"trigger": "axis", "textStyle": {"fontSize": 12}, "backgroundColor": "rgba(255,255,255,0.96)", "borderColor": "#e2e8f0", "borderWidth": 1, "axisPointer": {"type": "cross"}}, "legend": {"data": ["毛利率"], "top": 4, "textStyle": {"fontSize": 12, "color": "#334155"}, "itemWidth": 14, "itemHeight": 9}, "grid": {"containLabel": true, "left": 50, "right": 32, "top": 38, "bottom": 28}, "xAxis": {"type": "value", "name": "毛利率（%）", "nameTextStyle": {"fontSize": 12, "color": "#64748B"}, "axisLine": {"show": true, "lineStyle": {"color": "#94a3b8"}}, "axisLabel": {"fontSize": 12, "color": "#334155"}, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}, "min": 0, "max": 35, "interval": 5}, "yAxis": {"type": "category", "data": ["长安汽车", "亿纬锂能", "比亚迪", "宁德时代", "赛力斯"], "axisLine": {"lineStyle": {"color": "#94a3b8"}}, "axisTick": {"show": false}, "axisLabel": {"interval": 0, "fontSize": 12, "lineHeight": 16, "color": "#334155", "hideOverlap": false, "width": 120, "overflow": "break"}}, "series": [{"name": "毛利率", "type": "bar", "data": [15.5401, 16.1724, 17.7445, 26.2728, 29.1419], "itemStyle": {"color": "#1B365D", "borderRadius": [3, 3, 0, 0]}, "barMaxWidth": 34, "connectNulls": false, "label": {"show": true, "position": "right", "fontSize": 11, "formatter": "{c}%", "color": "#334155"}}], "chart_meta": {"chart_id": "C05", "chart_type": "horizontal_bar", "title": "2025 年五家样本企业毛利率横向排名：整车与电池环节的利润分配格局", "insight_goal": "验证 INS-002 / INS-007 / KF-006 毛利率最高为赛力斯、宁德时代次之，呈现 CH-03 利润分配中『整车与电池毛利率相近』的截面证据", "recommended_chapter_id": "CH-03", "insight_refs": ["INS-002", "INS-007", "KF-006"], "data_binding": {"domain": "financials", "metrics": ["gross_margin"], "entities": ["比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"], "periods": ["2025"], "value_transform": "原值(%)直接取用，按数值降序横向排列；不做标准化、不与金额类指标相加", "unit": "%"}, "evidence_ids": ["R-41f976fdb583554f5bbe", "R-5af428dfec95be77a3ef", "R-c50316c56bec8123caeb", "R-5569a84cfc21d79dad02", "R-15095f53dd293b4b7fef"], "unit": "%", "footnotes": ["横截面统一为 2025 年度、合并报表（scope=consolidated）、CNY 口径。", "口径红线：gross_margin 为比率(%)，与金额类指标不可相加、不归一化；仅 2025 单一截面，不得与 2026 前三季度数据并列。", "口径红线：毛利率不含期间费用与研发投入，不得据此直接推断净利率或研发强度；本图以『利润分配』替代被抑制的 industry_chain 拓扑，不使用环节归属结论。", "数据缺口：KF-006 提及 2023 年毛利率最高为比亚迪，但本图仅取 2025 截面，跨年毛利率变化未在图中展开；净利率 net_margin 仅 2 家有值，不得以毛利率代替净利率结论，缺失保持断点不补齐。"]}}, {"backgroundColor": "#FFFFFF", "color": ["#1B365D", "#D52B1E", "#D97706", "#0f766e", "#64748B", "#6941c6"], "title": {"text": "2025 年样本企业『盈利性—成长性』四象限定位：毛利率 × 营收同比与中位数十字线", "left": "center", "top": 8, "textStyle": {"fontSize": 15, "fontWeight": 600, "color": "#334155"}}, "tooltip": {"trigger": "item", "formatter": "{b}<br/>毛利率 / 营收同比（%）：{c}", "textStyle": {"fontSize": 12}, "backgroundColor": "rgba(255,255,255,0.96)", "borderColor": "#e2e8f0", "borderWidth": 1}, "legend": {"data": ["比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"], "top": 4, "textStyle": {"fontSize": 12, "color": "#334155"}, "itemWidth": 14, "itemHeight": 9}, "grid": {"containLabel": true, "left": 50, "right": 32, "top": 38, "bottom": 28}, "xAxis": {"type": "value", "name": "毛利率（%）", "nameTextStyle": {"fontSize": 12, "color": "#64748B"}, "axisLine": {"show": true, "lineStyle": {"color": "#94a3b8"}}, "axisLabel": {"fontSize": 12, "color": "#334155"}, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}, "min": 10, "max": 35, "interval": 5}, "yAxis": {"type": "value", "name": "营收同比（%）", "nameTextStyle": {"fontSize": 12, "color": "#64748B"}, "axisLine": {"show": true, "lineStyle": {"color": "#94a3b8"}}, "axisLabel": {"fontSize": 12, "color": "#334155"}, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}, "min": 0, "max": 30, "interval": 5}, "series": [{"name": "样本企业", "type": "scatter", "data": [{"name": "比亚迪", "value": [17.7445, 3.4568], "itemStyle": {"color": "#1B365D"}}, {"name": "长安汽车", "value": [15.5401, 2.6712], "itemStyle": {"color": "#D52B1E"}}, {"name": "赛力斯", "value": [29.1419, 13.6922], "itemStyle": {"color": "#D97706"}}, {"name": "宁德时代", "value": [26.2728, 17.0406], "itemStyle": {"color": "#0f766e"}}, {"name": "亿纬锂能", "value": [16.1724, 26.4428], "itemStyle": {"color": "#64748B"}}], "symbolSize": 14, "label": {"show": true, "position": "top", "formatter": "{b}", "fontSize": 11, "color": "#334155"}, "markLine": {"silent": true, "symbol": "none", "lineStyle": {"type": "dashed", "color": "#64748B", "width": 1.5}, "label": {"fontSize": 10, "color": "#64748B"}, "data": [{"xAxis": 17.7445, "label": {"formatter": "毛利率中位数"}}, {"yAxis": 13.6922, "label": {"formatter": "营收同比中位数"}}]}}], "chart_meta": {"chart_id": "C06", "chart_type": "scatter", "title": "2025 年样本企业『盈利性—成长性』四象限定位：毛利率 × 营收同比与中位数十字线", "insight_goal": "验证 INS-002 / INS-007 / INS-003 跨实体二维分化：高毛利低成长与低毛利高成长并存，为 CH-04 竞争格局分类提供定位依据", "recommended_chapter_id": "CH-04", "insight_refs": ["INS-002", "INS-007", "INS-003"], "data_binding": {"domain": "financials", "metrics": ["gross_margin", "revenue_yoy"], "entities": ["比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"], "periods": ["2025"], "value_transform": "原值(%)直接取用；x=毛利率(盈利性)、y=营收同比(成长性)，叠加两指标样本内中位数十字参考线划分四象限；不做量纲归一化、不做回归拟合", "unit": "% / %"}, "evidence_ids": ["R-41f976fdb583554f5bbe", "R-5af428dfec95be77a3ef", "R-c50316c56bec8123caeb", "R-5569a84cfc21d79dad02", "R-15095f53dd293b4b7fef", "R-ab43c127a70311c9f9b4", "R-6ee20254fc4b3ee71771", "R-8b7ed58ac163b00115eb", "R-fe789b78bb4745b076f2", "R-6a14d87cd8c2adc719c9"], "unit": "% / %", "footnotes": ["两轴均为 2025 年度比率（%），经济含义不同，仅作相对定位，不相加、不回归。", "分割线取样本内中位数，仅代表 5 家样本相对位置，不代表行业基准。", "net_margin 仅 2 家有值，盈利性维度改用 5 家全覆盖的 gross_margin，缺失不补齐。", "选型依据：scatter 取自 chart-selection 规范『跨实体截面比较两核心维度 + 中位数十字参考线划分四象限』，本图 5 实体 × 2 维均有 A1 实值支撑、证据充分；该类型不在智能体3 直出枚举内，特此说明。", "口径红线：两轴同为比率(%)，但毛利率(存量盈利)与营收同比(增速)经济含义不同，仅作四象限定位，不做相加、不做无解释归一化或回归。", "注意数据缺口：原欲用『营收体量 vs 净利率』，但 net_margin 仅宁德时代/亿纬锂能 2 家有值，缺失保持断点不补齐，故盈利性维度改用 5 家全覆盖的 gross_margin，绝不伪造其余 3 家净利率。", "极值提示：赛力斯 2024 营收同比 305.04%(R-ff94b56e31de3e228a08)、宁德时代 2024 -9.70%(R-05e528b6f49cbc410492) 属不同期间，不纳入 2025 截面。", "口径红线：历史值与预测值不得混线；A1 无任何预测值，本图不含预测点。"]}}, {"backgroundColor": "#FFFFFF", "color": ["#1B365D", "#D52B1E", "#D97706", "#0f766e", "#64748B", "#6941c6"], "title": {"text": "2025 年样本企业财务质量五维画像：规模、盈利、成长、现金与利润的样本内标准化对比", "left": "center", "top": 8, "textStyle": {"fontSize": 15, "fontWeight": 600, "color": "#334155"}}, "tooltip": {"trigger": "item", "textStyle": {"fontSize": 12}}, "legend": {"data": ["比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"], "top": 4, "textStyle": {"fontSize": 12, "color": "#334155"}, "itemWidth": 14, "itemHeight": 9}, "series": [{"name": "财务质量五维画像", "type": "radar", "data": [{"name": "比亚迪", "value": [100.0, 16.2, 3.3, 43.6, 41.9], "lineStyle": {"width": 2, "color": "#1B365D"}, "itemStyle": {"color": "#1B365D"}, "areaStyle": {"color": "#1B365D", "opacity": 0.06}}, {"name": "长安汽车", "value": [13.8, 0.0, 0.0, 0.0, 0.0], "lineStyle": {"width": 2, "color": "#D52B1E"}, "itemStyle": {"color": "#D52B1E"}, "areaStyle": {"color": "#D52B1E", "opacity": 0.06}}, {"name": "赛力斯", "value": [14.0, 100.0, 46.4, 20.6, 2.8], "lineStyle": {"width": 2, "color": "#D97706"}, "itemStyle": {"color": "#D97706"}, "areaStyle": {"color": "#D97706", "opacity": 0.06}}, {"name": "宁德时代", "value": [48.8, 78.9, 60.4, 100.0, 100.0], "lineStyle": {"width": 2, "color": "#0f766e"}, "itemStyle": {"color": "#0f766e"}, "areaStyle": {"color": "#0f766e", "opacity": 0.06}}, {"name": "亿纬锂能", "value": [0.0, 4.6, 100.0, 4.3, 0.1], "lineStyle": {"width": 2, "color": "#64748B"}, "itemStyle": {"color": "#64748B"}, "areaStyle": {"color": "#64748B", "opacity": 0.06}}]}], "chart_meta": {"chart_id": "C07", "chart_type": "radar", "title": "2025 年样本企业财务质量五维画像：规模、盈利、成长、现金与利润的样本内标准化对比", "insight_goal": "验证 INS-003 动力电池盈利韧性优于整车与 INS-004 比亚迪经营现金流连续两年下滑的截面位置，提供多维互补的财务质量参照（非估值参照）", "recommended_chapter_id": "CH-05", "insight_refs": ["INS-003", "INS-004", "KF-007"], "data_binding": {"domain": "financials", "metrics": ["revenue", "gross_margin", "revenue_yoy", "operating_cash_flow", "parent_net_profit"], "entities": ["比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"], "periods": ["2025"], "value_transform": "各维度按样本内 min-max 线性映射至 0—100：score = 100 × (x - min) / (max - min)；金额类先 ÷1e8 换算亿元、比率类用原 %，两类分别标准化，严禁跨量纲相加；5 个互补独立维度(规模/盈利/成长/现金/利润)分别计算，缺失维度保持断点、不补零", "unit": "0—100 标准化分值（原始：亿元 / %）"}, "evidence_ids": ["R-2850b52306edde896670", "R-439658738fbc270bf00f", "R-75932763a5e752cedc44", "R-f5a837da7f0378a237fb", "R-b9c2bd098377eeaede64", "R-41f976fdb583554f5bbe", "R-5af428dfec95be77a3ef", "R-c50316c56bec8123caeb", "R-5569a84cfc21d79dad02", "R-15095f53dd293b4b7fef", "R-ab43c127a70311c9f9b4", "R-6ee20254fc4b3ee71771", "R-8b7ed58ac163b00115eb", "R-fe789b78bb4745b076f2", "R-6a14d87cd8c2adc719c9", "R-2418d5a9d80646e9f228", "R-ac6feef0e7241fa25965", "R-85a057fb0eb59fa9c62b", "R-ca20cf2859da1042468c", "R-fbe3a644a93ca4be2cb0", "R-86899599c1bce98993a4", "R-0d84f32b243973dbc9e3", "R-f274adc626b7374d6c16", "R-63e026d9ead3d5f02201", "R-2f32d8e20d274383daeb"], "unit": "0—100 标准化分值（原始：亿元 / %）", "footnotes": ["标准化方法：各维度独立按 5 家样本内 min-max 线性映射，score = 100 × (x − min) / (max − min)。", "金额类（亿元）与比率类（%）分别标准化，严禁跨量纲相加；0 或 100 是排名结果而非缺失。", "不含 PE / PB / 市值等估值单点，不做估值判断（INS-006 越界）。", "选型依据：radar 满足 ≥3 个互补独立维度(规模/盈利/成长/现金/利润)，并标注样本内 0—100 min-max 标准化方法，非 1—2 指标硬拼。", "单位红线：金额类 unit=null/unknown，按量级判为元→÷1e8 亿元；比率类为 %。两类分别标准化，不做无解释相加或混一量纲归一化。", "口径红线：min-max 为样本内相对位置，不代表绝对优劣；单维取值为 0 或 100 属排名结果而非缺失；net_margin 仅 2 家有值故不入维度，缺失保持断点不补齐。", "范围红线：INS-006 估值结论越界，本图不含 PE/PB/市值(industry_chain 域单点)，不做任何估值判断；行业指数 PE 30.508309 仅 2026-11-09 单点、comps_matrix 中位数全 null，估值图已列入 suppressed_charts。", "数据缺口：INS-004『经营现金流连续两年下滑』的完整序列(比亚迪 2023/2024/2025)以正文陈述，本 radar 仅取 2025 截面，不构造跨年折线。"]}, "radar": {"center": ["50%", "54%"], "radius": "66%", "splitNumber": 4, "axisName": {"fontSize": 12, "color": "#334155"}, "splitLine": {"lineStyle": {"color": "#e2e8f0"}}, "splitArea": {"areaStyle": {"color": ["#FFFFFF", "#F8FAFC"]}}, "axisLine": {"lineStyle": {"color": "#e2e8f0"}}, "indicator": [{"name": "营业收入", "min": 0, "max": 100}, {"name": "毛利率", "min": 0, "max": 100}, {"name": "营收同比", "min": 0, "max": 100}, {"name": "经营现金流", "min": 0, "max": 100}, {"name": "归母净利", "min": 0, "max": 100}]}}, {"backgroundColor": "#FFFFFF", "color": ["#1B365D", "#D52B1E", "#D97706", "#0f766e", "#64748B", "#6941c6"], "title": {"text": "2025 年样本企业归母净利价值量分布：动力电池龙头份额与整车盈利构成", "left": "center", "top": 8, "textStyle": {"fontSize": 15, "fontWeight": 600, "color": "#334155"}}, "tooltip": {"trigger": "item", "formatter": "{b}<br/>{c} 亿元（{d}%）", "textStyle": {"fontSize": 12}}, "legend": {"data": ["比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"], "orient": "vertical", "right": 8, "top": "middle", "textStyle": {"fontSize": 12, "color": "#334155"}}, "series": [{"name": "归母净利润", "type": "pie", "radius": ["44%", "68%"], "center": ["36%", "54%"], "avoidLabelOverlap": true, "data": [{"name": "比亚迪", "value": 326.1902, "itemStyle": {"color": "#1B365D"}}, {"name": "长安汽车", "value": 40.7522, "itemStyle": {"color": "#D52B1E"}}, {"name": "赛力斯", "value": 59.5679, "itemStyle": {"color": "#D97706"}}, {"name": "宁德时代", "value": 722.0128, "itemStyle": {"color": "#0f766e"}}, {"name": "亿纬锂能", "value": 41.343, "itemStyle": {"color": "#64748B"}}], "label": {"show": true, "formatter": "{b} {d}%", "fontSize": 11, "color": "#334155"}, "labelLine": {"length": 8, "length2": 8}}], "chart_meta": {"chart_id": "C08", "chart_type": "donut", "title": "2025 年样本企业归母净利价值量分布：动力电池龙头份额与整车盈利构成", "insight_goal": "验证 INS-003 / KF-007 宁德时代归母净利 722.01 亿元居首、动力电池盈利韧性优于整车，以构成份额形式承载 CH-03 利润分配结论", "recommended_chapter_id": "CH-03", "insight_refs": ["INS-003", "INS-002", "KF-007"], "data_binding": {"domain": "financials", "metrics": ["parent_net_profit"], "entities": ["比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"], "periods": ["2025"], "value_transform": "元 ÷ 1e8 = 亿元；扇形 = 各公司 2025 归母净利 ÷ 5 家样本合计；中心留白标注样本合计归母净利(总规模)；仅使用可加总广延量，PE/毛利率/增速等强度指标不入", "unit": "亿元 / %"}, "evidence_ids": ["R-86899599c1bce98993a4", "R-0d84f32b243973dbc9e3", "R-f274adc626b7374d6c16", "R-63e026d9ead3d5f02201", "R-2f32d8e20d274383daeb"], "unit": "亿元", "footnotes": ["A1 金额类记录 unit=null / unit_provenance=unknown，按数值量级判断为「元」，本图除以 1e8 换算为亿元；原始值以 dataset.json 的 value 为准。", "横截面统一为 2025 年度、合并报表（scope=consolidated）、CNY 口径。", "分母为 5 家样本 2025 归母净利合计，非全行业利润总额；占比为派生值，非 A1 原生字段。", "仅使用可加总广延量，PE / 毛利率 / 增速等强度指标不入环形构成图。", "构成口径：分母为『5 家样本企业 2025 归母净利合计』，非全行业利润总额；中心总量仅代表样本，不得解读为行业利润总规模。", "选型依据：donut 用于可加总广延量(归母净利)的价值量分布并中心标总规模；treemap 红线同样只允广延量，本图未使用任何强度指标，强度指标树图已列入 suppressed_charts。", "单位红线：金额 unit=null/unknown，按量级判为元→÷1e8 亿元；构成份额为派生占比，非 A1 原生字段。", "数据缺口：赛力斯 2023 归母净利为负(-24.50 亿元, R-f21b29643b0d42107933)，属不同期间且为负值，未纳入 2025 正值构成；2025 五家均为正，无需零轴分化处理；其余 3 家净利率 net_margin 缺失，保持断点不补齐。"]}, "graphic": [{"type": "text", "left": "28%", "top": "48%", "style": {"text": "样本合计\n1189.87 亿元", "textAlign": "center", "fill": "#1B365D", "fontSize": 13, "fontWeight": 600, "lineHeight": 20}}, {"type": "text", "left": "68%", "top": "22%", "style": {"text": "样本归母净利构成（亿元 / %）\n比亚迪  326.19  (27.4%)\n长安汽车  40.75  (3.4%)\n赛力斯  59.57  (5.0%)\n宁德时代  722.01  (60.7%)\n亿纬锂能  41.34  (3.5%)", "fill": "#334155", "fontSize": 11, "lineHeight": 22}}]}, {"backgroundColor": "#FFFFFF", "color": ["#1B365D", "#D52B1E", "#D97706", "#0f766e", "#64748B", "#6941c6"], "title": {"text": "2026 年 1—9 月新能源汽车销量当月同比的零轴分化：负增长月与回落中的正增长", "left": "center", "top": 8, "textStyle": {"fontSize": 15, "fontWeight": 600, "color": "#334155"}}, "tooltip": {"trigger": "axis", "textStyle": {"fontSize": 12}, "backgroundColor": "rgba(255,255,255,0.96)", "borderColor": "#e2e8f0", "borderWidth": 1, "axisPointer": {"type": "cross"}}, "legend": {"data": ["销量当月同比"], "top": 4, "textStyle": {"fontSize": 12, "color": "#334155"}, "itemWidth": 14, "itemHeight": 9}, "grid": {"containLabel": true, "left": 50, "right": 32, "top": 38, "bottom": 28}, "xAxis": {"type": "category", "data": ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月"], "axisLine": {"lineStyle": {"color": "#94a3b8"}}, "axisTick": {"show": false}, "axisLabel": {"interval": 0, "fontSize": 12, "lineHeight": 16, "color": "#334155", "hideOverlap": false, "width": 75.0, "overflow": "break"}}, "yAxis": {"type": "value", "name": "销量当月同比（%）", "nameTextStyle": {"fontSize": 12, "color": "#64748B"}, "axisLine": {"show": true, "lineStyle": {"color": "#94a3b8"}}, "axisLabel": {"fontSize": 12, "color": "#334155"}, "splitLine": {"lineStyle": {"type": "dashed", "color": "#e2e8f0"}}, "min": -20, "max": 30, "interval": 10}, "series": [{"name": "销量当月同比", "type": "bar", "data": [{"value": 0.1, "itemStyle": {"color": "#1B365D"}}, {"value": -14.2, "itemStyle": {"color": "#D52B1E"}}, {"value": 1.2, "itemStyle": {"color": "#1B365D"}}, {"value": 9.7, "itemStyle": {"color": "#1B365D"}}, {"value": 14.4, "itemStyle": {"color": "#1B365D"}}, {"value": 23.6, "itemStyle": {"color": "#1B365D"}}, {"value": 23.7, "itemStyle": {"color": "#1B365D"}}, {"value": 17.8, "itemStyle": {"color": "#1B365D"}}, {"value": 13.6, "itemStyle": {"color": "#1B365D"}}], "itemStyle": {"color": "#1B365D", "borderRadius": [3, 3, 0, 0]}, "barMaxWidth": 34, "connectNulls": false, "label": {"show": true, "position": "top", "fontSize": 10, "formatter": "{c}%", "color": "#334155"}, "markLine": {"silent": true, "symbol": "none", "lineStyle": {"type": "solid", "color": "#334155", "width": 1.5}, "label": {"formatter": "零轴", "color": "#334155", "fontSize": 10}, "data": [{"yAxis": 0}]}}], "chart_meta": {"chart_id": "C09", "chart_type": "diverging_bar", "title": "2026 年 1—9 月新能源汽车销量当月同比的零轴分化：负增长月与回落中的正增长", "insight_goal": "验证 INS-005 / KF-011 2026 前三季度增速波动（2 月 -14.2%、7 月峰值 23.7%、9 月回落 13.6%），为 CH-06 宏观催化与风险提供严格切分期间的时序证据", "recommended_chapter_id": "CH-06", "insight_refs": ["INS-005", "KF-011"], "data_binding": {"domain": "macro", "metrics": ["新能源汽车:销量:当月同比"], "entities": ["中国"], "periods": ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"], "value_transform": "原值(%)直接取用；以 0 为清晰基线做正负双向条形，2 月为负、其余为正；空值保持断点、不补零", "unit": "%"}, "evidence_ids": ["R-a65c613495b562fab7da", "R-22243f778af54c2cb35c", "R-f9ea7aed9ad99d669701", "R-548477058bbfd08dc899", "R-efc4d1e804b153e6a6e0", "R-ac647211aac087be014f", "R-17c78b9808b50eb258a1", "R-9ae0c100ce3fe077306b", "R-bd5ac9d27e41ee534d11"], "unit": "%", "footnotes": ["2026 年为 1—9 月观测，与 2025 全年口径不同，禁止并列或相加。", "9 月观测 period_type=ytd_q3；出口为累计同比，销量为当月同比，两者量纲含义不同。", "选型依据：diverging_bar 取自 chart-selection 规范『含正负分化指标必须带清晰零轴基线』；本序列 2 月 -14.2% 为负、其余为正，证据充分；该类型不在智能体3 直出枚举内，特此说明。", "注意期间红线：本图为 2026 前三季度(1—9 月)『当月同比』，与 2025 全年销量累计值/出口年度值不同期间、不同口径，严禁并列、相加或拼接，以纠正 A2 已认定的『2026 混入 2025 结论』(INS-001 未切分期间)质量问题。", "宏观配额：本报告仅此 1 张取自 macro 域的宏观图(1/9≈11%，≤25% 且满足上限 1 张)；『出口数量:累计同比』为当月同比之外的另一口径，未在本图叠加，亦不另出单线/面积图，已列入 suppressed_charts。", "数据缺口：macro 域仅 2026 年 1—9 月，无 10—12 月及年度值；无 2021—2025 月度同比，故不能延长为多年月度趋势；无政策事件/技术催化的量化时间戳，CH-06 不造因果叠加图。"]}}];
+CHART_OPTIONS.forEach(function (opt, i) {
+  const el = document.getElementById('chart-' + (i + 1));
+  if (!el) return;
+  const chart = echarts.init(el, null, { renderer: 'canvas' });
+  chart.setOption(opt);
+  window.addEventListener('resize', function () { chart.resize(); });
+});
+</script>
+</body>
+</html>

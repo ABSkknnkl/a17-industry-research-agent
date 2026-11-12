@@ -1,0 +1,74 @@
+{
+  "stage": "A3_LLM_SELECTION",
+  "model": "deepseek-v4-flash",
+  "base_url": "https://ark.cn-beijing.volces.com/api/plan/v3",
+  "elapsed_seconds": 29.61,
+  "prompt_sha256": "4ba6c1472dd03bd9",
+  "candidate_card_count": 9,
+  "usage": {
+    "completion_tokens": 2252,
+    "prompt_tokens": 4832,
+    "total_tokens": 7084,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 1770
+    }
+  },
+  "validation_errors": [],
+  "selection": {
+    "chart_count": 8,
+    "rationale": "基于A1证据充分性和A2结论需求，选取销量、出口、渗透率、财务对比、盈利分布及2026年前三季度增速等8张图，覆盖行业、财务与宏观维度，并抑制数据不足的C07。",
+    "charts": [
+      {
+        "chart_id": "C01",
+        "chart_type": "combo",
+        "reason": "展示2021-2025年销量规模与增速换挡，支撑增长动能转向出口的判断。"
+      },
+      {
+        "chart_id": "C02",
+        "chart_type": "line",
+        "reason": "呈现2025年渗透率高位平台，验证内需边际见顶。"
+      },
+      {
+        "chart_id": "C03",
+        "chart_type": "area",
+        "reason": "对比出口量增长，佐证外需动能切换。"
+      },
+      {
+        "chart_id": "C04",
+        "chart_type": "comparison_bar",
+        "reason": "对比营收与归母净利，体现整车与电池的盈利分化。"
+      },
+      {
+        "chart_id": "C05",
+        "chart_type": "horizontal_bar",
+        "reason": "横向比较毛利率，呈现整车与电池利润分配格局。"
+      },
+      {
+        "chart_id": "C06",
+        "chart_type": "scatter",
+        "reason": "用毛利率×营收同比定位四象限，刻画竞争格局分类。"
+      },
+      {
+        "chart_id": "C08",
+        "chart_type": "donut",
+        "reason": "展示归母净利价值量分布，凸显动力电池龙头盈利韧性。"
+      },
+      {
+        "chart_id": "C09",
+        "chart_type": "diverging_bar",
+        "reason": "展示2026年前三季度销量同比零轴分化，提供宏观风险证据。"
+      }
+    ],
+    "suppressed": [
+      {
+        "chart_id": "C07",
+        "reason_code": "insufficient_evidence",
+        "reason": "A2明确警告经营现金流数据缺失，雷达图五维无法完整构建，证据不足。"
+      }
+    ]
+  },
+  "raw_response": "{\n  \"chart_count\": 8,\n  \"rationale\": \"基于A1证据充分性和A2结论需求，选取销量、出口、渗透率、财务对比、盈利分布及2026年前三季度增速等8张图，覆盖行业、财务与宏观维度，并抑制数据不足的C07。\",\n  \"charts\": [\n    {\n      \"chart_id\": \"C01\",\n      \"chart_type\": \"combo\",\n      \"reason\": \"展示2021-2025年销量规模与增速换挡，支撑增长动能转向出口的判断。\"\n    },\n    {\n      \"chart_id\": \"C02\",\n      \"chart_type\": \"line\",\n      \"reason\": \"呈现2025年渗透率高位平台，验证内需边际见顶。\"\n    },\n    {\n      \"chart_id\": \"C03\",\n      \"chart_type\": \"area\",\n      \"reason\": \"对比出口量增长，佐证外需动能切换。\"\n    },\n    {\n      \"chart_id\": \"C04\",\n      \"chart_type\": \"comparison_bar\",\n      \"reason\": \"对比营收与归母净利，体现整车与电池的盈利分化。\"\n    },\n    {\n      \"chart_id\": \"C05\",\n      \"chart_type\": \"horizontal_bar\",\n      \"reason\": \"横向比较毛利率，呈现整车与电池利润分配格局。\"\n    },\n    {\n      \"chart_id\": \"C06\",\n      \"chart_type\": \"scatter\",\n      \"reason\": \"用毛利率×营收同比定位四象限，刻画竞争格局分类。\"\n    },\n    {\n      \"chart_id\": \"C08\",\n      \"chart_type\": \"donut\",\n      \"reason\": \"展示归母净利价值量分布，凸显动力电池龙头盈利韧性。\"\n    },\n    {\n      \"chart_id\": \"C09\",\n      \"chart_type\": \"diverging_bar\",\n      \"reason\": \"展示2026年前三季度销量同比零轴分化，提供宏观风险证据。\"\n    }\n  ],\n  \"suppressed\": [\n    {\n      \"chart_id\": \"C07\",\n      \"reason_code\": \"insufficient_evidence\",\n      \"reason\": \"A2明确警告经营现金流数据缺失，雷达图五维无法完整构建，证据不足。\"\n    }\n  ]\n}"
+}

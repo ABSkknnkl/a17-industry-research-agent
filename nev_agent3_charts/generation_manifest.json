@@ -1,0 +1,121 @@
+{
+  "stage": "A3_GENERATE_FROM_LLM_SELECTION",
+  "input": {
+    "a1_dataset": "a17-industry-research-agent/output/a1_five_industry_probe/新能源汽车/runs/run-20261110013520-220857d7/dataset.json",
+    "a2_report": "a17-industry-research-agent/output/a2_industry_review/runs/a2-review-220857d7/artifacts/interpretation_report.json",
+    "llm_selection": "llm_selection_result.json",
+    "prompt_sha256": "4ba6c1472dd03bd9"
+  },
+  "llm": {
+    "model": "deepseek-v4-flash",
+    "elapsed_seconds": 29.61,
+    "usage": {
+      "completion_tokens": 2252,
+      "prompt_tokens": 4832,
+      "total_tokens": 7084,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 1770
+      }
+    },
+    "rationale": "基于A1证据充分性和A2结论需求，选取销量、出口、渗透率、财务对比、盈利分布及2026年前三季度增速等8张图，覆盖行业、财务与宏观维度，并抑制数据不足的C07。"
+  },
+  "count_reconciliation": {
+    "llm_chart_count": 8,
+    "llm_charts_array_length": 8,
+    "generated_options": 8,
+    "rendered_cards": 8,
+    "rendered_containers": 8,
+    "suppressed_by_llm": 1,
+    "consistent": true
+  },
+  "generated_charts": [
+    {
+      "seq": 1,
+      "chart_id": "C01",
+      "chart_type": "combo",
+      "title": "2021—2025 新能源汽车销量累计规模与同比增速：总量扩张与增速换挡",
+      "chapter": "CH-02",
+      "evidence_count": 5,
+      "footnote_count": 6,
+      "llm_reason": "展示2021-2025年销量规模与增速换挡，支撑增长动能转向出口的判断。"
+    },
+    {
+      "seq": 2,
+      "chart_id": "C02",
+      "chart_type": "line",
+      "title": "2025 年国内零售渗透率是否已进入高位平台：年内观测序列 51.1%→59.3%",
+      "chapter": "CH-01",
+      "evidence_count": 10,
+      "footnote_count": 5,
+      "llm_reason": "呈现2025年渗透率高位平台，验证内需边际见顶。"
+    },
+    {
+      "seq": 3,
+      "chart_id": "C03",
+      "chart_type": "area",
+      "title": "2021—2025 新能源汽车出口量年度规模：内需换挡下的外需动能切换",
+      "chapter": "CH-02",
+      "evidence_count": 5,
+      "footnote_count": 6,
+      "llm_reason": "对比出口量增长，佐证外需动能切换。"
+    },
+    {
+      "seq": 4,
+      "chart_id": "C04",
+      "chart_type": "comparison_bar",
+      "title": "2025 年样本企业营收规模与归母净利对照：以量取胜与以利取胜的分化",
+      "chapter": "CH-04",
+      "evidence_count": 10,
+      "footnote_count": 5,
+      "llm_reason": "对比营收与归母净利，体现整车与电池的盈利分化。"
+    },
+    {
+      "seq": 5,
+      "chart_id": "C05",
+      "chart_type": "horizontal_bar",
+      "title": "2025 年五家样本企业毛利率横向排名：整车与电池环节的利润分配格局",
+      "chapter": "CH-03",
+      "evidence_count": 5,
+      "footnote_count": 4,
+      "llm_reason": "横向比较毛利率，呈现整车与电池利润分配格局。"
+    },
+    {
+      "seq": 6,
+      "chart_id": "C06",
+      "chart_type": "scatter",
+      "title": "2025 年样本企业『盈利性—成长性』四象限定位：毛利率 × 营收同比与中位数十字线",
+      "chapter": "CH-04",
+      "evidence_count": 10,
+      "footnote_count": 8,
+      "llm_reason": "用毛利率×营收同比定位四象限，刻画竞争格局分类。"
+    },
+    {
+      "seq": 7,
+      "chart_id": "C08",
+      "chart_type": "donut",
+      "title": "2025 年样本企业归母净利价值量分布：动力电池龙头份额与整车盈利构成",
+      "chapter": "CH-03",
+      "evidence_count": 5,
+      "footnote_count": 8,
+      "llm_reason": "展示归母净利价值量分布，凸显动力电池龙头盈利韧性。"
+    },
+    {
+      "seq": 8,
+      "chart_id": "C09",
+      "chart_type": "diverging_bar",
+      "title": "2026 年 1—9 月新能源汽车销量当月同比的零轴分化：负增长月与回落中的正增长",
+      "chapter": "CH-06",
+      "evidence_count": 9,
+      "footnote_count": 6,
+      "llm_reason": "展示2026年前三季度销量同比零轴分化，提供宏观风险证据。"
+    }
+  ],
+  "outputs": [
+    "chart_options_selected.json",
+    "index_selected.html",
+    "generation_manifest.json"
+  ]
+}

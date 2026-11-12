@@ -1,0 +1,324 @@
+"""产业链「关系图」渲染器 —— 专门通道专用，不改既有 lane_grid 一行。
+
+为什么另起一个渲染器（2026-11-12 诊断 A 类）：
+``chain_render._render_lane_grid`` 是**分类目录**版式，按 10-17 裁定
+「卡片之间零连线」，且 ``_omitted_edge_labels`` 把所有边标签判为有意不画；
+``_lg_company_lines`` 只在企业为空时才用 items 兜底，有企业就整层不画品类；
+``_wrap_text(max_lines=2)`` + 卡高硬裁会截断描述。这些都是该版式的既定设计，
+直接改会动到 851 项既有回归，因此本模块独立实现「关系图」版式。
+
+本版式保证（与诊断一一对应）：
+  A1 21 条关系边全部上板：4 类 flow 各有 marker / 线型 / 色 + 逐条标签
+  A2 每个节点的 items 细分品类整行画出，不因有企业而被吞
+  A3 描述按可用宽度自动换行，不设行数上限、不硬裁
+  B2 垂直整合 / 集团复用、B3 财务样本：企业名后带标记
+  C1 证据来源 R1–R8 卡内标注 + 底部索引
+  C2 瓶颈判定依据、C3 状态口径、C4 flow/瓶颈/状态配色分离，底部统一图例
+  C5 副标题与列头同口径（均取 spec.stages 的 title）
+"""
+
+from __future__ import annotations
+
+import math
+from typing import Any
+from xml.sax.saxutils import escape, quoteattr
+
+from chart_generator.chain_graph import ChainGraphSpec, ChainNode
+
+# ── 版式常量 ──────────────────────────────────────────────────────────────
+W = 2600.0
+MG = 40.0
+COL_GAP = 36.0
+COL_W = (W - 2 * MG - 3 * COL_GAP) / 4
+TITLE_H = 118.0
+HEAD_H = 52.0
+CARD_TOP = TITLE_H + HEAD_H + 18
+CARD_GAP = 12.0
+CARD_PAD = 12.0
+INNER = COL_W - 2 * CARD_PAD - 16
+
+STAGE_COLOR = {
+    "upstream": "#0F766E",
+    "midstream": "#1B365D",
+    "downstream": "#B45309",
+    "support": "#6941C6",
+}
+INK, INK2, INK3 = "#0F172A", "#334155", "#64748B"
+WHITE, LINE, BG = "#FFFFFF", "#E2E8F0", "#F8FAFC"
+WARN, WARN_BG = "#D97706", "#FFF7ED"       # 瓶颈专用橙（不与状态徽标共用）
+NEUTRAL, NEUTRAL_BG = "#475569", "#F1F5F9"  # 状态徽标：中性蓝灰
+SAMPLE = "#D52B1E"                          # Q1 财务样本
+INTEG = "#0F766E"                           # 垂直整合
+
+# flow → 颜色 / 线型 / 图例名（C4：语义分离）
+FLOW_STYLE = {
+    "material": ("#1B365D", "", "物料 / 产品供给"),
+    "technical": ("#0F766E", "10 5", "技术 / 工艺输出"),
+    "service": ("#6941C6", "2 4", "服务 / 数据支撑"),
+    "recycle": ("#D52B1E", "8 4", "逆向回收 / 资源闭环"),
+    "flow": ("#1B365D", "", "通用主流向"),
+}
+CN = "PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif"
+
+
+def _wrap(text: str, size: float, max_w: float) -> list[str]:
+    """按字宽换行，**不设行数上限**（A3：描述不得硬裁）。"""
+    if not text:
+        return []
+    lines: list[str] = []
+    cur, width = "", 0.0
+    for ch in str(text):
+        cw = size * (0.55 if ord(ch) < 128 else 1.0)
+        if width + cw > max_w and cur:
+            lines.append(cur)
+            cur, width = ch, cw
+        else:
+            cur += ch
+            width += cw
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def _text(p: list[str], x: float, y: float, s: str, size: float,
+          color: str = INK, weight: int = 400, anchor: str = "start") -> None:
+    p.append(f'<text x="{x:.1f}" y="{y:.1f}" font-size="{size:.1f}" '
+             f'fill="{color}" font-weight="{weight}" text-anchor="{anchor}" '
+             f'font-family={quoteattr(CN)}>{escape(s)}</text>')
+
+
+def _company_label(name: str, ann: dict[str, Any]) -> str:
+    tags: list[str] = []
+    if name in (ann.get("financial_sample") or []):
+        tags.append("样本")
+    if len((ann.get("vertical_integration") or {}).get(name) or []) >= 2:
+        tags.append("整合")
+    return f"{name}〔{'·'.join(tags)}〕" if tags else name
+
+
+def _card_rows(nd: ChainNode, ann: dict[str, Any]) -> list[tuple[str, float, str, int]]:
+    """返回 (文本, 字号, 颜色, 字重) 行序列；描述完整换行，不截断。"""
+    rows: list[tuple[str, float, str, int]] = [(nd.name, 14.0, INK, 700)]
+    if nd.items:
+        rows += [(ln, 10.5, INK2, 400) for ln in
+                 _wrap("品类 · " + "、".join(nd.items), 10.5, INNER)]
+    if nd.companies:
+        comp_txt = "、".join(_company_label(c, ann) for c in nd.companies)
+        rows += [(ln, 10.5, INK, 400) for ln in
+                 _wrap("企业 · " + comp_txt, 10.5, INNER)]
+    if nd.description:
+        rows += [(ln, 10.0, INK3, 400) for ln in
+                 _wrap("说明 · " + nd.description, 10.0, INNER)]
+    basis = (ann.get("bottleneck_basis") or {}).get(nd.node_id)
+    if nd.bottleneck and basis:
+        rows += [(ln, 9.5, WARN, 400) for ln in
+                 _wrap("瓶颈依据 · " + basis, 9.5, INNER)]
+    src = "、".join(nd.evidence_record_ids) or "—"
+    foot = f"来源 {src}"
+    if nd.phase:
+        foot += f" · 状态 {nd.phase}"
+    rows.append((foot, 9.5, INK3, 400))
+    return rows
+
+
+def _row_height(size: float) -> float:
+    return {14.0: 22.0, 10.5: 16.0, 10.0: 15.0, 9.5: 14.0}.get(size, 16.0)
+
+
+def _card(p: list[str], x: float, y: float, nd: ChainNode,
+          ann: dict[str, Any], color: str) -> float:
+    """画一张卡，返回实际高度（内容决定，不裁字）。"""
+    rows = _card_rows(nd, ann)
+    h = CARD_PAD * 2 + 24 + sum(_row_height(r[1]) for r in rows[1:]) + 8
+    stroke = WARN if nd.bottleneck else color
+    p.append(f'<rect x="{x:.1f}" y="{y:.1f}" width="{COL_W:.1f}" height="{h:.1f}" '
+             f'rx="9" fill="{WHITE}" stroke="{stroke}" '
+             f'stroke-width="{2.0 if nd.bottleneck else 1.1}"/>')
+    if nd.bottleneck:  # C2：橙色双描边只表示瓶颈
+        p.append(f'<rect x="{x+3:.1f}" y="{y+3:.1f}" width="{COL_W-6:.1f}" '
+                 f'height="{h-6:.1f}" rx="7" fill="none" stroke="{WARN}" '
+                 f'stroke-opacity="0.55" stroke-width="0.9"/>')
+
+    cy = y + CARD_PAD + 17
+    _text(p, x + 12, cy, rows[0][0], 14.0, INK, 700)
+    if nd.bottleneck:
+        p.append(f'<rect x="{x+COL_W-52:.1f}" y="{cy-14:.1f}" width="40" height="17" '
+                 f'rx="8" fill="{WARN_BG}" stroke="{WARN}" stroke-width="0.8"/>')
+        _text(p, x + COL_W - 32, cy - 1, "瓶颈", 9.5, WARN, 700, "middle")
+    if nd.phase:  # C4：状态徽标用中性色，不与瓶颈橙冲突
+        p.append(f'<rect x="{x+COL_W-92:.1f}" y="{cy-14:.1f}" width="62" height="17" '
+                 f'rx="8" fill="{NEUTRAL_BG}" stroke="{NEUTRAL}" stroke-width="0.8"/>')
+        _text(p, x + COL_W - 61, cy - 1, nd.phase, 9.5, NEUTRAL, 700, "middle")
+    cy += 8
+    for txt, size, col, weight in rows[1:]:
+        cy += _row_height(size)
+        _text(p, x + 12, cy, txt, size, col, weight)
+    return h
+
+
+def _markers(p: list[str]) -> None:
+    """4 类 flow 各一个箭头 marker（A1：旧图 marker 数为 0）。"""
+    for flow, (color, _dash, _label) in FLOW_STYLE.items():
+        p.append(
+            f'<marker id="arw-{flow}" viewBox="0 0 10 10" refX="9" refY="5" '
+            f'markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
+            f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{color}"/></marker>'
+        )
+
+
+def _relation_panel(p: list[str], spec: ChainGraphSpec, y: float) -> float:
+    """21 条关系边逐条上板：源 → 目标 + 边标签 + flow 色/线型 + 证据。"""
+    nodes = spec.node_map()
+    ncol, gap, row_h = 3, 20.0, 50.0
+    cell_w = (W - 2 * MG - (ncol - 1) * gap) / ncol
+    rows_n = math.ceil(len(spec.edges) / ncol)
+    height = 44 + rows_n * row_h + 16
+    p.append(f'<rect x="{MG}" y="{y}" width="{W-2*MG}" height="{height}" '
+             f'rx="10" fill="{BG}" stroke="{LINE}"/>')
+    _text(p, MG + 16, y + 28, f"环节关系 · {len(spec.edges)} 条有向边（逐条可追溯）",
+          16.0, INK, 700)
+    for i, e in enumerate(spec.edges):
+        r, c = divmod(i, ncol)
+        cx = MG + 12 + c * (cell_w + gap)
+        cy = y + 44 + r * row_h
+        color, dash, _ = FLOW_STYLE.get(e.flow, FLOW_STYLE["flow"])
+        dash_attr = f' stroke-dasharray="{dash}"' if dash else ""
+        src = nodes.get(e.source)
+        dst = nodes.get(e.target)
+        s_name = src.name if src else e.source
+        t_name = dst.name if dst else e.target
+        p.append(f'<rect x="{cx:.1f}" y="{cy:.1f}" width="{cell_w-24:.1f}" '
+                 f'height="{row_h-6:.1f}" rx="6" fill="{WHITE}" stroke="{LINE}"/>')
+        p.append(f'<rect x="{cx:.1f}" y="{cy:.1f}" width="4" height="{row_h-6:.1f}" '
+                 f'rx="2" fill="{color}"/>')
+        # 每条边一个真实箭头几何元素（供产物回读校验计数）
+        p.append(f'<line x1="{cx+16:.1f}" y1="{cy+21:.1f}" x2="{cx+60:.1f}" '
+                 f'y2="{cy+21:.1f}" stroke="{color}" stroke-width="1.6"{dash_attr} '
+                 f'marker-end="url(#arw-{e.flow if e.flow in FLOW_STYLE else "flow"})"/>')
+        title = f"{s_name} → {t_name}"
+        _text(p, cx + 70, cy + 17, title, 11.5, INK, 700)
+        _text(p, cx + 70, cy + 34, e.label or "（未标注关系）", 10.0, color)
+        ev = "、".join(src.evidence_record_ids if src else []) if src else ""
+        if ev:
+            _text(p, cx + cell_w - 90, cy + 17, ev, 9.0, INK3, 400, "end")
+    return height
+
+
+def _legend(p: list[str], spec: ChainGraphSpec, ann: dict[str, Any], y: float) -> float:
+    """图例 + 证据索引 + 口径注记（C1–C5）。"""
+    lines: list[tuple[str, float, str, int]] = []
+    lines.append(("图例与口径说明", 15.0, INK, 700))
+    for flow, (color, dash, label) in FLOW_STYLE.items():
+        if flow == "flow":
+            continue
+        lines.append((f"  ── {label}（{flow}）", 10.5, color, 400))
+    lines.append(("  橙色双描边 = 瓶颈；灰蓝徽标 = 落地状态；"
+                  "〔样本〕= 报告 Q1 财务对比标的；〔整合〕= 跨环节垂直整合主体", 10.5, INK2, 400))
+    for key in ("bottleneck_rule", "phase_basis", "channel_note", "sample_note", "evidence_note"):
+        if ann.get(key):
+            lines += [(ln, 10.0, INK3, 400) for ln in
+                      _wrap("· " + str(ann[key]), 10.0, W - 2 * MG - 40)]
+    sources = ann.get("sources") or {}
+    if sources:
+        lines.append(("证据来源索引", 11.5, INK, 700))
+        for rid, desc in sources.items():
+            lines.append((f"  {rid}：{desc}", 10.0, INK2, 400))
+    row_h = 17.0
+    height = 24 + row_h * len(lines) + 18
+    p.append(f'<rect x="{MG}" y="{y}" width="{W-2*MG}" height="{height}" '
+             f'rx="10" fill="{WHITE}" stroke="{LINE}"/>')
+    cy = y + 22
+    for txt, size, color, weight in lines:
+        _text(p, MG + 16, cy, txt, size, color, weight)
+        cy += row_h
+    return height
+
+
+def _default_annotations(spec: ChainGraphSpec) -> dict[str, Any]:
+    """调用方未传注解时按标题回查数据底座（生产 A3 走这条）。"""
+    try:
+        from chain_data import load_chain_profile
+
+        payload = load_chain_profile(spec.title) or {}
+        return dict(payload.get("annotations") or {})
+    except Exception:
+        return {}
+
+
+def render_chain_relation_svg(
+    spec: ChainGraphSpec,
+    annotations: dict[str, Any] | None = None,
+    width: int = 2600,
+) -> str:
+    """把审定事实底座渲染成产业链关系图；返回完整 SVG 字符串。"""
+    ann = annotations if annotations is not None else _default_annotations(spec)
+    stage_order = [s.stage_id for s in spec.stages] or [
+        "upstream", "midstream", "downstream", "support"
+    ]
+    titles = {s.stage_id: s.title for s in spec.stages}
+    by_stage = {sid: [n for n in spec.nodes if n.stage == sid] for sid in stage_order}
+    by_stage.setdefault("other", [n for n in spec.nodes if n.stage not in stage_order])
+
+    # 先算各列高度，确定画布
+    col_heights: dict[str, float] = {}
+    for sid in stage_order:
+        col_heights[sid] = sum(
+            CARD_PAD * 2 + 24 + sum(_row_height(r[1]) for r in _card_rows(n, ann)[1:]) + 8
+            for n in by_stage[sid]
+        ) + CARD_GAP * max(0, len(by_stage[sid]) - 1)
+    grid_h = max(col_heights.values(), default=200.0)
+    panel_y = CARD_TOP + grid_h + 34.0
+    # 关系面板与图例高度需先算：用两遍法（面板高度只依赖边数）
+    n_edges = len(spec.edges)
+    panel_h = 44 + math.ceil(n_edges / 3) * 50.0 + 16
+    legend_y = panel_y + panel_h + 22.0
+    H = legend_y + 24 + 17 * 24 + 18 + 30  # 图例上限预留，实际用内容重算
+
+    p: list[str] = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W:.0f} {H:.0f}" '
+        f'width="{width}" height="{int(H * width / W)}" font-family={quoteattr(CN)}>',
+        f'<rect width="{W:.0f}" height="{H:.0f}" fill="{BG}"/>',
+        '<defs>',
+    ]
+    _markers(p)
+    p.append('</defs>')
+    _text(p, MG, 48, spec.title, 30.0, INK, 800)
+    if spec.subtitle:
+        _text(p, MG, 78, spec.subtitle, 13.0, INK2)
+    _text(p, W - MG, 48,
+          f"{len(spec.nodes)} 环节 · {len(spec.edges)} 关系边 · "
+          f"{sum(len(n.companies) for n in spec.nodes)} 企业次 · "
+          f"{sum(len(n.items) for n in spec.nodes)} 细分品类",
+          12.0, INK3, 400, "end")
+
+    xs = [MG + i * (COL_W + COL_GAP) for i in range(len(stage_order))]
+    for i, sid in enumerate(stage_order):
+        x = xs[i]
+        color = STAGE_COLOR.get(sid, INK3)
+        p.append(f'<rect x="{x:.1f}" y="{TITLE_H:.1f}" width="{COL_W:.1f}" '
+                 f'height="{HEAD_H:.1f}" rx="8" fill="{color}"/>')
+        # C5：列头直接取 spec.stages.title，与副标题同一套口径
+        _text(p, x + 14, TITLE_H + 33, titles.get(sid, sid), 16.0, WHITE, 700)
+        p.append(f'<rect x="{x:.1f}" y="{CARD_TOP-8:.1f}" width="{COL_W:.1f}" '
+                 f'height="{col_heights[sid]+16:.1f}" rx="10" fill="{WHITE}" '
+                 f'stroke="{LINE}" stroke-width="1"/>')
+        cy = CARD_TOP
+        for nd in by_stage[sid]:
+            cy += _card(p, x + 8, cy, nd, ann, color) + CARD_GAP
+        if i < len(xs) - 1:
+            # 箭头落在两列共同高度的中部，短列不再被拉出一大片空白框
+            ay = CARD_TOP + min(col_heights[sid], col_heights[stage_order[i + 1]]) / 2
+            p.append(f'<line x1="{x+COL_W+4:.1f}" y1="{ay:.1f}" '
+                     f'x2="{xs[i+1]-8:.1f}" y2="{ay:.1f}" stroke="{INK3}" '
+                     f'stroke-width="2.2" marker-end="url(#arw-material)"/>')
+
+    panel_h = _relation_panel(p, spec, panel_y)
+    legend_h = _legend(p, spec, ann, legend_y)
+    real_h = legend_y + legend_h + 24
+    # 用真实高度重写根元素尺寸（两遍法收口，避免底部留白或截断）
+    p[0] = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W:.0f} {real_h:.0f}" '
+            f'width="{width}" height="{int(real_h * width / W)}" '
+            f'font-family={quoteattr(CN)}>')
+    p[1] = f'<rect width="{W:.0f}" height="{real_h:.0f}" fill="{BG}"/>'
+    p.append('</svg>')
+    return "".join(p)
