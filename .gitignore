@@ -58,3 +58,9 @@ Thumbs.db
 *.swp
 *.zip
 *.tar.gz
+
+# ── 本地参考资料与恢复备份（不入库）───────────────────────
+# _ref_github 是外部仓库的完整克隆（含自身 .git，提交后只会变成空 gitlink）
+_ref_github/
+# 恢复操作前的本地备份文件（*.before_restore）
+_restore_backup_*/
