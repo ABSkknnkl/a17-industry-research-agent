@@ -568,9 +568,12 @@ async function onStageDirectEditSubmit(payload: {
   </div>
 </template>
 
-.next-step-hint { margin: 0 0 12px; color: var(--el-text-color-secondary); font-size: 13px; }
-
 <style scoped>
+.next-step-hint {
+  margin: 0 0 12px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
 .action-title {
   margin: 16px 0 8px;
   font-size: 14px;

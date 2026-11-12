@@ -121,10 +121,12 @@ def _format_metric_label(metric: str) -> str:
     m = str(metric or "").strip()
     return METRIC_DISPLAY_NAMES.get(m, METRIC_DISPLAY_NAMES.get(m.lower(), m))
 
-def _format_outlier_val(val: Any, metric: str = "") -> str:
+def _format_outlier_val(val: Any, metric: str = "", unit: str | None = None) -> str:
     s = str(val if val is not None else "").strip()
     if not s or s == "-":
         return "-"
+    if unit:
+        return _display_evidence_value(val, unit, metric)
     if "%" in s:
         return s
     try:
@@ -135,10 +137,6 @@ def _format_outlier_val(val: Any, metric: str = "") -> str:
         if any(r in m_lower for r in ["margin", "roe", "roa", "ratio", "rate", "率", "比"]):
             if abs(f) <= 100.0:
                 return f"{f:.2f}%"
-        if abs(f) >= 1e8:
-            return f"{f / 1e8:.2f}亿元"
-        if abs(f) >= 1e4:
-            return f"{f / 1e4:.2f}万元"
         if abs(f) < 1.0 and abs(f) > 0.0001:
             return f"{f:.4f}"
         return f"{f:.2f}"
@@ -162,7 +160,7 @@ def _normalize_dqa(dqa: dict[str, Any]) -> dict[str, Any]:
             item = dict(out)
             orig_m = str(out.get("metric", ""))
             item["metric"] = _format_metric_label(orig_m)
-            item["observed_value"] = _format_outlier_val(out.get("observed_value"), orig_m)
+            item["observed_value"] = _format_outlier_val(out.get("observed_value"), orig_m, out.get("unit"))
             item["expected_range"] = _format_stat_text(out.get("expected_range", ""))
             formatted_outliers.append(item)
         res["outlier_items"] = formatted_outliers
@@ -306,9 +304,7 @@ _SCOPE_LABELS = {"consolidated": "合并财务报表", "parent": "母公司财�
 def _period_phrase(match: re.Match) -> str:
     year = match["date"][:4]
     scope = match["scope"]
-    if scope:
-        return f"{year}年{_SCOPE_LABELS[scope]}"
-    return f"{year}{_QUARTER_LABELS[match['period']]}"
+    return f"{year}{_QUARTER_LABELS[match['period']]}{_SCOPE_LABELS.get(scope, '')}"
 
 
 def _reading_text(text: str) -> str:
@@ -484,7 +480,7 @@ def render_markdown(view: ReportViewModel) -> str:
         "### 1. 样本结构与期间基准说明",
         f"- **样本记录数**：本次结构化记录共 {sample_info.get('total_records', len(view.evidence_catalog))} 条微观与宏观数据记录；",
         f"- **覆盖企业数**：样本企业共 {sample_info.get('total_companies', len(set(x.entity for x in view.evidence_catalog if x.entity)))} 家，对标矩阵覆盖 {sample_info.get('comps_sample_size', 0)} 家观测企业，主营可比性另行核验；",
-        f"- **估值梯队结构**：盈利分层标的 {sample_info.get('profitable_sample_size', 0)} 家；微利/亏损/高乘数梯队 {sample_info.get('loss_or_high_multiple_size', 0)} 家；",
+        f"- **估值梯队结构**：盈利分层标的 {sample_info.get('profitable_sample_size', 0)} 家；微利/亏损/高乘数梯队 {sample_info.get('loss_or_high_multiple_size', 0)} 家；分层待核 {sample_info.get('unknown_valuation_size', 0)} 家；",
         f"- **估值可用覆盖**：PE {sample_info.get('pe_available_count', 0)}/{sample_info.get('comps_sample_size', 0)}；PB {sample_info.get('pb_available_count', 0)}/{sample_info.get('comps_sample_size', 0)}。可用观测不等于主营可比或成熟基准；",
         f"- **财务基准期间**：主要依据 {'、'.join(sample_info.get('primary_periods', ['最新公开披露报告期']))} ；不同期间长度分别比较；",
     ]
@@ -501,7 +497,7 @@ def render_markdown(view: ReportViewModel) -> str:
     if outliers:
         for out in outliers:
             m_label = _format_metric_label(out.get('metric', '-'))
-            o_val = _format_outlier_val(out.get('observed_value', '-'), out.get('metric', ''))
+            o_val = _format_outlier_val(out.get('observed_value', '-'), out.get('metric', ''), out.get('unit'))
             e_range = _format_stat_text(out.get('expected_range', '-'))
             refs = _citations(out.get('evidence_ids', []), lookup)
             lines.append(f"| {out.get('entity', '-')} | {m_label} | {o_val} | {out.get('period', '-')} {refs} | {e_range} | {out.get('treatment', '剔除')}: {out.get('reason', '-')} |")

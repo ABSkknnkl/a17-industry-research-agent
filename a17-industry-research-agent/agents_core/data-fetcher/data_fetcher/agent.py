@@ -45,6 +45,17 @@ from data_fetcher.skillhub import IwencaiAuthenticationError, SkillHub, SkillVal
 
 EventEmitter = Callable[[dict[str, Any]], Awaitable[None]]
 
+# 主题 → 必须同轮覆盖的关联画像主题。
+# 只放「上下游强耦合、缺了就答不了题」的关系，避免把预算摊到无关主题。
+THEME_RELATED_THEMES: dict[str, tuple[str, ...]] = {
+    # 整车研究必须包含动力电池环节，否则无法回答「整车与动力电池的产业链关系」
+    "新能源汽车": ("锂电池",),
+    # 光伏产业链的储能/逆变器耦合
+    "光伏": ("储能",),
+    # 低空经济整机依赖航空动力与碳纤维
+    "低空经济": ("军工国防",),
+}
+
 logger = logging.getLogger("data_fetcher.agent")
 
 INTENT_SYSTEM_PROMPT = """你是数据获取智能体的需求理解与实体抽取模块。
@@ -735,6 +746,15 @@ class DataFetcherAgent:
                 for task in decision.tasks:
                     if task.task_id in annual_ids:
                         kept.append(task)
+                    elif task.task_id.startswith(("profile_chain_", "annual_industry_")):
+                        # 产业与行业指标属「无条件必要」维度：产业链结构/供货关系无法由
+                        # 财务指标推出，行业市场指标（销量/渗透率/出口量）也只能由
+                        # hithink-industry-query 提供。这类任务一旦参与延后，就会被
+                        # 年度财务单元的预留预算挤掉（实测产业链 0 次、出口量 0 次），
+                        # 因此不参与延后，改由 _validate_tasks 的域配额单独约束。
+                        # 注意：研发比率（annual_rd）**不**在此列——它属 financials 域，
+                        # 若也豁免延后，会反向挤占三表金额的 8 条配额（实测财务域归零）。
+                        kept.append(task)
                     elif (self.skillhub.catalog.get(task.skill_name)
                           and self.skillhub.catalog[task.skill_name].domain == Domain.FINANCIALS):
                         deferred.append(task.task_id)
@@ -1004,7 +1024,14 @@ class DataFetcherAgent:
         baseline_reqs = self._baseline_requirements(request, required)
         # v3 接线（断点 A/B）：模型从问询中推导的指标验收需求不再丢弃。
         # 代码只做白名单/格式校验（算术，非决策），校验不过的条目退化为不参与验收。
-        model_reqs, rejected = self._parse_metric_requirements(response, baseline_reqs)
+        model_reqs, rejected = self._parse_metric_requirements(
+            response, baseline_reqs,
+            known_entities=list(dict.fromkeys(
+                [*request.must_include_entities,
+                 *((response.get("must_include_entities") or response.get("target_entities") or [])
+                   if isinstance(response.get("must_include_entities") or response.get("target_entities"), list) else [])]
+            )),
+        )
         # 模型需求排在基线之前：未满足时 observation 优先呈现，反馈循环优先逼问。
         requirements = model_reqs + baseline_reqs
         model_entities = response.get("must_include_entities") or response.get("target_entities") or []
@@ -1183,9 +1210,53 @@ class DataFetcherAgent:
                     if missing_years else ([] if matches else ["指定公司公告检索未返回可用线索，仍需核验"]))
 
     @staticmethod
+    def _fill_requirement_slots(
+        label: str, terms: list[str], known_entities: list[str],
+    ) -> tuple[list[str], list[date], list[str]]:
+        """从模型已给出的 label / metric_terms 回填可补数字段。
+
+        背景：契约里的 entity_names / period_ends / metric_families 是确定性补数
+        路径（_priority_annual_tasks）的过滤条件，但解析时从未赋值，导致模型识别
+        出的需求全部不可补数。模型的 label 已含实体与年份（如
+        「比亚迪2023-2025年营业收入年度序列」），因此在此回填，不额外要求模型
+        输出新字段。解析不出就留空，交回原有逻辑，不做猜测。
+        """
+        # 1) 实体：label 中出现的已知实体名；长名优先，避免「长安汽车」被「长安」截断。
+        entities: list[str] = []
+        for candidate in sorted({e.strip() for e in known_entities if e and e.strip()},
+                                key=len, reverse=True):
+            if candidate in label and not any(candidate in picked for picked in entities):
+                entities.append(candidate)
+
+        # 2) 期间：label 里的 2023-2025 / 2023—2025 / 2021至2025 / 单年
+        periods: list[date] = []
+        for first_raw, last_raw in re.findall(
+            r"(?<![\d.])(20\d{2})(?:\s*[-–—~至到]\s*(20\d{2}))?(?![\d.])", label
+        ):
+            first = int(first_raw)
+            last = int(last_raw or first_raw)
+            if 0 <= last - first <= 10:
+                periods.extend(date(year, 12, 31) for year in range(first, last + 1))
+        periods = sorted(set(periods))
+
+        # 3) 指标家族：用项目统一的 metric_family() 归一化同义词，取首个可识别家族
+        families: list[str] = []
+        for term in terms:
+            family = metric_family(str(term))
+            if family and family != str(term).strip().casefold():
+                families.append(family)
+                break
+        if not families and terms:
+            # 归一化失败时保留原始词，由后续指标表决定是否可用，不臆造别名
+            families = [str(terms[0]).strip()]
+        return entities, periods, families
+
+    @staticmethod
     def _parse_metric_requirements(
         response: dict[str, Any],
         baseline_reqs: list[ResearchRequirement],
+        *,
+        known_entities: list[str] | None = None,
     ) -> tuple[list[ResearchRequirement], list[str]]:
         """解析 INTENT 模型返回的 metric_requirements（v3：模型生成验收标准，代码只校验）。
 
@@ -1234,6 +1305,9 @@ class DataFetcherAgent:
                 rejected.append(f"{label or requirement_id or f'第 {idx + 1} 条'}: {reason}")
                 continue
             try:
+                entity_names, periods, families = DataFetcherAgent._fill_requirement_slots(
+                    label, terms, known_entities or [],
+                )
                 req = ResearchRequirement(
                     requirement_id=requirement_id,
                     label=label,
@@ -1242,6 +1316,9 @@ class DataFetcherAgent:
                     min_records=min_records,
                     expected_metric_groups=[terms],
                     requires_period_end=bool(item.get("requires_period_end")),
+                    entity_names=entity_names,
+                    period_ends=periods,
+                    metric_families=families,
                 )
             except ValidationError as exc:
                 rejected.append(f"{label}: 契约校验失败 {exc.errors()[0].get('msg', '')}")
@@ -1249,6 +1326,66 @@ class DataFetcherAgent:
             used_ids.add(req.requirement_id)
             accepted.append(req)
         return accepted, rejected
+
+    @staticmethod
+    def _profile_chain_tasks(
+        objective: "ResearchObjective", dataset: Any, results: list[SkillResult],
+        *, limit: int = 2,
+    ) -> list[SkillTask]:
+        """按已发布行业画像生成产业链查询任务。
+
+        背景：产业链结构与供货关系无法从财务指标推出，必须有独立的产业链查询；
+        之前只依赖 LLM 临场决定，实测 0 次命中（Q1/Q4 因此只写「缺口」）。
+        画像（data/industry_reference）已按主题给出环节键（如
+        「中游:中游-电控/电驱系统」），这里把它转成有界的产业链查询。
+        主题缺失或已尝试过则返回空，不猜环节。
+        """
+        from industry_reference.registry import IndustryRegistry
+
+        registry = IndustryRegistry.try_load()
+        if registry is None:
+            return []
+        theme_name = str(getattr(objective, "industry", "") or "")
+        themes = {t.get("theme_name"): t for t in registry.themes()}
+        entry = themes.get(theme_name)
+        if entry is None:
+            return []
+
+        # 与主题有上下游耦合关系的关联主题：整车研究必须同时覆盖动力电池环节，
+        # 否则「整车与动力电池的产业链关系」（Q1/Q4）无从建立。
+        related_names = [
+            name for name in (THEME_RELATED_THEMES.get(theme_name) or []) if name in themes
+        ]
+        groups: list[tuple[str, list[str]]] = []
+        for name, theme in [(theme_name, entry), *((n, themes[n]) for n in related_names)]:
+            activities = []
+            for key in (theme.get("activities") or []):
+                # 去掉「上游:/中游:」前缀，避免结构化标记进入查询串
+                label = str(key).split(":", 1)[-1].strip()
+                if label and label not in activities:
+                    activities.append(label)
+            if activities:
+                groups.append((name, activities))
+        if not groups:
+            return []
+
+        attempted_ids = {r.task_id for r in results}
+        attempted_queries = {r.query for r in results}
+        tasks: list[SkillTask] = []
+        for name, activities in groups[:limit]:
+            task_id = "profile_chain_" + sha256(f"chain|{name}".encode()).hexdigest()[:12]
+            if task_id in attempted_ids:
+                continue
+            query = f"{name} 产业链 上下游环节 " + "、".join(activities[:6])
+            if query in attempted_queries:
+                continue
+            tasks.append(SkillTask(
+                task_id=task_id, skill_name="hithink-business-query",
+                arguments={"query": query},
+                purpose=f"按行业画像补齐{name}的产业链环节与上下游关系",
+                expected_fields=activities[:6],
+            ))
+        return tasks
 
     @staticmethod
     def _priority_annual_tasks(
@@ -1269,9 +1406,16 @@ class DataFetcherAgent:
         served: dict[str, int] = defaultdict(int)
         labels = {"revenue": "营业收入", "parent_net_profit": "归母净利润", "gross_margin": "销售毛利率",
                   "operating_cash_flow": "经营活动产生的现金流量净额", "rd_expense": "研发费用",
-                  "rd_investment": "研发投入"}
+                  "rd_investment": "研发投入",
+                  # 问财原生字段名为「研发费用 / 营业收入」，但实测用「研发费用率」提问时
+# 同一次响应会同时带出 研发费用 与 研发费用/营业收入 三年列；写成除法式
+# 反而只回研发费用金额。因此这里用口语化标签。
+                  "rd_ratio": "研发费用率",
+                  "net_margin": "销售净利率"}
         industry_labels = {"pv_new_capacity": "中国光伏新增装机容量", "nev_sales": "中国新能源汽车销量",
-                           "nev_penetration": "中国新能源汽车市场渗透率"}
+                           "nev_penetration": "中国新能源汽车市场渗透率",
+                           # Q2 明确要求出口量；实测该指标 2021-2025 年度序列可查
+                           "nev_exports": "中国新能源汽车出口量"}
         industry_tasks = []
         for metric, label in industry_labels.items():
             missing = [r for r in objective.requirements
@@ -1279,7 +1423,13 @@ class DataFetcherAgent:
                        and not DataFetcherAgent._evaluate_requirement(dataset, r).passed]
             task_id = f"annual_industry_{metric}"
             if missing and task_id not in attempted_ids:
-                years = "、".join(f"{r.period_ends[0].year}年" for r in missing)
+                # 需求按「年 × 指标」拆成独立条目，每条的 period_ends 只有一个年份；
+                # 旧实现取 period_ends[0] 会把 2021-2025 的序列压成只查首年，
+                # 剩余年份永远补不上（实测出口量只落地 2021）。这里按年去重再拼。
+                year_list = sorted({p.year for r in missing for p in r.period_ends})
+                if not year_list:
+                    year_list = sorted({r.period_ends[0].year for r in missing if r.period_ends})
+                years = "、".join(f"{year}年" for year in year_list)
                 industry_tasks.append(SkillTask(
                     task_id=task_id, skill_name="hithink-industry-query",
                     arguments={"query": f"{label} {years} 全年 年度序列"},
@@ -1292,10 +1442,48 @@ class DataFetcherAgent:
                 served[entity] += 1
                 continue
             metrics = list(dict.fromkeys(labels.get(r.metric_families[0], r.metric_families[0]) for r in requirements))
-            query = f"{entity} {period.year}年全年 " + "、".join(metrics)
+            # 保留「{实体} {年份}年全年」前缀（既有契约与回归依赖该形态），
+            # 再逐年份追加指标：只写一次「2023年研发费用」会让问财仅返回首年，
+            # 其它年份缺口永远补不上（实测宁德时代只落地 2023 单年）。
+            years = sorted({p.year for r in requirements for p in r.period_ends})
+            # 研发类指标（金额与比率）必须单独成任务：问财在「营收/毛利率/现金流/研发」
+            # 长混写时会把研发列退化为累计或单期（实测宁德时代只落地 2025 累计值）；
+            # 只问研发指标时三年列可一次返回。
+            rd_families = {"rd_expense", "rd_investment", "rd_ratio", "rd_investment_ratio"}
+            rd_requirements = [r for r in requirements if r.metric_families
+                               and r.metric_families[0] in rd_families]
+            other_requirements = [r for r in requirements if r not in rd_requirements]
+
+            def _build_query(subset):
+                sub_metrics = list(dict.fromkeys(
+                    labels.get(r.metric_families[0], r.metric_families[0]) for r in subset))
+                terms = [f"{year}年{metric}" for year in years for metric in sub_metrics]
+                return f"{entity} {period.year}年全年 " + " ".join(terms), sub_metrics
+
+            batches = []
+            batch_requirements = []
+            if other_requirements:
+                batches.append(_build_query(other_requirements))
+                batch_requirements.append(other_requirements)
+            # 研发金额与研发比率合并为一条：「研发费用」+「研发费用率」同问时，
+# 问财一次响应会同时返回「研发费用[YYYYMMDD]」与
+# 「研发费用 / 营业收入[YYYYMMDD]」两组三年列（已实测）。
+# 拆成两条会白烧一半预算（32 次配额下直接导致 Q4 取不全）。
+# 只有当某家族问财不支持时才需要拆分，当前无此情况。
+            rd_batch = _build_query(rd_requirements) if rd_requirements else None
+            if rd_batch:
+                batches.append(rd_batch)
+                batch_requirements.append(rd_requirements)
+            if not batches:
+                served[entity] += 1
+                continue
+            query, metrics = batches[0]
+            main_requirements = batch_requirements[0]
+            extra_batches = list(zip(batches[1:], batch_requirements[1:]))
             # Identity is the requested entity/year, independent of query rewriting
             # or the subset still missing after a partial provider response.
             task_id = "annual_" + sha256(f"{entity}|{period.isoformat()}".encode()).hexdigest()[:12]
+            rd_task_id = "annual_rd_" + sha256(f"{entity}|{period.isoformat()}".encode()).hexdigest()[:12]
             compiled_query, _ = _compile_query(query, domain=Domain.FINANCIALS, expected_fields=metrics)
             is_retry = task_id in attempted_ids
             if is_retry:
@@ -1308,12 +1496,23 @@ class DataFetcherAgent:
                         or retry_id in attempted_ids):
                     continue
                 task_id = retry_id
+            for offset, ((extra_query, extra_metrics), extra_reqs) in enumerate(extra_batches, start=1):
+                extra_id = f"annual_rd{offset}_" + sha256(
+                    f"{entity}|{period.isoformat()}".encode()).hexdigest()[:12]
+                if extra_query and extra_id not in attempted_ids:
+                    tasks.setdefault(entity, []).insert(0, SkillTask(
+                        task_id=extra_id, skill_name="hithink-finance-query",
+                        arguments={"query": extra_query},
+                        purpose="研发指标单列补齐（金额与比率分列查询）",
+                        expected_fields=extra_metrics,
+                        requirement_ids=[r.requirement_id for r in extra_reqs],
+                    ))
             if task_id in attempted_ids or query in attempted or compiled_query in attempted:
                 served[entity] += 1
                 continue
             task = SkillTask(task_id=task_id, skill_name="hithink-finance-query", arguments={"query": query},
                 purpose="优先补齐用户指定的年度指标单元", expected_fields=metrics,
-                requirement_ids=[r.requirement_id for r in requirements])
+                requirement_ids=[r.requirement_id for r in main_requirements])
             if is_retry:
                 retries.append(task)
             else:
@@ -1321,7 +1520,21 @@ class DataFetcherAgent:
         # Least-served entity first; within each entity keep chronological order.
         # Recompute after each selection so a short budget cannot exhaust one
         # company's three years before another company gets its first turn.
-        ordered = industry_tasks[:limit]
+        # 研发比率任务必须优先占位：它属 ratio 类必需维度，若排在三表金额后面
+        # 会被 limit 截断（实测连续多轮 rd_ratio 查询从未发出）。
+        rd_priority = [
+            task for entity_tasks in tasks.values() for task in entity_tasks
+            if task.task_id.startswith("annual_rd")
+        ]
+        if rd_priority:
+            for task in rd_priority:
+                owner = next(name for name, items in tasks.items() if task in items)
+                tasks[owner].remove(task)
+                if not tasks[owner]:
+                    del tasks[owner]
+            ordered = rd_priority[:limit] if limit is not None else list(rd_priority)
+        else:
+            ordered = industry_tasks[:limit]
         while tasks and (limit is None or len(ordered) < limit):
             entity = min(tasks, key=lambda name: served[name])
             ordered.append(tasks[entity].pop(0))
@@ -1344,6 +1557,18 @@ class DataFetcherAgent:
     ) -> AgentDecision:
         priority_tasks = self._priority_annual_tasks(objective, dataset, results)
         if priority_tasks and (iteration > 1 or dataset.companies):
+            # 画像产业链任务与年度指标补齐并行：产业链数据无法从财务指标推出，
+            # 若只在「年度补齐」之后才轮到，预算通常已耗尽（实测 0 次产业链查询）。
+            chain_tasks = (
+                [] if dataset.industry_chain
+                else self._profile_chain_tasks(objective, dataset, results)
+            )
+            if chain_tasks:
+                return AgentDecision(
+                    decision="continue",
+                    assessment="优先补齐指定年度×指标，并并行补齐画像产业链环节",
+                    tasks=[*chain_tasks, *priority_tasks],
+                )
             return AgentDecision(decision="continue", assessment="优先补齐指定年度×指标，沿用原技能预算", tasks=priority_tasks)
         catalog = [
             {
@@ -1444,6 +1669,12 @@ class DataFetcherAgent:
         for item in requirements or []:
             requirements_by_domain.setdefault(item.domain, []).append(item.requirement_id)
         domain_accepted_counts: dict[Domain, int] = defaultdict(int)
+        # 研发比率任务独立计数：它属 financials 域但需要独立配额，
+        # 不能借用 domain_accepted_counts 的 Domain 键（Domain 是枚举）。
+        research_ratio_accepted = 0
+        # 已接受/已执行的财务查询足迹，用于「指标集合子集」去重：
+        # 同一公司同年份若已被更宽的查询覆盖，重复的窄查询不再消耗预算。
+        covered_footprints: list = []
         for task in tasks:
             reason: str | None = None
             # P0-2 + R2: query 模板编译（自然语言 → 检索关键词串）。
@@ -1497,9 +1728,22 @@ class DataFetcherAgent:
             task_spec = self.skillhub.catalog.get(task.skill_name)
             task_domain = task_spec.domain if task_spec else None
 
-            # 领域预算硬隔离：避免单个领域（如财务三表）占满全部调用预算，确保研报与新闻有保底配额
-            if task_domain == Domain.FINANCIALS and domain_accepted_counts[Domain.FINANCIALS] >= 8:
+            # 领域预算硬隔离：避免单个领域（如财务三表）占满全部调用预算，确保研报与新闻有保底配额。
+            # 产业链画像任务不受财务域配额影响（它属于 industry_chain 域），
+            # 但优先级必须高于财务年度补齐，否则预算会被财务吃光。
+            # 研发比率任务（annual_rd*）虽然是 financials 域，但它是「比率类」必需维度，
+            # 与三表金额不同源；三表金额占满 8 条配额后若把它一并拦下，
+            # rd_ratio 永远补不到（实测连续两轮 rd_ratio 均为 0）。故单独放宽 2 条。
+            if (task_domain == Domain.FINANCIALS
+                    and not task.task_id.startswith("annual_rd")
+                    and domain_accepted_counts[Domain.FINANCIALS] >= 8):
                 reason = "financials domain budget limit (8) reached"
+            elif (task.task_id.startswith("annual_rd")
+                  and research_ratio_accepted >= 2):
+                reason = "research-ratio domain budget limit (2) reached"
+            elif (task.task_id.startswith("profile_chain_")
+                  and domain_accepted_counts[Domain.INDUSTRY_CHAIN] >= 2):
+                reason = "industry_chain domain budget limit (2) reached"
             elif len(accepted) >= remaining:
                 reason = "global skill-call budget would be exceeded"
             elif task.task_id in used_task_ids:
@@ -1512,6 +1756,9 @@ class DataFetcherAgent:
                 reason = "task references an unknown research requirement"
             elif signature in completed_signatures or signature in accepted_signatures:
                 reason = "duplicate skill and query"
+            elif (task_domain == Domain.FINANCIALS
+                  and self._is_subset_of_attempted(task, covered_footprints)):
+                reason = "financial query superseded by a broader query (entity/year/metric subset)"
             elif (
                 self.skillhub.catalog.get(task.skill_name)
                 and self.skillhub.catalog[task.skill_name].domain == Domain.FINANCIALS
@@ -1572,6 +1819,12 @@ class DataFetcherAgent:
                 accepted_signatures.add(signature)
                 if task_domain:
                     domain_accepted_counts[task_domain] += 1
+                if task.task_id.startswith("annual_rd"):
+                    research_ratio_accepted += 1
+                if task_domain == Domain.FINANCIALS:
+                    footprint = self._financial_query_footprint(task)
+                    if footprint is not None:
+                        covered_footprints.append(footprint)
         try:
             self.skillhub.validate_plan(accepted, successful_task_ids)
         except SkillValidationError as exc:
@@ -1582,6 +1835,52 @@ class DataFetcherAgent:
     @staticmethod
     def _task_signature(task: SkillTask) -> str:
         return f"{task.skill_name}:{json.dumps(task.arguments, sort_keys=True, ensure_ascii=False, default=str)}"
+
+    @staticmethod
+    def _financial_query_footprint(task: SkillTask) -> tuple[str, tuple[int, ...], frozenset[str]] | None:
+        """把财务查询解析成可做子集比较的「足迹」：(实体, 年份集合, 指标家族集合)。
+
+        返回 None 表示无法解析，此时退回精确签名去重。
+        背景：同一公司同年份会被反复查询，第二次只少一两个指标（实测 33 次调用里
+        4 组是这种重复），把预算烧掉，导致 rd_ratio 排不上。
+        """
+        query = str(task.arguments.get("query", "") or "")
+        if not query:
+            return None
+        years = tuple(sorted({int(y) for y in re.findall(r"(20\d{2})\s*年", query)}))
+        if not years:
+            return None
+        # 先剥离所有年份前缀，得到「实体 + 指标词」的纯净串
+        cleaned = re.sub(r"20\d{2}年?", " ", query)
+        cleaned = re.sub(r"(全年|年度|数据|序列)", " ", cleaned)
+        tokens = [t for t in re.split(r"[、，,\s]+", cleaned) if t]
+        if not tokens:
+            return None
+        # 实体 = tokens[0]（查询串固定以实体开头）
+        entity = tokens[0]
+        # 指标家族 = 其余 token 归一化（跳过无法识别的词，如「或」「A股」）
+        families: set[str] = set()
+        for token in tokens[1:]:
+            family = metric_family(token)
+            if family and family != token.strip().casefold():
+                families.add(family)
+        if not families:
+            return None
+        return entity, years, frozenset(families)
+
+    @staticmethod
+    def _is_subset_of_attempted(task: SkillTask, attempted_footprints: list) -> bool:
+        """新任务的 (实体, 年份, 指标) 是否已被某个更宽的任务覆盖。"""
+        footprint = DataFetcherAgent._financial_query_footprint(task)
+        if footprint is None:
+            return False
+        entity, years, families = footprint
+        for prev_entity, prev_years, prev_families in attempted_footprints:
+            if (prev_entity == entity
+                    and set(years) <= set(prev_years)
+                    and families <= prev_families):
+                return True
+        return False
 
     @staticmethod
     def _split_security_code(code: str | None) -> tuple[str, str]:

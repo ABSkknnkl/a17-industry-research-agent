@@ -8,6 +8,13 @@ import re
 from typing import Any
 from agents_core.financial_semantics import quantity_issues
 
+from chapter_writer.assignment import (
+    AssignmentTable,
+    assignment_rows_for_context,
+    assignments_for_section,
+    build_assignment_guidance,
+    build_assignment_table,
+)
 from chapter_writer.models import ChapterWritingRequest, OutlineChapter
 
 # Stopwords to filter out trivial grammatical tokens
@@ -75,6 +82,10 @@ class DynamicEvidenceRetriever:
         self.request = request
         self.report = request.report
         self.charts = request.charts.charts if request.charts else []
+        # Computed once from the effective outline so full-run and targeted
+        # rewrites of the same input always see the same allocation.
+        self.assignment_table: AssignmentTable = build_assignment_table(request)
+        self.assignment_diagnostics: list[str] = list(self.assignment_table.diagnostics)
 
     def retrieve(self, chapter_id: str, outline_chapter: OutlineChapter) -> dict[str, Any]:
         # 1. Build chapter semantic query profile
@@ -242,7 +253,7 @@ class DynamicEvidenceRetriever:
                 matched_charts.append(_dump(c))
                 break
 
-        return {
+        result: dict[str, Any] = {
             "insights": top_insights,
             "outline_hints": top_outlines,
             "findings": top_findings,
@@ -255,6 +266,28 @@ class DynamicEvidenceRetriever:
             "warnings": self.report.warnings + retrieval_warnings,
             "requirement_evidence_matrix": chapter_requirements,
         }
+        if self.assignment_table.mode == "apply":
+            section_rows = [
+                row
+                for section in outline_chapter.sections
+                for row in assignments_for_section(self.assignment_table, section.section_id)
+            ]
+            hint, hint_diagnostics = build_assignment_guidance(section_rows)
+            self.assignment_diagnostics.extend(hint_diagnostics)
+            if hint:
+                primary_eids = {eid for row in section_rows for eid in row.evidence_record_ids}
+
+                def _relevance(item: dict[str, Any]) -> int:
+                    return len(primary_eids.intersection(item.get("evidence_record_ids") or []))
+
+                result["primary_requirements"] = assignment_rows_for_context(section_rows)
+                result["assignment_hints"] = hint
+                # Only the ordering of optional arguments changes. Mandatory
+                # evidence, chart-bound evidence and requirement rows stay intact.
+                result["insights"] = sorted(top_insights, key=lambda item: -_relevance(item))
+                result["outline_hints"] = sorted(top_outlines, key=lambda item: -_relevance(item))
+                result["findings"] = sorted(top_findings, key=lambda item: -_relevance(item))
+        return result
 
     @staticmethod
     def _score_text(text: str, query_tokens: Counter[str]) -> float:

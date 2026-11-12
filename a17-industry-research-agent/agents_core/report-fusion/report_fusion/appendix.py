@@ -60,6 +60,7 @@ def audit_appendix(report: Any) -> tuple[dict, list[dict]]:
             "comps_sample_size": len(entries),
             "profitable_sample_size": sum(e.get("valuation_tier") == "profitable" for e in entries),
             "loss_or_high_multiple_size": sum(e.get("valuation_tier") == "loss_or_high_multiple" for e in entries),
+            "unknown_valuation_size": sum(e.get("valuation_tier") == "unknown" for e in entries),
             "pe_available_count": sum(_number(e.get("pe_ttm")) is not None for e in entries),
             "pb_available_count": sum(_number(e.get("pb")) is not None for e in entries),
         }

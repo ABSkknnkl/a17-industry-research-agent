@@ -725,7 +725,6 @@ class ReportFusionAgent:
         # S-05：输入诊断（_check_inputs）只作内部审计基线；真正的交付判定
         # 必须针对**归位后的最终章节与嵌入图**再校验一次。
         requirement_matrix = (request.report.data_quality_appendix or {}).get("requirement_evidence_matrix") or []
-        before_links = {row["requirement_id"]: row for row in link_requirement_outputs(requirement_matrix, chapters, embedded)}
         if request.options.enable_editorial_llm and self.llm.is_available:
             initial_issues = _audit_numeric_components(chapters, summary, request)
             await self._repair_final_paragraphs(chapters, request, initial_issues, record)
@@ -758,12 +757,17 @@ class ReportFusionAgent:
             quality_issues.extend(dict(code="chart_contract", severity="error", location=cid,
                 evidence_ids=[], suggestion="修正图表语义契约后重新生成") for cid in sorted(invalid_chart_ids))
         final_blocking, final_warnings = _check_final_view(chapters, embedded, request, summary)
-        output_links = link_requirement_outputs(requirement_matrix, chapters, embedded)
+        output_links = link_requirement_outputs(requirement_matrix, chapters, embedded, summary)
+        baseline_ids = {
+            row["requirement"]["requirement_id"] for row in requirement_matrix
+            if (row.get("requirement") or {}).get("comparison_baseline")
+        }
         for row in output_links:
-            before = before_links.get(row["requirement_id"], {})
-            if row["hard"] and before.get("status") == "cited" and row["status"] == "not_cited":
+            requirement_id = str(row["requirement_id"] or "")
+            if (row["hard"] and row["status"] == "not_cited" and row["evidence_record_ids"]
+                    and requirement_id not in baseline_ids and not requirement_id.startswith("domain_")):
                 row["status"] = "answer_withheld"
-                final_blocking.append(f"必答内容尚未通过核验：{row['label'] or row['requirement_id']}")
+                final_blocking.append(f"必答内容尚未通过核验：{row['label'] or requirement_id}")
         safe_appendix["requirement_output_links"] = output_links
         appendix = request.report.data_quality_appendix or {}
         cells = appendix.get("requested_financial_coverage") or appendix.get("sample_info", {}).get("requested_financial_coverage") or []
@@ -929,23 +933,27 @@ class ReportFusionAgent:
                     revoked.append("markdown")
                     warnings.append(f"markdown 重渲染失败：{type(exc).__name__}")
                     await record("format_failed", format="markdown", error=type(exc).__name__)
-            if "html" in successful:
+            html_formats = [fmt for fmt in ("html", "pdf") if fmt in successful]
+            if html_formats:
                 try:
-                    html = render_html(view)
-                    _rewrite(artifact_dir, "report.html", html.encode())
+                    final_html = render_html(view)
                 except Exception as exc:
-                    revoked.append("html")
-                    warnings.append(f"html 重渲染失败：{type(exc).__name__}")
-                    await record("format_failed", format="html", error=type(exc).__name__)
-            if "pdf" in successful:
-                # PDF 由 HTML 渲染而来：PDF 必须基于重渲染后的最终 HTML
-                try:
-                    pdf_bytes = await self.pdf_renderer(html, self.settings.pdf_timeout_seconds)
-                    _rewrite(artifact_dir, "report.pdf", pdf_bytes)
-                except Exception as exc:
-                    revoked.append("pdf")
-                    warnings.append(f"pdf 重渲染失败：{type(exc).__name__}")
-                    await record("format_failed", format="pdf", error=type(exc).__name__)
+                    for fmt in html_formats:
+                        revoked.append(fmt)
+                        warnings.append(f"{fmt} 重渲染失败：{type(exc).__name__}")
+                        await record("format_failed", format=fmt, error=type(exc).__name__)
+                else:
+                    for fmt in html_formats:
+                        try:
+                            if fmt == "html":
+                                _rewrite(artifact_dir, "report.html", final_html.encode())
+                            else:
+                                pdf_bytes = await self.pdf_renderer(final_html, self.settings.pdf_timeout_seconds)
+                                _rewrite(artifact_dir, "report.pdf", pdf_bytes)
+                        except Exception as exc:
+                            revoked.append(fmt)
+                            warnings.append(f"{fmt} 重渲染失败：{type(exc).__name__}")
+                            await record("format_failed", format=fmt, error=type(exc).__name__)
 
             if revoked:
                 # 撤销发布资格：从可交付格式中移除，并把状态降为部分交付
@@ -953,7 +961,8 @@ class ReportFusionAgent:
                 artifacts = [a for a in artifacts if a.kind not in revoked]
                 for fmt in revoked:
                     try:
-                        (artifact_dir / {"markdown": "report.md", "html": "report.html", "pdf": "report.pdf"}[fmt]).unlink(missing_ok=True)
+                        if artifact_dir is not None:
+                            (artifact_dir / {"markdown": "report.md", "html": "report.html", "pdf": "report.pdf"}[fmt]).unlink(missing_ok=True)
                     except OSError:
                         pass
                 status = "failed" if not successful else "partial"

@@ -349,7 +349,37 @@ class IwencaiGateway:
         self._keys: list[str] = list(self.settings.iwencai_api_keys)
         if not self._keys and self.settings.iwencai_api_key:
             self._keys = [self.settings.iwencai_api_key]
+        # 首选 key 的绝对下标，只表示「下一次从哪个 key 开始试」。
+        # 并发安全：更新方式是「按黑名单绝对定位」，相同黑名单状态得到相同下标，
+        # 多个协程写入同一个值；不再使用 +1 相对位移（那会让并发任务互相把对方
+        # 推回已失效的 key，实测造成 401 反复重试、整批任务失败）。
         self._key_index: int = 0
+        # 已被服务端拒绝（401/403/429）的 key。命中即跳过，天然幂等。
+        self._dead_keys: set[str] = set()
+
+    def _refresh_preferred_key(self) -> None:
+        """把首选下标定位到第一个未被拒绝的 key；幂等，并发下写同一个值。"""
+        total = len(self._keys)
+        if not total:
+            return
+        for offset in range(total):
+            index = (self._key_index + offset) % total
+            if self._keys[index] not in self._dead_keys:
+                self._key_index = index
+                return
+
+    def _candidate_keys(self) -> list[tuple[int, str]]:
+        """本次调用可尝试的 (下标, key) 快照，从首选 key 起算，跳过已拒绝的 key。"""
+        total = len(self._keys)
+        if not total:
+            return []
+        start = self._key_index % total
+        return [
+            (index, self._keys[index])
+            for offset in range(total)
+            for index in ((start + offset) % total,)
+            if self._keys[index] not in self._dead_keys
+        ]
 
     async def _http(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
@@ -393,9 +423,16 @@ class IwencaiGateway:
             }
         num_keys = len(self._keys)
         last_auth_error: Exception | None = None
+        # 本次调用的候选 key 快照：从首选 key 起算，跳过已被服务端拒绝的 key。
+        # 轮换只发生在这次调用的局部列表里，不改共享首选下标，避免并发互相干扰。
+        self._refresh_preferred_key()
+        candidates = self._candidate_keys()
+        if not candidates:
+            raise IwencaiAuthenticationError(
+                f"all iwencai keys rejected ({len(self._dead_keys)}/{num_keys})"
+            )
 
-        for attempt_idx in range(num_keys):
-            active_key = self._keys[self._key_index]
+        for active_index, active_key in candidates:
             headers = {
                 "Authorization": f"Bearer {active_key}",
                 "Content-Type": "application/json",
@@ -436,13 +473,16 @@ class IwencaiGateway:
                     except Exception:
                         pass
             if response.status_code in (401, 403, 429):
+                # 记录被拒绝的 key（set 幂等：并发任务同时发现同一失效 key 只加一次），
+                # 再刷新首选下标到下一个可用 key；刷新是「按黑名单绝对定位」，
+                # 并发下算出的值相同，不会互相推回失效 key。
+                self._dead_keys.add(active_key)
+                self._refresh_preferred_key()
                 last_auth_error = IwencaiAuthenticationError(
-                    f"Iwencai authentication/quota failed: HTTP {response.status_code} (key {self._key_index + 1}/{num_keys})"
+                    f"Iwencai authentication/quota failed: HTTP {response.status_code} "
+                    f"(key {active_index + 1}/{num_keys})"
                 )
-                if num_keys > 1 and attempt_idx < num_keys - 1:
-                    self._key_index = (self._key_index + 1) % num_keys
-                    continue
-                raise last_auth_error
+                continue
 
             response.raise_for_status()
             data = response.json()
@@ -450,13 +490,14 @@ class IwencaiGateway:
                 code = data.get("code")
                 msg = str(data.get("message") or data.get("msg") or "").lower()
                 if (code not in (0, "0", None, 200, "200") and any(term in msg for term in ("quota", "额度", "token", "auth", "permission", "unauthorized"))) or ("额度不足" in msg):
+                    # 与 HTTP 401/403/429 同一条路径：记为失效 key，换下一个候选，
+                    # 不改共享首选下标（Promise 语义一致，避免并发互踩）。
+                    self._dead_keys.add(active_key)
+                    self._refresh_preferred_key()
                     last_auth_error = IwencaiAuthenticationError(
-                        f"Iwencai quota/auth error response (key {self._key_index + 1}/{num_keys})"
+                        f"Iwencai quota/auth error response (key {active_index + 1}/{num_keys})"
                     )
-                    if num_keys > 1 and attempt_idx < num_keys - 1:
-                        self._key_index = (self._key_index + 1) % num_keys
-                        continue
-                    raise last_auth_error
+                    continue
             return data
 
         if last_auth_error:

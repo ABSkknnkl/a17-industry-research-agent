@@ -126,13 +126,16 @@ def test_global_quantitative_anchor_extraction_and_scaling():
     assert "22,141.07 亿元" in anchor["market_cap_str"]
     assert "2.21 万亿元" in anchor["market_cap_str"]
 
-    # Canonical segment lock for 中国卫星 should be midstream
-    assert "中游" in anchor["canonical_segments"]["中国卫星"]
-    assert "上游" in anchor["canonical_segments"]["铖昌科技"]
+    # 历史硬编码修辞断言已替换：本夹具的环节名单没有 evidence_record_ids，
+    # 只能按样本描述，归属待核；金额与样本数核验强度保持不变。
+    assert anchor["canonical_segments"] == {}
+    assert "中国卫星" in anchor["pending_attribution"]
+    assert "铖昌科技" in anchor["pending_attribution"]
 
     prompt_text = format_global_facts_prompt(anchor)
     assert "2.21 万亿元" in prompt_text
-    assert "中国卫星: 中游" in prompt_text
+    assert "归属待核" in prompt_text
+    assert "产业链环节锁定字典" not in prompt_text
 
 
 def test_macro_evidence_filtered_in_non_macro_chapters():
@@ -270,9 +273,9 @@ def test_market_cap_consistency_repair_in_audit():
     assert "22.14" not in sec.paragraphs[0].text
     assert "2.21万亿元" in sec.paragraphs[0].text
 
-    # Verify entity segment was repaired from 上游 to 中游总装
-    assert "中国卫星等上游" not in sec.paragraphs[0].text
-    assert "中国卫星等中游总装" in sec.paragraphs[0].text
+    # 历史硬编码修辞断言已替换：正文不得被行业特例改写，原表述逐字保留。
+    assert "中国卫星等上游" in sec.paragraphs[0].text
+    assert "中国卫星等中游总装" not in sec.paragraphs[0].text
 
 
 def test_package_audit_single_placement_and_no_conflicts():
@@ -370,3 +373,70 @@ def test_aerospace_offline_regression_with_real_run_artifacts():
     all_summaries = " ".join(ch.summary for ch in result.chapters)
     assert "22.14万亿" not in all_text
     assert "22.14万亿" not in all_summaries
+
+
+# ---------------------------------------------------------------------------
+# P0 / G1 红测。以下用例在旧实现（航天固定字典 + 三条无条件公司名硬替换 +
+# 提示内历史特例）下必须失败。修复后重跑同一用例验证转绿。
+# ---------------------------------------------------------------------------
+
+def _p0_chapter_with_text(text: str) -> tuple[ChapterDraft, SectionDraft]:
+    sec = SectionDraft(
+        section_id="SEC-01-01", title="行业定位", purpose="目的",
+        paragraphs=[ParagraphDraft(paragraph_id="P-01-01-01", kind="thesis", text=text)],
+    )
+    others = [
+        SectionDraft(section_id=f"SEC-01-0{i}", title=f"节{i}", purpose="目的",
+                     paragraphs=[ParagraphDraft(paragraph_id=f"P-01-0{i}-01", kind="analysis", text="正文")])
+        for i in (2, 3)
+    ]
+    return ChapterDraft(chapter_id="CH-01", title="行业定位与宏观全景",
+                        summary="摘要", sections=[sec, *others]), sec
+
+
+def test_p0_non_aerospace_text_not_rewritten_by_aerospace_rules():
+    """红测 1：非航天样本里的普通文字不得被航天公司名规则改写。"""
+    agent = ChapterWriterAgent(llm=MissingLLM())
+    original = "对照组列出中国卫星等上游企业的历史名称，本次新能源汽车样本不涉及该行业。"
+    chapter, sec = _p0_chapter_with_text(original)
+    outline = next(c for c in DEFAULT_OUTLINE if c.chapter_id == "CH-01")
+    agent._audit_chapter(chapter, outline, set(), {})
+    assert sec.paragraphs[0].text == original
+    assert "中国卫星等中游总装" not in sec.paragraphs[0].text
+
+
+def test_p0_valid_aerospace_evidence_and_pending_attribution():
+    """红测 2：有据航天环节可写；缺证据的代表公司只能按样本描述，归属待核。"""
+    report = InterpretationReport.model_validate({
+        "report_id": "P0-AERO", "subject": "商业航天", "as_of": "2026-11-09",
+        "status": "completed",
+        "evidence_index": {
+            "C-1": {"record_id": "C-1", "domain": "companies", "entity": "铖昌科技",
+                    "metric": "销售毛利率", "value": 72.68, "unit": "%", "period": "2024-12-31"},
+        },
+        "industry_chain_segments": [
+            {"segment_name": "上游：核心元器件", "stage": "upstream",
+             "representative_companies": ["铖昌科技"], "evidence_record_ids": ["C-1"]},
+            {"segment_name": "下游：卫星运营服务", "stage": "downstream",
+             "representative_companies": ["中国卫通"], "evidence_record_ids": []},
+        ],
+    })
+    anchor = extract_global_quantitative_anchor(report)
+    assert anchor["canonical_segments"].get("铖昌科技") == "上游：核心元器件"
+    assert "中国卫通" not in anchor["canonical_segments"]
+    assert "中国卫通" in anchor["pending_attribution"]
+    prompt = format_global_facts_prompt(anchor)
+    assert "归属待核" in prompt
+    assert "产业链环节锁定字典" not in prompt
+
+
+def test_p0_prompt_has_no_legacy_aerospace_or_historic_cap_examples():
+    """红测 3：提示不得残留旧航天示例与历史具体市值示例。"""
+    from chapter_writer import agent as agent_module
+
+    anchor = extract_global_quantitative_anchor(make_dummy_report())
+    prompt = format_global_facts_prompt(anchor)
+    for text in (agent_module.SYSTEM_PROMPT, prompt):
+        assert "火箭" not in text
+        assert "22.14万亿" not in text
+        assert "10倍冲突" not in text

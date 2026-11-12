@@ -79,6 +79,86 @@ const ordered = computed(() =>
 )
 
 /** 渲染用 option：剥离绘图区内的纯文本注释（挪到卡片下方 footnotes），统一 category 轴标签采样，并对拓扑关系图进行坐标与样式加固。 */
+/** A3 版本化展示配置：前端与落盘 SVG 消费同一份轴定义与标签策略。 */
+type PresentationLabel = {
+  series_index: number
+  mode: 'all' | 'key' | 'endpoints' | 'none'
+  point_indices?: number[]
+  decimals?: number
+}
+type PresentationConfig = {
+  version: number
+  short_title?: string
+  period_labels?: 'year' | 'month' | 'auto'
+  labels?: PresentationLabel[]
+}
+
+function applyPresentation(option: ChartOption): void {
+  const pres = (option as unknown as Record<string, unknown>).presentation as
+    | PresentationConfig
+    | undefined
+  if (!pres || pres.version !== 1) return
+  const series = Array.isArray(option.series)
+    ? option.series
+    : option.series
+      ? [option.series]
+      : []
+
+  // 短日期只影响显示，xAxis.data 保留原始完整日期供逐点核对与悬浮详情使用
+  if (pres.period_labels === 'year' || pres.period_labels === 'month') {
+    const rawAxes = option.xAxis as unknown
+    const axes = Array.isArray(rawAxes) ? rawAxes : [rawAxes]
+    for (const rawAxis of axes) {
+      if (!rawAxis || typeof rawAxis !== 'object') continue
+      const axis = rawAxis as Record<string, unknown>
+      if (String(axis.type ?? 'category') !== 'category' || !Array.isArray(axis.data)) continue
+      const prev = (axis.axisLabel && typeof axis.axisLabel === 'object'
+        ? axis.axisLabel
+        : {}) as Record<string, unknown>
+      axis.axisLabel = {
+        ...prev,
+        formatter: (value: string) => {
+          const text = String(value)
+          if (pres.period_labels === 'year') return text.slice(0, 4)
+          const month = Number(text.slice(5, 7))
+          return Number.isFinite(month) && month > 0 ? `${month}月` : text
+        },
+      }
+    }
+  }
+
+  for (const rule of pres.labels ?? []) {
+    const target = series[rule.series_index] as Record<string, unknown> | undefined
+    if (!target || !Array.isArray(target.data)) continue
+    const count = target.data.length
+    const decimals = Number.isInteger(rule.decimals) ? Number(rule.decimals) : 2
+    const keyIndices = new Set(rule.point_indices ?? [])
+    const shouldShow = (index: number): boolean => {
+      if (rule.mode === 'none') return false
+      if (rule.mode === 'all') return true
+      if (rule.mode === 'endpoints') return index === 0 || index === count - 1
+      return keyIndices.has(index)
+    }
+    const label = (target.label && typeof target.label === 'object'
+      ? target.label
+      : {}) as Record<string, unknown>
+    label.show = true
+    label.position = 'top'
+    label.fontSize = 10
+    label.formatter = (p: { dataIndex: number; value: unknown }) => {
+      const raw = Array.isArray(p.value)
+        ? p.value[1]
+        : p.value && typeof p.value === 'object'
+          ? (p.value as Record<string, unknown>).value
+          : p.value
+      const num = Number(raw)
+      if (!Number.isFinite(num) || !shouldShow(p.dataIndex)) return ''
+      return num.toFixed(decimals)
+    }
+    target.label = label
+  }
+}
+
 function sanitizedOption(spec: ChartSpecLoose, isPreview = false): ChartOption | null {
   if (!spec.option) return null
   const graphic = Array.isArray(spec.option.graphic) ? spec.option.graphic : []
@@ -92,6 +172,7 @@ function sanitizedOption(spec: ChartSpecLoose, isPreview = false): ChartOption |
   sanitizeTooltip(option)
   sanitizeGraphOption(option, spec, isPreview)
   sanitizeScatterBubbleOption(option, spec, isPreview)
+  applyPresentation(option)
   return option
 }
 

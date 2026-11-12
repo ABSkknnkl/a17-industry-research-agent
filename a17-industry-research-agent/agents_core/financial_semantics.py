@@ -227,6 +227,24 @@ def metric_family(metric: str) -> str:
         '新能源汽车销量': 'nev_sales', '中国新能源汽车销量': 'nev_sales',
         '市场渗透率': 'nev_penetration', '新能源汽车市场渗透率': 'nev_penetration',
         '中国新能源汽车市场渗透率': 'nev_penetration',
+        # 模型需求词常只写「渗透率」；空车行业以外的行业不会复用该家族，
+        # 白名单按 domain=industry 再匹配一次，故不会误命中其它行业。
+        '渗透率': 'nev_penetration', '新能源渗透率': 'nev_penetration',
+        'penetration rate': 'nev_penetration',
+        '新能源汽车:销量:年度值': 'nev_sales',
+        '新能源汽车:市场渗透率:中汽协全口径': 'nev_penetration',
+        '新能源汽车:出口量:中汽协口径': 'nev_exports',
+        '新能源汽车出口量': 'nev_exports', '中国新能源汽车出口量': 'nev_exports',
+        # AB：模型需求里常写成交付/描述性说法，统一归到同一家族，否则
+        # 「出口量」与「新能源汽车出口」会被当成两个家族，白名单匹配失败。
+        '出口量': 'nev_exports', '新能源汽车出口': 'nev_exports',
+        '新能源汽车:出口量': 'nev_exports', '中国新能源汽车:出口量': 'nev_exports',
+        'export volume': 'nev_exports', 'nev export': 'nev_exports',
+        # 研发强度是比率类家族，与研发费用（金额）严格区分：问财原生字段为
+        # 「研发费用 / 营业收入」，直接命中该列名。
+        '研发强度': 'rd_ratio', '研发投入强度': 'rd_ratio',
+        '研发费用/营业收入': 'rd_ratio', '研发费用 / 营业收入': 'rd_ratio',
+        '研发投入/营业收入': 'rd_ratio', '研发投入 / 营业收入': 'rd_ratio',
         '经营活动现金流净额': 'operating_cash_flow',
         '经营活动现金流量净额': 'operating_cash_flow',
         '销售毛利率': 'gross_margin', '毛利率': 'gross_margin',

@@ -233,3 +233,64 @@ def test_infer_default_unit_function_unchanged():
     assert infer_default_unit("gross_margin") == "%"
     assert infer_default_unit("pe") == "倍"
     assert infer_default_unit("revenue") == "元"
+
+
+def test_nev_annual_aliases_fill_requested_cells_without_admitting_other_scopes():
+    from datetime import date
+    from data_fetcher.agent import DataFetcherAgent
+    from data_fetcher.models import Domain, ResearchRecord, ResearchRequirement, StructuredResearchDataset
+
+    year = date(2025, 12, 31)
+    source = _src()
+
+    def covers(family, metric, unit, period=year):
+        row = ResearchRecord(record_id="R-NEV", domain=Domain.INDUSTRY, entity_name="中国",
+                             metric=metric, value=50, unit=unit, period_end=period,
+                             period_type="annual" if period == year else "ytd_q3", source=source)
+        req = ResearchRequirement(requirement_id="annual_nev", label=family, domain=Domain.INDUSTRY,
+                                  period_ends=[year], metric_families=[family])
+        dataset = StructuredResearchDataset(industry=[row], research_as_of=date(2026, 11, 6))
+        return DataFetcherAgent._evaluate_requirement(dataset, req).passed
+
+    assert covers("nev_sales", "新能源汽车:销量:年度值", "万辆")
+    assert covers("nev_penetration", "新能源汽车:市场渗透率:中汽协全口径", "%")
+    assert not covers("nev_sales", "新能源汽车:销量:累计值", "万辆", date(2025, 9, 30))
+    assert not covers("nev_penetration", "新能源汽车:市场渗透率:零售口径", "%")
+
+
+def test_verified_observations_keep_quarter_and_recompute_coverage(tmp_path, monkeypatch):
+    import json
+    from data_fetcher import fusion as fusion_module
+    from data_fetcher.agent import DataFetcherAgent
+    from data_fetcher.models import ResearchRequirement
+
+    annual = _rec("annual", "revenue", 100, entity="合成样本").model_copy(update={
+        "published_at": date(2026, 3, 30),
+        "source": _src().model_copy(update={"skill_id": "verified-observation", "status": "verified"}),
+        "raw_fields": {"source_url": "https://example.org/annual.pdf",
+                       "source_locator": "PDF 第 10 页", "document_sha256": "a" * 64},
+    })
+    path = tmp_path / "verified_observations.json"
+    raw = annual.model_dump(mode="json")
+    path.write_text(json.dumps({"新能源汽车": [raw, raw]}))
+    monkeypatch.setattr(fusion_module, "_VERIFIED_OBSERVATIONS_PATH", path, raising=False)
+    result = SkillResult(
+        task_id="q3", skill_name="hithink-finance-query", skill_id="hithink-finance-query",
+        skill_version="1", domain=Domain.FINANCIALS, query="合成样本 营业收入", trace_id="q3", success=True,
+        records=[{"股票简称": "合成样本", "股票代码": "600001.SH", "营业收入(亿元)[2025-09-30]": 50}],
+    )
+
+    def fuse(as_of):
+        return DataFusion().fuse([result], as_of, industry="新能源汽车", comparison_entities=["合成样本"])
+
+    dataset = fuse(date(2026, 11, 6))
+    assert {(r.period_end, r.value) for r in dataset.financials} == {
+        (date(2025, 9, 30), 50), (date(2025, 12, 31), 100),
+    }
+    assert len(dataset.financials) == 2
+    req = ResearchRequirement(requirement_id="annual_nev", label="营业收入", domain=Domain.FINANCIALS,
+                              entity_names=["合成样本"], period_ends=[date(2025, 12, 31)], metric_families=["revenue"])
+    coverage = DataFetcherAgent._evaluate_requirement(dataset, req)
+    assert coverage.passed
+    assert coverage.evidence_record_ids == DataFetcherAgent._evaluate_requirement(fuse(date(2026, 11, 6)), req).evidence_record_ids
+    assert not DataFetcherAgent._evaluate_requirement(fuse(date(2026, 1, 1)), req).passed

@@ -57,7 +57,12 @@ def prepare_chapter_context(payload: dict[str, Any], system: str) -> tuple[str, 
             omitted.append('context.' + key)
     details = {'omitted_sections': omitted}
     packet['context_packing'] = details
-    for key in ('requirement_evidence_matrix.details', 'comps_matrix', 'financial_ratios', 'industry_chain_segments', 'findings', 'outline_hints', 'insights', None):
+    # New assignment hints are optional guidance: compress them before the
+    # requirement matrix, financial assets and evidence. Requirement rows and
+    # the evidence whitelist are never removed here.
+    for key in ('assignment_hints', 'primary_requirements',
+                'requirement_evidence_matrix.details', 'comps_matrix', 'financial_ratios',
+                'industry_chain_segments', 'findings', 'outline_hints', 'insights', None):
         try:
             text, size, budget = serialize_context(packet, system=system)
             details.update(bytes=size, budget_bytes=budget)
@@ -92,6 +97,10 @@ def prepare_chapter_context(payload: dict[str, Any], system: str) -> tuple[str, 
 
 NUMBER_RE=re.compile(r"(?<![A-Za-z0-9_-])[-+]?\d+(?:\.\d+)?%?")
 YEAR_OR_ORDINAL_RE=re.compile(r"^(?:19\d\d|20\d\d|[1-9]|10)$")
+
+# 审计隔离后，只保留图表占位符而无论述的段落会被改写为显式缺口句。
+# 该标记用于豁免段落去重检查（不同小节可以出现相同的缺口说明）。
+GAP_NOTICE_MARK = "本项量化解读未通过证据核验"
 
 # 单章写作规范的默认预算；强制规范与用户显式选择优先保留。
 CHAPTER_SKILL_LIMIT = 10
@@ -136,8 +145,8 @@ SYSTEM_PROMPT="""你是机构级证券与行业研究报告章节写作智能体
 6. 风险与情景推演规范（尤其针对第七章或预测性章节）：
    - 仅在输入提供可核验的测算依据时写量化情景，区分假设与结果；概率和阈值需要来源。
    - 资料只支持定性判断时，写清触发条件、待观察指标和判断边界；情景数量随证据决定。
-   - 必须包含非外推声明 (Non-extrapolation Disclaimer，建议放置在 callout 中)：明确指出样本结构代表性边界（如未上市火箭/本体龙头未纳入三表核算）及期间跨度局限，禁止线性外推至整个产业。
-7. 全局事实与一致性锚点（强制约束）：严格遵循输入及上下文中的 `global_facts`。凡提及行业/样本总市值，必须统一按照 `global_facts` 给出，严禁在不同章节出现数量级矛盾（如 22.14万亿 与 2.21万亿 的10倍冲突）；凡提及重点企业产业链环节归属，必须与 `global_facts` 保持绝对一致，严禁同一标的在上中下游反复横跳！
+   - 必须包含非外推声明 (Non-extrapolation Disclaimer，建议放置在 callout 中)：依据本次证据说明样本结构代表性边界与期间跨度局限，禁止线性外推至整个产业。
+7. 全局事实与一致性锚点（强制约束）：严格遵循输入及上下文中的 `global_facts`。凡提及行业/样本总市值，必须统一按照 `global_facts` 给出，严禁在不同章节出现数量级矛盾；凡提及企业产业链环节归属，只使用 `global_facts` 中有证据支持的关系，无证据的关系须标注「归属待核」，不得自行锁定或让同一标的在上中下游反复横跳。
 8. 非宏观章节套话禁令：除宏观综述或宏观驱动专章外，其余产业、竞争、财务等章节严禁重复展开脱节宏观指标（如社融、工业增加值）的周期无效性免责声明套话！保持对本行业真实财务、业务与竞争态势的专注。
 9. 返回严格 JSON 格式（【极其重要规范】：你的输出必须且只能是一个纯合法的 JSON 对象。严禁在输出开头添加任何 Markdown 标题如 "# 标题" 或引言文字；严禁输出任何 ```json 代码块外围文本；正文内部出现的双引号若非 JSON 键值语法边界，一律使用中文双引号“”或转义）：
 {
@@ -168,22 +177,9 @@ def extract_numbers(text:str)->list[str]:
     return NUMBER_RE.findall(text)
 
 
-AEROSPACE_CANONICAL_SEGMENTS: dict[str, str] = {
-    "中国卫星": "中游卫星研制与系统总装",
-    "铖昌科技": "上游相控阵T/R芯片与核心元器件",
-    "中兴通讯": "下游/地面系统与终端通信设备",
-    "航天电子": "中游航天电子元器件与集成",
-    "上海瀚讯": "中游卫星通信载荷与系统集成",
-    "航天环宇": "上游/中游地面测控天线与微波部件",
-    "移远通信": "下游通信模组与应用终端",
-    "中国卫通": "下游卫星运营与综合通信服务",
-    "光威复材": "上游碳纤维及复合材料",
-    "中材科技": "上游特种纤维与复合材料",
-    "国机精工": "上游特种轴承与精密部件",
-    "大族激光": "上游激光加工与先进装备",
-    "九丰能源": "上游特种气体与推进能源供给",
-    "海格通信": "中游北斗导航与卫星通信终端",
-}
+# Industry-specific company/segment dictionaries are deliberately absent here.
+# A role may only be asserted when an A2 relation points back to this run's
+# evidence index; otherwise it is a sample description with pending attribution.
 
 
 def extract_global_quantitative_anchor(report: Any) -> dict[str, Any]:
@@ -218,34 +214,66 @@ def extract_global_quantitative_anchor(report: Any) -> dict[str, Any]:
         mc_str = "暂无汇总数据"
 
     total_companies = len(comps) if comps else 0
-    profitable_count = sum(
-        1 for c in comps
-        if (c.get("valuation_tier") if isinstance(c, dict) else getattr(c, "valuation_tier", None)) == "profitable"
-    ) if comps else 0
-    loss_count = total_companies - profitable_count if total_companies else 0
 
-    # Resolve subject for domain-specific canonical dictionaries
-    subj = ""
-    meta = getattr(report, "metadata", None)
-    if isinstance(meta, dict):
-        subj = meta.get("industry") or meta.get("subject") or ""
-    elif meta:
-        subj = getattr(meta, "industry", "") or getattr(meta, "subject", "") or ""
-    if not subj and hasattr(report, "subject"):
-        subj = getattr(report, "subject", "") or ""
+    def _tier(c: Any) -> str:
+        return str(c.get("valuation_tier") if isinstance(c, dict) else getattr(c, "valuation_tier", "") or "")
 
-    is_aerospace = any(k in str(subj) for k in ("航天", "卫星", "低轨"))
-    canonical_segments: dict[str, str] = dict(AEROSPACE_CANONICAL_SEGMENTS) if is_aerospace else {}
+    profitable_count = sum(1 for c in comps if _tier(c) == "profitable") if comps else 0
+    # 未分类 / 待核的标的不得被算进「早期、亏损、高估值」，否则会把
+    # 数据缺失误写成全样本亏损的强断言（见 format_global_facts_prompt）。
+    loss_count = sum(1 for c in comps if _tier(c) == "loss_or_high_multiple") if comps else 0
+    unknown_count = total_companies - profitable_count - loss_count
 
-    # Resolve company canonical segments dynamically
-    for seg in getattr(report, "industry_chain_segments", []):
-        s_name = getattr(seg, "segment_name", "") or (seg.get("segment_name", "") if isinstance(seg, dict) else "")
-        reps = getattr(seg, "representative_companies", []) or (seg.get("representative_companies", []) if isinstance(seg, dict) else [])
+    # Chain roles are only asserted for A2 relations that point back to a
+    # record in this run's evidence index and whose subject matches the company.
+    # A representative-company list on its own is a sample description, so its
+    # attribution stays pending instead of being locked into the prompt.
+    evidence_index = getattr(report, "evidence_index", None) or {}
+    canonical_segments: dict[str, str] = {}
+    pending_attribution: list[str] = []
+    for seg in getattr(report, "industry_chain_segments", []) or []:
+        is_dict = isinstance(seg, dict)
+        s_name = str((seg.get("segment_name") if is_dict else getattr(seg, "segment_name", "")) or "").strip()
+        refs = (seg.get("evidence_record_ids") if is_dict else getattr(seg, "evidence_record_ids", [])) or []
+        reps = (seg.get("representative_companies") if is_dict else getattr(seg, "representative_companies", [])) or []
+        if not s_name:
+            continue
+        # Only a reviewed full-chain card may assert "company X belongs to
+        # segment Y".  Legacy segments are tagged industry_common and their
+        # evidence ids point at quotes / classification fields, which prove
+        # identity but not membership.  Fixtures without the new field keep
+        # the historical behaviour so existing chapter tests stay valid.
+        seg_tier = str((seg.get("source_tier") if is_dict else getattr(seg, "source_tier", None)) or "")
+        seg_basis = str((seg.get("attribution_basis") if is_dict else getattr(seg, "attribution_basis", None)) or "")
+        has_tier_field = (is_dict and "source_tier" in seg) or hasattr(seg, "source_tier")
+        reviewed_card = seg_tier == "reviewed_profile" and bool(seg_basis)
+        attribution_allowed = (
+            not has_tier_field
+            or (seg_tier in ("reviewed_profile", "evidence") and bool(seg_basis))
+        )
+        supported_entities: set[str] = set()
+        for rid in refs:
+            rec = evidence_index.get(rid) if hasattr(evidence_index, "get") else None
+            if rec is None:
+                continue
+            entity = (rec.get("entity") if isinstance(rec, dict) else getattr(rec, "entity", None)) or ""
+            if str(entity).strip():
+                supported_entities.add(str(entity).strip())
         for comp in reps:
             c_str = str(comp).strip()
-            if c_str and not re.match(r"^\d{6}\.[A-Z]{2}$", c_str) and not c_str.replace(".", "").isdigit():
-                if c_str not in canonical_segments:
-                    canonical_segments[c_str] = s_name
+            if not c_str or re.match(r"^\d{6}\.[A-Z]{2}$", c_str) or c_str.replace(".", "").isdigit():
+                continue
+            if not attribution_allowed:
+                if c_str not in canonical_segments and c_str not in pending_attribution:
+                    pending_attribution.append(c_str)
+                continue
+            # A reviewed full-chain card is itself the attribution basis; it
+            # must not depend on A1 quote / classification records that only
+            # prove a company exists, not which segment it belongs to.
+            if reviewed_card or c_str in supported_entities:
+                canonical_segments.setdefault(c_str, s_name)
+            elif c_str not in canonical_segments and c_str not in pending_attribution:
+                pending_attribution.append(c_str)
 
     return {
         "market_cap_val": mc_val,
@@ -254,10 +282,12 @@ def extract_global_quantitative_anchor(report: Any) -> dict[str, Any]:
         "total_companies": total_companies,
         "profitable_count": profitable_count,
         "loss_count": loss_count,
+        "unknown_count": unknown_count,
         "median_pe": median_pe,
         "median_pb": median_pb,
         "median_gross_margin": median_gross_margin,
         "canonical_segments": canonical_segments,
+        "pending_attribution": pending_attribution,
     }
 
 
@@ -266,15 +296,37 @@ def format_global_facts_prompt(facts: dict[str, Any]) -> str:
         "【全篇全局量化基准与事实锚点（强制约束，所有章节必须保持高度一致，严禁互相矛盾）】",
     ]
     if facts.get("total_companies"):
-        lines.append(f"- 样本公司总数：{facts['total_companies']} 家（成熟盈利：{facts['profitable_count']} 家，早期/亏损/高估值：{facts['loss_count']} 家）")
+        profitable_count = facts.get("profitable_count") or 0
+        loss_count = facts.get("loss_count") or 0
+        unknown_count = facts.get("unknown_count") or 0
+        medians_missing = all(
+            facts.get(k) is None for k in ("median_pe", "median_pb", "median_gross_margin")
+        )
+        # 估值分层/盈利中枢缺失时，不要下「成熟盈利 0 家、全部亏损或高估值」
+        # 这类强断言：那通常意味着字段没取到，而不是样本确实全亏损。
+        if profitable_count == 0 and (unknown_count > 0 or medians_missing):
+            detail = f"其中分层待核 {unknown_count} 家；" if unknown_count else ""
+            lines.append(
+                f"- 样本公司总数：{facts['total_companies']} 家；{detail}估值分层与盈利中枢数据不足。"
+                "不得据此判定样本整体盈利状态或估值梯队，严禁写成「全部亏损 / 全部高估值」"
+            )
+        else:
+            extra = f"，分层待核 {unknown_count} 家" if unknown_count else ""
+            lines.append(
+                f"- 样本公司总数：{facts['total_companies']} 家（成熟盈利：{profitable_count} 家，"
+                f"早期/亏损/高估值：{loss_count} 家{extra}）"
+            )
     if facts.get("market_cap_str") and facts["market_cap_str"] != "暂无汇总数据":
-        lines.append(f"- 样本总市值标准基准：{facts['market_cap_str']}（全篇必须以此为准，严禁在不同章节出现 22.14万亿 vs 2.21万亿 的10倍冲突！）")
+        lines.append(f"- 样本总市值标准基准：{facts['market_cap_str']}（全篇必须以此为准，严禁在不同章节出现数量级矛盾）")
     if facts.get("median_pe") is not None:
         lines.append(f"- 估值与盈利中枢：成熟标的 PE(TTM) 中位数 {facts['median_pe']} 倍，PB 中位数 {facts.get('median_pb')} 倍，销售毛利率中枢 {facts.get('median_gross_margin')}%")
     if facts.get("canonical_segments"):
-        lines.append("- 核心标的产业链环节锁定字典（严禁同一企业在不同章节环节归属不一致）：")
+        lines.append("- 本次证据支持的企业环节归属（只按下列有据关系描述，并保留对应记录 ID）：")
         for comp, seg in list(facts["canonical_segments"].items())[:12]:
             lines.append(f"  * {comp}: {seg}")
+    if facts.get("pending_attribution"):
+        lines.append("- 以下代表公司仅见于本次样本名单，缺少可回指证据，归属待核；只能按来源描述样本，不得写成确定的环节结论：")
+        lines.append("  * " + "、".join(facts["pending_attribution"][:12]))
     return "\n".join(lines)
 
 
@@ -679,13 +731,8 @@ class ChapterWriterAgent:
                     if cw <= 10:
                         para.text = re.sub(r"221411(?:\.07)?\s*亿元", cm_str, para.text)
 
-                # Entity chain segment consistency repair
-                if "中国卫星等上游" in para.text:
-                    para.text = para.text.replace("中国卫星等上游", "中国卫星等中游总装")
-                if "中国卫星、铖昌科技等上游" in para.text:
-                    para.text = para.text.replace("中国卫星、铖昌科技等上游", "铖昌科技等上游核心部件与中国卫星等中游总装")
-                if "铖昌科技、中国卫星等上游核心部件" in para.text:
-                    para.text = para.text.replace("铖昌科技、中国卫星等上游核心部件", "铖昌科技等上游核心部件与中国卫星等中游总装")
+                # Industry-specific entity rewrites were removed. A role may only
+                # be asserted from this run's evidence, never from a fixed phrase map.
 
                 # Filter out pure years (19xx, 20xx) and small list ordinals (1-10)
                 nums = extract_numbers(para.text)
@@ -740,7 +787,12 @@ class ChapterWriterAgent:
                     kind=para.kind, location=para.paragraph_id)
                 issues.extend(f"{para.paragraph_id} 数值语义未通过：{item['claim']}（需同实体、指标和期间证据）" for item in semantic_issues)
                 normalized = "".join(para.text.split())
-                if normalized in seen_text:
+                # 空壳段落（只有图表占位符、尚待改写）与显式缺口句都是审计
+                # 隔离的标准化产物，允许多节复用，不应触发重复重写。
+                shell_only = bool(para.text.strip()) and not re.sub(
+                    r"如图|所示|[,，。；;\s]", "", re.sub(r"\[[^\]]*\]", "", para.text or "")
+                )
+                if normalized in seen_text and GAP_NOTICE_MARK not in para.text and not shell_only:
                     issues.append(f"{para.paragraph_id} 与其他段落重复")
                 seen_text.add(normalized)
                 if len(para.text) > 1000:
@@ -836,6 +888,25 @@ class ChapterWriterAgent:
                         target_p = section.paragraphs[0]
                     if target_p:
                         target_p.text = f"如图 {tag} 所示，{target_p.text}"
+
+        # 审计隔离后可能留下「如图 [CHART-xx] 所示，」这类只有占位符、没有
+        # 任何论述的空壳段落。改写为显式缺口句并保留图表引用：既不让空句
+        # 进入排版层，也不删段（删段会造成空节，反而触发整章重写）。
+        for section in chapter.sections:
+            for para in section.paragraphs:
+                text = para.text or ""
+                body = re.sub(r"如图|所示|[,，。；;\s]", "", re.sub(r"\[[^\]]*\]", "", text))
+                # 完全空的段落留给 repair 分支按既有语义删除（无证据数字必须
+                # 被隔离，不得借缺口句复活）；这里只处理有占位符却无论述的空壳句。
+                if not text.strip() or body:
+                    continue
+                tags = re.findall(r"\[[^\]]*\]", text)
+                lead = f"如图 {'、'.join(tags)} 所示，" if tags else ""
+                para.text = (
+                    f"{lead}关于「{section.title}」，{GAP_NOTICE_MARK}；"
+                    "相关数值已隔离，待补充同口径证据后再行判断。"
+                )
+                para.evidence_ids = []
 
         chapter.evidence_ids = list(dict.fromkeys(e for s in chapter.sections for p in s.paragraphs for e in p.evidence_ids))
         chapter.chart_ids = list(dict.fromkeys(c for s in chapter.sections for c in s.chart_ids))

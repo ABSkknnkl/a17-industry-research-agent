@@ -1013,8 +1013,19 @@ class DeterministicAnalysisEngine:
                     val_tier = "loss_or_high_multiple"
                     val_note = "亏损标的(PE为负)，参考PB/PS分层估值"
                 else:
-                    val_tier = "profitable" if (net_profit and net_profit > 0) else "loss_or_high_multiple"
-                    val_note = f"PB {pb:.1f}倍" if pb else "以PS/产业地位对标"
+                    # PE(TTM) 与净利润均未取到时，「未知」不得判成「亏损/高估值」，
+                    # 否则下游会把数据缺失写成全样本亏损的强断言。
+                    if net_profit and net_profit > 0:
+                        val_tier = "profitable"
+                    elif net_profit is not None and net_profit <= 0:
+                        val_tier = "loss_or_high_multiple"
+                    else:
+                        val_tier = "unknown"
+                    val_note = (
+                        "PE(TTM)与净利润均缺失，估值分层待核"
+                        if val_tier == "unknown"
+                        else (f"PB {pb:.1f}倍" if pb else "以PS/产业地位对标")
+                    )
 
                 e_ids = [val for val in (mc_id, pe_id, pb_id, ps_id, rev_id, ryoy_id, np_id, nyoy_id, gm_id, nm_id, cf_id, roe_id, dr_id) if val]
                 entries.append(PeerCompsEntry(
@@ -1079,12 +1090,126 @@ class DeterministicAnalysisEngine:
             tiered_valuation_note=tier_note,
         )
 
+    def build_segments_from_chain_facts(
+        self,
+        facts: Any,
+        dataset: StructuredResearchDataset,
+        comps_matrix: PeerCompsMatrix | None = None,
+    ) -> list[IndustryChainSegment]:
+        """Build segments from a reviewed full-chain structure card.
+
+        A1's ``industry_chain`` records are quotes / concept / classification
+        fields and cannot prove segment membership, so attribution comes from
+        the reviewed card instead of the keyword tables below.  Company names
+        are intersected with entities actually present in the A1 dataset, and
+        evidence ids are limited to business-attribute records so that the
+        same ``record_id`` can never back two different segments.
+
+        Args:
+            facts: Validated :class:`ChainFacts` from ``chain_facts``.
+            dataset: A1 structured dataset (also supplies the evidence ids).
+            comps_matrix: Optional peer comparison matrix for margin ranges.
+
+        Returns:
+            Three :class:`IndustryChainSegment` objects with explicit
+            ``source_tier`` / ``attribution_basis`` / gap metadata.
+        """
+        from chart_generator.chain_facts import group_for, is_business_attribute_record
+
+        records = dataset.all_records()
+        covered_entities: set[str] = set()
+        business_refs: dict[str, list[str]] = {}
+        for record in records:
+            entity = _entity(record)
+            if not entity:
+                continue
+            covered_entities.add(entity)
+            if is_business_attribute_record(record.metric):
+                business_refs.setdefault(entity, []).append(record.record_id)
+
+        gm_map = {
+            entry.company_name: entry.gross_margin
+            for entry in getattr(comps_matrix, "entries", [])
+            if entry.gross_margin is not None
+        }
+        used_records: set[str] = set()
+        segments: list[IndustryChainSegment] = []
+
+        for fact in facts.segments:
+            if fact.stage not in ("upstream", "midstream", "downstream"):
+                continue
+            out_of_sample = fact.sample_status == "not_in_sample"
+            # Only A1-covered entities may be asserted; never pad a segment
+            # with model-prior or industry-common names.
+            companies = [] if out_of_sample else [
+                name for name in fact.companies if name in covered_entities
+            ]
+            refs: list[str] = []
+            for company in companies:
+                for record_id in business_refs.get(company, []):
+                    if record_id not in used_records:
+                        used_records.add(record_id)
+                        refs.append(record_id)
+
+            margins = [gm_map[name] for name in companies if name in gm_map]
+            if len(margins) >= 2:
+                gm_range: str | None = f"{min(margins):.1f}%~{max(margins):.1f}%"
+            elif len(margins) == 1:
+                gm_range = f"{margins[0]:.1f}%"
+            else:
+                gm_range = None
+
+            groups = sorted({
+                group_for(name, facts) for name in companies if group_for(name, facts)
+            })
+            description = fact.name + "。"
+            if fact.note:
+                description += fact.note + "。"
+            if fact.transmission:
+                description += fact.transmission + "。"
+            if fact.gap_declaration:
+                description += fact.gap_declaration + "。"
+
+            segments.append(IndustryChainSegment(
+                segment_name=fact.name,
+                stage=fact.stage,
+                description=description,
+                representative_companies=companies,
+                key_products=list(fact.key_products),
+                gross_margin_range=gm_range,
+                evidence_record_ids=refs,
+                source_tier="gap" if out_of_sample else "reviewed_profile",
+                attribution_basis=facts.attribution_basis,
+                gap_declaration=fact.gap_declaration,
+                comparison_group=groups[0] if len(groups) == 1 else "",
+                comparison_groups=groups,
+                profile_frame=facts.frame,
+                comparison_rules=[rule.get("rule", "") for rule in facts.comparison_rules],
+                non_comparable_reasons=list(facts.non_comparable_reasons),
+                interpretive_hypotheses=list(facts.interpretive_hypotheses),
+                entity_caveats=list(facts.entity_caveats),
+                forbidden=list(facts.forbidden),
+            ))
+        return segments
+
     def extract_industry_chain(
         self,
         dataset: StructuredResearchDataset,
         subject: str = "",
         comps_matrix: PeerCompsMatrix | None = None,
     ) -> list[IndustryChainSegment]:
+        # Reviewed full-chain structure wins.  Without a reviewed card we keep
+        # the legacy behaviour but tag every segment ``industry_common`` so
+        # A4's attribution gate refuses to write membership into the report.
+        try:
+            from chart_generator.chain_facts import try_load_chain_facts
+
+            facts = try_load_chain_facts(subject)
+        except Exception:                                    # pragma: no cover
+            facts = None
+        if facts is not None:
+            return self.build_segments_from_chain_facts(facts, dataset, comps_matrix)
+
         records = dataset.all_records()
         chain_data: dict[str, dict[str, Any]] = {
             "upstream": {"companies": set(), "evidence": [], "products": []},
@@ -1337,6 +1462,10 @@ class DeterministicAnalysisEngine:
                 key_products=up_prods,
                 gross_margin_range=up_gm,
                 evidence_record_ids=chain_data["upstream"]["evidence"][:10],
+                source_tier="industry_common",
+                attribution_basis="",
+                gap_declaration="",
+                profile_frame="",
             ),
             IndustryChainSegment(
                 segment_name="中游：核心产品研发、系统集成与方案交付",
@@ -1346,6 +1475,10 @@ class DeterministicAnalysisEngine:
                 key_products=mid_prods,
                 gross_margin_range=mid_gm,
                 evidence_record_ids=chain_data["midstream"]["evidence"][:10],
+                source_tier="industry_common",
+                attribution_basis="",
+                gap_declaration="",
+                profile_frame="",
             ),
             IndustryChainSegment(
                 segment_name="下游：场景应用、终端落地与商业化生态",
@@ -1355,6 +1488,10 @@ class DeterministicAnalysisEngine:
                 key_products=down_prods,
                 gross_margin_range=down_gm,
                 evidence_record_ids=chain_data["downstream"]["evidence"][:10],
+                source_tier="industry_common",
+                attribution_basis="",
+                gap_declaration="",
+                profile_frame="",
             ),
         ]
 
@@ -1467,6 +1604,7 @@ class DeterministicAnalysisEngine:
             "comps_sample_size": len(comps.entries),
             "profitable_sample_size": sum(1 for e in comps.entries if e.valuation_tier == "profitable"),
             "loss_or_high_multiple_size": sum(1 for e in comps.entries if e.valuation_tier == "loss_or_high_multiple"),
+            "unknown_valuation_size": sum(1 for e in comps.entries if e.valuation_tier == "unknown"),
             "pe_available": sum(e.pe_ttm is not None for e in comps.entries),
             "pb_available": sum(e.pb is not None for e in comps.entries),
             "pe_available_count": sum(e.pe_ttm is not None for e in comps.entries),

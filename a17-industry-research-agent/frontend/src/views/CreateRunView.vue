@@ -25,7 +25,7 @@ function randomProjectId(): string {
   return `proj-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
 }
 
-/** 配图密度（standard=标准精选(12~15张) / rich=详尽全景(18~22张) / minimal=极简摘要(4~6张) / none=纯文与表格(0张)） */
+/** 配图密度（standard=标准精选(最多6张) / rich=详尽全景(18~22张) / minimal=极简摘要(最多4张) / none=纯文与表格(0张)） */
 type ChartMode = 'standard' | 'rich' | 'minimal' | 'none' | 'auto'
 
 const SECURITY_TYPE_OPTIONS = ['股票', '基金', '期货', '指数']
@@ -557,7 +557,7 @@ async function submit(): Promise<void> {
                 <el-form-item label="配图密度">
                   <el-radio-group v-model="form.chartMode">
                     <el-tooltip
-                      content="标准精选（12~15张）：核心章节精选关键图表，每章2~3张，图文平衡（推荐）"
+                      content="标准精选（最多6张）：优先使用同口径柱线组合图，减少重复图表（推荐）"
                       placement="top"
                     >
                       <el-radio value="standard">标准精选</el-radio>
@@ -569,7 +569,7 @@ async function submit(): Promise<void> {
                       <el-radio value="rich">详尽全景</el-radio>
                     </el-tooltip>
                     <el-tooltip
-                      content="极简摘要（4~6张）：仅保留行业大盘、产业链及核心龙头关键图表，其余表格呈现"
+                      content="极简摘要（最多4张）：仅保留行业大盘、产业链及核心龙头关键图表，其余表格呈现"
                       placement="top"
                     >
                       <el-radio value="minimal">极简摘要</el-radio>

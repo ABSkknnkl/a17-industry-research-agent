@@ -23,3 +23,23 @@ def test_fusion_chart_contract_preserves_requested_count():
     from report_fusion.models import ChartResult
     chart=ChartResult.model_validate({'quality':{'requested_count':6,'passed':False},'charts':[]})
     assert chart.quality['requested_count']==6
+
+
+def test_chain_alias_is_normalized_at_input_and_chart_model():
+    from backend.app.schemas.workflow import ChartGenerationOptions
+    from chart_generator.models import ChartPreferences
+
+    prefs = ChartPreferences()
+    prefs.requested_types = ["line", "chain"]
+    assert prefs.requested_types == ["line", "industry_chain"]
+    options = ChartGenerationOptions(requested_chart_types=["bar", "chain"])
+    assert options.requested_chart_types == ["bar", "industry_chain"]
+
+
+def test_unknown_chart_type_is_rejected_before_pipeline():
+    import pytest
+    from pydantic import ValidationError
+    from backend.app.schemas.workflow import ChartGenerationOptions
+
+    with pytest.raises(ValidationError, match="requested_chart_types"):
+        ChartGenerationOptions(requested_chart_types=["unknown-chart"])

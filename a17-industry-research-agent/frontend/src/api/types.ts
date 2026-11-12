@@ -324,6 +324,7 @@ export interface ChartGenerationOptions {
   chart_type?: ChartTypeName
   requested_chart_count?: number
   requested_chart_types?: ChartTypeName[]
+  chart_question_ids?: string[]
   user_priority?: boolean
   allow_multiple_charts_per_dataset?: boolean
   bar_variant?: 'vertical' | 'horizontal' | 'grouped' | 'stacked'

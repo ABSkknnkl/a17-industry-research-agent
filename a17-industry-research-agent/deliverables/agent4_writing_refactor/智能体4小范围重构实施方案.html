@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>智能体 4 小范围重构实施方案</title>
+<style>
+:root{--ink:#162e3d;--muted:#45616b;--line:#d6e2e5;--accent:#075c57;--wash:#edf6f4}
+*{box-sizing:border-box}body{margin:0;background:#f4f7f8;color:var(--ink);font:16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+main{max-width:1120px;margin:auto;padding:24px 30px 60px}header{background:#10343e;color:white;padding:34px 36px;border-radius:12px}header p{color:#ddf0f0;margin:6px 0}h1{font-size:clamp(27px,5vw,43px);line-height:1.2;margin:9px 0 14px}h2{font-size:25px;line-height:1.4;margin:0 0 13px;color:#143b46}h3{font-size:19px;margin:22px 0 7px}p{margin:8px 0 13px}
+nav{display:flex;flex-wrap:wrap;gap:7px 16px;margin:16px 0;font-size:14px}a{color:var(--accent);text-underline-offset:3px}a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}section{background:#fff;border:1px solid var(--line);border-radius:10px;margin:14px 0;padding:23px 27px}
+.note{background:var(--wash);border-left:4px solid var(--accent);padding:10px 15px}.small{font-size:14px;color:var(--muted)}.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:14px}th,td{padding:8px 10px;border:1px solid var(--line);text-align:left;vertical-align:top}th{background:#e9f3f2}tbody tr:nth-child(even){background:#f8fbfc}
+code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em}code{background:#edf4f4;padding:1px 4px;overflow-wrap:anywhere}header code{color:var(--ink)}pre{overflow:auto;background:#f0f5f5;border:1px solid var(--line);padding:13px}pre code{background:transparent;padding:0}li{margin:4px 0}.flow{padding:12px 15px;background:var(--wash);font-weight:650}
+@media(max-width:650px){main{padding:10px}header,section{padding:17px 14px}.scroll table{min-width:610px}}
+@media print{body{background:white}main{padding:0}header{background:white;color:var(--ink);padding:0}header p{color:var(--muted)}nav{display:none}section{padding:10px 0;border:0}h2,h3{break-after:avoid}tr{break-inside:avoid}pre{white-space:pre-wrap}}
+</style>
+</head>
+<body><main>
+<header><p>实施规格 · V2.0 · 2026-11-09</p><h1>智能体 4 小范围重构实施方案</h1><p>核查基线 <code>fa9a6a6</code> · 供 AI 工程师实施与验收人员复核</p><p>正文围绕用户实际问题组织，保留关键判断及其证据，减少跨章重复展开。</p></header>
+<nav aria-label="目录"><a href="#scope">01 目标与边界</a><a href="#current">02 现状</a><a href="#design">03 架构与规则</a><a href="#phases">04 阶段任务</a><a href="#compat">05 兼容性</a><a href="#tests">06 测试与门槛</a><a href="#delivery">07 交付与里程碑</a><a href="#rules">08 AI 执行约束</a><a href="#commands">附录 命令</a></nav>
+
+<section id="scope">
+<h2>01 重构目标与范围</h2>
+<div class="scroll"><table><thead><tr><th>目标</th><th>完成标准</th></tr></thead><tbody>
+<tr><td>G1 清理行业特例</td><td>非航天合成样本中，旧航天示例和替换规则引入的表述为零。未知行业仍可计算市值、样本数和估值锚点。有效航空航天证据仍可用于正文。</td></tr>
+<tr><td>G2 明确问题的主答位置</td><td>可确定归属的必答需求有唯一主答小节。可用证据的必答项都有有据作答，缺数据的必答项明确说明缺口。基线已答项无退化。</td></tr>
+<tr><td>G3 改善内容密度</td><td>重复明显的冻结样稿中，人工确认的跨章重复展开率相对下降至少 30%。关键数字段落更能解释变化、业务含义及证据边界。</td></tr>
+<tr><td>G4 保护交付</td><td>证据引用与图表可追溯，事实核验、修订版本、正式与受限交付通过既有回归。</td></tr>
+</tbody></table></div>
+<p>核心改动位于 <code>agents_core/chapter-writer/chapter_writer/</code>。允许新增内部归属模块、针对性测试和离线评估脚本。优先由现有检索器同时服务整篇写作和单章重写。若复现两条入口拿到不同有效大纲，允许在后端单章重写入口做最小接线，并保留原版本保护。</p>
+<p>沿用 7 章 21 节、章节目编号、公开请求与结果、Python/Pydantic、现有模型客户端与事实核验。A1/A2/A3/A5 通过现有契约接入。最终图注与三格式导出属于集成验收。A5 门禁与导出异常修复作为独立事项记录。</p>
+</section>
+
+<section id="current">
+<h2>02 现状与源码依据</h2>
+<div class="scroll"><table><thead><tr><th>已核实的现状</th><th>对实施的影响</th></tr></thead><tbody>
+<tr><td>当前提示已要求先给判断、解释关键数字。通过审计后有剩余预算时，现有逻辑可为一段数字列表补解读。<br><a href="../../agents_core/chapter-writer/chapter_writer/agent.py">写作入口</a> 第 113、564 行</td><td>直接复用，重构优先改善证据和论点在各章的分配。</td></tr>
+<tr><td>航天字典已按主题启用，三条正文公司名替换未按主题限定。全局事实锚点同时计算通用市值、样本和估值信息。<br><a href="../../agents_core/chapter-writer/chapter_writer/agent.py">锚点与审计</a> 第 139、189、237、682 行</td><td>拆出行业特例，保留通用事实锚点。画像未命中也保留本次可验证的数值。</td></tr>
+<tr><td>各章按标题相似度、领域和图表证据各自取材，同领域必需需求可能进入多章。<br><a href="../../agents_core/chapter-writer/chapter_writer/retriever.py">检索器</a> 第 79、146、203 行</td><td>这是重复展开的可验证成因。用冻结样稿测量实际占比，允许不同分析目的共享证据。</td></tr>
+<tr><td>整篇和人工单章重写分别构造检索器，再调用同一个生成审计方法。<br><a href="../../backend/app/engine/state_machine.py">单章重写</a> 第 1106 行</td><td>归属计算放到共享检索器。同源同大纲应得出同一分配，人工重写不连带改其他章。</td></tr>
+<tr><td>ChartRef 缺少完整统计期间、分母和出处，A5 的需求引用链接按证据交集生成。<br><a href="../../agents_core/chapter-writer/chapter_writer/models.py">图表输入</a> 第 60 行 · <a href="../../agents_core/report-fusion/report_fusion/requirement_links.py">需求输出关联</a> 第 5 行</td><td>A4 验收挂接与解读，最终图注看交付成品。判断是否回答，还需复核问题、正文和证据。</td></tr>
+</tbody></table></div>
+<p class="note">本次定向离线基线为 <strong>79 项通过、1 项跳过</strong>，跳过项缺少历史航空航天产物。真实正文重复率、模型表现及耗时在 T0 冻结后测量。原方案 B15/B16 的 <code>view_patch.py</code> 未在当前仓库定位，归因前需取得脚本版本、运行编号和对应报告页。<a href="智能体4写作能力重构方案.md">原方案</a></p>
+</section>
+
+<section id="design">
+<h2>03 目标架构与技术选型</h2>
+<p class="flow">A2 解读与需求矩阵 / A3 图表 / 有效大纲 → 确定性分配 → 现有证据检索与装包 → A4 写作和事实核验 → A5 成品验证</p>
+<p>新增 <code>chapter_writer/assignment.py</code>，用标准库数据类与纯函数，从现有 Pydantic 输入生成不可变分配表。由 <code>DynamicEvidenceRetriever.__init__</code> 按实际大纲计算一次。整篇和单章重写均使用该入口。现有文本相关性检索用于材料排序及兼容回退。</p>
+<h3>内部数据契约</h3>
+<div class="scroll"><table><thead><tr><th>字段</th><th>约束</th></tr></thead><tbody>
+<tr><td><code>requirement_id</code>、<code>label</code>、<code>hard</code></td><td>从需求矩阵读取。每个原始 ID 独立建项。内容完全相同的重复行可去重，同 ID 冲突行回退并记诊断。</td></tr>
+<tr><td><code>owner_section_id</code></td><td>有效大纲中的唯一小节 ID，歧义时为 <code>None</code>。所属章从小节关系派生。</td></tr>
+<tr><td><code>coverage_state</code></td><td><code>covered</code> 要求上游通过且有有效证据。<code>missing_data</code> 表示上游明确未满足。缺失或不可判读为 <code>unknown</code>。</td></tr>
+<tr><td><code>evidence_record_ids</code>、<code>reason_code</code></td><td>只保留本次索引中的原始 ID，按 ID 稳定排序。记录 <code>metric_family</code>、<code>domain</code>、<code>ambiguous</code>、<code>unknown_kind</code>、<code>custom_outline</code> 或 <code>conflicting_rows</code>。</td></tr>
+</tbody></table></div>
+<h3>首版分配与检索规则</h3>
+<ol>
+<li>有效大纲取 <code>request.outline or DEFAULT_OUTLINE</code>。默认大纲映射只用于小节编号及语义一致的情况。自定义大纲出现不匹配时沿用旧检索并记录诊断。</li>
+<li>将显式 <code>metric_families</code> 通过现有 <code>metric_family()</code> 规范化，按领域和指标族匹配。匹配唯一才分配。混合行指向多节时记录歧义，保留原需求和证据。缺结构化指标时，仅使用已确认能唯一确定位置的领域规则。</li>
+<li>默认先覆盖 <code>SEC-02-01</code> 的行业指标 <code>pv_new_capacity</code>、<code>nev_sales</code>、<code>nev_penetration</code>，<code>SEC-05-01</code> 的财务指标 <code>revenue</code>、<code>parent_net_profit</code>、<code>gross_margin</code>、<code>rd_expense</code>、<code>rd_investment</code>，以及 <code>SEC-05-02</code> 的财务指标 <code>operating_cash_flow</code>、<code>cash_to_net_profit</code>。事件规则指向 <code>SEC-06-03</code>，接入前用生产形态夹具确认实际领域值。未识别的需求沿用旧逻辑。</li>
+<li>每章先保全现有必需证据、图表绑定证据和需求行，再对可选论点排序。主答负责完整展开，其它章可使用相同证据支撑新的判断或简短回顾。图表推荐、证据相关性与章节目职责共同约束解读。</li>
+</ol>
+<p><strong>模式</strong>使用单个内部开关 <code>A4_ASSIGNMENT_MODE=off|observe|apply</code>。缺省或非法值用 off，非法值记诊断。observe 生成内部评估信息，模型正文输入与 off 等价。apply 加入本章主答列表，以必答、有效证据、ID 顺序排序。新增提示软预算 2048 UTF-8 字节/章，优先压缩可选摘要和指导，保留原需求与证据保护规则。超限沿现有异常及兜底路径处理。</p>
+<p class="small">采用既有异步生成、技能路由、<code>quantity_issues</code>、章节重写预算和审计。新增规划和去重模型调用数为零。评估记录由直跑 A4 的 emit 或评估器保存，生产入口无需暴露新的响应字段。</p>
+</section>
+
+<section id="phases">
+<h2>04 分阶段实施、风险和回滚</h2>
+
+<h3>T0 · 冻结输入与建立基线 · 开工前置</h3>
+<ol>
+<li>执行附录基线命令。保存提交、工作树状态、Python 版本、退出码、失败和跳过用例的 node ID。既有用户变更保持原样，比较在同一环境进行。</li>
+<li>冻结两份可重放的 A2/A3 包。A 为正文重复明显的报告，B 为证据稀疏的非航天报告。另做一份航天证据夹具。只有 PDF 留档时，从现有用例生成合成包并单独标识，真实对照留待有效产物。</li>
+<li>为每份样本记录原始问题、可答的需求、数据缺口、<code>report_id</code>、图表 ID、模型配置和输入 SHA-256。先标注基线重复段落和关键数字段，再开始改代码。</li>
+</ol>
+<p><strong>门槛</strong>为测试基线与样稿可复跑。<strong>风险</strong>是把旧 PDF 当成可重放输入或把模拟结果当真实能力。<strong>回滚</strong>为撤销无效基线，修订输入清单后对基线和候选共同重跑。</p>
+
+<h3>P0 · 行业特例清理 · 最高优先级</h3>
+<ol>
+<li>先在 <code>test_aerospace_chapter_defects.py</code> 与 <code>test_dynamic_segment_and_scale_consistency.py</code> 写三组红测：非航天触发旧替换、合法航天事实、未知行业通用锚点。单独标记依赖历史硬编码修辞的断言。</li>
+<li>在 <code>agent.py</code> 删除航天提示示例及三条公司名硬替换。用本次证据说明样本和期间边界。历史具体市值示例从提示移除，现有通用数值计算与审计保持回归覆盖。</li>
+<li>让固定公司字典退出事实锚点。角色提示只接收能回指本次证据的 A2 关系。核对同一条依据是否实际支持该公司、环节和范围，单有代表公司名单及段级证据 ID 时只能按来源描述样本，归属待核。现有证据约束、章节结构和修复预算照常校验。</li>
+<li>更新锁定旧硬替换的断言，用可追溯的关系与缺证据反例替代。保留公司、期次、金额与既有结论的核验强度。</li>
+</ol>
+<p><strong>门槛</strong>为 G1 和事实回归通过。<strong>风险</strong>是旧航天稿曾依赖人工替换。<strong>回滚</strong>按 P0 的独立提交执行，恢复上一可用版本后重新核查行业样稿。恢复旧版的报告标注旧规则风险。</p>
+
+<h3>P1 · 真实需求主答分配 · 核心实施</h3>
+<ol>
+<li>建立 <code>assignment.py</code> 和 <code>test_writing_assignment.py</code>。测试唯一映射、混合指标、同 ID 冲突、输入重排、自定义大纲、无矩阵、坏引用及合成跨行业用例。</li>
+<li>在 <code>retriever.py</code> 接入共享分配。先验证 observe/off 的正文输入等价，再加入 apply 的本章主答提示和可选项排序。已存在的必需证据保护、硬需求和图表绑定条件先通过原回归。</li>
+<li>在 <code>agent.py</code> 接入装包优先级和写作指导。优先压缩附加提示，按现有方式报出仍超限。已有局部解读、事实审计和回退逻辑复用。</li>
+<li>对整篇生成和人工单章重写传入相同 A2/A3 与大纲，断言责任、证据集合和降级行为一致。若后端旧重写入口只能取默认大纲，先复现自定义大纲路径，再决定是否做最小透传。历史数据不足时保留基线行为。</li>
+</ol>
+<p><strong>门槛</strong>为路由稳定、旧契约兼容、没有新增必需证据或图表缺失。<strong>风险</strong>是错误认领和提示挤占证据空间。<strong>回滚</strong>将开关切回 off，按现有审核流程重写受影响章节并重建下游。</p>
+
+<h3>P2 · 重复与可读性诊断 · 先观察</h3>
+<ol>
+<li>新增 <code>scripts/evaluate_agent4_refactor.py</code> 及测试。按章、小节、段落 ID 生成跨章重复候选。先检测归一化后完全相同的正文，再对同一需求或同口径观测用字符三元组 Jaccard 筛近似候选，0.85 作为初始送审阈值。</li>
+<li>归一化移除空白、图表占位符和引用标记，保留主体、数值、年份、单位及否定。排除必要摘要回顾和图表说明。按人工标注确认同一结论的重复展开，同一证据支持不同分析判断时允许复用。</li>
+<li>比较冻结样稿的 off/observe 与 apply 结果，记录命中位置、人工判断及证据影响。先验收写前分配能否改善问题。跨章自动返修的立项以已确认的重复仍高为前提。</li>
+</ol>
+<p><strong>门槛</strong>为脚本可运行、结果可回查、G2/G3 有成品对照。<strong>风险</strong>是相似度误把不同期间、比较对象或观点当重复。<strong>回滚</strong>为撤销误判规则或修订阈值后重算候选，保留原样稿与人工标注。</p>
+
+<h3>P3 · 集成验收与小范围试用 · 发布前置</h3>
+<ol>
+<li>固定 A2/A3、模型配置、技能和写作预算。先评 A4 原稿，再查 A5 Markdown、HTML 和 Chromium PDF。人工单章改写后复验新版、旧版下载资格、图表位置和事实审计。</li>
+<li>A4 核对 <code>chart_id</code>、相应小节和证据解读。最终图注检查期间、统计口径、出处。发现上游字段不足或 A5 丢失说明时按责任层登记，附运行编号及报告位置。</li>
+<li>通过第 06 节门槛后，在试用环境开启 apply，记录配置与时间。用户可见的正式与受限状态仍由原门禁判断。</li>
+</ol>
+<p><strong>门槛</strong>为三格式可追溯、事实完整、人工标注及测试签认。<strong>风险</strong>是 A5 编辑稀释 A4 改善，或 Chromium、真实模型环境不可用。<strong>回滚</strong>关闭 apply，使用上一次已核验配置重跑受影响阶段。缺环境的项目登记待验收，并保留离线证据。</p>
+</section>
+
+<section id="compat">
+<h2>05 数据与接口兼容性</h2>
+<div class="scroll"><table><thead><tr><th>场景</th><th>实施约束</th></tr></thead><tbody>
+<tr><td>旧产物缺少需求矩阵</td><td>空分配并复用原检索。现有 ChapterWritingRequest、ChapterDraft、ChapterWritingResult 和成品结构兼容旧数据。</td></tr>
+<tr><td>坏字段、冲突 ID、无证据</td><td>对原始行做窄校验。非法引用不入模型上下文，冲突不取最后一条覆盖。明确缺数据就保留缺口与有效证据。</td></tr>
+<tr><td>行业画像或默认大纲未命中</td><td>通用写作加可用证据。未知归属回退，保留实际合法的大纲和章节号。跨行业和跨环节角色按业务、主体、期间核查。</td></tr>
+<tr><td>上下文压缩及模型故障</td><td>压缩后模型能看到的证据集与审计白名单一致。保留原必需证据保护，复用兜底和受限路径。新增提示、日志与配置不进入对外契约。</td></tr>
+<tr><td>修订、并发与重复执行</td><td>同一输入及配置得到稳定分配。重用既有版本号比较、下游失效和重建。旧、新运行的结果分别留档，完整回滚通过现有修订机制完成。</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="tests">
+<h2>06 测试、验收与质量口径</h2>
+<div class="scroll"><table><thead><tr><th>测试</th><th>关键断言</th><th>等级</th></tr></thead><tbody>
+<tr><td>T01 行业特例</td><td>通用数值锚点相等，非航天无注入，有据航天角色可写，缺据角色保留待核。</td><td>单测</td></tr>
+<tr><td>T02 分配稳定</td><td>已知需求主答唯一，输入乱序不变，歧义与冲突回退，自定义大纲兼容。</td><td>单测</td></tr>
+<tr><td>T03 证据与预算</td><td>合法受保护记录完整，未知 ID 不可引用。压缩先处理可选提示，超限沿旧路径。</td><td>单测 / 集成</td></tr>
+<tr><td>T04 模式与模型预算</td><td>off 与 observe 正文模型输入等价。apply 注入本章责任。新增规划与去重模型调用为零。</td><td>集成</td></tr>
+<tr><td>T05 单章重写</td><td>同源同大纲归属一致，其他章内容保持原样，旧下游仍失效，版本冲突仍被拦截。</td><td>后端回归</td></tr>
+<tr><td>T06 重复诊断</td><td>复写命中。不同主体、期间、口径、相反结论及合理回顾不判为确认重复。</td><td>单测 / 样稿</td></tr>
+<tr><td>T07 交付与图表</td><td>图表、证据与章节一致，三格式无新增导出错误，两套 PDF 模板的目录与页码可核查。</td><td>集成</td></tr>
+<tr><td>T08 正文解读</td><td>有据段落给出可复核比较、业务含义和判断边界。数据不足时指出具体缺失材料，因果有直接披露。</td><td>盲评</td></tr>
+</tbody></table></div>
+<h3>发布门槛</h3>
+<ul>
+<li><strong>必答完整性</strong>以 T0 标注的真实必答问题为分母，逐项记录“有据作答、明确缺口、遗漏”。保全基线已答项。有证据的必答项遗漏为零，缺数据项说明缺口。证据相交只作为定位线索。</li>
+<li><strong>重复率</strong>为人工确认的重复展开段落数除以可比正文段落数。每个冗余段落只计一次，必要引用、摘要和不同视角的合法证据复用排除。高重复样本相对下降 ≥30%，低重复样本逐项对照，零重复基线无新增。</li>
+<li><strong>信息密度</strong>每份样稿至少抽查 6 段关键数字段，比较、含义、边界各 0/1 分。隐藏版本标识并保存逐段理由。候选平均分不下降，高重复样本至少两段改善。必要时复核归因原始材料。</li>
+<li><strong>事实与导出</strong>分别记录生成错误、审计隔离、交付残留。新增错误数字、主体、单位、期间、悬空引用及错绑版本为零。已能完成的案例无新增兜底。以新增失败用例 ID 判回归，既有失败保留记录。</li>
+<li><strong>预算与耗时</strong>上下文超限无新增，新增规划和去重模型调用为零。同输入、同模型配置下记录字节、调用和耗时。真实样稿耗时中位数增加超过 15% 时先复核原因，暂缓启用 apply。</li>
+</ul>
+<p>真实模型比较固定 A2/A3、模型配置、技能和章节预算。条件允许时每版各跑三次取中位数，保留逐次结果。合成、真实模型、实际 Chromium 与导出 stub 各自记录。A5 最终结论以成品人工复核为依据。</p>
+</section>
+
+<section id="delivery">
+<h2>07 交付物与里程碑</h2>
+<p>预计 4–6 个工作日，从收到可比较输入起算。外部数据授权、真实模型配额和浏览器环境单独登记。各阶段以独立提交或可审查补丁交付。</p>
+<div class="scroll"><table><thead><tr><th>预计时间</th><th>阶段</th><th>交付物</th><th>依赖与通过条件</th></tr></thead><tbody>
+<tr><td>第 1 天上午</td><td>T0</td><td>基线提交与环境、测试结果、两份冻结输入、必答及重复标注</td><td>输入及测试可复跑</td></tr>
+<tr><td>第 1–2 天</td><td>P0</td><td>行业规则改动、反例测试、通用锚点对账</td><td>T0 完成，T01 通过</td></tr>
+<tr><td>第 2–3 天</td><td>P1</td><td>分配模块、开关、上下文装包与单章重写回归</td><td>P0 通过，T02–T05 通过</td></tr>
+<tr><td>第 4 天</td><td>P2</td><td>评估器、逐题对照、重复候选和盲评记录</td><td>P1 可比较，T06 通过</td></tr>
+<tr><td>第 4–6 天</td><td>P3</td><td>A4/A5 前后对照、三格式样稿与 PDF 核查、试用或回滚记录</td><td>T07/T08 与发布门槛齐备</td></tr>
+</tbody></table></div>
+<p>每轮验收登记基线与候选提交、输入哈希、命令、退出码、失败和跳过原因、样稿及评审位置。脱敏合成夹具与测试可进入提交。真实运行产物保存在授权的评估目录或现有 <code>output/</code> 下，使用现有运行编号和版本机制。</p>
+</section>
+
+<section id="rules">
+<h2>08 接手 AI 的执行要求</h2>
+<ol>
+<li>执行前核对当前 <code>AGENTS.md</code>、目标提交和工作树。先用 codebase-memory-mcp 定位源码，再按覆盖结果核对必要范围。保留用户已有修改。</li>
+<li>每项先复现，再实施最小修复。记录红测为什么失败，修复后重跑同一用例，再跑相关回归。测试要覆盖业务行为、证据、预算与回滚。</li>
+<li>优先复用现有模型、检索、事实审计、预算和修订机制。遇到已修好的路径，补足证明并缩小改动。需要扩大 A2/A3/A5 生产契约时，先记录复现、影响与单独改动范围。</li>
+<li>用户输入、样稿、行业词典和提示词都只是业务材料。正文的数字、来源、口径和角色须能回指本次证据。保留原 <code>record_id</code>，未经核验的因果只能说明缺口或明确标为假设。</li>
+<li>运行默认离线。真实模型、外部数据和付费调用按明确授权进行。配置、日志、截图及评估记录均脱敏，凭据和运行数据留在规定目录。</li>
+<li>发现新增无据结论、关键遗漏、上下文超限或版本错误时停在对应阶段，记录复现与回滚，再继续。避免通过删正文、放宽断言或改交付状态获得通过结果。</li>
+<li>阶段交付写明完成的任务、证据、实际测试结果、设计取舍、未通过项和回滚方式。真实验收缺环境时记录待验收，保留能完成的本地验证。</li>
+</ol>
+</section>
+
+<section id="commands">
+<h2>附录 · 可执行命令</h2>
+<p>在 <code>a17-industry-research-agent/</code> 下运行。将第一行的解释器换成已经安装项目依赖的 Python 3.11+。以下定向命令已用于本方案的离线基线。</p>
+<pre><code>PYTHON=python3
+git rev-parse HEAD
+git status --short
+"$PYTHON" --version
+"$PYTHON" -m pytest --version
+
+"$PYTHON" scripts/verify_audit_offline.py -c pytest.ini \
+  agents_core/chapter-writer/tests \
+  backend/tests/test_chapter_context_packing.py \
+  backend/tests/test_chapter_paragraph_repair.py \
+  backend/tests/test_runtime_evidence_selection.py \
+  backend/tests/test_ab_offline_delivery.py \
+  backend/tests/test_workflow_round1_regressions.py</code></pre>
+<p>新增归属与评估用例后，将对应测试路径追加到定向回归。PDF 和发布测试用本机 Chromium。若本机限制浏览器或 localhost 夹具，记录环境失败并在相同输入、具备本地能力的环境复跑。</p>
+<pre><code>"$PYTHON" scripts/verify_audit_offline.py -c pytest.ini \
+  backend/tests/test_pdf_continuation.py \
+  backend/tests/test_report_integrity_delivery.py \
+  backend/tests/test_delivery_invalidation_lifecycle_v8_final.py \
+  agents_core/report-fusion/tests/test_final_delivery_contract_v8.py</code></pre>
+<p>全量回归需携带公开的财务重述资料。现有离线脚本忽略 <code>data/</code> 后单独复制行业参考库，以下命令仅在临时副本补齐财务重述文件。其余仍走既有去凭据和套接字限制。</p>
+<pre><code>"$PYTHON" - &lt;&lt;'PY'
+import runpy
+import shutil
+from pathlib import Path
+
+root = Path.cwd().resolve()
+original_copytree = shutil.copytree
+
+def copy_with_reference(source, destination, *args, **kwargs):
+    result = original_copytree(source, destination, *args, **kwargs)
+    if Path(source).resolve() == root:
+        fixture = Path("data/official_financial_restatements.json")
+        target = Path(destination) / fixture
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(root / fixture, target)
+    return result
+
+shutil.copytree = copy_with_reference
+runpy.run_path(str(root / "scripts/verify_audit_offline.py"), run_name="__main__")
+PY</code></pre>
+<h3>样稿生成约定</h3>
+<p>冻结输入采用现有 A4 <code>ChapterWritingRequest</code> 能解析的结构，或同一运行目录中的 <code>interpretation_report.json</code> 与 <code>chart_result.json</code>。直接生成时复用现有 <code>ChapterWriterAgent.run(request, emit=..., save_artifacts=True)</code>，把输出目录指向独立评估目录。用模拟模型做离线集成，用获准的相同模型配置做样稿对照。基线与候选使用同一套方法和相同修订预算，采集实际模型调用事件和正文结果。继续按既有 A5 入口导出。</p>
+<p>真实模型获准后，可用下列现有 CLI 生成冻结 A4 样稿。运行前把三个 A4 变量设为实际文件和独立输出目录。P1 前后各在相应版本运行。真实配置通过环境注入，命令记录只保留变量名。</p>
+<pre><code>PYTHONPATH=".:agents_core:agents_core/chapter-writer" \
+OUTPUT_DIR="$A4_SAMPLE_OUTPUT" A4_ASSIGNMENT_MODE=off \
+  "$PYTHON" -m chapter_writer "$A4_ANALYSIS_JSON" --charts "$A4_CHARTS_JSON"</code></pre>
+<p>候选对照改用 <code>A4_ASSIGNMENT_MODE=apply</code> 及另一输出目录。若样本指定自定义大纲，对照两次均加 <code>--outline "$A4_OUTLINE_JSON"</code>。CLI 支持部分交付返回成功退出码，验收同时查看返回的 <code>status</code>、兜底章节和实际产物。模型回放所需的非默认参数可用现有 Python 入口固定。</p>
+<h3>P2 评估器命令契约</h3>
+<p>下面是 P2 待实现的入口。<code>--baseline</code> 与 <code>--candidate</code> 接受 A4 章节结果，<code>--annotations</code> 接受 T0 及盲评标注。<code>--gate</code> 启用发布门槛判断。输入不完整、路径不存在、版本不可比或定位失败时返回非零，并给出具体字段。</p>
+<pre><code>"$PYTHON" scripts/evaluate_agent4_refactor.py \
+  --baseline "$A4_BASELINE_CHAPTERS" \
+  --candidate "$A4_CANDIDATE_CHAPTERS" \
+  --annotations "$A4_ANNOTATIONS" \
+  --output "$A4_EVAL_JSON" --gate</code></pre>
+<p>标注文件根对象包含 <code>case_id</code>、<code>input_sha256</code>、<code>requirements</code>、<code>duplicate_paragraph_ids</code>、<code>readout_reviews</code>。需求项记录 <code>requirement_id</code>、版本、主答小节、段落定位、证据 ID、<code>answer_status</code> 及理由。确认重复段落按 baseline/candidate 保存。数字段评分按版本和定位保存比较、含义、边界三项分数及理由。段落定位统一用 <code>chapter_id/section_id/paragraph_id</code>。</p>
+</section>
+</main></body>
+</html>

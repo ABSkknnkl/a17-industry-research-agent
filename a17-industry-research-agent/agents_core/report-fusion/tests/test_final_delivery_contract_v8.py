@@ -379,3 +379,102 @@ def test_rendered_financial_language_preserves_audited_values():
     assert view["evidence_catalog"][0]["value"] == 8.1987
     assert view["evidence_catalog"][0]["record_id"] == "R1"
     assert view["chapters"][0]["sections"][0]["paragraphs"], "有据段落被误删"
+
+
+def test_pdf_only_success_is_regenerated_from_limited_view(monkeypatch, tmp_path):
+    from report_fusion.config import Settings
+
+    actual_write = Path.write_bytes
+    calls = []
+
+    def fail_markdown(path, data):
+        if path.name == "report.md":
+            raise OSError("simulated write failure")
+        return actual_write(path, data)
+
+    async def capture_pdf(html, timeout):
+        calls.append('data-delivery-status="ready_with_limits"' in html)
+        return b"%PDF-offline"
+
+    monkeypatch.setattr(Path, "write_bytes", fail_markdown)
+    agent = ReportFusionAgent(settings=Settings(output_dir=tmp_path), llm=_NoLLM(), pdf_renderer=capture_pdf)
+    result = asyncio.run(agent.run(_request(("markdown", "pdf"))))
+    assert result.formats == ["pdf"] and result.status == "partial"
+    assert calls == [False, True]
+
+
+def test_pdf_is_revoked_if_final_html_cannot_render(monkeypatch, tmp_path):
+    import report_fusion.agent as module
+    from report_fusion.config import Settings
+
+    actual_html = module.render_html
+    actual_write = Path.write_bytes
+
+    def fail_limited_html(view):
+        if view.delivery_status == "ready_with_limits":
+            raise ValueError("simulated HTML failure")
+        return actual_html(view)
+
+    def fail_markdown(path, data):
+        if path.name == "report.md":
+            raise OSError("simulated write failure")
+        return actual_write(path, data)
+
+    async def pdf(html, timeout):
+        return b"%PDF-offline"
+
+    monkeypatch.setattr(Path, "write_bytes", fail_markdown)
+    monkeypatch.setattr(module, "render_html", fail_limited_html)
+    agent = ReportFusionAgent(settings=Settings(output_dir=tmp_path), llm=_NoLLM(), pdf_renderer=pdf)
+    result = asyncio.run(agent.run(_request()))
+    assert "pdf" not in result.formats
+    assert not (Path(result.artifact_dir) / "report.pdf").exists()
+
+
+def test_hard_requirement_never_cited_blocks_formal_delivery(tmp_path):
+    from report_fusion.config import Settings
+
+    req = _request(("markdown",))
+    req.report.evidence_index["R2"] = req.report.evidence_index["R1"].model_copy(update={"record_id": "R2"})
+    req.report.data_quality_appendix = {"requirement_evidence_matrix": [{
+        "requirement": {"requirement_id": "asked_metric", "label": "必答指标", "hard": True},
+        "coverage": {"passed": True, "evidence_record_ids": ["R2"]},
+    }]}
+    agent = ReportFusionAgent(settings=Settings(output_dir=tmp_path), llm=_NoLLM())
+    result = asyncio.run(agent.run(req))
+    assert result.status == "partial"
+    assert any("必答指标" in item for item in result.consistency.issues)
+
+
+def test_appendix_units_and_quarter_scope_remain_explicit():
+    from report_fusion.render import _normalize_dqa, _reading_text
+
+    data = _normalize_dqa({"outlier_items": [
+        {"metric": "新能源汽车销量", "observed_value": 16490000, "unit": "辆"},
+    ]})
+    shown = data["outlier_items"][0]["observed_value"]
+    assert "元" not in shown and "辆" in shown
+    assert "前三季度" in _reading_text("2025-09-30（ytd_q3，consolidated）")
+    assert "合并财务报表" in _reading_text("2025-09-30（ytd_q3，consolidated）")
+
+
+def test_radar_preserves_units_per_indicator_for_a5_contract():
+    from chart_generator.agent import ChartGeneratorAgent, _Candidate
+    from chart_generator.models import InterpretationReport as ChartReport
+    from report_fusion.agent import _chart_contract_issues
+    from report_fusion.models import ChartSpec
+
+    report = ChartReport.model_validate({
+        "report_id": "radar", "subject": "新能源汽车", "as_of": "2026-11-06", "status": "completed",
+        "evidence_index": {
+            "margin": {"record_id": "margin", "domain": "financials", "entity": "甲公司",
+                       "metric": "net_margin", "value": 18.12, "unit": "%", "period": "2025-12-31"},
+            "rd": {"record_id": "rd", "domain": "financials", "entity": "甲公司",
+                   "metric": "rd_expense", "value": 22147000000, "unit": "元", "period": "2025-12-31"},
+        },
+    })
+    candidate = _Candidate("财务对照", "radar", {}, ["margin", "rd"], "", "CH-05")
+    assert ChartGeneratorAgent()._verify_numeric_candidate(candidate, report) is None
+    chart = ChartSpec(chart_id="C-RADAR", title=candidate.title, chart_type=candidate.chart_type,
+                      option=candidate.option, data_contract=candidate.data_contract)
+    assert not _chart_contract_issues(chart, report.evidence_index)

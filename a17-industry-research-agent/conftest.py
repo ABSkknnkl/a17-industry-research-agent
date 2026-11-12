@@ -23,3 +23,6 @@ def isolate_unit_tests_from_live_network(monkeypatch, request):
     monkeypatch.setenv("DOUBAO_SEARCH_API_KEY", "")
     monkeypatch.setenv("BOCHA_API_KEY", "")
     monkeypatch.setenv("ENABLE_WEB_SEARCH_FOR_CHAIN", "0")
+    # 2026-11-12：产业链事实底座专门通道只用于真跑，回归一律走既有 lane_grid 路径，
+    # 否则 .env 里的开关会让离线用例加载 chain_data 并改变产物体检口径。
+    monkeypatch.setenv("CHAIN_USE_REVIEWED_CHAIN_PROFILE", "0")

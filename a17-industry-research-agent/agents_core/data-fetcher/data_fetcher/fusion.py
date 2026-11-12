@@ -6,10 +6,11 @@ from collections import defaultdict
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from hashlib import sha256
+from math import isfinite
 from pathlib import Path
 import json
 import re
-from agents_core.financial_semantics import metric_family, period_shape, source_report_period
+from agents_core.financial_semantics import measurement_period, metric_family, period_shape, source_report_period
 from typing import Any
 
 from data_fetcher.models import (
@@ -588,8 +589,53 @@ def _fuse_long_table_row(
     )
 
 
+_VERIFIED_OBSERVATIONS_PATH = Path(__file__).resolve().parents[3] / "data" / "verified_observations.json"
+
+
+def _verified_observations(rows: list[dict], as_of: date) -> list[ResearchRecord]:
+    """Validate operator-reviewed observations against the requested cutoff."""
+    records = []
+    for raw in rows:
+        record = ResearchRecord.model_validate(raw)
+        if not {"period_start", "period_type", "scope", "currency"}.issubset(raw):
+            continue
+        if record.domain not in (Domain.INDUSTRY, Domain.FINANCIALS):
+            continue
+        source = record.raw_fields
+        url = str(source.get("source_url") or "")
+        locator = str(source.get("source_locator") or "").strip()
+        digest = str(source.get("document_sha256") or "").lower()
+        if (record.source.skill_id != "verified-observation" or record.source.status != "verified"
+                or not re.fullmatch(r"https://[^/\s]+(?:/[^\s]*)?", url) or not locator
+                or not re.fullmatch(r"[0-9a-f]{64}", digest)
+                or not record.entity_name or (record.domain == Domain.FINANCIALS and not record.entity_code)
+                or not record.unit or record.unit_provenance != "source_field"
+                or isinstance(record.value, bool) or not isinstance(record.value, (int, float))
+                or not isfinite(record.value) or record.issues):
+            continue
+        period = measurement_period(record)
+        if (period is None or not record.period_start or record.period_type == "unknown"
+                or not record.published_at or period[1] > as_of or record.published_at > as_of):
+            continue
+        if period[2] == "annual" and period[0] != date(period[1].year, 1, 1):
+            continue
+        rid = _record_id([
+            record.domain, record.entity_code or record.entity_name, record.metric, period,
+            record.scope, record.currency, record.value, record.unit, record.published_at,
+            url, locator, digest,
+        ])
+        records.append(record.model_copy(update={"record_id": rid}))
+    return records
+
+
 class DataFusion:
     """Pure fusion engine; it never calls an LLM or an external data source."""
+
+    def __init__(self) -> None:
+        path = _VERIFIED_OBSERVATIONS_PATH
+        self._verified_manifest = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        if not isinstance(self._verified_manifest, dict):
+            raise ValueError("已核验资料清单必须按研究主题存放记录列表")
 
     def fuse(
         self,
@@ -949,6 +995,18 @@ class DataFusion:
         )
         if mined_financials:
             dataset.financials.extend(mined_financials)
+
+        reviewed = self._verified_manifest.get(industry, []) if industry else []
+        if not isinstance(reviewed, list):
+            raise ValueError("已核验资料清单的主题记录必须为列表")
+        for record in _verified_observations(reviewed, as_of):
+            # Open discovery still needs ordinary business evidence to admit a financial cohort.
+            if record.domain == Domain.FINANCIALS and not comparison_entities:
+                continue
+            if record.record_id not in seen_record_ids:
+                dataset.records_for(record.domain).append(record)
+                dataset.sources.append(record.source)
+                seen_record_ids.add(record.record_id)
 
         if comparison_entities:
             from industry_reference.registry import IndustryRegistry

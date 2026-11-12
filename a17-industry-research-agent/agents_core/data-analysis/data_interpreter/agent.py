@@ -142,14 +142,22 @@ SEMANTIC_SYSTEM_PROMPT = """你是顶级研报数据解读智能体的语义分�
 【用户指标需求约束】：
 若输入 request 中含 metric_requirements（取数阶段从用户问询推导的指标需求），洞察组织应优先围绕这些指标；若输入数据无法支撑某项指标，必须在对应洞察中明确写"证据不足/数据缺失"，不得绕开、不得用无关指标顶替。
 
+【期间边界（技能硬规则，2026-11-10）】：
+已完成年度数据（问题窗口内的完整年度）与当年至今数据（含 as_of 当年的季度/月度记录）必须分开陈述；
+不得把当年至今数据与 2021-2025 等历史年度写进同一趋势句或同一结论句；引用当期数据须显式标注「当年至今」及统计期间。
+【估值边界（技能硬规则，2026-11-10）】：
+估值类指标只可作为带期间与来源的数据事实陈述，不得输出高位/透支/回调/买卖/评级/目标价等判断性结论；
+单点 PE 无历史分位对照时，不得据此判定「估值处于高位」。
+
 仅返回 JSON 对象，字段为：
-1. executive_summary：3-5 句，高水准概括行业市场定位、核心竞争龙头财务表现（结合可比矩阵与估值分位数）、产业链关键瓶颈及数据限制；
+1. executive_summary：3-5 句，高水准概括行业市场定位、核心竞争龙头财务表现、产业链关键瓶颈及数据限制；不得输出估值高低、买卖或评级判断，不得堆叠覆盖度模板句；
 2. knowledge_facts：从文本或数值证据中抽取的原子事实数组，每项仅含 fact_id、subject、predicate、
    object_summary、category、confidence、evidence_record_ids；不得把观点或预测写成事实；
    category 必须是以下之一: industry, company, financial, macro, industry_chain, event, other；
 3. insights：数组（6-12项），每项仅含 insight_id、title、conclusion、significance、confidence、
    evidence_record_ids、related_metric_ids、related_trend_ids、related_anomaly_ids；
-   要求结合财务比率（杜邦分解、毛利率、净现比质量）、同行可比估值溢价与产业链上下游环节进行专业深度归纳；
+   要求结合财务比率（杜邦分解、毛利率、净现比质量）与产业链上下游环节进行专业深度归纳；
+   title 必须是精炼判断句，不得把多个数值/日期串直接塞进标题；
 4. content_outline：数组，每项仅含 heading、purpose、key_points、evidence_record_ids；
 5. chain_topology：**产业链拓扑（仅当证据里确有产业链环节时输出，否则整段省略）**。
    🔴 **环节骨架取输入 JSON 的 structure_skeleton（本主题固定槽位表），不得自己另立一套。**
@@ -187,6 +195,8 @@ SEMANTIC_SYSTEM_PROMPT = """你是顶级研报数据解读智能体的语义分�
      (b) 证据里取不到、但属**行业公认龙头**的企业（尤其境外或未上市：亿航智能、小鹏汇天、
          峰飞航空、沃飞长空、大疆、极飞、莱斯信息、深城交、华测导航等）**可以直接写**——
          问财只覆盖 A 股，硬套白名单只会得到概念股；
+         🔴 例外（2026-11-10）：若本次运行存在**已审定产业链结构卡**（reviewed chain facts），
+         companies 只能取自该卡成员名单，禁止凭「行业公认龙头」补写任何企业名；
      (c) 🔴 **概念股剔除铁律**：整机/本体、以及各环节的代表企业，必须是**主营即该产品**的企业，
          严禁把跨界概念布局塞进来。实测反面案例：
            · 绿能慧充（充电桩/充换电）→ 不是低空整机厂；
@@ -426,6 +436,12 @@ class DataInterpreterAgent:
         # Compute specialized financial modeling & peer comparisons
         comps_matrix = self.engine.build_peer_comps_matrix(dataset, subject=request.subject)
         industry_chain_segments = self.engine.extract_industry_chain(dataset, request.subject, comps_matrix=comps_matrix)
+        try:
+            from chart_generator.chain_facts import try_load_chain_facts
+
+            self._active_chain_facts = try_load_chain_facts(request.subject)
+        except Exception:                                    # pragma: no cover
+            self._active_chain_facts = None
         # 产业链拓扑只有 LLM 语义通道能产出（确定性通道不做拓扑设计）；缺失时智能体3 回退 segments。
         industry_chain_topology: dict[str, Any] | None = None
         financial_ratios = self.engine.compute_financial_ratios(dataset)
@@ -598,6 +614,13 @@ class DataInterpreterAgent:
                         },
                         "evidence_index": fusion_evidence,
                         "limits": {"max_insights": request.max_insights},
+                        # 期间边界显式进 payload：让语义通道知道哪些是已完成年度、
+                        # 哪些是当年至今，避免把 2026 数据与 2021-2025 并列。
+                        "period_policy": {
+                            "as_of": request.as_of.isoformat(),
+                            "current_ytd_year": request.as_of.year,
+                            "rule": "当年至今数据不得与已完成年度写进同一趋势句；引用须标注期间",
+                        },
                         "skill_results": [item.model_dump(mode="json") for item in skill_results],
                         "analysis_methodologies": [
                             {
@@ -635,7 +658,7 @@ class DataInterpreterAgent:
                 # 升级（2026-10-07）：LLM 归纳与关键词抽取取并集，不再整体覆盖。
                 # 同名段合并（企业/产品/证据并集，stage 冲突留痕不消解）；
                 # 合并后无证据的段标 inferred 而非丢弃——宁可缺一块不假造一个节点。
-                if chain_segments is not None:
+                if chain_segments is not None and getattr(self, "_active_chain_facts", None) is None:
                     industry_chain_segments = self._merge_chain_segments(
                         industry_chain_segments, chain_segments,
                     )
@@ -761,6 +784,43 @@ class DataInterpreterAgent:
             total_companies=len({ref.entity for ref in evidence.values() if ref.domain == "companies" and ref.entity}),
             primary_periods=sorted({str(ref.period) for ref in evidence.values() if ref.domain == "financials" and ref.period}),
         )
+        # Reviewed full-chain structure is the single point of truth for
+        # segment attribution.  Rebuild here so a later LLM semantic merge
+        # cannot re-introduce guessed company names.  Comparison rules and
+        # caveats travel through knowledge_facts for A4's chapter writing.
+        chain_facts = getattr(self, "_active_chain_facts", None)
+        group_comparison: dict[str, Any] | None = None
+        if chain_facts is not None:
+            from chart_generator.chain_facts import chain_knowledge_facts
+            from data_interpreter.analysis_guard import build_group_comparison
+            from data_interpreter.models import KnowledgeFact
+
+            industry_chain_segments = self.engine.build_segments_from_chain_facts(
+                chain_facts, dataset, comps_matrix
+            )
+            group_comparison = build_group_comparison(
+                dataset, chain_facts, as_of=request.as_of
+            )
+            knowledge_facts = (
+                list(knowledge_facts)
+                + chain_knowledge_facts(chain_facts)
+                + [
+                    KnowledgeFact.model_validate(row)
+                    for row in group_comparison["knowledge_facts"]
+                ]
+            )
+
+        # Skill rules become executable here, once, right before the report is
+        # assembled.  Covers both the deterministic and the semantic channel.
+        from data_interpreter.analysis_guard import apply_guards
+
+        executive_summary, insights, guard_log = apply_guards(
+            executive_summary=executive_summary,
+            insights=insights,
+            as_of=request.as_of,
+        )
+        if guard_log:
+            data_quality_appendix["analysis_guards"] = guard_log
         report = InterpretationReport(
             report_id=report_id,
             subject=request.subject,
@@ -785,7 +845,7 @@ class DataInterpreterAgent:
             executive_summary=executive_summary,
             analysis_facts=analysis_facts,
             semantic_checks=semantic_checks,
-            chain_analysis=chain_analysis,
+            chain_analysis=group_comparison or chain_analysis,
             key_metrics=metrics,
             trends=trends,
             anomalies=anomalies,
@@ -947,7 +1007,10 @@ class DataInterpreterAgent:
         skipped = {}
         for index, skill in enumerate(selected_skills, 1):
             skill_evidence = self._filter_evidence_for_skill(skill, evidence, metrics, priority_ids=requirement_ids)
-            missing = missing_inputs(skill.name, skill_evidence, sensitivity_results)
+            missing = missing_inputs(
+                skill.name, skill_evidence, sensitivity_results,
+                chain_facts=bool(getattr(self, "_active_chain_facts", None)),
+            )
             if getattr(skill, "domains", ()) and not skill_evidence:
                 missing.insert(0, "缺少技能适用领域的证据")
             if missing:

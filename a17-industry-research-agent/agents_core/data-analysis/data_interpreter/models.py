@@ -415,7 +415,7 @@ class PeerCompsEntry(BaseModel):
     debt_ratio: float | None = None
     metric_provenance: dict[str, Any] = Field(default_factory=dict)
     peer_membership: str = "unknown"
-    valuation_tier: Literal["profitable", "loss_or_high_multiple"] = "profitable"
+    valuation_tier: Literal["profitable", "loss_or_high_multiple", "unknown"] = "profitable"
     valuation_note: str | None = None
     evidence_record_ids: list[str] = Field(default_factory=list)
 

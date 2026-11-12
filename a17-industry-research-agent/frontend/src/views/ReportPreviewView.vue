@@ -16,18 +16,7 @@ import {
  * 独立报告预览页（阶段五「预览完整报告」入口）。
  *
  * 取数：GET /runs/{runId} → stage_results.report_fusion 的产物与元信息。
- * 渲染：HTML 产物走 iframe + blob URL（报告自带 .limited-delivery {
-  margin-bottom: 12px;
-}
-
-.audit-details {
-  margin-top: 8px;
-  padding: 10px 14px;
-  border-left: 3px solid var(--el-color-warning);
-  background: var(--el-color-warning-light-9);
-}
-
-<style>，必须隔离，不能插进 Vue 模板）。
+ * 渲染：HTML 产物走 iframe + blob URL（报告自带 <style>，必须隔离，不能插进 Vue 模板）。
  *       报告 HTML 实测为纯静态（无 <script>、无外链资源），因此用最严格的 sandbox=""。
  */
 const route = useRoute()
@@ -325,6 +314,15 @@ onBeforeUnmount(revokeFrame)
 </template>
 
 <style scoped>
+.limited-delivery {
+  margin-bottom: 12px;
+}
+.audit-details {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
+}
 .preview-header-wrap {
   display: flex;
   justify-content: space-between;
