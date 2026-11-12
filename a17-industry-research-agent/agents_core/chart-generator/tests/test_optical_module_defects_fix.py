@@ -52,14 +52,14 @@ async def test_comps_matrix_prioritizes_top_core_entity_for_radar():
     # Note: 兆驰股份 is at index 2 (or 42 in real run)
     idx = 1
     for ent in ["兆驰股份", "新易盛", "中际旭创"]:
-        for m, val in [("revenue", 100), ("net_profit", 20), ("gross_margin", 30), ("roe", 15)]:
+        for m, val in [("debt_ratio", 60), ("net_margin", 20), ("gross_margin", 30), ("roe", 15)]:
             eid = f"E{idx}"
             evidence[eid] = EvidenceRef(
                 record_id=eid,
                 entity=ent,
                 metric=m,
                 value=val,
-                unit="亿元" if "margin" not in m and "roe" not in m else "%",
+                unit="%",
                 period="2025-12-31",
                 domain="financials",
             )

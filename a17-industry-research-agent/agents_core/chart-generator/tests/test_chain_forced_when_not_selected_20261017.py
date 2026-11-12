@@ -84,7 +84,7 @@ def test_chain_chart_is_forced_in_when_selection_skipped_it(monkeypatch):
     candidates = [_bar_candidate(i) for i in range(1, 7)]
 
     async def _fake_generate(request, record):
-        return ([], candidates, [])
+        return [], [c for c in candidates if not agent._verify_numeric_candidate(c, request.report)], []
 
     monkeypatch.setattr(agent, "_run_llm_generation", _fake_generate)
 
@@ -115,7 +115,7 @@ def test_chain_forced_from_topology_even_without_segments(monkeypatch):
     candidates = [_bar_candidate(i) for i in range(1, 7)]
 
     async def _fake_generate(request, record):
-        return ([], candidates, [])
+        return [], [c for c in candidates if not agent._verify_numeric_candidate(c, request.report)], []
 
     monkeypatch.setattr(agent, "_run_llm_generation", _fake_generate)
 
@@ -139,7 +139,7 @@ def test_no_forced_chain_when_no_chain_data(monkeypatch):
     candidates = [_bar_candidate(i) for i in range(1, 7)]
 
     async def _fake_generate(request, record):
-        return ([], candidates, [])
+        return [], [c for c in candidates if not agent._verify_numeric_candidate(c, request.report)], []
 
     monkeypatch.setattr(agent, "_run_llm_generation", _fake_generate)
 

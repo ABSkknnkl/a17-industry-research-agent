@@ -105,7 +105,7 @@ class ChainGraphSpec(BaseModel):
     nodes: list[ChainNode] = Field(default_factory=list)
     edges: list[ChainEdge] = Field(default_factory=list)
     anchor: str | None = None          # 中心锚点 node_id（公司锚定/中心辐射版式）
-    source: Literal["deterministic", "llm", "merged", "v2_bundle"] = "merged"
+    source: Literal["deterministic", "llm", "merged", "v2_bundle", "reviewed_profile"] = "merged"
     # ── 2026-10-21 口径（A 企业专属 / B 行业全景）─────────────────────────
     # 渲染层只消费这两个字段，不自己判口径（判定在 chart_generator.chain_scope）。
     # A 版品牌卡只有 1 家是正常的，所以本体盒下限必须可调，不能用固定 3。
@@ -131,7 +131,7 @@ def build_chain_graph_from_segments(
     segments: list[dict[str, Any]],
     *,
     subject: str = "",
-    source: Literal["deterministic", "llm", "merged"] = "merged",
+    source: Literal["deterministic", "llm", "merged", "reviewed_profile"] = "merged",
 ) -> ChainGraphSpec | None:
     """把 A2 的 industry_chain_segments 映射为 ChainGraphSpec。
 
@@ -164,12 +164,19 @@ def build_chain_graph_from_segments(
             name=name,
             stage=stage,
             items=items,
+            companies=list(raw.get("representative_companies") or []) if source == "reviewed_profile" else [],
+            description=str(raw.get("gap_declaration") or "") if source == "reviewed_profile" else "",
             evidence_record_ids=eids,
-            inferred=bool(raw.get("inferred")) or (not eids),
+            # 联网补来的企业未经原文核验，等级要透传，不能一律按 evidence 画。
+            source_tier=("web_unverified"
+                         if str(raw.get("source_tier") or "") == "web_unverified"
+                         else "evidence"),
+            inferred=source != "reviewed_profile" and (bool(raw.get("inferred")) or not eids),
         )
         clean.append(node)
         if stage not in seen_stages:
-            seen_stages[stage] = ChainStage(stage_id=stage, title=default_titles.get(stage, stage))
+            title = name if source == "reviewed_profile" else default_titles.get(stage, stage)
+            seen_stages[stage] = ChainStage(stage_id=stage, title=title)
 
     if not clean:
         return None
@@ -202,6 +209,6 @@ def build_chain_graph_from_segments(
         title=f"{subject}产业链结构" if subject else "产业链结构",
         stages=stages,
         nodes=clean,
-        edges=edges,
+        edges=[] if source == "reviewed_profile" else edges,
         source=source,
     )

@@ -1,0 +1,756 @@
+{
+  "theme": "新能源汽车",
+  "version": "2026-11-12.1",
+  "frame": "full_chain",
+  "source_archive": "/Users/Zhuanz1/Downloads/行业研究智能体-全链路系统 4/scratch/chain_template_eval/新能源汽车.chain_topology.json",
+  "spec": {
+    "title": "新能源汽车产业链关系全景图",
+    "subtitle": "上游资源与核心材料 → 中游电驱动与整车制造 → 下游用途场景，配套补能回收与车联网支撑",
+    "core_product": "新能源汽车整车",
+    "stages": [
+      {
+        "stage_id": "upstream",
+        "title": "上游：资源、核心材料与零部件"
+      },
+      {
+        "stage_id": "midstream",
+        "title": "中游：设计研发与制造集成"
+      },
+      {
+        "stage_id": "downstream",
+        "title": "下游：用途与采购主体"
+      },
+      {
+        "stage_id": "support",
+        "title": "配套：补能、回收与车联网"
+      }
+    ],
+    "groups": [],
+    "nodes": [
+      {
+        "node_id": "CH1",
+        "name": "正极材料",
+        "stage": "upstream",
+        "group": null,
+        "items": [
+          "三元正极",
+          "磷酸铁锂"
+        ],
+        "companies": [
+          "容百科技",
+          "当升科技"
+        ],
+        "description": "提供正极活性材料，决定能量密度与成本",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R1"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH2",
+        "name": "负极材料",
+        "stage": "upstream",
+        "group": null,
+        "items": [
+          "人造石墨",
+          "硅碳负极"
+        ],
+        "companies": [
+          "璞泰来",
+          "杉杉股份"
+        ],
+        "description": "提供负极活性材料，影响快充与循环寿命",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R1"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH3",
+        "name": "隔膜",
+        "stage": "upstream",
+        "group": null,
+        "items": [
+          "湿法隔膜",
+          "涂覆隔膜"
+        ],
+        "companies": [
+          "恩捷股份",
+          "星源材质"
+        ],
+        "description": "提供电池隔离层，保障安全与离子导通",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R2",
+          "R8"
+        ],
+        "inferred": false,
+        "bottleneck": true,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH4",
+        "name": "电解液",
+        "stage": "upstream",
+        "group": null,
+        "items": [
+          "六氟磷酸锂电解液",
+          "新型锂盐电解液"
+        ],
+        "companies": [
+          "天赐材料",
+          "新宙邦"
+        ],
+        "description": "提供锂离子传输介质，影响高低温性能",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R2"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH5",
+        "name": "结构件",
+        "stage": "upstream",
+        "group": null,
+        "items": [
+          "电池壳体",
+          "盖板",
+          "连接件"
+        ],
+        "companies": [
+          "科达利"
+        ],
+        "description": "提供电池封装与连接结构，支撑密封安全",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R2"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH6",
+        "name": "芯片与功率器件",
+        "stage": "upstream",
+        "group": null,
+        "items": [
+          "IGBT",
+          "SiC功率模块",
+          "车规MCU"
+        ],
+        "companies": [
+          "斯达半导",
+          "时代电气"
+        ],
+        "description": "提供电驱与整车控制核心芯片，高端依赖进口",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R3",
+          "R8"
+        ],
+        "inferred": false,
+        "bottleneck": true,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH7",
+        "name": "稀土永磁",
+        "stage": "upstream",
+        "group": null,
+        "items": [
+          "钕铁硼永磁体"
+        ],
+        "companies": [
+          "中科三环",
+          "金力永磁"
+        ],
+        "description": "提供驱动电机转子磁钢，受稀土开采配额与价格波动约束",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R3"
+        ],
+        "inferred": false,
+        "bottleneck": true,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH8",
+        "name": "动力电池",
+        "stage": "midstream",
+        "group": null,
+        "items": [
+          "电芯",
+          "方形电池包",
+          "圆柱电池包"
+        ],
+        "companies": [
+          "宁德时代",
+          "比亚迪",
+          "中创新航",
+          "亿纬锂能"
+        ],
+        "description": "提供车辆能量存储单元，是核心总成之一",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R4"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH9",
+        "name": "电机电控",
+        "stage": "midstream",
+        "group": null,
+        "items": [
+          "驱动电机",
+          "电机控制器",
+          "电驱动总成"
+        ],
+        "companies": [
+          "汇川技术",
+          "精进电动"
+        ],
+        "description": "提供电驱动力输出与精确控制，决定整车性能",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R4"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH10",
+        "name": "整车研发与品牌",
+        "stage": "midstream",
+        "group": null,
+        "items": [
+          "车型定义",
+          "整车架构",
+          "智能化软件"
+        ],
+        "companies": [
+          "比亚迪",
+          "长安汽车",
+          "赛力斯",
+          "特斯拉中国",
+          "蔚来",
+          "理想",
+          "小鹏"
+        ],
+        "description": "负责整车设计研发与品牌运营，定义产品和技术路线",
+        "is_core": true,
+        "emphasis": true,
+        "evidence_record_ids": [
+          "R5"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH11",
+        "name": "整车制造与集成",
+        "stage": "midstream",
+        "group": null,
+        "items": [
+          "整车总装",
+          "底盘系统",
+          "热管理集成"
+        ],
+        "companies": [
+          "比亚迪",
+          "长安汽车",
+          "赛力斯",
+          "特斯拉中国"
+        ],
+        "description": "承担整车生产制造与底盘/热管理等系统集成，实现产品落地",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R5"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH12",
+        "name": "私人消费",
+        "stage": "downstream",
+        "group": null,
+        "items": [
+          "家庭购车",
+          "智能出行"
+        ],
+        "companies": [],
+        "description": "个人消费者购车代步与出行升级需求",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R6"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "已落地",
+        "buyer": "个人消费者"
+      },
+      {
+        "node_id": "CH13",
+        "name": "网约与出行运营",
+        "stage": "downstream",
+        "group": null,
+        "items": [
+          "运营车辆",
+          "高频出行服务"
+        ],
+        "companies": [],
+        "description": "出行平台采购车辆用于日常运营，注重全生命周期成本",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R6"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "已落地",
+        "buyer": "出行平台"
+      },
+      {
+        "node_id": "CH14",
+        "name": "商用与物流车队",
+        "stage": "downstream",
+        "group": null,
+        "items": [
+          "电动公交",
+          "物流重卡",
+          "城市配送"
+        ],
+        "companies": [],
+        "description": "物流与客运企业批量采购，推动商用车电动化",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R6"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "已落地",
+        "buyer": "物流/客运企业"
+      },
+      {
+        "node_id": "CH15",
+        "name": "公共及专用场景",
+        "stage": "downstream",
+        "group": null,
+        "items": [
+          "公务用车",
+          "环卫与专用车",
+          "市政作业车"
+        ],
+        "companies": [],
+        "description": "公共机构与专用作业场景批量采购，属用途维度分类",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R6"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "已落地",
+        "buyer": "经销商集团/海外终端"
+      },
+      {
+        "node_id": "CH16",
+        "name": "充换电服务",
+        "stage": "support",
+        "group": null,
+        "items": [
+          "充电桩",
+          "换电站",
+          "补能运营"
+        ],
+        "companies": [
+          "特来电",
+          "星星充电",
+          "国家电网",
+          "宁德时代",
+          "比亚迪"
+        ],
+        "description": "为车辆提供充电与换电基础设施和运营服务",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R7"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH17",
+        "name": "电池回收",
+        "stage": "support",
+        "group": null,
+        "items": [
+          "退役电池拆解",
+          "梯次利用储能"
+        ],
+        "companies": [
+          "格林美",
+          "华友循环",
+          "比亚迪",
+          "宁德时代",
+          "中创新航"
+        ],
+        "description": "回收退役电池并梯次利用，形成资源闭环",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R7"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH18",
+        "name": "车联网运营",
+        "stage": "support",
+        "group": null,
+        "items": [
+          "车联网平台",
+          "远程监控",
+          "OTA服务"
+        ],
+        "companies": [
+          "华为",
+          "百度Apollo",
+          "特斯拉中国",
+          "蔚来",
+          "小鹏"
+        ],
+        "description": "提供车辆数据连接与智能运营服务，支撑迭代",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R7"
+        ],
+        "inferred": false,
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH19",
+        "name": "锂镍钴矿产资源",
+        "stage": "upstream",
+        "group": null,
+        "items": [
+          "锂辉石",
+          "盐湖卤水",
+          "硫酸镍",
+          "钴精矿"
+        ],
+        "companies": [
+          "赣锋锂业",
+          "天齐锂业",
+          "华友钴业",
+          "洛阳钼业"
+        ],
+        "description": "提供锂、镍、钴等上游资源，经冶炼盐类进入正极前驱体",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R1"
+        ],
+        "inferred": false,
+        "source_tier": "industry_common",
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      },
+      {
+        "node_id": "CH20",
+        "name": "底盘与热管理部件",
+        "stage": "upstream",
+        "group": null,
+        "items": [
+          "底盘结构件",
+          "内饰件",
+          "热管理阀件",
+          "电子膨胀阀"
+        ],
+        "companies": [
+          "拓普集团",
+          "三花智控"
+        ],
+        "description": "Tier1 零部件供应商，向整车总装提供底盘与热管理部件",
+        "is_core": false,
+        "emphasis": false,
+        "evidence_record_ids": [
+          "R2"
+        ],
+        "inferred": false,
+        "source_tier": "industry_common",
+        "bottleneck": false,
+        "phase": "",
+        "buyer": ""
+      }
+    ],
+    "edges": [
+      {
+        "source": "CH1",
+        "target": "CH8",
+        "label": "正极材料供给电芯制造",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH2",
+        "target": "CH8",
+        "label": "负极材料供给电芯制造",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH3",
+        "target": "CH8",
+        "label": "隔膜隔离正负极",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH4",
+        "target": "CH8",
+        "label": "电解液注入电芯",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH5",
+        "target": "CH8",
+        "label": "结构件封装电池",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH6",
+        "target": "CH11",
+        "label": "芯片与功率器件供应整车集成",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH7",
+        "target": "CH9",
+        "label": "永磁体供给电机转子",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH8",
+        "target": "CH11",
+        "label": "电池包供给整车总装",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH9",
+        "target": "CH11",
+        "label": "电驱动系统供给整车总装",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH10",
+        "target": "CH11",
+        "label": "设计图纸与工艺方案输出",
+        "flow": "technical",
+        "kind": "flow"
+      },
+      {
+        "source": "CH11",
+        "target": "CH12",
+        "label": "整车交付私人消费者",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH11",
+        "target": "CH13",
+        "label": "整车交付出行平台",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH11",
+        "target": "CH14",
+        "label": "整车交付物流客运企业",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH11",
+        "target": "CH15",
+        "label": "整车交付公共及专用场景",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH16",
+        "target": "CH12",
+        "label": "补能服务支撑私人用车",
+        "flow": "service",
+        "kind": "flow"
+      },
+      {
+        "source": "CH8",
+        "target": "CH17",
+        "label": "退役电池逆向回收",
+        "flow": "recycle",
+        "kind": "flow"
+      },
+      {
+        "source": "CH18",
+        "target": "CH10",
+        "label": "车联网数据反馈研发迭代",
+        "flow": "service",
+        "kind": "flow"
+      },
+      {
+        "source": "CH19",
+        "target": "CH1",
+        "label": "锂镍钴资源供给正极前驱体",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH19",
+        "target": "CH4",
+        "label": "锂盐供给电解液溶质",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH20",
+        "target": "CH11",
+        "label": "底盘与热管理部件供给整车总装",
+        "flow": "material",
+        "kind": "flow"
+      },
+      {
+        "source": "CH17",
+        "target": "CH19",
+        "label": "再生锂镍钴回流资源端",
+        "flow": "recycle",
+        "kind": "flow"
+      }
+    ],
+    "anchor": null,
+    "source": "merged",
+    "template_hint": "three_column_flow"
+  },
+  "annotations": {
+    "theme": "新能源汽车",
+    "frame": "full_chain",
+    "reviewed_at": "2026-11-12",
+    "subtitle": "上游资源与核心材料 → 中游电驱动与整车制造 → 下游用途场景，配套补能回收与车联网支撑",
+    "sources": {
+      "R1": "上游资源与正负极材料环节（行业公开资料）",
+      "R2": "电池材料、结构件与 Tier1 部件环节",
+      "R3": "芯片功率器件与稀土永磁环节",
+      "R4": "动力电池与电驱动总成环节",
+      "R5": "整车研发、品牌与制造环节",
+      "R6": "下游用途与采购主体场景",
+      "R7": "充换电、电池回收与车联网配套",
+      "R8": "瓶颈环节的供给约束判据"
+    },
+    "bottleneck_basis": {
+      "CH3": "高端涂覆隔膜与涂布设备国产化受限",
+      "CH6": "车规 IGBT / SiC 模块与 MCU 供给受限",
+      "CH7": "稀土永磁受开采配额与价格波动约束"
+    },
+    "bottleneck_rule": "瓶颈 = 关键材料/器件存在供给约束或国产替代未完成；本图按审定口径标注 3 处",
+    "phase_basis": "已落地 = 已有商业化规模运营；试点中 = 局部示范未规模化。本图下游四类场景均为已落地",
+    "flow_legend": {
+      "material": "物料 / 产品供给",
+      "technical": "技术 / 工艺输出",
+      "service": "服务 / 数据支撑",
+      "recycle": "逆向回收 / 资源闭环"
+    },
+    "vertical_integration": {
+      "比亚迪": [
+        "CH8",
+        "CH10",
+        "CH11",
+        "CH16",
+        "CH17"
+      ],
+      "特斯拉中国": [
+        "CH10",
+        "CH11",
+        "CH18"
+      ],
+      "中创新航": [
+        "CH8",
+        "CH17"
+      ],
+      "宁德时代": [
+        "CH8",
+        "CH16",
+        "CH17"
+      ],
+      "蔚来": [
+        "CH10",
+        "CH18"
+      ],
+      "小鹏": [
+        "CH10",
+        "CH18"
+      ]
+    },
+    "financial_sample": [
+      "比亚迪",
+      "长安汽车",
+      "赛力斯"
+    ],
+    "channel_note": "海外出口属地域渠道维度，可与任一用途场景叠加，故不列为并列的第四类下游；出口规模另见报告 Q2",
+    "sample_note": "图中企业为产业链环节代表主体，非财务样本全集；加「样本」标记者为报告 Q1 对比标的",
+    "evidence_note": "R1–R8 为环节级来源索引，图面标注供追溯；企业名单未逐家与原始披露核对"
+  }
+}

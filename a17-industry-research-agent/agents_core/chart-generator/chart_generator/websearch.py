@@ -1500,6 +1500,7 @@ async def apply_gap_hits(
     harden_support: bool | None = None,
     service_evidence: bool | None = None,
     defer_cap_for_core: bool = False,
+    keyword_fallback: bool = False,
 ) -> tuple[dict[str, Any], list[str]]:
     """把联网命中的**定性内容**回填到拓扑里——只补缺，不覆盖已有内容。
 
@@ -1658,6 +1659,53 @@ async def apply_gap_hits(
         matched_labels = {str(n.get("label") or "") for n in nodes}
         core_node = next((n for n in nodes if n.get("is_core")), None)
         absorbed_keys: set[str] = set()
+
+        # 粗段 vs 细分环节（2026-11-12）：审定结构卡把「正极/负极/隔膜/电解液」
+        # 合成一个上游段，而联网归纳返回的是细分环节名，字面永远不相等 →
+        # 企业全落进 leftovers。这里只对**空槽位**做关键词挂载，不挤占已有企业；
+        # 由 keyword_fallback 开关控制（默认关），不改变既有联网补漏行为。
+        if keyword_fallback:
+            for name, vals in llm_grouped.items():
+                if name in matched_labels or name == "*" or not vals:
+                    continue
+                core_name = name.split("：", 1)[-1].split(":", 1)[-1]
+                raw_tokens = [t for t in re.split(r"[、，,/\s]+", core_name) if len(t) >= 2]
+                tokens: list[str] = []
+                for token in raw_tokens:
+                    tokens.append(token)
+                    # 「正极材料」vs 粗段里的「正极」：去掉品类后缀再比一次
+                    for suffix in ("材料", "环节", "制造", "设备", "服务", "运营", "部件"):
+                        if token.endswith(suffix) and len(token) > len(suffix) + 1:
+                            tokens.append(token[:-len(suffix)])
+                    tokens.append(token[:3])
+                    tokens.append(token[:2])
+                generic = {"材料", "环节", "制造", "设备", "服务", "运营", "部件",
+                           "上游", "中游", "下游", "产业"}
+                tokens = [t for t in dict.fromkeys(tokens)
+                          if len(t) >= 2 and t not in generic]
+                if not tokens:
+                    continue
+                for node in nodes:
+                    if not _takes_companies(node):
+                        continue
+                    label = str(node.get("label") or "")
+                    if not any(token in label for token in tokens):
+                        continue
+                    existing = [str(c) for c in (node.get("companies") or []) if str(c).strip()]
+                    # 有据企业不挤占；只允许把多个细分环节累加进同一粗段
+                    # （第一次挂载后 source_tier 会变成 web_unverified）。
+                    if existing and node.get("source_tier") != "web_unverified":
+                        continue
+                    merged = list(dict.fromkeys(
+                        existing + [str(c) for c in vals if str(c).strip()]))
+                    node["companies"] = merged[:_cap_for(node)]
+                    node["source_tier"] = "web_unverified"
+                    absorbed_keys.add(name)
+                    matched_labels.add(name)
+                    notes.append(
+                        f"联网补漏：细分环节「{name}」按关键词挂到粗段「{label}」"
+                        f" {node['companies']}（tier=web_unverified）")
+                    break
         if core_node is not None and _takes_companies(core_node):
             extra: list[str] = []
             for name, vals in llm_grouped.items():
@@ -2061,6 +2109,7 @@ async def fill_chain_gaps(
     slot_query_mode: str | None = None,
     harden_support: bool | None = None,
     service_evidence: bool | None = None,
+    keyword_fallback: bool = False,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """产业链图联网补漏的**编排入口**（作用域唯一的调用点）。
 
@@ -2202,7 +2251,8 @@ async def fill_chain_gaps(
                                         # 🔴 2026-10-31：核心节点合并期不截断。
                                         # 角色判定（apply_company_fit）在 repair 里，
                                         # 早于它截断会让供应商占着品牌名额。
-                                        defer_cap_for_core=True)
+                                        defer_cap_for_core=True,
+                                        keyword_fallback=keyword_fallback)
     diag["notes"].extend(notes)
     return fixed, diag
 
@@ -2216,6 +2266,7 @@ async def supplement_segments_with_web(
     whitelist: set[str] | None = None,
     evidence_count: int | None = None,
     max_queries: int = 3,
+    keyword_fallback: bool = False,
 ) -> tuple[list[Any], dict[str, Any]]:
     """把博查补漏接到「A2 未产出拓扑 → segments 兜底」这条路径上（2026-10-17 B13）。
 
@@ -2281,6 +2332,7 @@ async def supplement_segments_with_web(
         call_llm=call_llm,
         max_queries=max_queries,
         evidence_count=evidence_count,
+        keyword_fallback=keyword_fallback,
     )
     for key in ("gaps", "queries", "hits", "topic_uncovered"):
         diag[key] = inner.get(key, diag[key])
@@ -2296,6 +2348,10 @@ async def supplement_segments_with_web(
             continue
         if isinstance(seg, dict):
             seg["representative_companies"] = comps
+            # 联网补到的企业未经原文核验，必须保留 web_unverified 证据等级，
+            # 否则建图时会被默认成 evidence，评审会误判为"已核验"。
+            if fixed_nodes[i].get("source_tier") == "web_unverified":
+                seg["source_tier"] = "web_unverified"
         else:
             try:
                 setattr(seg, "representative_companies", comps)

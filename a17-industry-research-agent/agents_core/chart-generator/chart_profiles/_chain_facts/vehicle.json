@@ -1,0 +1,79 @@
+{
+  "profile_key": "vehicle",
+  "related_profiles": ["battery"],
+  "status": "reviewed",
+  "frame": "full_chain",
+  "as_of": "2026-11-09",
+  "source": "人工审定：新能源汽车第 1 / 4 题标准答案正文",
+  "notes": "全链价值流视角。chart_profiles/vehicle.json 的 leading_upstream 是整车厂中心视角的供应商名单，不得用于环节归属判定。",
+  "segments": [
+    {
+      "stage": "upstream",
+      "name": "上游：锂、钴、镍等矿产与正极、负极、隔膜、电解液四大材料",
+      "key_products": ["锂", "钴", "镍", "正极材料", "负极材料", "隔膜", "电解液"],
+      "transmission": "成本波动沿链条向下传导",
+      "sample_status": "not_in_sample",
+      "gap_declaration": "上游资源与材料环节本次未纳入样本",
+      "companies": []
+    },
+    {
+      "stage": "midstream",
+      "name": "中游：动力电池、电机电控与功率半导体",
+      "key_products": ["动力电池", "电机电控", "功率半导体"],
+      "note": "动力电池单车价值量最高、技术密集度最强",
+      "sample_status": "in_sample",
+      "gap_declaration": "",
+      "companies": ["宁德时代", "亿纬锂能"]
+    },
+    {
+      "stage": "downstream",
+      "name": "下游：整车制造及充电、换电、电池回收等后市场运营",
+      "key_products": ["整车制造", "充电", "换电", "电池回收"],
+      "sample_status": "in_sample",
+      "gap_declaration": "",
+      "companies": ["比亚迪", "长安汽车", "赛力斯"]
+    }
+  ],
+  "entity_caveats": [
+    {
+      "company": "比亚迪",
+      "caveat": "采用垂直整合模式，自供电池与车规零部件；合并报表同时涵盖整车与制造业务，与另外两家纯整车厂相比存在口径差异",
+      "kind": "scope_mismatch"
+    }
+  ],
+  "comparison_groups": [
+    {"group": "电池组", "members": ["宁德时代", "亿纬锂能"]},
+    {"group": "整车组", "members": ["比亚迪", "长安汽车", "赛力斯"]}
+  ],
+  "comparison_rules": [
+    {"rule": "严格区分中游动力电池与下游整车两个环节分组，不得将五家公司放在同一维度统一排名", "kind": "hard"},
+    {"rule": "研发费用率的绝对值在电池组与整车组之间不具备直接可比性", "kind": "hard"},
+    {"rule": "后续横向比较以电池组与整车组分别展开，仅在讨论产业链利润分配时进行跨组对照", "kind": "hard"},
+    {"rule": "分析整车企业盈利能力时，须把与电池供应商的议价关系和供应链策略作为核心变量，不能只看合并报表毛利率", "kind": "hard"}
+  ],
+  "non_comparable_reasons": [
+    "商业模式不同：电池厂属制造业规模效应，盈利取决于良率、产能利用率与材料成本管控；整车厂是品牌、制造与渠道并重的重资产生意",
+    "研发方向不同：电池厂集中于化学体系、能量密度与产线工艺；整车厂集中于智能驾驶、电子电气架构与整车集成",
+    "现金流特征不同：电池厂对下游车企拥有账期话语权，经营现金流通常与利润同步甚至超前；整车厂受渠道打款节奏、库存与促销政策影响，现金流与利润可能阶段性背离"
+  ],
+  "interpretive_hypotheses": [
+    {
+      "id": "H1",
+      "statement": "整车与动力电池之间是议价权的动态博弈；样本期内中游头部电池企业盈利持续走强、下游整车除个别高端爆款外普遍承压，利润分配整体向电池龙头倾斜",
+      "kind": "hypothesis",
+      "requires_evidence": ["分组毛利率走势", "经营现金流与利润同步性"]
+    },
+    {
+      "id": "H2",
+      "statement": "该格局并非固化：整车厂可通过垂直整合把电池利润内部化、通过高端品牌溢价消化采购成本、通过多供应商策略打破单一电池厂依赖",
+      "kind": "hypothesis",
+      "requires_evidence": ["比亚迪合并报表口径", "多供应商导入披露"]
+    }
+  ],
+  "forbidden": [
+    "输出买卖或估值结论",
+    "把解释性假设写成数据已证明的结论",
+    "使用 industry_common / 模型先验补写企业名",
+    "把上游未纳入样本硬补成有代表企业的完整段落"
+  ]
+}

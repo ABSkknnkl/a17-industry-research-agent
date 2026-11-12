@@ -10,28 +10,28 @@ def make_test_report_with_core_and_outlier():
     evidence = {}
     rid = 1
     # 1. Core entity: 万丰奥威 with 4 metrics
-    for m, v in [("营收", 160.0), ("净利润", 10.0), ("ROE", 12.0), ("毛利率", 25.0)]:
+    for m, v in [("资产负债率", 60.0), ("净利率", 10.0), ("ROE", 12.0), ("毛利率", 25.0)]:
         evidence[f"R{rid}"] = {
             "record_id": f"R{rid}", "domain": "financials", "entity": "万丰奥威",
-            "metric": m, "value": v, "unit": "亿元" if "毛利" not in m and "ROE" not in m else "%",
+            "metric": m, "value": v, "unit": "%",
             "period": "2025-12-31"
         }
         rid += 1
 
     # 2. Outlier entity: 广电电气 with 4 metrics, but has high anomaly
-    for m, v in [("营收", 5.0), ("净利润", -2.0), ("ROE", -8.0), ("毛利率", 10.0)]:
+    for m, v in [("资产负债率", 5.0), ("净利率", -2.0), ("ROE", -8.0), ("毛利率", 10.0)]:
         evidence[f"R{rid}"] = {
             "record_id": f"R{rid}", "domain": "financials", "entity": "广电电气",
-            "metric": m, "value": v, "unit": "亿元" if "毛利" not in m and "ROE" not in m else "%",
+            "metric": m, "value": v, "unit": "%",
             "period": "2025-12-31"
         }
         rid += 1
 
     # 3. Third entity for peer context: 中信海直
-    for m, v in [("营收", 25.0), ("净利润", 3.0), ("ROE", 8.0), ("毛利率", 22.0)]:
+    for m, v in [("资产负债率", 25.0), ("净利率", 3.0), ("ROE", 8.0), ("毛利率", 22.0)]:
         evidence[f"R{rid}"] = {
             "record_id": f"R{rid}", "domain": "financials", "entity": "中信海直",
-            "metric": m, "value": v, "unit": "亿元" if "毛利" not in m and "ROE" not in m else "%",
+            "metric": m, "value": v, "unit": "%",
             "period": "2025-12-31"
         }
         rid += 1

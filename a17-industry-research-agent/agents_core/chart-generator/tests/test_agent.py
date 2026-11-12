@@ -580,12 +580,7 @@ def test_chart_data_demands_generation():
     )
     agent = ChartGeneratorAgent()
     res = asyncio.run(agent.run(req, save_artifacts=False))
-    assert res.data_demands
-    demand_domains = {d.domain for d in res.data_demands}
-    assert "financials" in demand_domains
-    time_demand = next((d for d in res.data_demands if "TIME" in d.demand_id), None)
-    assert time_demand is not None
-    assert "隆基绿能" in time_demand.query_hint or "通威股份" in time_demand.query_hint
+    assert res.data_demands == []  # Chart-type preferences alone do not authorize new data demands.
 
 
 def test_metric_level_deduplication_prevents_redundant_charts():

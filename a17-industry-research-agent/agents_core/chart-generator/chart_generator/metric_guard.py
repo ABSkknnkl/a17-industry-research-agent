@@ -276,6 +276,13 @@ METRIC_REGISTRY: dict[str, MetricMeta] = {
         preferred_unit="元",
         aliases=("每股收益", "基本每股收益", "EPS"),
     ),
+    "uav_registration": MetricMeta(
+        code="uav_registration",
+        canonical_name="无人机注册数量",
+        dimension=MetricDimension.COUNT_OR_SCALE,
+        preferred_unit="架",
+        aliases=("无人机注册量", "无人机注册数"),
+    ),
 }
 
 # Alias mapping lookup

@@ -865,11 +865,64 @@ def _render_lane_grid(spec: ChainGraphSpec, width: int = 1440) -> str:
     return "".join(p)
 
 
+def _render_reviewed_profile(spec: ChainGraphSpec, width: int) -> str:
+    """Render reviewed segments verbatim, including an explicit sample gap.
+
+    2026-11-12 合并项：这段来自 11-10 的「A2 审定结构卡」优化，不属于仓库
+    原版 lane_grid 模板。它只在 ``source=reviewed_profile`` 时生效；审定数据
+    底座用的是 ``source=merged``，仍走原模板。保留它是为了不回退已验收的
+    A3 优化（test_a3_reviewed_delivery 两个用例）。
+    """
+    margin, gap, canvas = 35, 28, 1440
+    column = (canvas - 2 * margin - 2 * gap) / 3
+    stage_labels = {"upstream": "上游", "midstream": "中游", "downstream": "下游"}
+    # 联网补位企业不是财务样本：没有 evidence_record_ids，也未与原始披露核对。
+    # 若仍写「本次样本」，会与同一张卡上的「样本说明 · 本次未纳入样本」自相矛盾。
+    has_web_basis = any(node.source_tier == "web_unverified" for node in spec.nodes)
+    cards = []
+    for node in spec.nodes:
+        products = "、".join(item for item in node.items if item not in node.companies)
+        companies = "、".join(node.companies)
+        company_label = "补充企业（联网未核验）" if node.source_tier == "web_unverified" else "本次样本"
+        lines = []
+        for label, value in (("环节", node.name), ("主要产品", products),
+                             (company_label, companies), ("样本说明", node.description)):
+            if value:
+                lines.extend(_wrap_text(f"{label} · {value}", 23, column - 44, max_lines=len(value) + 6))
+        cards.append((stage_labels.get(node.stage, node.stage), lines))
+    height = 200 + 36 * max((len(lines) for _, lines in cards), default=0)
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {canvas} {height}" '
+        f'width="{width}" height="{round(height * width / canvas)}" font-family="{_LG_CN}">',
+        f'<rect width="{canvas}" height="{height}" fill="#f8fafc"/>',
+        f'<text x="{margin}" y="58" font-size="36" font-weight="700" fill="#0f172a">{escape(spec.title)}</text>',
+    ]
+    for index, (label, lines) in enumerate(cards):
+        x = margin + index * (column + gap)
+        parts.append(f'<rect x="{x}" y="90" width="{column}" height="{height - 143}" '
+                     'rx="12" fill="#fff" stroke="#cbd5e1"/>')
+        parts.append(f'<text x="{x + 22}" y="136" font-size="29" font-weight="700" fill="#174877">{label}</text>')
+        for i, line in enumerate(lines):
+            parts.append(f'<text x="{x + 22}" y="{178 + i * 36}" font-size="23" fill="#172b4d">{escape(line)}</text>')
+    source_note = "来源：A2 已审产业链分层与样本。图中只展示环节分类。"
+    if has_web_basis:
+        source_note += "「补充企业」由联网检索补位，未与原始披露核对，不计入财务样本。"
+    parts.append(f'<text x="{margin}" y="{height - 22}" font-size="18" fill="#475569">'
+                 f'{escape(source_note)}</text></svg>')
+    return "".join(parts)
+
+
 def render_chain_svg(spec: ChainGraphSpec, width: int = 1440) -> str:
     """渲染产业链 SVG（唯一版式：三列目录式 ``lane_grid``）。
 
     2026-10-21：不再按 ``CHAIN_RENDER_MODE`` 分派。旧版默认回到 ``flow``（四列泳道 +
     逐条流线），任何没加载 ``.env`` 的调用方（批处理脚本、离线审计）都会静默退回错版式，
     实测把旧模板图当新图交付。现在只有一条路径，出图结果与运行环境无关。
+
+    2026-11-12 合并说明：上面 875 行 lane_grid 主体与 GitHub 仓库源码逐字节一致；
+    仅此函数末尾追加 11-10 的「A2 审定结构卡」分流，作为「优化过的智能体3」
+    合并项。审定数据底座（source=merged）与全部常规主题都走原模板。
     """
+    if spec.source == "reviewed_profile":
+        return _render_reviewed_profile(spec, width)
     return _render_lane_grid(spec, width)

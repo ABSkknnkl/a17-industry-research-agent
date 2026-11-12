@@ -181,7 +181,25 @@ def topology_system(subject: str = "") -> str:
             skeleton = structure_prompt_block(subject) + "\n\n"
         except Exception:                                # pragma: no cover
             skeleton = ""
-        extra = (industry_profile_block(subject) + "\n\n"
+        # Reviewed full-chain frame outranks the vehicle-centric drawing
+        # profile.  Inject it as an explicit override so A3's segment names
+        # and A4's report body use the same three-segment view.
+        chain_frame = ""
+        try:
+            from chart_generator.chain_facts import try_load_chain_facts
+
+            facts = try_load_chain_facts(subject)
+            if facts is not None:
+                lines = ["【已审定全链三段骨架（优先级高于下方画像词表；段名与环节归属以此为准）】"]
+                for seg in facts.segments:
+                    members = "、".join(seg.companies) if seg.companies else (seg.gap_declaration or "本次未纳入样本")
+                    lines.append(f"- {seg.stage}: {seg.name}；代表企业/状态：{members}")
+                lines.append("注意：画像中的 leading_upstream 是整车厂中心视角的供应商名单，不得据此判定环节归属。")
+                chain_frame = "\n".join(lines) + "\n\n"
+        except Exception:                                    # pragma: no cover
+            chain_frame = ""
+        extra = (chain_frame
+                 + industry_profile_block(subject) + "\n\n"
                  + skeleton
                  + ent_rule + extra)
     return TOPOLOGY_SYSTEM + "\n\n" + extra

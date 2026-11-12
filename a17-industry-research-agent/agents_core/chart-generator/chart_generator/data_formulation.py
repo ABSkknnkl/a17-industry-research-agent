@@ -6,6 +6,7 @@ dimensionally-homogeneous 2D Data Table before any visual rendering occurs.
 
 from __future__ import annotations
 import re
+import math
 
 from agents_core.financial_semantics import period_shape, measurement_period, comparable_key, metric_family
 
@@ -169,7 +170,7 @@ class DataFormulator:
         records: list[EvidenceRef] = []
         for eid in evidence_ids:
             ref = report.evidence_index.get(str(eid))
-            if ref and isinstance(ref.value, (int, float)) and not isinstance(ref.value, bool):
+            if ref and isinstance(ref.value, (int, float)) and not isinstance(ref.value, bool) and math.isfinite(ref.value):
                 records.append(ref)
 
         records = [r for r in records if "period_conflict" not in r.issues]
@@ -220,16 +221,14 @@ class DataFormulator:
 
         # 3. Check for specific chart types before generic dimension filtering
         # 3.1 Scatter / Bubble (requires 2 metrics across common entities)
-        if target_chart_type in ("scatter", "bubble") or (len(by_metric) >= 2 and target_chart_type not in ("bar", "horizontal_bar", "comparison_bar", "diverging_bar", "combo", "pie", "donut", "line", "area")):
+        if target_chart_type in ("scatter", "bubble") or (len(by_metric) >= 2 and target_chart_type is None):
             scatter_table = DataFormulator._try_formulate_scatter(by_metric, records)
             if scatter_table or target_chart_type in ("scatter", "bubble"):
                 return scatter_table
 
         # 3.2 Radar (single entity or entities with multi-dimensional profile)
         if target_chart_type == "radar":
-            radar_table = DataFormulator._try_formulate_radar(by_metric, records)
-            if radar_table:
-                return radar_table
+            return DataFormulator._try_formulate_radar(by_metric, records)
 
         # 3.3 Dual-Axis Combo Opportunity (e.g. Revenue + Margin, or Volume + Price, or Market Cap + Ratio)
         if target_chart_type in ("combo", "dual_axis", "line_bar", "dual_axis_combo") or (
@@ -398,8 +397,8 @@ class DataFormulator:
             point_evidence_ids={m_label: eids},
             point_periods={m_label: pds},
             quality_notes=[
-                f"比率对比图数值取自 A2 financial_ratios.{field}（最新披露期·G4 单一事实源）；"
-                f"点级证据限于已筛选的同口径同期记录，数值与源行一致"
+                f"比率按 A2 financial_ratios.{field} 披露精度保留两位小数；"
+                "源记录保留原始精度供逐点追溯。"
             ],
         )
 
@@ -559,7 +558,7 @@ class DataFormulator:
             raw_evidence_ids=[r.record_id for r in all_records if r.entity in qualified_entities],
             point_evidence_ids=point_eids,
             point_periods=point_pds,
-            quality_notes=["成功构建企业多维财务与估值画像雷达宽表"],
+            quality_notes=["各维度独立标注刻度，图形面积不用于比较。"],
         )
 
     @staticmethod

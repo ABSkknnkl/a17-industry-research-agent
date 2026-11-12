@@ -426,6 +426,41 @@ def detect_structure(subject: str) -> StructureSpec:
     text = str(subject or "")
     if not text:
         return _DISCRETE
+    # Reviewed full-chain structure outranks the heuristic discriminators.
+    # A3's LAYOUT_GUIDE only describes layout; the segment skeleton comes
+    # from StructureSpec.stages, so this is the single place to make A2/A3
+    # share the same three-segment view.  Industries without a reviewed card
+    # keep the original decision tree untouched (F1-F17 regression guards).
+    try:
+        from chart_generator.chain_facts import try_load_chain_facts
+
+        facts = try_load_chain_facts(text)
+    except Exception:                                        # pragma: no cover
+        facts = None
+    if facts is not None:
+        stages = tuple(
+            StageTemplate(
+                stage=seg.stage,
+                label=seg.name.split("：", 1)[-1][:8],
+                key_products=tuple(seg.key_products),
+                is_core=(seg.stage == "midstream"),
+                flow_out="material",
+            )
+            for seg in facts.segments
+            if seg.stage in ("upstream", "midstream", "downstream")
+        )
+        return StructureSpec(
+            key=f"reviewed_{facts.profile_key}",
+            name=f"{facts.profile_key} 已审定全链三段",
+            question="本主题已有人工审定的全链三段结构，不得另立骨架。",
+            signal_words=(),
+            stages=stages,
+            prompt_block=(
+                "【已审定全链三段骨架（固定槽位，不得增删、改名、并段）】\n"
+                + "\n".join(f"- {s.stage}: {s.label}" for s in stages)
+                + "\n证据不足的槽位只留空 companies，description 仍说明该环节做什么。"
+            ),
+        )
     # 复合词消歧优先：先看末尾词（医药电商→service、光伏设备→discrete、半导体材料→process）
     _cmp_key = _disambiguate_compound(text)
     if _cmp_key in STRUCTURE_MAP:

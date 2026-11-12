@@ -7,8 +7,14 @@ import math
 import re
 from typing import Any
 
+# 版本化展示配置（可选依赖：旧产物无 presentation 时自动走原有尺度）
+try:  # pragma: no cover - 单独加载 render.py 时的降级路径
+    from chart_generator import presentation as _presentation
+except Exception:
+    _presentation = None
+
 # Publication-grade institutional color palette (CICC / Top-Tier Research Style)
-PALETTE_PRIMARY = "#1B365D"       # CICC Deep Blue (中金深蓝)
+PALETTE_PRIMARY = "#155EEF"      # Research preview blue
 PALETTE_ACCENT = "#D52B1E"        # HSBC / Institutional Brick Red (汇丰砖红)
 PALETTE_AMBER = "#D97706"         # Resilient Amber / Gold (稳健琥珀)
 PALETTE_SECONDARY = "#0f766e"     # Deep Teal (深青)
@@ -55,6 +61,7 @@ METRIC_DISPLAY_NAMES: dict[str, str] = {
     "total_liabilities": "总负债",
     "total_equity": "净资产",
     "pe": "市盈率(PE)",
+    "pe_dynamic": "动态市盈率",
     "pe_ttm": "市盈率(PE TTM)",
     "pe_lyr": "市盈率(PE 静)",
     "pb": "市净率(PB)",
@@ -138,7 +145,7 @@ def clean_metric_label(name: str) -> str:
             if suffix in ("growth", "yoy", "ratio", "增长率"):
                 return f"{v}增长率"
             return f"{v}（{clean_metric_label(suffix)}）"
-    return cleaned
+    return " · ".join(cleaned.split(":"))
 
 
 def clean_chart_title(title: str) -> str:
@@ -215,6 +222,32 @@ def _format_num(val: float | None) -> str:
     if val == 0:
         return "0"
     return f"{val:.2g}"
+
+
+def _tick_text(val: float, ticks: list[float]) -> str:
+    """显式刻度按步长保留精度，避免 0.25 间隔被 _format_num 压成一位小数。"""
+    step = abs(ticks[1] - ticks[0]) if len(ticks) > 1 else 1.0
+    decimals = 0 if step >= 1 else 2
+    text = f"{val:.{decimals}f}"
+    return text.rstrip("0").rstrip(".") if decimals else text
+
+
+def _pres_ticks(option: dict[str, Any], index: int) -> list[float] | None:
+    return _presentation.explicit_ticks(index, option) if _presentation else None
+
+
+def _pres_label(option: dict[str, Any], index: int):
+    return _presentation.label_spec(index, option) if _presentation else None
+
+
+def _should_label(option: dict[str, Any], spec, index: int, count: int) -> bool:
+    return bool(_presentation and _presentation.should_label(spec, index, count))
+
+
+def _label_text(option: dict[str, Any], val: float, spec, *, suffix: str = "") -> str:
+    if _presentation and spec:
+        return _presentation.format_label(val, spec, suffix=suffix)
+    return _format_num(val)
 
 
 def _calc_ticks(low: float, high: float, num_ticks: int = 5) -> list[float]:
@@ -351,6 +384,9 @@ def render_svg(
 ) -> str:
     title = clean_chart_title(title)
     footnotes = footnotes or []
+    pres = _presentation.read_presentation(option) if _presentation else None
+    display_title = clean_chart_title(pres["short_title"]) if (pres and pres.get("short_title")) else title
+    pres_note = str(pres.get("note") or "") if pres else ""
 
     # Parse series and axes first to determine layout & margins
     x_axis = option.get("xAxis", {})
@@ -363,18 +399,34 @@ def render_svg(
     values = [v for v in values if v is not None]
 
     width, height = 960, 540
+    if (pres or {}).get("plot_height") == "compact":
+        # 少点短图：降低画布高度，避免三点序列被拉成大片空白
+        height = 400
     left, bottom = 90, 104
     right = 72 if (chart_type in ("line", "area") and len(series) > 1) else 48
     top = 86
 
     # 1. 规范主标题与图序
     fig_num = figure_number or option.get("figure_number")
-    if fig_num and not title.startswith("图"):
-        full_title = f"{fig_num}：{title}"
+    if fig_num and not display_title.startswith("图"):
+        full_title = f"{fig_num}：{display_title}"
     else:
-        full_title = title
+        full_title = display_title
 
-    title_lines = _wrap_svg_text(full_title, width - left - right - 145, 17)
+    observation = option.get("observation_range")
+    if isinstance(observation, dict) and observation.get("start") and observation.get("end"):
+        start, end = observation["start"], observation["end"]
+        date_label = f"观测期 {start}" if start == end else f"观测期 {start} 至 {end}"
+    else:
+        as_of_str = as_of or option.get("as_of", "")
+        date_label = str(as_of_str) if str(as_of_str).startswith(("截至", "报告期", "数据期", "时点")) else (
+            f"截至 {as_of_str}" if as_of_str else ""
+        )
+    if chart_type == "combo" and date_label.startswith("观测期 "):
+        period = date_label.removeprefix("观测期 ").replace(" 至 ", "至")
+        full_title = full_title.removesuffix(f"（{period}）")
+    date_width = sum(11 if ord(char) > 127 else 6.3 for char in date_label) + 24 if date_label else 0
+    title_lines = _wrap_svg_text(full_title, width - left - right - date_width, 17)
     header_extra = (len(title_lines) - 1) * 22
     # 16 SVG units prints at 8.5pt in the audited 510pt report column.
     # Wrap below the plot instead of shrinking source/notes to make them fit.
@@ -384,6 +436,8 @@ def render_svg(
     has_null_data = any((v.get("value") if isinstance(v, dict) else v) is None
                         for entry in series for v in entry.get("data", []))
     fn_items = list(dict.fromkeys(footnotes))
+    if pres_note and pres_note not in fn_items:
+        fn_items.append(pres_note)
     if has_null_data and not any("未披露" in str(fn) or "置空" in str(fn) for fn in fn_items):
         fn_items.append("数据提示：部分时段/指标未公开披露，已按置空处理并断线，杜绝虚假插值。")
     footer_runs = []
@@ -427,7 +481,6 @@ def render_svg(
         if m_unit:
             unit = m_unit.group(1)
 
-    as_of_str = as_of or option.get("as_of", "")
     source_str = source or option.get("source") or "公司公告、同花顺 iFinD、行业公开披露"
     takeaway = insight_takeaway or option.get("insight_goal") or option.get("takeaway") or ""
 
@@ -468,15 +521,14 @@ def render_svg(
         'style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',\'PingFang SC\',\'Noto Sans CJK SC\',sans-serif;">',
         f'<rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"/>',
         # Top Institutional Header Bar
-        f'<rect x="0" y="0" width="{width}" height="4" fill="#1B365D"/>',
+        f'<rect x="0" y="0" width="{width}" height="4" fill="#0A2540"/>',
         # Left-aligned publication title and subtitle
         "".join(f'<text x="{left}" y="{36+i*22}" font-size="17" font-weight="700" fill="#101828">{escape(line)}</text>' for i,line in enumerate(title_lines)),
     ]
     if subtitle:
         parts.append(f'<text x="{left}" y="{56+header_extra}" font-size="12" fill="#475467">{escape(subtitle)}</text>')
-    if as_of_str:
-        label = str(as_of_str) if str(as_of_str).startswith(("截至", "报告期", "数据期", "时点")) else f"截至 {as_of_str}"
-        parts.append(f'<text x="{width-right}" y="34" text-anchor="end" font-size="11" fill="#64748B">{escape(label)}</text>')
+    if date_label:
+        parts.append(f'<text x="{width-right}" y="34" text-anchor="end" font-size="11" fill="#64748B">{escape(date_label)}</text>')
     if unit:
         parts.append(f'<text x="{width-right}" y="{56+header_extra}" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：{escape(unit)}</text>')
 
@@ -650,7 +702,18 @@ def render_svg(
         r_high = max([0.0, *right_vals]) if right_vals else 100.0
         if r_high == r_low: r_high += 10.0
 
-        l_ticks, r_ticks = _calc_dual_ticks(l_low, l_high, r_low, r_high, 5)
+        pres_l = _pres_ticks(option, 0)
+        pres_r = _pres_ticks(option, 1)
+        explicit_axes = bool(
+            pres_l and pres_r
+            and pres_l[0] <= 0 <= pres_l[-1]
+            and pres_r[0] <= 0 <= pres_r[-1]
+        )
+        if explicit_axes:
+            # 展示配置已通过校验：左右轴分别按各自范围与步长绘制，零线共享底部
+            l_ticks, r_ticks = pres_l, pres_r
+        else:
+            l_ticks, r_ticks = _calc_dual_ticks(l_low, l_high, r_low, r_high, 5)
         l_span = l_ticks[-1] - l_ticks[0] or 1.0
         r_span = r_ticks[-1] - r_ticks[0] or 1.0
 
@@ -661,38 +724,43 @@ def render_svg(
             return top + (r_ticks[-1] - v) / r_span * plot_h
 
         # Left Y-axis (Gridlines + Ticks) and Synchronized Right Y-axis Ticks
-        for i, tv in enumerate(l_ticks):
+        # 网格跟主轴；右轴刻度按右轴自己的数值位置绘制，不再复用左轴像素位置。
+        for tv in l_ticks:
             ty = to_ly(tv)
             parts.append(f'<line x1="{left}" y1="{ty:.1f}" x2="{width-right}" y2="{ty:.1f}" stroke="#eaecf0" stroke-dasharray="3 3"/>')
-            l_tick_str = _format_num(tv)
+            l_tick_str = _tick_text(tv, l_ticks) if explicit_axes else _format_num(tv)
             if l_is_rate and not l_tick_str.endswith("%"):
                 l_tick_str += "%"
             parts.append(f'<text x="{left-12}" y="{ty+4:.1f}" text-anchor="end" font-size="11" fill="#667085">{l_tick_str}</text>')
-            if i < len(r_ticks):
-                r_tick_str = _format_num(r_ticks[i])
-                if r_is_rate and not r_tick_str.endswith("%"):
-                    r_tick_str += "%"
-                parts.append(f'<text x="{width-right+10}" y="{ty+4:.1f}" text-anchor="start" font-size="11" fill="#0f766e">{r_tick_str}</text>')
+        for tv in r_ticks:
+            ry = to_ry(tv)
+            r_tick_str = _tick_text(tv, r_ticks) if explicit_axes else _format_num(tv)
+            if r_is_rate and not r_tick_str.endswith("%"):
+                r_tick_str += "%"
+            parts.append(f'<text x="{width-right+10}" y="{ry+4:.1f}" text-anchor="start" font-size="11" fill="#0f766e">{r_tick_str}</text>')
 
         # Baseline (Exact zero line, aligned across both axes)
         zero_ly = to_ly(0.0)
         parts.append(f'<line x1="{left}" y1="{zero_ly:.1f}" x2="{width-right}" y2="{zero_ly:.1f}" stroke="#475467" stroke-width="1.5"/>')
 
-        # Legend at top right with dynamic item spacing
-        leg_items = []
+        # Match each legend glyph to its plotted mark and display both axis units.
+        legend_items = []
         for i, s in enumerate(series):
-            scolor = SERIES_COLORS[i % len(SERIES_COLORS)]
-            sname = str(s.get("name", f"指标{i+1}"))
-            sname = sname if len(sname) <= 16 else (sname[:14] + "...")
-            w = 16 + len(sname) * 11.5
-            leg_items.append((scolor, sname, w))
-        total_leg_w = sum(w + 16 for _, _, w in leg_items) - 16 if leg_items else 0
-        curr_leg_x = max(left + 120, width - right - total_leg_w)
-        for scolor, sname, w in leg_items:
-            parts.append(f'<rect x="{curr_leg_x:.1f}" y="48" width="10" height="10" rx="2" fill="{scolor}"/>')
-            parts.append(f'<text x="{curr_leg_x + 14:.1f}" y="57" font-size="10.5" font-weight="600" fill="#475467">{escape(sname)}</text>')
-            curr_leg_x += w + 16
-
+            is_line = s in right_series
+            color = PALETTE_ACCENT if is_line else SERIES_COLORS[i % len(SERIES_COLORS)]
+            name = str(s.get("name", f"指标{i + 1}"))
+            axis, series_unit = ("右轴", r_unit) if is_line else ("左轴", l_unit)
+            name = f"{name}（{axis}·{series_unit}）" if series_unit else f"{name}（{axis}）"
+            legend_items.append((color, name, 32 + len(name) * 11.5, is_line))
+        curr_leg_x = max(left, width - right - sum(item[2] for item in legend_items))
+        for color, name, item_width, is_line in legend_items:
+            if is_line:
+                parts.append(f'<line x1="{curr_leg_x:.1f}" y1="53" x2="{curr_leg_x + 14:.1f}" y2="53" stroke="{color}" stroke-width="2"/>')
+                parts.append(f'<circle cx="{curr_leg_x + 7:.1f}" cy="53" r="2.5" fill="white" stroke="{color}" stroke-width="1.5"/>')
+            else:
+                parts.append(f'<rect x="{curr_leg_x:.1f}" y="48" width="10" height="10" rx="2" fill="{color}"/>')
+            parts.append(f'<text x="{curr_leg_x + 18:.1f}" y="57" font-size="10.5" font-weight="600" fill="#475467">{escape(name)}</text>')
+            curr_leg_x += item_width
 
         n = max(len(labels), max((len(s.get("data", [])) for s in series), default=1))
         step_x = plot_w / max(n, 1)
@@ -726,7 +794,15 @@ def render_svg(
                 bh = max(abs(to_ly(val) - zero_ly), 2.0)
                 bar_pt_by_idx[i] = (bx + bar_w / 2, by, bh)
                 parts.append(f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w:.1f}" height="{bh:.1f}" rx="3" fill="{scolor}"/>')
-                if show_bar_text:
+                bar_lspec = _pres_label(option, series.index(s)) if pres else None
+                show_this = show_bar_text and (
+                    bar_lspec is None or _should_label(option, bar_lspec, i, len(data))
+                )
+                if show_this:
+                    if bar_lspec:
+                        bar_text = _label_text(option, val, bar_lspec)
+                    else:
+                        bar_text = f"{val:,.2f}".rstrip("0").rstrip(".") if l_unit == "万辆" else _format_num(val)
                     collides = False
                     line_above_bar = False
                     if i in line_pt_by_idx:
@@ -738,13 +814,13 @@ def render_svg(
                     if collides:
                         if line_above_bar:
                             if bh >= 24:
-                                parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by+15:.1f}" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">{_format_num(val)}</text>')
+                                parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by+15:.1f}" text-anchor="middle" font-size="10" font-weight="700" fill="#ffffff">{bar_text}</text>')
                             else:
-                                parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by+15:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">{_format_num(val)}</text>')
+                                parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by+15:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">{bar_text}</text>')
                         else:
-                            parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by-6:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{_format_num(val)}</text>')
+                            parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by-6:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{bar_text}</text>')
                     else:
-                        parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by-5:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{_format_num(val)}</text>')
+                        parts.append(f'<text x="{bx+bar_w/2:.1f}" y="{by-5:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{bar_text}</text>')
 
         # Draw Right Series (Lines) - connectNulls: False (segmented polyline)
         for si, s in enumerate(right_series):
@@ -781,7 +857,14 @@ def render_svg(
                 for pt_idx, (x, yy, val, orig_i) in enumerate(seg):
                     if not dense or orig_i in key_indices or pt_idx == 0 or pt_idx == len(seg) - 1:
                         parts.append(f'<circle cx="{x:.1f}" cy="{yy:.1f}" r="4" fill="#ffffff" stroke="{scolor}" stroke-width="2.5"/>')
-                        val_str = f"{val:.1f}%" if r_is_rate else (_format_num(val) if abs(val) >= 10000 else f"{val:.1f}")
+                        line_lspec = _pres_label(option, series.index(s)) if pres else None
+                        label_allowed = line_lspec is None or _should_label(
+                            option, line_lspec, orig_i, len(data)
+                        )
+                        if line_lspec:
+                            val_str = _label_text(option, val, line_lspec, suffix="%" if r_is_rate else "")
+                        else:
+                            val_str = f"{val:.1f}%" if r_is_rate else (_format_num(val) if abs(val) >= 10000 else f"{val:.1f}")
                         collides = False
                         line_above_bar = False
                         if orig_i in bar_pt_by_idx:
@@ -794,7 +877,8 @@ def render_svg(
                             lbl_y = (yy - 10.0) if line_above_bar else (yy + 16.0)
                         else:
                             lbl_y = yy - 8.0
-                        parts.append(f'<text x="{x:.1f}" y="{lbl_y:.1f}" text-anchor="middle" font-size="10" font-weight="700" fill="{scolor}" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{val_str}</text>')
+                        if label_allowed:
+                            parts.append(f'<text x="{x:.1f}" y="{lbl_y:.1f}" text-anchor="middle" font-size="10" font-weight="700" fill="{scolor}" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">{val_str}</text>')
 
         # Every bar identifies its category; wrap complete names, never skip them.
         for idx, raw_lbl in enumerate(labels):
@@ -1230,12 +1314,17 @@ def render_svg(
 
     elif chart_type in ("line", "area", "bar", "comparison_bar"):
         # Publication vertical line / area / bar chart with complete Y-axis scale and grid
-        low_val = min([0.0, *values]) if values else 0.0
-        high_val = max([0.0, *values]) if values else 1.0
-        if high_val == low_val:
-            high_val += 1.0
-
-        ticks = _calc_ticks(low_val, high_val, 5)
+        pres_line_ticks = _pres_ticks(option, 0)
+        explicit_line_axis = bool(pres_line_ticks and len(pres_line_ticks) > 1)
+        if explicit_line_axis:
+            # 折线局部刻度 / 通用规则显式范围：option 与 SVG 共用同一套轴定义
+            ticks = pres_line_ticks
+        else:
+            low_val = min([0.0, *values]) if values else 0.0
+            high_val = max([0.0, *values]) if values else 1.0
+            if high_val == low_val:
+                high_val += 1.0
+            ticks = _calc_ticks(low_val, high_val, 5)
         scale_low = ticks[0]
         scale_high = ticks[-1]
         scale_span = scale_high - scale_low or 1.0
@@ -1247,11 +1336,22 @@ def render_svg(
         for tv in ticks:
             ty = to_y(tv)
             parts.append(f'<line x1="{left}" y1="{ty:.1f}" x2="{width-right}" y2="{ty:.1f}" stroke="#eaecf0" stroke-dasharray="3 3"/>')
-            parts.append(f'<text x="{left-12}" y="{ty+4:.1f}" text-anchor="end" font-size="11" fill="#667085">{_format_num(tv)}</text>')
+            tick_str = _tick_text(tv, ticks) if explicit_line_axis else _format_num(tv)
+            parts.append(f'<text x="{left-12}" y="{ty+4:.1f}" text-anchor="end" font-size="11" fill="#667085">{tick_str}</text>')
 
-        # Zero baseline
-        zero_y = to_y(0.0)
-        parts.append(f'<line x1="{left}" y1="{zero_y:.1f}" x2="{width-right}" y2="{zero_y:.1f}" stroke="#475467" stroke-width="1.5"/>')
+        # 参考线（业务依据由展示配置给出，中性虚线，不参与数据契约）
+        if pres:
+            for ref in pres.get("reference_lines", []):
+                ref_val = ref.get("value")
+                if isinstance(ref_val, (int, float)) and scale_low <= ref_val <= scale_high:
+                    ref_y = to_y(float(ref_val))
+                    parts.append(f'<line x1="{left}" y1="{ref_y:.1f}" x2="{width-right}" y2="{ref_y:.1f}" stroke="{PALETTE_SLATE}" stroke-width="1" stroke-dasharray="5 5"/>')
+                    parts.append(f'<text x="{width-right-4}" y="{ref_y-5:.1f}" text-anchor="end" font-size="10" fill="{PALETTE_SLATE}">{_tick_text(float(ref_val), ticks)} 参考线</text>')
+
+        # Zero baseline：局部刻度不含 0 时不画零线，面积图以刻度下界为基线
+        zero_y = to_y(0.0) if scale_low <= 0 <= scale_high else to_y(scale_low)
+        if scale_low <= 0 <= scale_high:
+            parts.append(f'<line x1="{left}" y1="{zero_y:.1f}" x2="{width-right}" y2="{zero_y:.1f}" stroke="#475467" stroke-width="1.5"/>')
 
         n = max(len(labels), max((len(s.get("data", [])) for s in series), default=1))
         step_x = plot_w / max(n, 1)
@@ -1340,8 +1440,12 @@ def render_svg(
                         for x, yy, val, orig_i in seg:
                             parts.append(f'<circle cx="{x:.1f}" cy="{yy:.1f}" r="4" fill="#ffffff" stroke="{s_color}" stroke-width="2"/>')
                             show_pt_text = (len(nums) <= 6 or orig_i == 0 or orig_i == len(nums) - 1) if len(series) <= 1 else False
+                            pt_lspec = _pres_label(option, si) if pres else None
+                            if pt_lspec:
+                                show_pt_text = _should_label(option, pt_lspec, orig_i, len(nums))
                             if show_pt_text:
-                                parts.append(f'<text x="{x:.1f}" y="{yy-8:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="{s_color}">{_format_num(val)}</text>')
+                                pt_text = _label_text(option, val, pt_lspec) if pt_lspec else _format_num(val)
+                                parts.append(f'<text x="{x:.1f}" y="{yy-8:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="{s_color}">{pt_text}</text>')
             else:
                 bar_w = min(step_x * 0.65 / max(len(series), 1), 42.0)
                 for i, val in enumerate(nums):
@@ -1354,7 +1458,10 @@ def render_svg(
                     by = min(to_y(val), zero_y)
                     bh = max(abs(to_y(val) - zero_y), 1.0)
                     parts.append(f'<rect x="{bx:.1f}" y="{by:.1f}" width="{bar_w-2:.1f}" height="{bh:.1f}" rx="3" fill="{s_color}"/>')
-                    parts.append(f'<text x="{bx+bar_w/2-1:.1f}" y="{by-5:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">{_format_num(val)}</text>')
+                    bar_lspec = _pres_label(option, si) if pres else None
+                    bar_text = _label_text(option, val, bar_lspec) if bar_lspec else _format_num(val)
+                    if bar_lspec is None or _should_label(option, bar_lspec, i, len(nums)):
+                        parts.append(f'<text x="{bx+bar_w/2-1:.1f}" y="{by-5:.1f}" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">{bar_text}</text>')
 
         # Direct Endpoint Labels for Multi-Line Charts (1D vertical anti-collision)
         if chart_type == "line" and len(last_valid_pts) > 1:
@@ -1380,7 +1487,11 @@ def render_svg(
                 p_color = p["color"]
                 p_name = p["name"]
                 p_val = p.get("val")
-                val_str = f" {_format_num(p_val)}" if p_val is not None else ""
+                end_spec = _pres_label(option, p["si"]) if pres else None
+                if p_val is not None and end_spec:
+                    val_str = f" {_label_text(option, p_val, end_spec, suffix='%')}"
+                else:
+                    val_str = f" {_format_num(p_val)}" if p_val is not None else ""
                 if abs(ty - ly) > 3.0:
                     parts.append(f'<path d="M {lx+4:.1f} {ly:.1f} L {lx+8:.1f} {ty:.1f}" stroke="{p_color}" stroke-width="1" stroke-opacity="0.45" fill="none"/>')
                 parts.append(f'<text x="{lx+10:.1f}" y="{ty+3.5:.1f}" font-size="10.5" font-weight="700" fill="{p_color}">{escape(p_name)}{val_str}</text>')
@@ -1426,7 +1537,15 @@ def render_svg(
         for yi, y_lab in enumerate(y_cats):
             parts.append(f'<text x="{hm_left-10:.1f}" y="{top + yi*ch + ch*0.62:.1f}" text-anchor="end" font-size="11.5" font-weight="600" fill="#344054">{escape(str(y_lab)[:12])}</text>')
             for xi, x_lab in enumerate(x_cats):
-                val = cell_map.get((xi, yi), 50.0)
+                val = cell_map.get((xi, yi))
+                if val is None:
+                    cx = hm_left + xi * cw
+                    cy = top + yi * ch
+                    parts.append(f'<rect x="{cx + 1.5:.1f}" y="{cy + 1.5:.1f}" width="{cw - 3:.1f}" '
+                                 f'height="{ch - 3:.1f}" rx="4" fill="#e2e8f0"/>')
+                    parts.append(f'<text x="{cx + cw / 2:.1f}" y="{cy + ch * 0.62:.1f}" '
+                                 'text-anchor="middle" font-size="11" fill="#64748b">—</text>')
+                    continue
                 ratio = max(0.0, min(1.0, (val - v_min) / v_span))
                 r = int(240 - ratio * (240 - 21))
                 g = int(253 - ratio * (253 - 94))
@@ -1615,31 +1734,50 @@ def render_svg(
 
 
 def render_preview(subject: str, charts: list[tuple[str, str]]) -> str:
-    cards = "".join(
-        f'<section style="background:white;border:1px solid #eaecf0;border-radius:12px;padding:20px;margin:24px 0;box-shadow:0 2px 6px rgba(16,24,40,0.04);">'
-        f'<div style="font-size:16px;font-weight:700;color:#101828;margin-bottom:12px;">{escape(title)}</div>{svg}</section>'
-        for title, svg in charts
-    )
-    return f'''<!doctype html>
+    cards = []
+    for index, (title, svg) in enumerate(charts, 1):
+        size = " wide" if any(word in title for word in ("产业链", "趋势", "走势", "及同比增速")) else ""
+        cards.append(
+            f'<section class="chart-card{size}">'
+            f'<header><span>图 {index:02d}</span><h2>{escape(title)}</h2></header>{svg}</section>'
+        )
+    return f"""<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{escape(subject)} · 出版级可视化图表总览</title>
+<title>{escape(subject)} · 图表预览</title>
 <style>
-  body {{ margin:0; background:#f8fafc; color:#101828; font:14px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; padding:40px; }}
-  main {{ max-width:1040px; margin:auto; }}
-  h1 {{ font-size:26px; font-weight:800; color:#101828; margin-bottom:8px; }}
-  p.desc {{ font-size:14px; color:#475467; margin-bottom:28px; }}
-  svg {{ width:100%; height:auto; display:block; }}
+  :root {{ --navy:#0a2540; --blue:#155eef; --teal:#0f766e; --line:#e2e8f0; }}
+  * {{ box-sizing:border-box; }}
+  body {{ margin:0; padding:clamp(12px,3vw,36px); color:var(--navy); background:#f8fafc;
+    font:14px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; }}
+  main {{ max-width:1360px; margin:auto; }}
+  .hero {{ border-top:4px solid var(--blue); background:var(--navy); color:white;
+    padding:22px 26px; border-radius:8px; margin-bottom:18px; }}
+  .hero p {{ margin:0; color:#cbd5e1; }}
+  h1 {{ font-size:clamp(22px,3vw,30px); margin:5px 0; }}
+  .charts {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }}
+  .chart-card {{ min-width:0; background:white; border:1px solid var(--line); border-radius:8px;
+    padding:12px; break-inside:avoid; overflow:auto; }}
+  .chart-card.wide {{ grid-column:1/-1; }}
+  .chart-card header {{ display:flex; align-items:baseline; gap:10px; padding:4px 5px 10px; }}
+  .chart-card header span {{ flex:none; color:var(--teal); font-weight:700; }}
+  h2 {{ font-size:15px; line-height:1.4; margin:0; }}
+  .chart-card svg {{ width:100%; height:auto; display:block; }}
+  @media (max-width:800px) {{ .charts {{ grid-template-columns:minmax(0,1fr); }} }}
+  @media (max-width:560px) {{ .chart-card svg {{ min-width:540px; }} }}
+  @media print {{
+    body {{ background:white; padding:0; }}
+    .charts {{ display:block; }}
+    .chart-card {{ margin:0 0 12px; overflow:visible; }}
+    .chart-card svg {{ min-width:0; }}
+  }}
 </style>
 </head>
-<body>
-<main>
-  <h1>{escape(subject)} · 自动可视化图表集</h1>
-  <p class="desc">基于机构研报视觉规范生成，具备完整纵轴刻度、水平防截断对标、数值标签及真实数据溯源。</p>
-  {cards or '<p style="color:#667085;">当前数据未达到出版级图表生成要求，已安全抑制。</p>'}
-</main>
-</body>
-</html>'''
-
+<body><main>
+  <header class="hero"><p>行业研究 · 图表预览</p><h1>{escape(subject)}</h1>
+    <p>{len(charts)} 张图 · 观测期间、单位和证据说明随图展示</p></header>
+  <div class="charts">{''.join(cards) or '<p>本次无满足证据条件的图表。</p>'}</div>
+</main></body>
+</html>"""

@@ -462,7 +462,7 @@ class EChartsCompiler:
             "radar": {"indicator": indicators},
             "series": [
                 {
-                    "name": title,
+                    "name": next(iter(table.series_data)) if len(table.series_data) == 1 else title,
                     "type": "radar",
                     "data": series_data,
                 }
