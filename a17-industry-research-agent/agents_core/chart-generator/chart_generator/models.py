@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 ChartType = Literal[
     "line", "bar", "comparison_bar", "horizontal_bar", "diverging_bar", "pie", "donut", "radar", "industry_chain",
@@ -97,16 +97,26 @@ class InterpretationReport(BaseModel):
     comps_table: dict[str, Any] | None = None
     anomalies: list[dict[str, Any]] = Field(default_factory=list)
     industry_chain_segments: list[dict[str, Any]] = Field(default_factory=list)
+    chain_analysis: dict[str, Any] | None = None
     financial_ratios: list[dict[str, Any]] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
 
 class ChartPreferences(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
     max_charts: int | None = Field(default=None, ge=0)
+    prefer_combined: bool = False
     requested_types: list[ChartType] = Field(default_factory=list)
     theme: Literal["research_light", "research_dark", "warm"] = "research_light"
     include_advanced: bool = True
+
+    @field_validator("requested_types", mode="before")
+    @classmethod
+    def normalize_requested_types(cls, value: Any) -> Any:
+        if not isinstance(value, list):
+            return value
+        return ["industry_chain" if isinstance(item, str) and item.strip().casefold() == "chain" else item
+                for item in value]
 
 
 def extract_dataset_industry(dataset: Any) -> str | None:
@@ -200,6 +210,11 @@ class ChartGenerationRequest(BaseModel):
     report: InterpretationReport
     input_dataset: dict[str, Any] | None = None
     preferences: ChartPreferences = Field(default_factory=ChartPreferences)
+    question_ids: list[str] = Field(default_factory=list)
+    # A3 用户问题驱动选图（方案 3.1 / 5.5）：后端从执行快照读取模式，
+    # 把题面卡以 dict 形式透传，避免与旧 question_ids（行业预设编号）混用。
+    question_plan_mode: str = "off"
+    question_briefs: list[dict[str, Any]] = Field(default_factory=list)
     # 2026-10-21：用户是否**明确**需要产业链图（见 chart_generator.chain_intent）。
     #   True  → 出产业链图 + 调豆包
     #   False → **不出产业链图**（改出别的图），也不调豆包
@@ -208,6 +223,7 @@ class ChartGenerationRequest(BaseModel):
     want_industry_chain: bool | None = None
     # focus_points 是否为系统默认注入（adapters.py 的默认值含"产业链"，
     # 不该被当成用户意图）。默认 False 即"视为用户自填"。
+    focus_points: list[str] = Field(default_factory=list)
     defaulted_focus: bool = False
     # 产业链图口径（2026-10-21）：
     #   "entity"   = 企业专属版：主题点名一家公司，品牌卡恰好 1 家（不补竞品）
@@ -230,7 +246,7 @@ class ChartSpec(BaseModel):
     chart_type: ChartType
     status: Literal["ready"] = "ready"
     option: dict[str, Any]
-    evidence_ids: list[str] = Field(min_length=1)
+    evidence_ids: list[str]
     # 点级证据：与 option 中各数据点对应的 record_id，用于逐点溯源。
     point_evidence_ids: list[str] = Field(default_factory=list)
     data_contract: dict[str, Any] = Field(default_factory=dict)
@@ -265,6 +281,16 @@ class ChartSpec(BaseModel):
     supplement_html_uri: str | None = None
     supplement_note: str | None = None
 
+    @model_validator(mode="after")
+    def require_grounded_chart(self) -> "ChartSpec":
+        if not self.evidence_ids and not (
+            self.chart_type == "industry_chain"
+            and self.chain_graph
+            and self.data_contract.get("structure_source") == "a2_reviewed_segments"
+        ):
+            raise ValueError("图表缺少证据引用")
+        return self
+
 
 class SuppressedChart(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -278,6 +304,7 @@ class SuppressedChart(BaseModel):
 class DataSupplementDemand(BaseModel):
     model_config = ConfigDict(extra="forbid")
     demand_id: str
+    requirement_id: str | None = None
     target_chart_type: ChartType
     target_title: str
     entities: list[str] = Field(default_factory=list)
@@ -305,6 +332,97 @@ class AppliedSkill(BaseModel):
     status: Literal["applied"] = "applied"
 
 
+class QuestionBrief(BaseModel):
+    """用户题面卡（方案 5.2）：由 focus_questions 确定性生成，题号由系统分配，不由 LLM 生成。
+
+    优先级由关系标签按规则计算；显式禁图与必出图分别标记，避免模型擅自取消用户要求。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    question_id: str
+    text: str
+    relation_tags: list[str] = Field(default_factory=list)
+    metrics: list[str] = Field(default_factory=list)
+    entities: list[str] = Field(default_factory=list)
+    years: list[int] = Field(default_factory=list)
+    period_types: list[str] = Field(default_factory=list)
+    scopes: list[str] = Field(default_factory=list)
+    requests_chart: bool = False
+    chart_forbidden: bool = False
+    requested_chart_types: list[str] = Field(default_factory=list)
+    priority: Literal["P0", "P1", "P2"] = "P2"
+    sub_questions: list[str] = Field(default_factory=list)
+    defaulted_focus: bool = False
+
+
+class CandidateCard(BaseModel):
+    """候选图卡（方案 5.2）：由上游证据确定性生成。
+
+    ideal_role 与 feasible_expression 分开保存，数据不足时保留理想角色并登记 gap，
+    不静默降级；发给模型的摘要排除数值与证据 ID。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+    card_id: str
+    question_ids: list[str] = Field(default_factory=list)
+    sub_requirements: list[str] = Field(default_factory=list)
+    chart_type: ChartType
+    ideal_role: str = ""
+    feasible_expression: str = ""
+    gap: str | None = None
+    metrics: list[str] = Field(default_factory=list)
+    entities: list[str] = Field(default_factory=list)
+    periods: list[str] = Field(default_factory=list)
+    scope: str | None = None
+    units: list[str] = Field(default_factory=list)
+    evidence_complete: bool = False
+    candidate_ref: str | None = None
+    rank: int = 0
+
+
+class QuestionPlanItem(BaseModel):
+    """单题选图计划：needs_chart / 优先级 / 缺口均由规则与校验结果结算。"""
+
+    model_config = ConfigDict(extra="forbid")
+    question_id: str
+    needs_chart: bool = True
+    primary_card_ids: list[str] = Field(default_factory=list)
+    supporting_card_ids: list[str] = Field(default_factory=list)
+    rationale: str = ""
+    priority: Literal["P0", "P1", "P2"] = "P2"
+    uncovered: list[str] = Field(default_factory=list)
+    selection_source: Literal["llm", "deterministic_fallback", "not_needed"] = "deterministic_fallback"
+    validation_errors: list[str] = Field(default_factory=list)
+    fallback_reason: str | None = None
+    data_reality: str = ""
+
+
+class QuestionCoverageItem(BaseModel):
+    """最终覆盖（方案 5.3 第 7 步）：以实际发布图为准，不再由 ChartIntent.matches 反推。"""
+
+    model_config = ConfigDict(extra="forbid")
+    question_id: str
+    status: Literal[
+        "published", "partially_published", "not_needed",
+        "not_published", "evidence_gap", "capability_gap",
+    ]
+    chart_ids: list[str] = Field(default_factory=list)
+    uncovered: list[str] = Field(default_factory=list)
+    reason: str | None = None
+    chart_digest: str | None = None
+
+
+class QuestionChartPlan(BaseModel):
+    """A3 选图计划（附加产物）；question_plan 为可选字段，保证旧结果仍可读取。"""
+
+    model_config = ConfigDict(extra="forbid")
+    version: int = 1
+    mode: Literal["off", "observe", "apply"] = "off"
+    questions: list[QuestionPlanItem] = Field(default_factory=list)
+    coverage: list[QuestionCoverageItem] = Field(default_factory=list)
+    capability_gaps: list[str] = Field(default_factory=list)
+
+
 class ChartGenerationResult(BaseModel):
     chain_quality: dict[str, Any] | None = None
     model_config = ConfigDict(extra="forbid")
@@ -318,9 +436,14 @@ class ChartGenerationResult(BaseModel):
     charts: list[ChartSpec] = Field(default_factory=list)
     suppressed_charts: list[SuppressedChart] = Field(default_factory=list)
     data_demands: list[DataSupplementDemand] = Field(default_factory=list)
+    question_coverage: list[dict[str, Any]] = Field(default_factory=list)
+    report_tables: list[dict[str, Any]] = Field(default_factory=list)
     quality: ChartQualityReport
     warnings: list[str] = Field(default_factory=list)
+    upstream_warnings: list[str] = Field(default_factory=list)
     artifact_dir: str | None = None
+    # 附加产物：off / 旧产物不带该字段，A5 不消费（方案 4.3 契约隔离）。
+    question_plan: QuestionChartPlan | None = None
 
     @model_validator(mode="after")
     def unique_chart_ids(self) -> "ChartGenerationResult":

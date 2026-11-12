@@ -251,11 +251,14 @@ def resolve_execution_snapshot(req: RunCreateRequest) -> RunExecutionSnapshot:
         profile_id = req.input_data.data_fetch_options.chain_profile_id
 
     from chart_generator.chain_intent import user_wants_industry_chain
+    from chart_generator.selection import question_chain_request
 
     options = req.input_data.chart_generate_options
     chain_requested = user_wants_industry_chain(
         req.input_data.industry_topic, req.input_data.focus_questions,
-        explicit=options.want_industry_chain if options else None,
+        explicit=question_chain_request(
+            req.input_data.industry_topic, options.chart_question_ids, options.want_industry_chain,
+        ) if options else None,
         defaulted_focus=options.defaulted_focus if options else False,
         requested_types=options.requested_chart_types if options else None,
     )
@@ -315,7 +318,22 @@ def resolve_execution_snapshot(req: RunCreateRequest) -> RunExecutionSnapshot:
             source_digest.update(str(source.relative_to(project_root)).encode())
             source_digest.update(source.read_bytes())
     input_digest = sha256(json.dumps(req.input_data.model_dump(mode="json"), ensure_ascii=False, sort_keys=True).encode()).hexdigest()
+    # A3 用户问题驱动选图：创建 run 时固定模式与参数，后续阶段 / resume 不再重读环境。
+    # 非法取值一律按 off 处理，避免误开新链路（方案第 3.1、5.5 节）。
+    planner_mode = str(runtime_settings.CHART_QUESTION_PLANNER_MODE or "off").strip().lower()
+    if planner_mode not in {"off", "observe", "apply"}:
+        planner_mode = "off"
+    planner_params = {
+        "max_cards_per_question": int(runtime_settings.CHART_QUESTION_MAX_CARDS_PER_QUESTION),
+        "max_prompt_cards": int(runtime_settings.CHART_QUESTION_MAX_PROMPT_CARDS),
+        "timeout_seconds": int(runtime_settings.CHART_QUESTION_PLANNER_TIMEOUT_SECONDS),
+        # 键名避开 "token" 字样：执行快照有脱敏守卫（禁止 payload 出现该词），
+        # 这里只是选卡调用的输出预算，不是凭据。
+        "completion_budget": int(runtime_settings.CHART_QUESTION_PLANNER_MAX_TOKENS),
+    }
     return RunExecutionSnapshot(
+        question_planner_mode=planner_mode,
+        question_planner_params=planner_params,
         model_configuration={"model": runtime_settings.LLM_MODEL, "base_url": provider_url,
             "timeout_seconds": runtime_settings.LLM_TIMEOUT_SECONDS,
             "reasoning_effort": os.environ.get("LLM_REASONING_EFFORT", "low"),
@@ -395,7 +413,8 @@ class WorkflowEngine:
             entities = requirement.get("entity_names") or []
             metrics = requirement.get("metric_families") or []
             domain = str(requirement.get("domain") or "")
-            match = next((d for d in demands if str(d.get("domain") or "") == domain
+            match = next((d for d in demands if d.get("requirement_id") in (None, rid)
+                            and str(d.get("domain") or "") == domain
                           and (not entities or not d.get("entities") or set(entities) & set(d["entities"]))
                           and (not metrics or not d.get("metrics") or
                                {metric_family(str(m)) for m in metrics} &
@@ -609,6 +628,29 @@ class WorkflowEngine:
         input_file.write_text(req.model_dump_json(indent=2), encoding="utf-8")
         # D3：创建时解析一次执行策略并持久化；后续阶段与 resume 共用
         snapshot = resolve_execution_snapshot(req)
+        # A3 用户问题驱动选图（方案 3.1）：启用新路径时先落问题上下文，
+        # 再把哈希写进快照，最后才调度 A1；off 不生成任何附加文件。
+        if snapshot.question_planner_mode in {"observe", "apply"}:
+            from chart_generator.question_planner import (
+                parse_question_briefs, question_contract_payload, question_contract_sha256,
+            )
+            opts = req.input_data.chart_generate_options
+            briefs = parse_question_briefs(
+                req.input_data.focus_questions,
+                defaulted_focus=bool(opts and opts.defaulted_focus),
+                chart_mode=opts.chart_mode if opts else None,
+                requested_chart_count=opts.requested_chart_count if opts else None,
+            )
+            contract = question_contract_payload(
+                briefs, subject=req.input_data.industry_topic,
+                as_of=req.input_data.research_as_of,
+            )
+            (run_dir / "question_contract.json").write_text(
+                json.dumps(contract, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            snapshot.question_contract_sha256 = question_contract_sha256(contract)
+            if snapshot.question_planner_mode == "apply" and not briefs:
+                raise ValueError("apply 模式需要至少一个 focus_questions；未生成问题上下文")
         (run_dir / _SNAPSHOT_FILE).write_text(
             snapshot.model_dump_json(indent=2), encoding="utf-8"
         )
@@ -810,6 +852,16 @@ class WorkflowEngine:
             if spec.get("chain_graph") or spec.get("inline_svg"):
                 continue
             if cid and c_opt:
+                # 编辑后的新值可能越出旧展示轴：重新校验并回退到覆盖全部数据的尺度
+                try:
+                    from chart_generator.presentation import apply_presentation
+                    refreshed, _, _ = apply_presentation(dict(c_opt), c_type, title=c_title)
+                    if isinstance(refreshed, dict) and "presentation" in refreshed:
+                        spec["option"] = refreshed
+                        c_opt = refreshed
+                except (ValueError, TypeError, KeyError) as exc:
+                    import logging
+                    logging.getLogger(__name__).warning("presentation refresh failed: %s", exc)
                 svg_file = charts_dir / f"{cid}.svg"
                 backup(svg_file)
                 svg_text = render_svg(c_title, c_type, c_opt, c_notes)

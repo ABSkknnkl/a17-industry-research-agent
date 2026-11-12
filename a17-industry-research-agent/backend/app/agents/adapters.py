@@ -120,11 +120,15 @@ def record_requested_chart_shortfall(result: Any, requested_count: int | None) -
 def _requested_chain(input_data: dict[str, Any], chart_request: Any) -> bool:
     """Resolve user intent before disabling the legacy renderer for V2."""
     from chart_generator.chain_intent import user_wants_industry_chain
+    from chart_generator.selection import question_chain_request
 
     return user_wants_industry_chain(
         chart_request.report.subject or "",
         input_data.get("focus_questions") or [],
-        explicit=chart_request.want_industry_chain,
+        explicit=question_chain_request(
+            chart_request.report.subject, getattr(chart_request, "question_ids", []),
+            chart_request.want_industry_chain,
+        ),
         defaulted_focus=chart_request.defaulted_focus,
         requested_types=chart_request.preferences.requested_types,
     )
@@ -136,6 +140,23 @@ def _report_chain_delivery(run_id: str) -> dict[str, Any]:
     chart = state.stage_results.get("chart_generate") if state else None
     delivery = (chart.data or {}).get("chain_delivery") if chart else None
     return dict(delivery) if isinstance(delivery, dict) else {}
+
+
+def _question_context_marker(run_id: str) -> dict[str, Any]:
+    """A3 用户问题驱动选图（方案 3.2）：把系统题号附到前序阶段产物标记上。
+
+    off 或旧 run 没有 question_contract.json 时返回空 dict，既有产物结构不变。
+    """
+    try:
+        path = storage.get_run_dir(run_id) / "question_contract.json"
+        if not path.exists():
+            return {}
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        ids = [str(q.get("question_id")) for q in (payload.get("questions") or [])
+               if isinstance(q, dict) and q.get("question_id")]
+        return {"question_ids": ids} if ids else {}
+    except Exception:
+        return {}
 
 
 def _chart_svg_content(chart: Any, report: Any) -> str:
@@ -157,7 +178,8 @@ def _chart_svg_content(chart: Any, report: Any) -> str:
         chart.option,
         chart.footnotes or [],
         figure_number=getattr(chart, "figure_number", None),
-        as_of=str(getattr(report, "as_of", "") or ""),
+        as_of=(chart.option.get("as_of") if "research_as_of" in chart.option
+               else str(getattr(report, "as_of", "") or "")),
         insight_takeaway=getattr(chart, "insight_goal", ""),
     )
 
@@ -739,6 +761,7 @@ class FiveAgentsAdapter:
             )
         ]
 
+        data.update(_question_context_marker(run_id))
         return StageResult(
             stage="data_fetch",
             status="waiting_review",
@@ -953,6 +976,20 @@ class FiveAgentsAdapter:
             {"dimension": "risk", "status": "covered", "dimension_label": "风险提示", "reason": "已提取离群异常与不确定性事项"},
         ]
 
+        # A2 tags every segment with its attribution basis.  When no segment
+        # derives from a reviewed structure or business evidence, the chain
+        # dimension must not be advertised as "covered" to the workbench.
+        chain_dims = [d for d in dim_coverage if d["dimension"] == "industry_chain"]
+        if chain_dims:
+            segs = getattr(report, "industry_chain_segments", []) or []
+            tiers = {
+                str((s.get("source_tier") if isinstance(s, dict) else getattr(s, "source_tier", "")) or "")
+                for s in segs
+            }
+            if not segs or (tiers and tiers <= {"industry_common", "gap", ""}):
+                chain_dims[0]["status"] = "partial"
+                chain_dims[0]["reason"] = "环节归属缺少已审定结构或业务证据，已标注为待核实/缺口"
+
         if analysis_kwargs.get('chain_context'):
             cq = analysis_kwargs['chain_context'].get('quality', {})
             for dim in dim_coverage:
@@ -1031,6 +1068,7 @@ class FiveAgentsAdapter:
             )
         ]
 
+        data.update(_question_context_marker(run_id))
         return StageResult(
             stage="data_interpret",
             status="waiting_review",
@@ -1057,6 +1095,26 @@ class FiveAgentsAdapter:
         event_hub.emit(run_id, "chart_generate", "agent_start", "启动出版级图表生成智能体，正在分析数据形态并规划图表选型...", tool="ChartGeneratorAgent")
 
         run_dir = storage.get_run_dir(run_id)
+        # A3 用户问题驱动选图（方案 3.1 / 5.5）：模式固定来自执行快照，
+        # 题面来自创建时落盘的问题上下文；apply 下哈希不符必须显式报错。
+        from backend.app.engine.state_machine import load_execution_snapshot as _load_plan_snapshot
+        plan_snapshot = _load_plan_snapshot(run_id)
+        plan_mode = str(getattr(plan_snapshot, "question_planner_mode", "off") or "off").strip().lower()
+        if plan_mode not in {"off", "observe", "apply"}:
+            plan_mode = "off"
+        plan_briefs: list[dict[str, Any]] = []
+        if plan_mode in {"observe", "apply"}:
+            from chart_generator.question_planner import question_contract_sha256
+            contract_path = run_dir / "question_contract.json"
+            if not contract_path.exists():
+                raise AgentExecutionError(f"question_contract.json 缺失（mode={plan_mode}），无法按题选图")
+            contract = json.loads(contract_path.read_text(encoding="utf-8"))
+            expected = getattr(plan_snapshot, "question_contract_sha256", None)
+            if expected and question_contract_sha256(contract) != expected:
+                raise AgentExecutionError("question_contract.json 与执行快照哈希不符，拒绝按题选图")
+            plan_briefs = [q for q in (contract.get("questions") or []) if isinstance(q, dict)]
+            if plan_mode == "apply" and not plan_briefs:
+                raise AgentExecutionError("apply 模式问题上下文为空，拒绝按题选图")
         report_path = run_dir / "artifacts" / "interpretation_report.json"
         if not report_path.exists():
             raise AgentExecutionError("缺少阶段2解读产物 interpretation_report.json")
@@ -1081,7 +1139,12 @@ class FiveAgentsAdapter:
                 cid = details.get("chart_id")
                 title = details.get("title")
                 ctype = details.get("chart_type")
-                event_hub.emit(run_id, "chart_generate", "tool_call", f"出版级图表渲染就绪: [{cid}]《{title}》（{ctype}）", tool="EChartsEngine", details=details)
+                event_hub.emit(run_id, "chart_generate", "tool_call", f"出版级图表渲染就绪: [{cid}]《{title}》（{ctype}）", tool="EChartsEngine",
+                               details={"operation": "chart_ready", "task_id": cid,
+                                        "kind": details.get("selection_source")})
+            elif evt in ("llm_plan_parsed", "llm_generation_error", "llm_candidate_rejected"):
+                event_hub.emit(run_id, "chart_generate", "info", "图表选型已更新",
+                               tool="ChartLLM", details={"operation": evt, **details})
             elif evt == "skill_correction_triggered":
                 event_hub.emit(run_id, "chart_generate", "warn", "检测到图表排版冲突，触发智能自愈修正...", tool="ChartSkillLinter", details=details)
             elif evt == "skill_correction_resolved":
@@ -1169,12 +1232,11 @@ class FiveAgentsAdapter:
         if req_count and isinstance(req_count, int) and req_count > 0:
             target_max_charts = req_count
         elif chart_mode == "minimal":
-            target_max_charts = 6
+            target_max_charts = 4
         elif chart_mode == "rich":
             target_max_charts = 22
         else:
-            # 默认“标准精选”模式（12~15张），严设上限，杜绝无脑堆砌
-            target_max_charts = 15
+            target_max_charts = 6
 
         # 载入原始数据集供图表智能体进行企业名反查
         raw_dataset_dict = None
@@ -1200,7 +1262,9 @@ class FiveAgentsAdapter:
         )
         agent = ChartGeneratorAgent(settings=chart_settings)
         from chart_generator.models import ChartPreferences
-        chart_prefs = ChartPreferences(max_charts=target_max_charts)
+        chart_prefs = ChartPreferences(
+            max_charts=target_max_charts, prefer_combined=not req_count and chart_mode != "rich",
+        )
 
         # 预置用户请求的图表类型
         req_types_input = chart_opts.get("requested_chart_types") or []
@@ -1232,9 +1296,14 @@ class FiveAgentsAdapter:
             report=report,
             input_dataset=raw_dataset_dict,
             preferences=chart_prefs,
+            question_ids=[q for q in chart_opts.get("chart_question_ids", []) if isinstance(q, str)]
+            if isinstance(chart_opts.get("chart_question_ids"), list) else [],
             want_industry_chain=_as_bool(chart_opts.get("want_industry_chain")),
+            focus_points=input_data.get("focus_questions") or [],
             defaulted_focus=bool(chart_opts.get("defaulted_focus", False)),
             chain_scope=_as_scope(chart_opts.get("chain_scope")),
+            question_plan_mode=plan_mode,
+            question_briefs=plan_briefs,
         )
         chain_requested = _requested_chain(input_data, chart_request)
         v2_bundle_path = run_dir / 'artifacts' / 'chain' / 'v2' / 'bundle.json'
@@ -1243,9 +1312,8 @@ class FiveAgentsAdapter:
         use_chain_v2 = chart_snapshot.chain_engine == 'evidence_v2'
         if getattr(chart_snapshot, "chain_requested", None) is not None:
             chain_requested = chart_snapshot.chain_requested
-        if use_chain_v2:
-            # The v2 graph is compiled below; legacy must not fetch or repair it.
-            chart_request.want_industry_chain = False
+        # Both renderers must consume the frozen intent, even when focus inputs change on resume.
+        chart_request.want_industry_chain = chain_requested and not use_chain_v2
         if chart_request.want_industry_chain is not None:
             logger.info("[%s] 产业链图意图显式指定：%s", run_id, chart_request.want_industry_chain)
         if chart_request.chain_scope is not None:
@@ -1310,9 +1378,36 @@ class FiveAgentsAdapter:
             chain_delivery["verified_relations"] = len(verified_edges)
             if cb.supported_assertions() and cb.quality.release_status in ('partial', 'verified'):
                 result.charts = [c for c in result.charts if c.chart_type != 'industry_chain']
+                from chart_generator.selection import question_intents
+
+                chain_intents = {rule.id: rule.question_id for rule in
+                                 question_intents(report.subject, chart_request.question_ids)
+                                 if "industry_chain" in rule.types}
+                applied_plan = result.question_plan if (
+                    result.question_plan is not None and result.question_plan.mode == "apply"
+                ) else None
+                plan_chain_items = [
+                    item for item in applied_plan.questions
+                    if item.needs_chart and "产业链结构" in item.uncovered
+                ] if applied_plan else []
+                if applied_plan and chart_request.preferences.max_charts:
+                    result.charts = result.charts[:max(chart_request.preferences.max_charts - 1, 0)]
+                elif chain_intents:
+                    result.charts = result.charts[:max(target_max_charts - 1, 0)]
+                for item in plan_chain_items:
+                    if "CARD-chain-evidence-v2" not in item.supporting_card_ids:
+                        item.supporting_card_ids.append("CARD-chain-evidence-v2")
+                    item.uncovered.remove("产业链结构")
+                    if not verified_edges:
+                        item.uncovered.append("产业链关系")
                 result.charts.append(ChartSpec(chart_id='chain-evidence-v2', title=chain_spec.title or (report.subject+'（部分覆盖）'),
                     chart_type='industry_chain', option={}, render_mode='svg', inline_svg=svg,
                     chain_graph=chain_spec.model_dump(mode='json'),
+                    data_contract={"structure_source": "chain_evidence_v2",
+                                   "selection_source": "deterministic",
+                                   "question_ids": list(dict.fromkeys(
+                                       [*chain_intents.values(), *(item.question_id for item in plan_chain_items)]
+                                   ))},
                     evidence_ids=[item['record_id'] for item in project_supported_evidence(cb)],
                     insight_goal='证据支持的产业环节与企业参与',
                     footnotes=['完整性未认证；未获支持的候选不计入代表企业。'] + (
@@ -1320,6 +1415,12 @@ class FiveAgentsAdapter:
                     ),
                     source_line='原文证据与关系见 artifacts/chain/v2/bundle.json',
                     data_fingerprint=hashlib.sha256(svg.encode()).hexdigest()))
+                retained = {chart.chart_id for chart in result.charts}
+                for item in result.question_coverage:
+                    if item.get("intent_id") in chain_intents:
+                        item.update(status="published", chart_ids=["chain-evidence-v2"], reason=None)
+                    elif item["chart_ids"] and not retained.intersection(item["chart_ids"]):
+                        item.update(status="not_published", chart_ids=[], reason="已为请求的链图保留图数")
                 result.status = 'partial'
                 result.quality.ready_count = len(result.charts)
                 (v2_bundle_path.parent/'view_mapping.json').write_text(json.dumps(mapping,ensure_ascii=False,indent=2),encoding='utf-8')
@@ -1366,6 +1467,10 @@ class FiveAgentsAdapter:
                 svg_content = _chart_svg_content(c, report)
                 svg_file = charts_dir / f"{c.chart_id}.svg"
                 svg_file.write_text(svg_content, encoding="utf-8")
+                (charts_dir / f"{c.chart_id}.json").write_text(
+                    json.dumps(c.option, ensure_ascii=False, indent=2, default=str) + "\n",
+                    encoding="utf-8",
+                )
                 c.svg_uri = str(svg_file.resolve())
                 chart_svg_artifacts.append(
                     ArtifactRef(
@@ -1417,6 +1522,29 @@ class FiveAgentsAdapter:
                 except OSError:
                     c.supplement_html_uri = None
 
+        from chart_generator.render import render_preview
+
+        preview_path = run_dir / "artifacts" / "preview.html"
+        preview_path.write_text(render_preview(
+            report.subject,
+            [(c.title, Path(c.svg_uri).read_text(encoding="utf-8")) for c in result.charts if c.svg_uri],
+        ), encoding="utf-8")
+        for c in result.charts:
+            c.html_uri = str(preview_path.resolve())
+        # A3 覆盖对账（方案 5.3 第 7 步）：在 V2 替换、SVG 落盘与图数截断全部完成后，
+        # 以实际发布图重新结算；off 模式不触碰既有 question_coverage。
+        if result.question_plan is not None and result.question_plan.mode == "apply":
+            from chart_generator.models import QuestionBrief as _QuestionBrief
+            from chart_generator.question_planner import (
+                build_candidate_cards as _build_cards,
+                legacy_question_coverage as _legacy_coverage,
+                settle_coverage as _settle_coverage,
+            )
+            _briefs = [_QuestionBrief.model_validate(b) for b in plan_briefs]
+            _cards = _build_cards(result.charts, _briefs, report)
+            _settle_coverage(result.question_plan, result.charts, _cards)
+            result.question_coverage = _legacy_coverage(result.question_plan)
+
         record_requested_chart_shortfall(result, req_count)
         chart_result_path = run_dir / "artifacts" / "chart_result.json"
         chart_result_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
@@ -1450,6 +1578,12 @@ class FiveAgentsAdapter:
         data: dict[str, Any] = {
             "chart_specs": chart_specs,
             "chain_quality": result.chain_quality,
+            "warnings": result.warnings,
+            "upstream_warnings": result.upstream_warnings,
+            "question_coverage": result.question_coverage,
+            # 附加产物：A4 从原始阶段数据读取 question_plan.coverage；A5 不消费该字段。
+            "question_plan": result.question_plan.model_dump(mode="json") if result.question_plan else None,
+            "report_tables": result.report_tables,
             # D3：链图交付资格（requested/status/reason）随阶段产物透传，
             # 前端与评审核对"用户要的链图到底交付到什么程度"。
             "chain_delivery": chain_delivery,
@@ -1562,6 +1696,26 @@ class FiveAgentsAdapter:
         if feedback:
             instructions.append(f"【用户人工协同写作优化指导】: {feedback}。请在相关章节中针对性深化与体现该要求。")
             event_hub.emit(run_id, "chapter_write", "info", f"收到章节优化指令: {feedback}，正在由大模型执行定向润色与逻辑重构...", tool="ChapterWriterAgent")
+
+        # A3 用户问题驱动选图（方案 3.2）：ChartResult 会忽略 question_plan 附加字段，
+        # 因此在模型校验前从原始 A3 JSON 读取逐题覆盖，按题安排主答、缺口如实说明。
+        try:
+            with open(chart_path, "r", encoding="utf-8") as _plan_file:
+                _plan_raw = (json.load(_plan_file) or {}).get("question_plan") or {}
+            _coverage = _plan_raw.get("coverage") or []
+            if _plan_raw.get("mode") == "apply" and _coverage:
+                _lines = ["【用户问题逐题覆盖（来自 A3 选图计划）】"]
+                for _item in _coverage:
+                    _lines.append(
+                        f"- {_item.get('question_id')}: {_item.get('status')}；"
+                        f"已发布图 {len(_item.get('chart_ids') or [])} 张；"
+                        f"未覆盖 {', '.join(_item.get('uncovered') or []) or '无'}；"
+                        f"{_item.get('reason') or ''}"
+                    )
+                _lines.append("请按题安排主答小节；图表未覆盖或存在缺口时必须如实说明，不得编造数据补图。")
+                instructions.append("\n".join(_lines))
+        except Exception as exc:  # 附加产物缺失不得阻断既有写作链路
+            logger.warning("[%s] question_plan coverage 读取失败（不阻断写作）: %s", run_id, type(exc).__name__)
 
         if instructions:
             writing_options.instruction = "\n".join(instructions)

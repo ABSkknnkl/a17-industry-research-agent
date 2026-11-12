@@ -27,6 +27,12 @@ def _env_flag(name: str, *, default: bool = False) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on", "y", "t"}
 
 
+def _question_plan_mode() -> str:
+    """只允许 off / observe / apply，非法取值静默回退 off，避免误开新链路。"""
+    raw = os.getenv("CHART_QUESTION_PLANNER_MODE", "off").strip().lower()
+    return raw if raw in {"off", "observe", "apply"} else "off"
+
+
 @dataclass(frozen=True)
 class Settings:
     output_dir: Path = Path("output")
@@ -40,6 +46,13 @@ class Settings:
     # 置 LLM_THINKING=auto/enabled 可恢复；置空串则回退 reasoning_effort。
     llm_thinking: str = "disabled"
     llm_max_tokens: int = 16384
+    # A3 用户问题驱动选图（方案第 5.5 节）。默认 off 时完全走旧链路；
+    # 模式与参数在运行创建时由后端写入执行快照，运行内不再重读环境变量。
+    question_planner_mode: str = "off"
+    question_max_cards_per_question: int = 12
+    question_max_prompt_cards: int = 48
+    question_planner_timeout_seconds: float = 60.0
+    question_planner_max_tokens: int = 4096
     # 产业链 AI 生图开关，**默认关闭**。
     # 关闭后产业链图完全由本地确定性 ECharts 渲染（CHART-01「产业链结构」：
     # 上中下游三栏 + 代表企业 + 证据注），不依赖外部生图模型、不消耗生图额度，
@@ -70,6 +83,11 @@ class Settings:
             llm_reasoning_effort=os.getenv("LLM_REASONING_EFFORT") or "low",
             llm_thinking=os.getenv("LLM_THINKING") or "disabled",
             llm_max_tokens=int(os.getenv("LLM_MAX_TOKENS", "16384")),
+            question_planner_mode=_question_plan_mode(),
+            question_max_cards_per_question=int(os.getenv("CHART_QUESTION_MAX_CARDS_PER_QUESTION", "12")),
+            question_max_prompt_cards=int(os.getenv("CHART_QUESTION_MAX_PROMPT_CARDS", "48")),
+            question_planner_timeout_seconds=float(os.getenv("CHART_QUESTION_PLANNER_TIMEOUT_SECONDS", "60")),
+            question_planner_max_tokens=int(os.getenv("CHART_QUESTION_PLANNER_MAX_TOKENS", "4096")),
             enable_industry_chain_image=_env_flag("ENABLE_INDUSTRY_CHAIN_IMAGE", default=False),
             enable_industry_chain_html=_env_flag("ENABLE_INDUSTRY_CHAIN_HTML", default=True),
         )

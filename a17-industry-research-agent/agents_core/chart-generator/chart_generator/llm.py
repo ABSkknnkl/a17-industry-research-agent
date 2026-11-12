@@ -110,6 +110,31 @@ class OpenAICompatibleLLM:
                     continue
                 raise
 
+    async def select_cards(self, system_prompt: str, user_prompt: str) -> str:
+        """A3 用户问题驱动选图（方案 5.4）：无工具、结构化 JSON 的单次选卡调用。
+
+        不开放 tools、不执行模型提供的任何内容；返回文本交由 question_planner
+        的 parse_selection / validate_selection 按不可信输入处理。
+        """
+        if not self.is_available:
+            raise RuntimeError("LLM unavailable for question plan selection")
+        payload: dict[str, Any] = {
+            "model": self.settings.llm_model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            "max_tokens": max(512, min(int(self.settings.question_planner_max_tokens), 8192)),
+            "temperature": 0.1,
+        }
+        if self.settings.llm_thinking:
+            payload["thinking"] = {"type": self.settings.llm_thinking}
+        timeout = min(max(float(self.settings.question_planner_timeout_seconds), 5.0), 600.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            res = await self._post_with_retry(client, payload, max_retries=2)
+            data = res.json()
+        return str(data["choices"][0]["message"]["content"] or "")
+
     @model_call
     async def run_skill_and_chart_loop(
         self,

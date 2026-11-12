@@ -1,7 +1,7 @@
 from __future__ import annotations
 from datetime import datetime
 from typing import Any, Literal
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 StageName = Literal[
     "data_fetch",
@@ -146,6 +146,7 @@ class ChartGenerationOptions(BaseModel):
     chart_type: str | None = None
     requested_chart_count: int | None = None
     requested_chart_types: list[str] | None = None
+    chart_question_ids: list[str] = Field(default_factory=list)
     user_priority: bool | None = None
     allow_multiple_charts_per_dataset: bool | None = None
     bar_variant: Literal["vertical", "horizontal", "grouped", "stacked"] | None = None
@@ -153,6 +154,16 @@ class ChartGenerationOptions(BaseModel):
     title: str | None = None
     color_theme: str | None = None
     emphasis: str | None = None
+
+    @field_validator("requested_chart_types")
+    @classmethod
+    def validate_chart_types(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return None
+        import backend.app.core.setup_env  # noqa: F401
+        from chart_generator.models import ChartPreferences
+
+        return ChartPreferences(requested_types=value).requested_types
 
 
 class ResearchInput(BaseModel):
@@ -197,6 +208,11 @@ class RunExecutionSnapshot(BaseModel):
     source_policy_version: str | None = None
     resolved_at: str = Field(default_factory=lambda: datetime.now().isoformat())
     legacy: bool = False
+    # A3 用户问题驱动选图（方案第 3.1 / 5.5 节）：创建 run 时固定一次。
+    # 旧快照缺这些字段时按 off 解释，不默认切换链路。
+    question_planner_mode: str = "off"
+    question_planner_params: dict[str, Any] = Field(default_factory=dict)
+    question_contract_sha256: str | None = None
     notes: list[str] = Field(default_factory=list)
 
 

@@ -71,6 +71,24 @@ class Settings(BaseModel):
         default_factory=lambda: int(os.getenv("LLM_MAX_TOKENS", "16384"))
     )
 
+    # A3 用户问题驱动选图（方案第 5.5 节）。默认 off；模式与参数会在
+    # create_run 时写入 execution_snapshot，后续阶段与 resume 共用同一版本。
+    CHART_QUESTION_PLANNER_MODE: str = Field(
+        default_factory=lambda: os.getenv("CHART_QUESTION_PLANNER_MODE", "off").strip().lower()
+    )
+    CHART_QUESTION_MAX_CARDS_PER_QUESTION: int = Field(
+        default_factory=lambda: int(os.getenv("CHART_QUESTION_MAX_CARDS_PER_QUESTION", "12"))
+    )
+    CHART_QUESTION_MAX_PROMPT_CARDS: int = Field(
+        default_factory=lambda: int(os.getenv("CHART_QUESTION_MAX_PROMPT_CARDS", "48"))
+    )
+    CHART_QUESTION_PLANNER_TIMEOUT_SECONDS: int = Field(
+        default_factory=lambda: int(os.getenv("CHART_QUESTION_PLANNER_TIMEOUT_SECONDS", "60"))
+    )
+    CHART_QUESTION_PLANNER_MAX_TOKENS: int = Field(
+        default_factory=lambda: int(os.getenv("CHART_QUESTION_PLANNER_MAX_TOKENS", "4096"))
+    )
+
     # 问财官方 SkillHub 凭证
     IWENCAI_API_KEY: str = Field(
         default_factory=lambda: os.getenv("IWENCAI_API_KEY", "")
