@@ -321,6 +321,7 @@ export interface ChartFeedbackInterpretation {
 
 /** ChartGenerationOptions（workflow.py L158-169），全部字段可选 */
 export interface ChartGenerationOptions {
+  question_planner_mode?: 'off' | 'observe' | 'apply'
   chart_type?: ChartTypeName
   requested_chart_count?: number
   requested_chart_types?: ChartTypeName[]

@@ -22,16 +22,30 @@ const emit = defineEmits<{
 
 const loading = ref(false)
 const restoring = ref(false)
+const historyError = ref('')
+const diffError = ref('')
+const diffLoading = ref(false)
 const historyList = ref<FeedbackHistoryItem[]>([])
 const selectedHistory = ref<FeedbackHistoryItem | null>(null)
 const prevRevisionState = ref<WorkflowState | null>(null)
 const toRevisionState = ref<WorkflowState | null>(null)
+let historyRequest = 0
 
 async function loadHistory() {
-  if (!props.runId) return
+  const request = ++historyRequest
+  const runId = props.runId
+  if (!runId) {
+    historyList.value = []
+    selectedHistory.value = null
+    historyError.value = ''
+    loading.value = false
+    return
+  }
+  historyError.value = ''
   loading.value = true
   try {
-    const data = await getFeedbackHistory(props.runId)
+    const data = await getFeedbackHistory(runId)
+    if (request !== historyRequest) return
     historyList.value = data
     if (data.length > 0) {
       selectedHistory.value = data[data.length - 1]
@@ -39,31 +53,40 @@ async function loadHistory() {
       selectedHistory.value = null
     }
   } catch {
-    // 忽略
+    if (request !== historyRequest) return
+    historyList.value = []
+    selectedHistory.value = null
+    historyError.value = '修订历史加载失败，请重试。'
   } finally {
-    loading.value = false
+    if (request === historyRequest) loading.value = false
   }
 }
 
 watch(() => props.runId, loadHistory, { immediate: true })
 watch(() => props.currentRevision, loadHistory)
 
-watch(selectedHistory, async (item) => {
-  if (item) {
-    try {
-      const [fromState, toState] = await Promise.allSettled([
-        getRevision(props.runId, item.from_revision),
-        getRevision(props.runId, item.to_revision),
-      ])
-      prevRevisionState.value = fromState.status === 'fulfilled' ? fromState.value : null
-      toRevisionState.value = toState.status === 'fulfilled' ? toState.value : null
-    } catch {
-      prevRevisionState.value = null
-      toRevisionState.value = null
-    }
-  } else {
-    prevRevisionState.value = null
-    toRevisionState.value = null
+watch([() => props.runId, selectedHistory], async ([runId, item], _, onCleanup) => {
+  let current = true
+  onCleanup(() => {
+    current = false
+  })
+  prevRevisionState.value = null
+  toRevisionState.value = null
+  diffError.value = ''
+  diffLoading.value = Boolean(runId && item)
+  if (!runId || !item) return
+  try {
+    const [fromState, toState] = await Promise.all([
+      getRevision(runId, item.from_revision),
+      getRevision(runId, item.to_revision),
+    ])
+    if (!current) return
+    prevRevisionState.value = fromState
+    toRevisionState.value = toState
+  } catch {
+    if (current) diffError.value = '无法读取版本快照，暂无法比较。'
+  } finally {
+    if (current) diffLoading.value = false
   }
 })
 
@@ -263,7 +286,14 @@ async function onRestoreRevision(targetRev: number) {
 
 <template>
   <div class="revision-diff-viewer" data-testid="revision-diff-viewer">
-    <div v-if="historyList.length === 0" class="empty-diff muted">
+    <div v-if="historyError" class="empty-diff" role="alert">
+      <span>{{ historyError }}</span>
+      <el-button size="small" @click="loadHistory">重试</el-button>
+    </div>
+    <div v-else-if="loading && historyList.length === 0" class="empty-diff muted" role="status">
+      正在加载修订历史…
+    </div>
+    <div v-else-if="historyList.length === 0" class="empty-diff muted">
       <span class="empty-tag">INIT</span>
       <span
         >当前为初始生成版本
@@ -365,7 +395,9 @@ async function onRestoreRevision(targetRev: number) {
               (新版优化)</span
             >
           </div>
-          <div class="diff-lines">
+          <p v-if="diffError" role="alert">{{ diffError }}</p>
+          <p v-else-if="diffLoading" role="status">正在读取版本快照…</p>
+          <div v-else class="diff-lines">
             <div
               v-for="(diff, dIdx) in computedDiffLines"
               :key="dIdx"

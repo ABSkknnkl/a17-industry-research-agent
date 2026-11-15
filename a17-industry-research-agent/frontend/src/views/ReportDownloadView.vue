@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { downloadArtifact, getRun, triggerBlobDownload } from '../api/client'
+import { downloadArtifact, downloadCompactReport, getRun, triggerBlobDownload } from '../api/client'
 import { ApiError } from '../api/http'
 import { artifactKindLabel } from '../api/labels'
 import { classifyReportDownload, reportArtifacts, type ReportDownloadGate } from '../api/reportGate'
@@ -38,6 +38,26 @@ const EMPTY_GATE: ReportDownloadGate = {
   artifactCount: 0,
 }
 const gate = ref<ReportDownloadGate>(EMPTY_GATE)
+
+// 紧凑交付包：独立 loading / 取消，避免与原「下载全部」互相干扰。
+const compactPhase = ref<'idle' | 'downloading' | 'done' | 'error'>('idle')
+const compactMessage = ref('')
+let compactController: AbortController | null = null
+
+const compactReady = computed(() => {
+  if (!gate.value.downloadable || !workflow.value) return false
+  const stage = workflow.value.stage_results.report_fusion
+  const currentRevision = workflow.value.revision
+  const hasCurrentPdf = (stage?.artifacts ?? []).some(
+    (item) =>
+      (item.artifact_id === 'report_pdf' || item.kind === 'report_pdf') &&
+      item.revision === currentRevision
+  )
+  if (!hasCurrentPdf) return false
+  const builtAt = (stage?.data as Record<string, unknown> | undefined)?.built_at_revision
+  // 历史 run 没有构建代次时不预先禁用，由服务端按现有规则判定。
+  return builtAt == null || Number(builtAt) === currentRevision
+})
 
 const fusion = computed<ReportFusionData | null>(() => {
   const raw = workflow.value?.stage_results.report_fusion?.data
@@ -156,14 +176,53 @@ function cancelDownload(): void {
   cancelled = true
 }
 
+async function downloadCompact(): Promise<void> {
+  if (!compactReady.value || compactPhase.value === 'downloading' || !workflow.value) return
+  const controller = new AbortController()
+  compactController = controller
+  compactPhase.value = 'downloading'
+  compactMessage.value = ''
+  const mode = gate.value.mode ?? 'formal'
+  try {
+    const { blob, filename } = await downloadCompactReport(
+      runId.value,
+      workflow.value.revision,
+      mode,
+      controller.signal
+    )
+    if (controller.signal.aborted) return
+    triggerBlobDownload(blob, filename)
+    compactPhase.value = 'done'
+  } catch (error) {
+    if (controller.signal.aborted) return
+    compactPhase.value = 'error'
+    const message = error instanceof ApiError ? error.message : '紧凑交付包下载失败，请稍后重试'
+    compactMessage.value = message
+    ElMessage.error(message)
+    // 409 表示版本/资格已变，刷新任务状态后再由用户重新发起。
+    if (error instanceof ApiError && error.status === 409) await load()
+  } finally {
+    if (compactController === controller) compactController = null
+  }
+}
+
 function goBack(): void {
   router.push({ name: 'review', params: { runId: runId.value } })
 }
 
 onMounted(load)
+// 切换 run 时丢弃在途请求，避免旧 run 的响应落到新页面。
+watch(runId, () => {
+  compactController?.abort()
+  compactController = null
+  compactPhase.value = 'idle'
+  compactMessage.value = ''
+})
 // 卸载即中止循环，避免"离开页面后还在后台继续落文件"
 onBeforeUnmount(() => {
   cancelled = true
+  compactController?.abort()
+  compactController = null
 })
 </script>
 
@@ -242,6 +301,33 @@ onBeforeUnmount(() => {
       >
         {{ gate.mode === 'draft' ? '下载全部草稿文件' : '下载全部报告文件' }}
       </el-button>
+      <el-button
+        type="primary"
+        plain
+        :disabled="!compactReady || compactPhase === 'downloading'"
+        :loading="compactPhase === 'downloading'"
+        data-testid="report-download-compact"
+        @click="downloadCompact"
+      >
+        {{ gate.mode === 'draft' ? '下载紧凑草稿包' : '下载紧凑交付包' }}
+      </el-button>
+      <span class="muted" data-testid="report-download-compact-hint">
+        单个 ZIP，含报告三格式与完整证据索引 CSV
+      </span>
+      <span
+        v-if="compactPhase === 'done'"
+        class="download-done"
+        data-testid="report-download-compact-result"
+      >
+        紧凑交付包已下载
+      </span>
+      <span
+        v-else-if="compactPhase === 'error'"
+        class="download-warn"
+        data-testid="report-download-compact-result"
+      >
+        {{ compactMessage }}
+      </span>
       <el-button
         v-if="phase === 'downloading'"
         data-testid="report-download-cancel"

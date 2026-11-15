@@ -246,7 +246,7 @@ const stageTitle = computed(() => {
 
 const stageDescription = computed(() => {
   const map: Record<StageName, string> = {
-    data_fetch: '用户可审核确认检索范围与核心关键词，支持单点精准补采与脏数据剔除。',
+    data_fetch: '用户可审核确认检索范围与核心关键词，支持单点精准补采。',
     data_interpret: '用户可补充行业专家背景知识先验，并对AI核心研判进行逐条修正与裁决。',
     chart_generate: '用户可选择图表呈现样式（柱/折/条/堆），并指定核心标的高亮与基准线强调重点。',
     chapter_write: '用户可按章节提出修改意见与补充要求，支持单章定向重写与正文就地精修。',
@@ -415,15 +415,6 @@ async function onStageDirectEditSubmit(payload: {
             @click="openStageModal('replenish')"
           >
             增量数据补采
-          </el-button>
-          <el-button
-            type="warning"
-            plain
-            size="large"
-            :disabled="submitting || recoveryBlocked"
-            @click="openStageModal('clean')"
-          >
-            脏数据清洗与剔除
           </el-button>
         </template>
 

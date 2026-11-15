@@ -20,14 +20,6 @@ interface FindingSource {
   content?: string
   description?: string
 }
-interface RiskSource {
-  id?: string
-  title?: string
-  label?: string
-  name?: string
-  description?: string
-  desc?: string
-}
 type ChartDatum =
   number | string | number[] | null | { name?: string; value?: number | number[] | string | null }
 interface EditableAxis {
@@ -351,59 +343,6 @@ function handlePartialRefetchSubmit() {
   emit('update:visible', false)
 }
 
-// 1.3 脏数据清洗与剔除 (Data Cleansing)
-interface CleanRecord {
-  record_id: string
-  entity_name?: string
-  metric: string
-  value: unknown
-  unit?: string
-  domain?: string
-  query?: string
-}
-const localSourceRecords = ref<CleanRecord[]>([])
-const selectedRecordIdsToDelete = ref<string[]>([])
-const recordSearch = ref('')
-
-function initDataFetchClean() {
-  const raw = (props.data?.source_records || props.data?.records || []) as CleanRecord[]
-  localSourceRecords.value = raw.map((r) => ({
-    record_id: r.record_id || `REC-${Math.random().toString(36).slice(2, 7)}`,
-    entity_name: r.entity_name || '综合行业',
-    metric: r.metric || '指标',
-    value: r.value,
-    unit: r.unit || '',
-    domain: r.domain || 'financials',
-    query: r.query || '',
-  }))
-  selectedRecordIdsToDelete.value = []
-}
-
-const filteredSourceRecords = computed(() => {
-  if (!recordSearch.value.trim()) return localSourceRecords.value
-  const kw = recordSearch.value.toLowerCase()
-  return localSourceRecords.value.filter(
-    (r) =>
-      r.metric.toLowerCase().includes(kw) ||
-      (r.entity_name && r.entity_name.toLowerCase().includes(kw)) ||
-      (r.domain && r.domain.toLowerCase().includes(kw))
-  )
-})
-
-function handleCleanSubmit() {
-  if (selectedRecordIdsToDelete.value.length === 0) {
-    ElMessage.warning('请至少勾选一条需要剔除的脏数据记录')
-    return
-  }
-  emit('submitDirectEdit', {
-    edited_data: {
-      deleted_record_ids: selectedRecordIdsToDelete.value,
-    },
-    comment: `人工清洗剔除 ${selectedRecordIdsToDelete.value.length} 条噪声数据记录`,
-  })
-  emit('update:visible', false)
-}
-
 // =========================================================================
 // 阶段 2：数据解读 (data_interpret)
 // =========================================================================
@@ -555,121 +494,6 @@ function handleCompsSubmit() {
   emit('submitDirectEdit', {
     edited_data: { comps_matrix: matrix },
     comment: `更新可比公司标的池（共 ${entries.length} 家对标企业）`,
-  })
-  emit('update:visible', false)
-}
-
-// 2.2 核心研判论点精修 (Claims & Findings)
-interface LocalFinding {
-  id: string
-  title: string
-  text: string
-}
-const localFindings = ref<LocalFinding[]>([])
-
-function initFindingsData() {
-  const raw = (props.data?.findings || props.data?.key_findings || props.data?.claims || []) as (
-    FindingSource | string
-  )[]
-  if (Array.isArray(raw) && raw.length > 0) {
-    localFindings.value = raw.map((value, i) => {
-      const f = typeof value === 'string' ? { text: value } : value
-      return {
-        id: f.id || `F-${i + 1}`,
-        title: f.title || f.claim || `投研核心研判 #${i + 1}`,
-        text: f.text || f.content || f.description || '',
-      }
-    })
-  } else {
-    localFindings.value = [
-      {
-        id: 'F-1',
-        title: '产业处于技术迭代与出海加速双轮驱动期',
-        text: '核心龙头厂商依托规模效应与技术壁垒形成显著护城河，海外市场渗透率稳步攀升。',
-      },
-      {
-        id: 'F-2',
-        title: '上游原材料供给充裕推动产业链降本增效',
-        text: '主要原材料价格进入合理平稳区间，中下游系统集成环节毛利率出现修复拐点。',
-      },
-    ]
-  }
-}
-
-function addFindingRow() {
-  localFindings.value.push({
-    id: `F-${localFindings.value.length + 1}`,
-    title: '新增行业核心论点',
-    text: '补充具体的研判观点与量化依据阐述...',
-  })
-}
-
-function removeFindingRow(idx: number) {
-  localFindings.value.splice(idx, 1)
-}
-
-function handleFindingsSubmit() {
-  emit('submitDirectEdit', {
-    edited_data: {
-      findings: localFindings.value,
-      key_findings: localFindings.value,
-    },
-    comment: `微调核心研判结论（共 ${localFindings.value.length} 条论点）`,
-  })
-  emit('update:visible', false)
-}
-
-// 2.3 异常指标与风险项裁决 (Risk & Anomaly Gate)
-interface RiskItem {
-  id: string
-  label: string
-  desc: string
-  decision: 'emphasize' | 'keep' | 'ignore'
-}
-const localRisks = ref<RiskItem[]>([])
-
-function initRisksData() {
-  const rawRisks = (props.data?.risks || props.data?.anomalies || []) as (RiskSource | string)[]
-  if (Array.isArray(rawRisks) && rawRisks.length > 0) {
-    localRisks.value = rawRisks.map((value, i) => {
-      const r = typeof value === 'string' ? { description: value } : value
-      return {
-        id: r.id || `RISK-${i + 1}`,
-        label: r.title || r.label || r.name || `风险预警 #${i + 1}`,
-        desc: r.description || r.desc || (typeof r === 'string' ? r : JSON.stringify(r)),
-        decision: 'keep',
-      }
-    })
-  } else {
-    localRisks.value = [
-      {
-        id: 'RISK-1',
-        label: '行业产能阶段性供需失衡与降价风险',
-        desc: '新投产产能集中释放可能引发结构性价格战，压制二三线厂商毛利空间。',
-        decision: 'emphasize',
-      },
-      {
-        id: 'RISK-2',
-        label: '地缘政治与海外贸易关税壁垒风险',
-        desc: '重点海外目标市场贸易保护政策与关税调整可能影响出口放量进度。',
-        decision: 'keep',
-      },
-      {
-        id: 'RISK-3',
-        label: '新技术路线商业化突破替代风险',
-        desc: '新一代固态/半固态技术迭代节奏若超预期，可能对既有技术路径产线产生折旧压力。',
-        decision: 'keep',
-      },
-    ]
-  }
-}
-
-function handleRisksSubmit() {
-  emit('submitDirectEdit', {
-    edited_data: {
-      risk_decisions: localRisks.value,
-    },
-    comment: `完成风险项与异常信号人工裁决（共 ${localRisks.value.length} 项）`,
   })
   emit('update:visible', false)
 }
@@ -1292,13 +1116,10 @@ watch(
       }
       if (props.stage === 'data_fetch') {
         initScopeKeywords()
-        initDataFetchClean()
         initDataFetchReplenish(true)
       } else if (props.stage === 'data_interpret') {
         initKnowledgeAndJudgment()
         initCompsData()
-        initFindingsData()
-        initRisksData()
       } else if (props.stage === 'chart_generate') {
         initChartData()
       } else if (props.stage === 'chapter_write') {
@@ -1355,7 +1176,7 @@ const dialogTitle = computed(() => {
         </div>
         <div class="banner-text">
           <template v-if="stage === 'data_fetch'">
-            数据获取阶段提供<strong>「审核确认检索范围与关键词」</strong>、<strong>「增量数据精准补采」</strong>与<strong>「脏数据清洗剔除」</strong>，严格把关上游数据源头质量。
+            数据获取阶段提供<strong>「审核确认检索范围与关键词」</strong>与<strong>「增量数据精准补采」</strong>，严格把关上游数据源头质量。
           </template>
           <template v-else-if="stage === 'data_interpret'">
             数据解读阶段提供<strong>「补充专家背景知识先验」</strong>、<strong>「修正与裁决核心研判判断」</strong>与<strong>「可比公司标的池调整」</strong>，确保投研论据准确可信。
@@ -1585,71 +1406,6 @@ const dialogTitle = computed(() => {
             </div>
           </div>
         </el-tab-pane>
-
-        <!-- Tab 1.3: 脏数据清洗 -->
-        <el-tab-pane label="脏数据清洗与剔除" name="clean">
-          <div class="tab-pane-content">
-            <div class="clean-toolbar">
-              <span class="clean-stats">
-                当前数据集展示记录：共 {{ localSourceRecords.length }} 条 · 已选待剔除
-                <strong style="color: var(--el-color-danger)">{{
-                  selectedRecordIdsToDelete.length
-                }}</strong>
-                条
-              </span>
-              <el-input
-                v-model="recordSearch"
-                placeholder="过滤指标名称、实体公司..."
-                size="small"
-                style="width: 220px"
-                clearable
-              />
-            </div>
-
-            <el-table
-              :data="filteredSourceRecords"
-              size="small"
-              height="340px"
-              style="width: 100%; margin-top: 8px"
-              border
-              @selection-change="
-                (rows: CleanRecord[]) => (selectedRecordIdsToDelete = rows.map((r) => r.record_id))
-              "
-            >
-              <el-table-column type="selection" width="46" align="center" />
-              <el-table-column prop="entity_name" label="实体标的" width="130" />
-              <el-table-column prop="metric" label="指标名称" min-width="150" />
-              <el-table-column label="数值与单位" width="130">
-                <template #default="{ row }">
-                  <strong>{{ row.value }}</strong> <span class="muted">{{ row.unit }}</span>
-                </template>
-              </el-table-column>
-              <el-table-column prop="domain" label="领域" width="110">
-                <template #default="{ row }">
-                  <el-tag size="small" type="info">{{ row.domain }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column
-                prop="query"
-                label="来源查询"
-                min-width="160"
-                show-overflow-tooltip
-              />
-            </el-table>
-
-            <div class="pane-footer">
-              <el-button
-                type="danger"
-                size="large"
-                :disabled="selectedRecordIdsToDelete.length === 0"
-                :loading="submitting"
-                @click="handleCleanSubmit"
-              >
-                立即剔除所选记录并更新数据集
-              </el-button>
-            </div>
-          </div>
-        </el-tab-pane>
       </el-tabs>
 
       <!-- ------------------------------------------------------------- -->
@@ -1807,84 +1563,6 @@ const dialogTitle = computed(() => {
                 @click="handleCompsSubmit"
               >
                 保存标的池调整 (就地毫秒级生效)
-              </el-button>
-            </div>
-          </div>
-        </el-tab-pane>
-
-        <!-- Tab 2.2: 核心论点精修 -->
-        <el-tab-pane label="核心研判论点精修" name="findings">
-          <div class="tab-pane-content">
-            <div class="clean-toolbar">
-              <span class="clean-stats"
-                >当前定性论点提炼（共 {{ localFindings.length }} 条）：</span
-              >
-              <el-button size="small" type="primary" plain @click="addFindingRow"
-                >+ 补充研判论点</el-button
-              >
-            </div>
-
-            <div class="findings-scroll">
-              <div v-for="(f, idx) in localFindings" :key="f.id || idx" class="finding-card">
-                <div class="finding-card-header">
-                  <el-tag size="small" type="primary">{{ f.id }}</el-tag>
-                  <el-input
-                    v-model="f.title"
-                    placeholder="论点标题"
-                    style="flex: 1; margin: 0 10px"
-                  />
-                  <el-button type="danger" link @click="removeFindingRow(idx)">移除</el-button>
-                </div>
-                <el-input
-                  v-model="f.text"
-                  type="textarea"
-                  :rows="2"
-                  placeholder="详细逻辑阐述与数据依据..."
-                  style="margin-top: 8px"
-                />
-              </div>
-            </div>
-
-            <div class="pane-footer">
-              <el-button
-                type="success"
-                size="large"
-                :loading="submitting"
-                @click="handleFindingsSubmit"
-              >
-                保存论点精修 (就地毫秒级生效)
-              </el-button>
-            </div>
-          </div>
-        </el-tab-pane>
-
-        <!-- Tab 2.3: 风险项裁决 -->
-        <el-tab-pane label="异常指标与风险裁决" name="risks">
-          <div class="tab-pane-content">
-            <div class="section-lead">对智能体识别出的行业异常与风险预警进行人工定性裁决：</div>
-
-            <div class="risks-scroll">
-              <div v-for="r in localRisks" :key="r.id" class="risk-card">
-                <div class="risk-top">
-                  <span class="risk-title">{{ r.label }}</span>
-                  <el-radio-group v-model="r.decision" size="small">
-                    <el-radio-button value="emphasize">重点突出</el-radio-button>
-                    <el-radio-button value="keep">一般性提示</el-radio-button>
-                    <el-radio-button value="ignore">忽略排除</el-radio-button>
-                  </el-radio-group>
-                </div>
-                <div class="risk-desc-text">{{ r.desc }}</div>
-              </div>
-            </div>
-
-            <div class="pane-footer">
-              <el-button
-                type="success"
-                size="large"
-                :loading="submitting"
-                @click="handleRisksSubmit"
-              >
-                保存风险裁决 (就地毫秒级生效)
               </el-button>
             </div>
           </div>
@@ -2751,40 +2429,6 @@ const dialogTitle = computed(() => {
 .clean-stats {
   font-size: 13px;
   color: var(--el-text-color-regular);
-}
-.findings-scroll,
-.risks-scroll {
-  max-height: 340px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.finding-card,
-.risk-card {
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  padding: 10px 12px;
-  background: var(--el-bg-color);
-}
-.finding-card-header {
-  display: flex;
-  align-items: center;
-}
-.risk-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.risk-title {
-  font-weight: 600;
-  font-size: 13.5px;
-}
-.risk-desc-text {
-  font-size: 12.5px;
-  color: var(--el-text-color-secondary);
-  margin-top: 6px;
-  line-height: 1.5;
 }
 .single-rewrite-hero {
   background: linear-gradient(135deg, rgba(64, 158, 255, 0.08), rgba(103, 194, 58, 0.08));

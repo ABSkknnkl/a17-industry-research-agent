@@ -21,7 +21,7 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
     document.body.innerHTML = ''
   })
 
-  it('data_fetch 阶段支持增量数据补采与脏数据清洗', async () => {
+  it('data_fetch 阶段支持审核确认检索范围与增量数据补采', async () => {
     const wrapper = mount(StageInterventionModal, {
       props: {
         visible: true,
@@ -58,7 +58,7 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
     expect(bodyText).toContain('审核确认检索范围与关键词')
     expect(bodyText).toContain('增量数据补采')
     expect(bodyText).toContain('局部子域重采')
-    expect(bodyText).toContain('脏数据清洗与剔除')
+    expect(bodyText).not.toContain('脏数据清洗与剔除')
 
     // 快捷填入补采
     const buttons = Array.from(document.body.querySelectorAll('button'))

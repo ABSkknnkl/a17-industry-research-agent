@@ -1,4 +1,4 @@
-import { http, API_BASE_URL } from './http'
+import { ApiError, http, API_BASE_URL } from './http'
 import type {
   AgentTraceEvent,
   DownloadableArtifact,
@@ -102,6 +102,39 @@ export async function downloadArtifact(
   })
   const filename = artifact.uri.split(/[\\/]/).pop() || artifact.artifact_id
   return { blob: data, filename: mode === 'draft' ? `draft-${filename}` : filename }
+}
+
+/**
+ * 工作台紧凑交付包：单次 POST 直接返回内存 ZIP（含 md/html/pdf/完整证据 CSV）。
+ * 最终下载资格由服务端按当前版本与草稿/正式门禁确认，前端只做初步判断。
+ */
+export async function downloadCompactReport(
+  runId: string,
+  revision: number,
+  mode: 'formal' | 'draft',
+  signal?: AbortSignal
+): Promise<{ blob: Blob; filename: string }> {
+  const messages: Record<number, string> = {
+    404: '任务不存在，请返回工作台确认。',
+    409: '报告内容已变更或当前产物失效，请刷新后重新下载。',
+    429: '紧凑交付包正在生成，请稍后手动重试。',
+    500: '紧凑交付包生成失败，请稍后重试。',
+    504: 'PDF 渲染超时，请稍后重试。',
+  }
+  try {
+    const { data } = await http.post<Blob>(
+      `/runs/${runId}/exports/compact`,
+      { mode, expected_revision: revision },
+      { responseType: 'blob', timeout: 300_000, signal }
+    )
+    const filename = `${mode === 'draft' ? 'draft-' : ''}report-compact-r${revision}.zip`
+    return { blob: data, filename }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw new ApiError(messages[error.status ?? 0] ?? error.message, error.status, error.code)
+    }
+    throw error
+  }
 }
 
 export function triggerBlobDownload(blob: Blob, filename: string): void {
