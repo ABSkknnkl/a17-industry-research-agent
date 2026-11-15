@@ -1,0 +1,18 @@
+{
+  "template": {
+    "template_id": "a5_nev_a3_svg",
+    "source": "新能源汽车行业优化报告样例/report_a3.html",
+    "sha256": "d78f0861e1bb955c6051b96e5e51b5a8904d29194d9bcd56b190400da6eada25",
+    "chain_asset": "产业链图_单跑/新能源汽车产业链图.svg",
+    "chain_sha256": "11187b00aacd40419129b180f1976d91c2ade557a60dd23f0f8f312241f1bf99"
+  },
+  "chain_anchor": "fig8",
+  "chain_page": 15,
+  "toc_count": 42,
+  "outline_count": 35,
+  "original_svg_input_verified": true,
+  "existing_live_llm_view": null,
+  "delivery_status": "reference",
+  "new_llm_call": false,
+  "page_count": 20
+}

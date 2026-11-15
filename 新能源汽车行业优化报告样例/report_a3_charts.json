@@ -1,0 +1,4766 @@
+{
+  "a1_run_id": "run-20261113193412-b1c2a06bc319",
+  "a2_report_id": "analysis-20261113-2212af3b",
+  "a3_reference_run_id": "charts-20261113214131-d344a507",
+  "figures": {
+    "fig1": {
+      "origin": "accepted_a3_chart",
+      "charts": [
+        {
+          "chart_id": "CHART-05-A2563BAE",
+          "title": "新能源汽车 · 销量及同比增速（2021-12-31至2025-12-31）",
+          "chart_type": "combo",
+          "status": "ready",
+          "option": {
+            "tooltip": {
+              "trigger": "axis",
+              "axisPointer": {
+                "type": "cross"
+              }
+            },
+            "legend": {
+              "data": [
+                "新能源汽车 · 销量",
+                "同比增速"
+              ],
+              "top": 4
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2021-12-31",
+                "2022-12-31",
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLabel": {
+                "interval": 0,
+                "fontSize": 12,
+                "lineHeight": 16,
+                "hideOverlap": false,
+                "width": 139.0,
+                "overflow": "break"
+              }
+            },
+            "yAxis": [
+              {
+                "type": "value",
+                "name": "万辆",
+                "min": 0,
+                "max": 1800,
+                "interval": 300,
+                "splitNumber": 6,
+                "axisLine": {
+                  "show": true,
+                  "lineStyle": {
+                    "color": "#94a3b8"
+                  }
+                },
+                "splitLine": {
+                  "lineStyle": {
+                    "type": "dashed",
+                    "color": "#e2e8f0"
+                  }
+                }
+              },
+              {
+                "type": "value",
+                "name": "%",
+                "min": 0,
+                "max": 100,
+                "interval": 20,
+                "splitNumber": 5,
+                "axisLine": {
+                  "show": true,
+                  "lineStyle": {
+                    "color": "#94a3b8"
+                  }
+                },
+                "splitLine": {
+                  "show": false
+                }
+              }
+            ],
+            "series": [
+              {
+                "name": "新能源汽车 · 销量",
+                "type": "bar",
+                "yAxisIndex": 0,
+                "data": [
+                  352.1,
+                  688.7,
+                  949.5,
+                  1286.6,
+                  1649.0
+                ],
+                "itemStyle": {
+                  "color": "#1B365D",
+                  "borderRadius": [
+                    3,
+                    3,
+                    0,
+                    0
+                  ]
+                },
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              },
+              {
+                "name": "同比增速",
+                "type": "line",
+                "yAxisIndex": 1,
+                "connectNulls": false,
+                "data": [
+                  null,
+                  95.597842,
+                  37.868448,
+                  35.502896,
+                  28.167263
+                ],
+                "itemStyle": {
+                  "color": "#D52B1E"
+                },
+                "lineStyle": {
+                  "width": 2.5
+                },
+                "symbol": "circle",
+                "symbolSize": 6,
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              }
+            ],
+            "observation_range": {
+              "start": "2021-12-31",
+              "end": "2025-12-31"
+            },
+            "research_as_of": "2026-11-13",
+            "as_of": "",
+            "presentation": {
+              "version": 1,
+              "short_title": "新能源汽车销量及同比",
+              "period_labels": "year",
+              "plot_height": "regular",
+              "axes": [
+                {
+                  "series_index": 0,
+                  "min": 0,
+                  "max": 1800,
+                  "interval": 300
+                },
+                {
+                  "series_index": 1,
+                  "min": 0,
+                  "max": 100,
+                  "interval": 20
+                }
+              ],
+              "labels": [
+                {
+                  "series_index": 0,
+                  "mode": "all",
+                  "point_indices": [],
+                  "decimals": 2
+                },
+                {
+                  "series_index": 1,
+                  "mode": "key",
+                  "point_indices": [
+                    1,
+                    4
+                  ],
+                  "decimals": 1
+                }
+              ],
+              "note": "2025 年销量 1,649 万辆，同比 +28.2%",
+              "reference_lines": [],
+              "role": "nev.q1.sales",
+              "fallback_reason": ""
+            }
+          },
+          "evidence_ids": [
+            "R-deb83bebc112ce69cad1",
+            "R-5857b2071dd2c35950df",
+            "R-4fc0c382a6689f13fb54",
+            "R-a6951154c9e1604746b1",
+            "R-e291f0980156a96d5ddc"
+          ],
+          "point_evidence_ids": [
+            "R-deb83bebc112ce69cad1",
+            "R-5857b2071dd2c35950df",
+            "R-5857b2071dd2c35950df",
+            "R-4fc0c382a6689f13fb54",
+            "R-4fc0c382a6689f13fb54",
+            "R-a6951154c9e1604746b1",
+            "R-a6951154c9e1604746b1",
+            "R-e291f0980156a96d5ddc",
+            "R-e291f0980156a96d5ddc"
+          ],
+          "data_contract": {
+            "schema_version": "1",
+            "axis_type": "time_series",
+            "categories": [
+              "2021-12-31",
+              "2022-12-31",
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "series_units": {
+              "新能源汽车 · 销量": "万辆",
+              "同比增速": "%"
+            },
+            "series_order": [
+              "新能源汽车 · 销量",
+              "同比增速"
+            ],
+            "points": [
+              {
+                "index": 0,
+                "category": "2021-12-31",
+                "period": "2021-12-31",
+                "record_id": "R-deb83bebc112ce69cad1",
+                "entity": "中国",
+                "metric": "新能源汽车:销量:累计值",
+                "period_type": "annual",
+                "period_start": "2021-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 销量",
+                "value": 352.1,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 1,
+                "category": "2022-12-31",
+                "period": "2022-12-31",
+                "record_id": "R-5857b2071dd2c35950df",
+                "entity": "中国",
+                "metric": "新能源汽车:销量:累计值",
+                "period_type": "annual",
+                "period_start": "2022-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 销量",
+                "value": 688.7,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 1,
+                "category": "2022-12-31",
+                "period": "2022-12-31",
+                "record_id": "R-5857b2071dd2c35950df",
+                "entity": "中国",
+                "metric": "新能源汽车:销量:累计值",
+                "period_type": "annual",
+                "period_start": "2022-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "同比增速",
+                "value": 95.597842,
+                "unit": "%",
+                "calculation": "yoy_percent",
+                "source_record_ids": [
+                  "R-5857b2071dd2c35950df",
+                  "R-deb83bebc112ce69cad1"
+                ]
+              },
+              {
+                "index": 2,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "record_id": "R-4fc0c382a6689f13fb54",
+                "entity": "中国",
+                "metric": "新能源汽车:销量:累计值",
+                "period_type": "annual",
+                "period_start": "2023-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 销量",
+                "value": 949.5,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 2,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "record_id": "R-4fc0c382a6689f13fb54",
+                "entity": "中国",
+                "metric": "新能源汽车:销量:累计值",
+                "period_type": "annual",
+                "period_start": "2023-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "同比增速",
+                "value": 37.868448,
+                "unit": "%",
+                "calculation": "yoy_percent",
+                "source_record_ids": [
+                  "R-4fc0c382a6689f13fb54",
+                  "R-5857b2071dd2c35950df"
+                ]
+              },
+              {
+                "index": 3,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "record_id": "R-a6951154c9e1604746b1",
+                "entity": "中国",
+                "metric": "新能源汽车:销量:累计值",
+                "period_type": "annual",
+                "period_start": "2024-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 销量",
+                "value": 1286.6,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 3,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "record_id": "R-a6951154c9e1604746b1",
+                "entity": "中国",
+                "metric": "新能源汽车:销量:累计值",
+                "period_type": "annual",
+                "period_start": "2024-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "同比增速",
+                "value": 35.502896,
+                "unit": "%",
+                "calculation": "yoy_percent",
+                "source_record_ids": [
+                  "R-a6951154c9e1604746b1",
+                  "R-4fc0c382a6689f13fb54"
+                ]
+              },
+              {
+                "index": 4,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "record_id": "R-e291f0980156a96d5ddc",
+                "entity": "中国",
+                "metric": "新能源汽车:销量:累计值",
+                "period_type": "annual",
+                "period_start": "2025-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 销量",
+                "value": 1649.0,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 4,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "record_id": "R-e291f0980156a96d5ddc",
+                "entity": "中国",
+                "metric": "新能源汽车:销量:累计值",
+                "period_type": "annual",
+                "period_start": "2025-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "同比增速",
+                "value": 28.167263,
+                "unit": "%",
+                "calculation": "yoy_percent",
+                "source_record_ids": [
+                  "R-e291f0980156a96d5ddc",
+                  "R-a6951154c9e1604746b1"
+                ]
+              }
+            ],
+            "observation_range": {
+              "start": "2021-12-31",
+              "end": "2025-12-31"
+            },
+            "research_as_of": "2026-11-13",
+            "comparison_eligible": true,
+            "trend_id": "T-80aaf3f9d6ed3b2d",
+            "selection_source": "deterministic",
+            "question_ids": [
+              "Q-1"
+            ]
+          },
+          "insight_goal": "同时展示年度规模与同比变化。",
+          "recommended_chapter_id": "CH-02",
+          "footnotes": [
+            "左轴为规模，右轴为同比增速。同比按相邻两年同口径的源值计算。",
+            "首年缺少上年基期，同比置空。"
+          ],
+          "svg_uri": null,
+          "html_uri": null,
+          "data_fingerprint": "a2563baea47d8f408b5994028d7fb4f190e0fd221640d8a11c0fad50830aece4",
+          "figure_number": "图 5",
+          "subtitle": null,
+          "source_line": "数据来源：公司公告、同花顺 iFinD、行业公开披露；数值按证据换算，业务解释仍须复核。",
+          "render_mode": "echarts",
+          "inline_svg": null,
+          "image_uri": null,
+          "image_mime_type": null,
+          "generation_prompt": null,
+          "generation_prompt_model": null,
+          "generation_image_model": null,
+          "chain_template": null,
+          "chain_graph": null,
+          "supplement_image_uri": null,
+          "supplement_html_uri": null,
+          "supplement_note": null
+        }
+      ]
+    },
+    "fig2": {
+      "origin": "accepted_a3_chart",
+      "charts": [
+        {
+          "chart_id": "CHART-02-5F4CED24",
+          "title": "国内新能源乘用车零售渗透率（2021-02-28至2025-12-31）",
+          "chart_type": "area",
+          "status": "ready",
+          "option": {
+            "tooltip": {
+              "trigger": "axis"
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2021-02-28",
+                "2021-03-31",
+                "2021-04-30",
+                "2021-05-31",
+                "2021-06-30",
+                "2021-07-31",
+                "2021-08-31",
+                "2021-09-30",
+                "2021-10-31",
+                "2021-11-30",
+                "2021-12-31",
+                "2022-01-31",
+                "2022-02-28",
+                "2022-03-31",
+                "2022-04-30",
+                "2022-05-31",
+                "2022-06-30",
+                "2022-07-31",
+                "2022-08-31",
+                "2022-09-30",
+                "2022-10-31",
+                "2022-11-30",
+                "2022-12-31",
+                "2023-01-31",
+                "2023-02-28",
+                "2023-03-31",
+                "2023-04-30",
+                "2023-05-31",
+                "2023-06-30",
+                "2023-07-31",
+                "2023-08-31",
+                "2023-09-30",
+                "2023-10-31",
+                "2023-11-30",
+                "2023-12-31",
+                "2024-01-31",
+                "2024-02-29",
+                "2024-03-31",
+                "2024-04-30",
+                "2024-05-31",
+                "2024-06-30",
+                "2024-07-31",
+                "2024-08-31",
+                "2024-09-30",
+                "2024-10-31",
+                "2024-11-30",
+                "2024-12-31",
+                "2025-01-31",
+                "2025-02-28",
+                "2025-03-31",
+                "2025-04-30",
+                "2025-05-31",
+                "2025-06-30",
+                "2025-07-31",
+                "2025-08-31",
+                "2025-09-30",
+                "2025-10-31",
+                "2025-11-30",
+                "2025-12-31"
+              ],
+              "axisLine": {
+                "lineStyle": {
+                  "color": "#94a3b8"
+                }
+              }
+            },
+            "yAxis": {
+              "type": "value",
+              "name": "%",
+              "splitNumber": 4,
+              "splitLine": {
+                "lineStyle": {
+                  "type": "dashed",
+                  "color": "#e2e8f0"
+                }
+              },
+              "min": 0,
+              "max": 80,
+              "interval": 20
+            },
+            "series": [
+              {
+                "name": "国内新能源乘用车零售渗透率",
+                "type": "line",
+                "data": [
+                  8.1,
+                  10.5,
+                  10.1,
+                  11.4,
+                  14.0,
+                  14.8,
+                  17.1,
+                  21.1,
+                  18.8,
+                  20.8,
+                  22.6,
+                  16.6,
+                  21.8,
+                  28.2,
+                  27.2,
+                  26.6,
+                  27.4,
+                  26.7,
+                  28.3,
+                  31.8,
+                  30.2,
+                  36.3,
+                  29.5,
+                  25.7,
+                  31.6,
+                  34.2,
+                  32.3,
+                  33.3,
+                  35.1,
+                  36.1,
+                  37.3,
+                  36.9,
+                  37.8,
+                  40.4,
+                  40.2,
+                  32.8,
+                  35.8,
+                  41.6,
+                  43.7,
+                  47.0,
+                  48.4,
+                  51.1,
+                  53.9,
+                  53.3,
+                  52.9,
+                  52.3,
+                  49.4,
+                  41.5,
+                  49.5,
+                  51.1,
+                  51.5,
+                  52.9,
+                  53.3,
+                  54.0,
+                  55.2,
+                  57.8,
+                  57.2,
+                  59.3,
+                  59.1
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#1B365D"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5,
+                "areaStyle": {
+                  "opacity": 0.15
+                },
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              }
+            ],
+            "observation_range": {
+              "start": "2021-02-28",
+              "end": "2025-12-31"
+            },
+            "research_as_of": "2026-11-13",
+            "as_of": "",
+            "presentation": {
+              "version": 1,
+              "short_title": "",
+              "period_labels": "auto",
+              "plot_height": "regular",
+              "axes": [
+                {
+                  "series_index": 0,
+                  "min": 0,
+                  "max": 80,
+                  "interval": 20
+                }
+              ],
+              "labels": [
+                {
+                  "series_index": 0,
+                  "mode": "key",
+                  "point_indices": [
+                    0,
+                    58
+                  ],
+                  "decimals": 2
+                }
+              ],
+              "note": "",
+              "reference_lines": [],
+              "role": "nev.q1.monthly",
+              "fallback_reason": "nev_preset:轴 0 未覆盖全部实际点 [8.100000, 59.300000] vs [48, 62]"
+            }
+          },
+          "evidence_ids": [
+            "R-d90041f3501b9dd66f62",
+            "R-99c8d5806e326e23e0be",
+            "R-c0c80ccc451470dc0879",
+            "R-c411895d986ce0691146",
+            "R-5afc5e6d794fa68ac2be",
+            "R-cf2b2772d861557be6e7",
+            "R-f5d512307dbf3bb7bcbf",
+            "R-e06eb18ee6338fefcff4",
+            "R-3a40d78a71634bd8aa94",
+            "R-eb738558d1b7184fe252",
+            "R-be7f5a0f11629fe8abb3",
+            "R-ee56da7759a7dee47ece",
+            "R-d932554126c15003eab2",
+            "R-4b8bee51eeab9f38de80",
+            "R-84e94313871e1cf7d12b",
+            "R-63cc6aa3131bbad06916",
+            "R-b8a1e475f68c6433c2ec",
+            "R-8b9d38e2130c1a523416",
+            "R-3969b04211af16fe2c68",
+            "R-91c14da74b57a2b47952",
+            "R-c4a1e6035a3d07049aa0",
+            "R-18eda5a12b8edb9f4545",
+            "R-bb7d3100de87c799e98f",
+            "R-b83b3d5bc3fab42f4f95",
+            "R-002e6eceb0af996cc560",
+            "R-a45992b007076a159cab",
+            "R-aae7cf79280ce4320f32",
+            "R-52e16594570be4f9404b",
+            "R-67764acdff4e4ccf5ea8",
+            "R-34e1615425d1c1bf9e7a",
+            "R-42bcfda3bfe3b65eb1a7",
+            "R-83b3a4154e3a306781ef",
+            "R-62db14fde4da0038cc0a",
+            "R-090c18d0a4d5b8bd022a",
+            "R-d3d36567239af932030b",
+            "R-46e2f24ed5686c41a0be",
+            "R-8c5f28feb150de84b0ba",
+            "R-2bc240f43c5fb1e2a62d",
+            "R-8672b8cce89ea869c64f",
+            "R-b7c17432a4c63abe2091",
+            "R-e90412b64ac1fe7c3586",
+            "R-107c37392b1359ab82c4",
+            "R-7fa5896e6ed72f19a7c9",
+            "R-1cfd5df3f5c681864798",
+            "R-005a2fdebed8418a9623",
+            "R-60f8a93c3e8c0c21418f",
+            "R-9240556959984b2e0195",
+            "R-6e475fc8f1d6387b61a8",
+            "R-74f7da9e741987bba567",
+            "R-197785c1cffb39bdfe23",
+            "R-8f921e214f63e85fe3ec",
+            "R-3c3e8a1253cb21ab06cf",
+            "R-891fb90463464582e51d",
+            "R-24acaab557dade2246e3",
+            "R-5c2b9fba93fe1280899b",
+            "R-964a65805c99900d4838",
+            "R-5ede99ec767290791a43",
+            "R-b9fff305a499a1d185ac",
+            "R-e4dd323d06ed9a1ef152"
+          ],
+          "point_evidence_ids": [
+            "R-d90041f3501b9dd66f62",
+            "R-99c8d5806e326e23e0be",
+            "R-c0c80ccc451470dc0879",
+            "R-c411895d986ce0691146",
+            "R-5afc5e6d794fa68ac2be",
+            "R-cf2b2772d861557be6e7",
+            "R-f5d512307dbf3bb7bcbf",
+            "R-e06eb18ee6338fefcff4",
+            "R-3a40d78a71634bd8aa94",
+            "R-eb738558d1b7184fe252",
+            "R-be7f5a0f11629fe8abb3",
+            "R-ee56da7759a7dee47ece",
+            "R-d932554126c15003eab2",
+            "R-4b8bee51eeab9f38de80",
+            "R-84e94313871e1cf7d12b",
+            "R-63cc6aa3131bbad06916",
+            "R-b8a1e475f68c6433c2ec",
+            "R-8b9d38e2130c1a523416",
+            "R-3969b04211af16fe2c68",
+            "R-91c14da74b57a2b47952",
+            "R-c4a1e6035a3d07049aa0",
+            "R-18eda5a12b8edb9f4545",
+            "R-bb7d3100de87c799e98f",
+            "R-b83b3d5bc3fab42f4f95",
+            "R-002e6eceb0af996cc560",
+            "R-a45992b007076a159cab",
+            "R-aae7cf79280ce4320f32",
+            "R-52e16594570be4f9404b",
+            "R-67764acdff4e4ccf5ea8",
+            "R-34e1615425d1c1bf9e7a",
+            "R-42bcfda3bfe3b65eb1a7",
+            "R-83b3a4154e3a306781ef",
+            "R-62db14fde4da0038cc0a",
+            "R-090c18d0a4d5b8bd022a",
+            "R-d3d36567239af932030b",
+            "R-46e2f24ed5686c41a0be",
+            "R-8c5f28feb150de84b0ba",
+            "R-2bc240f43c5fb1e2a62d",
+            "R-8672b8cce89ea869c64f",
+            "R-b7c17432a4c63abe2091",
+            "R-e90412b64ac1fe7c3586",
+            "R-107c37392b1359ab82c4",
+            "R-7fa5896e6ed72f19a7c9",
+            "R-1cfd5df3f5c681864798",
+            "R-005a2fdebed8418a9623",
+            "R-60f8a93c3e8c0c21418f",
+            "R-9240556959984b2e0195",
+            "R-6e475fc8f1d6387b61a8",
+            "R-74f7da9e741987bba567",
+            "R-197785c1cffb39bdfe23",
+            "R-8f921e214f63e85fe3ec",
+            "R-3c3e8a1253cb21ab06cf",
+            "R-891fb90463464582e51d",
+            "R-24acaab557dade2246e3",
+            "R-5c2b9fba93fe1280899b",
+            "R-964a65805c99900d4838",
+            "R-5ede99ec767290791a43",
+            "R-b9fff305a499a1d185ac",
+            "R-e4dd323d06ed9a1ef152"
+          ],
+          "data_contract": {
+            "schema_version": "1",
+            "axis_type": "time_series",
+            "categories": [
+              "2021-02-28",
+              "2021-03-31",
+              "2021-04-30",
+              "2021-05-31",
+              "2021-06-30",
+              "2021-07-31",
+              "2021-08-31",
+              "2021-09-30",
+              "2021-10-31",
+              "2021-11-30",
+              "2021-12-31",
+              "2022-01-31",
+              "2022-02-28",
+              "2022-03-31",
+              "2022-04-30",
+              "2022-05-31",
+              "2022-06-30",
+              "2022-07-31",
+              "2022-08-31",
+              "2022-09-30",
+              "2022-10-31",
+              "2022-11-30",
+              "2022-12-31",
+              "2023-01-31",
+              "2023-02-28",
+              "2023-03-31",
+              "2023-04-30",
+              "2023-05-31",
+              "2023-06-30",
+              "2023-07-31",
+              "2023-08-31",
+              "2023-09-30",
+              "2023-10-31",
+              "2023-11-30",
+              "2023-12-31",
+              "2024-01-31",
+              "2024-02-29",
+              "2024-03-31",
+              "2024-04-30",
+              "2024-05-31",
+              "2024-06-30",
+              "2024-07-31",
+              "2024-08-31",
+              "2024-09-30",
+              "2024-10-31",
+              "2024-11-30",
+              "2024-12-31",
+              "2025-01-31",
+              "2025-02-28",
+              "2025-03-31",
+              "2025-04-30",
+              "2025-05-31",
+              "2025-06-30",
+              "2025-07-31",
+              "2025-08-31",
+              "2025-09-30",
+              "2025-10-31",
+              "2025-11-30",
+              "2025-12-31"
+            ],
+            "series_order": [
+              "国内新能源乘用车零售渗透率"
+            ],
+            "series_units": {
+              "国内新能源乘用车零售渗透率": "%"
+            },
+            "points": [
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 0,
+                "category": "2021-02-28",
+                "value": 8.1,
+                "unit": "%",
+                "record_id": "R-d90041f3501b9dd66f62",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-02-28",
+                "period_start": "2021-02-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 1,
+                "category": "2021-03-31",
+                "value": 10.5,
+                "unit": "%",
+                "record_id": "R-99c8d5806e326e23e0be",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-03-31",
+                "period_start": "2021-03-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 2,
+                "category": "2021-04-30",
+                "value": 10.1,
+                "unit": "%",
+                "record_id": "R-c0c80ccc451470dc0879",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-04-30",
+                "period_start": "2021-04-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 3,
+                "category": "2021-05-31",
+                "value": 11.4,
+                "unit": "%",
+                "record_id": "R-c411895d986ce0691146",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-05-31",
+                "period_start": "2021-05-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 4,
+                "category": "2021-06-30",
+                "value": 14.0,
+                "unit": "%",
+                "record_id": "R-5afc5e6d794fa68ac2be",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-06-30",
+                "period_start": "2021-06-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 5,
+                "category": "2021-07-31",
+                "value": 14.8,
+                "unit": "%",
+                "record_id": "R-cf2b2772d861557be6e7",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-07-31",
+                "period_start": "2021-07-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 6,
+                "category": "2021-08-31",
+                "value": 17.1,
+                "unit": "%",
+                "record_id": "R-f5d512307dbf3bb7bcbf",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-08-31",
+                "period_start": "2021-08-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 7,
+                "category": "2021-09-30",
+                "value": 21.1,
+                "unit": "%",
+                "record_id": "R-e06eb18ee6338fefcff4",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-09-30",
+                "period_start": "2021-09-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 8,
+                "category": "2021-10-31",
+                "value": 18.8,
+                "unit": "%",
+                "record_id": "R-3a40d78a71634bd8aa94",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-10-31",
+                "period_start": "2021-10-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 9,
+                "category": "2021-11-30",
+                "value": 20.8,
+                "unit": "%",
+                "record_id": "R-eb738558d1b7184fe252",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-11-30",
+                "period_start": "2021-11-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 10,
+                "category": "2021-12-31",
+                "value": 22.6,
+                "unit": "%",
+                "record_id": "R-be7f5a0f11629fe8abb3",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2021-12-31",
+                "period_start": "2021-12-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 11,
+                "category": "2022-01-31",
+                "value": 16.6,
+                "unit": "%",
+                "record_id": "R-ee56da7759a7dee47ece",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-01-31",
+                "period_start": "2022-01-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 12,
+                "category": "2022-02-28",
+                "value": 21.8,
+                "unit": "%",
+                "record_id": "R-d932554126c15003eab2",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-02-28",
+                "period_start": "2022-02-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 13,
+                "category": "2022-03-31",
+                "value": 28.2,
+                "unit": "%",
+                "record_id": "R-4b8bee51eeab9f38de80",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-03-31",
+                "period_start": "2022-03-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 14,
+                "category": "2022-04-30",
+                "value": 27.2,
+                "unit": "%",
+                "record_id": "R-84e94313871e1cf7d12b",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-04-30",
+                "period_start": "2022-04-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 15,
+                "category": "2022-05-31",
+                "value": 26.6,
+                "unit": "%",
+                "record_id": "R-63cc6aa3131bbad06916",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-05-31",
+                "period_start": "2022-05-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 16,
+                "category": "2022-06-30",
+                "value": 27.4,
+                "unit": "%",
+                "record_id": "R-b8a1e475f68c6433c2ec",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-06-30",
+                "period_start": "2022-06-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 17,
+                "category": "2022-07-31",
+                "value": 26.7,
+                "unit": "%",
+                "record_id": "R-8b9d38e2130c1a523416",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-07-31",
+                "period_start": "2022-07-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 18,
+                "category": "2022-08-31",
+                "value": 28.3,
+                "unit": "%",
+                "record_id": "R-3969b04211af16fe2c68",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-08-31",
+                "period_start": "2022-08-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 19,
+                "category": "2022-09-30",
+                "value": 31.8,
+                "unit": "%",
+                "record_id": "R-91c14da74b57a2b47952",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-09-30",
+                "period_start": "2022-09-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 20,
+                "category": "2022-10-31",
+                "value": 30.2,
+                "unit": "%",
+                "record_id": "R-c4a1e6035a3d07049aa0",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-10-31",
+                "period_start": "2022-10-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 21,
+                "category": "2022-11-30",
+                "value": 36.3,
+                "unit": "%",
+                "record_id": "R-18eda5a12b8edb9f4545",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-11-30",
+                "period_start": "2022-11-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 22,
+                "category": "2022-12-31",
+                "value": 29.5,
+                "unit": "%",
+                "record_id": "R-bb7d3100de87c799e98f",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2022-12-31",
+                "period_start": "2022-12-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 23,
+                "category": "2023-01-31",
+                "value": 25.7,
+                "unit": "%",
+                "record_id": "R-b83b3d5bc3fab42f4f95",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-01-31",
+                "period_start": "2023-01-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 24,
+                "category": "2023-02-28",
+                "value": 31.6,
+                "unit": "%",
+                "record_id": "R-002e6eceb0af996cc560",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-02-28",
+                "period_start": "2023-02-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 25,
+                "category": "2023-03-31",
+                "value": 34.2,
+                "unit": "%",
+                "record_id": "R-a45992b007076a159cab",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-03-31",
+                "period_start": "2023-03-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 26,
+                "category": "2023-04-30",
+                "value": 32.3,
+                "unit": "%",
+                "record_id": "R-aae7cf79280ce4320f32",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-04-30",
+                "period_start": "2023-04-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 27,
+                "category": "2023-05-31",
+                "value": 33.3,
+                "unit": "%",
+                "record_id": "R-52e16594570be4f9404b",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-05-31",
+                "period_start": "2023-05-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 28,
+                "category": "2023-06-30",
+                "value": 35.1,
+                "unit": "%",
+                "record_id": "R-67764acdff4e4ccf5ea8",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-06-30",
+                "period_start": "2023-06-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 29,
+                "category": "2023-07-31",
+                "value": 36.1,
+                "unit": "%",
+                "record_id": "R-34e1615425d1c1bf9e7a",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-07-31",
+                "period_start": "2023-07-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 30,
+                "category": "2023-08-31",
+                "value": 37.3,
+                "unit": "%",
+                "record_id": "R-42bcfda3bfe3b65eb1a7",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-08-31",
+                "period_start": "2023-08-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 31,
+                "category": "2023-09-30",
+                "value": 36.9,
+                "unit": "%",
+                "record_id": "R-83b3a4154e3a306781ef",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-09-30",
+                "period_start": "2023-09-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 32,
+                "category": "2023-10-31",
+                "value": 37.8,
+                "unit": "%",
+                "record_id": "R-62db14fde4da0038cc0a",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-10-31",
+                "period_start": "2023-10-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 33,
+                "category": "2023-11-30",
+                "value": 40.4,
+                "unit": "%",
+                "record_id": "R-090c18d0a4d5b8bd022a",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-11-30",
+                "period_start": "2023-11-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 34,
+                "category": "2023-12-31",
+                "value": 40.2,
+                "unit": "%",
+                "record_id": "R-d3d36567239af932030b",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2023-12-31",
+                "period_start": "2023-12-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 35,
+                "category": "2024-01-31",
+                "value": 32.8,
+                "unit": "%",
+                "record_id": "R-46e2f24ed5686c41a0be",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-01-31",
+                "period_start": "2024-01-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 36,
+                "category": "2024-02-29",
+                "value": 35.8,
+                "unit": "%",
+                "record_id": "R-8c5f28feb150de84b0ba",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-02-29",
+                "period_start": "2024-02-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 37,
+                "category": "2024-03-31",
+                "value": 41.6,
+                "unit": "%",
+                "record_id": "R-2bc240f43c5fb1e2a62d",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-03-31",
+                "period_start": "2024-03-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 38,
+                "category": "2024-04-30",
+                "value": 43.7,
+                "unit": "%",
+                "record_id": "R-8672b8cce89ea869c64f",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-04-30",
+                "period_start": "2024-04-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 39,
+                "category": "2024-05-31",
+                "value": 47.0,
+                "unit": "%",
+                "record_id": "R-b7c17432a4c63abe2091",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-05-31",
+                "period_start": "2024-05-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 40,
+                "category": "2024-06-30",
+                "value": 48.4,
+                "unit": "%",
+                "record_id": "R-e90412b64ac1fe7c3586",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-06-30",
+                "period_start": "2024-06-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 41,
+                "category": "2024-07-31",
+                "value": 51.1,
+                "unit": "%",
+                "record_id": "R-107c37392b1359ab82c4",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-07-31",
+                "period_start": "2024-07-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 42,
+                "category": "2024-08-31",
+                "value": 53.9,
+                "unit": "%",
+                "record_id": "R-7fa5896e6ed72f19a7c9",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-08-31",
+                "period_start": "2024-08-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 43,
+                "category": "2024-09-30",
+                "value": 53.3,
+                "unit": "%",
+                "record_id": "R-1cfd5df3f5c681864798",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-09-30",
+                "period_start": "2024-09-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 44,
+                "category": "2024-10-31",
+                "value": 52.9,
+                "unit": "%",
+                "record_id": "R-005a2fdebed8418a9623",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-10-31",
+                "period_start": "2024-10-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 45,
+                "category": "2024-11-30",
+                "value": 52.3,
+                "unit": "%",
+                "record_id": "R-60f8a93c3e8c0c21418f",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-11-30",
+                "period_start": "2024-11-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 46,
+                "category": "2024-12-31",
+                "value": 49.4,
+                "unit": "%",
+                "record_id": "R-9240556959984b2e0195",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2024-12-31",
+                "period_start": "2024-12-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 47,
+                "category": "2025-01-31",
+                "value": 41.5,
+                "unit": "%",
+                "record_id": "R-6e475fc8f1d6387b61a8",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-01-31",
+                "period_start": "2025-01-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 48,
+                "category": "2025-02-28",
+                "value": 49.5,
+                "unit": "%",
+                "record_id": "R-74f7da9e741987bba567",
+                "entity": "宏观",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-02-28",
+                "period_start": "2025-02-01",
+                "period_type": "month",
+                "period_provenance": "field",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 49,
+                "category": "2025-03-31",
+                "value": 51.1,
+                "unit": "%",
+                "record_id": "R-197785c1cffb39bdfe23",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-03-31",
+                "period_start": "2025-03-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 50,
+                "category": "2025-04-30",
+                "value": 51.5,
+                "unit": "%",
+                "record_id": "R-8f921e214f63e85fe3ec",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-04-30",
+                "period_start": "2025-04-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 51,
+                "category": "2025-05-31",
+                "value": 52.9,
+                "unit": "%",
+                "record_id": "R-3c3e8a1253cb21ab06cf",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-05-31",
+                "period_start": "2025-05-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 52,
+                "category": "2025-06-30",
+                "value": 53.3,
+                "unit": "%",
+                "record_id": "R-891fb90463464582e51d",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-06-30",
+                "period_start": "2025-06-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 53,
+                "category": "2025-07-31",
+                "value": 54.0,
+                "unit": "%",
+                "record_id": "R-24acaab557dade2246e3",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-07-31",
+                "period_start": "2025-07-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 54,
+                "category": "2025-08-31",
+                "value": 55.2,
+                "unit": "%",
+                "record_id": "R-5c2b9fba93fe1280899b",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-08-31",
+                "period_start": "2025-08-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 55,
+                "category": "2025-09-30",
+                "value": 57.8,
+                "unit": "%",
+                "record_id": "R-964a65805c99900d4838",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-09-30",
+                "period_start": "2025-09-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 56,
+                "category": "2025-10-31",
+                "value": 57.2,
+                "unit": "%",
+                "record_id": "R-5ede99ec767290791a43",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-10-31",
+                "period_start": "2025-10-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 57,
+                "category": "2025-11-30",
+                "value": 59.3,
+                "unit": "%",
+                "record_id": "R-b9fff305a499a1d185ac",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-11-30",
+                "period_start": "2025-11-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              },
+              {
+                "series": "国内新能源乘用车零售渗透率",
+                "index": 58,
+                "category": "2025-12-31",
+                "value": 59.1,
+                "unit": "%",
+                "record_id": "R-e4dd323d06ed9a1ef152",
+                "entity": "中国",
+                "metric": "国内零售渗透率:新能源汽车:当月值",
+                "period": "2025-12-31",
+                "period_start": "2025-12-01",
+                "period_type": "month",
+                "period_provenance": "row",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "source_domain": "macro"
+              }
+            ],
+            "observation_range": {
+              "start": "2021-02-28",
+              "end": "2025-12-31"
+            },
+            "research_as_of": "2026-11-13",
+            "comparison_eligible": true,
+            "source_indicator_id": "S009287586",
+            "selection_source": "deterministic",
+            "question_ids": [
+              "Q-2"
+            ]
+          },
+          "insight_goal": "展示同口径零售渗透率月度走势。",
+          "recommended_chapter_id": "CH-02",
+          "footnotes": [],
+          "svg_uri": null,
+          "html_uri": null,
+          "data_fingerprint": "5f4ced2402a67bd75a93821ff3d1eeaae44462a70743ff390045b688669fd05f",
+          "figure_number": "图 2",
+          "subtitle": null,
+          "source_line": "数据来源：公司公告、同花顺 iFinD、行业公开披露；数值按证据换算，业务解释仍须复核。",
+          "render_mode": "echarts",
+          "inline_svg": null,
+          "image_uri": null,
+          "image_mime_type": null,
+          "generation_prompt": null,
+          "generation_prompt_model": null,
+          "generation_image_model": null,
+          "chain_template": null,
+          "chain_graph": null,
+          "supplement_image_uri": null,
+          "supplement_html_uri": null,
+          "supplement_note": null
+        }
+      ]
+    },
+    "fig3": {
+      "origin": "accepted_a3_chart",
+      "charts": [
+        {
+          "chart_id": "CHART-01-B796826C",
+          "title": "新能源汽车 · 出口量及同比增速（2021-12-31至2025-12-31）",
+          "chart_type": "combo",
+          "status": "ready",
+          "option": {
+            "tooltip": {
+              "trigger": "axis",
+              "axisPointer": {
+                "type": "cross"
+              }
+            },
+            "legend": {
+              "data": [
+                "新能源汽车 · 出口量",
+                "同比增速"
+              ],
+              "top": 4
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2021-12-31",
+                "2022-12-31",
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLabel": {
+                "interval": 0,
+                "fontSize": 12,
+                "lineHeight": 16,
+                "hideOverlap": false,
+                "width": 139.0,
+                "overflow": "break"
+              }
+            },
+            "yAxis": [
+              {
+                "type": "value",
+                "name": "万辆",
+                "min": 0,
+                "max": 300,
+                "interval": 60,
+                "splitNumber": 5,
+                "axisLine": {
+                  "show": true,
+                  "lineStyle": {
+                    "color": "#94a3b8"
+                  }
+                },
+                "splitLine": {
+                  "lineStyle": {
+                    "type": "dashed",
+                    "color": "#e2e8f0"
+                  }
+                }
+              },
+              {
+                "type": "value",
+                "name": "%",
+                "min": 0,
+                "max": 120,
+                "interval": 30,
+                "splitNumber": 4,
+                "axisLine": {
+                  "show": true,
+                  "lineStyle": {
+                    "color": "#94a3b8"
+                  }
+                },
+                "splitLine": {
+                  "show": false
+                }
+              }
+            ],
+            "series": [
+              {
+                "name": "新能源汽车 · 出口量",
+                "type": "bar",
+                "yAxisIndex": 0,
+                "data": [
+                  34.88,
+                  67.5,
+                  115.26,
+                  127.44,
+                  258.43
+                ],
+                "itemStyle": {
+                  "color": "#1B365D",
+                  "borderRadius": [
+                    3,
+                    3,
+                    0,
+                    0
+                  ]
+                },
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              },
+              {
+                "name": "同比增速",
+                "type": "line",
+                "yAxisIndex": 1,
+                "connectNulls": false,
+                "data": [
+                  null,
+                  93.520642,
+                  70.755556,
+                  10.567413,
+                  102.785625
+                ],
+                "itemStyle": {
+                  "color": "#D52B1E"
+                },
+                "lineStyle": {
+                  "width": 2.5
+                },
+                "symbol": "circle",
+                "symbolSize": 6,
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              }
+            ],
+            "observation_range": {
+              "start": "2021-12-31",
+              "end": "2025-12-31"
+            },
+            "research_as_of": "2026-11-13",
+            "as_of": "",
+            "presentation": {
+              "version": 1,
+              "short_title": "新能源汽车出口量及同比",
+              "period_labels": "year",
+              "plot_height": "regular",
+              "axes": [
+                {
+                  "series_index": 0,
+                  "min": 0,
+                  "max": 300,
+                  "interval": 60
+                },
+                {
+                  "series_index": 1,
+                  "min": 0,
+                  "max": 120,
+                  "interval": 30
+                }
+              ],
+              "labels": [
+                {
+                  "series_index": 0,
+                  "mode": "all",
+                  "point_indices": [],
+                  "decimals": 2
+                },
+                {
+                  "series_index": 1,
+                  "mode": "key",
+                  "point_indices": [
+                    3,
+                    4
+                  ],
+                  "decimals": 1
+                }
+              ],
+              "note": "2025 年出口 258.43 万辆，同比 +102.8%",
+              "reference_lines": [],
+              "role": "nev.q4.exports",
+              "fallback_reason": ""
+            }
+          },
+          "evidence_ids": [
+            "R-edbb6e144668d79d8037",
+            "R-e000ce370a61ec50870e",
+            "R-04d35bda646d76dff5e5",
+            "R-6d58848443b2cbdba045",
+            "R-ceaba431b055c5db8754"
+          ],
+          "point_evidence_ids": [
+            "R-edbb6e144668d79d8037",
+            "R-e000ce370a61ec50870e",
+            "R-e000ce370a61ec50870e",
+            "R-04d35bda646d76dff5e5",
+            "R-04d35bda646d76dff5e5",
+            "R-6d58848443b2cbdba045",
+            "R-6d58848443b2cbdba045",
+            "R-ceaba431b055c5db8754",
+            "R-ceaba431b055c5db8754"
+          ],
+          "data_contract": {
+            "schema_version": "1",
+            "axis_type": "time_series",
+            "categories": [
+              "2021-12-31",
+              "2022-12-31",
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "series_units": {
+              "新能源汽车 · 出口量": "万辆",
+              "同比增速": "%"
+            },
+            "series_order": [
+              "新能源汽车 · 出口量",
+              "同比增速"
+            ],
+            "points": [
+              {
+                "index": 0,
+                "category": "2021-12-31",
+                "period": "2021-12-31",
+                "record_id": "R-edbb6e144668d79d8037",
+                "entity": "中国",
+                "metric": "新能源汽车:出口量",
+                "period_type": "annual",
+                "period_start": "2021-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 出口量",
+                "value": 34.88,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 1,
+                "category": "2022-12-31",
+                "period": "2022-12-31",
+                "record_id": "R-e000ce370a61ec50870e",
+                "entity": "中国",
+                "metric": "新能源汽车:出口量",
+                "period_type": "annual",
+                "period_start": "2022-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 出口量",
+                "value": 67.5,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 1,
+                "category": "2022-12-31",
+                "period": "2022-12-31",
+                "record_id": "R-e000ce370a61ec50870e",
+                "entity": "中国",
+                "metric": "新能源汽车:出口量",
+                "period_type": "annual",
+                "period_start": "2022-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "同比增速",
+                "value": 93.520642,
+                "unit": "%",
+                "calculation": "yoy_percent",
+                "source_record_ids": [
+                  "R-e000ce370a61ec50870e",
+                  "R-edbb6e144668d79d8037"
+                ]
+              },
+              {
+                "index": 2,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "record_id": "R-04d35bda646d76dff5e5",
+                "entity": "中国",
+                "metric": "新能源汽车:出口量",
+                "period_type": "annual",
+                "period_start": "2023-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 出口量",
+                "value": 115.26,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 2,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "record_id": "R-04d35bda646d76dff5e5",
+                "entity": "中国",
+                "metric": "新能源汽车:出口量",
+                "period_type": "annual",
+                "period_start": "2023-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "同比增速",
+                "value": 70.755556,
+                "unit": "%",
+                "calculation": "yoy_percent",
+                "source_record_ids": [
+                  "R-04d35bda646d76dff5e5",
+                  "R-e000ce370a61ec50870e"
+                ]
+              },
+              {
+                "index": 3,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "record_id": "R-6d58848443b2cbdba045",
+                "entity": "中国",
+                "metric": "新能源汽车:出口量",
+                "period_type": "annual",
+                "period_start": "2024-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 出口量",
+                "value": 127.44,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 3,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "record_id": "R-6d58848443b2cbdba045",
+                "entity": "中国",
+                "metric": "新能源汽车:出口量",
+                "period_type": "annual",
+                "period_start": "2024-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "同比增速",
+                "value": 10.567413,
+                "unit": "%",
+                "calculation": "yoy_percent",
+                "source_record_ids": [
+                  "R-6d58848443b2cbdba045",
+                  "R-04d35bda646d76dff5e5"
+                ]
+              },
+              {
+                "index": 4,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "record_id": "R-ceaba431b055c5db8754",
+                "entity": "中国",
+                "metric": "新能源汽车:出口量",
+                "period_type": "annual",
+                "period_start": "2025-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "新能源汽车 · 出口量",
+                "value": 258.43,
+                "unit": "万辆",
+                "source_unit": "辆",
+                "unit_scale": 10000
+              },
+              {
+                "index": 4,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "record_id": "R-ceaba431b055c5db8754",
+                "entity": "中国",
+                "metric": "新能源汽车:出口量",
+                "period_type": "annual",
+                "period_start": "2025-01-01",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "series": "同比增速",
+                "value": 102.785625,
+                "unit": "%",
+                "calculation": "yoy_percent",
+                "source_record_ids": [
+                  "R-ceaba431b055c5db8754",
+                  "R-6d58848443b2cbdba045"
+                ]
+              }
+            ],
+            "observation_range": {
+              "start": "2021-12-31",
+              "end": "2025-12-31"
+            },
+            "research_as_of": "2026-11-13",
+            "comparison_eligible": true,
+            "trend_id": "T-97da5c22560c74d7",
+            "selection_source": "deterministic",
+            "question_ids": [
+              "Q-1"
+            ]
+          },
+          "insight_goal": "同时展示年度规模与同比变化。",
+          "recommended_chapter_id": "CH-02",
+          "footnotes": [
+            "左轴为规模，右轴为同比增速。同比按相邻两年同口径的源值计算。",
+            "首年缺少上年基期，同比置空。"
+          ],
+          "svg_uri": null,
+          "html_uri": null,
+          "data_fingerprint": "b796826c3e8e2b5de8ee2a727f1bae35db58a64ee21168c7e5532154f9337701",
+          "figure_number": "图 1",
+          "subtitle": null,
+          "source_line": "数据来源：公司公告、同花顺 iFinD、行业公开披露；数值按证据换算，业务解释仍须复核。",
+          "render_mode": "echarts",
+          "inline_svg": null,
+          "image_uri": null,
+          "image_mime_type": null,
+          "generation_prompt": null,
+          "generation_prompt_model": null,
+          "generation_image_model": null,
+          "chain_template": null,
+          "chain_graph": null,
+          "supplement_image_uri": null,
+          "supplement_html_uri": null,
+          "supplement_note": null
+        }
+      ]
+    },
+    "fig4": {
+      "origin": "a3_compiled",
+      "charts": [
+        {
+          "title": "整车组 · 营收指数",
+          "chart_type": "line",
+          "option": {
+            "tooltip": {
+              "trigger": "axis"
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLine": {
+                "lineStyle": {
+                  "color": "#94a3b8"
+                }
+              }
+            },
+            "yAxis": {
+              "type": "value",
+              "name": "指数",
+              "splitNumber": 4,
+              "splitLine": {
+                "lineStyle": {
+                  "type": "dashed",
+                  "color": "#e2e8f0"
+                }
+              }
+            },
+            "series": [
+              {
+                "name": "比亚迪",
+                "type": "line",
+                "data": [
+                  100.0,
+                  null,
+                  null
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#1B365D"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5
+              },
+              {
+                "name": "长安汽车",
+                "type": "line",
+                "data": [
+                  100.0,
+                  105.58,
+                  108.4
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#D52B1E"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5
+              },
+              {
+                "name": "赛力斯",
+                "type": "line",
+                "data": [
+                  100.0,
+                  405.04,
+                  460.5
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#D97706"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5
+              }
+            ],
+            "legend": {
+              "data": [
+                "比亚迪",
+                "长安汽车",
+                "赛力斯"
+              ],
+              "top": 4
+            },
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "data_contract": {
+            "axis_type": "time_series",
+            "categories": [
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "series_order": [
+              "比亚迪",
+              "长安汽车",
+              "赛力斯"
+            ],
+            "series_units": {
+              "比亚迪": "指数",
+              "长安汽车": "指数",
+              "赛力斯": "指数"
+            },
+            "points": [
+              {
+                "series": "比亚迪",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "比亚迪",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 100.0,
+                "record_id": "R-c2678f02b259cdcaeb05",
+                "source_record_ids": [
+                  "R-c2678f02b259cdcaeb05"
+                ]
+              },
+              {
+                "series": "长安汽车",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "长安汽车",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 100.0,
+                "record_id": "R-d307b380be42aefb33d1",
+                "source_record_ids": [
+                  "R-d307b380be42aefb33d1"
+                ]
+              },
+              {
+                "series": "长安汽车",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "长安汽车",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 105.58,
+                "record_id": "R-d16ab32c6843a39cdd21",
+                "source_record_ids": [
+                  "R-d16ab32c6843a39cdd21",
+                  "R-d307b380be42aefb33d1"
+                ]
+              },
+              {
+                "series": "长安汽车",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "长安汽车",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 108.4,
+                "record_id": "R-439658738fbc270bf00f",
+                "source_record_ids": [
+                  "R-439658738fbc270bf00f",
+                  "R-d307b380be42aefb33d1"
+                ]
+              },
+              {
+                "series": "赛力斯",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "赛力斯",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 100.0,
+                "record_id": "R-994c82746ff57be89ecb",
+                "source_record_ids": [
+                  "R-994c82746ff57be89ecb"
+                ]
+              },
+              {
+                "series": "赛力斯",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "赛力斯",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 405.04,
+                "record_id": "R-a205e12b93422df8c124",
+                "source_record_ids": [
+                  "R-a205e12b93422df8c124",
+                  "R-994c82746ff57be89ecb"
+                ]
+              },
+              {
+                "series": "赛力斯",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "赛力斯",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 460.5,
+                "record_id": "R-75932763a5e752cedc44",
+                "source_record_ids": [
+                  "R-75932763a5e752cedc44",
+                  "R-994c82746ff57be89ecb"
+                ]
+              }
+            ],
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "evidence_ids": [
+            "R-c2678f02b259cdcaeb05",
+            "R-d307b380be42aefb33d1",
+            "R-d16ab32c6843a39cdd21",
+            "R-439658738fbc270bf00f",
+            "R-994c82746ff57be89ecb",
+            "R-a205e12b93422df8c124",
+            "R-75932763a5e752cedc44"
+          ],
+          "selection_source": "a3_report_adapter"
+        },
+        {
+          "title": "电池组 · 营收指数",
+          "chart_type": "line",
+          "option": {
+            "tooltip": {
+              "trigger": "axis"
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLine": {
+                "lineStyle": {
+                  "color": "#94a3b8"
+                }
+              }
+            },
+            "yAxis": {
+              "type": "value",
+              "name": "指数",
+              "splitNumber": 4,
+              "splitLine": {
+                "lineStyle": {
+                  "type": "dashed",
+                  "color": "#e2e8f0"
+                }
+              }
+            },
+            "series": [
+              {
+                "name": "宁德时代",
+                "type": "line",
+                "data": [
+                  100.0,
+                  90.3,
+                  105.68
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#1B365D"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5
+              },
+              {
+                "name": "亿纬锂能",
+                "type": "line",
+                "data": [
+                  100.0,
+                  99.65,
+                  126.0
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#D52B1E"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5
+              }
+            ],
+            "legend": {
+              "data": [
+                "宁德时代",
+                "亿纬锂能"
+              ],
+              "top": 4
+            },
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "data_contract": {
+            "axis_type": "time_series",
+            "categories": [
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "series_order": [
+              "宁德时代",
+              "亿纬锂能"
+            ],
+            "series_units": {
+              "宁德时代": "指数",
+              "亿纬锂能": "指数"
+            },
+            "points": [
+              {
+                "series": "宁德时代",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "宁德时代",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 100.0,
+                "record_id": "R-e2d3b80524e2d4c51118",
+                "source_record_ids": [
+                  "R-e2d3b80524e2d4c51118"
+                ]
+              },
+              {
+                "series": "宁德时代",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "宁德时代",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 90.3,
+                "record_id": "R-e949c0f54064f15edb9d",
+                "source_record_ids": [
+                  "R-e949c0f54064f15edb9d",
+                  "R-e2d3b80524e2d4c51118"
+                ]
+              },
+              {
+                "series": "宁德时代",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "宁德时代",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 105.68,
+                "record_id": "R-f5a837da7f0378a237fb",
+                "source_record_ids": [
+                  "R-f5a837da7f0378a237fb",
+                  "R-e2d3b80524e2d4c51118"
+                ]
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "亿纬锂能",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 100.0,
+                "record_id": "R-145e05e9c83cac61fef9",
+                "source_record_ids": [
+                  "R-145e05e9c83cac61fef9"
+                ]
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "亿纬锂能",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 99.65,
+                "record_id": "R-6661f1dad33a28372ba3",
+                "source_record_ids": [
+                  "R-6661f1dad33a28372ba3",
+                  "R-145e05e9c83cac61fef9"
+                ]
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "亿纬锂能",
+                "metric": "revenue_index",
+                "unit": "指数",
+                "value": 126.0,
+                "record_id": "R-b9c2bd098377eeaede64",
+                "source_record_ids": [
+                  "R-b9c2bd098377eeaede64",
+                  "R-145e05e9c83cac61fef9"
+                ]
+              }
+            ],
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "evidence_ids": [
+            "R-e2d3b80524e2d4c51118",
+            "R-e949c0f54064f15edb9d",
+            "R-f5a837da7f0378a237fb",
+            "R-145e05e9c83cac61fef9",
+            "R-6661f1dad33a28372ba3",
+            "R-b9c2bd098377eeaede64"
+          ],
+          "selection_source": "a3_report_adapter"
+        }
+      ],
+      "excluded": [
+        {
+          "entity": "比亚迪",
+          "period": "2024-12-31",
+          "source_record_ids": [
+            "R-00eff4a77ebcf7ba7e42",
+            "R-c2678f02b259cdcaeb05"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-00eff4a77ebcf7ba7e42",
+              "entity": "比亚迪",
+              "metric": "revenue",
+              "value": 777102455000.0,
+              "unit": "元",
+              "period": "2024-12-31",
+              "period_start": "2024-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-125176f2c6ba2451",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        },
+        {
+          "entity": "比亚迪",
+          "period": "2025-12-31",
+          "source_record_ids": [
+            "R-2850b52306edde896670",
+            "R-c2678f02b259cdcaeb05"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-2850b52306edde896670",
+              "entity": "比亚迪",
+              "metric": "revenue",
+              "value": 803964958000.0,
+              "unit": "元",
+              "period": "2025-12-31",
+              "period_start": "2025-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-cf4e73c43110dfef",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        }
+      ]
+    },
+    "fig5": {
+      "origin": "accepted_a3_chart",
+      "charts": [
+        {
+          "chart_id": "CHART-04-A0EE41A2",
+          "title": "新能源汽车整车组毛利率趋势（2023-12-31至2025-12-31）",
+          "chart_type": "line",
+          "status": "ready",
+          "option": {
+            "tooltip": {
+              "trigger": "axis"
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLine": {
+                "lineStyle": {
+                  "color": "#94a3b8"
+                }
+              }
+            },
+            "yAxis": {
+              "type": "value",
+              "name": "%",
+              "splitNumber": 6,
+              "splitLine": {
+                "lineStyle": {
+                  "type": "dashed",
+                  "color": "#e2e8f0"
+                }
+              },
+              "min": 5,
+              "max": 35,
+              "interval": 5
+            },
+            "series": [
+              {
+                "name": "比亚迪",
+                "type": "line",
+                "data": [
+                  20.2148,
+                  19.4383,
+                  17.7445
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#1B365D"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5,
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              },
+              {
+                "name": "赛力斯",
+                "type": "line",
+                "data": [
+                  10.3863,
+                  26.1518,
+                  29.1419
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#D52B1E"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5,
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              },
+              {
+                "name": "长安汽车",
+                "type": "line",
+                "data": [
+                  18.3579,
+                  14.9399,
+                  15.5401
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#D97706"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5,
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              }
+            ],
+            "legend": {
+              "data": [
+                "比亚迪",
+                "赛力斯",
+                "长安汽车"
+              ],
+              "top": 4
+            },
+            "research_as_of": "2026-11-13",
+            "observation_as_of": null,
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            },
+            "as_of": "",
+            "presentation": {
+              "version": 1,
+              "short_title": "",
+              "period_labels": "auto",
+              "plot_height": "compact",
+              "axes": [
+                {
+                  "series_index": 0,
+                  "min": 5,
+                  "max": 35,
+                  "interval": 5
+                }
+              ],
+              "labels": [
+                {
+                  "series_index": 0,
+                  "mode": "all",
+                  "point_indices": [
+                    0,
+                    1,
+                    2
+                  ],
+                  "decimals": 2
+                },
+                {
+                  "series_index": 1,
+                  "mode": "all",
+                  "point_indices": [
+                    0,
+                    1,
+                    2
+                  ],
+                  "decimals": 2
+                },
+                {
+                  "series_index": 2,
+                  "mode": "all",
+                  "point_indices": [
+                    0,
+                    1,
+                    2
+                  ],
+                  "decimals": 2
+                }
+              ],
+              "note": "",
+              "reference_lines": [],
+              "role": "nev.q2.margin",
+              "fallback_reason": "nev_preset:轴 0 未覆盖全部实际点 [10.386300, 29.141900] vs [12, 32]"
+            }
+          },
+          "evidence_ids": [
+            "R-432f53934d9566dc55f3",
+            "R-aaf8727ddbc15ed7b3bf",
+            "R-41f976fdb583554f5bbe",
+            "R-d5ac05599d06f774cba0",
+            "R-8dd06b265a0774dcd573",
+            "R-c50316c56bec8123caeb",
+            "R-5b88aa60c3bd93beafb6",
+            "R-9bebffd539ba8b753173",
+            "R-5af428dfec95be77a3ef"
+          ],
+          "point_evidence_ids": [
+            "R-432f53934d9566dc55f3",
+            "R-aaf8727ddbc15ed7b3bf",
+            "R-41f976fdb583554f5bbe",
+            "R-d5ac05599d06f774cba0",
+            "R-8dd06b265a0774dcd573",
+            "R-c50316c56bec8123caeb",
+            "R-5b88aa60c3bd93beafb6",
+            "R-9bebffd539ba8b753173",
+            "R-5af428dfec95be77a3ef"
+          ],
+          "data_contract": {
+            "schema_version": "1",
+            "axis_type": "time_series",
+            "categories": [
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            },
+            "comparison_group": "整车组",
+            "series_units": {
+              "比亚迪": "%",
+              "赛力斯": "%",
+              "长安汽车": "%"
+            },
+            "series_order": [
+              "比亚迪",
+              "赛力斯",
+              "长安汽车"
+            ],
+            "points": [
+              {
+                "series": "比亚迪",
+                "index": 0,
+                "category": "2023-12-31",
+                "value": 20.2148,
+                "unit": "%",
+                "record_id": "R-432f53934d9566dc55f3",
+                "entity": "比亚迪",
+                "metric": "gross_margin",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "比亚迪",
+                "index": 1,
+                "category": "2024-12-31",
+                "value": 19.4383,
+                "unit": "%",
+                "record_id": "R-aaf8727ddbc15ed7b3bf",
+                "entity": "比亚迪",
+                "metric": "gross_margin",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "比亚迪",
+                "index": 2,
+                "category": "2025-12-31",
+                "value": 17.7445,
+                "unit": "%",
+                "record_id": "R-41f976fdb583554f5bbe",
+                "entity": "比亚迪",
+                "metric": "gross_margin",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "赛力斯",
+                "index": 0,
+                "category": "2023-12-31",
+                "value": 10.3863,
+                "unit": "%",
+                "record_id": "R-d5ac05599d06f774cba0",
+                "entity": "赛力斯",
+                "metric": "gross_margin",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "赛力斯",
+                "index": 1,
+                "category": "2024-12-31",
+                "value": 26.1518,
+                "unit": "%",
+                "record_id": "R-8dd06b265a0774dcd573",
+                "entity": "赛力斯",
+                "metric": "gross_margin",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "赛力斯",
+                "index": 2,
+                "category": "2025-12-31",
+                "value": 29.1419,
+                "unit": "%",
+                "record_id": "R-c50316c56bec8123caeb",
+                "entity": "赛力斯",
+                "metric": "gross_margin",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "长安汽车",
+                "index": 0,
+                "category": "2023-12-31",
+                "value": 18.3579,
+                "unit": "%",
+                "record_id": "R-5b88aa60c3bd93beafb6",
+                "entity": "长安汽车",
+                "metric": "gross_margin",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "长安汽车",
+                "index": 1,
+                "category": "2024-12-31",
+                "value": 14.9399,
+                "unit": "%",
+                "record_id": "R-9bebffd539ba8b753173",
+                "entity": "长安汽车",
+                "metric": "gross_margin",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "长安汽车",
+                "index": 2,
+                "category": "2025-12-31",
+                "value": 15.5401,
+                "unit": "%",
+                "record_id": "R-5af428dfec95be77a3ef",
+                "entity": "长安汽车",
+                "metric": "gross_margin",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              }
+            ],
+            "research_as_of": "2026-11-13",
+            "comparison_eligible": true,
+            "excluded_points": [],
+            "exclusion_policy": "analysis_anomaly_record_ids",
+            "selection_source": "deterministic",
+            "question_ids": [
+              "Q-3"
+            ]
+          },
+          "insight_goal": "展示3个观测期、3个数据系列。",
+          "recommended_chapter_id": "CH-05",
+          "footnotes": [
+            "时序周期规范化对齐完成",
+            "研究基准日：2026-11-13；不代表数据观测日期。",
+            "各数据点的实体、指标、期间、单位及原始证据见图表数据契约；缺失值不填零。"
+          ],
+          "svg_uri": null,
+          "html_uri": null,
+          "data_fingerprint": "a0ee41a239e13674868a4c8b98ba8a98c15caff321422b8b198c02874bd43f5d",
+          "figure_number": "图 4",
+          "subtitle": null,
+          "source_line": "数据来源：公司公告、同花顺 iFinD、行业公开披露；数值按证据换算，业务解释仍须复核。",
+          "render_mode": "echarts",
+          "inline_svg": null,
+          "image_uri": null,
+          "image_mime_type": null,
+          "generation_prompt": null,
+          "generation_prompt_model": null,
+          "generation_image_model": null,
+          "chain_template": null,
+          "chain_graph": null,
+          "supplement_image_uri": null,
+          "supplement_html_uri": null,
+          "supplement_note": null
+        },
+        {
+          "chart_id": "CHART-10-0998582A",
+          "title": "新能源汽车电池组毛利率趋势（2023-12-31至2025-12-31）",
+          "chart_type": "line",
+          "status": "ready",
+          "option": {
+            "tooltip": {
+              "trigger": "axis"
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLine": {
+                "lineStyle": {
+                  "color": "#94a3b8"
+                }
+              }
+            },
+            "yAxis": {
+              "type": "value",
+              "name": "%",
+              "splitNumber": 4,
+              "splitLine": {
+                "lineStyle": {
+                  "type": "dashed",
+                  "color": "#e2e8f0"
+                }
+              },
+              "min": 10,
+              "max": 30,
+              "interval": 5
+            },
+            "series": [
+              {
+                "name": "亿纬锂能",
+                "type": "line",
+                "data": [
+                  17.035,
+                  17.4132,
+                  16.1724
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#1B365D"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5,
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              },
+              {
+                "name": "宁德时代",
+                "type": "line",
+                "data": [
+                  22.9091,
+                  24.4449,
+                  26.2728
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#D52B1E"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5,
+                "label": {
+                  "show": true,
+                  "position": "top",
+                  "fontSize": 10
+                }
+              }
+            ],
+            "legend": {
+              "data": [
+                "亿纬锂能",
+                "宁德时代"
+              ],
+              "top": 4
+            },
+            "research_as_of": "2026-11-13",
+            "observation_as_of": null,
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            },
+            "as_of": "",
+            "presentation": {
+              "version": 1,
+              "short_title": "",
+              "period_labels": "auto",
+              "plot_height": "compact",
+              "axes": [
+                {
+                  "series_index": 0,
+                  "min": 10,
+                  "max": 30,
+                  "interval": 5
+                }
+              ],
+              "labels": [
+                {
+                  "series_index": 0,
+                  "mode": "all",
+                  "point_indices": [
+                    0,
+                    1,
+                    2
+                  ],
+                  "decimals": 2
+                },
+                {
+                  "series_index": 1,
+                  "mode": "all",
+                  "point_indices": [
+                    0,
+                    1,
+                    2
+                  ],
+                  "decimals": 2
+                }
+              ],
+              "note": "",
+              "reference_lines": [],
+              "role": "nev.q2.margin",
+              "fallback_reason": "nev_preset:标签 series_index 2 越界"
+            }
+          },
+          "evidence_ids": [
+            "R-0fbb69e8cd41ba7c9e0f",
+            "R-74370e0d21bc7aa3d741",
+            "R-15095f53dd293b4b7fef",
+            "R-4dab9658613afa17706f",
+            "R-5d77e111695151f2adfc",
+            "R-5569a84cfc21d79dad02"
+          ],
+          "point_evidence_ids": [
+            "R-0fbb69e8cd41ba7c9e0f",
+            "R-74370e0d21bc7aa3d741",
+            "R-15095f53dd293b4b7fef",
+            "R-4dab9658613afa17706f",
+            "R-5d77e111695151f2adfc",
+            "R-5569a84cfc21d79dad02"
+          ],
+          "data_contract": {
+            "schema_version": "1",
+            "axis_type": "time_series",
+            "categories": [
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            },
+            "comparison_group": "电池组",
+            "series_units": {
+              "亿纬锂能": "%",
+              "宁德时代": "%"
+            },
+            "series_order": [
+              "亿纬锂能",
+              "宁德时代"
+            ],
+            "points": [
+              {
+                "series": "亿纬锂能",
+                "index": 0,
+                "category": "2023-12-31",
+                "value": 17.035,
+                "unit": "%",
+                "record_id": "R-0fbb69e8cd41ba7c9e0f",
+                "entity": "亿纬锂能",
+                "metric": "gross_margin",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 1,
+                "category": "2024-12-31",
+                "value": 17.4132,
+                "unit": "%",
+                "record_id": "R-74370e0d21bc7aa3d741",
+                "entity": "亿纬锂能",
+                "metric": "gross_margin",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 2,
+                "category": "2025-12-31",
+                "value": 16.1724,
+                "unit": "%",
+                "record_id": "R-15095f53dd293b4b7fef",
+                "entity": "亿纬锂能",
+                "metric": "gross_margin",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "宁德时代",
+                "index": 0,
+                "category": "2023-12-31",
+                "value": 22.9091,
+                "unit": "%",
+                "record_id": "R-4dab9658613afa17706f",
+                "entity": "宁德时代",
+                "metric": "gross_margin",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "宁德时代",
+                "index": 1,
+                "category": "2024-12-31",
+                "value": 24.4449,
+                "unit": "%",
+                "record_id": "R-5d77e111695151f2adfc",
+                "entity": "宁德时代",
+                "metric": "gross_margin",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              },
+              {
+                "series": "宁德时代",
+                "index": 2,
+                "category": "2025-12-31",
+                "value": 26.2728,
+                "unit": "%",
+                "record_id": "R-5569a84cfc21d79dad02",
+                "entity": "宁德时代",
+                "metric": "gross_margin",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_provenance": "field",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY"
+              }
+            ],
+            "research_as_of": "2026-11-13",
+            "comparison_eligible": true,
+            "excluded_points": [],
+            "exclusion_policy": "analysis_anomaly_record_ids",
+            "selection_source": "deterministic",
+            "question_ids": [
+              "Q-4"
+            ]
+          },
+          "insight_goal": "展示3个观测期、2个数据系列。",
+          "recommended_chapter_id": "CH-05",
+          "footnotes": [
+            "时序周期规范化对齐完成",
+            "研究基准日：2026-11-13；不代表数据观测日期。",
+            "各数据点的实体、指标、期间、单位及原始证据见图表数据契约；缺失值不填零。"
+          ],
+          "svg_uri": null,
+          "html_uri": null,
+          "data_fingerprint": "0998582aa6ee4f9078127ef9c0b68ac9037ce4755694f5e1901a08a4951fa921",
+          "figure_number": "图 10",
+          "subtitle": null,
+          "source_line": "数据来源：公司公告、同花顺 iFinD、行业公开披露；数值按证据换算，业务解释仍须复核。",
+          "render_mode": "echarts",
+          "inline_svg": null,
+          "image_uri": null,
+          "image_mime_type": null,
+          "generation_prompt": null,
+          "generation_prompt_model": null,
+          "generation_image_model": null,
+          "chain_template": null,
+          "chain_graph": null,
+          "supplement_image_uri": null,
+          "supplement_html_uri": null,
+          "supplement_note": null
+        }
+      ],
+      "excluded": []
+    },
+    "fig6": {
+      "origin": "a3_compiled",
+      "charts": [
+        {
+          "title": "整车组 · 经营现金流／归母净利润",
+          "chart_type": "line",
+          "option": {
+            "tooltip": {
+              "trigger": "axis"
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLine": {
+                "lineStyle": {
+                  "color": "#94a3b8"
+                }
+              }
+            },
+            "yAxis": {
+              "type": "value",
+              "name": "倍",
+              "splitNumber": 4,
+              "splitLine": {
+                "lineStyle": {
+                  "type": "dashed",
+                  "color": "#e2e8f0"
+                }
+              }
+            },
+            "series": [
+              {
+                "name": "长安汽车",
+                "type": "line",
+                "data": [
+                  1.75,
+                  0.66,
+                  0.45
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#1B365D"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5
+              },
+              {
+                "name": "赛力斯",
+                "type": "line",
+                "data": [
+                  null,
+                  3.79,
+                  4.85
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#D52B1E"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5
+              }
+            ],
+            "legend": {
+              "data": [
+                "长安汽车",
+                "赛力斯"
+              ],
+              "top": 4
+            },
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "data_contract": {
+            "axis_type": "time_series",
+            "categories": [
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "series_order": [
+              "长安汽车",
+              "赛力斯"
+            ],
+            "series_units": {
+              "长安汽车": "倍",
+              "赛力斯": "倍"
+            },
+            "points": [
+              {
+                "series": "长安汽车",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "长安汽车",
+                "metric": "cash_to_net_profit",
+                "unit": "倍",
+                "value": 1.75,
+                "record_id": "R-9165cb9e793e0d0a66d4",
+                "source_record_ids": [
+                  "R-9165cb9e793e0d0a66d4",
+                  "R-c05daf8d13c6e4114c0f"
+                ]
+              },
+              {
+                "series": "长安汽车",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "长安汽车",
+                "metric": "cash_to_net_profit",
+                "unit": "倍",
+                "value": 0.66,
+                "record_id": "R-dbdd4a9e940892d6c8e6",
+                "source_record_ids": [
+                  "R-dbdd4a9e940892d6c8e6",
+                  "R-a4edcef116f6c93e0118"
+                ]
+              },
+              {
+                "series": "长安汽车",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "长安汽车",
+                "metric": "cash_to_net_profit",
+                "unit": "倍",
+                "value": 0.45,
+                "record_id": "R-ac6feef0e7241fa25965",
+                "source_record_ids": [
+                  "R-ac6feef0e7241fa25965",
+                  "R-0d84f32b243973dbc9e3"
+                ]
+              },
+              {
+                "series": "赛力斯",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "赛力斯",
+                "metric": "cash_to_net_profit",
+                "unit": "倍",
+                "value": 3.79,
+                "record_id": "R-2d4fbd22249556aa27f3",
+                "source_record_ids": [
+                  "R-2d4fbd22249556aa27f3",
+                  "R-3f0e0443f7023d08bb24"
+                ]
+              },
+              {
+                "series": "赛力斯",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "赛力斯",
+                "metric": "cash_to_net_profit",
+                "unit": "倍",
+                "value": 4.85,
+                "record_id": "R-85a057fb0eb59fa9c62b",
+                "source_record_ids": [
+                  "R-85a057fb0eb59fa9c62b",
+                  "R-f274adc626b7374d6c16"
+                ]
+              }
+            ],
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "evidence_ids": [
+            "R-9165cb9e793e0d0a66d4",
+            "R-c05daf8d13c6e4114c0f",
+            "R-dbdd4a9e940892d6c8e6",
+            "R-a4edcef116f6c93e0118",
+            "R-ac6feef0e7241fa25965",
+            "R-0d84f32b243973dbc9e3",
+            "R-2d4fbd22249556aa27f3",
+            "R-3f0e0443f7023d08bb24",
+            "R-85a057fb0eb59fa9c62b",
+            "R-f274adc626b7374d6c16"
+          ],
+          "selection_source": "a3_report_adapter"
+        },
+        {
+          "title": "电池组 · 经营现金流／归母净利润",
+          "chart_type": "line",
+          "option": {
+            "tooltip": {
+              "trigger": "axis"
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLine": {
+                "lineStyle": {
+                  "color": "#94a3b8"
+                }
+              }
+            },
+            "yAxis": {
+              "type": "value",
+              "name": "倍",
+              "splitNumber": 4,
+              "splitLine": {
+                "lineStyle": {
+                  "type": "dashed",
+                  "color": "#e2e8f0"
+                }
+              }
+            },
+            "series": [
+              {
+                "name": "亿纬锂能",
+                "type": "line",
+                "data": [
+                  2.14,
+                  1.09,
+                  1.81
+                ],
+                "connectNulls": false,
+                "itemStyle": {
+                  "color": "#1B365D"
+                },
+                "lineStyle": {
+                  "width": 2.2
+                },
+                "symbol": "circle",
+                "symbolSize": 5
+              }
+            ],
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "data_contract": {
+            "axis_type": "time_series",
+            "categories": [
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "series_order": [
+              "亿纬锂能"
+            ],
+            "series_units": {
+              "亿纬锂能": "倍"
+            },
+            "points": [
+              {
+                "series": "亿纬锂能",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "亿纬锂能",
+                "metric": "cash_to_net_profit",
+                "unit": "倍",
+                "value": 2.14,
+                "record_id": "R-f01872d511603795dca0",
+                "source_record_ids": [
+                  "R-f01872d511603795dca0",
+                  "R-162f2f1029e79d8ac271"
+                ]
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "亿纬锂能",
+                "metric": "cash_to_net_profit",
+                "unit": "倍",
+                "value": 1.09,
+                "record_id": "R-dd0f66e3591e955bedbe",
+                "source_record_ids": [
+                  "R-dd0f66e3591e955bedbe",
+                  "R-dfab56a59706d02d072d"
+                ]
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "亿纬锂能",
+                "metric": "cash_to_net_profit",
+                "unit": "倍",
+                "value": 1.81,
+                "record_id": "R-fbe3a644a93ca4be2cb0",
+                "source_record_ids": [
+                  "R-fbe3a644a93ca4be2cb0",
+                  "R-2f32d8e20d274383daeb"
+                ]
+              }
+            ],
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "evidence_ids": [
+            "R-f01872d511603795dca0",
+            "R-162f2f1029e79d8ac271",
+            "R-dd0f66e3591e955bedbe",
+            "R-dfab56a59706d02d072d",
+            "R-fbe3a644a93ca4be2cb0",
+            "R-2f32d8e20d274383daeb"
+          ],
+          "selection_source": "a3_report_adapter"
+        }
+      ],
+      "excluded": [
+        {
+          "entity": "宁德时代",
+          "period": "2023-12-31",
+          "source_record_ids": [
+            "R-8aa3e30dd37b61e69f46",
+            "R-45d280d23745e65e9049"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-8aa3e30dd37b61e69f46",
+              "entity": "宁德时代",
+              "metric": "operating_cash_flow",
+              "value": 92826124000.0,
+              "unit": "元",
+              "period": "2023-12-31",
+              "period_start": "2023-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-685012cbe2d98bc4",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        },
+        {
+          "entity": "宁德时代",
+          "period": "2024-12-31",
+          "source_record_ids": [
+            "R-30bdaa9dce00b70ac144",
+            "R-425f970c7bd4284d1df6"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-425f970c7bd4284d1df6",
+              "entity": "宁德时代",
+              "metric": "parent_net_profit",
+              "value": 50744682000.0,
+              "unit": "元",
+              "period": "2024-12-31",
+              "period_start": "2024-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-6a14d01c5dcf0371",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        },
+        {
+          "entity": "宁德时代",
+          "period": "2025-12-31",
+          "source_record_ids": [
+            "R-ca20cf2859da1042468c",
+            "R-63e026d9ead3d5f02201"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-63e026d9ead3d5f02201",
+              "entity": "宁德时代",
+              "metric": "parent_net_profit",
+              "value": 72201282000.0,
+              "unit": "元",
+              "period": "2025-12-31",
+              "period_start": "2025-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-2514875a6b30f57c",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        },
+        {
+          "entity": "比亚迪",
+          "period": "2023-12-31",
+          "source_record_ids": [
+            "R-cf3f714e7258a40cd97b",
+            "R-dc52255ddb2e2d2b47f3"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-cf3f714e7258a40cd97b",
+              "entity": "比亚迪",
+              "metric": "operating_cash_flow",
+              "value": 169725025000.0,
+              "unit": "元",
+              "period": "2023-12-31",
+              "period_start": "2023-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-7afaec0372b635bf",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        },
+        {
+          "entity": "比亚迪",
+          "period": "2024-12-31",
+          "source_record_ids": [
+            "R-f7dc532fc8ee809cfb3e",
+            "R-009c8a3cc404c080f20b"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-f7dc532fc8ee809cfb3e",
+              "entity": "比亚迪",
+              "metric": "operating_cash_flow",
+              "value": 133453873000.0,
+              "unit": "元",
+              "period": "2024-12-31",
+              "period_start": "2024-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-49fceea0e4bf9196",
+              "treatment": "isolated_from_comparison"
+            },
+            {
+              "record_id": "R-009c8a3cc404c080f20b",
+              "entity": "比亚迪",
+              "metric": "parent_net_profit",
+              "value": 40254346000.0,
+              "unit": "元",
+              "period": "2024-12-31",
+              "period_start": "2024-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-dce119c8fa3f2ee2",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        },
+        {
+          "entity": "比亚迪",
+          "period": "2025-12-31",
+          "source_record_ids": [
+            "R-2418d5a9d80646e9f228",
+            "R-86899599c1bce98993a4"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-86899599c1bce98993a4",
+              "entity": "比亚迪",
+              "metric": "parent_net_profit",
+              "value": 32619022000.0,
+              "unit": "元",
+              "period": "2025-12-31",
+              "period_start": "2025-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-a71904d8b7b89453",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        }
+      ]
+    },
+    "fig7": {
+      "origin": "a3_compiled",
+      "charts": [
+        {
+          "title": "整车组 · 公司研发费用率",
+          "chart_type": "bar",
+          "option": {
+            "tooltip": {
+              "trigger": "axis"
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLine": {
+                "lineStyle": {
+                  "color": "#94a3b8"
+                }
+              },
+              "axisLabel": {
+                "interval": 0,
+                "fontSize": 12,
+                "lineHeight": 16,
+                "hideOverlap": false,
+                "width": 235.0,
+                "overflow": "break"
+              }
+            },
+            "yAxis": {
+              "type": "value",
+              "name": "%",
+              "min": 0,
+              "splitNumber": 4,
+              "splitLine": {
+                "lineStyle": {
+                  "type": "dashed",
+                  "color": "#e2e8f0"
+                }
+              }
+            },
+            "series": [
+              {
+                "name": "长安汽车",
+                "type": "bar",
+                "data": [
+                  3.95,
+                  4.07,
+                  4.36
+                ],
+                "itemStyle": {
+                  "color": "#1B365D",
+                  "borderRadius": [
+                    3,
+                    3,
+                    0,
+                    0
+                  ]
+                }
+              },
+              {
+                "name": "赛力斯",
+                "type": "bar",
+                "data": [
+                  4.73,
+                  3.85,
+                  4.82
+                ],
+                "itemStyle": {
+                  "color": "#D52B1E",
+                  "borderRadius": [
+                    3,
+                    3,
+                    0,
+                    0
+                  ]
+                }
+              }
+            ],
+            "legend": {
+              "data": [
+                "长安汽车",
+                "赛力斯"
+              ],
+              "top": 4
+            },
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "data_contract": {
+            "axis_type": "time_series",
+            "categories": [
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "series_order": [
+              "长安汽车",
+              "赛力斯"
+            ],
+            "series_units": {
+              "长安汽车": "%",
+              "赛力斯": "%"
+            },
+            "points": [
+              {
+                "series": "长安汽车",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "长安汽车",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 3.95,
+                "record_id": "R-ed12996fde3f70dcf939",
+                "source_record_ids": [
+                  "R-ed12996fde3f70dcf939",
+                  "R-d307b380be42aefb33d1"
+                ]
+              },
+              {
+                "series": "长安汽车",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "长安汽车",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 4.07,
+                "record_id": "R-d5cee85008d3739016fc",
+                "source_record_ids": [
+                  "R-d5cee85008d3739016fc",
+                  "R-d16ab32c6843a39cdd21"
+                ]
+              },
+              {
+                "series": "长安汽车",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "长安汽车",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 4.36,
+                "record_id": "R-d3f757f7f5d653cc63cd",
+                "source_record_ids": [
+                  "R-d3f757f7f5d653cc63cd",
+                  "R-439658738fbc270bf00f"
+                ]
+              },
+              {
+                "series": "赛力斯",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "赛力斯",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 4.73,
+                "record_id": "R-8573a5092efe5d2f07e8",
+                "source_record_ids": [
+                  "R-8573a5092efe5d2f07e8",
+                  "R-994c82746ff57be89ecb"
+                ]
+              },
+              {
+                "series": "赛力斯",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "赛力斯",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 3.85,
+                "record_id": "R-1fb8eff5f745c68aec14",
+                "source_record_ids": [
+                  "R-1fb8eff5f745c68aec14",
+                  "R-a205e12b93422df8c124"
+                ]
+              },
+              {
+                "series": "赛力斯",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "赛力斯",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 4.82,
+                "record_id": "R-e6fbb5831680fa49dcb7",
+                "source_record_ids": [
+                  "R-e6fbb5831680fa49dcb7",
+                  "R-75932763a5e752cedc44"
+                ]
+              }
+            ],
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "evidence_ids": [
+            "R-ed12996fde3f70dcf939",
+            "R-d307b380be42aefb33d1",
+            "R-d5cee85008d3739016fc",
+            "R-d16ab32c6843a39cdd21",
+            "R-d3f757f7f5d653cc63cd",
+            "R-439658738fbc270bf00f",
+            "R-8573a5092efe5d2f07e8",
+            "R-994c82746ff57be89ecb",
+            "R-1fb8eff5f745c68aec14",
+            "R-a205e12b93422df8c124",
+            "R-e6fbb5831680fa49dcb7",
+            "R-75932763a5e752cedc44"
+          ],
+          "selection_source": "a3_report_adapter"
+        },
+        {
+          "title": "电池组 · 公司研发费用率",
+          "chart_type": "bar",
+          "option": {
+            "tooltip": {
+              "trigger": "axis"
+            },
+            "grid": {
+              "containLabel": true,
+              "left": 50,
+              "right": 32,
+              "top": 38,
+              "bottom": 28
+            },
+            "xAxis": {
+              "type": "category",
+              "data": [
+                "2023-12-31",
+                "2024-12-31",
+                "2025-12-31"
+              ],
+              "axisLine": {
+                "lineStyle": {
+                  "color": "#94a3b8"
+                }
+              },
+              "axisLabel": {
+                "interval": 0,
+                "fontSize": 12,
+                "lineHeight": 16,
+                "hideOverlap": false,
+                "width": 235.0,
+                "overflow": "break"
+              }
+            },
+            "yAxis": {
+              "type": "value",
+              "name": "%",
+              "min": 0,
+              "splitNumber": 4,
+              "splitLine": {
+                "lineStyle": {
+                  "type": "dashed",
+                  "color": "#e2e8f0"
+                }
+              }
+            },
+            "series": [
+              {
+                "name": "宁德时代",
+                "type": "bar",
+                "data": [
+                  4.58,
+                  5.14,
+                  5.23
+                ],
+                "itemStyle": {
+                  "color": "#1B365D",
+                  "borderRadius": [
+                    3,
+                    3,
+                    0,
+                    0
+                  ]
+                }
+              },
+              {
+                "name": "亿纬锂能",
+                "type": "bar",
+                "data": [
+                  5.6,
+                  6.05,
+                  4.89
+                ],
+                "itemStyle": {
+                  "color": "#D52B1E",
+                  "borderRadius": [
+                    3,
+                    3,
+                    0,
+                    0
+                  ]
+                }
+              }
+            ],
+            "legend": {
+              "data": [
+                "宁德时代",
+                "亿纬锂能"
+              ],
+              "top": 4
+            },
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "data_contract": {
+            "axis_type": "time_series",
+            "categories": [
+              "2023-12-31",
+              "2024-12-31",
+              "2025-12-31"
+            ],
+            "series_order": [
+              "宁德时代",
+              "亿纬锂能"
+            ],
+            "series_units": {
+              "宁德时代": "%",
+              "亿纬锂能": "%"
+            },
+            "points": [
+              {
+                "series": "宁德时代",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "宁德时代",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 4.58,
+                "record_id": "R-94dba7a39f3b3c30860a",
+                "source_record_ids": [
+                  "R-94dba7a39f3b3c30860a",
+                  "R-e2d3b80524e2d4c51118"
+                ]
+              },
+              {
+                "series": "宁德时代",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "宁德时代",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 5.14,
+                "record_id": "R-79a653495150dace910d",
+                "source_record_ids": [
+                  "R-79a653495150dace910d",
+                  "R-e949c0f54064f15edb9d"
+                ]
+              },
+              {
+                "series": "宁德时代",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "宁德时代",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 5.23,
+                "record_id": "R-dada88033afe715c3137",
+                "source_record_ids": [
+                  "R-dada88033afe715c3137",
+                  "R-f5a837da7f0378a237fb"
+                ]
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 0,
+                "category": "2023-12-31",
+                "period": "2023-12-31",
+                "period_start": "2023-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "亿纬锂能",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 5.6,
+                "record_id": "R-ac1521dfbe4e21114142",
+                "source_record_ids": [
+                  "R-ac1521dfbe4e21114142",
+                  "R-145e05e9c83cac61fef9"
+                ]
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 1,
+                "category": "2024-12-31",
+                "period": "2024-12-31",
+                "period_start": "2024-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "亿纬锂能",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 6.05,
+                "record_id": "R-668c28cd8cefb9fcc38d",
+                "source_record_ids": [
+                  "R-668c28cd8cefb9fcc38d",
+                  "R-6661f1dad33a28372ba3"
+                ]
+              },
+              {
+                "series": "亿纬锂能",
+                "index": 2,
+                "category": "2025-12-31",
+                "period": "2025-12-31",
+                "period_start": "2025-01-01",
+                "period_type": "annual",
+                "scope": "consolidated",
+                "currency": "CNY",
+                "entity": "亿纬锂能",
+                "metric": "rd_ratio_pct",
+                "unit": "%",
+                "value": 4.89,
+                "record_id": "R-2d2963e127b1c65fc79d",
+                "source_record_ids": [
+                  "R-2d2963e127b1c65fc79d",
+                  "R-b9c2bd098377eeaede64"
+                ]
+              }
+            ],
+            "observation_range": {
+              "start": "2023-12-31",
+              "end": "2025-12-31"
+            }
+          },
+          "evidence_ids": [
+            "R-94dba7a39f3b3c30860a",
+            "R-e2d3b80524e2d4c51118",
+            "R-79a653495150dace910d",
+            "R-e949c0f54064f15edb9d",
+            "R-dada88033afe715c3137",
+            "R-f5a837da7f0378a237fb",
+            "R-ac1521dfbe4e21114142",
+            "R-145e05e9c83cac61fef9",
+            "R-668c28cd8cefb9fcc38d",
+            "R-6661f1dad33a28372ba3",
+            "R-2d2963e127b1c65fc79d",
+            "R-b9c2bd098377eeaede64"
+          ],
+          "selection_source": "a3_report_adapter"
+        }
+      ],
+      "excluded": [
+        {
+          "entity": "比亚迪",
+          "period": "2023-12-31",
+          "source_record_ids": [
+            "R-57938ed5d903c0e3d32c",
+            "R-c2678f02b259cdcaeb05"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-57938ed5d903c0e3d32c",
+              "entity": "比亚迪",
+              "metric": "rd_expense",
+              "value": 39574945000.0,
+              "unit": "元",
+              "period": "2023-12-31",
+              "period_start": "2023-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-3c45efb5860830e5",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        },
+        {
+          "entity": "比亚迪",
+          "period": "2024-12-31",
+          "source_record_ids": [
+            "R-0fa6d248819077b0f36d",
+            "R-00eff4a77ebcf7ba7e42"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-0fa6d248819077b0f36d",
+              "entity": "比亚迪",
+              "metric": "rd_expense",
+              "value": 53194745000.0,
+              "unit": "元",
+              "period": "2024-12-31",
+              "period_start": "2024-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-d2a663cd2b024903",
+              "treatment": "isolated_from_comparison"
+            },
+            {
+              "record_id": "R-00eff4a77ebcf7ba7e42",
+              "entity": "比亚迪",
+              "metric": "revenue",
+              "value": 777102455000.0,
+              "unit": "元",
+              "period": "2024-12-31",
+              "period_start": "2024-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-125176f2c6ba2451",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        },
+        {
+          "entity": "比亚迪",
+          "period": "2025-12-31",
+          "source_record_ids": [
+            "R-54fac9022f0809db3903",
+            "R-2850b52306edde896670"
+          ],
+          "omissions": [
+            {
+              "record_id": "R-54fac9022f0809db3903",
+              "entity": "比亚迪",
+              "metric": "rd_expense",
+              "value": 57978105000.0,
+              "unit": "元",
+              "period": "2025-12-31",
+              "period_start": "2025-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-023bc67d4b5fe7c8",
+              "treatment": "isolated_from_comparison"
+            },
+            {
+              "record_id": "R-2850b52306edde896670",
+              "entity": "比亚迪",
+              "metric": "revenue",
+              "value": 803964958000.0,
+              "unit": "元",
+              "period": "2025-12-31",
+              "period_start": "2025-01-01",
+              "period_type": "annual",
+              "period_provenance": "field",
+              "reason": "该值的稳健 Z 分数超过阈值，属于横截面离群候选。",
+              "anomaly_id": "A-cf4e73c43110dfef",
+              "treatment": "isolated_from_comparison"
+            }
+          ]
+        }
+      ]
+    },
+    "fig8": {
+      "origin": "a3_standalone_chain_panorama",
+      "source_path": "产业链图_单跑/新能源汽车产业链图.svg",
+      "generator_path": "产业链图_单跑/run_nev_chain.py",
+      "source_sha256": "11187b00aacd40419129b180f1976d91c2ade557a60dd23f0f8f312241f1bf99",
+      "title": "新能源汽车产业链关系全景图",
+      "a2_financial_sample_groups": {
+        "整车组": [
+          "比亚迪",
+          "长安汽车",
+          "赛力斯"
+        ],
+        "电池组": [
+          "宁德时代",
+          "亿纬锂能"
+        ]
+      }
+    }
+  }
+}

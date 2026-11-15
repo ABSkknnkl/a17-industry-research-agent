@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>白酒四强现金流与渠道质量｜2023—2025</title>
+<style>
+/* ===== 版式令牌：正文宋体、标题黑体、数字 Times ===== */
+:root{
+  --ink:#1B1B1B; --slate:#3D4A57; --muted:#7A7468;
+  --line:#D8CFC0; --hair:#E4DED3; --paper:#FFFFFF;
+  --cream:#F4F1EA; --cream2:#F7F4EE;
+  --accent:#1F5F5B; --red:#8C1D18; --gold:#B08A3E;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:#E9E7E2;
+  color:var(--ink);
+  font-family:"Songti SC","STSong","SimSun",serif;
+  font-size:10.5pt;
+  line-height:1.62;
+  -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.report{width:210mm;margin:24px auto;background:var(--paper);box-shadow:0 2px 18px rgba(0,0,0,.14);}
+.content{padding:18mm 16mm 16mm;}
+
+@page{size:A4;margin:20mm 16mm 17mm 16mm;}
+@page :first{margin:0;}
+@media print{
+  body{background:#fff;}
+  .report{width:auto;margin:0;box-shadow:none;}
+  .content{padding:0;}
+}
+
+/* ===== 封面 ===== */
+.cover{
+  width:210mm;height:297mm;position:relative;overflow:hidden;
+  background:var(--cream);
+}
+.cover-band{position:absolute;left:0;top:0;width:210mm;height:86mm;background:#17202A;}
+.cover-band .brand{
+  position:absolute;left:18mm;top:14mm;color:#F4F1EA;
+  font-family:"Heiti SC","STHeiti","PingFang SC",sans-serif;
+  font-size:8pt;letter-spacing:.14em;
+}
+.cover-band .date{
+  position:absolute;right:18mm;top:14mm;color:#C9B99A;
+  font-family:"Times New Roman",serif;font-size:8.5pt;letter-spacing:.08em;
+}
+.cover-band .kicker{
+  position:absolute;left:18mm;top:31mm;color:var(--gold);
+  font-family:"Heiti SC","STHeiti",sans-serif;font-size:9pt;letter-spacing:.18em;
+}
+.cover-band h1{
+  position:absolute;left:18mm;top:41mm;margin:0;color:#FFFFFF;
+  font-family:"Heiti SC","STHeiti","PingFang SC",sans-serif;
+  font-size:30pt;line-height:1.16;font-weight:600;letter-spacing:.01em;
+}
+.cover-band .sub{
+  position:absolute;left:18mm;top:70mm;width:168mm;color:#D9D2C6;
+  font-size:9.5pt;line-height:1.55;
+}
+.cover-main{position:absolute;left:18mm;top:101mm;width:174mm;}
+.cover-main .thesis{
+  font-size:12pt;line-height:1.68;color:var(--ink);
+  border-left:2.2pt solid var(--gold);padding-left:4mm;
+}
+.cover-main .thesis b{font-family:"Heiti SC","STHeiti",sans-serif;font-weight:600;}
+.cover-kpis{
+  position:absolute;left:18mm;top:147mm;width:174mm;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1.4pt solid var(--ink);border-bottom:.6pt solid var(--ink);
+}
+.kpi{padding:4mm 3mm 4.5mm;border-right:.3pt solid var(--line);}
+.kpi:last-child{border-right:none;}
+.kpi .v{font-family:"Times New Roman",serif;font-size:21pt;line-height:1;color:var(--ink);}
+.kpi .u{font-size:8pt;color:var(--muted);margin-left:1mm;}
+.kpi .l{font-size:7.6pt;color:var(--muted);margin-top:1.5mm;line-height:1.4;}
+.cover-note{
+  position:absolute;left:18mm;top:181mm;width:174mm;
+  font-size:9pt;line-height:1.75;color:var(--slate);
+}
+.cover-note .row{display:flex;justify-content:space-between;border-bottom:.3pt solid var(--line);padding:1.4mm 0;}
+.cover-note .row span:first-child{color:var(--muted);}
+.cover-questions{
+  position:absolute;left:18mm;top:238mm;width:174mm;
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1.2pt solid var(--ink);border-bottom:.6pt solid var(--ink);
+}
+.cover-questions .q{padding:3mm 2.6mm 3.2mm;border-right:.3pt solid var(--line);}
+.cover-questions .q:last-child{border-right:none;}
+.cover-questions .qn{font-family:"Times New Roman",serif;font-size:11pt;color:var(--gold);line-height:1;}
+.cover-questions .qt{font-family:"Heiti SC","STHeiti",sans-serif;font-size:7.8pt;line-height:1.45;margin-top:1.2mm;color:var(--slate);}
+.cover-foot{
+  position:absolute;left:18mm;bottom:14mm;width:174mm;
+  display:flex;justify-content:space-between;align-items:flex-end;
+  font-size:7.6pt;color:var(--muted);line-height:1.5;
+}
+.cover-foot .disc{color:var(--red);}
+
+/* ===== 目录 ===== */
+.toc-page{break-before:page;}
+.page-title{
+  font-family:"Heiti SC","STHeiti","PingFang SC",sans-serif;
+  font-size:19pt;font-weight:600;margin:0 0 2mm;
+  padding-bottom:2.2mm;border-bottom:1.4pt solid var(--ink);
+}
+.toc-block{margin-top:3.8mm;}
+.toc-block h4{
+  font-family:"Heiti SC","STHeiti",sans-serif;font-size:8pt;
+  letter-spacing:.16em;color:var(--gold);margin:0 0 1.2mm;font-weight:600;
+}
+.toc-item{display:flex;align-items:baseline;font-size:9.0pt;margin:1.05mm 0;line-height:1.26;}
+.toc-item .t{white-space:nowrap;}
+.toc-item .leader{flex:1;border-bottom:.5pt dotted #B9B3A7;margin:0 2mm 1.1mm;}
+.toc-item .pg{font-family:"Times New Roman",serif;font-size:8.8pt;min-width:7mm;text-align:right;color:var(--slate);}
+.toc-item.level2{padding-left:8mm;font-size:8.5pt;color:var(--slate);margin:0.75mm 0;}
+.toc-item.level2 .pg{font-size:8.6pt;}
+
+/* ===== 执行摘要 ===== */
+.exec-page{break-before:page;}
+.lead{
+  font-size:11pt;line-height:1.72;color:var(--ink);
+  border-top:1.4pt solid var(--ink);padding-top:3.5mm;margin:0 0 4mm;
+}
+
+.conclusion{
+  display:grid;grid-template-columns:13mm 1fr;gap:3mm;
+  padding:3.2mm 0;border-top:.5pt solid var(--line);
+  break-inside:avoid;
+}
+.conclusion .n{font-family:"Times New Roman",serif;font-size:19pt;line-height:1;color:var(--gold);}
+.conclusion .claim{
+  font-family:"Heiti SC","STHeiti","PingFang SC",sans-serif;
+  font-size:10.6pt;line-height:1.5;font-weight:600;margin-bottom:1.2mm;
+}
+.conclusion .ev,.conclusion .im{font-size:9.2pt;line-height:1.58;color:var(--slate);margin-top:.7mm;}
+.conclusion .ev b{color:var(--ink);font-family:"Heiti SC","STHeiti",sans-serif;font-weight:600;}
+.conclusion .im b{color:var(--accent);font-family:"Heiti SC","STHeiti",sans-serif;font-weight:600;}
+
+/* ===== 正文 ===== */
+.chapter{break-before:page;}
+.chapter-head{
+  border-top:2pt solid var(--ink);padding-top:3.2mm;margin-bottom:5mm;
+}
+.chapter-label{
+  font-family:"Heiti SC","STHeiti",sans-serif;font-size:8pt;
+  letter-spacing:.22em;color:var(--gold);font-weight:600;
+}
+.chapter h2{
+  font-family:"Heiti SC","STHeiti","PingFang SC",sans-serif;
+  font-size:18pt;line-height:1.3;font-weight:600;margin:1.2mm 0 2.4mm;
+}
+.chapter-question{
+  font-size:9.4pt;line-height:1.6;color:var(--slate);
+  border-left:2pt solid var(--gold);padding-left:3mm;
+}
+h3{
+  font-family:"Heiti SC","STHeiti","PingFang SC",sans-serif;
+  font-size:12pt;font-weight:600;line-height:1.4;
+  margin:5.2mm 0 2.2mm;break-after:avoid;
+}
+h3 .num{color:var(--accent);font-size:9pt;margin-right:2.2mm;letter-spacing:.04em;}
+h4{
+  font-family:"Heiti SC","STHeiti",sans-serif;font-size:10pt;
+  font-weight:600;margin:3.2mm 0 1.4mm;color:var(--ink);break-after:avoid;
+}
+p{text-indent:2em;margin:0 0 1.6mm;line-height:1.64;orphans:2;widows:2;text-align:justify;text-justify:inter-ideograph;}
+p.no-indent{text-indent:0;}
+.note-inline{font-size:8.4pt;color:var(--muted);}
+.cite{font-size:7pt;color:var(--muted);vertical-align:super;line-height:0;}
+
+/* ===== 图表 ===== */
+figure{margin:4mm 0 5mm;break-inside:avoid;}
+figure img{width:100%;max-height:104mm;object-fit:contain;display:block;}
+figcaption{
+  font-family:"Heiti SC","STHeiti","PingFang SC",sans-serif;
+  font-size:9pt;font-weight:600;color:var(--ink);margin-top:2.2mm;line-height:1.45;
+}
+.fig-source,.fig-note{font-size:7.4pt;color:var(--muted);line-height:1.5;margin-top:.8mm;}
+.fig-source b,.fig-note b{color:var(--slate);font-weight:600;}
+
+table.data-table{width:100%;border-collapse:collapse;margin:3mm 0 1mm;font-size:8.5pt;line-height:1.4;break-inside:avoid;}
+table.data-table caption{
+  caption-side:top;text-align:left;
+  font-family:"Heiti SC","STHeiti","PingFang SC",sans-serif;
+  font-size:9pt;font-weight:600;color:var(--ink);margin-bottom:1.6mm;
+}
+table.data-table thead th{
+  font-family:"Heiti SC","STHeiti",sans-serif;font-weight:600;font-size:7.8pt;
+  color:var(--slate);border-top:1.4pt solid var(--ink);
+  border-bottom:.6pt solid var(--ink);padding:1.6mm 1.4mm;text-align:right;
+}
+table.data-table tbody td{
+  border-bottom:.3pt solid var(--hair);padding:1.5mm 1.4mm;
+  text-align:right;font-variant-numeric:tabular-nums;
+  font-family:"Times New Roman","Songti SC",serif;
+}
+table.data-table tbody td:first-child{font-family:"Songti SC","STSong",serif;text-align:left;}
+table.data-table tbody tr:last-child td{border-bottom:1.4pt solid var(--ink);}
+table.data-table th:first-child,table.data-table td:first-child{text-align:left;}
+table.data-table td.neg{color:var(--red);}
+.sample-table{table-layout:fixed;}
+.text-table td,.text-table th{text-align:left!important;}
+.long-table{break-inside:auto;}
+.long-table thead{display:table-header-group;}
+.table-source{font-size:7.4pt;color:var(--muted);line-height:1.5;margin-top:1mm;}
+.table-source b{color:var(--slate);font-weight:600;}
+
+/* ===== 提示框 ===== */
+.callout{
+  background:var(--cream2);border-left:2.2pt solid var(--accent);
+  padding:3mm 4mm;margin:3.2mm 0;font-size:9.2pt;line-height:1.62;
+  break-inside:avoid;
+}
+.callout .label{
+  font-family:"Heiti SC","STHeiti",sans-serif;font-size:7.6pt;
+  letter-spacing:.12em;color:var(--accent);font-weight:600;margin-bottom:1mm;
+}
+.callout.warn{border-left-color:var(--red);}
+.callout.warn .label{color:var(--red);}
+
+/* ===== 两栏/网格 ===== */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:7mm;align-items:start;}
+.mini-kpi{
+  border-top:1.2pt solid var(--ink);padding-top:2mm;
+}
+.mini-kpi .v{font-family:"Times New Roman",serif;font-size:17pt;line-height:1;}
+.mini-kpi .l{font-size:7.6pt;color:var(--muted);margin-top:1mm;}
+
+ul.q-list{list-style:none;margin:2mm 0 2.4mm 0;padding:0;}
+ul.q-list li{margin:0 0 2.4mm;line-height:1.62;font-size:9.6pt;}
+ul.q-list li b{font-family:"Heiti SC","STHeiti",sans-serif;font-weight:600;}
+ol.steps{margin:2mm 0 2mm 5mm;padding:0;}
+ol.steps li{margin:0 0 2.2mm;line-height:1.62;font-size:9.4pt;}
+ul.plain{margin:1.5mm 0 2mm 4mm;padding:0;}
+ul.plain li{margin:0 0 1.2mm;line-height:1.6;font-size:9.4pt;}
+.tag{
+  display:inline-block;font-family:"Heiti SC","STHeiti",sans-serif;
+  font-size:7.2pt;padding:.5mm 1.6mm;border:.4pt solid var(--line);
+  color:var(--slate);margin-right:1mm;border-radius:1mm;
+}
+.tag.red{color:var(--red);border-color:#D9B8B2;}
+.tag.green{color:var(--accent);border-color:#B8CFC9;}
+
+/* ===== 附录 ===== */
+.appendix{break-before:page;}
+.small-table{font-size:7.8pt;}
+.tiny-table{font-size:7.2pt;}
+.source-list{font-size:8pt;line-height:1.65;color:var(--slate);margin:2mm 0 0 5mm;padding:0;}
+.source-list li{margin-bottom:1.2mm;}
+.url{font-family:"Times New Roman",serif;font-size:7pt;color:var(--muted);word-break:break-all;}
+</style>
+</head>
+<body>
+<div class="report">
+
+<!-- ================= 封面 ================= -->
+<section class="cover">
+  <div class="cover-band">
+    <div class="brand">同花顺 iFinD · 行业研究</div>
+    <div class="date">2026年11月 · 研究演示</div>
+    <div class="kicker">白酒行业 · 四强样本</div>
+    <h1>现金流的分化，<br>不是利润的分化</h1>
+    <div class="sub">2023—2025年白酒四强营收、归母净利、毛利率、经营现金流与渠道结构可比性研究</div>
+  </div>
+
+  <div class="cover-main">
+    <div class="thesis"><b>核心判断：</b>2025年四家酒企的现金流分化，更多来自收入确认、回款节奏与营运资金，而不是盈利质量的同向变化。先拆口径，再谈质量。</div>
+  </div>
+
+  <div class="cover-kpis">
+    <div class="kpi"><div class="v">2,738<span class="u">亿元</span></div><div class="l">2025年营收合计<br>同比 -16.3%</div></div>
+    <div class="kpi"><div class="v">1,144<span class="u">亿元</span></div><div class="l">2025年归母净利合计<br>同比 -20.5%</div></div>
+    <div class="kpi"><div class="v">1,074<span class="u">亿元</span></div><div class="l">2025年经营现金流合计<br>同比 -31.9%</div></div>
+    <div class="kpi"><div class="v">2.66<span class="u">倍</span></div><div class="l">OCF/NP极差<br>最高3.32 / 最低0.66</div></div>
+  </div>
+
+  <div class="cover-note">
+    <div class="row"><span>研究对象</span><span>贵州茅台（600519）· 五粮液（000858）· 泸州老窖（000568）· 山西汾酒（600809）</span></div>
+    <div class="row"><span>数据截至</span><span>2025年年度报告（2026年4月30日前披露）；查询日2026-11-13</span></div>
+    <div class="row"><span>统计口径</span><span>合并报表 · 年度 · 人民币；同比为名义值</span></div>
+    <div class="row"><span>报告编号</span><span>BAIJIU-2025-01 · 优化版式样例</span></div>
+  </div>
+
+  <div class="cover-questions">
+    <div class="q"><div class="qn">Q1</div><div class="qt">现金流与净利润<br>差异及可核验解释</div></div>
+    <div class="q"><div class="qn">Q2</div><div class="qt">2023—2025<br>三年经营表现</div></div>
+    <div class="q"><div class="qn">Q3</div><div class="qt">现金转化与<br>营运资金证据</div></div>
+    <div class="q"><div class="qn">Q4</div><div class="qt">渠道与产品结构<br>可比性边界</div></div>
+  </div>
+
+  <div class="cover-foot">
+    <div>本报告为智能体5版式优化样例，使用公开年报数据，不含投资评级或目标价。</div>
+    <div class="disc">研究演示 · 不构成投资建议</div>
+  </div>
+</section>
+
+<main class="content">
+
+<!-- ================= 目录 ================= -->
+<section class="toc-page">
+  <h2 class="page-title">目录</h2>
+
+  <div class="toc-block">
+    <h4>正文目录</h4>
+    <div class="toc-item"><span class="t">执行摘要</span><span class="leader"></span><span class="pg" data-key="exec">3</span></div>
+    <div class="toc-item"><span class="t">第一章　研究范围、数据口径与结论边界</span><span class="leader"></span><span class="pg" data-key="ch1">5</span></div>
+    <div class="toc-item level2"><span class="t">1.1　研究问题</span><span class="leader"></span><span class="pg" data-key="sec11">5</span></div>
+    <div class="toc-item level2"><span class="t">1.2　样本与数据</span><span class="leader"></span><span class="pg" data-key="sec12">5</span></div>
+    <div class="toc-item level2"><span class="t">1.3　六条口径声明</span><span class="leader"></span><span class="pg" data-key="sec13">5</span></div>
+    <div class="toc-item"><span class="t">第二章　2023—2025年经营表现</span><span class="leader"></span><span class="pg" data-key="ch2">7</span></div>
+    <div class="toc-item level2"><span class="t">2.1　营收：三条增长曲线与一次口径断层</span><span class="leader"></span><span class="pg" data-key="sec21">7</span></div>
+    <div class="toc-item level2"><span class="t">2.2　归母净利：五粮液的利润断层</span><span class="leader"></span><span class="pg" data-key="sec22">8</span></div>
+    <div class="toc-item level2"><span class="t">2.3　毛利率：价格体系未系统性塌陷</span><span class="leader"></span><span class="pg" data-key="sec23">8</span></div>
+    <div class="toc-item"><span class="t">第三章　现金流与净利润差异</span><span class="leader"></span><span class="pg" data-key="ch3">10</span></div>
+    <div class="toc-item level2"><span class="t">3.1　差异有多大：OCF/NP与现金收款</span><span class="leader"></span><span class="pg" data-key="sec31">10</span></div>
+    <div class="toc-item level2"><span class="t">3.2　五粮液：3.32倍不是质量跃升</span><span class="leader"></span><span class="pg" data-key="sec32">11</span></div>
+    <div class="toc-item level2"><span class="t">3.3　泸州老窖：预收红利消退</span><span class="leader"></span><span class="pg" data-key="sec33">12</span></div>
+    <div class="toc-item level2"><span class="t">3.4　汾酒：营运资金解释力88%</span><span class="leader"></span><span class="pg" data-key="sec34">12</span></div>
+    <div class="toc-item level2"><span class="t">3.5　茅台：合并口径让比较失真</span><span class="leader"></span><span class="pg" data-key="sec35">13</span></div>
+    <div class="toc-item level2"><span class="t">3.6　三种现金流分化机制</span><span class="leader"></span><span class="pg" data-key="sec36">13</span></div>
+    <div class="toc-item"><span class="t">第四章　渠道与产品结构：可比与不可比</span><span class="leader"></span><span class="pg" data-key="ch4">14</span></div>
+    <div class="toc-item level2"><span class="t">4.1　产品结构：四种分类口径</span><span class="leader"></span><span class="pg" data-key="sec41">14</span></div>
+    <div class="toc-item level2"><span class="t">4.2　渠道结构：四个“直销”不是一件事</span><span class="leader"></span><span class="pg" data-key="sec42">15</span></div>
+    <div class="toc-item level2"><span class="t">4.3　可比性矩阵</span><span class="leader"></span><span class="pg" data-key="sec43">16</span></div>
+    <div class="toc-item level2"><span class="t">4.4　披露不足时的五步限定法</span><span class="leader"></span><span class="pg" data-key="sec44">17</span></div>
+    <div class="toc-item"><span class="t">第五章　结论与跟踪指标</span><span class="leader"></span><span class="pg" data-key="ch5">18</span></div>
+    <div class="toc-item level2"><span class="t">5.1　五条结论</span><span class="leader"></span><span class="pg" data-key="sec51">18</span></div>
+    <div class="toc-item level2"><span class="t">5.2　跟踪指标</span><span class="leader"></span><span class="pg" data-key="sec52">18</span></div>
+    <div class="toc-item level2"><span class="t">5.3　研究限制</span><span class="leader"></span><span class="pg" data-key="sec53">18</span></div>
+    <div class="toc-item"><span class="t">附录A　数据表与来源索引</span><span class="leader"></span><span class="pg" data-key="appA">20</span></div>
+    <div class="toc-item"><span class="t">附录B　研究说明</span><span class="leader"></span><span class="pg" data-key="appB">22</span></div>
+  </div>
+
+  <div class="toc-block">
+    <h4>图表目录</h4>
+    <div class="toc-item"><span class="t">图1　营收指数：三条曲线与一次口径断层</span><span class="leader"></span><span class="pg" data-key="fig1">7</span></div>
+    <div class="toc-item"><span class="t">图2　归母净利：五粮液的利润断层</span><span class="leader"></span><span class="pg" data-key="fig2">8</span></div>
+    <div class="toc-item"><span class="t">图3　毛利率：价格体系未系统性塌陷</span><span class="leader"></span><span class="pg" data-key="fig3">9</span></div>
+    <div class="toc-item"><span class="t">图4　现金转化：四个极端值，四种机制</span><span class="leader"></span><span class="pg" data-key="fig4">10</span></div>
+    <div class="toc-item"><span class="t">图5　营运资金：汾酒解释力88%</span><span class="leader"></span><span class="pg" data-key="fig5">11</span></div>
+    <div class="toc-item"><span class="t">图6　产品结构：四套分类口径</span><span class="leader"></span><span class="pg" data-key="fig6">14</span></div>
+    <div class="toc-item"><span class="t">图7　渠道结构：四个“直销”不是一件事</span><span class="leader"></span><span class="pg" data-key="fig7">15</span></div>
+    <div class="toc-item"><span class="t">表1　2025年四家酒企核心指标</span><span class="leader"></span><span class="pg" data-key="tab1">9</span></div>
+    <div class="toc-item"><span class="t">表2　2025年营运资金变动与OCF解释力</span><span class="leader"></span><span class="pg" data-key="tab2">11</span></div>
+    <div class="toc-item"><span class="t">表3　2025年产品结构</span><span class="leader"></span><span class="pg" data-key="tab3">15</span></div>
+    <div class="toc-item"><span class="t">表4　2025年渠道结构</span><span class="leader"></span><span class="pg" data-key="tab4">16</span></div>
+    <div class="toc-item"><span class="t">表5　跨公司可比性矩阵</span><span class="leader"></span><span class="pg" data-key="tab5">17</span></div>
+    <div class="toc-item"><span class="t">表6　2026年跟踪指标</span><span class="leader"></span><span class="pg" data-key="tab6">18</span></div>
+    <div class="toc-item"><span class="t">表A1　2023—2025年核心财务数据</span><span class="leader"></span><span class="pg" data-key="tabA1">20</span></div>
+    <div class="toc-item"><span class="t">表A2　2025年产品与渠道结构明细</span><span class="leader"></span><span class="pg" data-key="tabA2">21</span></div>
+  </div>
+</section>
+
+<!-- ================= 执行摘要 ================= -->
+<section class="exec-page">
+  <h2 class="page-title">执行摘要</h2>
+
+  <p class="lead">2025年是白酒行业深度调整的一年。国家统计局口径下，全国白酒产量354.9万千升、同比下降12.1%，销售收入5,724亿元、同比下降7.5%，利润总额1,884亿元、同比下降13.3%<sup class="cite">[6]</sup>。四家样本公司合计营收2,738亿元、归母净利1,144亿元，但内部出现罕见分化：五粮液报表营收-54.55%、经营现金流仅-12.47%；汾酒营收+7.52%、经营现金流-25.94%。本报告不把这些分化直接归因于“经营好坏”，而是先拆口径，再拆营运资金，最后才给判断。</p>
+
+  <div class="conclusion">
+    <div class="n">01</div>
+    <div>
+      <div class="claim">四家合计营收-16.3%，但这不是同一条需求曲线。</div>
+      <div class="ev"><b>证据：</b>2025年四家营收合计2,738亿元，较2024年的3,273亿元下降16.3%；剔除五粮液后，其余三家合计2,333亿元，较2024年的2,381亿元仅下降2.0%。五粮液年报明确披露“调整2025年部分业务收入确认相关核算”<sup class="cite">[10]</sup>，且未披露可比口径金额。</div>
+      <div class="im"><b>含义：</b>五粮液-54.55%的报表营收不能直接读作需求降幅；任何跨公司增速比较，都必须先标注“报表口径”还是“可比口径”。</div>
+    </div>
+  </div>
+
+  <div class="conclusion">
+    <div class="n">02</div>
+    <div>
+      <div class="claim">归母净利合计-20.5%，剔除五粮液后-5.9%；利润下滑集中在五粮液。</div>
+      <div class="ev"><b>证据：</b>2025年归母净利合计1,144亿元，较2024年的1,438亿元下降20.5%；剔除五粮液后为1,054亿元，较2024年的1,119亿元下降5.9%。四家毛利率仍处高位：茅台91.18%、泸州老窖86.62%、五粮液77.54%、汾酒74.85%；营收加权毛利率86.4%，较2024年的85.7%上行0.7个百分点。</div>
+      <div class="im"><b>含义：</b>价格体系没有出现系统性塌陷。利润下滑更多是“量、结构、口径”的共同结果，而不是全线降价。</div>
+    </div>
+  </div>
+
+  <div class="conclusion">
+    <div class="n">03</div>
+    <div>
+      <div class="claim">现金流分化比利润分化更剧烈：OCF/NP从0.66到3.32，极差2.66倍。</div>
+      <div class="ev"><b>证据：</b>2025年经营现金流/归母净利分别为：茅台0.75、五粮液3.32、泸州老窖0.66、汾酒0.74；2024年分别为1.07、1.07、1.42、0.99。四家中仅汾酒与前一年接近，五粮液和泸州老窖出现极端值。</div>
+      <div class="im"><b>含义：</b>单看OCF/NP会误判。这个指标同时受收入确认、合并范围、回款节奏和营运资金影响，必须拆开看。</div>
+    </div>
+  </div>
+
+  <div class="conclusion">
+    <div class="n">04</div>
+    <div>
+      <div class="claim">五粮液的3.32倍不是“盈利质量跃升”，而是分子分母错位。</div>
+      <div class="ev"><b>证据：</b>2025年“销售商品、提供劳务收到的现金”914.00亿元，是报表营收405.29亿元的2.26倍（2024年为1.14倍）。同期合同负债+17.70亿元、存货+18.31亿元、应交税费-51.94亿元、其他应付款-18.88亿元；销售费用-28.65%、促销费-36.28%<sup class="cite">[2]</sup>。</div>
+      <div class="im"><b>含义：</b>分子受回款、税费和费用支付节奏支撑，分母被收入确认调整压缩。3.32倍不宜解读为现金流质量改善，更不能外推为2026年趋势。</div>
+    </div>
+  </div>
+
+  <div class="conclusion">
+    <div class="n">05</div>
+    <div>
+      <div class="claim">营运资金三项只在汾酒身上解释力强：汾酒88%，泸州/茅台约22%，五粮液约1%。</div>
+      <div class="ev"><b>证据：</b>用“合同负债变动-存货变动-应收款项变动”估算现金影响，2025年汾酒三项合计-27.87亿元，对应经营现金流降幅-31.58亿元，解释力88.3%；泸州老窖-26.09亿元对-120.59亿元，解释力21.6%；茅台-66.69亿元对-309.42亿元，解释力21.6%；五粮液-0.57亿元对-42.34亿元，解释力仅1.3%。</div>
+      <div class="im"><b>含义：</b>“合同负债下降”不是所有公司现金流下滑的统一解释。对五粮液和茅台，收入确认与合并范围才是首要问题问题；对汾酒，营运资金才是主因。</div>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="label">研究边界 · 先读这一段再看数字</div>
+    <p class="no-indent">① 五粮液2025年收入确认核算调整，年报未披露可比金额，无法还原纯经营降幅；② 茅台合并现金流量表含贵州茅台集团财务有限公司，OCF与纯酒企不可直接比较；③ 汾酒全年分产品/分渠道明细披露有限，结构数据主要采用2025年前三季度经营数据公告；④ 合同负债只含预收货款，不含应付经销商促销费/返利；⑤ 样本仅四家，不代表全行业；⑥ 所有增长率为名义值，未剔除价格、结构、并表影响。</p>
+  </div>
+</section>
+
+<!-- ================= 第一章 ================= -->
+<section class="chapter">
+  <div class="chapter-head">
+    <div class="chapter-label">CHAPTER 01</div>
+    <h2>研究范围、数据口径与结论边界</h2>
+    <div class="chapter-question">本章回答：这四个问题分别需要什么数据？哪些数字可以直接比，哪些必须先调整？</div>
+  </div>
+
+  <h3 id="sec11"><span class="num">1.1</span>研究问题</h3>
+  <p>本报告围绕四个问题展开，顺序上先做“经营表现”，再做“现金流归因”，最后做“结构与可比性”。这样安排的原因很简单：如果不先把营收和利润的报表口径拆开，后面的现金流分析就会建立在错误的同比基数上。</p>
+  <ul class="q-list">
+    <li><b>Q1　现金流与净利润差异：</b>贵州茅台、五粮液、泸州老窖、山西汾酒的经营现金流与净利润之间有何差异？差异有哪些可核验的解释？</li>
+    <li><b>Q2　三年经营表现：</b>2023—2025年四家的营业收入、归母净利润、毛利率和经营活动现金流净额有何差异？同比变化与横向比较如何呈现？</li>
+    <li><b>Q3　现金转化与营运资金：</b>2023—2025年“经营活动现金流净额/归母净利润”如何变化？差异能否从合同负债、应收款项及存货变化中找到年报证据？</li>
+    <li><b>Q4　渠道与产品结构：</b>四家的渠道与产品结构有哪些可比和不可比之处？披露不足时应如何限定财务结论？</li>
+  </ul>
+
+  <h3 id="sec12"><span class="num">1.2</span>样本与数据</h3>
+  <p>样本选择的标准是“A股白酒、2025年年报已披露、营收规模与品牌定位具有代表性”。四家公司覆盖酱香、浓香、清香三个香型，也覆盖高端、次高端和全国化/区域化三种经营形态。数据统一取合并报表、年度、人民币口径；2025年数据以各公司2025年年度报告为准，2023—2024年数据取同年年度报告，并与同花顺iFinD交叉核对<sup class="cite">[5]</sup>。</p>
+
+  <table class="data-table sample-table">
+    <caption>样本公司与数据来源</caption>
+    <colgroup><col style="width:18%"><col style="width:9%"><col style="width:14%"><col style="width:31%"><col style="width:28%"></colgroup>
+    <thead>
+      <tr><th>公司</th><th>代码</th><th>2025年报披露</th><th>主要数据来源</th><th>本报告使用重点</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>贵州茅台</td><td>600519</td><td>2026-04-17</td><td>2025年年度报告、2023—2024年年报</td><td>产品/渠道结构、财务公司对OCF的影响</td></tr>
+      <tr><td>五粮液</td><td>000858</td><td>2026-04-30</td><td>2025年年度报告、审计报告</td><td>收入确认调整、现金收款与税费/费用应付</td></tr>
+      <tr><td>泸州老窖</td><td>000568</td><td>2026-04-28</td><td>2025年年度报告</td><td>预收红利、存货增加、产品/渠道结构</td></tr>
+      <tr><td>山西汾酒</td><td>600809</td><td>2026-04-23</td><td>2025年年度报告、审计报告、季度经营数据公告</td><td>营运资金三项、代理/直销结构</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2025年年度报告，上海证券交易所/深圳证券交易所披露文件，同花顺iFinD；查询日2026-11-13。</div>
+
+  <h3 id="sec13"><span class="num">1.3</span>六条口径声明</h3>
+  <p>以下六条不是“免责声明”，而是本报告的分析前提。任何一条被忽略，后面的横向比较都可能得出相反结论。</p>
+
+  <div class="callout">
+    <div class="label">口径 01 · 收入确认</div>
+    <p class="no-indent">五粮液在2025年年报中披露：“公司对2025年业务模式进行梳理，基于谨慎性原则，调整2025年部分业务收入确认相关核算。”<sup class="cite">[10]</sup>年报未披露可比口径金额。因此，2025年营收-54.55%、归母净利-71.89%、毛利率77.54%，只能作为“报表口径”使用，不能直接解释为需求或价格的变化。</p>
+  </div>
+
+  <div class="callout">
+    <div class="label">口径 02 · 合并范围</div>
+    <p class="no-indent">茅台合并现金流量表包含控股子公司贵州茅台集团财务有限公司。2025年经营现金流净额-33.46%，年报给出的首要原因是“财务有限公司吸收集团公司成员单位存款减少及不可随时支取的同业存款增加”<sup class="cite">[9]</sup>。这意味着茅台OCF里有一部分是金融业务现金流，不能与五粮液、泸州老窖、汾酒的纯酒类OCF直接并列。</p>
+  </div>
+
+  <div class="callout">
+    <div class="label">口径 03 · 产品分类</div>
+    <p class="no-indent">四家的产品分类不是同一套标准：茅台按“茅台酒/系列酒”产品线；五粮液按“五粮液产品/其他酒产品”品牌；泸州老窖按“含税售价≥150元/瓶”的价格带；汾酒按“汾酒/其他酒类”。因此，“中高档占比”“高端占比”不能跨公司直接排名，只能在同一分类口径内比较。</p>
+  </div>
+
+  <div class="callout">
+    <div class="label">口径 04 · 渠道分类</div>
+    <p class="no-indent">四家的“直销”也不是同一件事：茅台直销含自营网点与“i茅台”数字营销平台；五粮液直销含团购、专卖店与线上销售；泸州老窖“新兴渠道”主要是线上；汾酒把“直销、团购、电商平台”合并披露。跨公司比较“直销占比”前，必须先还原各家的渠道定义。</p>
+  </div>
+
+  <div class="callout">
+    <div class="label">口径 05 · 渠道负债</div>
+    <p class="no-indent">合同负债只反映“已收或应收客户对价而应向客户转让商品”的预收货款，不含应付经销商的促销费、返利、保证金等。五粮液2025年末其他应付款中“形象宣传费及促销费”为25.23亿元<sup class="cite">[2]</sup>，单看合同负债会低估渠道义务。分析渠道压力时，应把合同负债与应付促销费合并观察。</p>
+  </div>
+
+  <div class="callout">
+    <div class="label">口径 06 · 数据边界</div>
+    <p class="no-indent">样本仅四家，不代表全行业；所有增长率均为名义值，未剔除价格、结构、并表影响；2025年行业数据来自五粮液年报引用的国家统计局口径<sup class="cite">[6]</sup>，与四家样本的统计范围不完全一致；数据查询日为2026-11-13，之后披露的公告未纳入。</p>
+  </div>
+
+  <p>把六条口径放在正文最前面，会牺牲一点“开门见山”的爽感，但能避免后面反复打补丁。专业报告和“AI拼报告”的差别，往往就在这一步：<b>先声明哪些数字不能比，再展示能比的数字。</b></p>
+</section>
+
+<!-- ================= 第二章 ================= -->
+<section class="chapter">
+  <div class="chapter-head">
+    <div class="chapter-label">CHAPTER 02</div>
+    <h2>2023—2025年经营表现</h2>
+    <div class="chapter-question">本章回答：四家酒企的营收、归母净利、毛利率和经营现金流，在过去三年走出了什么形状？哪些差异是经营造成的，哪些是口径造成的？</div>
+  </div>
+
+  <p>2025年的报表呈现两条完全不同的曲线：汾酒和茅台仍在增长或接近持平，五粮液和泸州老窖明显下滑。但在下结论之前，必须先回答一个问题：五粮液的-54.55%里，有多少是需求，有多少是口径？如果不先拆开，后面的现金流分析就会建立在错误的同比基数上。</p>
+
+  <h3 id="sec21"><span class="num">2.1</span>营收：三条增长曲线与一次口径断层</h3>
+  <p>先看营收。以2023年为100，汾酒2025年升至121.3，茅台114.3，泸州老窖85.1，五粮液48.7。前两家曲线向上，后两家向下，但向下的原因不同。泸州老窖是需求与产品结构共同作用；五粮液则叠加了收入确认核算调整，年报没有披露可比金额，所以48.7这个点不能直接读作“需求腰斩”。</p>
+
+  <figure>
+    <img src="assets/fig1_revenue_index.png" alt="2023—2025年营收指数">
+    <figcaption>图1　营收指数：三条增长曲线与一次口径断层（2023年=100）</figcaption>
+    <div class="fig-source"><b>资料来源：</b>各公司2023—2025年年度报告，同花顺iFinD。</div>
+    <div class="fig-note"><b>注：</b>指数化以2023年为100，仅用于比较相对变化，不代表绝对规模；五粮液2025年营收受收入确认核算调整影响，指数不代表纯经营变化。</div>
+  </figure>
+
+  <p>把五粮液剔除，其余三家2025年营收合计2,333亿元，较2024年的2,381亿元仅下降2.0%。这就是“口径断层”的含义：四家合计-16.3%的降幅里，绝大部分由五粮液的报表口径变化贡献，而不是四家同时出现的需求坍塌。这个对比不是替五粮液“洗白”，而是把“经营压力”和“报表降幅”分开。</p>
+
+  <p>即便还原口径，五粮液2025年的经营压力也是真实的：五粮液产品销售量19,455吨、同比-53.00%，期末库存量25,118吨、较期初增加306.90%；年报注2明确解释为“白酒行业进入深度调整期，消费场景收缩、存量竞争加剧，导致销量下降、阶段性库存增加”<sup class="cite">[2]</sup>。所以正确的写法是：<b>经营压力大，且报表降幅被收入确认调整放大</b>；不能只写“营收腰斩”，也不能只写“口径调整”。</p>
+
+  <h3 id="sec22"><span class="num">2.2</span>归母净利：五粮液的利润断层</h3>
+  <p>归母净利的曲线更陡。以2023年为100，汾酒117.3、茅台110.2、泸州老窖81.8、五粮液29.6。五粮液一家贡献了四家净利降幅的绝大部分；剔除五粮液，其余三家2025年净利合计1,054亿元，较2024年的1,119亿元下降5.9%。</p>
+
+  <figure>
+    <img src="assets/fig2_profit_index.png" alt="2023—2025年归母净利指数">
+    <figcaption>图2　归母净利：五粮液的利润断层（2023年=100）</figcaption>
+    <div class="fig-source"><b>资料来源：</b>各公司2023—2025年年度报告，同花顺iFinD。</div>
+    <div class="fig-note"><b>注：</b>五粮液2025年归母净利受收入确认核算调整影响；指数不代表可比口径下的经营变化。</div>
+  </figure>
+
+  <p>净利降幅与营收降幅的匹配度也不一样。茅台营收-1.21%、净利-4.53%，净利降幅大于营收，说明费用率或产品结构有拖累；汾酒营收+7.52%、净利+0.02%，增收不增利；泸州老窖营收-17.52%、净利-19.61%，基本同步；五粮液营收-54.55%、净利-71.89%，净利降幅远大于营收，经营杠杆与口径调整同时作用。</p>
+
+  <p>这组匹配度比“谁涨谁跌”更有信息量。它告诉我们：茅台的问题在利润端，不在收入端；汾酒的问题在现金端，不在利润端；泸州老窖是收入与利润同步收缩；五粮液则是收入、利润、库存三端同时承压，且报表口径放大了前两端。</p>
+
+  <h3 id="sec23"><span class="num">2.3</span>毛利率：价格体系未系统性塌陷</h3>
+  <p>毛利率是另一个容易被误读的指标。2025年茅台91.18%、泸州老窖86.62%、五粮液77.54%、汾酒74.85%，四家都还在高位；营收加权毛利率86.4%，较2024年的85.7%上行0.7个百分点。单看这个数，得不出“价格战”的结论。</p>
+
+  <figure>
+    <img src="assets/fig3_gross_margin.png" alt="2023—2025年销售毛利率">
+    <figcaption>图3　毛利率：价格体系未系统性塌陷（%）</figcaption>
+    <div class="fig-source"><b>资料来源：</b>各公司2023—2025年年度报告，同花顺iFinD。</div>
+    <div class="fig-note"><b>注：</b>毛利率为报表口径；五粮液2025年受收入确认核算调整影响，跨公司比较需谨慎。</div>
+  </figure>
+
+  <p>但毛利率上行不等于“卖得更贵”。五粮液毛利率从2023年的75.79%升至2025年的77.54%，同期营收却大幅下滑，这更可能是产品结构、收入确认口径和成本节奏共同作用；泸州老窖毛利率从88.30%降至86.62%，则与其“其他酒类”收入-23.93%、毛利率仅50.07%的结构变化有关<sup class="cite">[3]</sup>。汾酒毛利率从76.20%降至74.85%，与其省外扩张、产品结构下沉的方向一致。</p>
+
+  <p>所以本报告对毛利率的判断是：<b>价格体系没有出现系统性塌陷，但毛利率不能单独证明渠道健康。</b>渠道健康要看合同负债、应付促销费、库存和现金收款，这些放在第三章和第四章。</p>
+
+  <table class="data-table">
+    <caption>表1　2025年四家酒企核心指标</caption>
+    <thead>
+      <tr><th>公司</th><th>营业收入<br>（亿元）</th><th>同比</th><th>归母净利<br>（亿元）</th><th>同比</th><th>毛利率</th><th>同比<br>（pct）</th><th>经营现金流<br>（亿元）</th><th>OCF/NP<br>（倍）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>贵州茅台</td><td>1,688.38</td><td class="neg">-1.21%</td><td>823.20</td><td class="neg">-4.53%</td><td>91.18%</td><td class="neg">-0.75</td><td>615.22</td><td>0.75</td></tr>
+      <tr><td>五粮液</td><td>405.29</td><td class="neg">-54.55%</td><td>89.54</td><td class="neg">-71.89%</td><td>77.54%</td><td>+0.49</td><td>297.06</td><td>3.32</td></tr>
+      <tr><td>泸州老窖</td><td>257.31</td><td class="neg">-17.52%</td><td>108.31</td><td class="neg">-19.61%</td><td>86.62%</td><td class="neg">-0.92</td><td>71.23</td><td>0.66</td></tr>
+      <tr><td>山西汾酒</td><td>387.18</td><td>+7.52%</td><td>122.46</td><td>+0.02%</td><td>74.85%</td><td class="neg">-1.35</td><td>90.14</td><td>0.74</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2025年年度报告，同花顺iFinD；查询日2026-11-13。<b>注：</b>五粮液2025年营业收入、归母净利受收入确认核算调整影响，年报未披露可比金额；OCF/NP为报表口径，未做可比调整。</div>
+</section>
+
+<!-- ================= 第三章 ================= -->
+<section class="chapter">
+  <div class="chapter-head">
+    <div class="chapter-label">CHAPTER 03</div>
+    <h2>现金流与净利润差异</h2>
+    <div class="chapter-question">本章回答：为什么2025年四家酒企的OCF/NP会从0.66跳到3.32？这些差异里，哪些能用合同负债、应收、存货解释，哪些不能？</div>
+  </div>
+
+  <p>如果只看OCF/NP，2025年的四家酒企像是四个完全不同的行业：五粮液3.32倍，泸州老窖0.66倍，相差5倍。但拆开口径和营运资金后，会发现这些极端值分别对应三种机制：营运资金型、预收红利消退型、口径错位型。本章按这个顺序拆。</p>
+
+  <h3 id="sec31"><span class="num">3.1</span>差异有多大：OCF/NP与现金收款</h3>
+  <p>先看差异的量级。2025年OCF/NP：茅台0.75、五粮液3.32、泸州老窖0.66、汾酒0.74。2024年分别是1.07、1.07、1.42、0.99。五粮液从1.07跳到3.32，泸州从1.42跌到0.66，这两家是“异常值”；茅台和汾酒的变化相对温和。</p>
+
+  <figure>
+    <img src="assets/fig4_ocf_np.png" alt="2023—2025年经营现金流/归母净利">
+    <figcaption>图4　现金转化：四个极端值，四种机制（倍）</figcaption>
+    <div class="fig-source"><b>资料来源：</b>各公司2023—2025年年度报告，同花顺iFinD。</div>
+    <div class="fig-note"><b>注：</b>OCF/NP为报表口径；茅台合并现金流量表含财务公司，五粮液2025年含收入确认核算调整，跨公司比较需先读口径声明。</div>
+  </figure>
+
+  <p>再看现金收款。五粮液2025年“销售商品、提供劳务收到的现金”914.00亿元，是报表营收405.29亿元的2.26倍；2024年是1.14倍。泸州老窖277.77亿元，是营收的1.08倍（2024年1.28倍）；汾酒354.57亿元，是营收的0.92倍（2024年1.02倍）。茅台没有列入这个比较，因为其合并现金流量表含财务公司，现金收款与营收的分子分母不同口径。</p>
+
+  <p>表2用“合同负债变动-存货变动-应收款项变动”估算营运资金对现金流的现金影响。合同负债增加是现金来源，存货和应收增加是现金占用；三项合计为正，说明营运资金在释放现金，为负说明在占用现金。它只能解释一部分，但足以区分“营运资金型”与“口径型”的现金流分化。</p>
+
+  <table class="data-table">
+    <caption>表2　2025年营运资金变动与OCF解释力</caption>
+    <thead>
+      <tr><th>公司</th><th>Δ合同负债<br>（亿元）</th><th>Δ存货<br>（亿元）</th><th>Δ应收款项<br>（亿元）</th><th>三项合计<br>现金影响</th><th>ΔOCF<br>（亿元）</th><th>解释力</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>贵州茅台</td><td class="neg">-15.85</td><td class="neg">-70.84</td><td>+20.00</td><td class="neg">-66.69</td><td class="neg">-309.42</td><td>21.6%</td></tr>
+      <tr><td>五粮液</td><td>+17.70</td><td class="neg">-18.31</td><td>+0.04</td><td class="neg">-0.57</td><td class="neg">-42.34</td><td>1.3%</td></tr>
+      <tr><td>泸州老窖</td><td class="neg">-6.11</td><td class="neg">-20.03</td><td>+0.05</td><td class="neg">-26.09</td><td class="neg">-120.59</td><td>21.6%</td></tr>
+      <tr><td>山西汾酒</td><td class="neg">-16.65</td><td class="neg">-11.22</td><td>0.00</td><td class="neg">-27.87</td><td class="neg">-31.58</td><td>88.3%</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2025年年度报告资产负债表、现金流量表，同花顺iFinD。<b>注：</b>三项合计=Δ合同负债-Δ存货-Δ应收款项；解释力=三项合计/ΔOCF。茅台合并口径含财务公司，三项合计仅作报表口径参考；五粮液应收款项含应收票据，金额较小。</div>
+
+  <figure>
+    <img src="assets/fig5_working_capital.png" alt="2025年营运资金变动">
+    <figcaption>图5　营运资金：汾酒解释力88%（亿元）</figcaption>
+    <div class="fig-source"><b>资料来源：</b>各公司2025年年度报告资产负债表、现金流量表，同花顺iFinD。</div>
+    <div class="fig-note"><b>注：</b>正值为现金来源，负值为现金占用；三项合计=Δ合同负债-Δ存货-Δ应收款项；仅反映报表口径，不含收入确认调整与合并范围变化。</div>
+  </figure>
+
+  <p>图5把表2的现金影响画成了条形图：汾酒的三项合计-27.87亿元，与OCF降幅-31.58亿元几乎同宽，说明营运资金是主因；泸州的三项合计-26.09亿元，只有OCF降幅-120.59亿元的四分之一；茅台的三项合计-66.69亿元，也只有OCF降幅-309.42亿元的四分之一；五粮液的三项合计-0.57亿元，几乎解释不了OCF降幅。四条条形图的长度差异，就是四种机制的第一层证据。</p>
+
+  <h3 id="sec32"><span class="num">3.2</span>五粮液：3.32倍不是质量跃升</h3>
+  <p>五粮液是本轮最极端的样本。2025年营收405.29亿元、归母净利89.54亿元、经营现金流297.06亿元，OCF/NP 3.32倍。表面看，利润的现金含量极高；但把三张表放在一起，结论会反过来。</p>
+
+  <p><b>第一，分子被“回款节奏”撑住。</b>2025年销售商品收到现金914.00亿元，远高于当期营收。一个粗略的推断是：白酒经销“先款后货”，现金收款相对收入确认存在约1—2个季度的滞后；2024年下半年营收385.27亿元，加上2025年全年营收405.29亿元，合计790.56亿元，按13%增值税粗略折算约893亿元，与914亿元的现金收款量级接近。这个推算不是公司披露，只能作为方向性解释，不能当成精确的可比口径。</p>
+
+  <p><b>第二，分母被“收入确认调整”压住。</b>年报明确披露“公司对2025年业务模式进行梳理，基于谨慎性原则，调整2025年部分业务收入确认相关核算”<sup class="cite">[10]</sup>，但没有披露可比金额。分母变小，OCF/NP自然被放大。这是3.32倍最直接的会计原因。</p>
+
+  <p><b>第三，税费和费用应付的下降也在支撑分子。</b>2025年应交税费20.93亿元，较2024年的72.87亿元减少51.94亿元；其他应付款46.20亿元，较2024年的65.08亿元减少18.88亿元，其中形象宣传费及促销费25.23亿元，较2024年的44.21亿元减少18.98亿元；销售费用76.29亿元、同比-28.65%，促销费43.08亿元、同比-36.28%<sup class="cite">[2]</sup>。税费和促销费少付，现金流出减少，分子相对好看。</p>
+
+  <p><b>第四，渠道库存的压力是真的。</b>五粮液产品期末库存量25,118吨，较期初6,173吨增加306.90%；销售量19,455吨，同比-53.00%。年报注2解释为“白酒行业进入深度调整期，消费场景收缩、存量竞争加剧，导致销量下降、阶段性库存增加”<sup class="cite">[2]</sup>。这说明3.32倍不是“渠道更健康”，而是“报表口径+回款节奏+库存压力”同时出现。</p>
+
+  <p>把四条合起来：3.32倍 = 分子受回款、税费、费用支付节奏支撑 + 分母受收入确认调整压缩。它不是“盈利质量跃升”，更不能外推为2026年趋势。</p>
+
+  <div class="callout warn">
+    <div class="label">误读警示</div>
+    <p class="no-indent">如果把3.32倍直接写成“五粮液现金流质量显著改善”，就是典型的指标误读。正确的写法是：<b>报表口径下OCF/NP异常抬升，主要来自收入确认与回款节奏错位；可比口径下的现金转化能力，需等公司披露可比收入后重新计算。</b></p>
+  </div>
+
+  <h3 id="sec33"><span class="num">3.3</span>泸州老窖：预收红利消退</h3>
+  <p>泸州老窖的0.66倍，是另一个方向。2025年营收257.31亿元、归母净利108.31亿元、经营现金流71.23亿元；2024年经营现金流191.82亿元、归母净利134.73亿元，OCF/NP 1.42倍。一年之间，从1.42跌到0.66。</p>
+
+  <p>公司自己在年报里给出了解释：“主要系权责发生制原因导致本年度部分收入的现金流于上年度预收以及本年度存货增加等共同影响所致。”<sup class="cite">[8]</sup>这句话把两个机制说清楚了：一是2024年的高OCF里有“上年度预收”的红利，2025年这部分红利消退；二是2025年存货增加20.03亿元，占用现金。</p>
+
+  <p>数据也对得上：合同负债从39.78亿元降至33.67亿元（-6.11亿元），存货从133.93亿元升至153.96亿元（+20.03亿元），销售商品收到现金从400.36亿元降至277.77亿元（-30.6%），降幅大于营收的-17.52%。这说明回款端比收入端更弱，渠道打款意愿在下降。</p>
+
+  <p>所以泸州老窖的0.66倍不是“利润造假”，而是“预收红利消退+存货占用”的正常结果。2024年的1.42倍才是异常高的那一年。看这家公司，应该看两年平均，而不是单看2025年；跟踪重点应是合同负债能否止跌、存货增速能否低于营收增速。</p>
+
+  <h3 id="sec34"><span class="num">3.4</span>汾酒：营运资金解释力88%</h3>
+  <p>汾酒是四家里“营运资金解释力”最强的样本。2025年营收387.18亿元（+7.52%）、归母净利122.46亿元（+0.02%）、经营现金流90.14亿元（-25.94%），OCF/NP 0.74倍。利润几乎持平，现金流却下降四分之一。</p>
+
+  <p>用现金流量表补充资料看，2025年经营性应收增加11.30亿元、经营性应付减少14.33亿元、存货增加11.22亿元<sup class="cite">[4]</sup>；三项合计对现金流的占用约36.85亿元，与OCF降幅31.58亿元同一量级。用“合同负债-存货-应收”口径，三项合计-27.87亿元，解释力88.3%。</p>
+
+  <p>这是一条很干净的“增收不增现”链条：收入还在增长，但增长来自省外扩张和渠道铺货，合同负债下降、存货上升、应收增加，现金被营运资金吃掉。2025年前三季度，汾酒代理渠道占比93.8%，直销/团购/电商仅6.2%<sup class="cite">[11]</sup>；省外收入占比提升至65%<sup class="cite">[7]</sup>。渠道下沉和全国化带来了收入，也带来了应收账款和库存。</p>
+
+  <p>对汾酒的判断可以明确：它的现金流下滑不是“口径问题”，而是“营运资金问题”。跟踪指标应该锁定合同负债/营收、存货/营收、应收款项融资/营收，而不是只看净利润。2025年末应收款项融资20.60亿元，较2024年的17.62亿元增加2.98亿元，也是渠道信用扩张的一个侧证<sup class="cite">[4]</sup>。</p>
+
+  <h3 id="sec35"><span class="num">3.5</span>茅台：合并口径让比较失真</h3>
+  <p>茅台的0.75倍，最容易被误读成“现金流变差”。但茅台的情况和前三家不同：它的合并现金流量表含财务公司。</p>
+
+  <p>2025年经营现金流615.22亿元，较2024年的924.64亿元下降33.46%；归母净利823.20亿元，仅下降4.53%。年报把OCF下降的首要原因写成“财务有限公司吸收集团公司成员单位存款减少及不可随时支取的同业存款增加”<sup class="cite">[9]</sup>。这句话的信息量很大：茅台的OCF里有一部分是财务公司的存款/同业业务现金流，和酒类销售不是同一回事。</p>
+
+  <p>酒类口径的线索也有：2025年存货增加70.84亿元，合同负债减少15.85亿元，应收票据从19.84亿元降至0，三项合计-66.69亿元，只能解释OCF降幅的21.6%。剩下的大部分，来自财务公司和其他经营性应收/应付项目。公开报表不足以把财务公司现金流完全剔除，所以本报告不对茅台OCF/NP做跨公司排名。</p>
+
+  <p>酒类经营层面，茅台2025年茅台酒收入+0.39%、系列酒-9.76%；直销+12.96%、批发代理-12.05%，直销占比首次超过批发代理，达到50.09%<sup class="cite">[1]</sup>。这说明渠道结构在向自营和数字化迁移，但系列酒承压。把茅台的0.75倍和五粮液的3.32倍并列，方法上是错的：一个是合并口径，一个是收入确认调整口径。</p>
+
+  <h3 id="sec36"><span class="num">3.6</span>三种现金流分化机制</h3>
+  <p>把四家放在一起，2025年的现金流分化可以归为三种机制。这个分类比“谁好谁坏”更有解释力，也更容易复制到其他行业。</p>
+
+  <div class="callout">
+    <div class="label">机制 A · 营运资金型</div>
+    <p class="no-indent"><b>代表：汾酒。</b>识别信号：合同负债下降、存货上升、应收增加，三项合计与OCF降幅同量级。处理方式：跟踪合同负债/营收、存货/营收、应收款项融资/营收；用“现金转化周期”而不是单年OCF/NP做判断。</p>
+  </div>
+
+  <div class="callout">
+    <div class="label">机制 B · 预收红利消退型</div>
+    <p class="no-indent"><b>代表：泸州老窖。</b>识别信号：上一年OCF/NP异常高、合同负债处于高位；下一年合同负债下降、存货上升、现金收款降幅大于营收降幅。处理方式：用两年平均OCF/NP，避免把高基数年的红利当成常态。</p>
+  </div>
+
+  <div class="callout">
+    <div class="label">机制 C · 口径错位型</div>
+    <p class="no-indent"><b>代表：五粮液、茅台。</b>识别信号：OCF/NP出现极端值，现金收款/营收异常，年报出现“收入确认核算调整”或“合并范围含财务公司”等说明。处理方式：先读附注，再做可比口径调整；无法调整时，只做方向性判断，不做跨公司排名。</p>
+  </div>
+
+  <p>本报告的归因顺序是：<b>先排口径，再排营运资金，最后才谈经营质量。</b>这个顺序如果反过来，就会把五粮液的3.32倍写成“质量改善”，把茅台的0.75倍写成“现金流恶化”，把泸州老窖的0.66倍写成“利润失真”。三个结论都是错的。</p>
+</section>
+
+<!-- ================= 第四章 ================= -->
+<section class="chapter">
+  <div class="chapter-head">
+    <div class="chapter-label">CHAPTER 04</div>
+    <h2>渠道与产品结构：可比与不可比</h2>
+    <div class="chapter-question">本章回答：四家的产品结构和渠道结构，哪些可以直接比，哪些只能比方向？披露不足时，结论应该怎么限定？</div>
+  </div>
+
+  <p>产品结构和渠道结构，是四家酒企披露口径差异最大的两块。四家都披露了“高端/中高档占比”和“直销占比”，但四个百分比背后是四套分类标准。把它们放在一张图里，很容易得出“谁更高端、谁更扁平”的排名；但那个排名，大部分是口径造成的，不是经营造成的。</p>
+
+  <h3 id="sec41"><span class="num">4.1</span>产品结构：四种分类口径</h3>
+  <p>先看产品结构。图6显示，四家的“高端/中高档”占比都超过75%，但四个百分比不是同一把尺子：茅台按产品线（茅台酒/系列酒），五粮液按品牌（五粮液产品/其他酒），泸州老窖按价格带（含税售价≥150元/瓶的中高档酒/其他酒），汾酒按品类（汾酒/其他酒类）。</p>
+
+  <figure>
+    <img src="assets/fig6_product_mix.png" alt="2025年产品结构">
+    <figcaption>图6　产品结构：四套分类口径，不能直接排名（%）</figcaption>
+    <div class="fig-source"><b>资料来源：</b>各公司2025年年度报告；山西汾酒采用2025年前三季度经营数据公告。</div>
+    <div class="fig-note"><b>注：</b>四家分类口径不同，占比不可直接排名；汾酒为前三季度结构，非全年；五粮液占比以酒类收入为分母，其余以公司总收入或酒类收入为分母。</div>
+  </figure>
+
+  <p>真正可比的是“同一家公司内部的产品结构变化”。茅台系列酒收入-9.76%，说明次高端承压；泸州老窖其他酒收入-23.93%，说明大众价格带更弱；五粮液其他酒收入-28.73%，说明系列酒/中低端压力最大。这个结论比“谁的高端占比高”更有用，因为它在同一套分类标准内部比较，不受跨公司口径影响。</p>
+
+  <p>另一个可比的维度是“产品结构对毛利率的拉动”。茅台酒毛利率93.53%、系列酒76.11%，结构上移会拉高综合毛利率；五粮液产品毛利率89.55%、其他酒66.10%，同样如此；泸州中高档酒90.94%、其他酒50.07%，价差最大；汾酒未披露分产品毛利率，只能用整体毛利率和研报口径的增速做方向判断。价差越大，产品结构变化对综合毛利率的杠杆越强，这也是泸州老窖毛利率对“其他酒”下滑更敏感的原因。</p>
+
+  <table class="data-table">
+    <caption>表3　2025年产品结构</caption>
+    <thead>
+      <tr><th>公司</th><th>分类口径</th><th>产品/品类</th><th>收入<br>（亿元）</th><th>占比</th><th>毛利率</th><th>同比</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>贵州茅台</td><td>产品线</td><td>茅台酒</td><td>1,465.00</td><td>86.8%</td><td>93.53%</td><td>+0.39%</td></tr>
+      <tr><td>贵州茅台</td><td>产品线</td><td>系列酒</td><td>222.75</td><td>13.2%</td><td>76.11%</td><td class="neg">-9.76%</td></tr>
+      <tr><td>五粮液</td><td>品牌</td><td>五粮液产品</td><td>279.36</td><td>75.3%</td><td>89.55%</td><td class="neg">-18.52%</td></tr>
+      <tr><td>五粮液</td><td>品牌</td><td>其他酒</td><td>91.68</td><td>24.7%</td><td>66.10%</td><td class="neg">-28.73%</td></tr>
+      <tr><td>泸州老窖</td><td>价格带</td><td>中高档酒</td><td>229.68</td><td>89.7%</td><td>90.94%</td><td class="neg">-16.74%</td></tr>
+      <tr><td>泸州老窖</td><td>价格带</td><td>其他酒</td><td>26.38</td><td>10.3%</td><td>50.07%</td><td class="neg">-23.93%</td></tr>
+      <tr><td>山西汾酒</td><td>品类</td><td>汾酒（前三季度）</td><td>321.71</td><td>98.0%</td><td>—</td><td>+7.7%*</td></tr>
+      <tr><td>山西汾酒</td><td>品类</td><td>其他酒类（前三季度）</td><td>6.47</td><td>2.0%</td><td>—</td><td>+3.1%*</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2025年年度报告；山西汾酒2025年一至三季度经营数据公告；*汾酒同比为研报口径的全年增速，非前三季度增速<sup class="cite">[7][11]</sup>。<b>注：</b>五粮液占比以酒类收入371.04亿元为分母；汾酒占比以前三季度总营收328.19亿元为分母；毛利率“—”表示经营数据公告未披露分品类毛利率。</div>
+
+  <h3 id="sec42"><span class="num">4.2</span>渠道结构：四个“直销”不是一件事</h3>
+  <p>渠道结构比产品结构更不可比。四家都披露“直销”，但四个“直销”的边界不同：茅台直销含自营网点与“i茅台”数字营销平台；五粮液直销含团购、专卖店与线上销售；泸州老窖“新兴渠道”主要是线上；汾酒把“直销、团购、电商平台”合并披露。</p>
+
+  <figure>
+    <img src="assets/fig7_channel_mix.png" alt="2025年渠道结构">
+    <figcaption>图7　渠道结构：四个“直销”不是一件事（%）</figcaption>
+    <div class="fig-source"><b>资料来源：</b>各公司2025年年度报告；山西汾酒采用2025年前三季度经营数据公告。</div>
+    <div class="fig-note"><b>注：</b>四家渠道定义不同，占比不可直接排名；汾酒为前三季度结构；五粮液占比以酒类收入为分母。</div>
+  </figure>
+
+  <p>茅台的直销占比50.09%最高，但它的直销含自营网点和i茅台；i茅台2025年收入130.31亿元、同比-34.92%<sup class="cite">[1]</sup>，说明数字化渠道本身也在承压。五粮液的直销占比39.1%，含团购、专卖店和线上；泸州的新兴渠道只有5.4%，主要是线上；汾酒的直销/团购/电商合计6.2%。把四个“直销占比”直接排名，会得出“茅台渠道最扁平”的结论，但这只说对了一半：茅台的直销是“自营+数字化”，五粮液是“团购+专卖店+线上”，泸州是“线上”，汾酒是“团购+电商”。</p>
+
+  <p>真正可比的是“直销毛利率溢价”。茅台直销毛利率94.58%、批发代理87.86%，溢价6.72个百分点；五粮液直销90.36%、经销79.51%，溢价10.85个百分点；泸州新兴渠道82.75%、传统渠道86.96%，反而低4.21个百分点；汾酒未披露分渠道毛利率。这个差异说明：<b>直销不一定更赚钱，要看直销卖的是什么产品、什么价格。</b>泸州的新兴渠道以线上为主，线上价格透明、促销多，毛利率低于传统渠道，是合理的结构结果。</p>
+
+  <p>五粮液还披露了“线上/线下”维度：线上47.43亿元、占比12.8%，线下323.61亿元、占比87.2%。这个维度比“直销/经销”更接近真实渠道，但只有五粮液披露。披露口径的不一致，决定了跨公司渠道效率比较只能做“方向”，不能做“排名”。</p>
+
+  <table class="data-table">
+    <caption>表4　2025年渠道结构</caption>
+    <thead>
+      <tr><th>公司</th><th>渠道口径</th><th>渠道</th><th>收入<br>（亿元）</th><th>占比</th><th>毛利率</th><th>同比/备注</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>贵州茅台</td><td>直销/批发</td><td>直销</td><td>845.43</td><td>50.09%</td><td>94.58%</td><td>+12.96%</td></tr>
+      <tr><td>贵州茅台</td><td>直销/批发</td><td>批发代理</td><td>842.32</td><td>49.91%</td><td>87.86%</td><td class="neg">-12.05%</td></tr>
+      <tr><td>五粮液</td><td>经销/直销</td><td>经销</td><td>225.92</td><td>60.9%</td><td>79.51%</td><td>占酒类</td></tr>
+      <tr><td>五粮液</td><td>经销/直销</td><td>直销</td><td>145.12</td><td>39.1%</td><td>90.36%</td><td>占酒类</td></tr>
+      <tr><td>五粮液</td><td>线上/线下</td><td>线上</td><td>47.43</td><td>12.8%</td><td>—</td><td>占酒类</td></tr>
+      <tr><td>五粮液</td><td>线上/线下</td><td>线下</td><td>323.61</td><td>87.2%</td><td>—</td><td>占酒类</td></tr>
+      <tr><td>泸州老窖</td><td>传统/新兴</td><td>传统渠道</td><td>242.20</td><td>94.6%</td><td>86.96%</td><td>占酒类</td></tr>
+      <tr><td>泸州老窖</td><td>传统/新兴</td><td>新兴渠道</td><td>13.86</td><td>5.4%</td><td>82.75%</td><td>占酒类</td></tr>
+      <tr><td>山西汾酒</td><td>代理/直销</td><td>代理</td><td>307.76</td><td>93.8%</td><td>—</td><td>前三季度</td></tr>
+      <tr><td>山西汾酒</td><td>代理/直销</td><td>直销/团购/电商</td><td>20.42</td><td>6.2%</td><td>—</td><td>前三季度</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2025年年度报告；山西汾酒2025年一至三季度经营数据公告<sup class="cite">[11]</sup>。<b>注：</b>分母不一致：茅台为公司总收入，五粮液为酒类收入371.04亿元，泸州为酒类收入256.06亿元，汾酒为前三季度总营收328.19亿元；汾酒全年分渠道数据未披露。</div>
+
+  <h3 id="sec43"><span class="num">4.3</span>可比性矩阵</h3>
+  <p>把上面的口径差异压缩成一张矩阵，可以更清楚地看到“哪些能比、哪些不能比”。矩阵的读法是：<b>● 可直接比；◐ 需调整后比；○ 不可直接比。</b>“不可直接比”不等于“不能分析”，而是说不能做排名，只能做方向判断或同口径子样本比较。</p>
+
+  <table class="data-table">
+    <caption>表5　跨公司可比性矩阵</caption>
+    <thead>
+      <tr><th>维度</th><th>贵州茅台</th><th>五粮液</th><th>泸州老窖</th><th>山西汾酒</th><th>主要调整/说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>营收增速</td><td>●</td><td>◐</td><td>●</td><td>●</td><td>五粮液需还原收入确认调整，年报未披露可比金额</td></tr>
+      <tr><td>归母净利增速</td><td>●</td><td>◐</td><td>●</td><td>●</td><td>同上；五粮液净利受经营杠杆放大</td></tr>
+      <tr><td>毛利率</td><td>●</td><td>◐</td><td>●</td><td>●</td><td>五粮液受口径影响；泸州/汾酒需在分类内比较</td></tr>
+      <tr><td>OCF/NP</td><td>○</td><td>○</td><td>●</td><td>●</td><td>茅台含财务公司；五粮液含收入确认调整</td></tr>
+      <tr><td>合同负债/营收</td><td>●</td><td>◐</td><td>●</td><td>●</td><td>五粮液还需合并应付促销费观察</td></tr>
+      <tr><td>存货/营收</td><td>●</td><td>●</td><td>●</td><td>●</td><td>存货均为合并口径，可直接比</td></tr>
+      <tr><td>产品结构</td><td>◐</td><td>◐</td><td>◐</td><td>◐</td><td>产品线/品牌/价格带/品类四套标准</td></tr>
+      <tr><td>渠道结构</td><td>◐</td><td>◐</td><td>◐</td><td>◐</td><td>四个“直销”定义不同；汾酒仅前三季度</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>本报告根据各公司2025年年度报告口径整理。<b>注：</b>● 可直接比；◐ 需调整后比；○ 不可直接比。矩阵是“方法判断”，不是对公司经营质量的评级。</div>
+
+  <h3 id="sec44"><span class="num">4.4</span>披露不足时的五步限定法</h3>
+  <p>披露不足时，报告不能靠“可能/或许”糊过去，而要按五步把结论限死。这套方法适用于所有跨公司比较，不限于白酒。</p>
+
+  <ol class="steps">
+    <li><b>第一步，明确问题边界。</b>是水平比较、增速比较、结构比较还是因果比较？水平比较可以直接比报表数；增速比较要先统一口径；结构比较要先统一分类；因果比较需要额外证据，不能只靠相关性。</li>
+    <li><b>第二步，标记口径。</b>在表头和图注写清合并范围、收入确认、分类标准、统计期间。口径要放在读者第一眼能看到的地方，不能藏在脚注里。</li>
+    <li><b>第三步，做可比调整。</b>能调整的调整，例如剔除五粮液看其余三家、用汾酒前三季度结构代替全年；不能调整的，改用同口径子样本，例如只在“产品线”内部比较茅台和五粮液的品牌结构。</li>
+    <li><b>第四步，降低结论强度。</b>从“因果”降为“相关”，从“排名”降为“方向”，从“全年”降为“前三季度”，从“行业”降为“样本”。结论强度降一级，可信度就升一级。</li>
+    <li><b>第五步，给出验证路径。</b>写明“需要什么数据才能把结论升级”：五粮液可比收入、汾酒全年分渠道数据、茅台财务公司现金流剔除表。没有验证路径的“待核”，只是把问题丢给读者。</li>
+  </ol>
+
+  <div class="callout">
+    <div class="label">写法示例</div>
+    <p class="no-indent"><b>不合格写法：</b>“四家酒企中，茅台直销占比最高，渠道最扁平， therefore 经营效率最优。”<br><b>合格写法：</b>“茅台直销占比50.09%，高于五粮液39.1%、泸州5.4%、汾酒6.2%；但四家‘直销’定义不同，且汾酒仅披露前三季度。因此本报告只判断‘茅台自营+数字化渠道占比最高’，不据此推断渠道效率排名。”</p>
+  </div>
+
+  <p>限定结论不是示弱，是专业。把“不可比”写清楚，比硬做一个排名更可信；把“需要什么数据”写清楚，比一句“数据不足”更有用。</p>
+</section>
+
+<!-- ================= 第五章 ================= -->
+<section class="chapter">
+  <div class="chapter-head">
+    <div class="chapter-label">CHAPTER 05</div>
+    <h2>结论与跟踪指标</h2>
+    <div class="chapter-question">本章回答：如果只带走五条结论，是哪五条？下一步跟踪什么，才能验证或推翻这些结论？</div>
+  </div>
+
+  <h3 id="sec51"><span class="num">5.1</span>五条结论</h3>
+  <p><b>第一，2025年四家营收合计-16.3%，剔除五粮液后-2.0%。</b>五粮液的收入确认核算调整是首要问题问题，年报未披露可比金额；报表营收-54.55%不能直接读作需求降幅。跨公司增速比较，必须先标注口径。</p>
+
+  <p><b>第二，归母净利合计-20.5%，剔除五粮液后-5.9%。</b>利润下滑集中在五粮液；茅台-4.53%、泸州-19.61%、汾酒+0.02%。四家毛利率仍在74.85%—91.18%的高位，营收加权毛利率86.4%、较2024年上行0.7个百分点，价格体系没有系统性塌陷。</p>
+
+  <p><b>第三，OCF/NP极差2.66倍，四个极端值对应四种机制。</b>五粮液3.32倍是“分子受回款/税费/费用支付节奏支撑+分母受收入确认调整压缩”；泸州0.66倍是“预收红利消退+存货占用”；汾酒0.74倍是“营运资金占用”；茅台0.75倍是“合并口径含财务公司”。四个数不能直接排名。</p>
+
+  <p><b>第四，营运资金三项只在汾酒身上解释力强。</b>汾酒88.3%、泸州21.6%、茅台21.6%、五粮液1.3%。合同负债下降不是通用解释；对五粮液和茅台，口径与合并范围才是首要问题问题。</p>
+
+  <p><b>第五，产品/渠道结构只能做“方向比较”，不能做“排名”。</b>四家的产品分类（产品线/品牌/价格带/品类）和渠道定义（自营+数字化/团购+专卖店+线上/线上/团购+电商）不同；披露不足时，按“明确边界—标记口径—可比调整—降低强度—给出验证路径”五步限定。</p>
+
+  <h3 id="sec52"><span class="num">5.2</span>跟踪指标</h3>
+  <p>如果要在2026年验证或推翻上面的结论，跟踪以下六个指标就够了。指标不是越多越好，关键是要和结论一一对应。</p>
+
+  <table class="data-table">
+    <caption>表6　2026年跟踪指标</caption>
+    <thead>
+      <tr><th>指标</th><th>用途</th><th>茅台</th><th>五粮液</th><th>泸州</th><th>汾酒</th><th>观察点</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>合同负债/营收</td><td>渠道打款意愿</td><td>4.7%</td><td>33.2%</td><td>13.1%</td><td>18.1%</td><td>连续两季下降</td></tr>
+      <tr><td>存货/营收</td><td>库存压力</td><td>36.4%</td><td>49.5%</td><td>59.8%</td><td>37.2%</td><td>高于营收增速</td></tr>
+      <tr><td>应收款项融资/营收</td><td>渠道信用</td><td>0.0%</td><td>0.0%</td><td>0.0%</td><td>5.3%</td><td>快速上升</td></tr>
+      <tr><td>现金收款/营收</td><td>回款质量</td><td>不适用*</td><td>2.26×</td><td>1.08×</td><td>0.92×</td><td>连续两季&lt;1</td></tr>
+      <tr><td>OCF/NP</td><td>现金转化</td><td>0.75</td><td>3.32</td><td>0.66</td><td>0.74</td><td>结合口径读，不单看</td></tr>
+      <tr><td>直销/批发毛利率差</td><td>渠道结构</td><td>+6.72pct</td><td>+10.85pct</td><td class="neg">-4.21pct</td><td>未披露</td><td>溢价收窄</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2025年年度报告，同花顺iFinD；比率为本报告计算。<b>注：</b>*茅台现金收款/营收不适用，因合并现金流量表含财务公司，分子分母口径不同；五粮液现金收款/营收2.26倍受收入确认调整影响，不能直接作为2026年基准。</div>
+
+  <h3 id="sec53"><span class="num">5.3</span>研究限制</h3>
+  <p>本报告的限制有六条，前三条是数据限制，后三条是方法限制。它们决定了结论的适用范围，也决定了下一步验证的方向。</p>
+
+  <ul class="plain">
+    <li><b>五粮液可比收入未披露。</b>年报只说明“调整2025年部分业务收入确认相关核算”，没有披露可比金额。无法还原纯经营降幅，只能用“剔除五粮液”的子样本做方向判断。</li>
+    <li><b>茅台财务公司现金流无法完全剔除。</b>合并报表没有单独披露财务公司对经营现金流的贡献，只能用“OCF/NP+附注说明+存货/合同负债”做间接判断。</li>
+    <li><b>汾酒全年分产品/分渠道数据未披露。</b>结构分析主要采用2025年前三季度经营数据公告，全年只有总营收和研报口径增速；结构图标注“前三季度”，不能当全年结构用。</li>
+    <li><b>合同负债不含应付促销费。</b>五粮液2025年其他应付款中的形象宣传费及促销费25.23亿元，单看合同负债会低估渠道义务；本报告在正文做了合并观察，但没有做全口径调整。</li>
+    <li><b>样本仅四家。</b>四家覆盖酱香/浓香/清香和高端/次高端，但不代表全行业；行业数据来自国家统计局口径，与样本统计范围不完全一致。</li>
+    <li><b>增长率为名义值。</b>未剔除价格、结构、并表影响；2025年数据受收入确认、合并范围、渠道分类影响，跨公司比较需先读口径声明。</li>
+  </ul>
+
+  <p>下一步验证有三条路径：等五粮液披露可比口径或年报问询函回复；等汾酒2025年年度报告全文披露分产品/分渠道数据；用茅台财务公司单独报表剔除金融业务现金流。三条路径都需要新数据，本报告不提前给结论。</p>
+
+  <div class="callout">
+    <div class="label">本报告不做的事</div>
+    <p class="no-indent">不给投资评级，不给目标价，不做单季预测，不做全行业推断，不把“报表口径”当成“经营口径”。这四条是研究边界，也是本报告与“持牌证券研究报告”的区别。</p>
+  </div>
+</section>
+
+<!-- ================= 附录A ================= -->
+<section class="appendix">
+  <div class="chapter-head">
+    <div class="chapter-label">APPENDIX A</div>
+    <h2>数据表与来源索引</h2>
+    <div class="chapter-question">附录用于复核：所有正文数字的原始值、口径和来源都在这里。</div>
+  </div>
+
+  <table class="data-table tiny-table">
+    <caption>表A1　2023—2025年核心财务数据（亿元）</caption>
+    <thead>
+      <tr><th>公司</th><th>年份</th><th>营业收入</th><th>归母净利</th><th>毛利率</th><th>经营现金流</th><th>OCF/NP</th><th>合同负债</th><th>存货</th><th>应收款项</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>贵州茅台</td><td>2023</td><td>1,476.94</td><td>747.34</td><td>91.96%</td><td>665.93</td><td>0.89</td><td>141.26</td><td>464.35</td><td>0.74</td></tr>
+      <tr><td>贵州茅台</td><td>2024</td><td>1,708.99</td><td>862.28</td><td>91.93%</td><td>924.64</td><td>1.07</td><td>95.92</td><td>543.43</td><td>20.03</td></tr>
+      <tr><td>贵州茅台</td><td>2025</td><td>1,688.38</td><td>823.20</td><td>91.18%</td><td>615.22</td><td>0.75</td><td>80.07</td><td>614.27</td><td>0.03</td></tr>
+      <tr><td>五粮液</td><td>2023</td><td>832.72</td><td>302.11</td><td>75.79%</td><td>417.42</td><td>1.38</td><td>68.64</td><td>173.88</td><td>0.43</td></tr>
+      <tr><td>五粮液</td><td>2024</td><td>891.75</td><td>318.53</td><td>77.05%</td><td>339.40</td><td>1.07</td><td>116.90</td><td>182.34</td><td>0.47</td></tr>
+      <tr><td>五粮液</td><td>2025</td><td>405.29</td><td>89.54</td><td>77.54%</td><td>297.06</td><td>3.32</td><td>134.60</td><td>200.65</td><td>0.43</td></tr>
+      <tr><td>泸州老窖</td><td>2023</td><td>302.33</td><td>132.46</td><td>88.30%</td><td>106.48</td><td>0.80</td><td>26.73</td><td>116.22</td><td>0.17</td></tr>
+      <tr><td>泸州老窖</td><td>2024</td><td>311.96</td><td>134.73</td><td>87.54%</td><td>191.82</td><td>1.42</td><td>39.78</td><td>133.93</td><td>0.11</td></tr>
+      <tr><td>泸州老窖</td><td>2025</td><td>257.31</td><td>108.31</td><td>86.62%</td><td>71.23</td><td>0.66</td><td>33.67</td><td>153.96</td><td>0.06</td></tr>
+      <tr><td>山西汾酒</td><td>2023</td><td>319.28</td><td>104.38</td><td>75.31%</td><td>72.25</td><td>0.69</td><td>70.29</td><td>115.73</td><td>0.00</td></tr>
+      <tr><td>山西汾酒</td><td>2024</td><td>360.11</td><td>122.43</td><td>76.20%</td><td>121.72</td><td>0.99</td><td>86.72</td><td>132.70</td><td>0.00</td></tr>
+      <tr><td>山西汾酒</td><td>2025</td><td>387.18</td><td>122.46</td><td>74.85%</td><td>90.14</td><td>0.74</td><td>70.07</td><td>143.92</td><td>0.00</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2023—2025年年度报告，同花顺iFinD；查询日2026-11-13。<b>注：</b>应收款项为应收票据及应收账款，汾酒应收票据及应收账款约0，另有应收款项融资20.60亿元（2025年末）；五粮液2025年数据受收入确认核算调整影响。</div>
+
+  <table class="data-table small-table long-table">
+    <caption>表A2　2025年产品与渠道结构明细</caption>
+    <thead>
+      <tr><th>公司</th><th>维度</th><th>项目</th><th>收入（亿元）</th><th>占比</th><th>毛利率</th><th>同比</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>贵州茅台</td><td>产品</td><td>茅台酒</td><td>1,465.00</td><td>86.8%</td><td>93.53%</td><td>+0.39%</td></tr>
+      <tr><td>贵州茅台</td><td>产品</td><td>系列酒</td><td>222.75</td><td>13.2%</td><td>76.11%</td><td class="neg">-9.76%</td></tr>
+      <tr><td>贵州茅台</td><td>渠道</td><td>直销</td><td>845.43</td><td>50.09%</td><td>94.58%</td><td>+12.96%</td></tr>
+      <tr><td>贵州茅台</td><td>渠道</td><td>批发代理</td><td>842.32</td><td>49.91%</td><td>87.86%</td><td class="neg">-12.05%</td></tr>
+      <tr><td>五粮液</td><td>产品</td><td>五粮液产品</td><td>279.36</td><td>75.3%</td><td>89.55%</td><td class="neg">-18.52%</td></tr>
+      <tr><td>五粮液</td><td>产品</td><td>其他酒</td><td>91.68</td><td>24.7%</td><td>66.10%</td><td class="neg">-28.73%</td></tr>
+      <tr><td>五粮液</td><td>渠道</td><td>经销</td><td>225.92</td><td>60.9%</td><td>79.51%</td><td>占酒类</td></tr>
+      <tr><td>五粮液</td><td>渠道</td><td>直销</td><td>145.12</td><td>39.1%</td><td>90.36%</td><td>占酒类</td></tr>
+      <tr><td>泸州老窖</td><td>产品</td><td>中高档酒</td><td>229.68</td><td>89.7%</td><td>90.94%</td><td class="neg">-16.74%</td></tr>
+      <tr><td>泸州老窖</td><td>产品</td><td>其他酒</td><td>26.38</td><td>10.3%</td><td>50.07%</td><td class="neg">-23.93%</td></tr>
+      <tr><td>泸州老窖</td><td>渠道</td><td>传统渠道</td><td>242.20</td><td>94.6%</td><td>86.96%</td><td>占酒类</td></tr>
+      <tr><td>泸州老窖</td><td>渠道</td><td>新兴渠道</td><td>13.86</td><td>5.4%</td><td>82.75%</td><td>占酒类</td></tr>
+      <tr><td>山西汾酒</td><td>产品</td><td>汾酒（前三季度）</td><td>321.71</td><td>98.0%</td><td>—</td><td>+7.7%*</td></tr>
+      <tr><td>山西汾酒</td><td>产品</td><td>其他酒类（前三季度）</td><td>6.47</td><td>2.0%</td><td>—</td><td>+3.1%*</td></tr>
+      <tr><td>山西汾酒</td><td>渠道</td><td>代理（前三季度）</td><td>307.76</td><td>93.8%</td><td>—</td><td>前三季度</td></tr>
+      <tr><td>山西汾酒</td><td>渠道</td><td>直销/团购/电商（前三季度）</td><td>20.42</td><td>6.2%</td><td>—</td><td>前三季度</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2025年年度报告；山西汾酒2025年一至三季度经营数据公告<sup class="cite">[11]</sup>；*汾酒同比为研报口径全年增速<sup class="cite">[7]</sup>。</div>
+
+  <h3>来源索引</h3>
+  <ol class="source-list">
+    <li>贵州茅台（600519）2025年年度报告，上海证券交易所，2026-04-17。<span class="url">https://static.sse.com.cn/disclosure/listedinfo/announcement/c/new/2026-04-17/600519_20260417_9QS4.pdf</span></li>
+    <li>五粮液（000858）2025年年度报告，深圳证券交易所，2026-04-30。<span class="url">https://pdf.dfcfw.com/pdf/H2_AN202604301821851584_1.pdf</span></li>
+    <li>泸州老窖（000568）2025年年度报告，深圳证券交易所，2026-04-28。<span class="url">https://pdf.dfcfw.com/pdf/H2_AN202604281821699992_1.pdf</span></li>
+    <li>山西汾酒（600809）2025年年度报告/审计报告，上海证券交易所，2026-04-23。<span class="url">https://static.sse.com.cn/disclosure/listedinfo/announcement/c/new/2026-04-23/600809_20260423_142Z.pdf</span></li>
+    <li>同花顺iFinD财务数据，查询日2026-11-13。</li>
+    <li>五粮液2025年年度报告引用的国家统计局行业数据（白酒产量354.9万千升、销售收入5,724亿元、利润总额1,884亿元）。</li>
+    <li>山西汾酒2025年报点评，东方财富证券，2026-04-23。<span class="url">https://pdf.dfcfw.com/pdf/H3_AP202604231821493826_1.pdf</span></li>
+    <li>泸州老窖2025年年度报告“经营活动现金流与净利润差异原因说明”。</li>
+    <li>贵州茅台2025年年度报告“经营活动现金流减少原因说明”。</li>
+    <li>五粮液2025年年度报告“收入确认核算调整说明”。</li>
+    <li>山西汾酒2025年一至三季度经营数据公告，上海证券交易所，2025-10-31。<span class="url">http://www.sse.com.cn/disclosure/listedinfo/announcement/c/new/2025-10-31/600809_20251031_6GJH.pdf</span></li>
+  </ol>
+</section>
+
+<!-- ================= 附录B ================= -->
+<section class="appendix">
+  <div class="chapter-head">
+    <div class="chapter-label">APPENDIX B</div>
+    <h2>研究说明</h2>
+    <div class="chapter-question">本附录说明这份样例“为什么这样排”，以及它与智能体5现有模板的差异。</div>
+  </div>
+
+  <p><b>数据来源。</b>所有财务数据来自四家公司2023—2025年年度报告及同花顺iFinD；行业数据来自五粮液2025年年报引用的国家统计局口径；汾酒前三季度结构数据来自其2025年一至三季度经营数据公告；汾酒全年分产品增速来自公开研报。文中所有数字均可追溯到附录A或来源索引。</p>
+
+  <p><b>统计口径。</b>合并报表、年度、人民币；同比为名义值；OCF/NP为“经营活动现金流量净额/归母净利润”；营运资金三项的现金影响按“合同负债变动-存货变动-应收款项变动”估算；解释力为三项合计/OCF变动。所有口径在正文第一章和图表注释中重复标注，避免读者只看图不看正文。</p>
+
+  <p><b>方法边界。</b>本报告是“公开信息研究”，不是“尽调报告”：没有访谈经销商，没有草根调研，没有内部数据；对五粮液收入确认调整、茅台财务公司现金流、汾酒全年结构三个缺口，只做方向判断，不做精确还原。结论强度按“事实—推断—判断”三级区分：年报原文是事实，营运资金测算是推断，竞争格局判断是判断。</p>
+
+  <p><b>使用限制。</b>本报告为智能体5（ReportFusion）版式优化样例，不是项目代码的一部分；不构成投资建议，不含投资评级、目标价、分析师登记编码等持牌证券研究报告要素；引用请注明“公开年报数据+本报告测算”。</p>
+
+  <h3>版式对照：A5现有问题与本样例的处理</h3>
+  <table class="data-table small-table text-table">
+    <thead>
+      <tr><th>A5现有问题</th><th>本样例的处理</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>页眉重复、无页码</td><td>封面不盖页眉；第2页起统一页眉“白酒行业｜现金流与渠道质量”+右页码</td></tr>
+      <tr><td>图注重复“数据来源”两次</td><td>图下只保留一次“资料来源”，再加一条“注”说明口径</td></tr>
+      <tr><td>图2/图3同题、图题含字段名</td><td>每图唯一编号+结论式/对象式图题；字段名不进入图题</td></tr>
+      <tr><td>表格无编号、无单位</td><td>表1—表6连续编号；表头写单位；三线表；跨页表头重复</td></tr>
+      <tr><td>标题双编号“第X章 1.1”</td><td>章用“第一章”，节用“1.1”，全文只保留一套编号</td></tr>
+      <tr><td>正文出现内部状态词（草稿状态、数据边界标记、归属待核标记）</td><td>读者层清洗：内部状态词不进正文；局限集中到“研究边界”与“研究限制”</td></tr>
+      <tr><td>执行摘要占位句（引用内部字段名）</td><td>每条结论=判断句+证据+含义，不写内部字段名</td></tr>
+      <tr><td>封面标题重复用词、正文/卡片数值冲突</td><td>封面单一定语；所有数字来自同一数据底稿，正文与图表同源</td></tr>
+      <tr><td>PDF页眉用Chromium @page margin boxes不生效</td><td>先出PDF，再用PyMuPDF逐页盖页眉/页脚；封面跳过</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>说明：</b>本表是“版式工程”对照，不涉及A5代码修改；样例为独立目录，项目代码与数据未改动。</div>
+
+  <p><b>为什么不做“证券研究报告”合规外壳。</b>证监会《发布证券研究报告暂行规定》的适用主体是持牌证券公司/证券投资咨询机构；本样例没有投资评级、目标价、分析师登记编码，也不构成投资建议，因此不套用“证券研究报告”字样、“机构专供·绝密”等牌照元素。本报告对齐的是“阅读工程”：页序、字体、编号、图表、来源、结论强度；不碰“牌照元素”。</p>
+</section>
+
+
+</main>
+</div>
+</body>
+</html>

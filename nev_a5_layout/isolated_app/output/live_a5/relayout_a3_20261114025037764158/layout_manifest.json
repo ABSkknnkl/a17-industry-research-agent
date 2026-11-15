@@ -1,0 +1,462 @@
+{
+  "schema_version": "1.0",
+  "passed": true,
+  "hashes": {
+    "html": "64d1abb5aa6dcfb2561797bea4043a5b6b5f8bdce827fdee2944f5705fc73397",
+    "pdf": "1e8c4c5fe7022f23eb4fd3fca855c2405da486c9a4dc3beea1c8e2e5baf7e5a7",
+    "page_map": "42d115ab63e838554e9effa3055e7f9534656f317530f6dea9379fb50f2c5faa"
+  },
+  "diagnostics": {
+    "composed_at": "2026-11-13T18:50:37+00:00",
+    "theme": "a5_nev",
+    "visual_template": {
+      "template_id": "a5_nev_a3_svg",
+      "source": "新能源汽车行业优化报告样例/report_a3.html",
+      "sha256": "d78f0861e1bb955c6051b96e5e51b5a8904d29194d9bcd56b190400da6eada25",
+      "chain_asset": "产业链图_单跑/新能源汽车产业链图.svg",
+      "chain_sha256": "11187b00aacd40419129b180f1976d91c2ade557a60dd23f0f8f312241f1bf99"
+    },
+    "chain_panorama_present": true,
+    "toc_entries": 35,
+    "outline_entries": 37,
+    "page_map_consistent": true,
+    "html_has_converged_numbers": true,
+    "chromium_footer_disabled": true,
+    "header_footer_strategy": "pymupdf_stamp_single_strategy"
+  },
+  "outline": [
+    {
+      "level": 1,
+      "title": "封面",
+      "page": 1
+    },
+    {
+      "level": 1,
+      "title": "目录",
+      "page": 2
+    },
+    {
+      "level": 1,
+      "title": "执行摘要",
+      "page": 3
+    },
+    {
+      "level": 1,
+      "title": "行业定义与研究基础",
+      "page": 5
+    },
+    {
+      "level": 2,
+      "title": "行业定义、研究边界与证券范围",
+      "page": 5
+    },
+    {
+      "level": 2,
+      "title": "数据口径、研究时点与分析方法",
+      "page": 5
+    },
+    {
+      "level": 2,
+      "title": "行业发展阶段与当前核心矛盾",
+      "page": 5
+    },
+    {
+      "level": 1,
+      "title": "市场规模与成长性",
+      "page": 7
+    },
+    {
+      "level": 2,
+      "title": "市场规模与历史增长趋势",
+      "page": 7
+    },
+    {
+      "level": 2,
+      "title": "需求驱动因素与细分市场变化",
+      "page": 7
+    },
+    {
+      "level": 2,
+      "title": "供需关系、产能与行业周期",
+      "page": 7
+    },
+    {
+      "level": 1,
+      "title": "产业链与利润分配",
+      "page": 8
+    },
+    {
+      "level": 2,
+      "title": "上游资源、原材料与关键供应环节",
+      "page": 8
+    },
+    {
+      "level": 1,
+      "title": "图1　新能源汽车产业链关系全景图",
+      "page": 9
+    },
+    {
+      "level": 2,
+      "title": "中游核心产品、制造与服务环节",
+      "page": 9
+    },
+    {
+      "level": 1,
+      "title": "中游电池环节毛利率对比（2025年模拟）",
+      "page": 9
+    },
+    {
+      "level": 2,
+      "title": "下游需求、议价关系与利润迁移",
+      "page": 9
+    },
+    {
+      "level": 1,
+      "title": "下游整车环节毛利率对比（2025年模拟）",
+      "page": 10
+    },
+    {
+      "level": 1,
+      "title": "竞争格局",
+      "page": 11
+    },
+    {
+      "level": 2,
+      "title": "市场结构、集中度与竞争阶段",
+      "page": 11
+    },
+    {
+      "level": 2,
+      "title": "主要参与者及其竞争位置",
+      "page": 11
+    },
+    {
+      "level": 1,
+      "title": "2025年样本企业毛利率与经营现金流对比",
+      "page": 11
+    },
+    {
+      "level": 2,
+      "title": "竞争壁垒、差异化因素与潜在进入者",
+      "page": 11
+    },
+    {
+      "level": 1,
+      "title": "财务质量与估值参照",
+      "page": 13
+    },
+    {
+      "level": 2,
+      "title": "收入、利润与盈利能力",
+      "page": 13
+    },
+    {
+      "level": 1,
+      "title": "2025 年模拟毛利率分环节对比",
+      "page": 13
+    },
+    {
+      "level": 2,
+      "title": "现金流、资产负债与财务质量",
+      "page": 13
+    },
+    {
+      "level": 1,
+      "title": "2025 年模拟现金流与研发强度对比",
+      "page": 14
+    },
+    {
+      "level": 2,
+      "title": "估值水平、历史区间与跨市场可比性",
+      "page": 14
+    },
+    {
+      "level": 1,
+      "title": "宏观、政策与技术催化",
+      "page": 15
+    },
+    {
+      "level": 2,
+      "title": "宏观经济变量与行业传导路径",
+      "page": 15
+    },
+    {
+      "level": 2,
+      "title": "政策、监管与合规环境",
+      "page": 15
+    },
+    {
+      "level": 2,
+      "title": "技术趋势、事件催化与监测指标",
+      "page": 16
+    },
+    {
+      "level": 1,
+      "title": "情景、风险与研究结论",
+      "page": 17
+    },
+    {
+      "level": 2,
+      "title": "基准、乐观和悲观三种情景",
+      "page": 17
+    },
+    {
+      "level": 2,
+      "title": "核心风险、反证条件与跟踪指标",
+      "page": 17
+    },
+    {
+      "level": 2,
+      "title": "核心结论、适用边界与待验证事项",
+      "page": 17
+    }
+  ],
+  "toc_items": [
+    {
+      "key": "exec",
+      "label": "执行摘要",
+      "level": 1,
+      "kind": "section",
+      "page": 3
+    },
+    {
+      "key": "ch1",
+      "label": "行业定义与研究基础",
+      "level": 1,
+      "kind": "section",
+      "page": 5
+    },
+    {
+      "key": "SEC-01-01",
+      "label": "行业定义、研究边界与证券范围",
+      "level": 2,
+      "kind": "section",
+      "page": 5
+    },
+    {
+      "key": "SEC-01-02",
+      "label": "数据口径、研究时点与分析方法",
+      "level": 2,
+      "kind": "section",
+      "page": 5
+    },
+    {
+      "key": "SEC-01-03",
+      "label": "行业发展阶段与当前核心矛盾",
+      "level": 2,
+      "kind": "section",
+      "page": 5
+    },
+    {
+      "key": "ch2",
+      "label": "市场规模与成长性",
+      "level": 1,
+      "kind": "section",
+      "page": 7
+    },
+    {
+      "key": "SEC-02-01",
+      "label": "市场规模与历史增长趋势",
+      "level": 2,
+      "kind": "section",
+      "page": 7
+    },
+    {
+      "key": "SEC-02-02",
+      "label": "需求驱动因素与细分市场变化",
+      "level": 2,
+      "kind": "section",
+      "page": 7
+    },
+    {
+      "key": "SEC-02-03",
+      "label": "供需关系、产能与行业周期",
+      "level": 2,
+      "kind": "section",
+      "page": 7
+    },
+    {
+      "key": "ch3",
+      "label": "产业链与利润分配",
+      "level": 1,
+      "kind": "section",
+      "page": 8
+    },
+    {
+      "key": "SEC-03-01",
+      "label": "上游资源、原材料与关键供应环节",
+      "level": 2,
+      "kind": "section",
+      "page": 8
+    },
+    {
+      "key": "fig1",
+      "label": "图1　新能源汽车产业链关系全景图",
+      "level": 1,
+      "kind": "figure",
+      "page": 9
+    },
+    {
+      "key": "SEC-03-02",
+      "label": "中游核心产品、制造与服务环节",
+      "level": 2,
+      "kind": "section",
+      "page": 9
+    },
+    {
+      "key": "tab1",
+      "label": "中游电池环节毛利率对比（2025年模拟）",
+      "level": 1,
+      "kind": "table",
+      "page": 9
+    },
+    {
+      "key": "SEC-03-03",
+      "label": "下游需求、议价关系与利润迁移",
+      "level": 2,
+      "kind": "section",
+      "page": 9
+    },
+    {
+      "key": "tab2",
+      "label": "下游整车环节毛利率对比（2025年模拟）",
+      "level": 1,
+      "kind": "table",
+      "page": 10
+    },
+    {
+      "key": "ch4",
+      "label": "竞争格局",
+      "level": 1,
+      "kind": "section",
+      "page": 11
+    },
+    {
+      "key": "SEC-04-01",
+      "label": "市场结构、集中度与竞争阶段",
+      "level": 2,
+      "kind": "section",
+      "page": 11
+    },
+    {
+      "key": "SEC-04-02",
+      "label": "主要参与者及其竞争位置",
+      "level": 2,
+      "kind": "section",
+      "page": 11
+    },
+    {
+      "key": "tab3",
+      "label": "2025年样本企业毛利率与经营现金流对比",
+      "level": 1,
+      "kind": "table",
+      "page": 11
+    },
+    {
+      "key": "SEC-04-03",
+      "label": "竞争壁垒、差异化因素与潜在进入者",
+      "level": 2,
+      "kind": "section",
+      "page": 11
+    },
+    {
+      "key": "ch5",
+      "label": "财务质量与估值参照",
+      "level": 1,
+      "kind": "section",
+      "page": 13
+    },
+    {
+      "key": "SEC-05-01",
+      "label": "收入、利润与盈利能力",
+      "level": 2,
+      "kind": "section",
+      "page": 13
+    },
+    {
+      "key": "tab4",
+      "label": "2025 年模拟毛利率分环节对比",
+      "level": 1,
+      "kind": "table",
+      "page": 13
+    },
+    {
+      "key": "SEC-05-02",
+      "label": "现金流、资产负债与财务质量",
+      "level": 2,
+      "kind": "section",
+      "page": 13
+    },
+    {
+      "key": "tab5",
+      "label": "2025 年模拟现金流与研发强度对比",
+      "level": 1,
+      "kind": "table",
+      "page": 14
+    },
+    {
+      "key": "SEC-05-03",
+      "label": "估值水平、历史区间与跨市场可比性",
+      "level": 2,
+      "kind": "section",
+      "page": 14
+    },
+    {
+      "key": "ch6",
+      "label": "宏观、政策与技术催化",
+      "level": 1,
+      "kind": "section",
+      "page": 15
+    },
+    {
+      "key": "SEC-06-01",
+      "label": "宏观经济变量与行业传导路径",
+      "level": 2,
+      "kind": "section",
+      "page": 15
+    },
+    {
+      "key": "SEC-06-02",
+      "label": "政策、监管与合规环境",
+      "level": 2,
+      "kind": "section",
+      "page": 15
+    },
+    {
+      "key": "SEC-06-03",
+      "label": "技术趋势、事件催化与监测指标",
+      "level": 2,
+      "kind": "section",
+      "page": 16
+    },
+    {
+      "key": "ch7",
+      "label": "情景、风险与研究结论",
+      "level": 1,
+      "kind": "section",
+      "page": 17
+    },
+    {
+      "key": "SEC-07-01",
+      "label": "基准、乐观和悲观三种情景",
+      "level": 2,
+      "kind": "section",
+      "page": 17
+    },
+    {
+      "key": "SEC-07-02",
+      "label": "核心风险、反证条件与跟踪指标",
+      "level": 2,
+      "kind": "section",
+      "page": 17
+    },
+    {
+      "key": "SEC-07-03",
+      "label": "核心结论、适用边界与待验证事项",
+      "level": 2,
+      "kind": "section",
+      "page": 17
+    }
+  ],
+  "page_count": 18
+}

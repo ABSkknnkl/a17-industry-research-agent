@@ -1,0 +1,527 @@
+{
+  "schema_version": "1.0",
+  "checked_at": "2026-11-13T18:09:47+00:00",
+  "passed": true,
+  "gate": "P0_FIXTURE_STATISTICS",
+  "rule_count": 78,
+  "summary": {
+    "pass": 77,
+    "fail": 1,
+    "blocker_fail": 0,
+    "warning_fail": 1
+  },
+  "rules": [
+    {
+      "rule_id": "P0-001",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "冻结清单 schema_version=1.0"
+    },
+    {
+      "rule_id": "P0-002.os",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "环境字段 os 已冻结",
+      "value": "macOS 26.5.1 arm64"
+    },
+    {
+      "rule_id": "P0-002.python",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "环境字段 python 已冻结",
+      "value": "3.13.11"
+    },
+    {
+      "rule_id": "P0-002.pymupdf",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "环境字段 pymupdf 已冻结",
+      "value": "1.27.2.3"
+    },
+    {
+      "rule_id": "P0-002.chromium",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "环境字段 chromium 已冻结",
+      "value": "Google Chrome 157.0.8103.51"
+    },
+    {
+      "rule_id": "P0-002.raster_dpi",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "环境字段 raster_dpi 已冻结",
+      "value": 100
+    },
+    {
+      "rule_id": "P0-002.page_size_pt",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "环境字段 page_size_pt 已冻结",
+      "value": [
+        595.0,
+        841.9
+      ]
+    },
+    {
+      "rule_id": "P0-002.cjk_font_alias",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "环境字段 cjk_font_alias 已冻结",
+      "value": "ReportCJK"
+    },
+    {
+      "rule_id": "P0-002.cjk_fallback_chain",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "环境字段 cjk_fallback_chain 已冻结",
+      "value": [
+        "PingFang SC",
+        "Microsoft YaHei",
+        "Noto Sans CJK SC",
+        "Source Han Sans SC",
+        "SimHei"
+      ]
+    },
+    {
+      "rule_id": "P0-003",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "页尺寸冻结为 A4 (595.0 x 841.9 pt)"
+    },
+    {
+      "rule_id": "P0-NEV-001",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "母本 HTML SHA-256 未变更",
+      "path": "新能源汽车行业优化报告样例/report.html"
+    },
+    {
+      "rule_id": "P0-NEV-002",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "母本 PDF SHA-256 未变更",
+      "path": "新能源汽车行业优化报告样例/新能源汽车行业研究报告_2021-2025.pdf"
+    },
+    {
+      "rule_id": "P0-NEV-003",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "原始 PDF SHA-256 未变更"
+    },
+    {
+      "rule_id": "P0-NEV-004",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "PDF 页数 19 == 冻结 19"
+    },
+    {
+      "rule_id": "P0-NEV-005",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "PDF 书签 35 == 冻结 35"
+    },
+    {
+      "rule_id": "P0-NEV-006",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "全部页面 A4 且尺寸一致: [(595.0, 841.9)]"
+    },
+    {
+      "rule_id": "P0-NEV-007",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "目录键 42 个且唯一（冻结 42）"
+    },
+    {
+      "rule_id": "P0-NEV-008",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "图块 8 个 == 冻结 8"
+    },
+    {
+      "rule_id": "P0-NEV-009",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "表格 7 个 == 冻结 7"
+    },
+    {
+      "rule_id": "P0-NEV-010",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "全部目录页码落在 1..总页数"
+    },
+    {
+      "rule_id": "P0-NEV-011",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "目录项 kind/label 完整"
+    },
+    {
+      "rule_id": "P0-NEV-012",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "每个图块都有图题与资产路径"
+    },
+    {
+      "rule_id": "P0-NEV-013",
+      "severity": "warning",
+      "status": "PASS",
+      "detail": "图块带资料来源 8/8"
+    },
+    {
+      "rule_id": "P0-NEV-014",
+      "severity": "warning",
+      "status": "PASS",
+      "detail": "表格带 caption 7/7"
+    },
+    {
+      "rule_id": "P0-NEV-015",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "页级文本骨架 19 页 == PDF 页数"
+    },
+    {
+      "rule_id": "P0-NEV-016",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "封面隐藏页码"
+    },
+    {
+      "rule_id": "P0-NEV-017",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "物理第 2 页是目录"
+    },
+    {
+      "rule_id": "P0-NEV-018",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "摘要自物理第 3 页起"
+    },
+    {
+      "rule_id": "P0-NEV-019",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "封面之后页码与物理页一一对应",
+      "deviations": []
+    },
+    {
+      "rule_id": "P0-NEV-020",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "无空白页",
+      "empty_pages": []
+    },
+    {
+      "rule_id": "P0-NEV-021",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "固定 DPI 逐页截图 19 张 == 页数 19"
+    },
+    {
+      "rule_id": "P0-NEV-022",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "截图均非空白/损坏",
+      "undersized": []
+    },
+    {
+      "rule_id": "P0-NEV-023",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "截图命名 p01..pNN 连续且与物理页对应"
+    },
+    {
+      "rule_id": "P0-BAIJIU-001",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "母本 HTML SHA-256 未变更",
+      "path": "白酒行业优化报告样例/report.html"
+    },
+    {
+      "rule_id": "P0-BAIJIU-002",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "母本 PDF SHA-256 未变更",
+      "path": "白酒行业优化报告样例/白酒行业四强_现金流与渠道质量.pdf"
+    },
+    {
+      "rule_id": "P0-BAIJIU-003",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "原始 PDF SHA-256 未变更"
+    },
+    {
+      "rule_id": "P0-BAIJIU-004",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "PDF 页数 21 == 冻结 21"
+    },
+    {
+      "rule_id": "P0-BAIJIU-005",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "PDF 书签 0 == 冻结 0"
+    },
+    {
+      "rule_id": "P0-BAIJIU-006",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "全部页面 A4 且尺寸一致: [(595.0, 841.9)]"
+    },
+    {
+      "rule_id": "P0-BAIJIU-007",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "目录键 43 个且唯一（冻结 43）"
+    },
+    {
+      "rule_id": "P0-BAIJIU-008",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "图块 7 个 == 冻结 7"
+    },
+    {
+      "rule_id": "P0-BAIJIU-009",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "表格 11 个 == 冻结 11"
+    },
+    {
+      "rule_id": "P0-BAIJIU-010",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "全部目录页码落在 1..总页数"
+    },
+    {
+      "rule_id": "P0-BAIJIU-011",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "目录项 kind/label 完整"
+    },
+    {
+      "rule_id": "P0-BAIJIU-012",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "每个图块都有图题与资产路径"
+    },
+    {
+      "rule_id": "P0-BAIJIU-013",
+      "severity": "warning",
+      "status": "PASS",
+      "detail": "图块带资料来源 7/7"
+    },
+    {
+      "rule_id": "P0-BAIJIU-014",
+      "severity": "warning",
+      "status": "FAIL",
+      "detail": "表格带 caption 10/11"
+    },
+    {
+      "rule_id": "P0-BAIJIU-015",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "页级文本骨架 21 页 == PDF 页数"
+    },
+    {
+      "rule_id": "P0-BAIJIU-016",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "封面隐藏页码"
+    },
+    {
+      "rule_id": "P0-BAIJIU-017",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "物理第 2 页是目录"
+    },
+    {
+      "rule_id": "P0-BAIJIU-018",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "摘要自物理第 3 页起"
+    },
+    {
+      "rule_id": "P0-BAIJIU-019",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "封面之后页码与物理页一一对应",
+      "deviations": []
+    },
+    {
+      "rule_id": "P0-BAIJIU-020",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "无空白页",
+      "empty_pages": []
+    },
+    {
+      "rule_id": "P0-BAIJIU-021",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "固定 DPI 逐页截图 21 张 == 页数 21"
+    },
+    {
+      "rule_id": "P0-BAIJIU-022",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "截图均非空白/损坏",
+      "undersized": []
+    },
+    {
+      "rule_id": "P0-BAIJIU-023",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "截图命名 p01..pNN 连续且与物理页对应"
+    },
+    {
+      "rule_id": "P0-NEV-001",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "冻结 35 条 PDF 书签"
+    },
+    {
+      "rule_id": "P0-NEV-002",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "冻结 42 个目录键"
+    },
+    {
+      "rule_id": "P0-NEV-003",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "目录与书签对齐零异常（29 命中 + 6 仅书签项）",
+      "unexpected": []
+    },
+    {
+      "rule_id": "P0-NEV-004",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "书签总数 = 目录命中数 + 母本仅书签项"
+    },
+    {
+      "rule_id": "P0-NEV-005",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "图表目录 8 图 + 7 表"
+    },
+    {
+      "rule_id": "P0-NEV-006",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "图 8 产业链全景 SVG 哈希与 A3 声明一致"
+    },
+    {
+      "rule_id": "P0-NEV-007",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "A3 图位绑定 8 张"
+    },
+    {
+      "rule_id": "P0-NEV-008",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "A3 验收产物按内部 run_id 递归发现（上一轮误判已修正）",
+      "artifact_dir": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct"
+    },
+    {
+      "rule_id": "P0-NEV-009",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "A3 quality.passed=true 且 issues 为空",
+      "quality": {
+        "passed": true,
+        "ready_count": 11,
+        "suppressed_count": 43,
+        "requested_count": null,
+        "issues": []
+      }
+    },
+    {
+      "rule_id": "P0-NEV-010",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "A1 数据集 / A2 报告 / 题面三份哈希与输入锁全部一致"
+    },
+    {
+      "rule_id": "P0-NEV-011",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "77 点逐点对账 0 错且真实模型参与事件在案",
+      "point_checks": 77,
+      "point_errors": 0
+    },
+    {
+      "rule_id": "P0-NEV-012",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "表A2 五行逐行绑定，汇总来源由注册表生成而非手写",
+      "gaps": [
+        "SOURCE_GAP-TABA2-02",
+        "SOURCE_GAP-TABA2-05"
+      ]
+    },
+    {
+      "rule_id": "P0-THEME-001",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "主题 ID = a5_nev"
+    },
+    {
+      "rule_id": "P0-THEME-002.tokens",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "theme.tokens 已提取"
+    },
+    {
+      "rule_id": "P0-THEME-002.page",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "theme.page 已提取"
+    },
+    {
+      "rule_id": "P0-THEME-002.fonts",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "theme.fonts 已提取"
+    },
+    {
+      "rule_id": "P0-THEME-002.components",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "theme.components 已提取"
+    },
+    {
+      "rule_id": "P0-THEME-003",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "品牌色与页尺寸取自母本实测"
+    },
+    {
+      "rule_id": "P0-THEME-004",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "母本样式冻结副本 base.css 存在"
+    },
+    {
+      "rule_id": "P0-CSS-001",
+      "severity": "blocker",
+      "status": "PASS",
+      "detail": "NEV 母本 @page 定义 A4 portrait"
+    },
+    {
+      "rule_id": "P0-GAP-001",
+      "severity": "info",
+      "status": "PASS",
+      "detail": "冻结清单登记 5 项已知差异，其中 0 项延后到 P3 处置"
+    },
+    {
+      "rule_id": "P0-GAP-002",
+      "severity": "info",
+      "status": "PASS",
+      "detail": "A3 资产发现误判已登记修正记录，引用级降级已撤销"
+    }
+  ],
+  "deferred_blockers": [],
+  "next_gate": "P1 结构化块与内容保真（需 P0 零 blocker）"
+}

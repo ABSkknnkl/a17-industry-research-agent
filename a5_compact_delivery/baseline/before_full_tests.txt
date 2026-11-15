@@ -1,0 +1,6 @@
+FAILED agents_core/chain-research/tests/test_store_t2.py::TestBundlePersistence::test_quality_and_manifest_files_written
+FAILED agents_core/chain-research/tests/test_store_t2.py::TestBundlePersistence::test_restore_after_restart
+FAILED agents_core/chain-research/tests/test_store_t2.py::TestAtomicWrites::test_interrupted_write_keeps_old_snapshot
+FAILED agents_core/chain-research/tests/test_store_t2.py::TestAtomicWrites::test_no_tmp_files_left_after_success
+FAILED agents_core/chain-research/tests/test_store_t2.py::TestNoCacheMode::test_store_without_cache_db
+9 failed, 2249 passed, 66 skipped, 1 deselected, 5 warnings in 84.31s (0:01:24)

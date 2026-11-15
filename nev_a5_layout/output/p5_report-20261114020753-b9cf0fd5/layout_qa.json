@@ -1,0 +1,193 @@
+{
+  "schema_version": "1.0",
+  "stage": "P5",
+  "generated_at": "2026-11-13T18:08:01+00:00",
+  "input": "确定性模拟输入 + NEV/白酒固定夹具；本轮未发起真实模型调用",
+  "run_dir": "/Users/Zhuanz1/Downloads/同花顺赛题-T3交接/nev_a5_layout/isolated_app/output/runs/report-20261114020753-b9cf0fd5",
+  "pdf_pages": 8,
+  "score": 94.1,
+  "passed": true,
+  "blocker_failures": [],
+  "rules": [
+    {
+      "rule_id": "QA-001",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "全部 A4：{(595.0, 841.9)}"
+    },
+    {
+      "rule_id": "QA-002",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "PDF 书签 18 条"
+    },
+    {
+      "rule_id": "QA-003",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "封面无页眉页脚/页码"
+    },
+    {
+      "rule_id": "QA-004",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "正文页码连续：7/7 页"
+    },
+    {
+      "rule_id": "QA-005",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "页眉盖章存在且中文可提取"
+    },
+    {
+      "rule_id": "QA-006",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "无空白页：[]"
+    },
+    {
+      "rule_id": "QA-007",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "PDF 内部链接 16 条 >= 目录 16 条"
+    },
+    {
+      "rule_id": "QA-008",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "目录页码与 PDF 真实链接目标一致"
+    },
+    {
+      "rule_id": "QA-009",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "发布 HTML 已保存收敛页码"
+    },
+    {
+      "rule_id": "QA-010",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "同批 HTML 哈希可复算"
+    },
+    {
+      "rule_id": "QA-011",
+      "severity": "warning",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "无样例禁止的证券合规标识"
+    },
+    {
+      "rule_id": "QA-012",
+      "severity": "warning",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "模拟输入已显式标注，未包装为真实披露数据"
+    },
+    {
+      "rule_id": "QA-013",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "三次重排：页映射/书签/页面图像一致"
+    },
+    {
+      "rule_id": "QA-014",
+      "severity": "warning",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "三次重排：HTML 一致"
+    },
+    {
+      "rule_id": "QA-015",
+      "severity": "warning",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "页眉页脚仅用一种策略（PyMuPDF 盖章）"
+    },
+    {
+      "rule_id": "QA-016",
+      "severity": "warning",
+      "status": "FAIL",
+      "page": null,
+      "block_id": null,
+      "detail": "图/表来源文本已落入 PDF"
+    },
+    {
+      "rule_id": "QA-017",
+      "severity": "blocker",
+      "status": "PASS",
+      "page": null,
+      "block_id": null,
+      "detail": "NEV/白酒固定夹具统计回归：77/78 PASS"
+    }
+  ],
+  "repeat_runs": [
+    {
+      "repeat": 1,
+      "html_hash": "9b18f56fe925aec96927fa6e954d7a2381442e5062212ca7b8645b6651cf90a6",
+      "pdf_hash": "21a58a3337a70b0d6cdc6d4fedab52a7ed11a700525ff6bbbf39598989dcc03e",
+      "page_map_hash": "e7c64834e34dac57c99ca7012912385ba1cef3bd1c65da3ecf102839ed1a9baa",
+      "outline_hash": "dead211e01ce12b947873f1846f5baa9521196a8f964975e5decbbe06fae4b96",
+      "page_count": 8
+    },
+    {
+      "repeat": 2,
+      "html_hash": "9b18f56fe925aec96927fa6e954d7a2381442e5062212ca7b8645b6651cf90a6",
+      "pdf_hash": "51de09057a9b682446507e7b40577ea991a90fdec54e4c1d6d3a1e42d7153af5",
+      "page_map_hash": "e7c64834e34dac57c99ca7012912385ba1cef3bd1c65da3ecf102839ed1a9baa",
+      "outline_hash": "dead211e01ce12b947873f1846f5baa9521196a8f964975e5decbbe06fae4b96",
+      "page_count": 8
+    },
+    {
+      "repeat": 3,
+      "html_hash": "9b18f56fe925aec96927fa6e954d7a2381442e5062212ca7b8645b6651cf90a6",
+      "pdf_hash": "104413ce2f0b4fda0dbcbfe0e3c65bbf42661db2327f936a15c37067fd4cab82",
+      "page_map_hash": "e7c64834e34dac57c99ca7012912385ba1cef3bd1c65da3ecf102839ed1a9baa",
+      "outline_hash": "dead211e01ce12b947873f1846f5baa9521196a8f964975e5decbbe06fae4b96",
+      "page_count": 8
+    }
+  ],
+  "consistency": {
+    "html_stable": true,
+    "page_map_stable": true,
+    "outline_stable": true,
+    "page_images_stable": true,
+    "page_count_stable": true
+  },
+  "fixture_regression": {
+    "pass": 77,
+    "fail": 1,
+    "blocker_fail": 0,
+    "warning_fail": 1
+  },
+  "not_done": [
+    "真实 LLM 模拟稿 A4 章节",
+    "真实数据版证据接入回归",
+    "逐页原图放大人工复核（本脚本只产出截图，结论见 visual_review）"
+  ]
+}

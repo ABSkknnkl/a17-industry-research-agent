@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-11-13T18:05:53+00:00",
+  "stage": "P0+P1+P3",
+  "status": "VERIFIED_WITH_KNOWN_GAPS",
+  "p0_gate": {
+    "passed": true,
+    "rule_count": 78,
+    "summary": {
+      "pass": 77,
+      "fail": 1,
+      "blocker_fail": 0,
+      "warning_fail": 1
+    }
+  },
+  "a3_artifact": {
+    "run_id": "charts-20261113214131-d344a507",
+    "artifact_dir": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct",
+    "quality": {
+      "passed": true,
+      "ready_count": 11,
+      "suppressed_count": 43,
+      "requested_count": null,
+      "issues": []
+    },
+    "lock_all_match": true,
+    "point_checks": 77,
+    "point_errors": 0,
+    "real_model_participated": true,
+    "discovery_corrected": "corrected"
+  },
+  "source_bindings": {
+    "table": "表A2 数据来源与证据索引",
+    "summary": {
+      "rows": 5,
+      "verified": 3,
+      "disclosure_only": 1,
+      "source_gaps": 2,
+      "total_bindings": 17,
+      "verified_bindings": 17
+    },
+    "gaps": [
+      "SOURCE_GAP-TABA2-02",
+      "SOURCE_GAP-TABA2-05"
+    ],
+    "c5_c6_updated": true,
+    "mother_text_preserved": true
+  },
+  "layout_ast": {
+    "content_sha256": "d0ae3b80d242b1cd462be32662f4527786ccd3f410c650daa635f3446cfd5768",
+    "block_count": 245,
+    "figure_count": 8,
+    "table_count": 7,
+    "asset_count": 8,
+    "warning_count": 0,
+    "blocker_issues": []
+  },
+  "content_diff": {
+    "identical": true,
+    "numbers_equal": true,
+    "numeric_units_equal": true,
+    "evidence_ids_equal": true,
+    "paragraph_order_equal": true,
+    "conclusions_equal": true
+  },
+  "registry": {
+    "entry_count": 48,
+    "figure_count": 8,
+    "table_count": 7,
+    "outline_entries": 35,
+    "outline_only_count": 6,
+    "validate_issues": [],
+    "publish_blockers": [],
+    "blocking_gaps": []
+  },
+  "not_done": [
+    "P2 母本模板与打印 CSS 分页编排",
+    "P4 双遍目录收敛 / PDF outline / 页眉页脚 / 原子发布",
+    "P5 DOM+PDF 双侧自动 QA 与 AI 逐页视觉复核",
+    "§5 真实 LLM 联调、三次同输入重跑、真实数据版回归",
+    "A5 生产入口接线（agent.py / render.py / pdf.py / state_machine.py 均未改动）"
+  ],
+  "template_audit": {
+    "baseline": "新能源汽车行业优化报告样例/report.html",
+    "baseline_sha256": "2cec0986bb8adad4815620d6f24b77c7f689fc109a3918de6f2bf4b6649c489a",
+    "summary": {
+      "rules": 22,
+      "pass": 22,
+      "fail": 0,
+      "high_fail": 0
+    },
+    "high_failures": [],
+    "directory_page_verification": {
+      "checked": 42,
+      "matched": 42,
+      "deviations": 0
+    }
+  }
+}

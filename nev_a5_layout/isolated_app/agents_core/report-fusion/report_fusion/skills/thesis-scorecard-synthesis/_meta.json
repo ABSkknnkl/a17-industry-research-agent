@@ -1,0 +1,5 @@
+{
+  "always": true,
+  "source": "skills包/投资逻辑跟踪/SKILL.md",
+  "adaptation": "从全文各章中提炼核心论点，在研报末尾合成对冲基金标准的 Thesis Scorecard 跟踪台账；移除仓位指令与实盘盯盘。"
+}

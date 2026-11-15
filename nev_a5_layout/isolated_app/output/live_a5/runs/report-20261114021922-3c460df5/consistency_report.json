@@ -1,0 +1,1577 @@
+{
+  "passed": false,
+  "issues": [
+    "章节包含未通过质量核验的内容或兜底稿，仅提供受限草稿",
+    "SIM-C-01 声明为 ready 但缺少可读图形，未进入正式交付",
+    "SIM-C-02 声明为 ready 但缺少可读图形，未进入正式交付",
+    "SIM-C-03 声明为 ready 但缺少可读图形，未进入正式交付",
+    "SIM-C-04 声明为 ready 但缺少可读图形，未进入正式交付",
+    "SIM-C-05 声明为 ready 但缺少可读图形，未进入正式交付",
+    "SIM-C-06 声明为 ready 但缺少可读图形，未进入正式交付",
+    "SIM-C-07 声明为 ready 但缺少可读图形，未进入正式交付",
+    "SIM-C-01 缺少数据点语义契约，图表尚未核验",
+    "SIM-C-02 缺少数据点语义契约，图表尚未核验",
+    "SIM-C-03 缺少数据点语义契约，图表尚未核验",
+    "SIM-C-04 缺少数据点语义契约，图表尚未核验",
+    "SIM-C-05 缺少数据点语义契约，图表尚未核验",
+    "SIM-C-06 缺少数据点语义契约，图表尚未核验",
+    "SIM-C-07 缺少数据点语义契约，图表尚未核验"
+  ],
+  "warnings": [],
+  "accepted_edits": 14,
+  "rejected_edits": 0,
+  "terminology_map": {},
+  "quality_issues": [
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-01.summary",
+      "claim": "30万辆",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2021,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "本章界定新能源汽车行业的研究边界、数据口径与分析方法，并基于2021—2025年出口量证据概括行业发展阶段与核心矛盾。出口量从2021年的30万辆增至2025年的220万辆，年均复合增速约64.8%，但2024年增速显著放缓至13.5%，2025年回升至86.4%，显示行业进入波动增长阶段，核心矛盾在于高增长与阶段性放缓并存，以及产业链样本覆盖不完整带来的研究边界限制。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-01.summary",
+      "claim": "220万辆",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "本章界定新能源汽车行业的研究边界、数据口径与分析方法，并基于2021—2025年出口量证据概括行业发展阶段与核心矛盾。出口量从2021年的30万辆增至2025年的220万辆，年均复合增速约64.8%，但2024年增速显著放缓至13.5%，2025年回升至86.4%，显示行业进入波动增长阶段，核心矛盾在于高增长与阶段性放缓并存，以及产业链样本覆盖不完整带来的研究边界限制。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-01.summary",
+      "claim": "64.8%",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "本章界定新能源汽车行业的研究边界、数据口径与分析方法，并基于2021—2025年出口量证据概括行业发展阶段与核心矛盾。出口量从2021年的30万辆增至2025年的220万辆，年均复合增速约64.8%，但2024年增速显著放缓至13.5%，2025年回升至86.4%，显示行业进入波动增长阶段，核心矛盾在于高增长与阶段性放缓并存，以及产业链样本覆盖不完整带来的研究边界限制。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-01.summary",
+      "claim": "13.5%",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2024,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "本章界定新能源汽车行业的研究边界、数据口径与分析方法，并基于2021—2025年出口量证据概括行业发展阶段与核心矛盾。出口量从2021年的30万辆增至2025年的220万辆，年均复合增速约64.8%，但2024年增速显著放缓至13.5%，2025年回升至86.4%，显示行业进入波动增长阶段，核心矛盾在于高增长与阶段性放缓并存，以及产业链样本覆盖不完整带来的研究边界限制。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-01.summary",
+      "claim": "86.4%",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "本章界定新能源汽车行业的研究边界、数据口径与分析方法，并基于2021—2025年出口量证据概括行业发展阶段与核心矛盾。出口量从2021年的30万辆增至2025年的220万辆，年均复合增速约64.8%，但2024年增速显著放缓至13.5%，2025年回升至86.4%，显示行业进入波动增长阶段，核心矛盾在于高增长与阶段性放缓并存，以及产业链样本覆盖不完整带来的研究边界限制。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-01-03.key_points[0]",
+      "claim": "64.8%",
+      "metric": "nev_exports",
+      "entity": null,
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "2021—2025年出口量年均复合增速约64.8%，行业处于高速增长期。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-01-03.key_points[1]",
+      "claim": "13.5%",
+      "metric": null,
+      "entity": null,
+      "year": 2024,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "2024年增速显著放缓至13.5%，2025年回升至86.4%，显示波动性。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-01-03.key_points[1]",
+      "claim": "86.4%",
+      "metric": null,
+      "entity": null,
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "2024年增速显著放缓至13.5%，2025年回升至86.4%，显示波动性。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-02-02.key_points[0]",
+      "claim": "14.7%",
+      "metric": "nev_sales",
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2024",
+        "R-sim-sales-2025",
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "出口成为第二增长极，2025 年出口 220.0 万辆，占当年销量 14.7%。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-03.summary",
+      "claim": "25.8%",
+      "metric": "gross_margin",
+      "entity": "亿纬锂能",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025",
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025",
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "新能源汽车产业链按上游资源、中游核心部件、下游整车与服务的结构展开。上游锂、正极、负极、隔膜、电解液等环节未纳入样本，仅作结构定位；中游动力电池与电机电控环节以宁德时代、亿纬锂能为样本，2025年模拟毛利率分别为25.8%和15.9%，组内差异明显；下游整车制造环节以比亚迪、长安汽车、赛力斯为样本，2025年模拟毛利率分别为17.2%、15.1%和27.5%，组内极差大于组间差异。利润分配呈现环节内分化大于环节间差异的特征，现金流分化早于利润分化，但净现比因缺乏已核验数据不可计算。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-03.summary",
+      "claim": "17.2%",
+      "metric": "gross_margin",
+      "entity": "赛力斯",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025",
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025",
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "新能源汽车产业链按上游资源、中游核心部件、下游整车与服务的结构展开。上游锂、正极、负极、隔膜、电解液等环节未纳入样本，仅作结构定位；中游动力电池与电机电控环节以宁德时代、亿纬锂能为样本，2025年模拟毛利率分别为25.8%和15.9%，组内差异明显；下游整车制造环节以比亚迪、长安汽车、赛力斯为样本，2025年模拟毛利率分别为17.2%、15.1%和27.5%，组内极差大于组间差异。利润分配呈现环节内分化大于环节间差异的特征，现金流分化早于利润分化，但净现比因缺乏已核验数据不可计算。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-03.summary",
+      "claim": "15.1%",
+      "metric": "gross_margin",
+      "entity": "赛力斯",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025",
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025",
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "新能源汽车产业链按上游资源、中游核心部件、下游整车与服务的结构展开。上游锂、正极、负极、隔膜、电解液等环节未纳入样本，仅作结构定位；中游动力电池与电机电控环节以宁德时代、亿纬锂能为样本，2025年模拟毛利率分别为25.8%和15.9%，组内差异明显；下游整车制造环节以比亚迪、长安汽车、赛力斯为样本，2025年模拟毛利率分别为17.2%、15.1%和27.5%，组内极差大于组间差异。利润分配呈现环节内分化大于环节间差异的特征，现金流分化早于利润分化，但净现比因缺乏已核验数据不可计算。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-03-02.key_points[0]",
+      "claim": "25.8%",
+      "metric": "gross_margin",
+      "entity": "亿纬锂能",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025",
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "中游动力电池环节样本为宁德时代和亿纬锂能，2025年模拟毛利率分别为25.8%和15.9%，组内差异明显。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-03-03.key_points[0]",
+      "claim": "17.2%",
+      "metric": "gross_margin",
+      "entity": "赛力斯",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "下游整车环节样本为比亚迪、长安汽车、赛力斯，2025年模拟毛利率分别为17.2%、15.1%和27.5%，组内极差达12.4个百分点。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-03-03.key_points[0]",
+      "claim": "15.1%",
+      "metric": "gross_margin",
+      "entity": "赛力斯",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "下游整车环节样本为比亚迪、长安汽车、赛力斯，2025年模拟毛利率分别为17.2%、15.1%和27.5%，组内极差达12.4个百分点。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-03-03.key_points[0]",
+      "claim": "27.5%",
+      "metric": "gross_margin",
+      "entity": "赛力斯",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "下游整车环节样本为比亚迪、长安汽车、赛力斯，2025年模拟毛利率分别为17.2%、15.1%和27.5%，组内极差达12.4个百分点。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-03-03.key_points[0]",
+      "claim": "12.4个百分点",
+      "metric": "gross_margin",
+      "entity": "赛力斯",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "下游整车环节样本为比亚迪、长安汽车、赛力斯，2025年模拟毛利率分别为17.2%、15.1%和27.5%，组内极差达12.4个百分点。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_causal_claim",
+      "severity": "error",
+      "location": "CH-04.summary",
+      "claim": "由于数据为模拟且缺乏营运资金附注",
+      "evidence_ids": [
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025",
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-长安汽车-2025"
+      ],
+      "suggestion": "补充直接证据，或在该因果子句中明确标记为待验证假设。",
+      "original": "本章基于模拟数据，按产业链环节分组比较新能源汽车行业主要参与者的盈利与现金流表现。数据显示毛利率组内差异大于组间差异，整车组毛利率区间为15.1%—27.5%，电池组为15.9%—25.8%，因此不宜跨组排名。经营现金流分化明显，宁德时代以1280亿元居首，比亚迪640亿元，赛力斯270亿元，长安汽车22亿元，亿纬锂能72亿元。由于数据为模拟且缺乏营运资金附注，本章仅作结构定位，不判断竞争胜负。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-04-03.key_points[0]",
+      "claim": "6.84%",
+      "metric": null,
+      "entity": "比亚迪",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025",
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "研发强度差异构成潜在壁垒，比亚迪研发强度6.84%领先。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_causal_claim",
+      "severity": "error",
+      "location": "SEC-04-03.key_points[1]",
+      "claim": "毛利率与现金流分化反映差异化因素",
+      "evidence_ids": [
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025",
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025"
+      ],
+      "suggestion": "补充直接证据，或在该因果子句中明确标记为待验证假设。",
+      "original": "毛利率与现金流分化反映差异化因素，但缺乏营运资金附注。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-04-03.callouts[0]",
+      "claim": "5家",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025",
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "非外推声明 本章所有财务数据均为模拟数据，样本仅覆盖5家企业（2家电池、3家整车），且上游环节未纳入样本。样本结构代表性有限，期间仅2025年单年，禁止将本章结论线性外推至整个新能源汽车产业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-04-03.callouts[0]",
+      "claim": "2家",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025",
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "非外推声明 本章所有财务数据均为模拟数据，样本仅覆盖5家企业（2家电池、3家整车），且上游环节未纳入样本。样本结构代表性有限，期间仅2025年单年，禁止将本章结论线性外推至整个新能源汽车产业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-04-03.callouts[0]",
+      "claim": "3家",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025",
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "非外推声明 本章所有财务数据均为模拟数据，样本仅覆盖5家企业（2家电池、3家整车），且上游环节未纳入样本。样本结构代表性有限，期间仅2025年单年，禁止将本章结论线性外推至整个新能源汽车产业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_causal_claim",
+      "severity": "error",
+      "location": "TRANS-CH-05",
+      "claim": "识别外部驱动与约束",
+      "evidence_ids": [],
+      "suggestion": "补充直接证据，或在该因果子句中明确标记为待验证假设。",
+      "original": "在完成财务质量评估后，下一章将转向宏观、政策与技术催化，识别外部驱动与约束。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.key_points[2]",
+      "claim": "6.84%",
+      "metric": null,
+      "entity": "比亚迪",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-长安汽车-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "研发强度差异显著：比亚迪 6.84%，宁德时代 5.24%，赛力斯 4.75%，亿纬锂能 4.83%，长安汽车 4.43%。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.key_points[2]",
+      "claim": "5.24%",
+      "metric": null,
+      "entity": "宁德时代",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-长安汽车-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "研发强度差异显著：比亚迪 6.84%，宁德时代 5.24%，赛力斯 4.75%，亿纬锂能 4.83%，长安汽车 4.43%。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.key_points[2]",
+      "claim": "4.75%",
+      "metric": null,
+      "entity": "赛力斯",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-长安汽车-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "研发强度差异显著：比亚迪 6.84%，宁德时代 5.24%，赛力斯 4.75%，亿纬锂能 4.83%，长安汽车 4.43%。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.key_points[2]",
+      "claim": "4.83%",
+      "metric": null,
+      "entity": "亿纬锂能",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-长安汽车-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "研发强度差异显著：比亚迪 6.84%，宁德时代 5.24%，赛力斯 4.75%，亿纬锂能 4.83%，长安汽车 4.43%。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.key_points[2]",
+      "claim": "4.43%",
+      "metric": null,
+      "entity": "长安汽车",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-长安汽车-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "研发强度差异显著：比亚迪 6.84%，宁德时代 5.24%，赛力斯 4.75%，亿纬锂能 4.83%，长安汽车 4.43%。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.table[0][2]",
+      "claim": "6.84%",
+      "metric": null,
+      "entity": "比亚迪",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-长安汽车-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "比亚迪 研发强度（%） 6.84%",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.table[1][2]",
+      "claim": "4.43%",
+      "metric": null,
+      "entity": "长安汽车",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-长安汽车-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "长安汽车 研发强度（%） 4.43%",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.table[2][2]",
+      "claim": "4.75%",
+      "metric": null,
+      "entity": "赛力斯",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-长安汽车-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "赛力斯 研发强度（%） 4.75%",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.table[3][2]",
+      "claim": "5.24%",
+      "metric": null,
+      "entity": "宁德时代",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-长安汽车-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "宁德时代 研发强度（%） 5.24%",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-02.table[4][2]",
+      "claim": "4.83%",
+      "metric": null,
+      "entity": "亿纬锂能",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-rd-比亚迪-2025",
+        "R-sim-rd-长安汽车-2025",
+        "R-sim-rd-赛力斯-2025",
+        "R-sim-rd-宁德时代-2025",
+        "R-sim-rd-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "亿纬锂能 研发强度（%） 4.83%",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-03.callouts[0]",
+      "claim": "5 家",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025",
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "非外推声明 本次证据仅包含 2025 年模拟财务数据，样本仅覆盖 5 家公司（整车 3 家、电池 2 家），且上游环节未纳入样本。基于此样本的财务分化结论不代表整个新能源汽车产业链，禁止线性外推至全行业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-03.callouts[0]",
+      "claim": "3 家",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025",
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "非外推声明 本次证据仅包含 2025 年模拟财务数据，样本仅覆盖 5 家公司（整车 3 家、电池 2 家），且上游环节未纳入样本。基于此样本的财务分化结论不代表整个新能源汽车产业链，禁止线性外推至全行业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-05-03.callouts[0]",
+      "claim": "2 家",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-gm-比亚迪-2025",
+        "R-sim-gm-长安汽车-2025",
+        "R-sim-gm-赛力斯-2025",
+        "R-sim-gm-宁德时代-2025",
+        "R-sim-gm-亿纬锂能-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "非外推声明 本次证据仅包含 2025 年模拟财务数据，样本仅覆盖 5 家公司（整车 3 家、电池 2 家），且上游环节未纳入样本。基于此样本的财务分化结论不代表整个新能源汽车产业链，禁止线性外推至全行业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-06.summary",
+      "claim": "21.0%",
+      "metric": null,
+      "entity": "国内零售渗透率自",
+      "year": 2021,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2021",
+        "R-sim-sales-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "本章基于模拟数据，梳理新能源汽车行业在宏观、政策与技术三个维度的催化与约束。宏观层面，国内零售渗透率自2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行但存在月度回撤；出口量自2021年的30万辆增至2025年的220万辆，成为总量增长的第二极。政策与技术层面，本章未获得可核验的政策事件、技术趋势或具体催化数据，仅能基于行业结构定位与财务比率给出定性判断与监测框架，并明确标注证据缺口。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-06.summary",
+      "claim": "55.0%",
+      "metric": null,
+      "entity": "国内零售渗透率自",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2021",
+        "R-sim-sales-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "本章基于模拟数据，梳理新能源汽车行业在宏观、政策与技术三个维度的催化与约束。宏观层面，国内零售渗透率自2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行但存在月度回撤；出口量自2021年的30万辆增至2025年的220万辆，成为总量增长的第二极。政策与技术层面，本章未获得可核验的政策事件、技术趋势或具体催化数据，仅能基于行业结构定位与财务比率给出定性判断与监测框架，并明确标注证据缺口。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-06.summary",
+      "claim": "30万辆",
+      "metric": "nev_exports",
+      "entity": "出口量自",
+      "year": 2021,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2021",
+        "R-sim-sales-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "本章基于模拟数据，梳理新能源汽车行业在宏观、政策与技术三个维度的催化与约束。宏观层面，国内零售渗透率自2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行但存在月度回撤；出口量自2021年的30万辆增至2025年的220万辆，成为总量增长的第二极。政策与技术层面，本章未获得可核验的政策事件、技术趋势或具体催化数据，仅能基于行业结构定位与财务比率给出定性判断与监测框架，并明确标注证据缺口。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-06.summary",
+      "claim": "220万辆",
+      "metric": "nev_exports",
+      "entity": "出口量自",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2021",
+        "R-sim-sales-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "本章基于模拟数据，梳理新能源汽车行业在宏观、政策与技术三个维度的催化与约束。宏观层面，国内零售渗透率自2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行但存在月度回撤；出口量自2021年的30万辆增至2025年的220万辆，成为总量增长的第二极。政策与技术层面，本章未获得可核验的政策事件、技术趋势或具体催化数据，仅能基于行业结构定位与财务比率给出定性判断与监测框架，并明确标注证据缺口。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-06-01.key_points[0]",
+      "claim": "21.0%",
+      "metric": null,
+      "entity": "国内零售渗透率从",
+      "year": 2021,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2021",
+        "R-sim-sales-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "国内零售渗透率从2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行，但单月回撤不等于趋势反转。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-06-01.key_points[0]",
+      "claim": "55.0%",
+      "metric": null,
+      "entity": "国内零售渗透率从",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2021",
+        "R-sim-sales-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "国内零售渗透率从2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行，但单月回撤不等于趋势反转。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-06-01.key_points[1]",
+      "claim": "30万辆",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2021,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2021",
+        "R-sim-sales-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "出口量从2021年的30万辆增至2025年的220万辆，出口成为总量增长的第二极，但2024年增速显著放缓。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-06-01.key_points[1]",
+      "claim": "220万辆",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2021",
+        "R-sim-sales-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "出口量从2021年的30万辆增至2025年的220万辆，出口成为总量增长的第二极，但2024年增速显著放缓。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-06-03.key_points[1]",
+      "claim": "6.84%",
+      "metric": "revenue",
+      "entity": "比亚迪",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-pen-2025-12",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "研发强度（研发费用/营收）可作为技术投入的代理指标，样本中比亚迪为6.84%，赛力斯为4.75%，宁德时代为5.24%，但缺乏研发成果或技术突破的直接证据。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-06-03.key_points[1]",
+      "claim": "4.75%",
+      "metric": "revenue",
+      "entity": "赛力斯",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-pen-2025-12",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "研发强度（研发费用/营收）可作为技术投入的代理指标，样本中比亚迪为6.84%，赛力斯为4.75%，宁德时代为5.24%，但缺乏研发成果或技术突破的直接证据。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-06-03.key_points[1]",
+      "claim": "5.24%",
+      "metric": "revenue",
+      "entity": "宁德时代",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-pen-2025-12",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "研发强度（研发费用/营收）可作为技术投入的代理指标，样本中比亚迪为6.84%，赛力斯为4.75%，宁德时代为5.24%，但缺乏研发成果或技术突破的直接证据。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-06-03.callouts[0]",
+      "claim": "5家",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "非外推声明 本章所有数据均为模拟数据，且样本仅覆盖5家代表性企业（比亚迪、长安汽车、赛力斯、宁德时代、亿纬锂能），不包含上游环节。基于此样本得出的研发强度、毛利率等指标，不代表整个新能源汽车产业链，严禁线性外推至全行业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-07.summary",
+      "claim": "30万辆",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2021,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "基于2021-2025年新能源汽车出口量模拟数据，本章构建基准、乐观、悲观三种情景，识别核心风险与反证条件，并汇总结论与适用边界。出口量从2021年30万辆增至2025年220万辆，年均复合增速约64.9%，但数据为模拟性质，样本结构有限，结论不可外推至整个产业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-07.summary",
+      "claim": "220万辆",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "基于2021-2025年新能源汽车出口量模拟数据，本章构建基准、乐观、悲观三种情景，识别核心风险与反证条件，并汇总结论与适用边界。出口量从2021年30万辆增至2025年220万辆，年均复合增速约64.9%，但数据为模拟性质，样本结构有限，结论不可外推至整个产业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "CH-07.summary",
+      "claim": "64.9%",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "基于2021-2025年新能源汽车出口量模拟数据，本章构建基准、乐观、悲观三种情景，识别核心风险与反证条件，并汇总结论与适用边界。出口量从2021年30万辆增至2025年220万辆，年均复合增速约64.9%，但数据为模拟性质，样本结构有限，结论不可外推至整个产业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-07-01.key_points[0]",
+      "claim": "64.9%",
+      "metric": "nev_exports",
+      "entity": null,
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "2021-2025年新能源汽车出口量年均复合增速约64.9%，2025年达220万辆。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-07-01.table[0][1]",
+      "claim": "50%",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "基准 假设复合增速 50%",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-07-01.table[0][2]",
+      "claim": "742.5",
+      "metric": "nev_exports",
+      "entity": "基准",
+      "year": 2028,
+      "evidence_ids": [
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "基准 2028年出口量（万辆） 742.5",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-07-01.table[1][1]",
+      "claim": "70%",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "乐观 假设复合增速 70%",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-07-01.table[1][2]",
+      "claim": "1080.8",
+      "metric": "nev_exports",
+      "entity": "乐观",
+      "year": 2028,
+      "evidence_ids": [
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "乐观 2028年出口量（万辆） 1080.8",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-07-01.table[2][1]",
+      "claim": "20%",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "悲观 假设复合增速 20%",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "SEC-07-01.table[2][2]",
+      "claim": "380.2",
+      "metric": "nev_exports",
+      "entity": "悲观",
+      "year": 2028,
+      "evidence_ids": [
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "悲观 2028年出口量（万辆） 380.2",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_direction_claim",
+      "severity": "error",
+      "location": "SEC-07-02.key_points[1]",
+      "claim": "反证条件包括出口量连续下滑、政策实质性受阻等",
+      "evidence_ids": [
+        "R-sim-export-2024"
+      ],
+      "suggestion": "补充同口径观测，或明确区分已观察变化与待验证假设。",
+      "original": "反证条件包括出口量连续下滑、政策实质性受阻等。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[1]",
+      "claim": "+86%",
+      "metric": "nev_exports",
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "模拟出口从 30.0 增至 220.0 万辆，2025 年同比约 +86%。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[2]",
+      "claim": "12 ",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "模拟渗透率从 2021-12 的 21.0% 升至 2025-12 的 55.0%，单月存在季节性回撤。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[2]",
+      "claim": "12 ",
+      "metric": null,
+      "entity": null,
+      "year": null,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "模拟渗透率从 2021-12 的 21.0% 升至 2025-12 的 55.0%，单月存在季节性回撤。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[4]",
+      "claim": "1,500.0 ",
+      "metric": null,
+      "entity": "比亚迪",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-比亚迪-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "模拟比亚迪 OCF 从 1,500.0 降至 640.0 亿元，长安从 180.0 降至 22.0 亿元，赛力斯从 60.0 升至 270.0 亿元。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[4]",
+      "claim": "180.0 ",
+      "metric": null,
+      "entity": "比亚迪",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-比亚迪-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "模拟比亚迪 OCF 从 1,500.0 降至 640.0 亿元，长安从 180.0 降至 22.0 亿元，赛力斯从 60.0 升至 270.0 亿元。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[4]",
+      "claim": "22.0 亿元",
+      "metric": null,
+      "entity": "比亚迪",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-比亚迪-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "模拟比亚迪 OCF 从 1,500.0 降至 640.0 亿元，长安从 180.0 降至 22.0 亿元，赛力斯从 60.0 升至 270.0 亿元。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[4]",
+      "claim": "60.0 ",
+      "metric": null,
+      "entity": "赛力斯",
+      "year": null,
+      "evidence_ids": [
+        "R-sim-ocf-比亚迪-2025",
+        "R-sim-ocf-长安汽车-2025",
+        "R-sim-ocf-赛力斯-2025",
+        "R-sim-ocf-宁德时代-2025",
+        "R-sim-ocf-亿纬锂能-2025",
+        "R-sim-ocf-比亚迪-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "模拟比亚迪 OCF 从 1,500.0 降至 640.0 亿元，长安从 180.0 降至 22.0 亿元，赛力斯从 60.0 升至 270.0 亿元。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[6]",
+      "claim": "21.0%",
+      "metric": null,
+      "entity": "国内零售渗透率自",
+      "year": 2021,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "【宏观、政策与技术催化】本章基于模拟数据，梳理新能源汽车行业在宏观、政策与技术三个维度的催化与约束。宏观层面，国内零售渗透率自2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行但存在月度回撤；出口量自2021年的30万辆增至2025年的220万辆，成为总量增长的第二极。政策与技术层面，本章未获得可核验的政策事件、技术趋势或具体催化数据，仅能基于行业结构定位与财务比率给出定性判断与监测框架，并明确标注证据缺口。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[6]",
+      "claim": "55.0%",
+      "metric": null,
+      "entity": "国内零售渗透率自",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "【宏观、政策与技术催化】本章基于模拟数据，梳理新能源汽车行业在宏观、政策与技术三个维度的催化与约束。宏观层面，国内零售渗透率自2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行但存在月度回撤；出口量自2021年的30万辆增至2025年的220万辆，成为总量增长的第二极。政策与技术层面，本章未获得可核验的政策事件、技术趋势或具体催化数据，仅能基于行业结构定位与财务比率给出定性判断与监测框架，并明确标注证据缺口。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[6]",
+      "claim": "30万辆",
+      "metric": "nev_exports",
+      "entity": "出口量自",
+      "year": 2021,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "【宏观、政策与技术催化】本章基于模拟数据，梳理新能源汽车行业在宏观、政策与技术三个维度的催化与约束。宏观层面，国内零售渗透率自2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行但存在月度回撤；出口量自2021年的30万辆增至2025年的220万辆，成为总量增长的第二极。政策与技术层面，本章未获得可核验的政策事件、技术趋势或具体催化数据，仅能基于行业结构定位与财务比率给出定性判断与监测框架，并明确标注证据缺口。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[6]",
+      "claim": "220万辆",
+      "metric": "nev_exports",
+      "entity": "出口量自",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12",
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "【宏观、政策与技术催化】本章基于模拟数据，梳理新能源汽车行业在宏观、政策与技术三个维度的催化与约束。宏观层面，国内零售渗透率自2021年12月的21.0%升至2025年12月的55.0%，呈台阶式上行但存在月度回撤；出口量自2021年的30万辆增至2025年的220万辆，成为总量增长的第二极。政策与技术层面，本章未获得可核验的政策事件、技术趋势或具体催化数据，仅能基于行业结构定位与财务比率给出定性判断与监测框架，并明确标注证据缺口。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[7]",
+      "claim": "30万辆",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2021,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "【情景、风险与研究结论】基于2021-2025年新能源汽车出口量模拟数据，本章构建基准、乐观、悲观三种情景，识别核心风险与反证条件，并汇总结论与适用边界。出口量从2021年30万辆增至2025年220万辆，年均复合增速约64.9%，但数据为模拟性质，样本结构有限，结论不可外推至整个产业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[7]",
+      "claim": "220万辆",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "【情景、风险与研究结论】基于2021-2025年新能源汽车出口量模拟数据，本章构建基准、乐观、悲观三种情景，识别核心风险与反证条件，并汇总结论与适用边界。出口量从2021年30万辆增至2025年220万辆，年均复合增速约64.9%，但数据为模拟性质，样本结构有限，结论不可外推至整个产业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "unsupported_quantity",
+      "severity": "error",
+      "location": "summary.conclusions[7]",
+      "claim": "64.9%",
+      "metric": "nev_exports",
+      "entity": "出口量从",
+      "year": 2025,
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "suggestion": "补充同实体、同指标定义、同期间和单位的证据；否则从草稿删除该断言。",
+      "original": "【情景、风险与研究结论】基于2021-2025年新能源汽车出口量模拟数据，本章构建基准、乐观、悲观三种情景，识别核心风险与反证条件，并汇总结论与适用边界。出口量从2021年30万辆增至2025年220万辆，年均复合增速约64.9%，但数据为模拟性质，样本结构有限，结论不可外推至整个产业。",
+      "disposition": "isolated"
+    },
+    {
+      "code": "chart_contract",
+      "severity": "error",
+      "location": "SIM-C-01",
+      "evidence_ids": [],
+      "suggestion": "修正图表语义契约后重新生成"
+    },
+    {
+      "code": "chart_contract",
+      "severity": "error",
+      "location": "SIM-C-02",
+      "evidence_ids": [],
+      "suggestion": "修正图表语义契约后重新生成"
+    },
+    {
+      "code": "chart_contract",
+      "severity": "error",
+      "location": "SIM-C-03",
+      "evidence_ids": [],
+      "suggestion": "修正图表语义契约后重新生成"
+    },
+    {
+      "code": "chart_contract",
+      "severity": "error",
+      "location": "SIM-C-04",
+      "evidence_ids": [],
+      "suggestion": "修正图表语义契约后重新生成"
+    },
+    {
+      "code": "chart_contract",
+      "severity": "error",
+      "location": "SIM-C-05",
+      "evidence_ids": [],
+      "suggestion": "修正图表语义契约后重新生成"
+    },
+    {
+      "code": "chart_contract",
+      "severity": "error",
+      "location": "SIM-C-06",
+      "evidence_ids": [],
+      "suggestion": "修正图表语义契约后重新生成"
+    },
+    {
+      "code": "chart_contract",
+      "severity": "error",
+      "location": "SIM-C-07",
+      "evidence_ids": [],
+      "suggestion": "修正图表语义契约后重新生成"
+    },
+    {
+      "code": "delivery_rule",
+      "severity": "error",
+      "location": "report",
+      "claim": "章节包含未通过质量核验的内容或兜底稿，仅提供受限草稿",
+      "evidence_ids": [],
+      "suggestion": "解决质量问题后重新融合"
+    }
+  ]
+}

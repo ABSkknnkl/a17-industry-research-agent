@@ -1,0 +1,775 @@
+<html lang="zh-CN"><head>
+<style>
+:root{
+  --brand:#0A5C5C;
+  --red:#C0392B;
+  --green:#4C8C2B;
+  --muted:#595959;
+  --grid:#dfe3e8;
+  --rule:#595959;
+  --h2-size:16pt;
+  --h3-size:12pt;
+  --body-lh:1.38;
+  --section-margin:5mm;
+}
+@font-face{font-family:'ReportCJK';src:local('PingFang SC'),local('Microsoft YaHei'),local('Noto Sans CJK SC'),local('Source Han Sans SC'),local('SimHei');font-weight:400;font-style:normal;}
+@font-face{font-family:'ReportCJK';src:local('PingFang SC Semibold'),local('PingFang SC'),local('Microsoft YaHei Bold'),local('Noto Sans CJK SC Bold'),local('Source Han Sans SC Bold'),local('SimHei');font-weight:700;font-style:normal;}
+@page{size:A4 portrait;margin:20mm 15mm 18mm 15mm;}
+@page :first{margin:0;}
+
+
+
+
+
+
+
+*{box-sizing:border-box;}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+body{
+  margin:0;background:#fff;color:#000;
+  font-family:'ReportCJK','Times New Roman',serif;
+  font-size:10.4pt;line-height:1.38;font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+.report{width:210mm;margin:24px auto;background:#fff;box-shadow:0 2px 18px rgba(0,0,0,.08);}
+.content{padding:20mm 15mm 18mm;}
+@media screen{body{background:#eef1f3;}}
+@media print{
+  body{background:#fff;}
+  .report{width:auto;margin:0;box-shadow:none;}
+  .content{padding:0;}
+}
+h1,h2,h3,h4{margin:0;font-weight:700;}
+h2{font-size:var(--h2-size);color:var(--brand);line-height:1.3;margin:9mm 0 5mm;padding-bottom:2mm;border-bottom:.5pt solid var(--brand);break-after:avoid;page-break-after:avoid;}
+h3{font-size:var(--h3-size);color:var(--brand);line-height:1.35;margin:5mm 0 2.5mm;break-after:avoid;page-break-after:avoid;}
+p{margin:0 0 3mm 0;text-align:left;text-indent:0;orphans:3;widows:3;}
+ul,ol{margin:2mm 0 3mm 6mm;padding:0;}
+li{margin:1.2mm 0;line-height:1.42;}
+b,strong{font-weight:700;}
+sup.cite{font-family:'Times New Roman',serif;font-size:7.2pt;color:var(--brand);margin-left:.4mm;line-height:0;vertical-align:super;}
+.cite{font-family:'Times New Roman',serif;font-size:7.2pt;color:var(--brand);}
+.neg{color:inherit;}
+
+/* ===== 封面：白底、品牌色带、信息密集 ===== */
+.cover{
+  width:210mm;height:297mm;padding:20mm 15mm 18mm;background:#fff;
+  display:flex;flex-direction:column;overflow:hidden;
+  break-after:page;page-break-after:always;
+}
+.cover-brandbar{
+  height:7mm;background:var(--brand);color:#fff;display:flex;align-items:center;
+  padding:0 3mm;font-size:8.4pt;font-weight:700;letter-spacing:.1em;
+}
+.cover-brandbar .right{margin-left:auto;font-weight:400;letter-spacing:.04em;}
+.cover-rule{height:1.2mm;background:var(--brand);margin:2mm 0 8mm;}
+.cover-eyebrow{font-size:10.5pt;color:var(--muted);letter-spacing:.2em;margin-bottom:3.5mm;}
+.cover-meta{
+  display:flex;justify-content:space-between;font-size:9.8pt;color:var(--muted);
+  border-bottom:.5pt solid var(--grid);padding-bottom:2.5mm;margin-bottom:12mm;
+}
+.cover-meta .left{font-weight:700;color:var(--brand);}
+.cover h1{font-size:26pt;font-weight:700;line-height:1.24;color:#000;margin:0 0 4mm;}
+.cover .sub{
+  font-size:11.5pt;color:var(--muted);line-height:1.5;
+  border-bottom:1.5pt solid var(--brand);padding-bottom:4mm;margin-bottom:8mm;
+}
+.cover-thesis{
+  font-size:10.5pt;color:var(--muted);line-height:1.45;
+  border-left:3pt solid var(--brand);padding-left:4mm;margin:0 0 8mm;
+}
+.cover-hero-band{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6mm;margin:0 0 9mm;}
+.hero-fact{border-top:2pt solid var(--brand);padding-top:2.5mm;min-width:0;}
+.hf-value{display:block;font-size:21pt;font-weight:700;line-height:1.12;color:var(--brand);}
+.hf-value .u{font-size:10.5pt;font-weight:700;margin-left:1mm;}
+.hf-label{display:block;font-size:9.6pt;font-weight:700;color:#000;margin-top:1.8mm;}
+.hf-entity{display:block;font-size:8.6pt;color:var(--muted);margin-top:.7mm;}
+.cover-info{margin-top:auto;}
+.cover-info h3{font-size:9.6pt;font-weight:700;color:var(--brand);letter-spacing:.14em;margin:0 0 3mm;}
+.cover-info-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3mm 8mm;
+  border-top:.5pt solid var(--grid);padding-top:3.5mm;
+}
+.meta-row{display:flex;flex-direction:column;margin:0;}
+.meta-row .k{display:block;color:var(--muted);font-size:8.4pt;margin-bottom:.5mm;}
+.meta-row .v{display:block;color:#000;font-size:9.4pt;}
+.cover-disclosure{
+  font-size:7.8pt;color:var(--muted);line-height:1.45;
+  border-top:.5pt solid var(--grid);padding-top:3mm;margin-top:7mm;
+}
+
+/* ===== 目录：20pt 品牌色标题、点线 leader、右对齐页码 ===== */
+.toc-page{break-after:page;page-break-after:always;}
+.toc-page .page-title{
+  font-size:20pt;font-weight:700;color:var(--brand);line-height:1.2;
+  margin:0 0 2.5mm;padding-bottom:2.5mm;border-bottom:2pt solid var(--brand);
+}
+.toc-subtitle{font-size:9.2pt;color:var(--muted);margin:0 0 3mm;}
+.toc-head{
+  display:flex;align-items:baseline;font-size:7.2pt;font-weight:700;letter-spacing:.16em;
+  color:var(--muted);border-bottom:.5pt solid var(--grid);padding-bottom:.6mm;margin-bottom:.8mm;
+}
+.toc-head .leader{flex:1;}
+.toc-block{margin-top:2mm;}
+.toc-block h4{
+  font-size:7.8pt;font-weight:700;color:var(--brand);letter-spacing:.14em;
+  margin:2.2mm 0 .5mm;
+}
+.toc-item{
+  display:flex;align-items:baseline;font-size:9.9pt;font-weight:700;
+  line-height:1.22;margin:.55mm 0;
+}
+.toc-item .t{white-space:nowrap;}
+.toc-item .n{color:var(--brand);font-weight:700;}
+.toc-item .leader{
+  flex:1;border-bottom:1.2pt dotted var(--muted);margin:0 2.5mm;min-width:7mm;
+  transform:translateY(-.8mm);
+}
+.toc-item .pg{
+  min-width:8mm;text-align:right;font-family:'Times New Roman',serif;
+  font-size:8.3pt;color:var(--muted);font-variant-numeric:tabular-nums;
+}
+.toc-item.level2{
+  padding-left:7mm;font-size:8.4pt;font-weight:400;color:var(--muted);
+  margin:.25mm 0;line-height:1.2;
+}
+.toc-item.level2 .pg{font-size:8pt;}
+
+/* ===== 章节：品牌色编号 + 16pt 标题 + .5pt 横线 ===== */
+.chapter,.appendix{break-before:page;page-break-before:always;}
+.chapter-head{
+  display:flex;align-items:baseline;gap:4mm;padding-bottom:2mm;
+  border-bottom:.5pt solid var(--brand);margin-bottom:4mm;
+  break-after:avoid;page-break-after:avoid;
+}
+.chapter-head h2{
+  font-size:var(--h2-size);color:var(--brand);line-height:1.3;
+  margin:0;padding:0;border:0;
+}
+.chapter-number{color:var(--brand);font-size:var(--h2-size);font-weight:700;flex:0 0 auto;}
+.chapter-label{color:var(--brand);font-size:var(--h2-size);font-weight:700;flex:0 0 auto;}
+.chapter-question{
+  font-size:10.4pt;color:var(--muted);line-height:1.45;
+  border-left:3pt solid var(--brand);padding:1mm 0 1mm 4mm;margin:0 0 5mm;
+  break-inside:avoid;
+}
+h3 .num{color:var(--brand);font-size:9pt;font-weight:700;margin-right:2.2mm;}
+
+/* ===== 执行摘要：12.5pt headline + 品牌色结论编号 ===== */
+.exec-page{break-after:page;page-break-after:always;}
+.exec-page .page-title{
+  font-size:16pt;font-weight:700;color:var(--brand);line-height:1.3;
+  margin:0 0 4mm;padding-bottom:2mm;border-bottom:.5pt solid var(--brand);
+}
+.lead{font-size:11.5pt;line-height:1.5;color:#000;margin:0 0 4mm;}
+.conclusion{
+  display:grid;grid-template-columns:12mm minmax(0,1fr);gap:3mm;
+  padding:3mm 0;border-top:.5pt solid var(--grid);break-inside:avoid;
+}
+.conclusion .n{font-size:18pt;font-weight:700;color:var(--brand);line-height:1;margin-top:.5mm;}
+.claim{font-size:11pt;font-weight:700;line-height:1.4;margin:0 0 1mm;}
+.ev,.im{font-size:10.4pt;line-height:1.38;margin:.6mm 0 0;}
+.ev b,.im b{color:var(--brand);font-weight:700;}
+
+/* ===== 提示框：无底色，左侧 3pt 色条 ===== */
+.callout{
+  background:#fff;border-left:3pt solid var(--brand);padding:1mm 0 1mm 4mm;
+  margin:3mm 0;color:var(--muted);break-inside:avoid;
+}
+.callout .label{
+  font-size:9pt;font-weight:700;color:var(--brand);letter-spacing:.1em;
+  margin:0 0 1mm;
+}
+.callout p{color:var(--muted);margin:0;font-size:10.2pt;line-height:1.42;}
+.callout.warn{border-left-color:var(--red);}
+.callout.warn .label{color:var(--red);}
+
+/* ===== 图表：无卡片、顶线、图题在上、来源/注在下 ===== */
+figure.chart{
+  margin:4mm 0 6mm;padding:2mm 0 0;border-top:1pt solid var(--rule);
+  background:#fff;break-inside:avoid;page-break-inside:avoid;
+}
+.figure-heading{font-size:10.4pt;font-weight:700;line-height:1.34;margin:0 0 1.5mm;}
+figure.chart img{width:100%;height:auto;max-height:104mm;object-fit:contain;display:block;}
+figure.chart figcaption{margin:1.5mm 0 0;color:var(--muted);font-size:8.5pt;line-height:1.42;}
+figure.chart figcaption b{color:var(--rule);font-weight:700;}
+
+/* ===== 表格：品牌色表头 + 全网格细线 ===== */
+table.data-table{
+  width:100%;border-collapse:collapse;font-size:9.2pt;line-height:1.3;
+  margin:3mm 0 2mm;break-inside:auto;
+}
+table.data-table:not(.long-table){break-inside:avoid;page-break-inside:avoid;}
+table.data-table th,table.data-table td{
+  border:.5pt solid var(--rule);padding:1.5mm 2mm;text-align:left!important;
+  vertical-align:top;background:#fff;
+}
+table.data-table th{background:var(--brand)!important;color:#fff!important;font-weight:700;}
+table.data-table tbody tr{break-inside:avoid;page-break-inside:avoid;}
+table.data-table caption{
+  caption-side:top;text-align:left;font-weight:700;font-size:10.4pt;
+  margin:0 0 1.5mm;break-after:avoid;page-break-after:avoid;
+}
+table.data-table td.neg,table.data-table .neg{color:inherit!important;}
+.sample-table{font-size:8.4pt;table-layout:fixed;}
+.q-index{font-size:8.2pt;table-layout:fixed;}
+.q-index th,.q-index td{padding:1.2mm 2mm;}
+.small-table{font-size:8.4pt;}
+.tiny-table{font-size:7.4pt;}
+.text-table{font-size:8.2pt;}
+.long-table{break-inside:auto;break-before:page;page-break-before:always;}
+.long-table thead{display:table-header-group;}
+.table-source{font-size:8.2pt;line-height:1.45;color:var(--muted);margin:1mm 0 0;}
+.table-source b{color:var(--rule);}
+
+/* ===== 其他 ===== */
+.two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8mm;margin:3mm 0;}
+.two-col > div{min-width:0;}
+.steps{counter-reset:step;list-style:none;margin-left:0;padding-left:0;}
+.steps li{counter-increment:step;position:relative;padding-left:8mm;margin:2mm 0;line-height:1.42;}
+.steps li::before{content:counter(step);position:absolute;left:0;top:0;color:var(--brand);font-weight:700;}
+.plain{list-style:none;margin-left:0;padding-left:0;}
+.source-list{font-size:8pt;line-height:1.55;color:var(--muted);margin:2mm 0 0 5mm;padding:0;}
+.source-list li{margin-bottom:1.1mm;}
+.url{font-family:'Times New Roman',serif;font-size:7pt;color:var(--muted);word-break:break-all;}
+
+
+
+code{font-family:'Times New Roman',serif;font-size:8.2pt;color:#595959;letter-spacing:0;}
+ul.q-list{margin:2mm 0 3mm 5mm;padding:0;}
+ul.q-list li{margin:1.4mm 0;line-height:1.42;}
+.hf-value.compact{font-size:18pt;}
+.new-page{break-before:page;}
+.chapter-head h2{max-width:none;}
+figure.chart img{max-height:100mm;}
+
+
+.a3-panel svg{display:block;width:100%;height:auto}
+.a3-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2mm}
+.toc-item a.t{color:inherit;text-decoration:underline;text-underline-offset:2px}
+@media screen{
+  #a3-fig8 .a3-panel{overflow-x:auto}
+  #a3-fig8 svg{min-width:960px}
+}
+@media screen and (max-width:800px){
+  .report,.cover{width:100%;margin:0}
+  .cover{height:auto;min-height:0;padding:24px 16px}
+  .content{padding:24px 16px}
+  .a3-pair{grid-template-columns:1fr}
+}
+
+/* P2 结构化模板增量规则 */
+.toc-list{list-style:none;margin:0;padding:0;}
+.toc-item a{color:inherit;text-decoration:none;}
+.panorama{break-before:page;page-break-before:always;break-inside:avoid;}
+.panorama svg{display:block;width:100%;height:auto;max-height:170mm;}
+.a3-panel svg{display:block;width:100%;height:auto;}
+@media screen{
+  .panorama .a3-panel{overflow-x:auto;}
+  .panorama svg{min-width:960px;max-height:none;}
+}
+@media print{
+  .panorama .a3-panel{overflow:visible;}
+  .panorama svg{min-width:0;}
+}
+.outline-anchor{color:inherit;text-decoration:none;}
+.chart-caption-scope{color:var(--muted);font-size:8.5pt;margin-top:1mm;}
+/* 章末孤页：让最后两个块尽量跟随前文，避免一行正文独占整页 */
+.callout{break-before:avoid;page-break-before:avoid;}
+.chapter>*:last-child,.chapter>*:nth-last-child(2){break-before:avoid;page-break-before:avoid;}
+
+</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>新能源汽车行业研究报告｜2021—2025</title>
+
+
+
+
+</head>
+<body data-delivery-status="ready" class="visual-deep-research density-detailed profile-modern_analysis table-header-solid report-mode-comprehensive archetype-data-led" data-chart-mode="auto" data-template-source="ths-broker-report">
+<div class="report">
+<!-- ================= 封面 ================= -->
+<section class="cover" id="cover">
+  <div class="cover-brandbar"><span>同花顺 iFinD · 行业研究</span><span class="right">A5 优化版式</span></div>
+  <div class="cover-rule"></div>
+  <div class="cover-eyebrow">行业深度研究 · 新能源汽车</div>
+  <div class="cover-meta"><span class="left">深度版</span><span>研究基准日 2026-11-13</span></div>
+  <h1>销量的胜利，<br>现金流的考试</h1>
+  <div class="sub">2021—2025年中国新能源汽车销量、渗透率、出口与整车/电池利润分化</div>
+  <div class="cover-thesis"><b>核心判断：</b>渗透率仍在上升，但增长红利已不再平均分配。2025年整车三强营收都还在增长，现金流却先分化；电池龙头的利润与现金转化更稳，但“电池一定比整车赚钱”是一个被组内差异掩盖的伪结论。</div>
+  <div class="cover-hero-band">
+    <div class="hero-fact"><span class="hf-value">1,649.0<span class="u">万辆</span></span><span class="hf-label">2025年新能源汽车销量</span><span class="hf-entity">2021—2025年复合增速约47.1%</span></div>
+    <div class="hero-fact"><span class="hf-value">59.1<span class="u">%</span></span><span class="hf-label">2025年12月零售渗透率</span><span class="hf-entity">2021年2月为8.1%</span></div>
+    <div class="hero-fact"><span class="hf-value">258.43<span class="u">万辆</span></span><span class="hf-label">2025年新能源汽车出口</span><span class="hf-entity">同比 +102.8% / 占销量15.7%</span></div>
+    <div class="hero-fact"><span class="hf-value compact">0.45—4.85<span class="u">倍</span></span><span class="hf-label">2025年OCF/NP区间</span><span class="hf-entity">长安最低 / 赛力斯最高</span></div>
+  </div>
+  <div class="cover-info">
+    <h3>报告信息</h3>
+    <div class="cover-info-grid">
+      <div class="meta-row"><span class="k">研究主题</span><span class="v">新能源汽车销量、出海与利润分化</span></div>
+      <div class="meta-row"><span class="k">研究时点</span><span class="v">2026-11-13</span></div>
+      <div class="meta-row"><span class="k">报告编号</span><span class="v">NEV-2025-01</span></div>
+      <div class="meta-row"><span class="k">样本构成</span><span class="v">比亚迪 · 长安汽车 · 赛力斯 / 宁德时代 · 亿纬锂能</span></div>
+      <div class="meta-row"><span class="k">数据口径</span><span class="v">2023—2025年报 · 合并报表 · 人民币；宏观2021—2025</span></div>
+      <div class="meta-row"><span class="k">发布状态</span><span class="v">优化版式样例</span></div>
+    </div>
+    <p class="cover-disclosure">本报告基于上游数据与公开年报整理，仅供研究与信息交流，不构成投资建议。报告不载“证券研究报告”字样、分析师登记编码、投资评级或目标价。</p>
+  </div>
+</section>
+
+<main class="content">
+
+<!-- ================= 目录 ================= -->
+<section class="toc-page" id="toc">
+<h2 class="page-title">目录</h2>
+<p class="toc-subtitle">共 5 章 · 收录图表 8 张 · 数据表 7 张 · 研究基准日 2026-11-13</p>
+<div class="toc-block"><div class="toc-head"><span>章节</span><span class="leader"></span><span class="pg">页码</span></div><ul class="toc-list"><li class="toc-item" data-key="exec"><span class="t"><a href="#exec">执行摘要</a></span><span class="leader"></span><span class="pg" data-key="exec">3</span></li><li class="toc-item" data-key="ch1"><span class="t"><a href="#ch1">第1章 研究范围、数据口径与结论边界</a></span><span class="leader"></span><span class="pg" data-key="ch1">4</span></li><li class="toc-item level2" data-key="sec11"><span class="t"><a href="#sec11">1.1研究问题</a></span><span class="leader"></span><span class="pg" data-key="sec11">4</span></li><li class="toc-item level2" data-key="sec12"><span class="t"><a href="#sec12">1.2样本与数据</a></span><span class="leader"></span><span class="pg" data-key="sec12">4</span></li><li class="toc-item level2" data-key="sec13"><span class="t"><a href="#sec13">1.3六条口径声明</a></span><span class="leader"></span><span class="pg" data-key="sec13">4</span></li><li class="toc-item level2" data-key="sec14"><span class="t"><a href="#sec14">1.4研究问题与结论索引</a></span><span class="leader"></span><span class="pg" data-key="sec14">5</span></li><li class="toc-item" data-key="ch2"><span class="t"><a href="#ch2">第2章 需求：销量、渗透率与出口</a></span><span class="leader"></span><span class="pg" data-key="ch2">6</span></li><li class="toc-item level2" data-key="sec21"><span class="t"><a href="#sec21">2.1销量：增速降了，增量没降</a></span><span class="leader"></span><span class="pg" data-key="sec21">6</span></li><li class="toc-item level2" data-key="sec22"><span class="t"><a href="#sec22">2.2渗透率：台阶式上升，伴随季节性回撤</a></span><span class="leader"></span><span class="pg" data-key="sec22">7</span></li><li class="toc-item level2" data-key="sec23"><span class="t"><a href="#sec23">2.3出口：2025年的第二增长极</a></span><span class="leader"></span><span class="pg" data-key="sec23">7</span></li><li class="toc-item" data-key="ch3"><span class="t"><a href="#ch3">第3章 整车三强：营收、毛利率与现金流</a></span><span class="leader"></span><span class="pg" data-key="ch3">10</span></li><li class="toc-item level2" data-key="sec31"><span class="t"><a href="#sec31">3.1营收：三种增长曲线</a></span><span class="leader"></span><span class="pg" data-key="sec31">10</span></li><li class="toc-item level2" data-key="sec32"><span class="t"><a href="#sec32">3.2毛利率：规模不等于毛利</a></span><span class="leader"></span><span class="pg" data-key="sec32">11</span></li><li class="toc-item level2" data-key="sec33"><span class="t"><a href="#sec33">3.3现金流：利润还在，现金先分化</a></span><span class="leader"></span><span class="pg" data-key="sec33">11</span></li><li class="toc-item" data-key="ch4"><span class="t"><a href="#ch4">第4章 电池与整车：为什么必须分组</a></span><span class="leader"></span><span class="pg" data-key="ch4">13</span></li><li class="toc-item level2" data-key="sec41"><span class="t"><a href="#sec41">4.1分组理由：三种不同的生意</a></span><span class="leader"></span><span class="pg" data-key="sec41">13</span></li><li class="toc-item level2" data-key="sec42"><span class="t"><a href="#sec42">4.2研发强度：比亚迪最高，电池组更稳</a></span><span class="leader"></span><span class="pg" data-key="sec42">13</span></li><li class="toc-item level2" data-key="sec43"><span class="t"><a href="#sec43">4.3毛利率与现金流：组间差小，组内差大</a></span><span class="leader"></span><span class="pg" data-key="sec43">14</span></li><li class="toc-item level2" data-key="sec44"><span class="t"><a href="#sec44">4.4产业链结构：为什么分组比较</a></span><span class="leader"></span><span class="pg" data-key="sec44">14</span></li><li class="toc-item" data-key="ch5"><span class="t"><a href="#ch5">第5章 结论与跟踪指标</a></span><span class="leader"></span><span class="pg" data-key="ch5">16</span></li><li class="toc-item level2" data-key="sec51"><span class="t"><a href="#sec51">5.1五条结论</a></span><span class="leader"></span><span class="pg" data-key="sec51">16</span></li><li class="toc-item level2" data-key="sec52"><span class="t"><a href="#sec52">5.2跟踪指标</a></span><span class="leader"></span><span class="pg" data-key="sec52">16</span></li><li class="toc-item level2" data-key="sec53"><span class="t"><a href="#sec53">5.3结论强度与适用边界</a></span><span class="leader"></span><span class="pg" data-key="sec53">17</span></li><li class="toc-item level2" data-key="sec54"><span class="t"><a href="#sec54">5.4研究限制</a></span><span class="leader"></span><span class="pg" data-key="sec54">17</span></li><li class="toc-item level2" data-key="sec55"><span class="t"><a href="#sec55">5.5下一步取证清单</a></span><span class="leader"></span><span class="pg" data-key="sec55">17</span></li><li class="toc-item" data-key="appA"><span class="t"><a href="#appA">附录A 数据表与来源索引</a></span><span class="leader"></span><span class="pg" data-key="appA">18</span></li><li class="toc-item" data-key="appB"><span class="t"><a href="#appB">附录B 研究说明</a></span><span class="leader"></span><span class="pg" data-key="appB">20</span></li></ul></div>
+<div class="toc-block"><h4>图表目录</h4><div class="toc-head"><span>图表</span><span class="leader"></span><span class="pg">页码</span></div><ul class="toc-list"><li class="toc-item" data-key="fig1"><span class="t"><a href="#fig1">图1　销量：352.1→1,649.0万辆，增速降到28.2%</a></span><span class="leader"></span><span class="pg" data-key="fig1">6</span></li><li class="toc-item" data-key="fig2"><span class="t"><a href="#fig2">图2　渗透率：从8.1%到59.1%，不是一条直线</a></span><span class="leader"></span><span class="pg" data-key="fig2">7</span></li><li class="toc-item" data-key="fig3"><span class="t"><a href="#fig3">图3　出口：2025年翻倍，出口占销量15.7%</a></span><span class="leader"></span><span class="pg" data-key="fig3">8</span></li><li class="toc-item" data-key="fig4"><span class="t"><a href="#fig4">图4　营收指数（分组展示）</a></span><span class="leader"></span><span class="pg" data-key="fig4">10</span></li><li class="toc-item" data-key="fig5"><span class="t"><a href="#fig5">图5　合并报表毛利率（分组展示）</a></span><span class="leader"></span><span class="pg" data-key="fig5">11</span></li><li class="toc-item" data-key="fig6"><span class="t"><a href="#fig6">图6　经营现金流／归母净利润（分组展示）</a></span><span class="leader"></span><span class="pg" data-key="fig6">12</span></li><li class="toc-item" data-key="fig7"><span class="t"><a href="#fig7">图7　公司研发费用率（分组展示）</a></span><span class="leader"></span><span class="pg" data-key="fig7">13</span></li><li class="toc-item" data-key="fig8"><span class="t"><a href="#fig8">图8　新能源汽车产业链关系全景图</a></span><span class="leader"></span><span class="pg" data-key="fig8">15</span></li><li class="toc-item" data-key="tab1"><span class="t"><a href="#tab1">表1 2021—2025年销量、出口与年末渗透率</a></span><span class="leader"></span><span class="pg" data-key="tab1">9</span></li><li class="toc-item" data-key="tab2"><span class="t"><a href="#tab2">表2 2025年五家公司核心指标</a></span><span class="leader"></span><span class="pg" data-key="tab2">10</span></li><li class="toc-item" data-key="tab3"><span class="t"><a href="#tab3">表3 2025年整车组与电池组：组间平均与组内极差</a></span><span class="leader"></span><span class="pg" data-key="tab3">14</span></li><li class="toc-item" data-key="tab4"><span class="t"><a href="#tab4">表4 研究问题与结论索引</a></span><span class="leader"></span><span class="pg" data-key="tab4">5</span></li><li class="toc-item" data-key="tab5"><span class="t"><a href="#tab5">表5 结论强度与适用边界</a></span><span class="leader"></span><span class="pg" data-key="tab5">17</span></li><li class="toc-item" data-key="tabA1"><span class="t"><a href="#tabA1">表A1 2023—2025年五家公司财务底稿</a></span><span class="leader"></span><span class="pg" data-key="tabA1">18</span></li><li class="toc-item" data-key="tabA2"><span class="t"><a href="#tabA2">表A2 数据来源与证据索引</a></span><span class="leader"></span><span class="pg" data-key="tabA2">19</span></li></ul></div>
+</section>
+
+<!-- ================= 执行摘要 ================= -->
+<section class="exec-page" id="exec">
+  <h2 class="page-title">执行摘要</h2>
+
+  <p class="lead">2021—2025年，中国新能源汽车销量从352.1万辆增至1,649.0万辆，月度零售渗透率从2021年2月的8.1%升至2025年12月的59.1%，出口从34.88万辆增至258.43万辆<sup class="cite">[1]</sup>。但2025年的核心矛盾不是“需求还有没有”，而是“增长红利怎么分配”：整车三强营收都还在增长，毛利率和经营现金流却显著分化；电池龙头的利润率更高，组内差异也同样明显。本报告先拆需求，再拆整车财务，最后按产业链环节分组，避免把不同生意放在同一张榜上排名。</p>
+
+  <div class="conclusion">
+    <div class="n">01</div>
+    <div>
+      <div class="claim">销量增速从95.6%降到28.2%，但2025年绝对增量362.4万辆，是五年最大。</div>
+      <div class="ev"><b>证据：</b>2021—2025年销量分别为352.1、688.7、949.5、1,286.6、1,649.0万辆；2025年同比+28.2%，较2022年的+95.6%明显降速；但2025年绝对增量为362.4万辆，高于2024年的337.1万辆。同期零售渗透率从2021年2月的8.1%升至2025年12月的59.1%，出口258.43万辆、同比+102.8%、占销量15.7%<sup class="cite">[1]</sup>。</div>
+      <div class="im"><b>含义：</b>市场已从“翻倍扩张”进入“千万级增量”。增速下降不等于需求萎缩；出口成为第二增长极，但2025年翻倍有低基数与口径因素，不能直接读成海外终端需求翻倍。</div>
+    </div>
+  </div>
+
+  <div class="conclusion">
+    <div class="n">02</div>
+    <div>
+      <div class="claim">三家整车营收都增长，但增长质量不同：比亚迪平台期、长安低增速、赛力斯低基数后减速。</div>
+      <div class="ev"><b>证据：</b>2025年营业收入：比亚迪8,039.65亿元、同比+3.46%；长安汽车1,640.00亿元、同比+2.67%；赛力斯1,650.54亿元、同比+13.69%。以2023年为基期，两年累计变化分别为+33.5%、+8.4%、+360.5%；赛力斯2024年营收同比+305.0%，2025年回落到+13.7%<sup class="cite">[2]</sup>。</div>
+      <div class="im"><b>含义：</b>营收增速不能直接当竞争力。比亚迪是规模平台期，长安是低增速，赛力斯是低基数后的高位减速；三者处在不同的增长阶段。</div>
+    </div>
+  </div>
+
+  <div class="conclusion">
+    <div class="n">03</div>
+    <div>
+      <div class="claim">毛利率分化比营收更剧烈：赛力斯+18.76pct，比亚迪-2.47pct，长安-2.82pct。</div>
+      <div class="ev"><b>证据：</b>2025年毛利率：赛力斯29.14%、比亚迪17.74%、长安汽车15.54%；2023年分别为10.39%、20.21%、18.36%。两年变化：赛力斯+18.76个百分点，比亚迪-2.47个百分点，长安-2.82个百分点<sup class="cite">[2]</sup>。</div>
+      <div class="im"><b>含义：</b>毛利率是产品结构、价格带、规模与垂直整合的混合结果。比亚迪合并口径含电池与电子业务，长安、赛力斯是整车口径；三者的毛利率不能直接当作“谁更会赚钱”的排名。</div>
+    </div>
+  </div>
+
+  <div class="conclusion">
+    <div class="n">04</div>
+    <div>
+      <div class="claim">利润还在，现金先分化：比亚迪OCF -65.2%，长安-90.8%，赛力斯+351.9%。</div>
+      <div class="ev"><b>证据：</b>2025年经营现金流：比亚迪591.36亿元、长安汽车18.36亿元、赛力斯289.14亿元；较2023年分别-65.2%、-90.8%、+351.9%。OCF/归母净利分别为1.81、0.45、4.85倍；赛力斯2023年归母净利为负，2023年比率不适用<sup class="cite">[2]</sup>。</div>
+      <div class="im"><b>含义：</b>赛力斯4.85倍不能直接读成“现金质量最好”，需要拆应付、预收与存货；长安0.45倍说明利润的现金含量偏弱；比亚迪1.81倍仍高于1，但趋势在下降。当前数据只能做方向判断，不能做百分比归因。</div>
+    </div>
+  </div>
+
+  <div class="conclusion">
+    <div class="n">05</div>
+    <div>
+      <div class="claim">电池组与整车组平均毛利率只差0.41pct，但组内极差10.1—13.6pct；按环节分组，不跨组排名。</div>
+      <div class="ev"><b>证据：</b>2025年整车组等权平均毛利率20.81%（区间15.54%—29.14%），电池组21.22%（区间16.17%—26.27%）；研发强度：比亚迪7.21%、宁德时代5.23%、亿纬锂能4.89%、赛力斯4.82%、长安汽车4.36%。组间平均差很小，组内差异更大<sup class="cite">[2]</sup>。</div>
+      <div class="im"><b>含义：</b>分组是为了同口径比较，不是为了给“电池”或“整车”贴优劣标签。跨组只在讨论议价关系与利润池时使用，且必须标注合并范围与重复计算风险。</div>
+    </div>
+  </div>
+</section>
+<!-- ================= 第一章 ================= -->
+<section class="chapter" id="ch1">
+  <div class="chapter-head">
+    <span class="chapter-number">01</span>
+    <span class="chapter-label">第1章</span>
+    <h2>研究范围、数据口径与结论边界</h2>
+  </div>
+  <div class="chapter-question">本章回答：这四个问题分别需要什么数据？哪些数字可以直接比，哪些必须先分组、先拆口径？</div>
+
+  <div class="callout warn">
+    <div class="label">研究边界 · 先读这一段再看数字</div>
+    <p class="no-indent">① 销量是年度累计值，渗透率是月度零售口径；问题里的“月度口径”落在渗透率序列，不把年度销量拆成12个月。② 2021年1月渗透率原始无值，序列从2021年2月起共59个有效月份，不插值。③ 出口是年度出口量，2025年翻倍；未拆分整车出口与KD散件，不能直接等同海外终端销量。④ 公司财务为2023—2025年报、合并报表、人民币口径；比亚迪垂直整合含电池与电子业务，不是纯整车口径。⑤ 研发强度=研发费用/营业收入，未资本化；OCF/归母净利不是法定“净现比”，赛力斯2023年归母净利为负，比率不适用。⑥ 上游资源与材料、电机电控、充电/换电/回收本次未纳入样本，只做结构定位，不做公司排名。</p>
+  </div>
+
+  <h3 id="sec11"><span class="num">1.1</span>研究问题</h3>
+  <p>本报告严格对应选题文档中的四个问题。Q1是总问题，Q2、Q3是它的两个子问题，Q4是分组问题；章节顺序按“需求—整车—环节分组—结论”展开，避免先给判断、再找数据。</p>
+  <ul class="q-list">
+    <li><b>Q1　总量、整车与产业链：</b>2021—2025年中国新能源汽车销量及国内零售渗透率（月度口径）如何变化？请比较比亚迪、长安汽车和赛力斯在2023—2025年的营业收入、毛利率及经营现金流，并分析整车与动力电池产业链的主要关系，形成包含数据表、趋势图、产业链结构和证据来源的完整行业研究报告。</li>
+    <li><b>Q2　需求三变量：</b>2021—2025年中国新能源汽车销量、渗透率及出口量如何变化？</li>
+    <li><b>Q3　整车三强分化：</b>比亚迪、长安汽车、赛力斯2023—2025年的营收、毛利率及经营现金流如何分化？</li>
+    <li><b>Q4　电池与整车分组：</b>宁德时代、亿纬锂能与整车企业在研发强度、毛利率及现金流方面有何差异？为什么应按动力电池与整车环节分组分析？</li>
+  </ul>
+
+  <h3 id="sec12"><span class="num">1.2</span>样本与数据</h3>
+  <p>样本由五家公司构成：整车组为比亚迪（002594.SZ）、长安汽车（000625.SZ）、赛力斯（601127.SH）；电池组为宁德时代（300750.SZ）、亿纬锂能（300014.SZ）。选择标准不是“市值最大”，而是“与四个问题直接相关、2023—2025年报数据连续、能形成整车/电池两组对照”。五家之外，数据集里还有公司实体与新闻记录，但财务指标并未完整覆盖，因此本报告不做全行业排名。</p>
+  <p>数据底稿是A1运行批次<code>run-20261113193412-b1c2a06bc319</code>的<code>dataset.json</code>：共389条记录，financials 100条、macro 64条、industry 52条、industry_chain 92条、sources 57条、conflicts 0；研究基准日2026-11-13。五家公司各3个年度、6个核心指标，财务记录均为<code>annual</code>；月度渗透率59个唯一月份，2021-02至2025-12<sup class="cite">[1]</sup>。</p>
+  <p>口径校验做了三件事。第一，只取<code>period_type=annual</code>且<code>period_end</code>为2023/2024/2025年末的财务记录，剔除industry中2026-09-30的<code>ytd_q3</code>记录，避免把2026年前三季度混进三年年报。第二，A3基准六图中，C1—C4可直接对账；C5只覆盖2025-03至2025-12共10个月，本报告用A1的59个月重建完整渗透率图；C6只含三家整车、且主营构成记录的期间字段为unknown，不能当2025年度结构表，因此只保留定性产业链图，不引用其百分比<sup class="cite">[3]</sup>。第三，A3基准与A2解读报告只用于结构框架和交叉核对；A2早期“月度仅覆盖10个月”的警告已被A1补采后的59个月数据覆盖，报告以A1原始记录为准<sup class="cite">[4]</sup>。</p>
+
+  <h3 id="sec13"><span class="num">1.3</span>六条口径声明</h3>
+  <p><b>第一条，年度与月度不能混。</b>销量是年度累计值，渗透率是月度零售值。把1,649.0万辆平均切成12个月，会得到一个不存在的“月均137.4万辆”；把渗透率当成年度销量占比，也会把零售口径与批发口径混在一起。本报告的月度分析只用于渗透率，年度分析用于销量与出口。</p>
+  <p><b>第二条，缺失值不插值。</b>2021年1月渗透率原始无值，序列从2021年2月的8.1%开始；2021年全年只有11个有效月份。报告在图表与表中明确标注“2021-01无值”，不用线性插值补一个看起来完整的起点。</p>
+  <p><b>第三条，出口不等于海外零售。</b>出口量是报告期内从中国口岸出口的新能源汽车数量，可能包含整车、KD散件与贸易商库存；海外终端销量还受当地注册、渠道库存与政策影响。2025年出口同比+102.8%，报告只把它读成“出口成为第二增长极”，不读成“海外需求翻倍”。</p>
+  <p><b>第四条，合并口径不是业务口径。</b>比亚迪的合并报表同时包含整车、电池、电子与零部件，长安与赛力斯是整车为主，宁德与亿纬是电池为主。把五家放在同一张毛利率图上，只能看“报表毛利率的分布”，不能直接说“电池比整车更赚钱”。第4章会给出分组后的对照。</p>
+  <p><b>第五条，比率要有适用条件。</b>研发强度用“研发费用/营业收入”，不是研发投入强度，也不含资本化；OCF/归母净利用“经营活动现金流净额/归母净利润”，不是法律或准则定义的“净现比”。赛力斯2023年归母净利为-24.50亿元，OCF/NP为负值且不具可比含义，报告从2024年起才展示该比率。</p>
+  <p><b>第六条，样本边界要写进结论。</b>上游锂、钴、镍与四大材料，中游电机电控、功率半导体，下游充电、换电、电池回收，均未纳入本次样本。报告只在中游电池组与下游整车组内部做同环节比较；跨组只在“议价关系与利润池”这一层做方向性讨论，不做公司排名，也不补写未取证的上游代表企业。</p>
+
+  <h3 id="sec14"><span class="num">1.4</span>研究问题与结论索引</h3>
+  <p>下表是“答题卡”：每个问题对应一句话结论与详细章节。数字的完整表格、证据record_id与来源索引见附录A。</p>
+
+  <table id="tab4" class="data-table q-index">
+    <caption>表4　研究问题与结论索引</caption>
+    <colgroup><col style="width:52%"><col style="width:37%"><col style="width:11%"></colgroup>
+    <thead>
+      <tr><th>研究问题</th><th>一句话结论</th><th>详见</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><b>Q1</b>　2021—2025年销量及月度渗透率如何变化？比较比亚迪、长安、赛力斯2023—2025年营收、毛利率、经营现金流，并分析整车与动力电池产业链关系。</td><td>销量352.1→1,649.0万辆、月度渗透率2021-02的8.1%→2025-12的59.1%；三家整车营收均增长，毛利率与OCF显著分化；产业链利润向电池龙头倾斜，但比亚迪垂直整合使“整车/电池”边界不可简单相加。</td><td>第2、3、4章</td></tr>
+      <tr><td><b>Q2</b>　2021—2025年销量、渗透率及出口量如何变化？</td><td>销量复合增速47.1%、2025年降至28.2%；2025年末渗透率59.1%；出口258.43万辆、2025年+102.8%、占销量15.7%。</td><td>2.1—2.3</td></tr>
+      <tr><td><b>Q3</b>　比亚迪、长安、赛力斯2023—2025年营收、毛利率及经营现金流如何分化？</td><td>营收均增长但阶段不同；毛利率赛力斯+18.76pct、比亚迪-2.47pct、长安-2.82pct；OCF比亚迪-65.2%、长安-90.8%、赛力斯+351.9%。</td><td>3.1—3.3</td></tr>
+      <tr><td><b>Q4</b>　宁德时代、亿纬锂能与整车企业在研发强度、毛利率及现金流方面有何差异？为什么应按动力电池与整车环节分组？</td><td>2025年研发强度比亚迪7.21%、宁德5.23%、亿纬4.89%、赛力斯4.82%、长安4.36%；电池组毛利率均值21.22%、整车组20.81%，组间差0.41pct，组内极差10.1—13.6pct；应按环节分组、组内比较。</td><td>第4章</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>本报告计算，数据见附录A1；问题原文见用户选题文档。<b>注：</b>“pct”为百分点；OCF/NP为经营现金流/归母净利，赛力斯2023年归母净利为负，不计算该比率。</div>
+</section>
+
+<!-- ================= 第二章 ================= -->
+<section class="chapter" id="ch2">
+  <div class="chapter-head">
+    <span class="chapter-number">02</span>
+    <span class="chapter-label">第2章</span>
+    <h2>需求：销量、渗透率与出口</h2>
+  </div>
+  <div class="chapter-question">本章回答Q2：2021—2025年销量、渗透率、出口量各自怎么变？哪一个是趋势，哪一个只是年度波动？</div>
+
+  <p>需求端有三个变量，但它们的节奏并不一样：销量是年度总量，渗透率是月度零售占比，出口是年度外销数量。把三者放在一张表里可以看全貌，但不能用同一个“增速”去概括。本章先看总量，再看渗透率的月度路径，最后看出口这个第二增长极。</p>
+
+  <h3 id="sec21"><span class="num">2.1</span>销量：增速降了，增量没降</h3>
+  <p>2021—2025年销量分别为352.1、688.7、949.5、1,286.6、1,649.0万辆，四年复合增速约47.1%。年度同比从2022年的+95.6%，降到2023年的+37.9%、2024年的+35.5%、2025年的+28.2%<sup class="cite">[1]</sup>。单看增速，这是一条明显的降速曲线；单看绝对增量，2025年却比前四年都大：2025年增加362.4万辆，2024年增加337.1万辆，2023年增加260.8万辆，2022年增加336.6万辆。</p>
+
+  <p>这两个事实并不矛盾。基数越大，同样的绝对增量对应的增速越低；2025年的362.4万辆增量说明市场仍在扩张，只是从“翻倍式扩张”进入“千万级增量”。对企业的含义也不同：在翻倍阶段，产能与渠道扩张能带来普遍增长；在千万级增量阶段，增量会向有产品周期、价格带覆盖和出口能力的公司集中。</p>
+
+  <figure class="chart a3-chart" id="fig1"><div class="figure-heading">图1　销量：352.1→1,649.0万辆，增速降到28.2%</div><div class="a3-panel" role="img" aria-label="年度销量与同比"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">年度销量与同比</text><text x="912" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2021-12-31 至 2025-12-31</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="440.0" text-anchor="end" font-size="11" fill="#667085">0</text><line x1="90" y1="377.7" x2="912" y2="377.7" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="381.7" text-anchor="end" font-size="11" fill="#667085">300</text><line x1="90" y1="319.3" x2="912" y2="319.3" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="323.3" text-anchor="end" font-size="11" fill="#667085">600</text><line x1="90" y1="261.0" x2="912" y2="261.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="265.0" text-anchor="end" font-size="11" fill="#667085">900</text><line x1="90" y1="202.7" x2="912" y2="202.7" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="206.7" text-anchor="end" font-size="11" fill="#667085">1200</text><line x1="90" y1="144.3" x2="912" y2="144.3" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="148.3" text-anchor="end" font-size="11" fill="#667085">1500</text><line x1="90" y1="86.0" x2="912" y2="86.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="90.0" text-anchor="end" font-size="11" fill="#667085">1800</text><text x="922" y="440.0" text-anchor="start" font-size="11" fill="#0f766e">0%</text><text x="922" y="370.0" text-anchor="start" font-size="11" fill="#0f766e">20%</text><text x="922" y="300.0" text-anchor="start" font-size="11" fill="#0f766e">40%</text><text x="922" y="230.0" text-anchor="start" font-size="11" fill="#0f766e">60%</text><text x="922" y="160.0" text-anchor="start" font-size="11" fill="#0f766e">80%</text><text x="922" y="90.0" text-anchor="start" font-size="11" fill="#0f766e">100%</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#475467" stroke-width="1.5"></line><rect x="537.5" y="48" width="10" height="10" rx="2" fill="#1F4E79"></rect><text x="555.5" y="57" font-size="10.5" font-weight="600" fill="#475467">新能源汽车 · 销量（左轴·万辆）</text><line x1="765.0" y1="53" x2="779.0" y2="53" stroke="#E8833A" stroke-width="2"></line><circle cx="772.0" cy="53" r="2.5" fill="white" stroke="#E8833A" stroke-width="1.5"></circle><text x="783.0" y="57" font-size="10.5" font-weight="600" fill="#475467">同比增速（右轴·%）</text><rect x="153.2" y="367.5" width="38.0" height="68.5" rx="3" fill="#1F4E79"></rect><text x="172.2" y="362.5" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">352.10</text><rect x="317.6" y="302.1" width="38.0" height="133.9" rx="3" fill="#1F4E79"></rect><text x="336.6" y="297.1" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">688.70</text><rect x="482.0" y="251.4" width="38.0" height="184.6" rx="3" fill="#1F4E79"></rect><text x="501.0" y="246.4" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">949.50</text><rect x="646.4" y="185.8" width="38.0" height="250.2" rx="3" fill="#1F4E79"></rect><text x="665.4" y="180.8" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">1286.60</text><rect x="810.8" y="115.4" width="38.0" height="320.6" rx="3" fill="#1F4E79"></rect><text x="829.8" y="110.4" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">1649.00</text><polyline points="336.6,101.4 501.0,303.5 665.4,311.7 829.8,337.4" fill="none" stroke="#E8833A" stroke-width="2.5"></polyline><circle cx="336.6" cy="101.4" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2.5"></circle><text x="336.6" y="93.4" text-anchor="middle" font-size="10" font-weight="700" fill="#E8833A" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">95.6%</text><circle cx="501.0" cy="303.5" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2.5"></circle><circle cx="665.4" cy="311.7" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2.5"></circle><circle cx="829.8" cy="337.4" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2.5"></circle><text x="829.8" y="329.4" text-anchor="middle" font-size="10" font-weight="700" fill="#E8833A" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">28.2%</text><text x="172.2" y="458" text-anchor="middle" font-size="12" fill="#475467">2021-12-31</text><text x="336.6" y="458" text-anchor="middle" font-size="12" fill="#475467">2022-12-31</text><text x="501.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="665.4" y="458" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="829.8" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="494" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text><text x="90" y="516" font-size="16" fill="#64748b">注：数据提示：部分时段/指标未公开披露，已按置空处理并断线，杜绝虚假插值。</text></svg></div><figcaption><b>资料来源：</b>智能体 A3 验收图表；数据来自本批 A1，并由 A2 证据索引复核。<b>注：</b>柱为销量，折线为同比。2021 年缺上年基期，同比留空。</figcaption></figure>
+
+  <p>把2025年的增量拆开看，362.4万辆相当于2021年全年销量的1.03倍。这不是“增速下降”可以概括的：市场每年仍在增加一个“2021年级别”的体量。真正变化的是竞争方式——从“有没有车卖”转向“谁能把增量变成利润和现金流”。这也是第3章要回答的问题。</p>
+
+  <h3 id="sec22"><span class="num">2.2</span>渗透率：台阶式上升，伴随季节性回撤</h3>
+  <p>零售渗透率从2021年2月的8.1%，升至2021年12月的22.6%、2022年12月的29.5%、2023年12月的40.2%、2024年12月的49.4%、2025年12月的59.1%<sup class="cite">[1]</sup>。以年末值看，2022—2025年的年度抬升分别为+6.9、+10.7、+9.2、+9.7个百分点；以2021年2月为起点，四年多上升51.0个百分点。</p>
+
+  <p>但月度路径不是一条直线。2022年12月29.5%，比2022年11月的36.3%低6.8个百分点；2023年1月25.7%，比2022年12月低3.8个百分点；2024年9月53.3%后连续回落至12月的49.4%；2025年1月41.5%，比2024年12月低7.9个百分点，随后2月回到49.5%、12月到59.1%。这些回撤大多出现在年初、政策切换或年末冲量之后，说明单月渗透率含季节性与政策扰动，不能把一次回撤读成趋势反转。</p>
+
+  <figure class="chart a3-chart" id="fig2"><div class="figure-heading">图2　渗透率：从8.1%到59.1%，不是一条直线</div><div class="a3-panel" role="img" aria-label="国内新能源乘用车零售渗透率"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">国内新能源乘用车零售渗透率</text><text x="912" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2021-02-28 至 2025-12-31</text><text x="912" y="56" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：%</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="440.0" text-anchor="end" font-size="11" fill="#667085">0</text><line x1="90" y1="348.5" x2="912" y2="348.5" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="352.5" text-anchor="end" font-size="11" fill="#667085">20</text><line x1="90" y1="261.0" x2="912" y2="261.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="265.0" text-anchor="end" font-size="11" fill="#667085">40</text><line x1="90" y1="173.5" x2="912" y2="173.5" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="177.5" text-anchor="end" font-size="11" fill="#667085">60</text><line x1="90" y1="86.0" x2="912" y2="86.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="90.0" text-anchor="end" font-size="11" fill="#667085">80</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#475467" stroke-width="1.5"></line><polygon points="97.0,436.0 97.0,400.6 110.9,390.1 124.8,391.8 138.8,386.1 152.7,374.8 166.6,371.2 180.6,361.2 194.5,343.7 208.4,353.8 222.4,345.0 236.3,337.1 250.2,363.4 264.2,340.6 278.1,312.6 292.0,317.0 305.9,319.6 319.9,316.1 333.8,319.2 347.7,312.2 361.7,296.9 375.6,303.9 389.5,277.2 403.5,306.9 417.4,323.6 431.3,297.8 445.3,286.4 459.2,294.7 473.1,290.3 487.1,282.4 501.0,278.1 514.9,272.8 528.9,274.6 542.8,270.6 556.7,259.2 570.7,260.1 584.6,292.5 598.5,279.4 612.5,254.0 626.4,244.8 640.3,230.4 654.3,224.2 668.2,212.4 682.1,200.2 696.1,202.8 710.0,204.6 723.9,207.2 737.8,219.9 751.8,254.4 765.7,219.4 779.6,212.4 793.6,210.7 807.5,204.6 821.4,202.8 835.4,199.8 849.3,194.5 863.2,183.1 877.2,185.8 891.1,176.6 905.0,177.4 905.0,436.0" fill="#1F4E79" fill-opacity="0.12"></polygon><polyline points="97.0,400.6 110.9,390.1 124.8,391.8 138.8,386.1 152.7,374.8 166.6,371.2 180.6,361.2 194.5,343.7 208.4,353.8 222.4,345.0 236.3,337.1 250.2,363.4 264.2,340.6 278.1,312.6 292.0,317.0 305.9,319.6 319.9,316.1 333.8,319.2 347.7,312.2 361.7,296.9 375.6,303.9 389.5,277.2 403.5,306.9 417.4,323.6 431.3,297.8 445.3,286.4 459.2,294.7 473.1,290.3 487.1,282.4 501.0,278.1 514.9,272.8 528.9,274.6 542.8,270.6 556.7,259.2 570.7,260.1 584.6,292.5 598.5,279.4 612.5,254.0 626.4,244.8 640.3,230.4 654.3,224.2 668.2,212.4 682.1,200.2 696.1,202.8 710.0,204.6 723.9,207.2 737.8,219.9 751.8,254.4 765.7,219.4 779.6,212.4 793.6,210.7 807.5,204.6 821.4,202.8 835.4,199.8 849.3,194.5 863.2,183.1 877.2,185.8 891.1,176.6 905.0,177.4" fill="none" stroke="#1F4E79" stroke-width="2.5"></polyline><circle cx="97.0" cy="400.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="97.0" y="392.6" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">8.10</text><circle cx="110.9" cy="390.1" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="124.8" cy="391.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="138.8" cy="386.1" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="152.7" cy="374.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="166.6" cy="371.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="180.6" cy="361.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="194.5" cy="343.7" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="208.4" cy="353.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="222.4" cy="345.0" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="236.3" cy="337.1" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="250.2" cy="363.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="264.2" cy="340.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="278.1" cy="312.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="292.0" cy="317.0" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="305.9" cy="319.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="319.9" cy="316.1" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="333.8" cy="319.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="347.7" cy="312.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="361.7" cy="296.9" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="375.6" cy="303.9" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="389.5" cy="277.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="403.5" cy="306.9" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="417.4" cy="323.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="431.3" cy="297.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="445.3" cy="286.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="459.2" cy="294.7" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="473.1" cy="290.3" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="487.1" cy="282.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="501.0" cy="278.1" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="514.9" cy="272.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="528.9" cy="274.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="542.8" cy="270.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="556.7" cy="259.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="570.7" cy="260.1" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="584.6" cy="292.5" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="598.5" cy="279.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="612.5" cy="254.0" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="626.4" cy="244.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="640.3" cy="230.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="654.3" cy="224.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="668.2" cy="212.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="682.1" cy="200.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="696.1" cy="202.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="710.0" cy="204.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="723.9" cy="207.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="737.8" cy="219.9" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="751.8" cy="254.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="765.7" cy="219.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="779.6" cy="212.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="793.6" cy="210.7" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="807.5" cy="204.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="821.4" cy="202.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="835.4" cy="199.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="849.3" cy="194.5" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="863.2" cy="183.1" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="877.2" cy="185.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="891.1" cy="176.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="905.0" cy="177.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="905.0" y="169.4" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">59.10</text><text x="97.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2021-02-28</text><text x="236.3" y="458" text-anchor="middle" font-size="12" fill="#475467">2021-12-31</text><text x="361.7" y="458" text-anchor="middle" font-size="12" fill="#475467">2022-09-30</text><text x="501.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2023-07-31</text><text x="640.3" y="458" text-anchor="middle" font-size="12" fill="#475467">2024-05-31</text><text x="765.7" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-02-28</text><text x="905.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="494" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text></svg></div><figcaption><b>资料来源：</b>智能体 A3 验收图表；数据来自本批 A1，并由 A2 证据索引复核。<b>注：</b>2021 年 2 月至 2025 年 12 月共 59 个实际月度值。2021 年 1 月缺值。</figcaption></figure>
+
+  <p>各年可得月份的均值更能看清台阶：2021年2—12月均值15.4%、2022年27.6%、2023年35.1%、2024年46.9%、2025年53.5%。2025年平均比2024年高6.7个百分点，但年末值高9.7个百分点，说明2025年的抬升更多发生在下半年。对企业的含义是：渗透率越高，增量越依赖“替换燃油车”而非“第一次购车”；产品定义、补能体验和价格带会比单纯的渠道扩张更重要。</p>
+
+  <h3 id="sec23"><span class="num">2.3</span>出口：2025年的第二增长极</h3>
+  <p>出口量从2021年的34.88万辆，增至2022年的67.50万辆、2023年的115.26万辆、2024年的127.44万辆、2025年的258.43万辆。2022—2025年同比分别为+93.5%、+70.8%、+10.6%、+102.8%<sup class="cite">[1]</sup>。2024年只增10.6%，2025年却翻倍，两年节奏差异极大。</p>
+
+  <p>出口占销量的比例，2021—2024年一直在9.8%—12.1%之间，2025年升至15.7%。2025年出口增量为131.0万辆，几乎等于2024年全年出口量（127.44万辆）。这说明出口不再是“边角料”，而是继国内渗透率之后第二个能影响总量的变量。</p>
+
+  <p>出口的读法要保守。第一，2024年+10.6%是低基数，2025年+102.8%是在低基数上的反弹，两年平均增速约50%，仍高但不如单看2025年夸张。第二，出口量不等于海外注册量，渠道库存、KD散件与贸易商采购都会造成时间差。第三，出口结构未在本次数据中拆分，无法判断增量来自整车还是散件、来自哪个区域。因此，报告只把出口列为“第二增长极”，不把它当成“国内需求见顶”的替代证据。</p>
+
+  <figure class="chart a3-chart" id="fig3"><div class="figure-heading">图3　出口：2025年翻倍，出口占销量15.7%</div><div class="a3-panel" role="img" aria-label="年度出口量与同比"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">年度出口量与同比</text><text x="912" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2021-12-31 至 2025-12-31</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="440.0" text-anchor="end" font-size="11" fill="#667085">0</text><line x1="90" y1="366.0" x2="912" y2="366.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="370.0" text-anchor="end" font-size="11" fill="#667085">60</text><line x1="90" y1="296.0" x2="912" y2="296.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="300.0" text-anchor="end" font-size="11" fill="#667085">120</text><line x1="90" y1="226.0" x2="912" y2="226.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="230.0" text-anchor="end" font-size="11" fill="#667085">180</text><line x1="90" y1="156.0" x2="912" y2="156.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="160.0" text-anchor="end" font-size="11" fill="#667085">240</text><line x1="90" y1="86.0" x2="912" y2="86.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="90.0" text-anchor="end" font-size="11" fill="#667085">300</text><text x="922" y="440.0" text-anchor="start" font-size="11" fill="#0f766e">0%</text><text x="922" y="352.5" text-anchor="start" font-size="11" fill="#0f766e">30%</text><text x="922" y="265.0" text-anchor="start" font-size="11" fill="#0f766e">60%</text><text x="922" y="177.5" text-anchor="start" font-size="11" fill="#0f766e">90%</text><text x="922" y="90.0" text-anchor="start" font-size="11" fill="#0f766e">120%</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#475467" stroke-width="1.5"></line><rect x="526.0" y="48" width="10" height="10" rx="2" fill="#1F4E79"></rect><text x="544.0" y="57" font-size="10.5" font-weight="600" fill="#475467">新能源汽车 · 出口量（左轴·万辆）</text><line x1="765.0" y1="53" x2="779.0" y2="53" stroke="#E8833A" stroke-width="2"></line><circle cx="772.0" cy="53" r="2.5" fill="white" stroke="#E8833A" stroke-width="1.5"></circle><text x="783.0" y="57" font-size="10.5" font-weight="600" fill="#475467">同比增速（右轴·%）</text><rect x="153.2" y="395.3" width="38.0" height="40.7" rx="3" fill="#1F4E79"></rect><text x="172.2" y="390.3" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">34.88</text><rect x="317.6" y="357.2" width="38.0" height="78.8" rx="3" fill="#1F4E79"></rect><text x="336.6" y="352.2" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">67.50</text><rect x="482.0" y="301.5" width="38.0" height="134.5" rx="3" fill="#1F4E79"></rect><text x="501.0" y="296.5" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">115.26</text><rect x="646.4" y="287.3" width="38.0" height="148.7" rx="3" fill="#1F4E79"></rect><text x="665.4" y="282.3" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">127.44</text><rect x="810.8" y="134.5" width="38.0" height="301.5" rx="3" fill="#1F4E79"></rect><text x="829.8" y="128.5" text-anchor="middle" font-size="10" font-weight="600" fill="#344054" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">258.43</text><polyline points="336.6,163.2 501.0,229.6 665.4,405.2 829.8,136.2" fill="none" stroke="#E8833A" stroke-width="2.5"></polyline><circle cx="336.6" cy="163.2" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2.5"></circle><circle cx="501.0" cy="229.6" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2.5"></circle><circle cx="665.4" cy="405.2" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2.5"></circle><text x="665.4" y="397.2" text-anchor="middle" font-size="10" font-weight="700" fill="#E8833A" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">10.6%</text><circle cx="829.8" cy="136.2" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2.5"></circle><text x="829.8" y="152.2" text-anchor="middle" font-size="10" font-weight="700" fill="#E8833A" style="paint-order:stroke fill;stroke:#ffffff;stroke-width:2.5px;stroke-linejoin:round;">102.8%</text><text x="172.2" y="458" text-anchor="middle" font-size="12" fill="#475467">2021-12-31</text><text x="336.6" y="458" text-anchor="middle" font-size="12" fill="#475467">2022-12-31</text><text x="501.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="665.4" y="458" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="829.8" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="494" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text><text x="90" y="516" font-size="16" fill="#64748b">注：数据提示：部分时段/指标未公开披露，已按置空处理并断线，杜绝虚假插值。</text></svg></div><figcaption><b>资料来源：</b>智能体 A3 验收图表；数据来自本批 A1，并由 A2 证据索引复核。<b>注：</b>柱为出口量，折线为同比。2021 年同比留空。出口未拆分整车与 KD 散件。</figcaption></figure>
+
+  <table id="tab1" class="data-table">
+    <caption>表1　2021—2025年销量、出口与年末渗透率</caption>
+    <colgroup><col style="width:9%"><col style="width:16%"><col style="width:13%"><col style="width:16%"><col style="width:13%"><col style="width:17%"><col style="width:16%"></colgroup>
+    <thead>
+      <tr><th>年度</th><th>销量<br>（万辆）</th><th>销量同比</th><th>出口<br>（万辆）</th><th>出口同比</th><th>年末渗透率</th><th>渗透率<br>同比变化</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>2021</td><td>352.1</td><td>—</td><td>34.88</td><td>—</td><td>22.6%</td><td>—</td></tr>
+      <tr><td>2022</td><td>688.7</td><td>+95.6%</td><td>67.50</td><td>+93.5%</td><td>29.5%</td><td>+6.9pct</td></tr>
+      <tr><td>2023</td><td>949.5</td><td>+37.9%</td><td>115.26</td><td>+70.8%</td><td>40.2%</td><td>+10.7pct</td></tr>
+      <tr><td>2024</td><td>1,286.6</td><td>+35.5%</td><td>127.44</td><td>+10.6%</td><td>49.4%</td><td>+9.2pct</td></tr>
+      <tr><td>2025</td><td>1,649.0</td><td>+28.2%</td><td>258.43</td><td>+102.8%</td><td>59.1%</td><td>+9.7pct</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>同花顺iFinD宏观库/行业库，A1数据集；查询日2026-11-13。<b>注：</b>年末渗透率取当年12月值；2021年1月无值，2021年12月为22.6%；“—”表示无上年基数或不适用。</div>
+
+  <div class="callout">
+    <div class="label">读表提示</div>
+    <ul class="q-list">
+      <li><b>销量看增量，不只看增速。</b>2025年增速28.2%低于2022年的95.6%，但绝对增量362.4万辆是五年最大；在千万辆量级上，28%仍是高增长。</li>
+      <li><b>出口看两年平均。</b>2025年+102.8%建立在2024年+10.6%的低基数上，两年平均约50%；单年翻倍不能直接外推为长期趋势。</li>
+      <li><b>渗透率固定口径。</b>年末值从22.6%升至59.1%，年均值从15.4%升至53.5%；两者不能混用，跨年比较必须注明是年末还是年均。</li>
+      <li><b>缺口不补。</b>2021年无同比基数，2021年1月渗透率原始无值；图表与表格不插值、不补0，避免制造一个看起来完整的起点。</li>
+    </ul>
+  </div>
+</section>
+<!-- ================= 第三章 ================= -->
+<section class="chapter" id="ch3">
+  <div class="chapter-head">
+    <span class="chapter-number">03</span>
+    <span class="chapter-label">第3章</span>
+    <h2>整车三强：营收、毛利率与现金流</h2>
+  </div>
+  <div class="chapter-question">本章回答Q3：比亚迪、长安汽车、赛力斯2023—2025年的营收、毛利率和经营现金流，究竟怎么分化？哪些差异能用报表解释，哪些只能先标记为待验证？</div>
+
+  <p>三家公司2025年营收都在增长，但三家公司的报表讲的是三个故事：比亚迪是“规模最大、增速最低、现金流下行”；长安是“低增长、利润与现金双弱”；赛力斯是“低基数高增、毛利率最高、现金转化最强，但需要拆营运资金”。先把2025年的核心指标放在一张表里，再逐项拆。</p>
+
+  <table id="tab2" class="data-table sample-table">
+    <caption>表2　2025年五家公司核心指标</caption>
+    <colgroup><col style="width:10%"><col style="width:8%"><col style="width:18%"><col style="width:10%"><col style="width:10%"><col style="width:12%"><col style="width:12%"><col style="width:10%"><col style="width:10%"></colgroup>
+    <thead>
+      <tr><th>公司</th><th>环节</th><th>营业收入<br>（亿元）</th><th>营收<br>同比</th><th>毛利率</th><th>归母净利<br>（亿元）</th><th>经营现金流<br>（亿元）</th><th>OCF/NP<br>（倍）</th><th>研发<br>强度</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>比亚迪</td><td>整车</td><td>8,039.65</td><td>+3.46%</td><td>17.74%</td><td>326.19</td><td>591.36</td><td>1.81</td><td>7.21%</td></tr>
+      <tr><td>长安汽车</td><td>整车</td><td>1,640.00</td><td>+2.67%</td><td>15.54%</td><td>40.75</td><td>18.36</td><td>0.45</td><td>4.36%</td></tr>
+      <tr><td>赛力斯</td><td>整车</td><td>1,650.54</td><td>+13.69%</td><td>29.14%</td><td>59.57</td><td>289.14</td><td>4.85</td><td>4.82%</td></tr>
+      <tr><td>宁德时代</td><td>电池</td><td>4,237.02</td><td>+17.04%</td><td>26.27%</td><td>722.01</td><td>1,332.20</td><td>1.85</td><td>5.23%</td></tr>
+      <tr><td>亿纬锂能</td><td>电池</td><td>614.70</td><td>+26.44%</td><td>16.17%</td><td>41.34</td><td>74.92</td><td>1.81</td><td>4.89%</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2025年年度报告，A1财务库交叉核对；查询日2026-11-13。<b>注：</b>均为合并报表、年度、人民币口径；OCF/NP=经营活动现金流净额/归母净利润；研发强度=研发费用/营业收入，未资本化。</div>
+
+  <h3 id="sec31"><span class="num">3.1</span>营收：三种增长曲线</h3>
+  <p>以2023年为100，2025年营收指数：比亚迪133.5、长安汽车108.4、赛力斯460.5；宁德时代105.7、亿纬锂能126.0<sup class="cite">[2]</sup>。三家整车的曲线形态完全不同：比亚迪在2024年跳到129.0后，2025年只走到133.5；长安从105.6走到108.4；赛力斯从405.0走到460.5，两年四倍多。</p>
+
+  <figure class="chart a3-chart" id="fig4"><div class="figure-heading">图4　营收指数（分组展示）</div><div class="a3-pair"><div class="a3-panel" role="img" aria-label="整车组 · 营收指数"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">整车组 · 营收指数</text><text x="888" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2023-12-31 至 2025-12-31</text><text x="888" y="56" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：指数</text><line x1="376.0" y1="66.0" x2="392.0" y2="66.0" stroke="#1F4E79" stroke-width="2.5"></line><circle cx="384.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="398.0" y="70.0" font-size="11" font-weight="600" fill="#344054">比亚迪</text><line x1="454.0" y1="66.0" x2="470.0" y2="66.0" stroke="#E8833A" stroke-width="2.5"></line><circle cx="462.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="476.0" y="70.0" font-size="11" font-weight="600" fill="#344054">长安汽车</text><line x1="544.0" y1="66.0" x2="560.0" y2="66.0" stroke="#D97706" stroke-width="2.5"></line><circle cx="552.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#D97706" stroke-width="2"></circle><text x="566.0" y="70.0" font-size="11" font-weight="600" fill="#344054">赛力斯</text><line x1="90" y1="436.0" x2="888" y2="436.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="440.0" text-anchor="end" font-size="11" fill="#667085">0</text><line x1="90" y1="367.2" x2="888" y2="367.2" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="371.2" text-anchor="end" font-size="11" fill="#667085">100</text><line x1="90" y1="298.4" x2="888" y2="298.4" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="302.4" text-anchor="end" font-size="11" fill="#667085">200</text><line x1="90" y1="229.6" x2="888" y2="229.6" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="233.6" text-anchor="end" font-size="11" fill="#667085">300</text><line x1="90" y1="160.8" x2="888" y2="160.8" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="164.8" text-anchor="end" font-size="11" fill="#667085">400</text><line x1="90" y1="92.0" x2="888" y2="92.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="96.0" text-anchor="end" font-size="11" fill="#667085">500</text><line x1="90" y1="436.0" x2="888" y2="436.0" stroke="#475467" stroke-width="1.5"></line><circle cx="223.0" cy="367.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><polyline points="223.0,367.2 489.0,363.4 755.0,361.4" fill="none" stroke="#E8833A" stroke-width="2.5"></polyline><circle cx="223.0" cy="367.2" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><circle cx="489.0" cy="363.4" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><circle cx="755.0" cy="361.4" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><polyline points="223.0,367.2 489.0,157.3 755.0,119.2" fill="none" stroke="#D97706" stroke-width="2.5"></polyline><circle cx="223.0" cy="367.2" r="4" fill="#ffffff" stroke="#D97706" stroke-width="2"></circle><circle cx="489.0" cy="157.3" r="4" fill="#ffffff" stroke="#D97706" stroke-width="2"></circle><circle cx="755.0" cy="119.2" r="4" fill="#ffffff" stroke="#D97706" stroke-width="2"></circle><text x="765.0" y="122.7" font-size="10.5" font-weight="700" fill="#D97706">赛力斯 460.5</text><text x="765.0" y="364.9" font-size="10.5" font-weight="700" fill="#E8833A">长安汽车 108.4</text><path d="M 227.0 367.2 L 231.0 375.4" stroke="#1F4E79" stroke-width="1" stroke-opacity="0.45" fill="none"></path><text x="233.0" y="378.9" font-size="10.5" font-weight="700" fill="#1F4E79">比亚迪 100</text><text x="223.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="489.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="755.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="494" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text><text x="90" y="516" font-size="16" fill="#64748b">注：数据提示：部分时段/指标未公开披露，已按置空处理并断线，杜绝虚假插值。</text></svg></div><div class="a3-panel" role="img" aria-label="电池组 · 营收指数"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">电池组 · 营收指数</text><text x="888" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2023-12-31 至 2025-12-31</text><text x="888" y="56" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：指数</text><line x1="409.0" y1="66.0" x2="425.0" y2="66.0" stroke="#1F4E79" stroke-width="2.5"></line><circle cx="417.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="431.0" y="70.0" font-size="11" font-weight="600" fill="#344054">宁德时代</text><line x1="499.0" y1="66.0" x2="515.0" y2="66.0" stroke="#E8833A" stroke-width="2.5"></line><circle cx="507.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="521.0" y="70.0" font-size="11" font-weight="600" fill="#344054">亿纬锂能</text><line x1="90" y1="436.0" x2="888" y2="436.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="440.0" text-anchor="end" font-size="11" fill="#667085">0</text><line x1="90" y1="321.3" x2="888" y2="321.3" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="325.3" text-anchor="end" font-size="11" fill="#667085">50</text><line x1="90" y1="206.7" x2="888" y2="206.7" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="210.7" text-anchor="end" font-size="11" fill="#667085">100</text><line x1="90" y1="92.0" x2="888" y2="92.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="96.0" text-anchor="end" font-size="11" fill="#667085">150</text><line x1="90" y1="436.0" x2="888" y2="436.0" stroke="#475467" stroke-width="1.5"></line><polyline points="223.0,206.7 489.0,228.9 755.0,193.6" fill="none" stroke="#1F4E79" stroke-width="2.5"></polyline><circle cx="223.0" cy="206.7" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="489.0" cy="228.9" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="755.0" cy="193.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><polyline points="223.0,206.7 489.0,207.5 755.0,147.0" fill="none" stroke="#E8833A" stroke-width="2.5"></polyline><circle cx="223.0" cy="206.7" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><circle cx="489.0" cy="207.5" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><circle cx="755.0" cy="147.0" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="765.0" y="150.5" font-size="10.5" font-weight="700" fill="#E8833A">亿纬锂能 126</text><text x="765.0" y="197.1" font-size="10.5" font-weight="700" fill="#1F4E79">宁德时代 105.7</text><text x="223.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="489.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="755.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="494" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text></svg></div></div><figcaption><b>资料来源：</b>智能体 A3 编译与渲染；A1 年报原值、A2 同期计算口径。<b>注：</b>各公司以 2023 年营收为 100。比亚迪 2024—2025 年营收记录被 A3 隔离，图中留空。</figcaption></figure>
+
+  <p>拆到年度同比，三家的阶段差异更清楚。比亚迪2023年+42.04%、2024年+29.02%、2025年+3.46%，从高速扩张进入平台期；长安2023年+24.78%、2024年+5.58%、2025年+2.67%，增速逐年下台阶；赛力斯2023年+5.09%、2024年+305.04%、2025年+13.69%，2024年是低基数上的爆发，2025年回到两位数<sup class="cite">[2]</sup>。</p>
+
+  <p>因此，2025年营收的“分化”不是谁正谁负，而是三种增长阶段：比亚迪的增量仍最大（2025年比2024年增加268.63亿元），但增速最低；长安增量42.67亿元，增长最弱；赛力斯增量198.78亿元，增速最高但基数最小。用同一个“增速”排名会掩盖阶段差异，用同一个“增量”排名会掩盖基数差异。</p>
+
+  <h3 id="sec32"><span class="num">3.2</span>毛利率：规模不等于毛利</h3>
+  <p>2023—2025年毛利率：比亚迪20.21%→19.44%→17.74%，两年-2.47个百分点；长安18.36%→14.94%→15.54%，两年-2.82个百分点；赛力斯10.39%→26.15%→29.14%，两年+18.76个百分点<sup class="cite">[2]</sup>。2025年的排序是赛力斯29.14% &gt; 比亚迪17.74% &gt; 长安15.54%，但三家的口径并不同。</p>
+
+  <figure class="chart a3-chart" id="fig5"><div class="figure-heading">图5　合并报表毛利率（分组展示）</div><div class="a3-pair"><div class="a3-panel" role="img" aria-label="整车组 · 合并报表毛利率"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">整车组 · 合并报表毛利率</text><text x="888" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2023-12-31 至 2025-12-31</text><text x="888" y="56" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：%</text><line x1="376.0" y1="66.0" x2="392.0" y2="66.0" stroke="#1F4E79" stroke-width="2.5"></line><circle cx="384.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="398.0" y="70.0" font-size="11" font-weight="600" fill="#344054">比亚迪</text><line x1="454.0" y1="66.0" x2="470.0" y2="66.0" stroke="#E8833A" stroke-width="2.5"></line><circle cx="462.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="476.0" y="70.0" font-size="11" font-weight="600" fill="#344054">赛力斯</text><line x1="532.0" y1="66.0" x2="548.0" y2="66.0" stroke="#D97706" stroke-width="2.5"></line><circle cx="540.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#D97706" stroke-width="2"></circle><text x="554.0" y="70.0" font-size="11" font-weight="600" fill="#344054">长安汽车</text><line x1="90" y1="296.0" x2="888" y2="296.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="300.0" text-anchor="end" font-size="11" fill="#667085">5</text><line x1="90" y1="262.0" x2="888" y2="262.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="266.0" text-anchor="end" font-size="11" fill="#667085">10</text><line x1="90" y1="228.0" x2="888" y2="228.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="232.0" text-anchor="end" font-size="11" fill="#667085">15</text><line x1="90" y1="194.0" x2="888" y2="194.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="198.0" text-anchor="end" font-size="11" fill="#667085">20</text><line x1="90" y1="160.0" x2="888" y2="160.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="164.0" text-anchor="end" font-size="11" fill="#667085">25</text><line x1="90" y1="126.0" x2="888" y2="126.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="130.0" text-anchor="end" font-size="11" fill="#667085">30</text><line x1="90" y1="92.0" x2="888" y2="92.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="96.0" text-anchor="end" font-size="11" fill="#667085">35</text><polyline points="223.0,192.5 489.0,197.8 755.0,209.3" fill="none" stroke="#1F4E79" stroke-width="2.5"></polyline><circle cx="223.0" cy="192.5" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="223.0" y="184.5" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">20.21</text><circle cx="489.0" cy="197.8" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="489.0" y="189.8" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">19.44</text><circle cx="755.0" cy="209.3" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="755.0" y="201.3" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">17.74</text><polyline points="223.0,259.4 489.0,152.2 755.0,131.8" fill="none" stroke="#E8833A" stroke-width="2.5"></polyline><circle cx="223.0" cy="259.4" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="223.0" y="251.4" text-anchor="middle" font-size="10" font-weight="600" fill="#E8833A">10.39</text><circle cx="489.0" cy="152.2" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="489.0" y="144.2" text-anchor="middle" font-size="10" font-weight="600" fill="#E8833A">26.15</text><circle cx="755.0" cy="131.8" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="755.0" y="123.8" text-anchor="middle" font-size="10" font-weight="600" fill="#E8833A">29.14</text><polyline points="223.0,205.2 489.0,228.4 755.0,224.3" fill="none" stroke="#D97706" stroke-width="2.5"></polyline><circle cx="223.0" cy="205.2" r="4" fill="#ffffff" stroke="#D97706" stroke-width="2"></circle><text x="223.0" y="197.2" text-anchor="middle" font-size="10" font-weight="600" fill="#D97706">18.36</text><circle cx="489.0" cy="228.4" r="4" fill="#ffffff" stroke="#D97706" stroke-width="2"></circle><text x="489.0" y="220.4" text-anchor="middle" font-size="10" font-weight="600" fill="#D97706">14.94</text><circle cx="755.0" cy="224.3" r="4" fill="#ffffff" stroke="#D97706" stroke-width="2"></circle><text x="755.0" y="216.3" text-anchor="middle" font-size="10" font-weight="600" fill="#D97706">15.54</text><text x="765.0" y="135.3" font-size="10.5" font-weight="700" fill="#E8833A">赛力斯 29.14%</text><text x="765.0" y="212.8" font-size="10.5" font-weight="700" fill="#1F4E79">比亚迪 17.74%</text><text x="765.0" y="227.8" font-size="10.5" font-weight="700" fill="#D97706">长安汽车 15.54%</text><text x="223.0" y="318" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="489.0" y="318" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="755.0" y="318" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="354" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text></svg></div><div class="a3-panel" role="img" aria-label="电池组 · 合并报表毛利率"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 430" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">电池组 · 合并报表毛利率</text><text x="888" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2023-12-31 至 2025-12-31</text><text x="888" y="56" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：%</text><line x1="409.0" y1="66.0" x2="425.0" y2="66.0" stroke="#1F4E79" stroke-width="2.5"></line><circle cx="417.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="431.0" y="70.0" font-size="11" font-weight="600" fill="#344054">亿纬锂能</text><line x1="499.0" y1="66.0" x2="515.0" y2="66.0" stroke="#E8833A" stroke-width="2.5"></line><circle cx="507.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="521.0" y="70.0" font-size="11" font-weight="600" fill="#344054">宁德时代</text><line x1="90" y1="296.0" x2="888" y2="296.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="300.0" text-anchor="end" font-size="11" fill="#667085">10</text><line x1="90" y1="245.0" x2="888" y2="245.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="249.0" text-anchor="end" font-size="11" fill="#667085">15</text><line x1="90" y1="194.0" x2="888" y2="194.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="198.0" text-anchor="end" font-size="11" fill="#667085">20</text><line x1="90" y1="143.0" x2="888" y2="143.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="147.0" text-anchor="end" font-size="11" fill="#667085">25</text><line x1="90" y1="92.0" x2="888" y2="92.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="96.0" text-anchor="end" font-size="11" fill="#667085">30</text><polyline points="223.0,224.2 489.0,220.4 755.0,233.0" fill="none" stroke="#1F4E79" stroke-width="2.5"></polyline><circle cx="223.0" cy="224.2" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="223.0" y="216.2" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">17.04</text><circle cx="489.0" cy="220.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="489.0" y="212.4" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">17.41</text><circle cx="755.0" cy="233.0" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="755.0" y="225.0" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">16.17</text><polyline points="223.0,164.3 489.0,148.7 755.0,130.0" fill="none" stroke="#E8833A" stroke-width="2.5"></polyline><circle cx="223.0" cy="164.3" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="223.0" y="156.3" text-anchor="middle" font-size="10" font-weight="600" fill="#E8833A">22.91</text><circle cx="489.0" cy="148.7" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="489.0" y="140.7" text-anchor="middle" font-size="10" font-weight="600" fill="#E8833A">24.44</text><circle cx="755.0" cy="130.0" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="755.0" y="122.0" text-anchor="middle" font-size="10" font-weight="600" fill="#E8833A">26.27</text><text x="765.0" y="133.5" font-size="10.5" font-weight="700" fill="#E8833A">宁德时代 26.27%</text><text x="765.0" y="236.5" font-size="10.5" font-weight="700" fill="#1F4E79">亿纬锂能 16.17%</text><text x="223.0" y="318" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="489.0" y="318" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="755.0" y="318" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="354" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text></svg></div></div><figcaption><b>资料来源：</b>智能体 A3 验收图表；数据来自本批 A1，并由 A2 证据索引复核。<b>注：</b>整车组与电池组分开展示。比亚迪使用集团合并口径。</figcaption></figure>
+
+  <p>比亚迪的毛利率连续两年下行：2024年-0.78个百分点，2025年-1.69个百分点。它的规模最大，但规模并没有阻止毛利率下滑，这说明“规模摊薄成本”不是充分条件；价格竞争、产品结构、出口与电池/电子业务的结构都会影响合并毛利率。长安2024年毛利率下降3.42个百分点，2025年回升0.60个百分点，但仍在15.54%的低位；赛力斯2024年提升15.77个百分点，2025年再提升2.99个百分点，主要发生在低基数放量之后。</p>
+
+  <p>毛利率不能直接读成“谁更会赚钱”。第一，比亚迪是垂直整合口径，合并报表里含电池与电子，和纯整车不是同一件事。第二，赛力斯的高毛利与产品价格带、车型结构有关，但本次数据没有分车型/分价格带明细，无法做定量归因。第三，长安的毛利率受合资、产品结构与促销影响，合并口径也不能完全反映单一新能源车型的盈利。能确定的只有方向：赛力斯的毛利率在样本期内显著抬升，比亚迪与长安承压；不能确定的是“为什么”，需要产品结构与单车数据才能回答。</p>
+
+  <h3 id="sec33"><span class="num">3.3</span>现金流：利润还在，现金先分化</h3>
+  <p>2025年经营现金流：比亚迪591.36亿元、长安18.36亿元、赛力斯289.14亿元；较2023年分别-65.2%、-90.8%、+351.9%。同期归母净利：比亚迪326.19亿元（较2023年+8.6%）、长安40.75亿元（-64.0%）、赛力斯59.57亿元（2023年为-24.50亿元，扭亏）。OCF/归母净利分别为1.81、0.45、4.85倍<sup class="cite">[2]</sup>。</p>
+
+  <figure class="chart a3-chart" id="fig6"><div class="figure-heading">图6　经营现金流／归母净利润（分组展示）</div><div class="a3-pair"><div class="a3-panel" role="img" aria-label="整车组 · 经营现金流／归母净利润"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">整车组 · 经营现金流／归母净利润</text><text x="888" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2023-12-31 至 2025-12-31</text><text x="888" y="56" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：倍</text><line x1="415.0" y1="66.0" x2="431.0" y2="66.0" stroke="#1F4E79" stroke-width="2.5"></line><circle cx="423.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="437.0" y="70.0" font-size="11" font-weight="600" fill="#344054">长安汽车</text><line x1="505.0" y1="66.0" x2="521.0" y2="66.0" stroke="#E8833A" stroke-width="2.5"></line><circle cx="513.0" cy="66.0" r="3.5" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="527.0" y="70.0" font-size="11" font-weight="600" fill="#344054">赛力斯</text><line x1="90" y1="436.0" x2="888" y2="436.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="440.0" text-anchor="end" font-size="11" fill="#667085">0</text><line x1="90" y1="367.2" x2="888" y2="367.2" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="371.2" text-anchor="end" font-size="11" fill="#667085">1</text><line x1="90" y1="298.4" x2="888" y2="298.4" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="302.4" text-anchor="end" font-size="11" fill="#667085">2</text><line x1="90" y1="229.6" x2="888" y2="229.6" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="233.6" text-anchor="end" font-size="11" fill="#667085">3</text><line x1="90" y1="160.8" x2="888" y2="160.8" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="164.8" text-anchor="end" font-size="11" fill="#667085">4</text><line x1="90" y1="92.0" x2="888" y2="92.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="96.0" text-anchor="end" font-size="11" fill="#667085">5</text><line x1="90" y1="436.0" x2="888" y2="436.0" stroke="#475467" stroke-width="1.5"></line><polyline points="223.0,315.6 489.0,390.6 755.0,405.0" fill="none" stroke="#1F4E79" stroke-width="2.5"></polyline><circle cx="223.0" cy="315.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="489.0" cy="390.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><circle cx="755.0" cy="405.0" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><polyline points="489.0,175.2 755.0,102.3" fill="none" stroke="#E8833A" stroke-width="2.5"></polyline><circle cx="489.0" cy="175.2" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><circle cx="755.0" cy="102.3" r="4" fill="#ffffff" stroke="#E8833A" stroke-width="2"></circle><text x="765.0" y="105.8" font-size="10.5" font-weight="700" fill="#E8833A">赛力斯 4.8</text><text x="765.0" y="408.5" font-size="10.5" font-weight="700" fill="#1F4E79">长安汽车 0.45</text><text x="223.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="489.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="755.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="494" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text><text x="90" y="516" font-size="16" fill="#64748b">注：数据提示：部分时段/指标未公开披露，已按置空处理并断线，杜绝虚假插值。</text></svg></div><div class="a3-panel" role="img" aria-label="电池组 · 经营现金流／归母净利润"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">电池组 · 经营现金流／归母净利润</text><text x="912" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2023-12-31 至 2025-12-31</text><text x="912" y="56" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：倍</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="440.0" text-anchor="end" font-size="11" fill="#667085">0</text><line x1="90" y1="366.0" x2="912" y2="366.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="370.0" text-anchor="end" font-size="11" fill="#667085">0.5</text><line x1="90" y1="296.0" x2="912" y2="296.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="300.0" text-anchor="end" font-size="11" fill="#667085">1</text><line x1="90" y1="226.0" x2="912" y2="226.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="230.0" text-anchor="end" font-size="11" fill="#667085">1.5</text><line x1="90" y1="156.0" x2="912" y2="156.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="160.0" text-anchor="end" font-size="11" fill="#667085">2</text><line x1="90" y1="86.0" x2="912" y2="86.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="90.0" text-anchor="end" font-size="11" fill="#667085">2.5</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#475467" stroke-width="1.5"></line><polyline points="227.0,136.4 501.0,283.4 775.0,182.6" fill="none" stroke="#1F4E79" stroke-width="2.5"></polyline><circle cx="227.0" cy="136.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="227.0" y="128.4" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">2.1</text><circle cx="501.0" cy="283.4" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="501.0" y="275.4" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">1.1</text><circle cx="775.0" cy="182.6" r="4" fill="#ffffff" stroke="#1F4E79" stroke-width="2"></circle><text x="775.0" y="174.6" text-anchor="middle" font-size="10" font-weight="600" fill="#1F4E79">1.8</text><text x="227.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="501.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="775.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="494" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text></svg></div></div><figcaption><b>资料来源：</b>智能体 A3 编译与渲染；A1 年报原值、A2 同期计算口径。<b>注：</b>同公司同年度合并报表口径。比亚迪、宁德时代的输入被 A3 隔离，图中不出线。赛力斯 2023 年归母净利润为负，该点留空。</figcaption></figure>
+
+  <p>三个组合起来看，分化很清楚。比亚迪是“利润微增、现金大降”：归母净利从300.41亿元增至326.19亿元，OCF却从1,697.25亿元降到591.36亿元，OCF/NP从5.65倍降到1.81倍。长安是“利润与现金双降”：归母净利从113.27亿元降到40.75亿元，OCF从198.61亿元降到18.36亿元，OCF/NP从1.75倍降到0.45倍。赛力斯是“扭亏+现金扩张”：归母净利从-24.50亿元转为59.57亿元，OCF从63.98亿元增至289.14亿元，OCF/NP从2024年的3.79倍升至4.85倍。</p>
+
+  <p>可核验的解释只能到“机制”，不能到“百分比”。第一，价格与产品结构影响毛利率，进而影响利润；第二，营运资金（应收、存货、应付、合同负债）影响OCF，而本次数据集没有这些附注细项，无法像白酒报告那样做营运资金三項归因；第三，合并范围与垂直整合影响可比性，比亚迪的电池/电子业务、赛力斯的合作车型结构都会改变报表。A2解读报告也明确提示“营运资金变动原因需结合财报附注定性研判”<sup class="cite">[4]</sup>。因此，本报告只给方向判断：比亚迪的现金转化在变弱，长安最弱，赛力斯最强但需要拆应付/预收；不给“价格战导致XX%”的伪精确结论。</p>
+
+  <p>OCF/NP也不是越高越好。赛力斯4.85倍可能来自应付账款、合同负债或存货变动，也可能是收入确认与交付节奏；没有附注，不能把它直接读成“盈利质量最好”。长安0.45倍说明利润的现金含量偏弱，但也要看其应收/票据与合资收益的现金实现方式。比亚迪1.81倍仍高于1，说明经营现金流仍覆盖利润，但趋势从5.65倍一路下行，这是更值得跟踪的信号。</p>
+
+  <p><b>Q3的答案：</b>三家整车在2023—2025年呈现三种模式——比亚迪“规模平台+现金流下行”，长安“低增长+利润现金双弱”，赛力斯“低基数高增+高毛利+高OCF/NP（待拆营运资金）”。分化由营收阶段、毛利率、营运资金与合并口径共同造成；在缺少附注细项的情况下，只能做方向判断，不能做单因素定量归因。</p>
+</section>
+
+<!-- ================= 第四章 ================= -->
+<section class="chapter" id="ch4">
+  <div class="chapter-head">
+    <span class="chapter-number">04</span>
+    <span class="chapter-label">第4章</span>
+    <h2>电池与整车：为什么必须分组</h2>
+  </div>
+  <div class="chapter-question">本章回答Q4：宁德时代、亿纬锂能与整车企业在研发强度、毛利率、现金流上有什么差异？为什么不能把五家放在同一张榜上排名？</div>
+
+  <p>第3章已经看到，三家整车的毛利率从15.54%到29.14%，差异已经很大；如果再把两家电池厂加进来，分布会更宽。但“把五家放在一张图里”与“把五家当成一个行业排名”是两件事。本章先说明为什么分组，再在组内比较，最后回到产业链结构。</p>
+
+  <h3 id="sec41"><span class="num">4.1</span>分组理由：三种不同的生意</h3>
+  <p>第一，商业模式不同。电池厂是制造业规模效应，盈利取决于良率、产能利用率、材料成本与客户结构；整车厂是品牌、制造、渠道并重的重资产生意，盈利取决于产品定义、价格带、渠道效率与售后。第二，研发方向不同。电池研发集中在化学体系、能量密度、快充与产线工艺；整车研发集中在电子电气架构、智能驾驶、整车集成与造型。第三，现金流特征不同。电池厂对下游车企通常有账期话语权，经营现金流可能与利润同步甚至超前；整车厂受渠道打款、库存与促销政策影响，现金流与利润可能阶段性背离<sup class="cite">[4]</sup>。</p>
+
+  <p>这三条差异决定了：研发强度、毛利率、OCF/NP在两组之间不能直接比绝对值，只能比“组内谁更强、组间利润池如何分配”。因此本报告把五家分为整车组（比亚迪、长安汽车、赛力斯）与电池组（宁德时代、亿纬锂能）；组内做同环节比较，跨组只在产业链议价与利润池层面做方向性讨论。</p>
+
+  <h3 id="sec42"><span class="num">4.2</span>研发强度：比亚迪最高，电池组更稳</h3>
+  <p>2025年研发强度：比亚迪7.21%、宁德时代5.23%、亿纬锂能4.89%、赛力斯4.82%、长安汽车4.36%。研发费用绝对值：比亚迪579.78亿元、宁德时代221.47亿元、赛力斯79.54亿元、长安汽车71.58亿元、亿纬锂能30.06亿元<sup class="cite">[2]</sup>。比亚迪的强度与绝对值都最高，但它的口径含汽车、电池、电子与零部件，不能直接等同“整车研发强度”。</p>
+
+  <figure class="chart a3-chart" id="fig7"><div class="figure-heading">图7　公司研发费用率（分组展示）</div><div class="a3-pair"><div class="a3-panel" role="img" aria-label="整车组 · 公司研发费用率"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">整车组 · 公司研发费用率</text><text x="912" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2023-12-31 至 2025-12-31</text><text x="912" y="56" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：%</text><rect x="427.0" y="61.0" width="12" height="10" rx="2.5" fill="#1F4E79"></rect><text x="445.0" y="70.0" font-size="11" font-weight="600" fill="#344054">长安汽车</text><rect x="517.0" y="61.0" width="12" height="10" rx="2.5" fill="#E8833A"></rect><text x="535.0" y="70.0" font-size="11" font-weight="600" fill="#344054">赛力斯</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="440.0" text-anchor="end" font-size="11" fill="#667085">0</text><line x1="90" y1="367.2" x2="912" y2="367.2" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="371.2" text-anchor="end" font-size="11" fill="#667085">1</text><line x1="90" y1="298.4" x2="912" y2="298.4" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="302.4" text-anchor="end" font-size="11" fill="#667085">2</text><line x1="90" y1="229.6" x2="912" y2="229.6" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="233.6" text-anchor="end" font-size="11" fill="#667085">3</text><line x1="90" y1="160.8" x2="912" y2="160.8" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="164.8" text-anchor="end" font-size="11" fill="#667085">4</text><line x1="90" y1="92.0" x2="912" y2="92.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="96.0" text-anchor="end" font-size="11" fill="#667085">5</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#475467" stroke-width="1.5"></line><rect x="185.0" y="164.2" width="40.0" height="271.8" rx="3" fill="#1F4E79"></rect><text x="205.0" y="159.2" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">4</text><rect x="459.0" y="156.0" width="40.0" height="280.0" rx="3" fill="#1F4E79"></rect><text x="479.0" y="151.0" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">4.1</text><rect x="733.0" y="136.0" width="40.0" height="300.0" rx="3" fill="#1F4E79"></rect><text x="753.0" y="131.0" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">4.4</text><rect x="227.0" y="110.6" width="40.0" height="325.4" rx="3" fill="#E8833A"></rect><text x="247.0" y="105.6" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">4.7</text><rect x="501.0" y="171.1" width="40.0" height="264.9" rx="3" fill="#E8833A"></rect><text x="521.0" y="166.1" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">3.9</text><rect x="775.0" y="104.4" width="40.0" height="331.6" rx="3" fill="#E8833A"></rect><text x="795.0" y="99.4" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">4.8</text><text x="227.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="501.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="775.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="494" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text></svg></div><div class="a3-panel" role="img" aria-label="电池组 · 公司研发费用率"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 570" role="img" style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Noto Sans CJK SC',sans-serif;"><rect width="100%" height="100%" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1"></rect><rect x="0" y="0" width="960" height="4" fill="#0A2540"></rect><text x="90" y="36" font-size="17" font-weight="700" fill="#101828">电池组 · 公司研发费用率</text><text x="912" y="34" text-anchor="end" font-size="11" fill="#64748B">观测期 2023-12-31 至 2025-12-31</text><text x="912" y="56" text-anchor="end" font-size="11" font-weight="600" fill="#64748B">单位：%</text><rect x="421.0" y="61.0" width="12" height="10" rx="2.5" fill="#1F4E79"></rect><text x="439.0" y="70.0" font-size="11" font-weight="600" fill="#344054">宁德时代</text><rect x="511.0" y="61.0" width="12" height="10" rx="2.5" fill="#E8833A"></rect><text x="529.0" y="70.0" font-size="11" font-weight="600" fill="#344054">亿纬锂能</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="440.0" text-anchor="end" font-size="11" fill="#667085">0</text><line x1="90" y1="350.0" x2="912" y2="350.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="354.0" text-anchor="end" font-size="11" fill="#667085">2</text><line x1="90" y1="264.0" x2="912" y2="264.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="268.0" text-anchor="end" font-size="11" fill="#667085">4</text><line x1="90" y1="178.0" x2="912" y2="178.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="182.0" text-anchor="end" font-size="11" fill="#667085">6</text><line x1="90" y1="92.0" x2="912" y2="92.0" stroke="#eaecf0" stroke-dasharray="3 3"></line><text x="78" y="96.0" text-anchor="end" font-size="11" fill="#667085">8</text><line x1="90" y1="436.0" x2="912" y2="436.0" stroke="#475467" stroke-width="1.5"></line><rect x="185.0" y="239.1" width="40.0" height="196.9" rx="3" fill="#1F4E79"></rect><text x="205.0" y="234.1" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">4.6</text><rect x="459.0" y="215.0" width="40.0" height="221.0" rx="3" fill="#1F4E79"></rect><text x="479.0" y="210.0" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">5.1</text><rect x="733.0" y="211.1" width="40.0" height="224.9" rx="3" fill="#1F4E79"></rect><text x="753.0" y="206.1" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">5.2</text><rect x="227.0" y="195.2" width="40.0" height="240.8" rx="3" fill="#E8833A"></rect><text x="247.0" y="190.2" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">5.6</text><rect x="501.0" y="175.9" width="40.0" height="260.1" rx="3" fill="#E8833A"></rect><text x="521.0" y="170.9" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">6</text><rect x="775.0" y="225.7" width="40.0" height="210.3" rx="3" fill="#E8833A"></rect><text x="795.0" y="220.7" text-anchor="middle" font-size="10" font-weight="600" fill="#344054">4.9</text><text x="227.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2023-12-31</text><text x="501.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2024-12-31</text><text x="775.0" y="458" text-anchor="middle" font-size="12" fill="#475467">2025-12-31</text><text x="90" y="494" font-size="16" fill="#64748b">数据来源：本批 A1 数据与 A2 证据索引；数值按证据换算，解释须结合原始披露。</text></svg></div></div><figcaption><b>资料来源：</b>智能体 A3 编译与渲染；A1 年报原值、A2 同期计算口径。<b>注：</b>研发费用除以营业收入。比亚迪各年有计算输入被 A3 隔离，图中不出柱。</figcaption></figure>
+
+  <p>三年趋势也不一样。比亚迪6.57%→6.85%→7.21%，持续上行；宁德4.58%→5.14%→5.23%，稳步抬升；亿纬5.60%→6.05%→4.89%，2025年下降，但研发费用绝对值从29.42亿元增至30.06亿元，强度下降主要是营收增长26.44%快于研发费用增长；赛力斯4.73%→3.85%→4.82%，随营收放量先降后升；长安3.95%→4.07%→4.36%，缓慢抬升。</p>
+
+  <p>研发强度不是技术优势的同义词。比亚迪的7.21%含电子与电池业务，不能直接和宁德5.23%、长安4.36%放在同一把尺子上；宁德与亿纬的强度更稳定，但绝对研发费用远低于比亚迪；长安的强度最低，但71.58亿元的绝对投入并不小，强度低部分来自营收基数。可以说的结论是：比亚迪在样本内研发投入最激进，电池组的研发强度更稳定，整车组除比亚迪外普遍在4%—5%区间；不能说的是“研发强度高就一定技术领先”。</p>
+
+  <h3 id="sec43"><span class="num">4.3</span>毛利率与现金流：组间差小，组内差大</h3>
+  <p>把两组各自等权平均，2025年整车组毛利率20.81%、电池组21.22%，组间只差0.41个百分点；但整车组区间15.54%—29.14%（极差13.60pct），电池组16.17%—26.27%（极差10.10pct）。研发强度：整车组等权5.47%、电池组5.06%，组间差0.41pct；整车组区间4.36%—7.21%，电池组4.89%—5.23%。OCF/NP：整车组0.45—4.85倍，电池组1.81—1.85倍<sup class="cite">[2]</sup>。</p>
+
+  <table id="tab3" class="data-table">
+    <caption>表3　2025年整车组与电池组：组间平均与组内极差</caption>
+    <colgroup><col style="width:11%"><col style="width:8%"><col style="width:15%"><col style="width:12%"><col style="width:15%"><col style="width:12%"><col style="width:13%"><col style="width:14%"></colgroup>
+    <thead>
+      <tr><th>组别</th><th>样本数</th><th>营收合计<br>（亿元）</th><th>毛利率<br>等权平均</th><th>毛利率区间</th><th>研发强度<br>等权平均</th><th>OCF/NP<br>区间（倍）</th><th>净利合计<br>（亿元）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>整车组</td><td>3</td><td>11,330.18</td><td>20.81%</td><td>15.54%—29.14%</td><td>5.47%</td><td>0.45—4.85</td><td>426.51</td></tr>
+      <tr><td>电池组</td><td>2</td><td>4,851.71</td><td>21.22%</td><td>16.17%—26.27%</td><td>5.06%</td><td>1.81—1.85</td><td>763.36</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2025年年度报告，A1财务库；本报告计算。<b>注：</b>等权平均只用于组内汇总，不代表市值加权或行业加权；营收/净利合计为样本简单加总，存在跨环节重复计算，不能当产业链利润分配核算。</div>
+
+  <p>这组数字说明一个关键点：组间平均差只有0.41个百分点，但组内极差是10—13.6个百分点。换句话说，“电池比整车毛利率高”这句话在样本平均上几乎不成立；真正大的差异发生在组内——赛力斯29.14%远高于长安15.54%，宁德26.27%远高于亿纬16.17%。因此，分组不是为了证明“电池更好”，而是为了在同一种生意里比较；跨组平均只能当背景，不能当结论。</p>
+
+  <p>现金流也是同样的结构。电池组两家OCF/NP集中在1.81—1.85倍，现金转化相对稳定；整车组从长安0.45倍到赛力斯4.85倍，分化极大。样本内电池组以30.0%的营收合计贡献了64.2%的归母净利润合计（简单加总），但这个比例不能直接当“产业链利润池”：比亚迪垂直整合使整车组利润中含电池环节，电池厂对样本外整车厂的销售也不在样本内，简单加总存在重复计算。它只能说明“样本利润集中在电池龙头”，不能说明“产业链利润固定归电池”。</p>
+
+  <h3 id="sec44"><span class="num">4.4</span>产业链结构：为什么分组比较</h3>
+  <p>产业链可以分成三段：上游资源与材料（锂、钴、镍，正极、负极、隔膜、电解液）；中游电池与零部件（动力电池、电机电控、功率半导体）；下游整车与后市场（整车制造、充电、换电、电池回收）。本次样本只覆盖中游电池（宁德时代、亿纬锂能）与下游整车（比亚迪、长安汽车、赛力斯）；上游、电机电控、充电回收均未取证，因此只做结构定位，不补公司、不做跨环节排名。</p>
+
+  <figure class="panorama chart a3-chart" data-role="a3-chain-panorama" id="fig8"><div class="figure-heading">图8　新能源汽车产业链关系全景图</div><div class="a3-panel" role="img" aria-label="新能源汽车产业链关系全景图"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1440" height="810" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif"><rect width="1600" height="900" fill="#FFFFFF"></rect><line x1="0" y1="0" x2="0" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="32" y1="0" x2="32" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="64" y1="0" x2="64" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="96" y1="0" x2="96" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="128" y1="0" x2="128" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="160" y1="0" x2="160" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="192" y1="0" x2="192" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="224" y1="0" x2="224" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="256" y1="0" x2="256" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="288" y1="0" x2="288" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="320" y1="0" x2="320" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="352" y1="0" x2="352" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="384" y1="0" x2="384" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="416" y1="0" x2="416" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="448" y1="0" x2="448" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="480" y1="0" x2="480" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="512" y1="0" x2="512" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="544" y1="0" x2="544" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="576" y1="0" x2="576" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="608" y1="0" x2="608" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="640" y1="0" x2="640" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="672" y1="0" x2="672" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="704" y1="0" x2="704" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="736" y1="0" x2="736" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="768" y1="0" x2="768" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="800" y1="0" x2="800" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="832" y1="0" x2="832" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="864" y1="0" x2="864" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="896" y1="0" x2="896" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="928" y1="0" x2="928" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="960" y1="0" x2="960" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="992" y1="0" x2="992" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1024" y1="0" x2="1024" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1056" y1="0" x2="1056" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1088" y1="0" x2="1088" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1120" y1="0" x2="1120" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1152" y1="0" x2="1152" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1184" y1="0" x2="1184" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1216" y1="0" x2="1216" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1248" y1="0" x2="1248" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1280" y1="0" x2="1280" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1312" y1="0" x2="1312" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1344" y1="0" x2="1344" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1376" y1="0" x2="1376" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1408" y1="0" x2="1408" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1440" y1="0" x2="1440" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1472" y1="0" x2="1472" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1504" y1="0" x2="1504" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1536" y1="0" x2="1536" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="1568" y1="0" x2="1568" y2="900" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="0" x2="1600" y2="0" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="32" x2="1600" y2="32" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="64" x2="1600" y2="64" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="96" x2="1600" y2="96" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="128" x2="1600" y2="128" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="160" x2="1600" y2="160" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="192" x2="1600" y2="192" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="224" x2="1600" y2="224" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="256" x2="1600" y2="256" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="288" x2="1600" y2="288" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="320" x2="1600" y2="320" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="352" x2="1600" y2="352" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="384" x2="1600" y2="384" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="416" x2="1600" y2="416" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="448" x2="1600" y2="448" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="480" x2="1600" y2="480" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="512" x2="1600" y2="512" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="544" x2="1600" y2="544" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="576" x2="1600" y2="576" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="608" x2="1600" y2="608" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="640" x2="1600" y2="640" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="672" x2="1600" y2="672" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="704" x2="1600" y2="704" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="736" x2="1600" y2="736" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="768" x2="1600" y2="768" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="800" x2="1600" y2="800" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="832" x2="1600" y2="832" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="864" x2="1600" y2="864" stroke="#E2E8F0" stroke-opacity="0.45"></line><line x1="0" y1="896" x2="1600" y2="896" stroke="#E2E8F0" stroke-opacity="0.45"></line><text x="40.0" y="54.0" font-size="33.75" font-weight="800" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">新能源汽车产业链关系全景图</text><text x="40.0" y="86.0" font-size="15.62" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">上游资源与核心材料 → 中游电驱动与整车制造 → 下游用途场景，配套补能回收与车联网支撑</text><text x="1560.0" y="54.0" font-size="14.38" text-anchor="end" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">上游 9 环节 · 中游 3 能力 · 新能源汽车整车 7 品牌 · 下游 4 场景 · 配套 3 支撑</text><rect x="40.0" y="110.0" width="432.1" height="510.0" rx="14" fill="#EFF6FF" fill-opacity="0.45" stroke="#2563EB" stroke-opacity="0.22" stroke-width="1.2"></rect><rect x="40.0" y="110.0" width="432.1" height="38.0" rx="19.0" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.4"></rect><text x="256.1" y="134.5" font-size="18.75" font-weight="700" text-anchor="middle" fill="#2563EB" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">上游：资源、核心材料与零部件</text><text x="458.1" y="124.0" font-size="12.5" text-anchor="end" fill="#2563EB" fill-opacity="0.75">9 环节</text><rect x="506.1" y="110.0" width="535.9" height="510.0" rx="14" fill="#ECFEFF" fill-opacity="0.45" stroke="#0891B2" stroke-opacity="0.22" stroke-width="1.2"></rect><rect x="506.1" y="110.0" width="535.9" height="38.0" rx="19.0" fill="#ECFEFF" stroke="#0891B2" stroke-width="1.4"></rect><text x="774.1" y="134.5" font-size="18.75" font-weight="700" text-anchor="middle" fill="#0891B2" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">中游：设计研发与制造集成</text><text x="1028.0" y="124.0" font-size="12.5" text-anchor="end" fill="#0891B2" fill-opacity="0.75">7 品牌 · 3 能力</text><rect x="1076.0" y="110.0" width="484.0" height="510.0" rx="14" fill="#F5F3FF" fill-opacity="0.45" stroke="#7C3AED" stroke-opacity="0.22" stroke-width="1.2"></rect><rect x="1076.0" y="110.0" width="484.0" height="38.0" rx="19.0" fill="#F5F3FF" stroke="#7C3AED" stroke-width="1.4"></rect><text x="1318.0" y="134.5" font-size="18.75" font-weight="700" text-anchor="middle" fill="#7C3AED" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">下游：用途与采购主体</text><text x="1546.0" y="124.0" font-size="12.5" text-anchor="end" fill="#7C3AED" fill-opacity="0.75">4 场景</text><line x1="478.1" y1="391.0" x2="491.1" y2="391.0" stroke="#CBD5E1" stroke-width="7" stroke-linecap="round"></line><polygon points="490.1,384.0 501.1,391.0 490.1,398.0" fill="#CBD5E1"></polygon><line x1="1048.0" y1="391.0" x2="1061.0" y2="391.0" stroke="#CBD5E1" stroke-width="7" stroke-linecap="round"></line><polygon points="1060.0,384.0 1071.0,391.0 1060.0,398.0" fill="#CBD5E1"></polygon><rect x="54.0" y="162.0" width="196.1" height="82.0" rx="8.0" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.1"></rect><text x="63.0" y="183.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">正极材料</text><text x="63.0" y="202.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">容百科技、当升科技</text><text x="63.0" y="218.2" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供正极活性材料，决定能量</text><text x="63.0" y="235.8" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">密度与成本</text><rect x="262.1" y="162.0" width="196.1" height="82.0" rx="8.0" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.1"></rect><text x="271.1" y="183.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">负极材料</text><text x="271.1" y="202.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">璞泰来、杉杉股份</text><text x="271.1" y="218.2" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供负极活性材料，影响快充</text><text x="271.1" y="235.8" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">与循环寿命</text><rect x="54.0" y="256.0" width="196.1" height="82.0" rx="8.0" fill="#FFFFFF" stroke="#D97706" stroke-width="2.2"></rect><rect x="57.0" y="259.0" width="190.1" height="76.0" rx="6.0" fill="none" stroke="#D97706" stroke-width="0.9" stroke-opacity="0.55"></rect><text x="63.0" y="277.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">隔膜</text><rect x="208.1" y="264.0" width="34" height="15" rx="7.5" fill="#FEF3C7" stroke="#D97706" stroke-width="0.9"></rect><text x="225.1" y="275.0" font-size="11.88" font-weight="700" text-anchor="middle" fill="#D97706">瓶颈</text><text x="63.0" y="296.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">恩捷股份、星源材质</text><text x="63.0" y="312.2" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供电池隔离层，保障安全与</text><text x="63.0" y="329.8" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">离子导通</text><rect x="262.1" y="256.0" width="196.1" height="82.0" rx="8.0" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.1"></rect><text x="271.1" y="277.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">电解液</text><text x="271.1" y="296.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">天赐材料、新宙邦</text><text x="271.1" y="312.2" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供锂离子传输介质，影响高</text><text x="271.1" y="329.8" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">低温性能</text><rect x="54.0" y="350.0" width="196.1" height="82.0" rx="8.0" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.1"></rect><text x="63.0" y="371.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">结构件</text><text x="63.0" y="390.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">科达利</text><text x="63.0" y="406.2" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供电池封装与连接结构，支</text><text x="63.0" y="423.8" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">撑密封安全</text><rect x="262.1" y="350.0" width="196.1" height="82.0" rx="8.0" fill="#FFFFFF" stroke="#D97706" stroke-width="2.2"></rect><rect x="265.1" y="353.0" width="190.1" height="76.0" rx="6.0" fill="none" stroke="#D97706" stroke-width="0.9" stroke-opacity="0.55"></rect><text x="271.1" y="371.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">芯片与功率器件</text><rect x="416.1" y="358.0" width="34" height="15" rx="7.5" fill="#FEF3C7" stroke="#D97706" stroke-width="0.9"></rect><text x="433.1" y="369.0" font-size="11.88" font-weight="700" text-anchor="middle" fill="#D97706">瓶颈</text><text x="271.1" y="390.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">斯达半导、时代电气</text><text x="271.1" y="406.2" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供电驱与整车控制核心芯片</text><text x="271.1" y="423.8" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">，高端依赖进口</text><rect x="54.0" y="444.0" width="196.1" height="82.0" rx="8.0" fill="#FFFFFF" stroke="#D97706" stroke-width="2.2"></rect><rect x="57.0" y="447.0" width="190.1" height="76.0" rx="6.0" fill="none" stroke="#D97706" stroke-width="0.9" stroke-opacity="0.55"></rect><text x="63.0" y="465.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">稀土永磁</text><rect x="208.1" y="452.0" width="34" height="15" rx="7.5" fill="#FEF3C7" stroke="#D97706" stroke-width="0.9"></rect><text x="225.1" y="463.0" font-size="11.88" font-weight="700" text-anchor="middle" fill="#D97706">瓶颈</text><text x="63.0" y="484.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">中科三环、金力永磁</text><text x="63.0" y="500.2" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供驱动电机转子磁钢，受稀</text><text x="63.0" y="517.8" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">土开采配额与价格波动约束</text><rect x="262.1" y="444.0" width="196.1" height="82.0" rx="8.0" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.1"></rect><text x="271.1" y="465.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">锂镍钴矿产资源</text><text x="271.1" y="484.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">赣锋锂业、天齐锂业、华友钴</text><text x="271.1" y="500.2" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">业、洛阳钼业</text><text x="271.1" y="516.5" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供锂、镍、钴等上游资源，</text><rect x="54.0" y="538.0" width="196.1" height="82.0" rx="8.0" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.1"></rect><text x="63.0" y="559.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">底盘与热管理部件</text><text x="63.0" y="578.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">拓普集团、三花智控</text><text x="63.0" y="594.2" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">Tier1 零部件供应商，向整车</text><text x="63.0" y="611.8" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">总装提供底盘与热管理部件</text><rect x="520.1" y="162.0" width="507.9" height="265.6" rx="12" fill="#CFFAFE" stroke="#0E7490" stroke-width="1.8"></rect><rect x="520.1" y="162.0" width="507.9" height="4" rx="2" fill="#0E7490"></rect><text x="532.1" y="189.0" font-size="18.75" font-weight="800" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">整车研发与品牌</text><text x="1016.0" y="189.0" font-size="13.12" text-anchor="end" fill="#0E7490">品牌主体 · 7 家</text><text x="532.1" y="207.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">负责整车设计研发与品牌运营，定义产品和技术路线</text><rect x="532.1" y="217.0" width="236.9" height="42.9" rx="6" fill="#FFFFFF" stroke="#0E7490" stroke-opacity="0.45" stroke-width="0.9"></rect><text x="650.6" y="243.0" font-size="15.62" font-weight="700" text-anchor="middle" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">比亚迪</text><rect x="779.1" y="217.0" width="236.9" height="42.9" rx="6" fill="#FFFFFF" stroke="#0E7490" stroke-opacity="0.45" stroke-width="0.9"></rect><text x="897.5" y="243.0" font-size="15.62" font-weight="700" text-anchor="middle" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">长安汽车</text><rect x="532.1" y="268.9" width="236.9" height="42.9" rx="6" fill="#FFFFFF" stroke="#0E7490" stroke-opacity="0.45" stroke-width="0.9"></rect><text x="650.6" y="294.9" font-size="15.62" font-weight="700" text-anchor="middle" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">赛力斯</text><rect x="779.1" y="268.9" width="236.9" height="42.9" rx="6" fill="#FFFFFF" stroke="#0E7490" stroke-opacity="0.45" stroke-width="0.9"></rect><text x="897.5" y="294.9" font-size="15.62" font-weight="700" text-anchor="middle" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">特斯拉中国</text><rect x="532.1" y="320.8" width="236.9" height="42.9" rx="6" fill="#FFFFFF" stroke="#0E7490" stroke-opacity="0.45" stroke-width="0.9"></rect><text x="650.6" y="346.8" font-size="15.62" font-weight="700" text-anchor="middle" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">蔚来</text><rect x="779.1" y="320.8" width="236.9" height="42.9" rx="6" fill="#FFFFFF" stroke="#0E7490" stroke-opacity="0.45" stroke-width="0.9"></rect><text x="897.5" y="346.8" font-size="15.62" font-weight="700" text-anchor="middle" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">理想</text><rect x="532.1" y="372.7" width="236.9" height="42.9" rx="6" fill="#FFFFFF" stroke="#0E7490" stroke-opacity="0.45" stroke-width="0.9"></rect><text x="650.6" y="398.7" font-size="15.62" font-weight="700" text-anchor="middle" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">小鹏</text><rect x="520.1" y="439.6" width="247.9" height="84.2" rx="8.0" fill="#FFFFFF" stroke="#0891B2" stroke-opacity="0.7" stroke-width="1.1"></rect><text x="528.1" y="459.6" font-size="15.0" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">动力电池</text><text x="528.1" y="478.6" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">宁德时代、比亚迪、中创新航、亿纬锂</text><text x="528.1" y="492.6" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">能</text><text x="528.1" y="506.6" font-size="12.5" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供车辆能量存储单元，是核心总成之一</text><rect x="780.1" y="439.6" width="247.9" height="84.2" rx="8.0" fill="#FFFFFF" stroke="#0891B2" stroke-opacity="0.7" stroke-width="1.1"></rect><text x="788.1" y="459.6" font-size="15.0" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">电机电控</text><text x="788.1" y="478.6" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">汇川技术、精进电动</text><text x="788.1" y="492.6" font-size="12.5" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供电驱动力输出与精确控制，决定整车</text><text x="788.1" y="505.6" font-size="12.5" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">性能</text><rect x="520.1" y="535.8" width="247.9" height="84.2" rx="8.0" fill="#FFFFFF" stroke="#0891B2" stroke-opacity="0.7" stroke-width="1.1"></rect><text x="528.1" y="555.8" font-size="15.0" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">整车制造与集成</text><text x="528.1" y="574.8" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">比亚迪、长安汽车、赛力斯、特斯拉中</text><text x="528.1" y="588.8" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">国</text><text x="528.1" y="602.8" font-size="12.5" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">承担整车生产制造与底盘/热管理等系统集</text><rect x="1090.0" y="162.0" width="222.0" height="223.0" rx="8.0" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.1"></rect><rect x="1256.0" y="170.0" width="48" height="15" rx="7.5" fill="#D1FAE5" stroke="#065F46" stroke-width="0.8"></rect><text x="1280.0" y="181.0" font-size="11.88" font-weight="700" text-anchor="middle" fill="#065F46">已落地</text><text x="1099.0" y="184.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">私人消费</text><text x="1099.0" y="203.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">家庭购车｜智能出行</text><text x="1099.0" y="216.0" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">个人消费者购车代步与出行升级需</text><text x="1099.0" y="233.5" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">求</text><text x="1099.0" y="374.0" font-size="12.5" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">采购方：个人消费者</text><rect x="1324.0" y="162.0" width="222.0" height="223.0" rx="8.0" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.1"></rect><rect x="1490.0" y="170.0" width="48" height="15" rx="7.5" fill="#D1FAE5" stroke="#065F46" stroke-width="0.8"></rect><text x="1514.0" y="181.0" font-size="11.88" font-weight="700" text-anchor="middle" fill="#065F46">已落地</text><text x="1333.0" y="184.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">网约与出行运营</text><text x="1333.0" y="203.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">运营车辆｜高频出行服务</text><text x="1333.0" y="216.0" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">出行平台采购车辆用于日常运营，</text><text x="1333.0" y="233.5" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">注重全生命周期成本</text><text x="1333.0" y="374.0" font-size="12.5" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">采购方：出行平台</text><rect x="1090.0" y="397.0" width="222.0" height="223.0" rx="8.0" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.1"></rect><rect x="1256.0" y="405.0" width="48" height="15" rx="7.5" fill="#D1FAE5" stroke="#065F46" stroke-width="0.8"></rect><text x="1280.0" y="416.0" font-size="11.88" font-weight="700" text-anchor="middle" fill="#065F46">已落地</text><text x="1099.0" y="419.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">商用与物流车队</text><text x="1099.0" y="438.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">电动公交｜物流重卡</text><text x="1099.0" y="451.0" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">物流与客运企业批量采购，推动商</text><text x="1099.0" y="468.5" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">用车电动化</text><text x="1099.0" y="609.0" font-size="12.5" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">采购方：物流/客运企业</text><rect x="1324.0" y="397.0" width="222.0" height="223.0" rx="8.0" fill="#FFFFFF" stroke="#7C3AED" stroke-width="1.1"></rect><rect x="1490.0" y="405.0" width="48" height="15" rx="7.5" fill="#D1FAE5" stroke="#065F46" stroke-width="0.8"></rect><text x="1514.0" y="416.0" font-size="11.88" font-weight="700" text-anchor="middle" fill="#065F46">已落地</text><text x="1333.0" y="419.0" font-size="16.88" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">公共及专用场景</text><text x="1333.0" y="438.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">公务用车｜环卫与专用车</text><text x="1333.0" y="451.0" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">公共机构与专用作业场景批量采购</text><text x="1333.0" y="468.5" font-size="13.12" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">，属用途维度分类</text><text x="1333.0" y="609.0" font-size="12.5" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">采购方：经销商集团/海外终端</text><rect x="40.0" y="664.0" width="1520.0" height="148.0" rx="12" fill="#F8FAFC" stroke="#64748B" stroke-opacity="0.35" stroke-width="1.1"></rect><text x="54.0" y="686.0" font-size="15.0" font-weight="700" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">配套：服务、软件与回收体系</text><rect x="54.0" y="696.0" width="488.0" height="102.0" rx="8.0" fill="#FFFFFF" stroke="#64748B" stroke-opacity="0.55" stroke-width="1" stroke-dasharray="5,4"></rect><text x="62.0" y="716.0" font-size="15.62" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">充换电服务</text><text x="62.0" y="734.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">特来电、星星充电、国家电网、宁德时代、比亚迪</text><text x="62.0" y="747.0" font-size="12.25" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">为车辆提供充电与换电基础设施和运营服务</text><rect x="556.0" y="696.0" width="488.0" height="102.0" rx="8.0" fill="#FFFFFF" stroke="#64748B" stroke-opacity="0.55" stroke-width="1" stroke-dasharray="5,4"></rect><text x="564.0" y="716.0" font-size="15.62" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">电池回收</text><text x="564.0" y="734.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">格林美、华友循环、比亚迪、宁德时代、中创新航</text><text x="564.0" y="747.0" font-size="12.25" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">回收退役电池并梯次利用，形成资源闭环</text><rect x="1058.0" y="696.0" width="488.0" height="102.0" rx="8.0" fill="#FFFFFF" stroke="#64748B" stroke-opacity="0.55" stroke-width="1" stroke-dasharray="5,4"></rect><text x="1066.0" y="716.0" font-size="15.62" font-weight="700" fill="#0F172A" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">车联网运营</text><text x="1066.0" y="734.0" font-size="13.12" fill="#475569" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">华为、百度Apollo、特斯拉中国、蔚来、小鹏</text><text x="1066.0" y="747.0" font-size="12.25" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">提供车辆数据连接与智能运营服务，支撑迭代</text><text x="40.0" y="886.0" font-size="12.5" fill="#94A3B8" font-family="PingFang SC, Microsoft YaHei, system-ui, sans-serif">读法：自上而下扫一列。三列的 2 根箭头表达价值方向，具体工序关系以核验关系区为准。　橙色双描边＝瓶颈环节　｜　中游大卡＝核心产品品牌主体，下方小卡＝厂商内建能力</text></svg></div><figcaption><b>资料来源：</b>智能体 3 单跑产物《新能源汽车产业链关系全景图》。<b>注：</b>Q1、Q4 共用。全景图中的企业和采购场景用于行业定位。财务比较沿用 A2 分组：电池组为宁德时代、亿纬锂能，整车组为比亚迪、长安汽车、赛力斯，上游未纳入财务样本。比亚迪采用集团合并口径，含电池业务。图中箭头表示环节方向，利润分配和企业间供货关系需单独取证。</figcaption></figure>
+
+  <p>从利润率的横截面看，电池龙头的确更靠前：2025年宁德时代毛利率26.27%、归母净利率17.04%；亿纬锂能毛利率16.17%、归母净利率6.73%；整车样本中，赛力斯毛利率29.14%、归母净利率3.61%，比亚迪毛利率17.74%、归母净利率4.06%，长安毛利率15.54%、归母净利率2.48%（归母净利率=归母净利/营业收入）。电池龙头的高利润率与整车样本的低净利率形成鲜明对照，但这只是“样本内、单年度”的横截面，不是产业链利润分配的完整核算。</p>
+
+  <p>利润池不是固定归属。比亚迪用垂直整合把电池利润内部化，赛力斯用高端产品带把毛利率抬到整车组最高，长安则处在低毛利与低净利的状态；电池厂也不是无条件赚钱，亿纬的毛利率16.17%就低于宁德26.27%。整车厂可以通过自供电池、平台化、多供应商与品牌溢价改变分配；电池厂可以通过规模、良率、客户结构与技术迭代维持毛利。谁能留住利润，取决于议价权与产品差异化，而不是“环节”本身。</p>
+
+  <p><b>Q4的答案：</b>五家公司的研发强度、毛利率、现金流差异，不能用一个“新能源汽车”标签统一比较。电池组与整车组的平均毛利率只差0.41个百分点，但组内极差10—13.6个百分点；电池组现金流转化更集中，整车组分化更大。应按动力电池与整车环节分组，组内同口径比较；跨组只在议价关系与利润池层面做方向性讨论，并标注合并范围与重复计算风险。</p>
+</section>
+<!-- ================= 第五章 ================= -->
+<section class="chapter" id="ch5">
+  <div class="chapter-head">
+    <span class="chapter-number">05</span>
+    <span class="chapter-label">第5章</span>
+    <h2>结论与跟踪指标</h2>
+  </div>
+  <div class="chapter-question">本章回答：把四个问题收成五条结论；下一期数据出来时，应该盯哪几个数，而不是重复看总量？</div>
+
+  <h3 id="sec51"><span class="num">5.1</span>五条结论</h3>
+  <p><b>结论一，需求仍在增长，但增长方式变了。</b>2021—2025年销量从352.1万辆增至1,649.0万辆，复合增速47.1%；2025年增速降到28.2%，但绝对增量362.4万辆，是五年最大。月度渗透率从2021年2月的8.1%升至2025年12月的59.1%，出口从34.88万辆增至258.43万辆、2025年翻倍。市场从“翻倍扩张”进入“千万级增量”，出口成为第二增长极<sup class="cite">[1]</sup>。</p>
+
+  <p><b>结论二，三家整车营收都增长，但处在三个增长阶段。</b>2025年比亚迪营收8,039.65亿元、同比+3.46%，长安1,640.00亿元、+2.67%，赛力斯1,650.54亿元、+13.69%。比亚迪是规模平台期，长安是低增速，赛力斯是低基数后的高位减速；用同一个增速排名会掩盖阶段差异<sup class="cite">[2]</sup>。</p>
+
+  <p><b>结论三，毛利率分化比营收更剧烈，规模不是充分条件。</b>赛力斯毛利率从10.39%升至29.14%（+18.76pct），比亚迪从20.21%降至17.74%（-2.47pct），长安从18.36%降至15.54%（-2.82pct）。比亚迪规模最大但毛利率下行，赛力斯规模较小但毛利率最高；毛利率是产品结构、价格带、垂直整合与合并口径的混合结果，不能直接排名<sup class="cite">[2]</sup>。</p>
+
+  <p><b>结论四，利润还在，现金先分化。</b>比亚迪2025年归母净利较2023年+8.6%，OCF却-65.2%；长安归母净利-64.0%、OCF-90.8%；赛力斯扭亏、OCF+351.9%。OCF/NP分别为1.81、0.45、4.85倍。赛力斯4.85倍需拆应付/预收/存货，长安0.45倍说明利润现金含量弱，比亚迪1.81倍仍高于1但趋势下行。方向可判断，百分比归因不可做<sup class="cite">[2]</sup>。</p>
+
+  <p><b>结论五，按环节分组，不跨组排名。</b>2025年整车组等权毛利率20.81%、电池组21.22%，组间差仅0.41pct；组内极差10.1—13.6pct。研发强度比亚迪7.21%、宁德5.23%、亿纬4.89%、赛力斯4.82%、长安4.36%。电池组OCF/NP集中在1.81—1.85倍，整车组0.45—4.85倍。分组是为了同口径，不是为了贴“电池优于整车”的标签<sup class="cite">[2]</sup>。</p>
+
+  <h3 id="sec52"><span class="num">5.2</span>跟踪指标</h3>
+  <p>下一期数据不必重复看所有总量，建议盯六个“结构指标”：</p>
+  <ul class="steps">
+    <li><b>月度渗透率的3个月移动平均。</b>单月受政策与季节扰动；看3个月移动平均是否延续2025年下半年的抬升，而不是看一次回撤。</li>
+    <li><b>出口占销量的比例。</b>2025年为15.7%，2024年为9.9%；若比例继续上升，说明出口仍在贡献增量，但要同时核对整车/KD结构与海外注册数据。</li>
+    <li><b>比亚迪的OCF/NP。</b>从2023年的5.65倍降到2025年的1.81倍；若继续向1倍靠拢，说明现金转化在弱化，需要看应收、存货与应付变化。</li>
+    <li><b>长安的经营现金流。</b>2025年只有18.36亿元、OCF/NP 0.45倍；看下一期是否回升，以及利润下滑是否伴随应收/库存上升。</li>
+    <li><b>赛力斯的毛利率与OCF/NP。</b>2025年29.14%、4.85倍；高毛利率能否维持，取决于产品结构与价格带；高OCF/NP能否持续，取决于应付/预收/存货，而不是单看比率。</li>
+    <li><b>宁德时代毛利率与亿纬锂能研发强度。</b>宁德2025年26.27%，是电池组利润池的核心；亿纬研发强度从6.05%降到4.89%，要看是营收增长摊薄还是研发投入减速。</li>
+  </ul>
+
+  <h3 id="sec53" class="new-page"><span class="num">5.3</span>结论强度与适用边界</h3>
+  <p>“能说”与“不能说”要分开。下表把五条结论按证据强度分级：描述性事实可以说到样本和期间；机制解释只能说到方向，不能说到百分比。</p>
+
+  <table id="tab5" class="data-table small-table">
+    <caption>表5　结论强度与适用边界</caption>
+    <colgroup><col style="width:22%"><col style="width:30%"><col style="width:14%"><col style="width:34%"></colgroup>
+    <thead><tr><th>结论</th><th>主要证据</th><th>证据强度</th><th>可以说 / 不能说</th></tr></thead>
+    <tbody>
+      <tr><td>需求增长，出口成为第二增长极</td><td>A1宏观数据2021—2025；销量、渗透率、出口三组年度/月度序列</td><td>强<br>（描述性）</td><td>可说总量、增速与出口占比；不可说“海外终端需求翻倍”，出口未拆整车/KD。</td></tr>
+      <tr><td>三家整车处在三种增长阶段</td><td>三家公司2023—2025年年报；营收及同比</td><td>强<br>（样本内）</td><td>可说三家阶段差异；不可代表全行业，也不可用单一增速排名。</td></tr>
+      <tr><td>毛利率分化比营收更剧烈</td><td>三家公司年报；合并报表毛利率</td><td>中强<br>（描述性）</td><td>可说方向与幅度；不可归因到具体车型、价格带或产品结构。</td></tr>
+      <tr><td>利润还在，现金先分化</td><td>OCF、归母净利、OCF/NP；缺营运资金附注</td><td>中<br>（方向性）</td><td>可说“现金转化差异”；不可做应收/存货/合同负债的百分比归因。</td></tr>
+      <tr><td>组间差小、组内差大</td><td>五家样本2025年；等权毛利率、研发强度、OCF/NP</td><td>中<br>（样本小）</td><td>可说“组内差异大于组间”；不可说“电池一定优于整车”，也不可做产业链利润分配核算。</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>本报告计算，数据见附录A表A1/A2。<b>注：</b>“证据强度”是对本报告结论的限定，不是对数据质量的评级；样本仅五家、期间仅三年，所有结论均不外推到全行业。</div>
+
+  <h3 id="sec54"><span class="num">5.4</span>研究限制</h3>
+  <p>第一，样本只有五家，且财务数据只覆盖2023—2025年，不能代表全行业；第二，缺少应收账款、存货、合同负债等附注细项，OCF差异只能做方向判断，不能做营运资金三項归因；第三，上游资源/材料、电机电控、充电回收未纳入样本，产业链结构只覆盖中游电池与下游整车；第四，出口未拆分整车/KD/区域，不能等同海外终端销量；第五，研发强度未区分资本化与费用化，合并口径含电池/电子，跨组比较需谨慎；第六，所有公司数据为2025年报，未使用2026年Q3数据，避免期间混用。</p>
+
+  <h3 id="sec55"><span class="num">5.5</span>下一步取证清单</h3>
+  <p>要把本报告的方向性判断升级为可归因结论，需要补四类证据。它们也直接对应生产链路的缺口：</p>
+  <ul class="steps">
+    <li><b>营运资金明细。</b>逐家拆应收账款、存货、合同负债、应付账款与票据；赛力斯4.85倍、长安0.45倍、比亚迪1.81倍的差异，只有拆到这些科目才能解释。</li>
+    <li><b>产品与价格带结构。</b>分车型/分价格带的销量、单车收入与毛利率；没有这一层，赛力斯29.14%与比亚迪17.74%的差距只能停在“口径不同”。</li>
+    <li><b>出口拆分。</b>整车出口、KD散件、贸易商采购与海外注册量分开；2025年+102.8%的低基数与口径因素必须标清。</li>
+    <li><b>上游与电池环节。</b>锂/钴/镍、正极/负极/隔膜/电解液的价格与产能；本报告只覆盖中游电池与下游整车，不能代替全产业链利润分配。</li>
+  </ul>
+</section>
+
+<!-- ================= 附录A ================= -->
+<section class="appendix" id="appA">
+  <div class="chapter-head">
+    <span class="chapter-number">A</span>
+    <span class="chapter-label">附录A</span>
+    <h2>数据表与来源索引</h2>
+  </div>
+  <div class="chapter-question">本附录给出可复核的底稿：五家公司三年财务、数据来源与证据编号。正文中的每个关键数字都能在这里找到对应记录。</div>
+
+  <table id="tabA1" class="data-table tiny-table">
+    <caption>表A1　2023—2025年五家公司财务底稿</caption>
+    <colgroup><col style="width:11%"><col style="width:7%"><col style="width:6%"><col style="width:11%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:10%"><col style="width:8%"><col style="width:9.5%"><col style="width:9.5%"></colgroup>
+    <thead>
+      <tr><th>公司</th><th>环节</th><th>年度</th><th>营收<br>（亿元）</th><th>同比</th><th>毛利率</th><th>归母净利<br>（亿元）</th><th>OCF<br>（亿元）</th><th>OCF/NP<br>（倍）</th><th>研发<br>（亿元）</th><th>研发<br>强度</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>比亚迪</td><td>整车</td><td>2023</td><td>6,023.15</td><td>+42.04%</td><td>20.21%</td><td>300.41</td><td>1,697.25</td><td>5.65</td><td>395.75</td><td>6.57%</td></tr>
+      <tr><td>比亚迪</td><td>整车</td><td>2024</td><td>7,771.02</td><td>+29.02%</td><td>19.44%</td><td>402.54</td><td>1,334.54</td><td>3.32</td><td>531.95</td><td>6.85%</td></tr>
+      <tr><td>比亚迪</td><td>整车</td><td>2025</td><td>8,039.65</td><td>+3.46%</td><td>17.74%</td><td>326.19</td><td>591.36</td><td>1.81</td><td>579.78</td><td>7.21%</td></tr>
+      <tr><td>长安汽车</td><td>整车</td><td>2023</td><td>1,512.98</td><td>+24.78%</td><td>18.36%</td><td>113.27</td><td>198.61</td><td>1.75</td><td>59.80</td><td>3.95%</td></tr>
+      <tr><td>长安汽车</td><td>整车</td><td>2024</td><td>1,597.33</td><td>+5.58%</td><td>14.94%</td><td>73.21</td><td>48.49</td><td>0.66</td><td>65.05</td><td>4.07%</td></tr>
+      <tr><td>长安汽车</td><td>整车</td><td>2025</td><td>1,640.00</td><td>+2.67%</td><td>15.54%</td><td>40.75</td><td>18.36</td><td>0.45</td><td>71.58</td><td>4.36%</td></tr>
+      <tr><td>赛力斯</td><td>整车</td><td>2023</td><td>358.42</td><td>+5.09%</td><td>10.39%</td><td>-24.50</td><td>63.98</td><td>不适用</td><td>16.96</td><td>4.73%</td></tr>
+      <tr><td>赛力斯</td><td>整车</td><td>2024</td><td>1,451.76</td><td>+305.04%</td><td>26.15%</td><td>59.46</td><td>225.15</td><td>3.79</td><td>55.86</td><td>3.85%</td></tr>
+      <tr><td>赛力斯</td><td>整车</td><td>2025</td><td>1,650.54</td><td>+13.69%</td><td>29.14%</td><td>59.57</td><td>289.14</td><td>4.85</td><td>79.54</td><td>4.82%</td></tr>
+      <tr><td>宁德时代</td><td>电池</td><td>2023</td><td>4,009.17</td><td>+22.01%</td><td>22.91%</td><td>441.21</td><td>928.26</td><td>2.10</td><td>183.56</td><td>4.58%</td></tr>
+      <tr><td>宁德时代</td><td>电池</td><td>2024</td><td>3,620.13</td><td>-9.70%</td><td>24.44%</td><td>507.45</td><td>969.90</td><td>1.91</td><td>186.07</td><td>5.14%</td></tr>
+      <tr><td>宁德时代</td><td>电池</td><td>2025</td><td>4,237.02</td><td>+17.04%</td><td>26.27%</td><td>722.01</td><td>1,332.20</td><td>1.85</td><td>221.47</td><td>5.23%</td></tr>
+      <tr><td>亿纬锂能</td><td>电池</td><td>2023</td><td>487.84</td><td>+34.38%</td><td>17.04%</td><td>40.50</td><td>86.76</td><td>2.14</td><td>27.32</td><td>5.60%</td></tr>
+      <tr><td>亿纬锂能</td><td>电池</td><td>2024</td><td>486.15</td><td>-0.35%</td><td>17.41%</td><td>40.76</td><td>44.34</td><td>1.09</td><td>29.42</td><td>6.05%</td></tr>
+      <tr><td>亿纬锂能</td><td>电池</td><td>2025</td><td>614.70</td><td>+26.44%</td><td>16.17%</td><td>41.34</td><td>74.92</td><td>1.81</td><td>30.06</td><td>4.89%</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>资料来源：</b>各公司2023—2025年年度报告，A1财务库交叉核对；查询日2026-11-13。<b>注：</b>所有财务记录均为annual、合并报表、人民币；OCF/NP为经营现金流/归母净利；赛力斯2023年归母净利为负，比率不适用；合计按原始值计算，与四舍五入后的分项可能有0.01—0.02的尾差。</div>
+
+  <p>完整的记录级底稿见同目录<code>nev_financials.csv</code>与<code>nev_macro.csv</code>，字段包括公司、环节、年度、指标、数值、单位与证据record_id；正文图表由<code>build_charts.py</code>从A1数据重绘，不直接调用A3生产代码。</p>
+
+  <table id="tabA2" class="data-table small-table">
+    <caption>表A2　数据来源与证据索引</caption>
+    <colgroup><col style="width:10%"><col style="width:35%"><col style="width:19%"><col style="width:23%"><col style="width:13%"></colgroup>
+    <thead>
+      <tr><th>编号</th><th>来源</th><th>覆盖/期间</th><th>本报告用途</th><th>备注</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>[1]</td><td>A1数据集<code>dataset.json</code>；run <code>run-20261113193412-b1c2a06bc319</code>；底层为同花顺iFinD宏观库/行业库/财务库</td><td>389条；宏观2021—2025；财务2023—2025</td><td>销量、出口、59个月渗透率、五家公司财务</td><td>原始记录；record_id见CSV</td></tr>
+      <tr><td>[2]</td><td>比亚迪、长安汽车、赛力斯、宁德时代、亿纬锂能2023—2025年年度报告（上交所/深交所披露）</td><td>5家；2023—2025年报</td><td>财务数据交叉核对、合并口径确认</td><td>年报原文为准</td></tr>
+      <tr><td>[3]</td><td>A3基准<code>a3_baseline/chart_data.json</code>与C1—C6图表</td><td>6张基准图；C5仅10个月；C6仅3家整车</td><td>图表结构对照、口径校验</td><td>C5/C6未直接用于最终图，理由见1.2</td></tr>
+      <tr><td>[4]</td><td>A2解读报告<code>interpretation_report.json</code></td><td>2026-11-13；含产业链分段与warnings</td><td>产业链分段框架、分组理由、限制提示</td><td>“月度仅10个月”警告已被A1的59个月覆盖</td></tr>
+      <tr><td>[5]</td><td>用户提供的A5版式参考<code>光伏行业研究报告.html</code></td><td>版式/组件</td><td>视觉语言与页面结构</td><td>仅版式；不引用其数据</td></tr>
+    </tbody>
+  </table>
+  <div class="table-source"><b>注：</b>图1—3和图5采用本批验收的 A3 图表。图4、图6、图7按报告指标由 A3 编译。图8嵌入 A3 单跑的产业链全景原图，财务样本分组沿用本批 A2。主营构成记录的期间未确认，未进入年度结构比较。</div>
+
+  <h3>A.3　图表与证据对照</h3>
+  <p>每张图只承担一个判断，避免“图很多、结论很少”。下表说明每张图回答哪个问题、用什么数据、在正文哪一章出现。</p>
+  <ul class="q-list">
+    <li><b>图1 销量</b>—回答Q2的总量与增速：2021—2025年销量及同比；数据为A1宏观年度序列；见第2.1节。</li>
+    <li><b>图2 渗透率</b>—回答Q2的月度路径：2021-02至2025-12共59个月；数据为A1月度渗透率；见第2.2节。</li>
+    <li><b>图3 出口</b>—回答Q2的出口变化：2021—2025年出口量及同比；数据为A1行业出口；见第2.3节。</li>
+    <li><b>图4 营收指数</b>—回答Q3的营收分化：2023年＝100，按组展示并保留隔离缺口；数据为A1财务；见第3.1节。</li>
+    <li><b>图5 毛利率</b>—回答Q3/Q4的毛利率差异：五家公司2023—2025；数据为A1财务；见第3.2节。</li>
+    <li><b>图6 现金转化</b>—回答Q3/Q4的OCF/NP：按组展示合格样本，图注列明隔离缺口；数据为A1财务；见第3.3节。</li>
+    <li><b>图7 研发强度</b>—回答Q4的研发投入差异：按组展示合格样本，图注列明隔离缺口；数据为A1财务；见第4.2节。</li>
+    <li><b>图8 产业链结构</b>—供Q1和Q4共用，展示行业全景；图注另列本批A2财务样本边界；见第4.4节。</li>
+  </ul>
+
+  <h3>A.4　复现顺序</h3>
+  <p>锁定本批 A1/A2 后，使用隔离副本的 <code>adapt_nev_report_a3.py</code> 导入、编译并嵌入 A3 图表。<code>report_a3_charts.json</code> 保存逐点证据与产业链原图来源。目录中的图题可直接跳到相应图位。</p>
+</section>
+
+<!-- ================= 附录B ================= -->
+<section class="appendix" id="appB">
+  <div class="chapter-head">
+    <span class="chapter-number">B</span>
+    <span class="chapter-label">附录B</span>
+    <h2>研究说明</h2>
+  </div>
+  <div class="chapter-question">本附录说明这份报告是怎么做出来的、版式沿用了什么、哪些话不能说。</div>
+
+  <h3>B.1　制作方式</h3>
+  <p>本报告是智能体4（ChapterWriter）与智能体5（ReportFusion）的人工样例：由助手直接读取上游A1/A2/A3产物，自己完成数据校验、章节写作、图表重绘与PDF排版；不调用生产代码，不修改<code>a17-industry-research-agent</code>源码。数据底稿、图表脚本、HTML与PDF均放在独立样例目录，便于与生产输出对照。</p>
+
+  <h3>B.2　版式说明</h3>
+  <p>版式沿用刚刚优化过的A5视觉语言：白底、PingFang无衬线正文、品牌青绿（#0A5C5C）、全网格表头、图题在图上方、无底色左侧色条提示框、A5页眉页脚与页码。封面为白底信息型，不使用宋体/金色/米色/深色大色块；表格不使用三线表；目录自动回填页码，正文每页（封面除外）有页码。图表由matplotlib按A5配色重绘，图内不放标题，标题放在图上方。</p>
+
+  <h3>B.3　合规边界</h3>
+  <p>本报告不是证券研究报告，不载“证券研究报告”字样、机构资格说明、分析师姓名/登记编码、投资评级或目标价，也不构成投资建议。报告只做行业与财务分析，所有数据来自公开年报与上游数据集；引用数字以年报原文为准，读者应自行复核。报告中的“含义”“机制”“利润池”均为样本内、年度口径的方向性判断，不是因果证明。</p>
+
+  <h3>B.4　使用限制</h3>
+  <p>第一，样本仅五家，不代表全行业；第二，财务数据为2023—2025年报，未使用2026年Q3；第三，缺少营运资金附注，OCF差异不能做百分比归因；第四，出口未拆分整车/KD/区域；第五，上游资源与材料、电机电控、充电回收未纳入样本；第六，研发强度未区分资本化，合并口径含电池/电子，跨组比较多有边界。超出这些边界的结论，需要新增数据后再下。</p>
+
+  <p class="table-source" style="margin-top:6mm"><b>报告编号：</b>NEV-2025-01　<b>研究基准日：</b>2026-11-13　<b>数据底稿：</b>nev_financials.csv / nev_macro.csv　<b>图表脚本：</b>build_charts.py　<b>版式母本：</b>白酒A5样例（用户已验收方向）</p>
+</section>
+
+</main>
+</div>
+
+
+
+</body></html>

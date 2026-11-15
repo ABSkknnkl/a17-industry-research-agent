@@ -1,0 +1,633 @@
+{
+  "sales_wan": {
+    "2021": 352.1,
+    "2022": 688.7,
+    "2023": 949.5,
+    "2024": 1286.6,
+    "2025": 1649.0
+  },
+  "sales_yoy": {
+    "2021": null,
+    "2022": 95.5978415222948,
+    "2023": 37.86844780020326,
+    "2024": 35.502896261190095,
+    "2025": 28.167262552463868
+  },
+  "exports_wan": {
+    "2021": 34.88,
+    "2022": 67.5,
+    "2023": 115.26,
+    "2024": 127.44,
+    "2025": 258.43
+  },
+  "exports_yoy": {
+    "2021": null,
+    "2022": 93.52064220183485,
+    "2023": 70.75555555555557,
+    "2024": 10.56741280583029,
+    "2025": 102.78562460765852
+  },
+  "penetration": [
+    {
+      "month": "2021-02",
+      "value": 8.1,
+      "record_id": "R-d90041f3501b9dd66f62"
+    },
+    {
+      "month": "2021-03",
+      "value": 10.5,
+      "record_id": "R-99c8d5806e326e23e0be"
+    },
+    {
+      "month": "2021-04",
+      "value": 10.1,
+      "record_id": "R-c0c80ccc451470dc0879"
+    },
+    {
+      "month": "2021-05",
+      "value": 11.4,
+      "record_id": "R-c411895d986ce0691146"
+    },
+    {
+      "month": "2021-06",
+      "value": 14.0,
+      "record_id": "R-5afc5e6d794fa68ac2be"
+    },
+    {
+      "month": "2021-07",
+      "value": 14.8,
+      "record_id": "R-cf2b2772d861557be6e7"
+    },
+    {
+      "month": "2021-08",
+      "value": 17.1,
+      "record_id": "R-f5d512307dbf3bb7bcbf"
+    },
+    {
+      "month": "2021-09",
+      "value": 21.1,
+      "record_id": "R-e06eb18ee6338fefcff4"
+    },
+    {
+      "month": "2021-10",
+      "value": 18.8,
+      "record_id": "R-3a40d78a71634bd8aa94"
+    },
+    {
+      "month": "2021-11",
+      "value": 20.8,
+      "record_id": "R-eb738558d1b7184fe252"
+    },
+    {
+      "month": "2021-12",
+      "value": 22.6,
+      "record_id": "R-be7f5a0f11629fe8abb3"
+    },
+    {
+      "month": "2022-01",
+      "value": 16.6,
+      "record_id": "R-ee56da7759a7dee47ece"
+    },
+    {
+      "month": "2022-02",
+      "value": 21.8,
+      "record_id": "R-d932554126c15003eab2"
+    },
+    {
+      "month": "2022-03",
+      "value": 28.2,
+      "record_id": "R-4b8bee51eeab9f38de80"
+    },
+    {
+      "month": "2022-04",
+      "value": 27.2,
+      "record_id": "R-84e94313871e1cf7d12b"
+    },
+    {
+      "month": "2022-05",
+      "value": 26.6,
+      "record_id": "R-63cc6aa3131bbad06916"
+    },
+    {
+      "month": "2022-06",
+      "value": 27.4,
+      "record_id": "R-b8a1e475f68c6433c2ec"
+    },
+    {
+      "month": "2022-07",
+      "value": 26.7,
+      "record_id": "R-8b9d38e2130c1a523416"
+    },
+    {
+      "month": "2022-08",
+      "value": 28.3,
+      "record_id": "R-3969b04211af16fe2c68"
+    },
+    {
+      "month": "2022-09",
+      "value": 31.8,
+      "record_id": "R-91c14da74b57a2b47952"
+    },
+    {
+      "month": "2022-10",
+      "value": 30.2,
+      "record_id": "R-c4a1e6035a3d07049aa0"
+    },
+    {
+      "month": "2022-11",
+      "value": 36.3,
+      "record_id": "R-18eda5a12b8edb9f4545"
+    },
+    {
+      "month": "2022-12",
+      "value": 29.5,
+      "record_id": "R-bb7d3100de87c799e98f"
+    },
+    {
+      "month": "2023-01",
+      "value": 25.7,
+      "record_id": "R-b83b3d5bc3fab42f4f95"
+    },
+    {
+      "month": "2023-02",
+      "value": 31.6,
+      "record_id": "R-002e6eceb0af996cc560"
+    },
+    {
+      "month": "2023-03",
+      "value": 34.2,
+      "record_id": "R-a45992b007076a159cab"
+    },
+    {
+      "month": "2023-04",
+      "value": 32.3,
+      "record_id": "R-aae7cf79280ce4320f32"
+    },
+    {
+      "month": "2023-05",
+      "value": 33.3,
+      "record_id": "R-52e16594570be4f9404b"
+    },
+    {
+      "month": "2023-06",
+      "value": 35.1,
+      "record_id": "R-67764acdff4e4ccf5ea8"
+    },
+    {
+      "month": "2023-07",
+      "value": 36.1,
+      "record_id": "R-34e1615425d1c1bf9e7a"
+    },
+    {
+      "month": "2023-08",
+      "value": 37.3,
+      "record_id": "R-42bcfda3bfe3b65eb1a7"
+    },
+    {
+      "month": "2023-09",
+      "value": 36.9,
+      "record_id": "R-83b3a4154e3a306781ef"
+    },
+    {
+      "month": "2023-10",
+      "value": 37.8,
+      "record_id": "R-62db14fde4da0038cc0a"
+    },
+    {
+      "month": "2023-11",
+      "value": 40.4,
+      "record_id": "R-090c18d0a4d5b8bd022a"
+    },
+    {
+      "month": "2023-12",
+      "value": 40.2,
+      "record_id": "R-d3d36567239af932030b"
+    },
+    {
+      "month": "2024-01",
+      "value": 32.8,
+      "record_id": "R-46e2f24ed5686c41a0be"
+    },
+    {
+      "month": "2024-02",
+      "value": 35.8,
+      "record_id": "R-8c5f28feb150de84b0ba"
+    },
+    {
+      "month": "2024-03",
+      "value": 41.6,
+      "record_id": "R-2bc240f43c5fb1e2a62d"
+    },
+    {
+      "month": "2024-04",
+      "value": 43.7,
+      "record_id": "R-8672b8cce89ea869c64f"
+    },
+    {
+      "month": "2024-05",
+      "value": 47.0,
+      "record_id": "R-b7c17432a4c63abe2091"
+    },
+    {
+      "month": "2024-06",
+      "value": 48.4,
+      "record_id": "R-e90412b64ac1fe7c3586"
+    },
+    {
+      "month": "2024-07",
+      "value": 51.1,
+      "record_id": "R-107c37392b1359ab82c4"
+    },
+    {
+      "month": "2024-08",
+      "value": 53.9,
+      "record_id": "R-7fa5896e6ed72f19a7c9"
+    },
+    {
+      "month": "2024-09",
+      "value": 53.3,
+      "record_id": "R-1cfd5df3f5c681864798"
+    },
+    {
+      "month": "2024-10",
+      "value": 52.9,
+      "record_id": "R-005a2fdebed8418a9623"
+    },
+    {
+      "month": "2024-11",
+      "value": 52.3,
+      "record_id": "R-60f8a93c3e8c0c21418f"
+    },
+    {
+      "month": "2024-12",
+      "value": 49.4,
+      "record_id": "R-9240556959984b2e0195"
+    },
+    {
+      "month": "2025-01",
+      "value": 41.5,
+      "record_id": "R-6e475fc8f1d6387b61a8"
+    },
+    {
+      "month": "2025-02",
+      "value": 49.5,
+      "record_id": "R-74f7da9e741987bba567"
+    },
+    {
+      "month": "2025-03",
+      "value": 51.1,
+      "record_id": "R-197785c1cffb39bdfe23"
+    },
+    {
+      "month": "2025-04",
+      "value": 51.5,
+      "record_id": "R-8f921e214f63e85fe3ec"
+    },
+    {
+      "month": "2025-05",
+      "value": 52.9,
+      "record_id": "R-3c3e8a1253cb21ab06cf"
+    },
+    {
+      "month": "2025-06",
+      "value": 53.3,
+      "record_id": "R-891fb90463464582e51d"
+    },
+    {
+      "month": "2025-07",
+      "value": 54.0,
+      "record_id": "R-24acaab557dade2246e3"
+    },
+    {
+      "month": "2025-08",
+      "value": 55.2,
+      "record_id": "R-5c2b9fba93fe1280899b"
+    },
+    {
+      "month": "2025-09",
+      "value": 57.8,
+      "record_id": "R-964a65805c99900d4838"
+    },
+    {
+      "month": "2025-10",
+      "value": 57.2,
+      "record_id": "R-5ede99ec767290791a43"
+    },
+    {
+      "month": "2025-11",
+      "value": 59.3,
+      "record_id": "R-b9fff305a499a1d185ac"
+    },
+    {
+      "month": "2025-12",
+      "value": 59.1,
+      "record_id": "R-e4dd323d06ed9a1ef152"
+    }
+  ],
+  "companies": {
+    "比亚迪": {
+      "2023": {
+        "revenue": 6023.15354,
+        "revenue_yoy": 42.0352,
+        "gross_margin": 20.2148,
+        "net_profit": 300.40811,
+        "ocf": 1697.25025,
+        "ocf_np": 5.649815013316385,
+        "rd": 395.74945,
+        "rd_intensity": 6.57046922964544,
+        "ids": {
+          "revenue": "R-c2678f02b259cdcaeb05",
+          "gross_margin": "R-432f53934d9566dc55f3",
+          "operating_cash_flow": "R-cf3f714e7258a40cd97b",
+          "revenue_yoy": "R-ef0cea0c733e7539e054",
+          "parent_net_profit": "R-dc52255ddb2e2d2b47f3",
+          "rd_expense": "R-57938ed5d903c0e3d32c"
+        }
+      },
+      "2024": {
+        "revenue": 7771.02455,
+        "revenue_yoy": 29.0192,
+        "gross_margin": 19.4383,
+        "net_profit": 402.54346,
+        "ocf": 1334.53873,
+        "ocf_np": 3.3152662075294925,
+        "rd": 531.94745,
+        "rd_intensity": 6.845267912581746,
+        "ids": {
+          "revenue": "R-00eff4a77ebcf7ba7e42",
+          "gross_margin": "R-aaf8727ddbc15ed7b3bf",
+          "operating_cash_flow": "R-f7dc532fc8ee809cfb3e",
+          "revenue_yoy": "R-a995231d03a3891f45d5",
+          "parent_net_profit": "R-009c8a3cc404c080f20b",
+          "rd_expense": "R-0fa6d248819077b0f36d"
+        }
+      },
+      "2025": {
+        "revenue": 8039.64958,
+        "revenue_yoy": 3.4568000000000003,
+        "gross_margin": 17.7445,
+        "net_profit": 326.19022,
+        "ocf": 591.35544,
+        "ocf_np": 1.8129159114580444,
+        "rd": 579.78105,
+        "rd_intensity": 7.211521400662839,
+        "ids": {
+          "revenue": "R-2850b52306edde896670",
+          "gross_margin": "R-41f976fdb583554f5bbe",
+          "operating_cash_flow": "R-2418d5a9d80646e9f228",
+          "revenue_yoy": "R-ab43c127a70311c9f9b4",
+          "parent_net_profit": "R-86899599c1bce98993a4",
+          "rd_expense": "R-54fac9022f0809db3903",
+          "debt_ratio": "R-16e7942009e9d68a3d4b",
+          "net_margin": "R-4336dc96f84cb0e476e2"
+        }
+      }
+    },
+    "长安汽车": {
+      "2023": {
+        "revenue": 1512.9770664697,
+        "revenue_yoy": 24.7787,
+        "gross_margin": 18.3579,
+        "net_profit": 113.27463013149999,
+        "ocf": 198.6146623756,
+        "ocf_np": 1.7533905177622666,
+        "rd": 59.7984465323,
+        "rd_intensity": 3.952369659629442,
+        "ids": {
+          "revenue": "R-d307b380be42aefb33d1",
+          "gross_margin": "R-5b88aa60c3bd93beafb6",
+          "operating_cash_flow": "R-9165cb9e793e0d0a66d4",
+          "revenue_yoy": "R-c111ed6c11bdd7e17169",
+          "parent_net_profit": "R-c05daf8d13c6e4114c0f",
+          "rd_expense": "R-ed12996fde3f70dcf939"
+        }
+      },
+      "2024": {
+        "revenue": 1597.3303421325,
+        "revenue_yoy": 5.5752999999999995,
+        "gross_margin": 14.9399,
+        "net_profit": 73.21363897239999,
+        "ocf": 48.4939881314,
+        "ocf_np": 0.6623627620760828,
+        "rd": 65.05446679239999,
+        "rd_intensity": 4.0726996211409645,
+        "ids": {
+          "revenue": "R-d16ab32c6843a39cdd21",
+          "gross_margin": "R-9bebffd539ba8b753173",
+          "operating_cash_flow": "R-dbdd4a9e940892d6c8e6",
+          "revenue_yoy": "R-3a8f8fcda5c22d40e1c2",
+          "parent_net_profit": "R-a4edcef116f6c93e0118",
+          "rd_expense": "R-d5cee85008d3739016fc"
+        }
+      },
+      "2025": {
+        "revenue": 1639.9980387587,
+        "revenue_yoy": 2.6712,
+        "gross_margin": 15.5401,
+        "net_profit": 40.7522318154,
+        "ocf": 18.3567335856,
+        "ocf_np": 0.45044731951743344,
+        "rd": 71.5759892724,
+        "rd_intensity": 4.364394809067895,
+        "ids": {
+          "revenue": "R-439658738fbc270bf00f",
+          "gross_margin": "R-5af428dfec95be77a3ef",
+          "operating_cash_flow": "R-ac6feef0e7241fa25965",
+          "revenue_yoy": "R-6ee20254fc4b3ee71771",
+          "parent_net_profit": "R-0d84f32b243973dbc9e3",
+          "rd_expense": "R-d3f757f7f5d653cc63cd",
+          "debt_ratio": "R-0b11146746f8a2f77a69",
+          "net_margin": "R-e33bfa8f0e2c82a98f35"
+        }
+      }
+    },
+    "赛力斯": {
+      "2023": {
+        "revenue": 358.4195786681,
+        "revenue_yoy": 5.093,
+        "gross_margin": 10.3863,
+        "net_profit": -24.4968710734,
+        "ocf": 63.976116207,
+        "ocf_np": null,
+        "rd": 16.9647582671,
+        "rd_intensity": 4.733211932825113,
+        "ids": {
+          "revenue": "R-994c82746ff57be89ecb",
+          "gross_margin": "R-d5ac05599d06f774cba0",
+          "operating_cash_flow": "R-de71a61078c570614127",
+          "revenue_yoy": "R-870884ac6cb31eb63492",
+          "parent_net_profit": "R-f21b29643b0d42107933",
+          "rd_expense": "R-8573a5092efe5d2f07e8"
+        }
+      },
+      "2024": {
+        "revenue": 1451.7582205379001,
+        "revenue_yoy": 305.0443,
+        "gross_margin": 26.151799999999998,
+        "net_profit": 59.459453628199995,
+        "ocf": 225.1526514417,
+        "ocf_np": 3.786658600154311,
+        "rd": 55.8550444738,
+        "rd_intensity": 3.8474067984340254,
+        "ids": {
+          "revenue": "R-a205e12b93422df8c124",
+          "gross_margin": "R-8dd06b265a0774dcd573",
+          "operating_cash_flow": "R-2d4fbd22249556aa27f3",
+          "revenue_yoy": "R-ff94b56e31de3e228a08",
+          "parent_net_profit": "R-3f0e0443f7023d08bb24",
+          "rd_expense": "R-1fb8eff5f745c68aec14"
+        }
+      },
+      "2025": {
+        "revenue": 1650.5363663913001,
+        "revenue_yoy": 13.6922,
+        "gross_margin": 29.1419,
+        "net_profit": 59.5678744991,
+        "ocf": 289.13743329240003,
+        "ocf_np": 4.853915566464749,
+        "rd": 79.5431973655,
+        "rd_intensity": 4.81923324957763,
+        "ids": {
+          "revenue": "R-75932763a5e752cedc44",
+          "gross_margin": "R-c50316c56bec8123caeb",
+          "operating_cash_flow": "R-85a057fb0eb59fa9c62b",
+          "revenue_yoy": "R-8b7ed58ac163b00115eb",
+          "parent_net_profit": "R-f274adc626b7374d6c16",
+          "rd_expense": "R-e6fbb5831680fa49dcb7",
+          "debt_ratio": "R-123661eb86ce246f5082",
+          "net_margin": "R-af61169ee3813d464a92"
+        }
+      }
+    },
+    "宁德时代": {
+      "2023": {
+        "revenue": 4009.17045,
+        "revenue_yoy": 22.0099,
+        "gross_margin": 22.9091,
+        "net_profit": 441.21248,
+        "ocf": 928.26124,
+        "ocf_np": 2.1038870885973124,
+        "rd": 183.56108,
+        "rd_intensity": 4.578530204421715,
+        "ids": {
+          "revenue": "R-e2d3b80524e2d4c51118",
+          "gross_margin": "R-4dab9658613afa17706f",
+          "operating_cash_flow": "R-8aa3e30dd37b61e69f46",
+          "revenue_yoy": "R-e1542c600d009331c867",
+          "parent_net_profit": "R-45d280d23745e65e9049",
+          "rd_expense": "R-94dba7a39f3b3c30860a"
+        }
+      },
+      "2024": {
+        "revenue": 3620.12554,
+        "revenue_yoy": -9.7039,
+        "gross_margin": 24.4449,
+        "net_profit": 507.44682,
+        "ocf": 969.90345,
+        "ocf_np": 1.911340088799847,
+        "rd": 186.06756,
+        "rd_intensity": 5.139809598978713,
+        "ids": {
+          "revenue": "R-e949c0f54064f15edb9d",
+          "gross_margin": "R-5d77e111695151f2adfc",
+          "operating_cash_flow": "R-30bdaa9dce00b70ac144",
+          "revenue_yoy": "R-05e528b6f49cbc410492",
+          "parent_net_profit": "R-425f970c7bd4284d1df6",
+          "rd_expense": "R-79a653495150dace910d"
+        }
+      },
+      "2025": {
+        "revenue": 4237.01834,
+        "revenue_yoy": 17.0406,
+        "gross_margin": 26.2728,
+        "net_profit": 722.01282,
+        "ocf": 1332.19982,
+        "ocf_np": 1.84511934289477,
+        "rd": 221.46581,
+        "rd_intensity": 5.226925923572944,
+        "ids": {
+          "revenue": "R-f5a837da7f0378a237fb",
+          "gross_margin": "R-5569a84cfc21d79dad02",
+          "operating_cash_flow": "R-ca20cf2859da1042468c",
+          "revenue_yoy": "R-fe789b78bb4745b076f2",
+          "parent_net_profit": "R-63e026d9ead3d5f02201",
+          "rd_expense": "R-dada88033afe715c3137",
+          "debt_ratio": "R-6fa794c80d97f3a94932",
+          "net_margin": "R-0fcf9924860ee0fe69fc"
+        }
+      }
+    },
+    "亿纬锂能": {
+      "2023": {
+        "revenue": 487.8358717586,
+        "revenue_yoy": 34.3754,
+        "gross_margin": 17.035,
+        "net_profit": 40.5017469952,
+        "ocf": 86.76259761120001,
+        "ocf_np": 2.1421939557689336,
+        "rd": 27.3163699769,
+        "rd_intensity": 5.599500069239925,
+        "ids": {
+          "revenue": "R-145e05e9c83cac61fef9",
+          "gross_margin": "R-0fbb69e8cd41ba7c9e0f",
+          "operating_cash_flow": "R-f01872d511603795dca0",
+          "revenue_yoy": "R-ac5ad16c786abc1b8d1c",
+          "parent_net_profit": "R-162f2f1029e79d8ac271",
+          "rd_expense": "R-ac1521dfbe4e21114142"
+        }
+      },
+      "2024": {
+        "revenue": 486.14556525089995,
+        "revenue_yoy": -0.34650000000000003,
+        "gross_margin": 17.4132,
+        "net_profit": 40.7558528437,
+        "ocf": 44.337328945500005,
+        "ocf_np": 1.0878763625812244,
+        "rd": 29.4230751123,
+        "rd_intensity": 6.05231790957812,
+        "ids": {
+          "revenue": "R-6661f1dad33a28372ba3",
+          "gross_margin": "R-74370e0d21bc7aa3d741",
+          "operating_cash_flow": "R-dd0f66e3591e955bedbe",
+          "revenue_yoy": "R-4a43191ef35522b43eee",
+          "parent_net_profit": "R-dfab56a59706d02d072d",
+          "rd_expense": "R-668c28cd8cefb9fcc38d"
+        }
+      },
+      "2025": {
+        "revenue": 614.6963077608999,
+        "revenue_yoy": 26.4428,
+        "gross_margin": 16.1724,
+        "net_profit": 41.3430367089,
+        "ocf": 74.9213166679,
+        "ocf_np": 1.8121870726484766,
+        "rd": 30.059448446799998,
+        "rd_intensity": 4.890129982445299,
+        "ids": {
+          "revenue": "R-b9c2bd098377eeaede64",
+          "gross_margin": "R-15095f53dd293b4b7fef",
+          "operating_cash_flow": "R-fbe3a644a93ca4be2cb0",
+          "revenue_yoy": "R-6a14d87cd8c2adc719c9",
+          "parent_net_profit": "R-2f32d8e20d274383daeb",
+          "rd_expense": "R-2d2963e127b1c65fc79d",
+          "debt_ratio": "R-ba6f81ee44ea7c3ce344",
+          "net_margin": "R-6eeb74405fd02142d471"
+        }
+      }
+    }
+  },
+  "sales_ids": {
+    "2021": "R-deb83bebc112ce69cad1",
+    "2022": "R-5857b2071dd2c35950df",
+    "2023": "R-4fc0c382a6689f13fb54",
+    "2024": "R-a6951154c9e1604746b1",
+    "2025": "R-e291f0980156a96d5ddc"
+  },
+  "export_ids": {
+    "2021": "R-edbb6e144668d79d8037",
+    "2022": "R-e000ce370a61ec50870e",
+    "2023": "R-04d35bda646d76dff5e5",
+    "2024": "R-6d58848443b2cbdba045",
+    "2025": "R-ceaba431b055c5db8754"
+  }
+}

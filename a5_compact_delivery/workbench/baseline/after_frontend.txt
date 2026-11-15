@@ -1,0 +1,14 @@
+> skillhub-frontend@0.1.0 type-check
+> vue-tsc --build --force
+
+
+> skillhub-frontend@0.1.0 lint
+> eslint . --max-warnings 0
+
+
+> skillhub-frontend@0.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+[warn] src/components/ChartGallery.vue
+[warn] Code style issues found in the above file. Run Prettier with --write to fix.

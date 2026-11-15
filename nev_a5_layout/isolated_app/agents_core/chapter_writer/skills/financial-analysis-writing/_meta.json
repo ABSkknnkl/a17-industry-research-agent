@@ -1,0 +1,5 @@
+{
+  "chapters": ["CH-05"],
+  "source": "skills包/财务报表深度解读/financial-statement/SKILL.md",
+  "adaptation": "保留三表联动、盈利质量和口径检查；移除固定健康阈值、数据工具调用、估值评级与行动建议。"
+}

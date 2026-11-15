@@ -1,0 +1,264 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-11-13T18:05:52+00:00",
+  "table": "表A2 数据来源与证据索引",
+  "table_number": "表A2",
+  "mother_html_sha256": "2cec0986bb8adad4815620d6f24b77c7f689fc109a3918de6f2bf4b6649c489a",
+  "a3_artifact_dir": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct",
+  "rows": [
+    {
+      "no": "[1]",
+      "mother_cells": [
+        "[1]",
+        "A1数据集 dataset.json ；run run-20261113193412-b1c2a06bc319 ；底层为同花顺iFinD宏观库/行业库/财务库",
+        "389条；宏观2021—2025；财务2023—2025",
+        "销量、出口、59个月渗透率、五家公司财务",
+        "原始记录；record_id见CSV"
+      ],
+      "mother_source_text": "A1数据集 dataset.json ；run run-20261113193412-b1c2a06bc319 ；底层为同花顺iFinD宏观库/行业库/财务库",
+      "status": "verified",
+      "bindings": [
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/dataset.json",
+          "exists": true,
+          "sha256": "c094302adc787ea69014780fef82f9d36b3d44e7bf37d9c90eae3d7cfe5eddf5",
+          "size_bytes": 2850431,
+          "role": "A1 dataset.json（原始数据）",
+          "lock_field": "dataset_sha256",
+          "lock_sha256": "c094302adc787ea69014780fef82f9d36b3d44e7bf37d9c90eae3d7cfe5eddf5",
+          "lock_match": true
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/input_data.json",
+          "exists": true,
+          "sha256": "2217350c3cfd0c03ce0efab4a5f02ab97098cce1f5d97e50c130b7f45a2f2724",
+          "size_bytes": 1872,
+          "role": "题面/问句集",
+          "lock_field": "questions_sha256",
+          "lock_sha256": "2217350c3cfd0c03ce0efab4a5f02ab97098cce1f5d97e50c130b7f45a2f2724",
+          "lock_match": true
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_input_lock.json",
+          "exists": true,
+          "sha256": "0707e61372561d302de8a64df5da1dd323466a673f7853ed4db001e33c08aeae",
+          "size_bytes": 480,
+          "role": "A1/A2/题面哈希锁"
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/runs/run-20261113193412-b1c2a06bc319/state.json",
+          "exists": true,
+          "sha256": "19d1949929f964b6806f38eec5b23abfaf513defea29c26dbe98e9f55495a51a",
+          "size_bytes": 267657,
+          "role": "A1 运行态快照"
+        }
+      ],
+      "verified_bindings": 4,
+      "note": "A1/A2/题面三份锁哈希全部匹配；389 条记录与 59 个月序列可复核"
+    },
+    {
+      "no": "[2]",
+      "mother_cells": [
+        "[2]",
+        "比亚迪、长安汽车、赛力斯、宁德时代、亿纬锂能2023—2025年年度报告（上交所/深交所披露）",
+        "5家；2023—2025年报",
+        "财务数据交叉核对、合并口径确认",
+        "年报原文为准"
+      ],
+      "mother_source_text": "比亚迪、长安汽车、赛力斯、宁德时代、亿纬锂能2023—2025年年度报告（上交所/深交所披露）",
+      "status": "disclosure_only",
+      "bindings": [
+        {
+          "path": "新能源汽车行业优化报告样例/nev_financials.csv",
+          "exists": true,
+          "sha256": "e65ef3b0fd5fc88900b6f21775a017cbea975c94218e6f5f59f03247419bcdad",
+          "size_bytes": 4979,
+          "role": "五家公司财务派生底稿（本地）"
+        },
+        {
+          "path": "新能源汽车行业优化报告样例/data_snapshot.json",
+          "exists": true,
+          "sha256": "dc187b08a2f908c808bb80437389677da7ea307141d97b606514a065526a460c",
+          "size_bytes": 17453,
+          "role": "样例数据快照（本地）"
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/dataset.json",
+          "exists": true,
+          "sha256": "c094302adc787ea69014780fef82f9d36b3d44e7bf37d9c90eae3d7cfe5eddf5",
+          "size_bytes": 2850431,
+          "role": "A1 financials 记录（合并报表口径来源）"
+        }
+      ],
+      "verified_bindings": 3,
+      "note": "母本声明为五家公司 2023—2025 年报（上交所/深交所公开披露）；工作区无年报原文文件，仅有派生底稿 nev_financials.csv / data_snapshot.json 与 A1 financials 记录，外部披露可追溯但本地原文不可验真",
+      "source_gap_id": "SOURCE_GAP-TABA2-02"
+    },
+    {
+      "no": "[3]",
+      "mother_cells": [
+        "[3]",
+        "A3基准 a3_baseline/chart_data.json 与C1—C6图表",
+        "6张基准图；C5仅10个月；C6仅3家整车",
+        "图表结构对照、口径校验",
+        "C5/C6未直接用于最终图，理由见1.2"
+      ],
+      "mother_source_text": "A3基准 a3_baseline/chart_data.json 与C1—C6图表",
+      "status": "verified",
+      "bindings": [
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/a3_baseline/chart_data.json",
+          "exists": true,
+          "sha256": "cacb273a20f886512661ecb22c7751c39ee88173d46cf68353c8afbb1644761f",
+          "size_bytes": 3230,
+          "role": "A3 基准图数据"
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/a3_baseline/charts/C1_sales.png",
+          "exists": true,
+          "sha256": "73a42eee8740c3a9ceb747a37238d4d35383057ecaa81c37c010738612a0693a",
+          "size_bytes": 120510,
+          "role": "A3 基准图 C1_sales"
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/a3_baseline/charts/C2_export.png",
+          "exists": true,
+          "sha256": "4d232b6ba396febb712759acfb2d0a6dc1cf5c185d6f3c1343a178231d01c346",
+          "size_bytes": 120046,
+          "role": "A3 基准图 C2_export"
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/a3_baseline/charts/C3_margin.png",
+          "exists": true,
+          "sha256": "ffcfe575f737b50ea00bfb96314d517fef9ad7e924243f0259d7a44d21b4030f",
+          "size_bytes": 126768,
+          "role": "A3 基准图 C3_margin"
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/a3_baseline/charts/C4_rd_intensity.png",
+          "exists": true,
+          "sha256": "f08e08c4158f569df8f6218ec6eea3ae75a3b61bb14871a4fdb6fe045389e3c6",
+          "size_bytes": 81746,
+          "role": "A3 基准图 C4_rd_intensity"
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/a3_baseline/charts/C5_penetration.png",
+          "exists": true,
+          "sha256": "7cfceed8be1946697cd84b0fb617233babe82b237e39399a21defc4f5ddf5bf6",
+          "size_bytes": 112099,
+          "role": "A3 基准图 C5_penetration"
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/a3_baseline/charts/C6_structure.png",
+          "exists": true,
+          "sha256": "647f5a50d9f12c41495eb0881675045f530320886927b06e8b3561b0d357dccb",
+          "size_bytes": 97761,
+          "role": "A3 基准图 C6_structure"
+        }
+      ],
+      "verified_bindings": 7,
+      "note": "A3 基准 chart_data.json 与 C1—C6 六张图均存在；旧 C5 10 点、C6 三家整车仅历史展示"
+    },
+    {
+      "no": "[4]",
+      "mother_cells": [
+        "[4]",
+        "A2解读报告 interpretation_report.json",
+        "2026-11-13；含产业链分段与warnings",
+        "产业链分段框架、分组理由、限制提示",
+        "“月度仅10个月”警告已被A1的59个月覆盖"
+      ],
+      "mother_source_text": "A2解读报告 interpretation_report.json",
+      "status": "verified",
+      "bindings": [
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/interpretation_report.json",
+          "exists": true,
+          "sha256": "d6dd06e121b364038a1e17b626d149000ebdd0372731be1cae6bcb5612bdc8e9",
+          "size_bytes": 2982718,
+          "role": "A2 解读报告",
+          "lock_field": "report_sha256",
+          "lock_sha256": "d6dd06e121b364038a1e17b626d149000ebdd0372731be1cae6bcb5612bdc8e9",
+          "lock_match": true
+        },
+        {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a2_verification.json",
+          "exists": true,
+          "sha256": "f368df7b3bd97d41967a1d8cdbc2c17f544847a0bf997c9367ba6e2e75cb2fe5",
+          "size_bytes": 1582,
+          "role": "A2 月度覆盖复核"
+        }
+      ],
+      "verified_bindings": 2,
+      "note": "A2 解读报告哈希与 a3_input_lock.report_sha256 一致；月度 59 个月复核见 a2_verification.json"
+    },
+    {
+      "no": "[5]",
+      "mother_cells": [
+        "[5]",
+        "用户提供的A5版式参考 光伏行业研究报告.html",
+        "版式/组件",
+        "视觉语言与页面结构",
+        "仅版式；不引用其数据"
+      ],
+      "mother_source_text": "用户提供的A5版式参考 光伏行业研究报告.html",
+      "status": "source_gap",
+      "bindings": [
+        {
+          "path": "新能源汽车行业优化报告样例/a5_style.html",
+          "exists": true,
+          "sha256": "cbd04dbf820b9ba48199a2fa40dbaf67524dfa9ab6daf375ec643e1ab9b24530",
+          "size_bytes": 10524,
+          "role": "同目录 A5 样式片段（旁证，非母本所指文件）"
+        }
+      ],
+      "verified_bindings": 1,
+      "note": "母本声明的版式参考「光伏行业研究报告.html」全仓检索为 0 个文件；同目录 a5_style.html 只是 CSS 样式片段，不是该 HTML，登记为旁证而非绑定",
+      "source_gap_id": "SOURCE_GAP-TABA2-05"
+    }
+  ],
+  "aggregate_source_generated_by_registry": "资料来源：由图表注册表逐行绑定生成（表A2 共 5 行）。已验真 3 行：[1] A1 dataset.json / input_data.json（哈希与 a3_input_lock 一致）；[3] A3 基准 chart_data.json 与 C1—C6 六图；[4] A2 interpretation_report.json（哈希与锁一致）。[2] 为五家公司 2023—2025 年报公开披露，工作区仅存派生底稿，年报原文缺失，见 SOURCE_GAP-TABA2-02；[5] 母本所指光伏版式 HTML 未在工作区找到，见 SOURCE_GAP-TABA2-05。注：母本原文与图表数据未改，本行仅由注册表汇总可追溯证据。",
+  "source_gaps": [
+    {
+      "id": "SOURCE_GAP-TABA2-02",
+      "row": "[2]",
+      "severity": "informational",
+      "detail": "母本声明为五家公司 2023—2025 年报（上交所/深交所公开披露）；工作区无年报原文文件，仅有派生底稿 nev_financials.csv / data_snapshot.json 与 A1 financials 记录，外部披露可追溯但本地原文不可验真",
+      "action": "交回内容层补原件或降级为披露声明；排版层不代写来源"
+    },
+    {
+      "id": "SOURCE_GAP-TABA2-05",
+      "row": "[5]",
+      "severity": "informational",
+      "detail": "母本声明的版式参考「光伏行业研究报告.html」全仓检索为 0 个文件；同目录 a5_style.html 只是 CSS 样式片段，不是该 HTML，登记为旁证而非绑定",
+      "action": "交回内容层补原件或降级为披露声明；排版层不代写来源"
+    }
+  ],
+  "summary": {
+    "rows": 5,
+    "verified": 3,
+    "disclosure_only": 1,
+    "source_gaps": 2,
+    "total_bindings": 17,
+    "verified_bindings": 17
+  },
+  "c5_c6_update": {
+    "mother_frozen_text": "本报告不把A3基准图直接当最终图；C5用A1的59个月重绘，C6因主营构成记录期间不可确认，未进入年度结构表。",
+    "mother_preserved": true,
+    "registry_updated_text": {
+      "C-05_legacy": "旧 C-05 仅 10 点（2025-03—2025-12），只可支撑该区间；资产 a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/a3_baseline/charts/C5_penetration.png",
+      "C-05_current": "本次 A3 验收 C-05 = CHART-02-5F4CED24，59 点（2021-02-28—2025-12-31），2021-01 原始无值不插值；77 点逐点对账 0 错",
+      "C-06": "C-06 仅历史展示；主营构成记录期间 unknown，不充当年度结构表或产业链证据"
+    }
+  },
+  "figure8": {
+    "role": "a3_standalone_panorama",
+    "title": "新能源汽车产业链关系全景图（A3 单跑原图）",
+    "path": "产业链图_单跑/新能源汽车产业链图.svg",
+    "sha256": "11187b00aacd40419129b180f1976d91c2ade557a60dd23f0f8f312241f1bf99",
+    "hash_matches": true,
+    "caption_scope": "行业全景（上游—中游—下游）；不是 A2 五家财务样本，样本仅整车组三家与电池组两家",
+    "a3_note": "A3 未提供供货关系边，不为它伪造关系证据"
+  },
+  "note": "母本 report.html 保留原文不改；新版注册表/C5/C6 描述单独更新。"
+}

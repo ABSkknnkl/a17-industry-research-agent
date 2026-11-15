@@ -1,0 +1,48 @@
+{
+  "report_id": "REPORT-F64253705E34",
+  "generated_at": "2026-11-14T02:21:23.767671+08:00",
+  "artifacts": [
+    {
+      "kind": "markdown",
+      "uri": "/Users/Zhuanz1/Downloads/同花顺赛题-T3交接/nev_a5_layout/isolated_app/output/live_a5/runs/report-20261114022056-ec2fdcd8/report.md",
+      "sha256": "8c36594f76e99ee409a15dc6ba7348d7f408443fd0deb207ca200fc74064b2c8",
+      "size_bytes": 40662
+    },
+    {
+      "kind": "html",
+      "uri": "/Users/Zhuanz1/Downloads/同花顺赛题-T3交接/nev_a5_layout/isolated_app/output/live_a5/runs/report-20261114022056-ec2fdcd8/report.html",
+      "sha256": "0ed7beb8bdba88d72df242d9e339e1fd2094665c6e49cd3914412b617a2eb9b2",
+      "size_bytes": 53491
+    },
+    {
+      "kind": "pdf",
+      "uri": "/Users/Zhuanz1/Downloads/同花顺赛题-T3交接/nev_a5_layout/isolated_app/output/live_a5/runs/report-20261114022056-ec2fdcd8/report.pdf",
+      "sha256": "f66209708e077ad0f8dbe4f962be2c9326dfd2ee3cd39e6fbf808be3b0d17fc5",
+      "size_bytes": 1619132
+    },
+    {
+      "kind": "svg",
+      "uri": "/Users/Zhuanz1/Downloads/同花顺赛题-T3交接/nev_a5_layout/isolated_app/output/live_a5/runs/report-20261114022056-ec2fdcd8/charts/SIM-C-08.svg",
+      "sha256": "d916c92d73087d820205933b3f7899c407f413e573102aefbfb500ae47138224",
+      "size_bytes": 440
+    },
+    {
+      "kind": "json",
+      "uri": "/Users/Zhuanz1/Downloads/同花顺赛题-T3交接/nev_a5_layout/isolated_app/output/live_a5/runs/report-20261114022056-ec2fdcd8/fact_audit.json",
+      "sha256": "e26d209fa20360c7e5556b86b3850fc49041a93672371bd1a95bcdfb6a04300f",
+      "size_bytes": 106542
+    },
+    {
+      "kind": "json",
+      "uri": "/Users/Zhuanz1/Downloads/同花顺赛题-T3交接/nev_a5_layout/isolated_app/output/live_a5/runs/report-20261114022056-ec2fdcd8/report_view.json",
+      "sha256": "0c2fd247d2d8cdb627e058344f15355ec4b6e43fdfe447d34e20d0d22d720621",
+      "size_bytes": 219393
+    },
+    {
+      "kind": "json",
+      "uri": "/Users/Zhuanz1/Downloads/同花顺赛题-T3交接/nev_a5_layout/isolated_app/output/live_a5/runs/report-20261114022056-ec2fdcd8/consistency_report.json",
+      "sha256": "097bc6818fb4c7a42e4dd38250eb3df5fd2ca57c5c7b66a8b25fc29b19f43272",
+      "size_bytes": 67480
+    }
+  ]
+}

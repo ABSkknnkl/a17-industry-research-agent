@@ -1,0 +1,501 @@
+{
+  "schema_version": "1.0",
+  "passed": true,
+  "hashes": {
+    "html": "d0622fc7db128574dd58d4fde6ed4ba9744bb2c5c86a878c57bfbb2821c5a00a",
+    "pdf": "626ced5f2fe5743db13f35311c22765154a156d2849ffd32bbc3a66d4fc19966",
+    "page_map": "3ef74e947e6f76ed25ecbbdad4830a79b5fab3d398e3877e56df096d1b60878d"
+  },
+  "diagnostics": {
+    "composed_at": "2026-11-13T18:49:39+00:00",
+    "theme": "a5_nev",
+    "visual_template": {
+      "template_id": "a5_nev_a3_svg",
+      "source": "新能源汽车行业优化报告样例/report_a3.html",
+      "sha256": "d78f0861e1bb955c6051b96e5e51b5a8904d29194d9bcd56b190400da6eada25",
+      "chain_asset": "产业链图_单跑/新能源汽车产业链图.svg",
+      "chain_sha256": "11187b00aacd40419129b180f1976d91c2ade557a60dd23f0f8f312241f1bf99"
+    },
+    "chain_panorama_present": true,
+    "toc_entries": 42,
+    "outline_entries": 35,
+    "page_map_consistent": true,
+    "html_has_converged_numbers": true,
+    "chromium_footer_disabled": true,
+    "header_footer_strategy": "pymupdf_stamp_single_strategy"
+  },
+  "outline": [
+    {
+      "level": 1,
+      "title": "封面",
+      "page": 1
+    },
+    {
+      "level": 1,
+      "title": "目录",
+      "page": 2
+    },
+    {
+      "level": 1,
+      "title": "执行摘要",
+      "page": 3
+    },
+    {
+      "level": 1,
+      "title": "第1章 研究范围、数据口径与结论边界",
+      "page": 4
+    },
+    {
+      "level": 2,
+      "title": "1.1 研究问题",
+      "page": 4
+    },
+    {
+      "level": 2,
+      "title": "1.2 样本与数据",
+      "page": 4
+    },
+    {
+      "level": 2,
+      "title": "1.3 六条口径声明",
+      "page": 4
+    },
+    {
+      "level": 2,
+      "title": "1.4 研究问题与结论索引",
+      "page": 5
+    },
+    {
+      "level": 1,
+      "title": "第2章 需求：销量、渗透率与出口",
+      "page": 6
+    },
+    {
+      "level": 2,
+      "title": "2.1 销量：增速降了，增量没降",
+      "page": 6
+    },
+    {
+      "level": 2,
+      "title": "2.2 渗透率：台阶式上升，伴随季节性回撤",
+      "page": 7
+    },
+    {
+      "level": 2,
+      "title": "2.3 出口：2025年的第二增长极",
+      "page": 7
+    },
+    {
+      "level": 1,
+      "title": "第3章 整车三强：营收、毛利率与现金流",
+      "page": 10
+    },
+    {
+      "level": 2,
+      "title": "3.1 营收：三种增长曲线",
+      "page": 10
+    },
+    {
+      "level": 2,
+      "title": "3.2 毛利率：规模不等于毛利",
+      "page": 11
+    },
+    {
+      "level": 2,
+      "title": "3.3 现金流：利润还在，现金先分化",
+      "page": 11
+    },
+    {
+      "level": 1,
+      "title": "第4章 电池与整车：为什么必须分组",
+      "page": 13
+    },
+    {
+      "level": 2,
+      "title": "4.1 分组理由：三种不同的生意",
+      "page": 13
+    },
+    {
+      "level": 2,
+      "title": "4.2 研发强度：比亚迪最高，电池组更稳",
+      "page": 13
+    },
+    {
+      "level": 2,
+      "title": "4.3 毛利率与现金流：组间差小，组内差大",
+      "page": 14
+    },
+    {
+      "level": 2,
+      "title": "4.4 产业链结构：利润池在哪个环节",
+      "page": 14
+    },
+    {
+      "level": 1,
+      "title": "第5章 结论与跟踪指标",
+      "page": 16
+    },
+    {
+      "level": 2,
+      "title": "5.1 五条结论",
+      "page": 16
+    },
+    {
+      "level": 2,
+      "title": "5.2 跟踪指标",
+      "page": 16
+    },
+    {
+      "level": 2,
+      "title": "5.3 结论强度与适用边界",
+      "page": 17
+    },
+    {
+      "level": 2,
+      "title": "5.4 研究限制",
+      "page": 17
+    },
+    {
+      "level": 2,
+      "title": "5.5 下一步取证清单",
+      "page": 17
+    },
+    {
+      "level": 1,
+      "title": "附录A 数据表与来源索引",
+      "page": 18
+    },
+    {
+      "level": 2,
+      "title": "表A1 2023—2025年五家公司财务底稿",
+      "page": 18
+    },
+    {
+      "level": 2,
+      "title": "表A2 数据来源与证据索引",
+      "page": 19
+    },
+    {
+      "level": 2,
+      "title": "A.3 图表与证据对照",
+      "page": 19
+    },
+    {
+      "level": 1,
+      "title": "附录B 研究说明",
+      "page": 20
+    },
+    {
+      "level": 2,
+      "title": "B.1 制作方式",
+      "page": 20
+    },
+    {
+      "level": 2,
+      "title": "B.3 合规边界",
+      "page": 20
+    },
+    {
+      "level": 2,
+      "title": "B.4 使用限制",
+      "page": 20
+    }
+  ],
+  "toc_items": [
+    {
+      "key": "exec",
+      "label": "执行摘要",
+      "level": 1,
+      "page": 3,
+      "kind": "section"
+    },
+    {
+      "key": "ch1",
+      "label": "第1章 研究范围、数据口径与结论边界",
+      "level": 1,
+      "page": 4,
+      "kind": "section"
+    },
+    {
+      "key": "sec11",
+      "label": "1.1 研究问题",
+      "level": 2,
+      "page": 4,
+      "kind": "section"
+    },
+    {
+      "key": "sec12",
+      "label": "1.2 样本与数据",
+      "level": 2,
+      "page": 4,
+      "kind": "section"
+    },
+    {
+      "key": "sec13",
+      "label": "1.3 六条口径声明",
+      "level": 2,
+      "page": 4,
+      "kind": "section"
+    },
+    {
+      "key": "sec14",
+      "label": "1.4 研究问题与结论索引",
+      "level": 2,
+      "page": 5,
+      "kind": "section"
+    },
+    {
+      "key": "ch2",
+      "label": "第2章 需求：销量、渗透率与出口",
+      "level": 1,
+      "page": 6,
+      "kind": "section"
+    },
+    {
+      "key": "sec21",
+      "label": "2.1 销量：增速降了，增量没降",
+      "level": 2,
+      "page": 6,
+      "kind": "section"
+    },
+    {
+      "key": "sec22",
+      "label": "2.2 渗透率：台阶式上升，伴随季节性回撤",
+      "level": 2,
+      "page": 7,
+      "kind": "section"
+    },
+    {
+      "key": "sec23",
+      "label": "2.3 出口：2025年的第二增长极",
+      "level": 2,
+      "page": 7,
+      "kind": "section"
+    },
+    {
+      "key": "ch3",
+      "label": "第3章 整车三强：营收、毛利率与现金流",
+      "level": 1,
+      "page": 10,
+      "kind": "section"
+    },
+    {
+      "key": "sec31",
+      "label": "3.1 营收：三种增长曲线",
+      "level": 2,
+      "page": 10,
+      "kind": "section"
+    },
+    {
+      "key": "sec32",
+      "label": "3.2 毛利率：规模不等于毛利",
+      "level": 2,
+      "page": 11,
+      "kind": "section"
+    },
+    {
+      "key": "sec33",
+      "label": "3.3 现金流：利润还在，现金先分化",
+      "level": 2,
+      "page": 11,
+      "kind": "section"
+    },
+    {
+      "key": "ch4",
+      "label": "第4章 电池与整车：为什么必须分组",
+      "level": 1,
+      "page": 13,
+      "kind": "section"
+    },
+    {
+      "key": "sec41",
+      "label": "4.1 分组理由：三种不同的生意",
+      "level": 2,
+      "page": 13,
+      "kind": "section"
+    },
+    {
+      "key": "sec42",
+      "label": "4.2 研发强度：比亚迪最高，电池组更稳",
+      "level": 2,
+      "page": 13,
+      "kind": "section"
+    },
+    {
+      "key": "sec43",
+      "label": "4.3 毛利率与现金流：组间差小，组内差大",
+      "level": 2,
+      "page": 14,
+      "kind": "section"
+    },
+    {
+      "key": "sec44",
+      "label": "4.4 产业链结构：利润池在哪个环节",
+      "level": 2,
+      "page": 14,
+      "kind": "section"
+    },
+    {
+      "key": "ch5",
+      "label": "第5章 结论与跟踪指标",
+      "level": 1,
+      "page": 16,
+      "kind": "section"
+    },
+    {
+      "key": "sec51",
+      "label": "5.1 五条结论",
+      "level": 2,
+      "page": 16,
+      "kind": "section"
+    },
+    {
+      "key": "sec52",
+      "label": "5.2 跟踪指标",
+      "level": 2,
+      "page": 16,
+      "kind": "section"
+    },
+    {
+      "key": "sec53",
+      "label": "5.3 结论强度与适用边界",
+      "level": 2,
+      "page": 17,
+      "kind": "section"
+    },
+    {
+      "key": "sec54",
+      "label": "5.4 研究限制",
+      "level": 2,
+      "page": 17,
+      "kind": "section"
+    },
+    {
+      "key": "sec55",
+      "label": "5.5 下一步取证清单",
+      "level": 2,
+      "page": 17,
+      "kind": "section"
+    },
+    {
+      "key": "appA",
+      "label": "附录A 数据表与来源索引",
+      "level": 1,
+      "page": 18,
+      "kind": "section"
+    },
+    {
+      "key": "appB",
+      "label": "附录B 研究说明",
+      "level": 1,
+      "page": 20,
+      "kind": "section"
+    },
+    {
+      "key": "fig1",
+      "label": "图1　销量：352.1→1,649.0万辆，增速降到28.2%",
+      "level": 1,
+      "page": 6,
+      "kind": "figure"
+    },
+    {
+      "key": "fig2",
+      "label": "图2　渗透率：从8.1%到59.1%，不是一条直线",
+      "level": 1,
+      "page": 7,
+      "kind": "figure"
+    },
+    {
+      "key": "fig3",
+      "label": "图3　出口：2025年翻倍，出口占销量15.7%",
+      "level": 1,
+      "page": 8,
+      "kind": "figure"
+    },
+    {
+      "key": "fig4",
+      "label": "图4　营收指数（分组展示）",
+      "level": 1,
+      "page": 10,
+      "kind": "figure"
+    },
+    {
+      "key": "fig5",
+      "label": "图5　合并报表毛利率（分组展示）",
+      "level": 1,
+      "page": 11,
+      "kind": "figure"
+    },
+    {
+      "key": "fig6",
+      "label": "图6　经营现金流／归母净利润（分组展示）",
+      "level": 1,
+      "page": 12,
+      "kind": "figure"
+    },
+    {
+      "key": "fig7",
+      "label": "图7　公司研发费用率（分组展示）",
+      "level": 1,
+      "page": 13,
+      "kind": "figure"
+    },
+    {
+      "key": "fig8",
+      "label": "图8　新能源汽车产业链关系全景图",
+      "level": 1,
+      "page": 15,
+      "kind": "figure"
+    },
+    {
+      "key": "tab1",
+      "label": "表1 2021—2025年销量、出口与年末渗透率",
+      "level": 1,
+      "page": 9,
+      "kind": "table"
+    },
+    {
+      "key": "tab2",
+      "label": "表2 2025年五家公司核心指标",
+      "level": 1,
+      "page": 10,
+      "kind": "table"
+    },
+    {
+      "key": "tab3",
+      "label": "表3 2025年整车组与电池组：组间平均与组内极差",
+      "level": 1,
+      "page": 14,
+      "kind": "table"
+    },
+    {
+      "key": "tab4",
+      "label": "表4 研究问题与结论索引",
+      "level": 1,
+      "page": 5,
+      "kind": "table"
+    },
+    {
+      "key": "tab5",
+      "label": "表5 结论强度与适用边界",
+      "level": 1,
+      "page": 17,
+      "kind": "table"
+    },
+    {
+      "key": "tabA1",
+      "label": "表A1 2023—2025年五家公司财务底稿",
+      "level": 1,
+      "page": 18,
+      "kind": "table"
+    },
+    {
+      "key": "tabA2",
+      "label": "表A2 数据来源与证据索引",
+      "level": 1,
+      "page": 19,
+      "kind": "table"
+    }
+  ],
+  "page_count": 20
+}

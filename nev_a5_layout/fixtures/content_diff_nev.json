@@ -1,0 +1,12 @@
+{
+  "identical": true,
+  "numbers_equal": true,
+  "numeric_units_equal": true,
+  "units_equal": true,
+  "evidence_ids_equal": true,
+  "paragraph_order_equal": true,
+  "conclusions_equal": true,
+  "before_hash": "d0ae3b80d242b1cd462be32662f4527786ccd3f410c650daa635f3446cfd5768",
+  "after_hash": "d0ae3b80d242b1cd462be32662f4527786ccd3f410c650daa635f3446cfd5768",
+  "differences": []
+}

@@ -1,0 +1,6 @@
+{
+  "chapters": ["CH-01", "CH-02", "CH-03", "CH-04", "CH-05", "CH-06", "CH-07"],
+  "always": true,
+  "source": "skills包/投行材料质检/SKILL.md; skills包/行业概览/SKILL.md",
+  "adaptation": "提炼数字一致性、来源可追溯和数据叙事匹配；不引入外部检索、投资建议或审批流程。"
+}

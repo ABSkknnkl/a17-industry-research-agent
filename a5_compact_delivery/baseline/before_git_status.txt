@@ -1,0 +1,103 @@
+ M a17-industry-research-agent/.env.example
+ M a17-industry-research-agent/agents_core/chapter-writer/chapter_writer/agent.py
+ M a17-industry-research-agent/agents_core/chapter-writer/chapter_writer/models.py
+ M a17-industry-research-agent/agents_core/chapter-writer/chapter_writer/retriever.py
+ M a17-industry-research-agent/agents_core/chapter-writer/tests/test_writing_assignment.py
+ M a17-industry-research-agent/agents_core/chart-generator/chart_generator/agent.py
+ M a17-industry-research-agent/agents_core/chart-generator/chart_generator/compiler.py
+ M a17-industry-research-agent/agents_core/chart-generator/chart_generator/data_formulation.py
+ M a17-industry-research-agent/agents_core/chart-generator/chart_generator/evidence_policy.py
+ M a17-industry-research-agent/agents_core/chart-generator/chart_generator/metric_guard.py
+ M a17-industry-research-agent/agents_core/chart-generator/chart_generator/models.py
+ M a17-industry-research-agent/agents_core/chart-generator/chart_generator/question_planner.py
+ M a17-industry-research-agent/agents_core/chart-generator/chart_generator/render.py
+ M a17-industry-research-agent/agents_core/chart-generator/tests/test_a3_reviewed_delivery.py
+ M a17-industry-research-agent/agents_core/chart-generator/tests/test_chain_facts.py
+ M a17-industry-research-agent/agents_core/chart-generator/tests/test_cross_industry_publication.py
+ M a17-industry-research-agent/agents_core/chart-generator/tests/test_question_plan_contract.py
+ M a17-industry-research-agent/agents_core/chart-generator/tests/test_question_planner.py
+ M a17-industry-research-agent/agents_core/chart-generator/tests/test_shared_axis_unit_v8_final.py
+ M a17-industry-research-agent/agents_core/data-analysis/data_interpreter/agent.py
+ M a17-industry-research-agent/agents_core/data-analysis/data_interpreter/analysis_guard.py
+ M a17-industry-research-agent/agents_core/data-analysis/data_interpreter/engine.py
+ M a17-industry-research-agent/agents_core/data-analysis/data_interpreter/measurement_facts.py
+ M a17-industry-research-agent/agents_core/data-analysis/data_interpreter/models.py
+ M a17-industry-research-agent/agents_core/data-analysis/tests/test_measurement_semantics_audit.py
+ M a17-industry-research-agent/agents_core/data-fetcher/data_fetcher/agent.py
+ M a17-industry-research-agent/agents_core/data-fetcher/data_fetcher/fusion.py
+ M a17-industry-research-agent/agents_core/data-fetcher/tests/test_metric_requirements.py
+ M a17-industry-research-agent/agents_core/financial_semantics.py
+ M a17-industry-research-agent/agents_core/report-fusion/report_fusion/agent.py
+ M a17-industry-research-agent/agents_core/report-fusion/report_fusion/models.py
+ M a17-industry-research-agent/agents_core/report-fusion/report_fusion/render.py
+ M a17-industry-research-agent/agents_core/report-fusion/report_fusion/requirement_links.py
+ M a17-industry-research-agent/agents_core/report-fusion/report_fusion/styles/print.css
+ M a17-industry-research-agent/agents_core/report-fusion/report_fusion/templates/auto/report.html
+ M a17-industry-research-agent/agents_core/report-fusion/report_fusion/templates/rich/report.html
+ M a17-industry-research-agent/agents_core/report-fusion/report_fusion/templates/rich/section.html
+ M a17-industry-research-agent/agents_core/report-fusion/tests/test_agent.py
+ M a17-industry-research-agent/agents_core/report-fusion/tests/test_final_delivery_contract_v8.py
+ M a17-industry-research-agent/backend/app/agents/adapters.py
+ M a17-industry-research-agent/backend/app/api/routes.py
+ M a17-industry-research-agent/backend/app/engine/state_machine.py
+ M a17-industry-research-agent/backend/app/schemas/workflow.py
+ M a17-industry-research-agent/backend/tests/l1/test_c1_formula_baselines.py
+ M a17-industry-research-agent/backend/tests/test_ab1_metric_unit_provenance.py
+ M a17-industry-research-agent/backend/tests/test_all_defects_verification.py
+ M a17-industry-research-agent/backend/tests/test_causal_sensitivity_continuation.py
+ M a17-industry-research-agent/backend/tests/test_chapter_source_claim_filter.py
+ M a17-industry-research-agent/backend/tests/test_chart_data_replenishment.py
+ M a17-industry-research-agent/backend/tests/test_financial_conflict_precision.py
+ M a17-industry-research-agent/backend/tests/test_official_restatement_reconciliation.py
+ M a17-industry-research-agent/backend/tests/test_report_integrity_charts.py
+ M a17-industry-research-agent/backend/tests/test_report_integrity_data.py
+ M a17-industry-research-agent/backend/tests/test_report_integrity_delivery.py
+ M a17-industry-research-agent/backend/tests/test_report_integrity_facts.py
+ M a17-industry-research-agent/eval/cases/baselines.json
+ M a17-industry-research-agent/frontend/src/api/types.ts
+ M a17-industry-research-agent/frontend/src/components/ReviewActions.vue
+ M a17-industry-research-agent/frontend/src/components/RevisionDiffViewer.vue
+ M a17-industry-research-agent/frontend/src/components/StageInterventionModal.vue
+ M a17-industry-research-agent/frontend/src/components/__tests__/ReviewActions.revise.spec.ts
+ M a17-industry-research-agent/frontend/src/components/__tests__/StageInterventionModal.spec.ts
+ M "\351\207\221\350\236\215\345\205\254\345\274\217Bug\344\277\256\345\244\215\344\270\216\351\252\214\346\224\266\346\226\271\346\241\210.md"
+?? "A5\351\231\204\345\275\225\344\272\214\347\264\247\345\207\221\346\250\241\345\274\217\345\256\236\346\226\275\346\226\271\346\241\210.md"
+?? a17-industry-research-agent/agents_core/chapter-writer/chapter_writer/net_cash_ratio.py
+?? a17-industry-research-agent/agents_core/chapter-writer/tests/test_a4_coverage_association.py
+?? a17-industry-research-agent/agents_core/chapter-writer/tests/test_a4_upstream_contract.py
+?? a17-industry-research-agent/agents_core/chapter-writer/tests/test_claim_clause_retention.py
+?? a17-industry-research-agent/agents_core/chapter-writer/tests/test_cross_chapter_claim_audit.py
+?? a17-industry-research-agent/agents_core/chapter-writer/tests/test_empty_section_chart_placement.py
+?? a17-industry-research-agent/agents_core/chapter-writer/tests/test_net_cash_ratio_guard.py
+?? a17-industry-research-agent/agents_core/chart-generator/tests/test_chart_period_intent_filter.py
+?? a17-industry-research-agent/agents_core/chart-generator/tests/test_local_cleanup_p13_p15_p18.py
+?? a17-industry-research-agent/agents_core/data-fetcher/tests/test_source_period_priority.py
+?? a17-industry-research-agent/agents_core/report-fusion/report_fusion/templates/research_sections.html
+?? a17-industry-research-agent/backend/tests/test_cross_chapter_content_audit_alert.py
+?? "a17-industry-research-agent/deliverables/agent4_writing_refactor/A1-A2\351\207\215\350\267\221\344\270\216\345\233\272\345\256\232\345\233\276\350\241\250\351\252\214\346\224\266\350\241\245\345\205\205\346\226\271\346\241\210.md"
+?? a17-industry-research-agent/deliverables/agent4_writing_refactor/build_a1_revision_copy.py
+?? a17-industry-research-agent/deliverables/agent4_writing_refactor/build_a4_coverage_acceptance.py
+?? a17-industry-research-agent/deliverables/agent4_writing_refactor/build_nev_rev1_acceptance.py
+?? "a17-industry-research-agent/deliverables/agent4_writing_refactor/\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246\344\277\256\345\244\215\346\240\270\351\252\214\344\270\216\345\211\251\344\275\231\351\227\256\351\242\230\346\226\271\346\241\210.md"
+?? "a17-industry-research-agent/deliverables/agent4_writing_refactor/\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246\344\277\256\345\244\215\351\252\214\346\224\266\350\256\260\345\275\225.md"
+?? a17-industry-research-agent/frontend/src/components/__tests__/RevisionDiffViewer.spec.ts
+?? a5_compact_delivery/
+?? nev_a5_layout/
+?? "\344\270\255\345\233\275\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246\350\241\214\344\270\232\347\240\224\347\251\266\346\212\245\345\221\212_\346\270\262\346\237\223\351\252\214\350\257\201.json"
+?? "\344\270\255\345\233\275\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246\350\241\214\344\270\232\347\240\224\347\251\266\346\212\245\345\221\212_\347\240\224\347\251\266\347\250\277.html"
+?? "\344\270\255\345\233\275\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246\350\241\214\344\270\232\347\240\224\347\251\266\346\212\245\345\221\212_\347\240\224\347\251\266\347\250\277.md"
+?? "\344\270\255\345\233\275\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246\350\241\214\344\270\232\347\240\224\347\251\266\346\212\245\345\221\212_\351\242\204\350\247\210.png"
+?? "\345\206\263\350\265\233\346\274\224\347\244\272\345\211\215\347\253\257\347\273\204\344\273\266\345\210\240\345\207\217\350\257\204\344\274\260-20261114.md"
+?? "\345\211\215\347\253\257\347\273\204\344\273\266\346\216\245\345\205\245\346\203\205\345\206\265\347\233\230\347\202\271-20261114.md"
+?? "\345\267\245\344\275\234\346\265\201\351\200\211\345\236\213\344\270\216\347\231\275\351\205\222\350\241\214\344\270\232AI\350\207\252\351\200\202\351\205\215\346\226\271\346\241\210.md"
+?? "\346\225\205\351\232\234\350\207\252\346\204\210\345\267\245\344\275\234\346\265\201-\345\210\206\350\257\212\345\244\204\346\226\271\344\270\216\351\252\214\346\224\266\346\250\241\346\235\277.md"
+?? "\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246A1A2\351\207\215\350\267\221\344\270\216\345\233\272\345\256\232\345\205\255\345\233\276\345\257\271\350\264\246\346\211\247\350\241\214\346\226\271\346\241\210.md"
+?? "\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246A5\347\273\223\346\236\204\345\214\226\346\216\222\347\211\210\351\207\215\346\236\204\346\211\247\350\241\214\346\226\271\346\241\210.md"
+?? "\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246\346\212\245\345\221\212\351\223\276\350\267\257\344\277\256\345\244\215\346\200\273\347\273\223-20261115.md"
+?? "\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246\350\241\214\344\270\232\344\274\230\345\214\226\346\212\245\345\221\212\346\240\267\344\276\213/"
+?? "\346\226\260\350\203\275\346\272\220\346\261\275\350\275\246\350\241\214\344\270\232\346\212\245\345\221\212_\346\225\260\346\215\256\350\241\245\345\274\272\345\214\205.xlsx"
+?? "\346\231\272\350\203\275\344\275\2235-\346\216\222\347\211\210\344\274\230\345\214\226\345\273\272\350\256\256.md"
+?? "\346\231\272\350\203\275\344\275\223\346\224\271\345\212\250\346\261\207\346\200\273_20261109-20261113.md"
+?? "\347\231\275\351\205\222\350\241\214\344\270\232\344\274\230\345\214\226\346\212\245\345\221\212\346\240\267\344\276\213/"
+?? "\350\241\214\344\270\232\347\224\273\345\203\217-\347\231\275\351\205\222.template.yaml"
+?? "\351\207\221\350\236\215\345\205\254\345\274\217Bug\344\277\256\345\244\215-\345\256\236\346\226\275\344\270\216\351\252\214\346\224\266\350\256\260\345\275\225.md"

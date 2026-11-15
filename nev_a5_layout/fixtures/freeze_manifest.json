@@ -1,0 +1,596 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-11-13T17:44:22+00:00",
+  "environment": {
+    "os": "macOS 26.5.1 arm64",
+    "python": "3.13.11",
+    "pymupdf": "1.27.2.3",
+    "chromium": "Google Chrome 157.0.8103.51",
+    "chromium_executable": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "raster_dpi": 100,
+    "page_size_pt": [
+      595.0,
+      841.9
+    ],
+    "cjk_font_alias": "ReportCJK",
+    "cjk_fallback_chain": [
+      "PingFang SC",
+      "Microsoft YaHei",
+      "Noto Sans CJK SC",
+      "Source Han Sans SC",
+      "SimHei"
+    ],
+    "note": "PDF 元数据时间等可变字段不纳入字节等同性断言。"
+  },
+  "header_footer": {
+    "strategy": "pdf_postprocess_stamp",
+    "single_strategy": true,
+    "html_has_dom": false,
+    "cover_skipped": true,
+    "evidence": "模板 HTML 无 <header>/<footer> DOM；PDF 页眉（INDUSTRY RESEARCH / 报告名·日期）与页脚（免责声明 + 页码）由样例目录 render_pdf.py 后处理盖章。P4 若采用 PyMuPDF 盖章，须关闭 Chromium 页眉页脚，在正文边界外盖章并跳过封面。"
+  },
+  "fixtures": {
+    "nev": {
+      "role": "visual_mother",
+      "html": {
+        "path": "新能源汽车行业优化报告样例/report.html",
+        "sha256": "2cec0986bb8adad4815620d6f24b77c7f689fc109a3918de6f2bf4b6649c489a",
+        "bytes": 82468
+      },
+      "pdf_raw": {
+        "path": "新能源汽车行业优化报告样例/report_raw.pdf",
+        "sha256": "a9a5c76aca9f95730fccd3c87cf76c39daf92f864ac7795fe2d9527db7074c8c",
+        "pages": 19,
+        "outline": 0
+      },
+      "pdf_final": {
+        "path": "新能源汽车行业优化报告样例/新能源汽车行业研究报告_2021-2025.pdf",
+        "sha256": "b88cf31302ab52414d04604e382d00b8eecc7285a32301f131be5d3cf179ae1a",
+        "pages": 19,
+        "outline": 35
+      },
+      "expect": {
+        "pages": 19,
+        "toc_keys": 42,
+        "toc_items": 42,
+        "figures": 8,
+        "tables": 7,
+        "outline": 35
+      },
+      "measured": {
+        "pages": 19,
+        "toc_keys": 42,
+        "toc_items": 42,
+        "figures": 8,
+        "tables": 7,
+        "outline": 35
+      },
+      "counts": {
+        "toc_keys": 42,
+        "toc_items": 42,
+        "figures": 8,
+        "img_tags": 8,
+        "tables": 7,
+        "h1": 1,
+        "h2": 9,
+        "h3": 26,
+        "h4": 1,
+        "page_break_rules": 30,
+        "section_roles": {
+          "cover": 1,
+          "toc-page": 1,
+          "exec-page": 1,
+          "chapter": 5,
+          "appendix": 2
+        }
+      },
+      "page_rules": {
+        "cover_has_no_page_number": true,
+        "physical_page_2_is_toc": true,
+        "summary_starts_page": 3,
+        "later_pages_numbered": true
+      },
+      "raster": {
+        "dpi": 100,
+        "dir": "nev_a5_layout/fixtures/pages/nev",
+        "files": [
+          "p01.png",
+          "p02.png",
+          "p03.png",
+          "p04.png",
+          "p05.png",
+          "p06.png",
+          "p07.png",
+          "p08.png",
+          "p09.png",
+          "p10.png",
+          "p11.png",
+          "p12.png",
+          "p13.png",
+          "p14.png",
+          "p15.png",
+          "p16.png",
+          "p17.png",
+          "p18.png",
+          "p19.png"
+        ],
+        "count": 19
+      }
+    },
+    "baijiu": {
+      "role": "layout_generality_fixture",
+      "html": {
+        "path": "白酒行业优化报告样例/report.html",
+        "sha256": "9c8ba23fd80163ae9975f656e40ff1a5ccc9fff9ca394c1df2e7ad1f62ba2c49",
+        "bytes": 89112
+      },
+      "pdf_raw": {
+        "path": "白酒行业优化报告样例/report_raw.pdf",
+        "sha256": "f1a3a9ee4fb611506efbb63d0f7abb5a9651ee9690e270853362c0d70368516b",
+        "pages": 21,
+        "outline": 0
+      },
+      "pdf_final": {
+        "path": "白酒行业优化报告样例/白酒行业四强_现金流与渠道质量.pdf",
+        "sha256": "086649004855e8ad24099decb40fea19a05924c37cbe465313ff700c55b868d1",
+        "pages": 21,
+        "outline": 0
+      },
+      "expect": {
+        "pages": 21,
+        "toc_keys": 43,
+        "toc_items": 43,
+        "figures": 7,
+        "tables": 11,
+        "outline": 0
+      },
+      "measured": {
+        "pages": 21,
+        "toc_keys": 43,
+        "toc_items": 43,
+        "figures": 7,
+        "tables": 11,
+        "outline": 0
+      },
+      "counts": {
+        "toc_keys": 43,
+        "toc_items": 43,
+        "figures": 7,
+        "img_tags": 7,
+        "tables": 11,
+        "h1": 1,
+        "h2": 9,
+        "h3": 24,
+        "h4": 1,
+        "page_break_rules": 29,
+        "section_roles": {
+          "cover": 1,
+          "toc-page": 1,
+          "exec-page": 1,
+          "chapter": 5,
+          "appendix": 2
+        }
+      },
+      "page_rules": {
+        "cover_has_no_page_number": true,
+        "physical_page_2_is_toc": true,
+        "summary_starts_page": 3,
+        "later_pages_numbered": true
+      },
+      "raster": {
+        "dpi": 100,
+        "dir": "nev_a5_layout/fixtures/pages/baijiu",
+        "files": [
+          "p01.png",
+          "p02.png",
+          "p03.png",
+          "p04.png",
+          "p05.png",
+          "p06.png",
+          "p07.png",
+          "p08.png",
+          "p09.png",
+          "p10.png",
+          "p11.png",
+          "p12.png",
+          "p13.png",
+          "p14.png",
+          "p15.png",
+          "p16.png",
+          "p17.png",
+          "p18.png",
+          "p19.png",
+          "p20.png",
+          "p21.png"
+        ],
+        "count": 21
+      }
+    }
+  },
+  "a3": {
+    "a1_run_id": "run-20261113193412-b1c2a06bc319",
+    "a2_report_id": "analysis-20261113-2212af3b",
+    "a3_reference_run_id": "charts-20261113214131-d344a507",
+    "discovery": {
+      "strategy": "递归扫描 output/**/chart_result.json，按文件内部 run_id 匹配",
+      "searched_root": "a17-industry-research-agent/output",
+      "chart_results_scanned": 70,
+      "matches": [
+        "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct/chart_result.json"
+      ],
+      "previous_mistake": "只按同名 run 目录查找，漏掉嵌套验收目录，误判为产物缺失",
+      "correction_status": "corrected"
+    },
+    "run": {
+      "artifact_dir": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct",
+      "artifact_dir_present": true,
+      "chart_result_path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct/chart_result.json",
+      "chart_result_sha256": "9f2674dd85da74ef18524039c9bc4b76581abc203236ad5f1310bb70cef68e29",
+      "events_path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct/events.json",
+      "request_path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct/request.json",
+      "status": "completed",
+      "subject": "新能源汽车",
+      "source_report_id": "analysis-20261113-2212af3b",
+      "generated_at": "2026-11-13T13:42:24.678134Z",
+      "quality": {
+        "passed": true,
+        "ready_count": 11,
+        "suppressed_count": 43,
+        "requested_count": null,
+        "issues": []
+      },
+      "chart_count": 11,
+      "suppressed_count": 43
+    },
+    "run_artifact_dirs_checked": [
+      "/Users/Zhuanz1/Downloads/同花顺赛题-T3交接/a17-industry-research-agent/output"
+    ],
+    "run_artifact_dirs_present": [
+      "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct"
+    ],
+    "run_artifact_missing": false,
+    "input_lock": {
+      "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_input_lock.json",
+      "sha256": "0707e61372561d302de8a64df5da1dd323466a673f7853ed4db001e33c08aeae",
+      "a1_run_id": "run-20261113193412-b1c2a06bc319",
+      "report_id": "analysis-20261113-2212af3b",
+      "checks": {
+        "dataset": {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/dataset.json",
+          "lock_sha256": "c094302adc787ea69014780fef82f9d36b3d44e7bf37d9c90eae3d7cfe5eddf5",
+          "actual_sha256": "c094302adc787ea69014780fef82f9d36b3d44e7bf37d9c90eae3d7cfe5eddf5",
+          "match": true
+        },
+        "a2_report": {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/interpretation_report.json",
+          "lock_sha256": "d6dd06e121b364038a1e17b626d149000ebdd0372731be1cae6bcb5612bdc8e9",
+          "actual_sha256": "d6dd06e121b364038a1e17b626d149000ebdd0372731be1cae6bcb5612bdc8e9",
+          "match": true
+        },
+        "questions": {
+          "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/input_data.json",
+          "lock_sha256": "2217350c3cfd0c03ce0efab4a5f02ab97098cce1f5d97e50c130b7f45a2f2724",
+          "actual_sha256": "2217350c3cfd0c03ce0efab4a5f02ab97098cce1f5d97e50c130b7f45a2f2724",
+          "match": true
+        }
+      },
+      "all_match": true
+    },
+    "point_verification": {
+      "path": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/point_verification.json",
+      "sha256": "391694a68c65b865b727da36b2b264458ac699f463b1b222582d212a7691f879",
+      "target_point_checks": 77,
+      "target_point_errors": 0,
+      "real_model_participated": true,
+      "error_count": 0,
+      "slots": {
+        "C-01": {
+          "status": "已对齐",
+          "chart_id": "CHART-05-A2563BAE",
+          "points": 9,
+          "start": "2021-12-31",
+          "end": "2025-12-31"
+        },
+        "C-02": {
+          "status": "已对齐",
+          "chart_id": "CHART-01-B796826C",
+          "points": 9,
+          "start": "2021-12-31",
+          "end": "2025-12-31"
+        },
+        "C-05": {
+          "status": "已对齐",
+          "chart_id": "CHART-02-5F4CED24",
+          "points": 59,
+          "start": "2021-02-28",
+          "end": "2025-12-31"
+        }
+      },
+      "other_slots": {
+        "C-03": "部分对齐",
+        "C-04": "部分对齐",
+        "C-06": "仅历史展示"
+      },
+      "point_comparison_count": 77,
+      "all_points_passed": true
+    },
+    "acceptance_summary": {
+      "target_point_checks": 77,
+      "target_point_errors": 0,
+      "a2_semantic_mode": "deterministic_only",
+      "a3_attempts": [
+        {
+          "directory": "a3_live",
+          "run_id": "charts-20261113213255-f3b650e6",
+          "llm_responded": false,
+          "connect_error": true
+        },
+        {
+          "directory": "a3_live_retry",
+          "run_id": "charts-20261113213324-ce50209c",
+          "llm_responded": false,
+          "connect_error": true
+        },
+        {
+          "directory": "a3_live_direct",
+          "run_id": "charts-20261113214131-d344a507",
+          "llm_responded": true,
+          "connect_error": false
+        }
+      ],
+      "focused_tests_passed": 62,
+      "deterministic_preflight_repetitions": 2,
+      "original_run_state": {
+        "stage": "data_fetch",
+        "status": "waiting_review",
+        "revision": 13
+      },
+      "a1_additional_wencai_calls": 0,
+      "a4_dispatches": 0,
+      "a5_dispatches": 0,
+      "historical_svg_sha256": "387b356d4d5b5e71cf6cab013016bb2404b8e95d7396d4254b6e872d79f3c3ca",
+      "historical_svg_matches_registry": true,
+      "exported_formats": [
+        "json"
+      ]
+    },
+    "chart_catalog": [
+      {
+        "chart_id": "CHART-01-B796826C",
+        "title": "新能源汽车 · 出口量及同比增速（2021-12-31至2025-12-31）",
+        "chart_type": "combo",
+        "status": "ready",
+        "categories": 5
+      },
+      {
+        "chart_id": "CHART-02-5F4CED24",
+        "title": "国内新能源乘用车零售渗透率（2021-02-28至2025-12-31）",
+        "chart_type": "area",
+        "status": "ready",
+        "categories": 59
+      },
+      {
+        "chart_id": "CHART-03-F9DC803D",
+        "title": "新能源汽车电池组研发费用率趋势（2023-12-31至2025-12-31）",
+        "chart_type": "line",
+        "status": "ready",
+        "categories": 3
+      },
+      {
+        "chart_id": "CHART-04-A0EE41A2",
+        "title": "新能源汽车整车组毛利率趋势（2023-12-31至2025-12-31）",
+        "chart_type": "line",
+        "status": "ready",
+        "categories": 3
+      },
+      {
+        "chart_id": "CHART-05-A2563BAE",
+        "title": "新能源汽车 · 销量及同比增速（2021-12-31至2025-12-31）",
+        "chart_type": "combo",
+        "status": "ready",
+        "categories": 5
+      },
+      {
+        "chart_id": "CHART-06-29628945",
+        "title": "新能源汽车整车组研发费用率趋势（2023-12-31至2025-12-31）",
+        "chart_type": "line",
+        "status": "ready",
+        "categories": 3
+      },
+      {
+        "chart_id": "CHART-07-0DCBA59C",
+        "title": "新能源汽车整车组营业收入趋势（2023-12-31至2025-12-31）",
+        "chart_type": "line",
+        "status": "ready",
+        "categories": 3
+      },
+      {
+        "chart_id": "CHART-08-F9FFF11B",
+        "title": "新能源汽车电池组营业收入与毛利率趋势（2023-12-31至2025-12-31）",
+        "chart_type": "combo",
+        "status": "ready",
+        "categories": 3
+      },
+      {
+        "chart_id": "CHART-09-3F8D5233",
+        "title": "新能源汽车整车组经营活动现金流趋势（2023-12-31至2025-12-31）",
+        "chart_type": "line",
+        "status": "ready",
+        "categories": 3
+      },
+      {
+        "chart_id": "CHART-10-0998582A",
+        "title": "新能源汽车电池组毛利率趋势（2023-12-31至2025-12-31）",
+        "chart_type": "line",
+        "status": "ready",
+        "categories": 3
+      },
+      {
+        "chart_id": "CHART-11-1B2E4C3C",
+        "title": "新能源汽车电池组经营活动现金流趋势（2023-12-31至2025-12-31）",
+        "chart_type": "line",
+        "status": "ready",
+        "categories": 3
+      }
+    ],
+    "legacy_c5": {
+      "slot": "C-05(旧)",
+      "status": "历史 10 点图，仅可支撑 2025-03—2025-12",
+      "points": 10,
+      "period": "2025-03—2025-12",
+      "file": "a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/a3_baseline/charts/C5_penetration.png",
+      "sha256": "7cfceed8be1946697cd84b0fb617233babe82b237e39399a21defc4f5ddf5bf6"
+    },
+    "new_c5": {
+      "slot": "C-05(新)",
+      "chart_id": "CHART-02-5F4CED24",
+      "points": 59,
+      "start": "2021-02-28",
+      "end": "2025-12-31",
+      "missing_points": [
+        "2021-01"
+      ],
+      "coverage": "2021-02—2025-12 共 59 个有效月份，2021-01 原始无值不插值"
+    },
+    "c6": {
+      "slot": "C-06",
+      "status": "仅历史展示",
+      "period_status": "unknown",
+      "note": "主营构成记录期间不可确认，仅历史展示，不充当年度结构表或产业链证据"
+    },
+    "figures": {
+      "fig1": {
+        "origin": "accepted_a3_chart",
+        "chart_ids": [
+          "CHART-05-A2563BAE"
+        ],
+        "titles": [
+          "新能源汽车 · 销量及同比增速（2021-12-31至2025-12-31）"
+        ],
+        "excluded_count": 0
+      },
+      "fig2": {
+        "origin": "accepted_a3_chart",
+        "chart_ids": [
+          "CHART-02-5F4CED24"
+        ],
+        "titles": [
+          "国内新能源乘用车零售渗透率（2021-02-28至2025-12-31）"
+        ],
+        "excluded_count": 0
+      },
+      "fig3": {
+        "origin": "accepted_a3_chart",
+        "chart_ids": [
+          "CHART-01-B796826C"
+        ],
+        "titles": [
+          "新能源汽车 · 出口量及同比增速（2021-12-31至2025-12-31）"
+        ],
+        "excluded_count": 0
+      },
+      "fig4": {
+        "origin": "a3_compiled",
+        "chart_ids": [],
+        "titles": [
+          "整车组 · 营收指数",
+          "电池组 · 营收指数"
+        ],
+        "excluded_count": 2
+      },
+      "fig5": {
+        "origin": "accepted_a3_chart",
+        "chart_ids": [
+          "CHART-04-A0EE41A2",
+          "CHART-10-0998582A"
+        ],
+        "titles": [
+          "新能源汽车整车组毛利率趋势（2023-12-31至2025-12-31）",
+          "新能源汽车电池组毛利率趋势（2023-12-31至2025-12-31）"
+        ],
+        "excluded_count": 0
+      },
+      "fig6": {
+        "origin": "a3_compiled",
+        "chart_ids": [],
+        "titles": [
+          "整车组 · 经营现金流／归母净利润",
+          "电池组 · 经营现金流／归母净利润"
+        ],
+        "excluded_count": 6
+      },
+      "fig7": {
+        "origin": "a3_compiled",
+        "chart_ids": [],
+        "titles": [
+          "整车组 · 公司研发费用率",
+          "电池组 · 公司研发费用率"
+        ],
+        "excluded_count": 3
+      },
+      "fig8": {
+        "origin": "a3_standalone_chain_panorama",
+        "chart_ids": [],
+        "titles": [],
+        "excluded_count": 0
+      }
+    },
+    "figure8": {
+      "path": "产业链图_单跑/新能源汽车产业链图.svg",
+      "declared_sha256": "11187b00aacd40419129b180f1976d91c2ade557a60dd23f0f8f312241f1bf99",
+      "actual_sha256": "11187b00aacd40419129b180f1976d91c2ade557a60dd23f0f8f312241f1bf99",
+      "hash_matches": true,
+      "role": "a3_standalone_panorama",
+      "title": "新能源汽车产业链关系全景图（A3 单跑原图）",
+      "caption_scope": "行业全景（上游—中游—下游）；不是 A2 五家财务样本，样本仅整车组三家与电池组两家",
+      "generator_path": "产业链图_单跑/run_nev_chain.py",
+      "generator_sha256": "513a19a37323232112c554ed0284e37afe496fe90127a5f6d02911afe67a78c3",
+      "a3_note": "A3 未提供供货关系边，不为它伪造关系证据"
+    },
+    "note": "产物已按内部 run_id 递归发现并验真；provenance 可标记为已验收产物（引用级降级已撤销）。"
+  },
+  "known_gaps": [
+    {
+      "id": "GAP-BAIJIU-TABLE-NO-CAPTION",
+      "severity": "informational",
+      "detail": "白酒样例第 [11] 个 table 无 <caption>（为布局/附录用表），冻结时按实测保留，P1 投影需保留原文并报警，不伪造表题。"
+    },
+    {
+      "id": "GAP-BAIJIU-TABLE-COUNT-NOTE",
+      "severity": "informational",
+      "detail": "白酒样例目录页声明「数据表 8 张」，HTML 实测 11 个 table 元素（含附录/底稿表）。冻结时以 HTML 实测 11 为夹具预期，目录文案差异单列，不修改母本。"
+    },
+    {
+      "id": "GAP-FIG8-MOTHER-VS-A3",
+      "severity": "informational",
+      "detail": "冻结视觉母本 p14 的图 8 使用 assets/fig8_chain.png（三栏结构图），与方案指定、report_a3_charts.json 绑定的 A3 产业链全景 SVG 不是同一资产。重构成品须改用 A3 全景图，图注区分行业全景与五家财务样本；不得把母本旧图称作已验收的 A3 图。"
+    },
+    {
+      "id": "GAP-OUTLINE-FINER-THAN-TOC",
+      "severity": "informational",
+      "detail": "母本 PDF 书签比 HTML 目录多出 封面、目录、A.3 图表与证据对照、B.1 制作方式、B.3 合规边界、B.4 使用限制；按冻结清单验收，P4 注册表需显式标记 include_in_outline，不得反向要求目录补条目。"
+    },
+    {
+      "id": "GAP-CJK-FONT-NOT-PINNED",
+      "severity": "warning_for_CI",
+      "detail": "母本 @font-face 用 local('PingFang SC') 别名，本机候选字体路径中未检出 PingFang.ttc，仅见 STHeiti Light.ttc / Songti.ttc。CI 需绑定实际命中的字体文件与版本，缺字或字体未加载视为布局失败。"
+    }
+  ],
+  "corrections": [
+    {
+      "id": "CORRECTION-A3-DISCOVERY",
+      "severity": "informational",
+      "detail": "A3 验收 run charts-20261113214131-d344a507 的实体产物已在 a17-industry-research-agent/output/nev_a1_a2_rerun_20261113_v2/acceptance_20261113_three_patches/a3_live_direct 找到（按 chart_result.json 内部 run_id 递归匹配），上一轮「产物缺失」属误判；引用级降级与 P3 provenance 阻断已撤销，锁文件三份哈希与 77 点逐点对账均已复核。"
+    }
+  ],
+  "fixture_differences": {
+    "blank_pages": [],
+    "clipped_pages": [],
+    "manual_page_number_deviations": [],
+    "appendix_tail_pages_with_design_whitespace": {
+      "nev": 19,
+      "baijiu": 21
+    },
+    "note": "两份母本均无空页、无页码缺失/错号；首页隐藏页码、物理第 2 页为目录、摘要自第 3 页起，按实测冻结。末页为附录收尾页，下半保留设计留白，不是规则冲突或误插断页，按角色验收而不触发 P2 填充率补写。content_bottom_ratio 含页脚文本，不作为 P2 正文填充率判定依据。"
+  }
+}

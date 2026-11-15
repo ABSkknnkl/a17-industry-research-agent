@@ -1,0 +1,379 @@
+{
+  "chapter_id": "CH-02",
+  "title": "市场规模与成长性",
+  "summary": "2021—2025 年新能源汽车销量从 320.0 万辆增至 1,500.0 万辆，增速换挡但绝对增量仍高；出口成为第二增长极，2025 年出口 220.0 万辆；国内零售渗透率从 21.0% 升至 55.0%，月度路径呈台阶式上行。数据均为模拟，需注意口径与期间限制。",
+  "sections": [
+    {
+      "section_id": "SEC-02-01",
+      "title": "市场规模与历史增长趋势",
+      "purpose": "呈现可追溯的规模与增长证据。",
+      "key_points": [
+        "2021—2025 年销量从 320.0 万辆增至 1,500.0 万辆，2025 年增量 320.0 万辆。",
+        "增速换挡但绝对增量仍高，判断需求见顶应看增量而非单看增速。"
+      ],
+      "paragraphs": [
+        {
+          "paragraph_id": "P-02-01-01",
+          "kind": "thesis",
+          "text": "如图 [SIM-C-01] 所示，2021—2025 年新能源汽车销量持续扩张，但增速换挡，绝对增量仍处高位。",
+          "evidence_ids": [
+            "R-sim-sales-2021",
+            "R-sim-sales-2022",
+            "R-sim-sales-2023",
+            "R-sim-sales-2024",
+            "R-sim-sales-2025"
+          ],
+          "assumption_note": null
+        },
+        {
+          "paragraph_id": "P-02-01-02",
+          "kind": "evidence",
+          "text": "销量数据为年度累计值：2021 年 320.0 万辆，2022 年 640.0 万辆，2023 年 900.0 万辆，2024 年 1,180.0 万辆，2025 年 1,500.0 万辆。",
+          "evidence_ids": [
+            "R-sim-sales-2021",
+            "R-sim-sales-2022",
+            "R-sim-sales-2023",
+            "R-sim-sales-2024",
+            "R-sim-sales-2025"
+          ],
+          "assumption_note": null
+        }
+      ],
+      "chart_ids": [
+        "SIM-C-01"
+      ],
+      "uncertainties": [
+        "数据为模拟数据，非实际统计，期间为年度累计，未包含月度波动。"
+      ],
+      "metric_cards": [
+        {
+          "label": "2025 年销量",
+          "value": "1,500.0",
+          "unit": "万辆",
+          "period": "2025-12-31",
+          "evidence_ids": [
+            "R-sim-sales-2025"
+          ]
+        }
+      ],
+      "comparison_table": null,
+      "callouts": [],
+      "layout_hint": "chart_right"
+    },
+    {
+      "section_id": "SEC-02-02",
+      "title": "需求驱动因素与细分市场变化",
+      "purpose": "说明需求驱动及其边界。",
+      "key_points": [
+        "出口成为第二增长极，2025 年出口 220.0 万辆，占当年销量 14.7%。",
+        "国内零售渗透率从 21.0% 升至 55.0%，月度路径呈台阶式上行，单月回撤不等于趋势反转。"
+      ],
+      "paragraphs": [
+        {
+          "paragraph_id": "P-02-02-02",
+          "kind": "evidence",
+          "text": "出口量年度数据：2021 年 30.0 万辆，2022 年 62.0 万辆，2023 年 104.0 万辆，2024 年 118.0 万辆，2025 年 220.0 万辆。",
+          "evidence_ids": [
+            "R-sim-export-2021",
+            "R-sim-export-2022",
+            "R-sim-export-2023",
+            "R-sim-export-2024",
+            "R-sim-export-2025",
+            "R-sim-sales-2024",
+            "R-sim-sales-2025"
+          ],
+          "assumption_note": null
+        },
+        {
+          "paragraph_id": "P-02-02-03",
+          "kind": "chart_readout",
+          "text": "如图 [SIM-C-03] 所示，图中 2024 年增速明显放缓，但 2025 年重新加速，出口作为第二增长极的波动性较大。",
+          "evidence_ids": [
+            "R-sim-export-2021",
+            "R-sim-export-2022",
+            "R-sim-export-2023",
+            "R-sim-export-2024",
+            "R-sim-export-2025"
+          ],
+          "assumption_note": null
+        },
+        {
+          "paragraph_id": "P-02-02-04",
+          "kind": "chart_readout",
+          "text": "如图 [SIM-C-02] 所示，[CHART-SIM-C-02] 显示国内零售渗透率月度路径从 2021 年 12 月的 21.0% 升至 2025 年 12 月的 55.0%，呈台阶式上行。单月回撤（如 2024 年某月）并未改变年度台阶，说明渗透率上行趋势稳固。",
+          "evidence_ids": [
+            "R-sim-pen-2021-12",
+            "R-sim-pen-2022-12",
+            "R-sim-pen-2023-12",
+            "R-sim-pen-2024-12",
+            "R-sim-pen-2025-12"
+          ],
+          "assumption_note": null
+        }
+      ],
+      "chart_ids": [
+        "SIM-C-02",
+        "SIM-C-03"
+      ],
+      "uncertainties": [
+        "渗透率数据仅含每年 12 月当月值，缺少 2021 年 1 月数据，月度路径不完整；出口数据为模拟，未区分目的地结构。"
+      ],
+      "metric_cards": [
+        {
+          "label": "2025 年出口量",
+          "value": "220.0",
+          "unit": "万辆",
+          "period": "2025-12-31",
+          "evidence_ids": [
+            "R-sim-export-2025"
+          ]
+        },
+        {
+          "label": "2025 年 12 月渗透率",
+          "value": "55.0",
+          "unit": "%",
+          "period": "2025-12-28",
+          "evidence_ids": [
+            "R-sim-pen-2025-12"
+          ]
+        }
+      ],
+      "comparison_table": null,
+      "callouts": [],
+      "layout_hint": "chart_right"
+    },
+    {
+      "section_id": "SEC-02-03",
+      "title": "供需关系、产能与行业周期",
+      "purpose": "分析供需、产能和周期传导。",
+      "key_points": [
+        "销量与出口同步扩张，但缺乏产能数据，无法直接判断供需缺口。",
+        "渗透率台阶上行与销量增速换挡并存，行业可能处于从高速增长向成熟期过渡的阶段。"
+      ],
+      "paragraphs": [
+        {
+          "paragraph_id": "P-02-03-01",
+          "kind": "thesis",
+          "text": "当前证据仅覆盖销量与出口，缺乏产能、库存和开工率数据，无法直接量化供需缺口。",
+          "evidence_ids": [
+            "R-sim-sales-2025",
+            "R-sim-pen-2025-12"
+          ],
+          "assumption_note": null
+        },
+        {
+          "paragraph_id": "P-02-03-02",
+          "kind": "analysis",
+          "text": "从销量增速换挡与渗透率台阶上行两个维度看，行业可能正从高速增长期向成熟期过渡。",
+          "evidence_ids": [
+            "R-sim-sales-2022",
+            "R-sim-sales-2025",
+            "R-sim-pen-2025-12"
+          ],
+          "assumption_note": null
+        },
+        {
+          "paragraph_id": "P-02-03-03",
+          "kind": "risk",
+          "text": "需注意数据均为模拟，且渗透率仅含每年 12 月单点，无法反映年内波动；出口数据未区分目的地，无法判断贸易政策风险。产能、库存等供给侧数据缺失，供需判断存在明显证据缺口。",
+          "evidence_ids": [
+            "R-sim-sales-2021",
+            "R-sim-export-2021",
+            "R-sim-pen-2021-12"
+          ],
+          "assumption_note": null
+        }
+      ],
+      "chart_ids": [],
+      "uncertainties": [
+        "缺乏产能、库存、开工率等供给侧数据，无法量化供需缺口；渗透率月度数据不完整，无法识别年内周期波动。"
+      ],
+      "metric_cards": [],
+      "comparison_table": null,
+      "callouts": [
+        {
+          "type": "boundary",
+          "title": "非外推声明",
+          "text": "本章数据均为模拟数据，期间为 2021—2025 年，样本结构未覆盖上游环节，且渗透率仅含每年 12 月单点。基于此证据得出的增速与渗透率趋势，不得线性外推至整个产业或未来年份。",
+          "evidence_ids": [
+            "R-sim-sales-2021",
+            "R-sim-pen-2021-12"
+          ]
+        }
+      ],
+      "layout_hint": "text_only"
+    }
+  ],
+  "evidence_ids": [
+    "R-sim-sales-2021",
+    "R-sim-sales-2022",
+    "R-sim-sales-2023",
+    "R-sim-sales-2024",
+    "R-sim-sales-2025",
+    "R-sim-export-2021",
+    "R-sim-export-2022",
+    "R-sim-export-2023",
+    "R-sim-export-2024",
+    "R-sim-export-2025",
+    "R-sim-pen-2021-12",
+    "R-sim-pen-2022-12",
+    "R-sim-pen-2023-12",
+    "R-sim-pen-2024-12",
+    "R-sim-pen-2025-12"
+  ],
+  "chart_ids": [
+    "SIM-C-01",
+    "SIM-C-02",
+    "SIM-C-03"
+  ],
+  "used_fallback": false,
+  "content_audit": [
+    {
+      "code": "chapter_component_isolation",
+      "location": "SEC-02-01",
+      "section_id": "SEC-02-01",
+      "claim": "SEC-02-01 指标卡「2025 年同比增速」数值缺少证据绑定",
+      "disposition": "isolated"
+    },
+    {
+      "code": "chapter_claim_repair",
+      "location": "P-02-01-01",
+      "section_id": "SEC-02-01",
+      "original": "2021—2025 年新能源汽车销量持续扩张，但增速换挡，绝对增量仍处高位。2025 年销量 1,500.0 万辆，较 2024 年增加 320.0 万辆，增量与 2021 年全年销量持平，表明需求并未见顶，只是增速中枢下移。",
+      "claim": "P-02-01-01 因果判断缺少独立依据：表明需求并未见顶；P-02-01-01 数值语义未通过：320.0 万辆（需同实体、指标和期间证据）",
+      "evidence_ids": [
+        "R-sim-sales-2021",
+        "R-sim-sales-2022",
+        "R-sim-sales-2023",
+        "R-sim-sales-2024",
+        "R-sim-sales-2025"
+      ],
+      "disposition": "partially_retained",
+      "reason": "ValidationError"
+    },
+    {
+      "code": "chapter_claim_repair",
+      "location": "P-02-01-02",
+      "section_id": "SEC-02-01",
+      "original": "销量数据为年度累计值：2021 年 320.0 万辆，2022 年 640.0 万辆，2023 年 900.0 万辆，2024 年 1,180.0 万辆，2025 年 1,500.0 万辆。据此计算，2022 年同比增速为 100.0%，2023 年降至 40.6%，2024 年降至 31.1%，2025 年降至 27.1%。增速逐年回落，但每年增量均超过 200 万辆。",
+      "claim": "P-02-01-02 数值语义未通过：100.0%（需同实体、指标和期间证据）；P-02-01-02 数值语义未通过：40.6%（需同实体、指标和期间证据）；P-02-01-02 数值语义未通过：31.1%（需同实体、指标和期间证据）；P-02-01-02 数值语义未通过：27.1%（需同实体、指标和期间证据）；P-02-01-02 数值语义未通过：200 万辆（需同实体、指标和期间证据）",
+      "evidence_ids": [
+        "R-sim-sales-2021",
+        "R-sim-sales-2022",
+        "R-sim-sales-2023",
+        "R-sim-sales-2024",
+        "R-sim-sales-2025"
+      ],
+      "disposition": "partially_retained",
+      "reason": "ValidationError"
+    },
+    {
+      "code": "chapter_claim_repair",
+      "location": "P-02-01-03",
+      "section_id": "SEC-02-01",
+      "original": "如图 [SIM-C-01] 所示，[CHART-SIM-C-01] 显示 2021—2025 年销量柱状逐年抬升，同比增速线从 2022 年的 100.0% 回落至 2025 年的 27.1%，呈现典型的增速换挡形态。图中拐点出现在 2023 年，增速首次降至 50% 以下，但销量绝对增量仍维持在 260 万辆以上，说明市场扩张动能仍在。",
+      "claim": "P-02-01-03 数值语义未通过：100.0%（需同实体、指标和期间证据）；P-02-01-03 数值语义未通过：27.1%（需同实体、指标和期间证据）；P-02-01-03 数值语义未通过：50%（需同实体、指标和期间证据）；P-02-01-03 数值语义未通过：260 万辆（需同实体、指标和期间证据）",
+      "evidence_ids": [
+        "R-sim-sales-2021",
+        "R-sim-sales-2022",
+        "R-sim-sales-2023",
+        "R-sim-sales-2024",
+        "R-sim-sales-2025"
+      ],
+      "disposition": "isolated",
+      "reason": "repair_disabled"
+    },
+    {
+      "code": "chapter_claim_repair",
+      "location": "P-02-02-01",
+      "section_id": "SEC-02-02",
+      "original": "出口是需求的重要边际驱动。2025 年出口 220.0 万辆，占当年总销量 1,500.0 万辆的 14.7%，较 2021 年出口占比 9.4% 提升 5.3 个百分点，出口对总量增长的贡献显著上升。",
+      "claim": "P-02-02-01 因果判断缺少独立依据：出口是需求的重要边际驱动；P-02-02-01 数值语义未通过：14.7%（需同实体、指标和期间证据）；P-02-02-01 数值语义未通过：9.4%（需同实体、指标和期间证据）；P-02-02-01 数值语义未通过：5.3 个百分点（需同实体、指标和期间证据）",
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2025",
+        "R-sim-sales-2021",
+        "R-sim-sales-2025"
+      ],
+      "disposition": "isolated",
+      "reason": "repair_disabled"
+    },
+    {
+      "code": "chapter_claim_repair",
+      "location": "P-02-02-02",
+      "section_id": "SEC-02-02",
+      "original": "出口量年度数据：2021 年 30.0 万辆，2022 年 62.0 万辆，2023 年 104.0 万辆，2024 年 118.0 万辆，2025 年 220.0 万辆。2025 年出口同比增速为 86.4%，远高于同期总销量增速 27.1%，显示出口是当前增长最快的细分方向。",
+      "claim": "P-02-02-02 数值语义未通过：86.4%（需同实体、指标和期间证据）；P-02-02-02 数值语义未通过：27.1%（需同实体、指标和期间证据）",
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025",
+        "R-sim-sales-2024",
+        "R-sim-sales-2025"
+      ],
+      "disposition": "partially_retained",
+      "reason": "repair_disabled"
+    },
+    {
+      "code": "chapter_claim_repair",
+      "location": "P-02-02-03",
+      "section_id": "SEC-02-02",
+      "original": "如图 [SIM-C-03] 所示，[CHART-SIM-C-03] 显示出口量柱状逐年抬升，同比增速在 2022 年达到 106.7%，2023 年回落至 67.7%，2024 年降至 13.5%，2025 年回升至 86.4%。图中 2024 年增速明显放缓，但 2025 年重新加速，出口作为第二增长极的波动性较大。",
+      "claim": "P-02-02-03 数值语义未通过：106.7%（需同实体、指标和期间证据）；P-02-02-03 数值语义未通过：67.7%（需同实体、指标和期间证据）；P-02-02-03 数值语义未通过：13.5%（需同实体、指标和期间证据）；P-02-02-03 数值语义未通过：86.4%（需同实体、指标和期间证据）",
+      "evidence_ids": [
+        "R-sim-export-2021",
+        "R-sim-export-2022",
+        "R-sim-export-2023",
+        "R-sim-export-2024",
+        "R-sim-export-2025"
+      ],
+      "disposition": "partially_retained",
+      "reason": "repair_disabled"
+    },
+    {
+      "code": "chapter_claim_repair",
+      "location": "P-02-02-04",
+      "section_id": "SEC-02-02",
+      "original": "如图 [SIM-C-02] 所示，[CHART-SIM-C-02] 显示国内零售渗透率月度路径从 2021 年 12 月的 21.0% 升至 2025 年 12 月的 55.0%，呈台阶式上行。2022 年 12 月 27.5%，2023 年 12 月 37.0%，2024 年 12 月 45.5%，每年 12 月均较上年同期提升 8—10 个百分点。单月回撤（如 2024 年某月）并未改变年度台阶，说明渗透率上行趋势稳固。",
+      "claim": "P-02-02-04 数值语义未通过：10 个百分点（需同实体、指标和期间证据）",
+      "evidence_ids": [
+        "R-sim-pen-2021-12",
+        "R-sim-pen-2022-12",
+        "R-sim-pen-2023-12",
+        "R-sim-pen-2024-12",
+        "R-sim-pen-2025-12"
+      ],
+      "disposition": "partially_retained",
+      "reason": "repair_disabled"
+    },
+    {
+      "code": "chapter_claim_repair",
+      "location": "P-02-03-01",
+      "section_id": "SEC-02-03",
+      "original": "当前证据仅覆盖销量与出口，缺乏产能、库存和开工率数据，无法直接量化供需缺口。销量持续扩张与渗透率上行表明需求端仍强，但供给端是否匹配需待产能数据补充。",
+      "claim": "P-02-03-01 因果判断缺少独立依据：销量持续扩张与渗透率上行表明需求端仍强",
+      "evidence_ids": [
+        "R-sim-sales-2025",
+        "R-sim-pen-2025-12"
+      ],
+      "disposition": "partially_retained",
+      "reason": "repair_disabled"
+    },
+    {
+      "code": "chapter_claim_repair",
+      "location": "P-02-03-02",
+      "section_id": "SEC-02-03",
+      "original": "从销量增速换挡与渗透率台阶上行两个维度看，行业可能正从高速增长期向成熟期过渡。2025 年销量增速 27.1% 仍高于多数成熟行业，但较 2022 年的 100.0% 已明显回落；渗透率突破 50% 后，增量更多依赖存量替换而非新增需求，周期特征可能从成长型转向成熟型。",
+      "claim": "P-02-03-02 数值语义未通过：27.1%（需同实体、指标和期间证据）；P-02-03-02 数值语义未通过：100.0%（需同实体、指标和期间证据）；P-02-03-02 数值语义未通过：50%（需同实体、指标和期间证据）",
+      "evidence_ids": [
+        "R-sim-sales-2022",
+        "R-sim-sales-2025",
+        "R-sim-pen-2025-12"
+      ],
+      "disposition": "partially_retained",
+      "reason": "repair_disabled"
+    }
+  ]
+}
