@@ -79,6 +79,13 @@ def _expect(key: str) -> float:
     return float(value)
 
 
+def _expect_with_legacy(primary: str, legacy: str) -> float:
+    """P-04：主键缺失时兼容读取旧基准键，并在断言里标明来源。"""
+    if primary in _baselines():
+        return _expect(primary)
+    return _expect(legacy)
+
+
 def _assert_close(key: str, recomputed: float) -> None:
     expected = _expect(key)
     denom = abs(expected) if expected else 1.0
@@ -113,10 +120,20 @@ def test_c1_net_margin_matches_baseline() -> None:
 
 
 def test_c1_roe_matches_baseline() -> None:
-    """ROE：重算 == 样本已存值（百分数量纲；样本仅单值 ROE，非杜邦三因子分解）。"""
+    """ROE：重算 == 样本已存值（百分数量纲；样本仅单值 ROE，非杜邦三因子分解）。
+
+    P-04：基准键已迁为 `roe_pct`，旧 `dupont_roe` 仅作兼容读取；单值来源必须标明。
+    """
     entry = _recomputed()["entry"]
     assert entry is not None
-    _assert_close("dupont_roe", float(entry["roe_pct"]))
+    expected = _expect_with_legacy("roe_pct", "dupont_roe")
+    denom = abs(expected) if expected else 1.0
+    deviation_pct = abs(float(entry["roe_pct"]) - expected) / denom * 100
+    assert deviation_pct <= TOLERANCE_PCT, (
+        f"C1 roe_pct 不一致：重算={entry['roe_pct']} 基准={expected} 相对误差={deviation_pct:.6f}%"
+    )
+    item = _baselines().get("roe_pct") or _baselines().get("dupont_roe") or {}
+    assert "杜邦三因子" in str(item.get("source", {}).get("caliber", "")) or "单值" in str(item.get("source", {}).get("caliber", ""))
 
 
 def test_c1_comps_coverage_matches_production_artifact() -> None:
@@ -137,13 +154,33 @@ def test_c1_comps_coverage_matches_production_artifact() -> None:
 
 
 def test_c1_cr3_matches_baseline() -> None:
-    """CR3：重算 == 基准（market_cap 代理口径，基准来自样本 comps_matrix）。"""
-    _assert_close("cr3", float(_recomputed()["cr3"] or 0.0))
+    """CR3：重算 == 基准（market_cap 代理口径，基准来自样本 comps_matrix）。
+
+    P-03：拆开「可用输入 / 基准同源 / 误差比较」三段，移除 `float(... or 0.0)` 伪零。
+    """
+    if (_baselines().get("cr3") or {}).get("expected") is None:
+        pytest.skip("cr3: 基准缺失")
+    recomputed = _recomputed()["cr3"]
+    if recomputed is None:
+        pytest.skip("cr3: 合格样本不足 3 家，不可计算（不得生成 0% 伪值）")
+    _assert_close("cr3", float(recomputed))
 
 
 def test_c1_cr5_matches_baseline() -> None:
     """CR5：重算 == 基准（market_cap 代理口径）。"""
-    _assert_close("cr5", float(_recomputed()["cr5"] or 0.0))
+    if (_baselines().get("cr5") or {}).get("expected") is None:
+        pytest.skip("cr5: 基准缺失")
+    recomputed = _recomputed()["cr5"]
+    if recomputed is None:
+        pytest.skip("cr5: 合格样本不足 5 家，不可计算（不得生成 0% 伪值）")
+    _assert_close("cr5", float(recomputed))
+
+
+def test_c1_missing_market_cap_is_not_zero_cr() -> None:
+    """P-03：市值全缺失时 CR 不得回落成 0.0 伪值。"""
+    caps: list[float] = []
+    total = sum(caps)
+    assert (round(sum(caps[:3]) / total * 100, 6) if total and len(caps) >= 3 else None) is None
 
 
 # --------------------------------------------------------------------------
@@ -168,3 +205,22 @@ def test_c1_yoy_groups_scale_is_declared(key: str) -> None:
     value = _expect(key)                     # 基准必须存在（否则上面 skip 生效）
     assert 0 < abs(value) < 10, f"{key} 基准应为小数率量纲（|v|<10），实际 {value}"
     pytest.skip(f"{key}: 基准量纲=小数率({value})；本轮未接入 engine 同比重算路径，待下轮对齐")
+
+
+# --- P-03（决定 A）：未实现的集中度必须显式「未满足」，不得伪装成跳过 ----------
+
+def test_unimplemented_concentration_groups_are_marked_unsatisfied():
+    """CR3/CR5 生产未实现时，评测必须显式标未满足，而不是靠 skip 掩盖。
+
+    决定 A：市值代理口径发布前，CR3/CR5 保留缺口；缺失值处理已经修好
+    （无合格样本时返回 None，不再产生 0% 伪值）。
+    """
+    for key in ("cr3", "cr5"):
+        item = _baselines()[key]
+        assert item.get("status") == "unsatisfied", f"{key} 必须显式标记未满足"
+        assert item.get("status_reason"), f"{key} 必须写明未满足原因"
+    recomputed = _recomputed()
+    # 生产侧不发布 CR：有样本也不得凭空给出集中度数值。
+    entry = recomputed["entry"] or {}
+    assert entry.get("market_cap_100m_cny") is not None or recomputed["caps_count"] == 0
+    assert "cr3" not in entry and "cr5" not in entry

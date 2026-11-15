@@ -326,7 +326,9 @@ def test_normal_fetch_run_persists_required_cells_for_downstream_gate(tmp_path):
         status='completed',data_quality_appendix=appendix),chapters=dict(run_id='c',subject='行业',
         as_of='2026-11-01',status='completed',chapters=[])))
     blocked,_=_check_final_view([],[],req)
-    assert sum('指定年度指标缺口' in message for message in blocked)==1
+    # P4：同一缺口按 requirement_id 去重后，先以「必需研究数据缺口」登记；
+    # 仍须保证该年度缺口只出现一次，且不被年度前缀豁免。
+    assert sum('公司甲 2025年全年 parent_net_profit' in message and '缺口' in message for message in blocked)==1
 
 
 def test_partial_annual_response_can_retry_only_missing_metrics_once_after_other_targets():

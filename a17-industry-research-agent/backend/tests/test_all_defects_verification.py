@@ -68,7 +68,8 @@ def test_def_03_figure_number_reindexing(tmp_path):
 
     report = InterpretationReport.model_validate({
         "report_id": "R-1", "subject": "测试行业", "as_of": "2026-09-27", "status": "completed",
-        "evidence_index": {"E1": {"record_id": "E1", "domain": "macro", "metric": "指标1", "value": 10}}
+        "evidence_index": {"E1": {"record_id": "E1", "domain": "macro", "entity": "样本",
+                                    "metric": "指标1", "value": 10, "unit": "%", "period": "2025-12-31"}}
     })
 
     # Section 1 has chart 8, Section 2 has chart 1 (inverted order)
@@ -85,9 +86,21 @@ def test_def_03_figure_number_reindexing(tmp_path):
     ch1 = ChapterDraft(chapter_id="C-1", title="第1章", summary="摘要", sections=[sec1, sec2])
     chap_res = ChapterResult.model_validate({"run_id": "RUN-1", "subject": "测试行业", "as_of": "2026-09-27", "status": "completed", "chapters": [ch1]})
 
+    svg = tmp_path / "input.svg"
+    svg.write_text('<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10"/></svg>')
+    option = {"xAxis": {"data": ["2025-12-31"]}, "series": [{"name": "指标1", "data": [10]}]}
+    contract = {"categories": ["2025-12-31"], "points": [
+        {"record_id": "E1", "entity": "样本", "metric": "指标1", "value": 10, "unit": "%",
+         "period": "2025-12-31", "series": "指标1", "index": 0, "category": "2025-12-31"},
+    ]}
     charts = ChartResult(run_id="RUN-1", charts=[
-        ChartSpec(chart_id="CHART-08", title="第二个生成的图", chart_type="bar", status="ready", figure_number="图 8", recommended_chapter_id="C-1", evidence_ids=["E1"]),
-        ChartSpec(chart_id="CHART-01", title="第一个生成的图", chart_type="line", status="ready", figure_number="图 1", recommended_chapter_id="C-1", evidence_ids=["E1"]),
+        ChartSpec(chart_id=cid, title=title, chart_type=chart_type, figure_number=number,
+                  recommended_chapter_id="C-1", evidence_ids=["E1"],
+                  svg_uri=str(svg), option=option, data_contract=contract)
+        for cid, title, chart_type, number in [
+            ("CHART-08", "第二个生成的图", "bar", "图 8"),
+            ("CHART-01", "第一个生成的图", "line", "图 1"),
+        ]
     ])
 
     agent = ReportFusionAgent(settings=Settings(output_dir=tmp_path))
@@ -117,7 +130,7 @@ def test_def_04_double_title_and_source_elimination():
         chart_type="bar",
         evidence_ids=["E1"],
         placement_section_id="SEC-1",
-        svg='<svg><text>图 1: 测试图表</text></svg>',
+        svg='<svg><text>图 1: 测试图表</text><text>数据来源：同花顺数据</text></svg>',
         source_line="数据来源：同花顺数据",
         figure_number="图 1"
     )
@@ -140,9 +153,9 @@ def test_def_04_double_title_and_source_elimination():
         evidence_catalog=[ev],
     )
     html = render_html(view)
-    # Ensure redundant outer figure-heading and figcaption are display:none
-    assert 'class="figure-heading sr-only" style="display:none"' in html, "DEF-04: Outer figure heading must be hidden"
-    assert '<figcaption style="display:none">' in html, "DEF-04: Outer figcaption must be hidden"
+    # Title and source already printed inside the SVG must appear once.
+    assert html.count("图 1: 测试图表") == 1
+    assert html.count("数据来源：同花顺数据") == 1
     # Ensure double "数据来源: 数据来源:" is absent
     assert "数据来源: 数据来源:" not in html
     assert "数据来源：数据来源：" not in html
@@ -300,8 +313,10 @@ def test_new_02_combo_growth_rates_preserves_both_series():
     combo_table = DataFormulator._try_formulate_combo(by_metric, records)
     assert combo_table is not None, "NEW-02: Two rate metrics for single entity must formulate combo"
     assert len(combo_table.series_data) == 2, f"NEW-02: Must retain 2 series (bar + line), got {len(combo_table.series_data)}"
-    assert "营业收入同比增长率" in combo_table.series_data
-    assert "归母净利润同比增长率" in combo_table.series_data
+    assert combo_table.series_data == {
+        "营业收入同比增速": [20.27, -12.83],
+        "归母净利润同比增速": [-18.17, -17.84],
+    }
 
 
 # NEW-03: Topology ratios have % unit, and bubble chart strips metric-as-unit

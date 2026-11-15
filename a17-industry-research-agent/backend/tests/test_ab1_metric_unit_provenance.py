@@ -294,3 +294,57 @@ def test_verified_observations_keep_quarter_and_recompute_coverage(tmp_path, mon
     assert coverage.passed
     assert coverage.evidence_record_ids == DataFetcherAgent._evaluate_requirement(fuse(date(2026, 11, 6)), req).evidence_record_ids
     assert not DataFetcherAgent._evaluate_requirement(fuse(date(2026, 1, 1)), req).passed
+
+
+# ---------------------------------------------------------------------------
+# P-01 / P-16 / P-20：完整单位词表与数量前缀
+# ---------------------------------------------------------------------------
+
+def test_amount_unit_from_value_header_and_row():
+    """百万元/千万元/万亿元按完整单位解析，不得被「万」「亿」子串截获。"""
+    from data_fetcher.fusion import _split_value_unit
+    from agents_core.financial_semantics import money_to_yi
+
+    assert _split_value_unit("100百万元") == (100_000_000.0, "元")
+    assert _split_value_unit("10千万元") == (100_000_000.0, "元")
+    assert _split_value_unit("10000万元") == (100_000_000.0, "元")
+    assert _split_value_unit("1万亿元") == (1_000_000_000_000.0, "元")
+    assert _split_value_unit("100元") == (100.0, "元")
+
+    engine = DeterministicAnalysisEngine()
+    for value, unit, expected_yi in (
+        (100, "百万元", 1.0),
+        (10, "千万元", 1.0),
+        (10000, "万元", 1.0),
+        (1, "万亿元", 10000.0),
+        (1, "亿元", 1.0),
+    ):
+        assert engine._normalize_money(value, unit) == pytest.approx(expected_yi)
+        assert money_to_yi(value, unit) is not None
+
+
+def test_quantity_prefix_applied_once():
+    """万套/亿台只换算一次；已换算到基本单位后重放不再乘倍率。"""
+    from data_fetcher.fusion import _split_value_unit
+
+    assert _split_value_unit("1.5万套") == (15_000.0, "套")
+    assert _split_value_unit("0.2亿台") == (20_000_000.0, "台")
+    assert _split_value_unit("10万辆") == (100_000.0, "辆")
+    assert _split_value_unit("5万吨") == (50_000.0, "吨")
+    # 已规范到基本单位的旧字段重放：单位是「套」，不带前缀，不得再乘 1e4
+    assert _split_value_unit("15000套") == (15_000.0, "套")
+    # 复合单位与含糊后缀不进入数量换算
+    assert _split_value_unit("100万元/吨") == (100.0, "万元/吨")
+    assert _split_value_unit("1亿%") == (1.0, "亿%")
+
+
+def test_multiple_is_not_percent():
+    """「倍」保持倍数语义：PE=20 倍不得被当成 2000%。"""
+    engine = DeterministicAnalysisEngine()
+    assert engine._normalize_pct(20.0, "倍") == pytest.approx(20.0)
+    assert engine._normalize_pct(0.12, "ratio") == pytest.approx(12.0)
+
+    from chart_generator.metric_guard import DimensionGuard
+    value, unit = DimensionGuard.normalize_financial_value(20.0, "市盈率", "倍")
+    assert value == pytest.approx(20.0)
+    assert unit == "倍"

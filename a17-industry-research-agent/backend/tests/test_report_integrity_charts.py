@@ -1,11 +1,10 @@
 """Chart semantics must describe the actual plotted measurements."""
 from datetime import date
-from types import SimpleNamespace
 import re
 import xml.etree.ElementTree as ET
 from chart_generator.agent import ChartGeneratorAgent, _Candidate
 from chart_generator.data_formulation import DataFormulator
-from chart_generator.models import EvidenceRef
+from chart_generator.models import EvidenceRef, InterpretationReport
 from chart_generator.render import render_svg
 
 
@@ -15,7 +14,10 @@ def ev(rid, metric, val, entity, period='2026-09-30', unit='%'):
 
 
 def report(*rows):
-    return SimpleNamespace(evidence_index={r.record_id:r for r in rows}, financial_ratios=[])
+    return InterpretationReport(
+        report_id="chart-test", subject="测试行业", as_of=date(2026, 11, 1), status="completed",
+        evidence_index={r.record_id: r for r in rows},
+    )
 
 
 def candidate(title, typ, refs):
@@ -102,6 +104,114 @@ def test_point_contract_detects_company_value_swap_even_with_same_number_set():
             {'record_id':'a','entity':'甲','metric':'revenue','value':100,'unit':'亿元','period':'2025-12-31','series':'收入','index':0,'category':'甲'},
             {'record_id':'b','entity':'乙','metric':'revenue','value':200,'unit':'亿元','period':'2025-12-31','series':'收入','index':1,'category':'乙'}]})
     assert _chart_contract_issues(chart,index)
+
+
+def test_fusion_recomputes_volume_conversion_and_yoy_from_annual_evidence():
+    from report_fusion.agent import _chart_contract_issues
+    from report_fusion.models import ChartSpec, EvidenceRef
+
+    periods = ['2024-12-31', '2025-12-31']
+    index = {
+        rid: EvidenceRef(record_id=rid, domain='industry', entity='中国', metric='销量',
+                         value=value, unit='辆', period=period, period_type='annual',
+                         period_start=f'{period[:4]}-01-01')
+        for rid, value, period in zip(('a', 'b'), (20000, 30000), periods)
+    }
+    amounts = [
+        dict(record_id=rid, entity='中国', metric='销量', period=period, category=period,
+             series='销量', index=i, value=value, unit='万辆', source_unit='辆', unit_scale=10000)
+        for i, (rid, period, value) in enumerate(zip(index, periods, (2, 3)))
+    ]
+    growth = dict(amounts[1], series='同比增速', value=50, unit='%',
+                  calculation='yoy_percent', source_record_ids=['b', 'a'])
+    growth.pop('source_unit')
+    growth.pop('unit_scale')
+    chart = ChartSpec(chart_id='C', title='销量及同比', chart_type='combo',
+                      evidence_ids=list(index),
+                      option={'xAxis': {'data': periods}, 'series': [
+                          {'name': '销量', 'data': [2, 3]},
+                          {'name': '同比增速', 'data': [None, 50]}]},
+                      data_contract={'categories': periods, 'points': [*amounts, growth]})
+    assert _chart_contract_issues(chart, index) == []
+
+    chart.data_contract['points'][-1]['value'] = 60
+    chart.option['series'][1]['data'][1] = 60
+    assert _chart_contract_issues(chart, index)
+
+
+def test_revenue_cash_divergence_requires_two_comparable_annual_observations():
+    from report_fusion.agent import _revenue_cash_divergence
+    from report_fusion.models import EvidenceRef
+
+    rows = {
+        rid: EvidenceRef(record_id=rid, domain="financials", entity="样本甲",
+                         metric=metric, value=value, unit="亿元", period=f"{year}-12-31",
+                         period_type="annual", period_start=f"{year}-01-01")
+        for rid, metric, year, value in (
+            ("R1", "revenue", 2024, 150), ("R2", "revenue", 2025, 190),
+            ("R3", "operating_cash_flow", 2024, 34), ("R4", "operating_cash_flow", 2025, 24),
+        )
+    }
+    question = "样本甲2024—2025年哪一年增收不增现？"
+    assert _revenue_cash_divergence(question, rows) == [
+        (["样本甲", "2025", "150.00 → 190.00", "34.00 → 24.00", "CNY", "consolidated"],
+         ["R1", "R2", "R3", "R4"]),
+    ]
+    rows["R4"].scope = "parent"
+    assert _revenue_cash_divergence(question, rows) == []
+
+
+def test_group_financial_table_preserves_group_members_and_calculation_basis():
+    from report_fusion.agent import _financial_question_tables
+    from report_fusion.models import EvidenceRef
+
+    groups = {"设备组": {"members": ["设备甲", "设备乙"]}, "服务组": {"members": ["服务甲"]}}
+    index = {}
+    for company, revenue, expense, margin, cash in (
+        ("设备甲", 100, 10, 20, 30), ("设备乙", 300, 15, 40, 50),
+        ("服务甲", 600, 30, 50, 60),
+    ):
+        for metric, value, unit in (
+            ("revenue", revenue, "亿元"), ("rd_expense", expense, "亿元"),
+            ("gross_margin", margin, "%"), ("operating_cash_flow", cash, "亿元"),
+        ):
+            rid = f"{company}:{metric}"
+            index[rid] = EvidenceRef(
+                record_id=rid, entity=company, domain="financials", metric=metric,
+                value=value, unit=unit, period="2025-12-31", period_start="2025-01-01",
+                period_type="annual",
+            )
+    question = "设备组和服务组2025年按研发、毛利率和现金流分组比较。"
+    table, = _financial_question_tables(question, index, groups)
+    cells, refs = table["rows"][0]
+    assert cells == ["设备组", "2025", "设备乙、设备甲", "30.00%（20.00%–40.00%）", "40.00", "6.25%"]
+    assert set(refs) == {rid for rid in index if rid.startswith("设备")}
+
+    index["设备甲:rd_expense"].scope = "parent"
+    table, = _financial_question_tables(question, index, groups)
+    cells, refs = table["rows"][0]
+    assert cells[-1] == "—"
+    assert not any(rid.endswith(("revenue", "rd_expense")) for rid in refs)
+
+
+def test_financial_question_cash_ratios_use_same_year_positive_parent_profit():
+    from report_fusion.agent import _annual_cash_ratios
+    from report_fusion.models import EvidenceRef
+
+    index = {}
+    for year, profit in ((2024, 20), (2025, -3)):
+        for metric, value in (("operating_cash_flow", 10), ("parent_net_profit", profit)):
+            rid = f"{metric}-{year}"
+            index[rid] = EvidenceRef(record_id=rid, entity="样本甲", metric=metric,
+                                     domain="financials", value=value, unit="亿元",
+                                     period=f"{year}-12-31", period_start=f"{year}-01-01",
+                                     period_type="annual")
+    question = "样本甲2024—2025年现金流覆盖归母净利润的倍数如何？"
+    assert _annual_cash_ratios(question, index, []) == [
+        (["样本甲", "2024", "0.50 倍"], ["operating_cash_flow-2024", "parent_net_profit-2024"]),
+    ]
+    index["parent_net_profit-2024"].currency = "USD"
+    assert _annual_cash_ratios(question, index, []) == []
 
 
 def test_incomparable_candidates_are_rejected_before_selection():

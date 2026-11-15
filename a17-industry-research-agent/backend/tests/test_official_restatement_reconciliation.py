@@ -263,6 +263,9 @@ def test_announcement_search_coverage_does_not_accept_wrong_company_or_missing_d
  undated=EventRecord(record_id='undated',entity_name='甲公司',title='2023年年报',source=source)
  coverage=agent._announcement_search_coverage(task,objective,StructuredResearchDataset(events=[wrong,undated]))
  assert not coverage.passed and coverage.evidence_record_ids==[]
+ newer=EventRecord(record_id='newer',entity_name='甲公司',title='2024年年度报告',announce_date=date(2025,4,1),source=source)
+ coverage=agent._announcement_search_coverage(task,objective,StructuredResearchDataset(events=[newer]))
+ assert not coverage.passed and coverage.evidence_record_ids==[]
 
 
 def test_announcement_search_rejects_same_name_with_wrong_exchange_code():
@@ -415,3 +418,65 @@ def test_negative_checkbox_does_not_hide_separate_restatement_clue():
   body='公司是否需追溯调整或重述以前年度会计数据\n□是\uf052否\n另行更正2023年度财务报表。',source=source)]
  assert DataFusion._mark_unverified_restatement_clues(dataset,date(2026,11,1),[])
  assert 'pending_restatement' in dataset.financials[0].issues
+
+
+# --- P-12：重述按「已存值 vs 调整前/后」精度匹配矩阵处理 ------------------
+
+def _margin_record(value, text):
+    from data_fetcher.models import ResearchRecord, SourceRef
+    from datetime import datetime, timezone
+    return ResearchRecord(
+        record_id="stored", domain=Domain.FINANCIALS, entity_name="甲公司", entity_code="000001.SZ",
+        metric="gross_margin", value=value, unit="%", period_end=date(2023, 12, 31),
+        period_type="annual", period_start=date(2023, 1, 1), scope="consolidated", currency="CNY",
+        source=SourceRef(task_id="t", skill_id="hithink-finance-query", skill_version="1", query="",
+                         trace_id="t", retrieved_at=datetime(2026, 1, 1, tzinfo=timezone.utc)),
+        raw_fields={"销售毛利率[2023-12-31]": text},
+    )
+
+
+def _margin_ref(original_cost, adjustment, restated_cost):
+    return {
+        "entity_code": "000001.SZ", "entity_name": "甲公司", "period_end": "2023-12-31",
+        "period_type": "annual", "scope": "consolidated", "currency": "CNY",
+        "metric": "gross_margin", "unit": "%", "published_at": "2025-04-24",
+        "revenue_yuan": "100000", "original_cost_yuan": str(original_cost),
+        "adjustment_yuan": str(adjustment), "restated_cost_yuan": str(restated_cost),
+        "source_url": "https://disc.static.szse.cn/disc/2025-04-24/test.pdf",
+        "source_locator": "PDF 第3页毛利率调整表", "basis": "合并口径营业成本调整前后数",
+    }
+
+
+def test_restatement_matches_pre_value_by_disclosure_precision():
+    from data_fetcher.models import StructuredResearchDataset
+    from datetime import date
+    dataset = StructuredResearchDataset(financials=[_margin_record(16.9, "16.9%")])
+    changes = DataFusion._apply_official_restatements(
+        dataset, date(2026, 11, 1), references=[_margin_ref(83080, -220, 82860)],
+    )
+    assert len(changes) == 1
+    assert abs(dataset.financials[0].value - 17.14) < 1e-9
+    assert dataset.financials[0].raw_fields["superseded_record_id"] == "stored"
+
+
+def test_restatement_ambiguous_between_before_and_after_stays_pending():
+    from data_fetcher.models import StructuredResearchDataset
+    from datetime import date
+    dataset = StructuredResearchDataset(financials=[_margin_record(16.9, "16.9%")])
+    changes = DataFusion._apply_official_restatements(
+        dataset, date(2026, 11, 1), references=[_margin_ref(83090, -20, 83070)],
+    )
+    assert not changes
+    assert "pending_restatement" in dataset.financials[0].issues
+
+
+def test_replaying_same_restatement_does_not_duplicate_effective_replacement():
+    from data_fetcher.models import StructuredResearchDataset
+    from datetime import date
+    dataset = StructuredResearchDataset(financials=[_margin_record(16.9, "16.9%")])
+    reference = _margin_ref(83080, -220, 82860)
+    first = DataFusion._apply_official_restatements(dataset, date(2026, 11, 1), references=[reference])
+    second = DataFusion._apply_official_restatements(dataset, date(2026, 11, 1), references=[reference])
+    assert len(first) == 1
+    assert all(change.get("status") == "already_adjusted" for change in second)
+    assert len(dataset.financials) == 1 and abs(dataset.financials[0].value - 17.14) < 1e-9

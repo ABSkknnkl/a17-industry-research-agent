@@ -144,3 +144,23 @@ def test_real_stage_commit_makes_current_sanitized_draft_downloadable(tmp_path,m
     assert client.get(url+'?mode=draft').status_code==200
     state=storage.load_state(run);state.revision=4;storage.save_state(state)
     assert client.get(url+'?mode=draft').status_code==409
+
+
+def test_ready_with_limits_blocks_formal_even_when_agent_status_is_completed(tmp_path,monkeypatch):
+    """P4：A5 的最终交付资格优先于 agent_status/quality 的宽松组合。"""
+    monkeypatch.setattr(storage,'base_dir',tmp_path)
+    app=FastAPI();app.include_router(router)
+    run='run-ready-with-limits';root=storage.get_run_dir(run);art=root/'artifacts';art.mkdir(parents=True,exist_ok=True)
+    pdf=art/'report.pdf';pdf.write_bytes(b'%PDF-limited')
+    state=WorkflowState(project_id='p',run_id=run,status='completed',current_stage='report_fusion',
+        revision=1,created_at='2026-11-03',updated_at='2026-11-03',stage_results={
+        'report_fusion':StageResult(stage='report_fusion',status='completed',revision=1,
+            data={'built_at_revision':1,'agent_status':'completed','hard_blocked':False,
+                  'draft_available':True,'draft_sanitized':True,'quality':{'passed':True},
+                  'delivery_status':'ready_with_limits'},
+            artifacts=[ArtifactRef(artifact_id='report_pdf',kind='report_pdf',uri=str(pdf),revision=1)])})
+    storage.save_state(state)
+    client=TestClient(app)
+    url=f'/api/v1/runs/{run}/artifacts/report_pdf'
+    assert client.get(url).status_code==409
+    assert client.get(url+'?mode=draft').status_code==200

@@ -38,6 +38,8 @@ def test_chart_data_replenishment_feedback_loop(tmp_path, monkeypatch):
                     value=4009.17,
                     unit="亿元",
                     period_end=date(2024, 12, 31),
+                    period_start=date(2024, 1, 1),
+                    period_type="annual",
                     source=SourceRef(
                         task_id="task-init",
                         skill_id="hithink-finance-query",
@@ -78,6 +80,8 @@ def test_chart_data_replenishment_feedback_loop(tmp_path, monkeypatch):
                     "value": 4009.17,
                     "unit": "亿元",
                     "period": "2024-12-31",
+                    "period_start": "2024-01-01",
+                    "period_type": "annual",
                     "skill_id": "hithink-finance-query",
                     "trace_id": "tr-init",
                 }
@@ -91,7 +95,12 @@ def test_chart_data_replenishment_feedback_loop(tmp_path, monkeypatch):
                 "analyzability_score": 0.9,
                 "limitations": [],
             },
-            "data_quality_appendix": {},
+            "data_quality_appendix": {"requirement_evidence_matrix": [
+                {"requirement": {"requirement_id": "annual_catl_revenue", "label": "宁德时代年度营业收入",
+                                 "domain": "financials", "hard": True, "metric_families": ["revenue"],
+                                 "entity_names": ["宁德时代"], "period_ends": ["2022-12-31", "2023-12-31", "2024-12-31"]},
+                 "coverage": {"passed": False, "evidence_record_ids": ["R-FIN-001"]}},
+            ]},
             "warnings": [],
         }
         report_file = artifacts_dir / "interpretation_report.json"

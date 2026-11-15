@@ -92,6 +92,9 @@ def test_output_wording_cannot_reuse_the_input_assumption_shortcut(text):
 @pytest.mark.parametrize("text", [
     "集团毛利率说明电池业务议价权提升。",
     "净现背离体现应收账款及存货占用。",
+    "产业链利润分配向中游电池龙头倾斜。",
+    "出口增速显著高于销量增速，显示增长重心向外需转移。",
+    "油价上行强化新能源出口优势。",
 ])
 def test_financial_cause_synonyms_require_direct_support(text):
     assert _final_issues(text)
@@ -99,3 +102,9 @@ def test_financial_cause_synonyms_require_direct_support(text):
 
 def test_discussion_topic_is_not_itself_a_causal_assertion():
     assert quantity_issues('围绕“需求驱动因素与细分市场变化”，梳理资料。', []) == []
+
+
+@pytest.mark.parametrize('text', ['赛力斯盈利质量最优。', '宁德时代现金流质量优于亿纬锂能。'])
+def test_financial_rank_needs_an_explicit_metric(text):
+    issues = quantity_issues(text, [FACT])
+    assert [issue['code'] for issue in issues] == ['unsupported_direction_claim']
