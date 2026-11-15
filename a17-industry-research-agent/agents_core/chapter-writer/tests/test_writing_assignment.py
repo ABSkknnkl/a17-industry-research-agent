@@ -380,3 +380,40 @@ def test_full_run_and_targeted_rewrite_share_one_assignment(monkeypatch):
     ch5 = rewrite.retrieve("CH-05", next(c for c in DEFAULT_OUTLINE if c.chapter_id == "CH-05"))
     assert {r["requirement_id"] for r in ch5["primary_requirements"]} == {"q-revenue", "q-ocf"}
     assert "q-sales" not in {r["requirement_id"] for r in ch5["primary_requirements"]}
+
+
+def test_question_main_answer_receives_approved_evidence_without_any_chart():
+    request = _request([
+        _row("q-revenue", "financials", ["revenue"], ["R-A", "STALE"]),
+        _row("q-cash", "financials", ["operating_cash_flow"], [], passed=False),
+    ])
+    request = ChapterWritingRequest.model_validate({
+        **request.model_dump(),
+        "questions": [{
+            "question_id": "Q-1", "text": "营收与经营现金流如何分化？",
+            "relation_tags": ["对比"], "requirement_ids": ["q-revenue", "q-cash"],
+        }],
+    })
+    retriever = DynamicEvidenceRetriever(request)
+    ch5 = retriever.retrieve("CH-05", DEFAULT_OUTLINE[4])
+    question, = ch5["question_assignments"]
+    assert question["text"] == "营收与经营现金流如何分化？"
+    assert question["section_id"] == "SEC-05-01"
+    assert question["chart_ids"] == []
+    assert question["requirements"][0]["evidence_record_ids"] == ["R-A"]
+    assert question["requirements"][1]["status"] == "missing_data"
+    assert "R-A" in ch5["evidence"]
+    assert "question_assignments" not in retriever.retrieve("CH-02", DEFAULT_OUTLINE[1])
+
+    class CapturingLLM(_CountingLLM):
+        async def generate_json(self, system: str, prompt: str) -> dict:
+            if json.loads(prompt)["outline"]["chapter_id"] == "CH-05":
+                assert "context.question_assignments" in system
+                assert json.loads(prompt)["context"]["question_assignments"][0]["question_id"] == "Q-1"
+            return await super().generate_json(system, prompt)
+
+    result = asyncio.run(ChapterWriterAgent(llm=CapturingLLM()).run(request, save_artifacts=False))
+    answer, = result.question_answers
+    assert answer["section_id"] == "SEC-05-01"
+    assert answer["paragraph_ids"] == []
+    assert answer["unmet_requirement_ids"] == ["q-cash"]

@@ -374,6 +374,7 @@ class CandidateCard(BaseModel):
     entities: list[str] = Field(default_factory=list)
     periods: list[str] = Field(default_factory=list)
     scope: str | None = None
+    comparison_group: str | None = None
     units: list[str] = Field(default_factory=list)
     evidence_complete: bool = False
     candidate_ref: str | None = None

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from enum import Enum
 import math
+import statistics
 from typing import Any
 
 
@@ -231,7 +232,7 @@ class EChartsCompiler:
         pos_vals = sorted([v for v in data if isinstance(v, (int, float)) and v > 0])
         has_extreme_outlier = False
         if len(pos_vals) >= 4:
-            median_v = pos_vals[len(pos_vals) // 2]
+            median_v = statistics.median(pos_vals)
             max_v = pos_vals[-1]
             if median_v > 0 and max_v > 5 * median_v and max_v >= 100:
                 has_extreme_outlier = True
@@ -333,7 +334,7 @@ class EChartsCompiler:
         pos_vals = sorted([v for v in all_vals if v > 0])
         has_extreme_outlier = False
         if len(pos_vals) >= 4:
-            median_v = pos_vals[len(pos_vals) // 2]
+            median_v = statistics.median(pos_vals)
             max_v = pos_vals[-1]
             if median_v > 0 and max_v > 5 * median_v and max_v >= 100:
                 has_extreme_outlier = True

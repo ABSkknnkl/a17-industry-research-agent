@@ -135,6 +135,7 @@ class _Candidate:
         selection_source: str = "deterministic",
         derived_group: str = "",
         auto_time_series: bool = False,
+        period_type: str = "",
     ):
         self.title = title
         self.chart_type = chart_type
@@ -154,7 +155,56 @@ class _Candidate:
         self.selection_source = selection_source
         self.derived_group = derived_group
         self.auto_time_series = auto_time_series
+        # 图表意图的观测期间：annual / month / 空（由证据推断）。
+        # 年度缺口检查只能作用于年度意图，不能按指标族连带拦截月度图。
+        self.period_type = period_type
         self.fingerprint = _fingerprint({"type": chart_type, "option": option, "evidence": sorted(evidence_ids)})
+
+
+def _reference_period_kind(ref: Any) -> str:
+    """Return the observation period kind used by chart eligibility checks."""
+    metric = str(getattr(ref, "metric", "") or "")
+    if getattr(ref, "domain", "") == "industry" and metric.endswith(":当月值"):
+        return "month"
+    period_type = str(getattr(ref, "period_type", "") or "")
+    if period_type in ("annual", "ytd_month"):
+        return "annual"
+    return period_type
+
+
+def _is_qualified_monthly_ref(ref: Any) -> bool:
+    """A monthly point must be monthly, conflict-free and anchored to a month end."""
+    if _reference_period_kind(ref) != "month":
+        return False
+    if "period_conflict" in (getattr(ref, "issues", []) or []):
+        return False
+    period, period_start = getattr(ref, "period", None), getattr(ref, "period_start", None)
+    if period is None:
+        return False
+    metric = str(getattr(ref, "metric", "") or "")
+    if getattr(ref, "domain", "") == "industry" and metric.endswith(":当月值"):
+        # 旧 A2 可能把当月值标成 annual/q1 且补了 1 月 1 日起日；
+        # 这里按现有兼容规则以“月末观测 + 当月值指标”确认月度，起日由编译器校正。
+        return period.day == monthrange(period.year, period.month)[1]
+    return period_start is None or (period_start.year, period_start.month) == (period.year, period.month)
+
+
+def _candidate_period_intent(
+    item: _Candidate, evidence_ids: list[str], report: Any,
+) -> str:
+    """Prefer an explicit chart-intent period; otherwise infer from homogeneous evidence."""
+    explicit = str(getattr(item, "period_type", "") or "")
+    if explicit:
+        return explicit
+    kinds = {
+        _reference_period_kind(report.evidence_index[rid])
+        for rid in evidence_ids if rid in report.evidence_index
+    }
+    if kinds == {"month"}:
+        return "month"
+    if kinds and kinds <= {"annual"}:
+        return "annual"
+    return ""
 
 
 class ChartGeneratorAgent:
@@ -676,7 +726,8 @@ class ChartGeneratorAgent:
                     # Preselect by scope, metric and period before invoking the shared compiler.
                     ids = intent.refs(request.report)
                     for kind in intent.types if ids else ():
-                        item = _Candidate(intent.label, kind, {}, ids, "", "CH-02")
+                        item = _Candidate(intent.label, kind, {}, ids, "", "CH-02",
+                                          period_type=intent.period_type)
                         try:
                             problem = self._verify_numeric_candidate(item, request.report)
                         except (ValueError, TypeError, ArithmeticError):
@@ -717,7 +768,32 @@ class ChartGeneratorAgent:
             candidates = sorted([*combined, *remaining], key=compact_priority)
 
         if apply_question_plan:
-            pool = [*combined, *candidates] if not compact else candidates
+            from .question_planner import question_financial_snapshots
+
+            monthly_series = self._covered_monthly_series(request.report)
+            pool = [*monthly_series, *([*combined, *candidates] if not compact else candidates)]
+            if reviewed_company_groups(request.report):
+                alternatives, _ = self._deterministic_fallback(request)
+                for candidate in alternatives:
+                    if candidate.chart_type != "line":
+                        continue
+                    refs = [request.report.evidence_index[rid] for rid in candidate.evidence_ids
+                            if rid in request.report.evidence_index]
+                    if (len({ref.entity for ref in refs}) < 2
+                            or not refs or any(ref.metric != "gross_margin" for ref in refs)):
+                        continue
+                    if not self._verify_numeric_candidate(candidate, request.report):
+                        pool.insert(0, candidate)
+            for ids, chapter in question_financial_snapshots(plan_briefs, request.report):
+                candidate = _Candidate("同年度样本比较", "comparison_bar", {}, ids, "", chapter)
+                problem = self._verify_numeric_candidate(candidate, request.report)
+                if problem:
+                    suppressed.append(SuppressedChart(
+                        title=candidate.title, requested_type=candidate.chart_type,
+                        reason_code="measurement_contract", reason=problem, evidence_ids=ids,
+                    ))
+                else:
+                    pool.append(candidate)
             candidates, consolidation, sparse_candidates = self._consolidate_question_candidates(
                 pool, plan_briefs, request.report,
             )
@@ -913,7 +989,7 @@ class ChartGeneratorAgent:
                 plan_briefs, plan_cards, mode="apply", llm=plan_llm,
                 max_cards=request.preferences.max_charts,
             )
-            ordered = apply_plan_to_charts(question_plan, specs)
+            ordered = apply_plan_to_charts(question_plan, specs, cards=plan_cards)
             chain = next((spec for spec in specs if spec.chart_type == "industry_chain"), None)
             if _wants_chain and chain is not None:
                 ordered = [chain, *(spec for spec in ordered if spec.chart_id != chain.chart_id)]
@@ -1591,7 +1667,7 @@ class ChartGeneratorAgent:
             quality_issues.append("已隔离未通过发布校验的图表")
         if any(chart.chart_type != "industry_chain" and not chart.data_contract.get("points") for chart in charts):
             quality_issues.append("存在缺少逐点证据契约的数值图")
-        demands = self._extract_data_demands(request, suppressed) if suppressed else []
+        demands = self._extract_data_demands(request, suppressed)
 
         if plan_mode == "observe" and plan_briefs:
             from .question_planner import build_candidate_cards, build_question_plan
@@ -1601,7 +1677,7 @@ class ChartGeneratorAgent:
             )
         if question_plan is not None:
             from .question_planner import legacy_question_coverage, settle_coverage
-            settle_coverage(question_plan, charts, plan_cards)
+            settle_coverage(question_plan, charts, plan_cards, plan_briefs)
             if apply_question_plan:
                 question_coverage = legacy_question_coverage(question_plan)
                 questions_by_chart: dict[str, list[str]] = defaultdict(list)
@@ -1673,12 +1749,21 @@ class ChartGeneratorAgent:
                         and (not entities or ref.entity in entities)
                         for eid in item.evidence_ids if (ref := report.evidence_index.get(eid)))
             ), None)
-            if related is None:
+            requested_trend = (
+                set(request.preferences.requested_types) & {"line", "area", "combo"}
+                and not requirement.get("comparison_baseline")
+                and len(periods) >= 2
+                and any(ref.domain == domain and metric_family(ref.metric) in metrics
+                        and (not entities or ref.entity in entities)
+                        for ref in report.evidence_index.values())
+            )
+            if related is None and not requested_trend:
                 continue
             demands.append(DataSupplementDemand(
                 demand_id=f"DMD-{rid}", requirement_id=rid,
-                target_chart_type=related.requested_type or "line",
-                target_title=related.title, entities=entities, metrics=metrics, domain=domain,
+                target_chart_type=(related.requested_type or "line") if related else "line",
+                target_title=related.title if related else requirement.get("label", rid),
+                entities=entities, metrics=metrics, domain=domain,
                 query_hint=" ".join([*entities, *metrics, *periods]),
                 reason=f"A2 硬性需求 {rid} 未覆盖，相关图表已受限",
             ))
@@ -2191,7 +2276,12 @@ class ChartGeneratorAgent:
                 trend is not item and own <= observations(trend)
                 and (item.chart_type in BAR_TYPES and not ranking_required
                      or item.chart_type in ("line", "area")
-                     and (trend.chart_type == "combo" or trend in merged_charts))
+                     and (trend.chart_type == "combo" or trend in merged_charts
+                          or (item.chart_type == trend.chart_type == "line"
+                              and own < observations(trend)
+                              and getattr(item, "data_contract", {}).get("comparison_group")
+                              and item.data_contract.get("comparison_group") == trend.data_contract.get("comparison_group")
+                              and {p["metric"] for p in points(item)} == {p["metric"] for p in points(trend)})))
                 for trend in trends
             )
             if covered:
@@ -2202,6 +2292,60 @@ class ChartGeneratorAgent:
             else:
                 retained.append(item)
         return retained, suppressed, sparse
+
+    def _covered_monthly_series(self, report: InterpretationReport) -> list[_Candidate]:
+        """Publish the exact monthly observations already reconciled by A1."""
+        from .data_formulation import AxisType, NormalizedDataTable
+
+        candidates = []
+        for row in report.data_quality_appendix.get("requirement_evidence_matrix", []):
+            requirement, coverage = row.get("requirement") or {}, row.get("coverage") or {}
+            if (requirement.get("metric_families") != ["nev_penetration"]
+                    or "月度" not in requirement.get("label", "") or not coverage.get("passed")):
+                continue
+            ids = list(dict.fromkeys(coverage.get("evidence_record_ids") or []))
+            refs = [report.evidence_index.get(rid) for rid in ids]
+            if len(refs) < 2 or any(
+                ref is None or ref.period is None or ref.period_start is None or ref.period_type != "month"
+                or ref.unit != "%" or not is_finite_number(ref.value)
+                or not 0 <= ref.value <= 100 or any("conflict" in issue for issue in ref.issues)
+                for ref in refs
+            ):
+                continue
+            refs.sort(key=lambda ref: ref.period)
+            months = [ref.period.year * 12 + ref.period.month for ref in refs]
+            if (months != list(range(months[0], months[-1] + 1))
+                    or len({(ref.metric, ref.scope, ref.currency) for ref in refs}) != 1
+                    or "零售" not in refs[0].metric):
+                continue
+            label = "国内新能源乘用车零售渗透率"
+            dates = [ref.period.isoformat() for ref in refs]
+            ids = [ref.record_id for ref in refs]
+            table = NormalizedDataTable(
+                axis_type=AxisType.TIME_SERIES, x_field_name="观测期", categories=dates,
+                series_data={label: [ref.value for ref in refs]}, series_units={label: "%"},
+                primary_series_name=label, raw_evidence_ids=ids,
+            )
+            title = f"{label}（{dates[0]}至{dates[-1]}）"
+            option = EChartsCompiler.compile(table, "area", title)
+            observation = {"start": dates[0], "end": dates[-1]}
+            option.update(observation_range=observation, research_as_of=str(report.as_of))
+            points = [
+                dict(index=i, category=period, period=period, record_id=ref.record_id, entity=ref.entity,
+                     metric=ref.metric, value=ref.value, unit=ref.unit, period_type=ref.period_type,
+                     period_start=ref.period_start.isoformat(), scope=ref.scope, currency=ref.currency, series=label)
+                for i, (period, ref) in enumerate(zip(dates, refs))
+            ]
+            item = _Candidate(title, "area", option, ids, "比较月度走势及回撤", "CH-02",
+                              point_evidence_ids=ids, footnotes=["各点均为当月零售观察。"])
+            item.data_contract = dict(
+                schema_version="1", axis_type="time_series", categories=dates, series_units={label: "%"},
+                series_order=[label], points=points, comparison_eligible=True,
+                observation_range=observation, research_as_of=str(report.as_of),
+            )
+            if not option_contract_issue(item.option, item.data_contract, item.chart_type):
+                candidates.append(item)
+        return candidates
 
     def _annual_volume_combos(self, report: InterpretationReport) -> list[_Candidate]:
         """Pair approved annual volumes with YoY computed from the same source series."""
@@ -2214,7 +2358,7 @@ class ChartGeneratorAgent:
             ids, _ = isolate_anomalous_evidence(trend.evidence_record_ids, report)
             refs = [report.evidence_index.get(rid) for rid in ids]
             if len(refs) != len(trend.evidence_record_ids) or any(
-                ref is None or ref.domain != "industry" or ref.metric != trend.metric
+                ref is None or ref.domain not in {"industry", "macro"} or ref.metric != trend.metric
                 or ref.entity != trend.entity or ref.unit not in ("辆", "台", "套", "件")
                 or not is_finite_number(ref.value) or ref.value < 0
                 or ref.period is None or (ref.period.month, ref.period.day) != (12, 31)
@@ -2225,7 +2369,7 @@ class ChartGeneratorAgent:
             ):
                 continue
             rows = sorted(refs, key=lambda ref: ref.period)
-            if len({(ref.scope, ref.currency, ref.unit, ref.period_type) for ref in rows}) != 1:
+            if len({(ref.domain, ref.scope, ref.currency, ref.unit, ref.period_type) for ref in rows}) != 1:
                 continue
             if any(b.period.year != a.period.year + 1 for a, b in zip(rows, rows[1:])):
                 continue
@@ -2332,33 +2476,52 @@ class ChartGeneratorAgent:
         if len(selected_groups) > 1:
             return "A2 reviewed 口径要求按产业链分组展示企业指标"
         group = next(iter(selected_groups), "")
-        matrix = getattr(report, "data_quality_appendix", {}).get("requirement_evidence_matrix", [])
-        from agents_core.financial_semantics import metric_family
-
-        annual_ids: dict[str, set[str]] = defaultdict(set)
-        incomplete = set()
-        for row in matrix:
-            requirement, coverage = row.get("requirement", {}), row.get("coverage", {})
-            if (not str(requirement.get("requirement_id", "")).startswith("annual_")
-                    or requirement.get("comparison_baseline") or not requirement.get("hard")):
-                continue
-            for family in requirement.get("metric_families", []):
-                annual_ids[family].update(coverage.get("evidence_record_ids", []))
-                if not coverage.get("passed"):
-                    incomplete.add(family)
-        if annual_ids:
-            selected_families = {
-                metric_family(report.evidence_index[rid].metric) for rid in included_ids
-                if rid in report.evidence_index
-            }
-            if item.chart_type in ("line", "area", "combo") and selected_families & incomplete:
-                return "指定年度数据有缺口，未交付完整时序图"
+        period_intent = _candidate_period_intent(item, included_ids, report)
+        if period_intent == "month":
+            # 月度意图只筛合格月度观测，不执行年度必答缺口检查。
+            # 年度与月度可能共用同一指标族（如 nev_penetration），不能按族连带拦截。
             included_ids = [
-                rid for rid in included_ids if rid in report.evidence_index and (
-                    (family := metric_family(report.evidence_index[rid].metric)) not in annual_ids
-                    or rid in annual_ids[family]
-                )
+                rid for rid in included_ids
+                if rid in report.evidence_index and _is_qualified_monthly_ref(report.evidence_index[rid])
             ]
+            if not included_ids:
+                return "图表意图要求月度观测，但没有合格的月度证据"
+        else:
+            matrix = getattr(report, "data_quality_appendix", {}).get("requirement_evidence_matrix", [])
+            from agents_core.financial_semantics import metric_family
+
+            annual_ids: dict[str, set[str]] = defaultdict(set)
+            incomplete = set()
+            for row in matrix:
+                requirement, coverage = row.get("requirement", {}), row.get("coverage", {})
+                if (not str(requirement.get("requirement_id", "")).startswith("annual_")
+                        or requirement.get("comparison_baseline") or not requirement.get("hard")):
+                    continue
+                for family in requirement.get("metric_families", []):
+                    annual_ids[family].update(coverage.get("evidence_record_ids", []))
+                    if not coverage.get("passed"):
+                        incomplete.add(family)
+            if annual_ids:
+                selected_families = {
+                    metric_family(report.evidence_index[rid].metric) for rid in included_ids
+                    if rid in report.evidence_index
+                }
+                if item.chart_type in ("line", "area", "combo") and selected_families & incomplete:
+                    return "指定年度数据有缺口，未交付完整时序图"
+                included_ids = [
+                    rid for rid in included_ids if rid in report.evidence_index and (
+                        (family := metric_family(report.evidence_index[rid].metric)) not in annual_ids
+                        or rid in annual_ids[family]
+                    )
+                ]
+            if period_intent == "annual":
+                # 显式年度意图不得复用月度观测，即使该指标族没有年度必答需求。
+                included_ids = [
+                    rid for rid in included_ids
+                    if rid in report.evidence_index and _reference_period_kind(report.evidence_index[rid]) == "annual"
+                ]
+                if not included_ids:
+                    return "图表意图要求年度观测，但没有合格的年度证据"
         table = DataFormulator.formulate(included_ids, report, target_chart_type=item.chart_type)
         if table is None:
             return "缺少可比、可逐点追溯的数据，不能生成此图"

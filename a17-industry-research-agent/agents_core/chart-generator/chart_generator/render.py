@@ -5,6 +5,7 @@ from __future__ import annotations
 from html import escape
 import math
 import re
+import statistics
 from typing import Any
 
 # 版本化展示配置（可选依赖：旧产物无 presentation 时自动走原有尺度）
@@ -447,7 +448,9 @@ def render_svg(
         f"数据来源：{source_str}；数值按证据换算，解释须结合原始披露。", width-left-right, footer_font))
     for note in fn_items:
         footer_runs.extend((line, "#64748b") for line in _wrap_svg_text("注：" + str(note), width-left-right, footer_font))
-    footer_extra = max(30, len(footer_runs) * footer_line_height - 20)
+    # 散点/气泡在绘制阶段才知道是否发生轴截断，预留一行脚注高度（P-18）。
+    _footer_reserve = 1 if chart_type in ("scatter", "bubble") else 0
+    footer_extra = max(30, (len(footer_runs) + _footer_reserve) * footer_line_height - 20)
     # Give every category a complete wrapped label; reserve its actual height.
     bar_types = ("bar", "comparison_bar", "diverging_bar", "horizontal_bar", "combo")
     category_rows = max((len(_wrap_svg_text(str(label), max(35, (width-left-right)/max(1,len(labels))-5), 12))
@@ -1069,7 +1072,10 @@ def render_svg(
 
         has_any_outlier = any(x_outliers) or any(y_outliers)
         if has_any_outlier:
-            footnotes.append("部分极端离群值已在坐标轴边界截断展示（标注真实值与箭头）以保证主体分布可读性")
+            _iqr_note = "部分极端离群值已按 3.5×IQR 规则在坐标轴边界截断展示（标注真实值与箭头），以保证主体分布可读性"
+            footnotes.append(_iqr_note)
+            footer_runs.extend((line, "#64748b") for line in _wrap_svg_text(
+                "注：" + _iqr_note, width-left-right, footer_font))
 
         x_padding = (x_max_norm - x_min_norm) * 0.12 or 1.0
         y_padding = (y_max_norm - y_min_norm) * 0.12 or 1.0
@@ -1109,8 +1115,9 @@ def render_svg(
             parts.append(f'<text x="{left-12}" y="{ty+4:.1f}" text-anchor="end" font-size="11" fill="#667085">{_format_num(tv)}</text>')
 
         # Median Crosshairs
-        mid_x = sorted(xs)[len(xs)//2] if xs else (x_ticks[0]+x_ticks[-1])/2
-        mid_y = sorted(ys)[len(ys)//2] if ys else (y_ticks[0]+y_ticks[-1])/2
+        # P-15：十字线用标准中位数（偶数样本取中间两值均值），不再取上中位数。
+        mid_x = statistics.median(xs) if xs else (x_ticks[0]+x_ticks[-1])/2
+        mid_y = statistics.median(ys) if ys else (y_ticks[0]+y_ticks[-1])/2
         mx_pos = to_sx(mid_x)
         my_pos = to_sy(mid_y)
         parts.append(f'<line x1="{mx_pos:.1f}" y1="{top}" x2="{mx_pos:.1f}" y2="{top+plot_h}" stroke="#94a3b8" stroke-width="1" stroke-dasharray="5 5"/>')

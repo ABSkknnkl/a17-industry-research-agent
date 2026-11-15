@@ -244,3 +244,64 @@ def test_automatic_model_bars_for_trends_use_the_same_semantic_key_as_lines():
         ), record, "llm",
     ))
     assert requested[0].chart_type == "comparison_bar"
+
+
+# ---------------------------------------------------------------------------
+# P-07 / P-09：研发费用率量纲只乘一次；中间缺年保持断点
+# ---------------------------------------------------------------------------
+
+def _rd_report(*, years, value_unit, group_mean, gap_year=None):
+    refs = []
+    evidence_by_year = {}
+    for year in years:
+        rd_a = ref(f"rd-{year}-a", "甲", "rd_expense", 10, "元", year=year)
+        rev_a = ref(f"rev-{year}-a", "甲", "revenue", 100, "元", year=year)
+        rd_b = ref(f"rd-{year}-b", "乙", "rd_expense", 10, "元", year=year)
+        rev_b = ref(f"rev-{year}-b", "乙", "revenue", 300, "元", year=year)
+        refs.extend([rd_a, rev_a, rd_b, rev_b])
+        evidence_by_year[str(year)] = {
+            "numerator_ids": [rd_a.record_id, rd_b.record_id],
+            "denominator_ids": [rev_a.record_id, rev_b.record_id],
+        }
+    ratio = {
+        "years": list(years),
+        "group_mean": {str(year): group_mean for year in years},
+        "evidence_record_ids": [row.record_id for row in refs],
+        "evidence_by_year": evidence_by_year,
+        "aggregation_method": "aggregate_ratio",
+        "value_unit": value_unit,
+    }
+    if gap_year:
+        ratio["gaps_by_year"] = {str(gap_year): {"reason": "missing_member_pair", "record_ids": []}}
+    analysis = {
+        "method": "reviewed_chain_facts_group_comparison",
+        "groups": {"电池组": {"members": ["甲", "乙"], "series": {"rd_ratio_derived": ratio}}},
+    }
+    return report_for(*refs, chain_analysis=analysis)
+
+
+def test_rd_ratio_ratio_unit_multiplies_once():
+    from chart_generator.evidence_policy import reviewed_rd_points
+
+    report = _rd_report(years=[2024, 2025], value_unit="ratio", group_mean=0.05)
+    points, note = reviewed_rd_points(report, "电池组")
+    assert [p["value"] for p in points] == pytest.approx([5.0, 5.0])
+    assert "小数率" in note
+
+
+def test_rd_ratio_percent_unit_is_not_multiplied_again():
+    from chart_generator.evidence_policy import reviewed_rd_points
+
+    report = _rd_report(years=[2024, 2025], value_unit="%", group_mean=5.0)
+    points, _ = reviewed_rd_points(report, "电池组")
+    assert [p["value"] for p in points] == pytest.approx([5.0, 5.0])
+
+
+def test_rd_ratio_missing_middle_year_keeps_break():
+    from chart_generator.evidence_policy import reviewed_rd_points
+
+    report = _rd_report(years=[2024, 2026], value_unit="ratio", group_mean=0.05, gap_year=2025)
+    points, note = reviewed_rd_points(report, "电池组")
+    assert [p["period"][:4] for p in points] == ["2024", "2025", "2026"]
+    assert points[1]["value"] is None and points[1]["insufficient"]
+    assert "2025" in note

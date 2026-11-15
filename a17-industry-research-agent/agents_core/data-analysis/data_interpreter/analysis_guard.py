@@ -21,7 +21,10 @@ from __future__ import annotations
 import re
 from collections import defaultdict
 from datetime import date
+from decimal import Decimal
 from typing import Any, Iterable
+
+from agents_core.financial_semantics import comparable_key, money_to_yuan
 
 # Skill rules: industry-chain-analysis:14, tech-hype-vs-fundamentals:8,
 # valuation-context-analysis:12 -- no buy/sell, target price, rating or
@@ -123,18 +126,29 @@ def build_group_comparison(
         deltas, hypothesis verdicts and generated ``KnowledgeFact`` rows.
     """
     completed_years = {as_of.year - 1, as_of.year - 2, as_of.year - 3}
-    values: dict[str, dict[str, dict[int, dict[str, tuple[float, str]]]]] = (
-        defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+    # P-06：按「成员 + 指标 + 年份」保留**原始记录列表**。
+    # 旧实现对同一格用 dict 覆盖（后写入者获胜），既无法发现同期不同值，
+    # 也让研发费用与营收的配对可能来自不同成员集合。这里只收集，聚合阶段再裁定。
+    cells: dict[str, dict[str, dict[int, list[Any]]]] = (
+        defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
     )
     for record in dataset.all_records():
         entity = getattr(record, "entity_name", None)
         year = _period_year(record)
         number = _as_float(getattr(record, "value", None))
-        if not entity or year not in completed_years or number is None:
+        if entity is None or year not in completed_years or number is None:
             continue
-        values[str(entity)][str(record.metric)][year][str(entity)] = (
-            number, str(record.record_id)
-        )
+
+        def _has_comparable_period(record: Any) -> bool:
+            try:
+                return comparable_key(record) is not None
+            except (TypeError, ValueError):
+                # 适配层/测试可能传入轻量对象（SimpleNamespace）：只按已完结年度判定。
+                return getattr(record, "period_end", None) is not None
+
+        if not _has_comparable_period(record):
+            continue
+        cells[str(entity)][str(record.metric)][year].append(record)
 
     groups: dict[str, Any] = {}
     fact_rows: list[dict[str, Any]] = []
@@ -154,16 +168,41 @@ def build_group_comparison(
     for group in facts.comparison_groups:
         name = str(group.get("group") or "未命名组")
         members = [str(m) for m in group.get("members", [])]
-        per_metric: dict[str, dict[int, list[float]]] = defaultdict(
+        per_metric: dict[str, dict[int, list[Any]]] = defaultdict(
             lambda: defaultdict(list)
         )
         refs: dict[str, list[str]] = defaultdict(list)
         for member in members:
-            for metric, by_year in values.get(member, {}).items():
-                for year, entries in by_year.items():
-                    for value, record_id in entries.values():
-                        per_metric[metric][year].append(value)
-                        refs[metric].append(record_id)
+            for metric, by_year in cells.get(member, {}).items():
+                for year, rows in by_year.items():
+                    per_metric[metric][year].extend(rows)
+                    refs[metric].extend(str(record.record_id) for record in rows)
+
+        def _resolve_cell(records: list[Any], *, money: bool) -> tuple[float | None, list[str]]:
+            """把一个「成员 + 指标 + 年」格裁定成单一可复现值。
+
+            同 ID 去重后：金额先还原到元再比较；同格出现多个不同值且无裁定 → 缺口，
+            不由记录顺序决定赢家（P-06/P-09）。
+            """
+            unique = {str(getattr(r, "record_id", "")): r for r in records}
+            rows = [r for r in unique.values() if _as_float(getattr(r, "value", None)) is not None]
+            if not rows:
+                return None, []
+            ids = [str(r.record_id) for r in rows]
+            if money:
+                by_value: dict[Decimal, list[Any]] = defaultdict(list)
+                for r in rows:
+                    yuan = money_to_yuan(getattr(r, "value", None), getattr(r, "unit", None))
+                    if yuan is None:
+                        return None, ids
+                    by_value[yuan].append(r)
+                if len(by_value) != 1:
+                    return None, ids
+                return float(next(iter(by_value))), ids
+            distinct = {float(r.value) for r in rows}
+            if len(distinct) != 1:
+                return None, ids
+            return next(iter(distinct)), ids
 
         series: dict[str, dict[str, Any]] = {}
         for metric in ("gross_margin", "revenue", "operating_cash_flow",
@@ -171,38 +210,109 @@ def build_group_comparison(
             by_year = per_metric.get(metric, {})
             if not by_year:
                 continue
+            money = metric != "gross_margin"
+            group_mean: dict[str, float] = {}
+            for year, rows in sorted(by_year.items()):
+                member_values: list[float] = []
+                for member in members:
+                    member_rows = cells.get(member, {}).get(metric, {}).get(year, [])
+                    if not member_rows:
+                        continue
+                    value, _ids = _resolve_cell(member_rows, money=money)
+                    if value is not None:
+                        member_values.append(value)
+                if member_values:
+                    group_mean[str(year)] = round(sum(member_values) / len(member_values), 4)
+            if not group_mean:
+                continue
             series[metric] = {
-                "years": sorted(by_year),
-                "group_mean": {
-                    str(year): round(sum(vals) / len(vals), 4)
-                    for year, vals in sorted(by_year.items())
-                },
+                "years": sorted(int(year) for year in group_mean),
+                "group_mean": group_mean,
+                "aggregation_method": "equal_weighted_mean",
+                "value_unit": "%" if metric == "gross_margin" else "元",
                 "sample_count": sum(len(v) for v in by_year.values()),
                 "evidence_record_ids": sorted(set(refs.get(metric, []))),
             }
 
         # rd_ratio is derived, never fetched: A1 has rd_expense and revenue.
+        # P-06/P-07：研发费用率固定为金额加权（Σ研发费用/Σ营收），与毛利率的等权均值
+        # 在字段上显式分开，避免同一张图里两个「组内均值」口径不同却同名。
         rd_by_year = per_metric.get("rd_expense", {})
         rev_by_year = per_metric.get("revenue", {})
         if rd_by_year and rev_by_year:
             ratio: dict[str, float] = {}
+            evidence_by_year: dict[str, dict[str, list[str]]] = {}
+            gaps_by_year: dict[str, dict[str, Any]] = {}
             for year in sorted(set(rd_by_year) & set(rev_by_year)):
-                rd_vals, rev_vals = rd_by_year[year], rev_by_year[year]
-                if rd_vals and rev_vals and sum(rev_vals) != 0:
-                    ratio[str(year)] = round(sum(rd_vals) / sum(rev_vals), 6)
+                numerator_yuan = Decimal(0)
+                denominator_yuan = Decimal(0)
+                numerator_ids: list[str] = []
+                denominator_ids: list[str] = []
+                year_gap: tuple[str, list[str]] | None = None
+                for member in members:
+                    rd_rows = cells.get(member, {}).get("rd_expense", {}).get(year, [])
+                    rev_rows = cells.get(member, {}).get("revenue", {}).get(year, [])
+                    if not rd_rows or not rev_rows:
+                        year_gap = ("missing_member_pair", [
+                            str(r.record_id) for r in [*rd_rows, *rev_rows]
+                        ])
+                        break
+                    rd_val, rd_ids = _resolve_cell(rd_rows, money=True)
+                    rev_val, rev_ids = _resolve_cell(rev_rows, money=True)
+                    if rd_val is None or rev_val is None:
+                        year_gap = ("unverified_member_value", [*rd_ids, *rev_ids])
+                        break
+                    if rd_val < 0 or rev_val <= 0:
+                        year_gap = ("invalid_member_sign", [*rd_ids, *rev_ids])
+                        break
+                    numerator_yuan += Decimal(str(rd_val))
+                    denominator_yuan += Decimal(str(rev_val))
+                    numerator_ids.append(rd_ids[0])
+                    denominator_ids.append(rev_ids[0])
+                if year_gap is not None:
+                    gaps_by_year[str(year)] = {"reason": year_gap[0], "record_ids": year_gap[1]}
+                    continue
+                if denominator_yuan <= 0:
+                    gaps_by_year[str(year)] = {
+                        "reason": "non_positive_group_revenue",
+                        "record_ids": [*numerator_ids, *denominator_ids],
+                    }
+                    continue
+                ratio[str(year)] = round(float(numerator_yuan / denominator_yuan), 6)
+                evidence_by_year[str(year)] = {
+                    "numerator_ids": numerator_ids,
+                    "denominator_ids": denominator_ids,
+                }
             if ratio:
-                series["rd_ratio_derived"] = {
+                derived: dict[str, Any] = {
                     "years": sorted(int(y) for y in ratio),
                     "group_mean": ratio,
                     "method": "sum(rd_expense)/sum(revenue), same group & year",
+                    "aggregation_method": "aggregate_ratio",
+                    "value_unit": "ratio",
                     "sample_count": sum(len(rd_by_year[y]) for y in rd_by_year),
                     "evidence_record_ids": sorted(set(
                         refs.get("rd_expense", []) + refs.get("revenue", [])
                     )),
+                    "evidence_by_year": evidence_by_year,
+                }
+                if gaps_by_year:
+                    derived["gaps_by_year"] = gaps_by_year
+                series["rd_ratio_derived"] = derived
+            else:
+                series["rd_ratio_derived"] = {
+                    "gap": "本组缺少可核验的同成员同年度研发费用/营收配对，研发费用率不可计算，不跨组顶替",
+                    "aggregation_method": "aggregate_ratio",
+                    "value_unit": "ratio",
+                    "sample_count": 0,
+                    "evidence_record_ids": [],
+                    "gaps_by_year": gaps_by_year,
                 }
         else:
             series["rd_ratio_derived"] = {
                 "gap": "本组缺少 rd_expense，研发费用率不可计算，不跨组顶替",
+                "aggregation_method": "aggregate_ratio",
+                "value_unit": "ratio",
                 "sample_count": 0,
                 "evidence_record_ids": [],
             }
@@ -210,12 +320,12 @@ def build_group_comparison(
         # Cash-flow / profit co-movement: direction agreement of adjacent
         # completed years, computed within the group only.
         ocf_mean = {
-            year: sum(vals) / len(vals)
-            for year, vals in per_metric.get("operating_cash_flow", {}).items() if vals
+            int(year): value
+            for year, value in series.get("operating_cash_flow", {}).get("group_mean", {}).items()
         }
         pnp_mean = {
-            year: sum(vals) / len(vals)
-            for year, vals in per_metric.get("parent_net_profit", {}).items() if vals
+            int(year): value
+            for year, value in series.get("parent_net_profit", {}).get("group_mean", {}).items()
         }
         shared = sorted(set(ocf_mean) & set(pnp_mean))
         agreements = 0

@@ -25,6 +25,7 @@ class EvidenceRef(BaseModel):
     source_locator: str | None = None
     published_at: date | None = None
     document_sha256: str | None = None
+    segment_name: str | None = None
 
 
 class Insight(BaseModel):
@@ -35,6 +36,18 @@ class Insight(BaseModel):
 class ContentSection(BaseModel):
     model_config=ConfigDict(extra="ignore")
     heading:str; purpose:str=""; key_points:list[str]=Field(default_factory=list); evidence_record_ids:list[str]=Field(default_factory=list)
+
+
+class HypothesisVerdict(BaseModel):
+    """A2 产业链假设判定：判定值可用于写作，证据说明不得当作记录 ID。"""
+    model_config=ConfigDict(extra="ignore")
+    hypothesis_id:str=""
+    statement:str=""
+    verdict:str="unknown"
+    required_evidence:list[str]=Field(default_factory=list)
+    covered_evidence:list[str]=Field(default_factory=list)
+    basis:str=""
+    evidence_record_ids:list[str]=Field(default_factory=list)
 
 
 class InterpretationReport(BaseModel):
@@ -55,16 +68,26 @@ class InterpretationReport(BaseModel):
     data_quality:dict[str,Any]=Field(default_factory=dict)
     data_quality_appendix:dict[str,Any]=Field(default_factory=dict)
     warnings:list[str]=Field(default_factory=list)
+    # P1：窄字段契约。旧样稿没有这些键时按空值兼容。
+    chain_analysis:dict[str,Any]|None=None
+    analysis_facts:dict[str,Any]=Field(default_factory=dict)
+    semantic_checks:list[dict[str,Any]]=Field(default_factory=list)
 
 
 class ChartRef(BaseModel):
     model_config=ConfigDict(extra="ignore")
     chart_id:str; title:str; chart_type:str; status:str="ready"; evidence_ids:list[str]=Field(default_factory=list); insight_goal:str=""; recommended_chapter_id:str|None=None; svg_uri:str|None=None
+    # P1：逐图口径。旧 chart_result.json 没有这些键时按空值兼容。
+    data_contract:dict[str,Any]=Field(default_factory=dict)
+    footnotes:list[str]=Field(default_factory=list)
+    point_evidence_ids:list[str]=Field(default_factory=list)
 
 
 class ChartResult(BaseModel):
     model_config=ConfigDict(extra="ignore")
     run_id:str=""; charts:list[ChartRef]=Field(default_factory=list); warnings:list[str]=Field(default_factory=list)
+    suppressed_charts:list[dict[str,Any]]=Field(default_factory=list)
+    question_coverage:list[dict[str,Any]]=Field(default_factory=list)
 
 
 class OutlineSection(BaseModel):
@@ -172,6 +195,16 @@ def validate_request_consistency(dataset: Any, subject: str | None) -> None:
         raise ValueError(f"输入数据集行业 ({ds_ind}) 与请求分析主题 ({subject}) 不一致！")
 
 
+class WritingQuestion(BaseModel):
+    question_id: str
+    text: str
+    relation_tags: list[str] = Field(default_factory=list)
+    requirement_ids: list[str] = Field(default_factory=list)
+    chart_ids: list[str] = Field(default_factory=list)
+    chart_gaps: list[str] = Field(default_factory=list)
+    chart_status: str | None = None
+
+
 class ChapterWritingRequest(BaseModel):
     model_config=ConfigDict(extra="forbid")
     report:InterpretationReport
@@ -180,6 +213,7 @@ class ChapterWritingRequest(BaseModel):
     input_dataset:dict[str, Any]|None=None
     outline:list[OutlineChapter]|None=None
     options:ChapterWritingOptions=Field(default_factory=ChapterWritingOptions)
+    questions: list[WritingQuestion] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_outline(self)->"ChapterWritingRequest":
@@ -335,3 +369,4 @@ class ChapterWritingResult(BaseModel):
     quality:ChapterQualityReport
     warnings:list[str]=Field(default_factory=list)
     artifact_dir:str|None=None
+    question_answers: list[dict[str, Any]] = Field(default_factory=list)

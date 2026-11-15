@@ -436,3 +436,29 @@ def test_yoy_uses_prior_year_as_a_calculation_baseline():
     rows = DataFetcherAgent._annual_financial_requirements(request, ["贵州茅台"])
     assert {r.period_ends[0].year for r in rows if not r.comparison_baseline} == {2023, 2024, 2025}
     assert {r.period_ends[0].year for r in rows if r.comparison_baseline} == {2022}
+
+
+def test_monthly_retail_coverage_joins_only_the_same_source_indicator():
+    req = ResearchRequirement(
+        requirement_id="monthly", label="2025年1月至2025年3月国内零售渗透率月度",
+        domain=Domain.INDUSTRY, metric_families=["nev_penetration"],
+        period_ends=[date(2025, 12, 31)], min_records=3,
+    )
+    source = _news_record("unused", "unused").source
+    series = [
+        ResearchRecord(
+            record_id=f"M{month}", domain=Domain.MACRO, entity_name=entity,
+            metric="国内零售渗透率:新能源汽车:当月值", value=month + 40, unit="%",
+            period_type="month", period_start=date(2025, month, 1),
+            period_end=date(2025, month, end_day), source=source,
+            raw_fields={source_key: "same-series"},
+        )
+        for month, end_day, entity, source_key in (
+            (1, 31, "宏观", "宏观@id"), (2, 28, "宏观", "宏观@id"), (3, 31, "中国", "macro_id"),
+        )
+    ]
+    dataset = StructuredResearchDataset(macro=series)
+    result = DataFetcherAgent._evaluate_requirement(dataset, req)
+    assert result.passed and result.evidence_record_ids == ["M1", "M2", "M3"]
+    dataset.macro[-1].raw_fields["macro_id"] = "different-series"
+    assert not DataFetcherAgent._evaluate_requirement(dataset, req).passed

@@ -320,7 +320,8 @@ def resolve_execution_snapshot(req: RunCreateRequest) -> RunExecutionSnapshot:
     input_digest = sha256(json.dumps(req.input_data.model_dump(mode="json"), ensure_ascii=False, sort_keys=True).encode()).hexdigest()
     # A3 用户问题驱动选图：创建 run 时固定模式与参数，后续阶段 / resume 不再重读环境。
     # 非法取值一律按 off 处理，避免误开新链路（方案第 3.1、5.5 节）。
-    planner_mode = str(runtime_settings.CHART_QUESTION_PLANNER_MODE or "off").strip().lower()
+    planner_mode = str((options.question_planner_mode if options else None)
+                       or runtime_settings.CHART_QUESTION_PLANNER_MODE or "off").strip().lower()
     if planner_mode not in {"off", "observe", "apply"}:
         planner_mode = "off"
     planner_params = {
@@ -447,7 +448,9 @@ class WorkflowEngine:
         """Prepare a single bounded round outside the run lock and commit with a revision guard."""
         import hashlib
         import shutil
-        from backend.app.agents.adapters import SupplementalRecordCollision, merge_supplemental_records
+        from backend.app.agents.adapters import (
+            SupplementalRecordCollision, merge_supplemental_records, question_stage_coverage,
+        )
         from data_fetcher.agent import DataFetcherAgent
         from data_fetcher.models import ResearchRecord, StructuredResearchDataset
 
@@ -547,6 +550,7 @@ class WorkflowEngine:
                 fetch_stage.revision = fresh.revision
                 fetch_stage.data["record_count"] = len(candidate.all_records())
                 fetch_stage.data["requirement_evidence_matrix"] = candidate.quality_summary.get("requirement_evidence_matrix", [])
+                fetch_stage.data.update(question_stage_coverage(run_id, fetch_stage.data["requirement_evidence_matrix"]))
                 self._invalidate_following_stages(fresh, "data_fetch")
                 fresh.current_stage = "data_interpret"
                 fresh.status = "running"
@@ -1111,7 +1115,7 @@ class WorkflowEngine:
         if not records:
             return None
         path = run_dir / "artifacts" / "dataset.json"
-        from backend.app.agents.adapters import merge_supplemental_records
+        from backend.app.agents.adapters import merge_supplemental_records, question_stage_coverage
         from data_fetcher.models import ResearchRecord, ResearchRequirement, StructuredResearchDataset
 
         dataset = StructuredResearchDataset.model_validate_json(path.read_text(encoding="utf-8"))
@@ -1153,11 +1157,15 @@ class WorkflowEngine:
         if "total_records" in data:
             data["total_records"] = int(data["total_records"] or 0) + len(records)
         data["replenishment_status"] = "completed"
+        data.update(question_stage_coverage(
+            req.run_id, dataset.quality_summary.get("requirement_evidence_matrix") or [],
+        ))
         return {path: dataset.model_dump_json(indent=2)}, data, f"精准数据补采完成，新增 {len(records)} 条有效金融记录"
 
     async def _prepare_chapter_rewrite(
         self, req: ReviewRequest, original: WorkflowState, run_dir: Path,
     ) -> tuple[dict[Path, str], dict[str, Any], str]:
+        from backend.app.agents.adapters import load_writing_questions
         from chapter_writer.agent import (
             ChapterWriterAgent, DEFAULT_OUTLINE, extract_global_quantitative_anchor,
             format_global_facts_prompt,
@@ -1174,7 +1182,8 @@ class WorkflowEngine:
         report_raw = json.loads((art / "interpretation_report.json").read_text(encoding="utf-8"))
         report = InterpretationReport.model_validate(report_raw)
         charts_path = art / "chart_result.json"
-        charts = ChartResult.model_validate_json(charts_path.read_text(encoding="utf-8")) if charts_path.exists() else None
+        chart_raw = json.loads(charts_path.read_text(encoding="utf-8")) if charts_path.exists() else {}
+        charts = ChartResult.model_validate(chart_raw) if chart_raw else None
         edits = req.edited_data or {}
         target_id = edits.get("target_chapter_id")
         outline = next((c for c in DEFAULT_OUTLINE if c.chapter_id == target_id), None)
@@ -1182,10 +1191,12 @@ class WorkflowEngine:
             raise ValueError(f"未找到待重写章节: {target_id}")
         instructions = [str(report_raw.get("expert_background") or ""), str(edits.get("instruction") or req.comment or "")]
         request = ChapterWritingRequest(report=report, charts=charts,
-            options=ChapterWritingOptions(instruction="\n".join(x for x in instructions if x)))
+            options=ChapterWritingOptions(instruction="\n".join(x for x in instructions if x)),
+            questions=load_writing_questions(req.run_id, report, chart_raw, run_dir))
         agent = ChapterWriterAgent()
         facts = extract_global_quantitative_anchor(report)
-        context = DynamicEvidenceRetriever(request).retrieve(outline.chapter_id, outline)
+        retriever = DynamicEvidenceRetriever(request)
+        context = retriever.retrieve(outline.chapter_id, outline)
         context["global_facts"] = facts
         context["global_facts_prompt"] = format_global_facts_prompt(facts)
         skills = await agent._plan_chapter_skills(outline, context, request)
@@ -1210,7 +1221,8 @@ class WorkflowEngine:
             except ValueError:
                 issues.append(f"章节 {raw.get('chapter_id')} 结构不完整")
         before_audit = {c.chapter_id: c.model_dump(mode="json") for c in parsed}
-        issues.extend(agent._audit_package(parsed, set(report.evidence_index), ready_charts, facts))
+        issues.extend(agent._audit_package(parsed, set(report.evidence_index), ready_charts, facts,
+            evidence=report.evidence_index))
         for audited in parsed:
             raw = audited.model_dump(mode="json")
             if audited.chapter_id == target_id:
@@ -1239,6 +1251,10 @@ class WorkflowEngine:
         data = original.stage_results[req.stage].model_copy(deep=True).data
         data.update(chapters=package["chapters"], quality=quality, agent_status=package["status"],
                     warnings=package["warnings"])
+        if request.questions:
+            persisted = [ChapterDraft.model_validate(raw) for raw in package["chapters"]
+                         if any(chapter.chapter_id == raw.get("chapter_id") for chapter in parsed)]
+            data["question_answers"] = package["question_answers"] = retriever.summarize_question_answers(persisted)
         return {path: json.dumps(package, ensure_ascii=False, indent=2)}, data, f"单章定向重写完成（章节 {target_id}）"
 
     @staticmethod

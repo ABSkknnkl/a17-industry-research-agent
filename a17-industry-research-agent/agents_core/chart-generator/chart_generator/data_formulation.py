@@ -8,7 +8,14 @@ from __future__ import annotations
 import re
 import math
 
-from agents_core.financial_semantics import period_shape, measurement_period, comparable_key, metric_family
+from agents_core.financial_semantics import (
+    choose_display_money_unit,
+    money_scale,
+    period_shape,
+    measurement_period,
+    comparable_key,
+    metric_family,
+)
 
 from collections import defaultdict
 from dataclasses import field
@@ -144,13 +151,12 @@ def _currency_axis_unit(records: list[EvidenceRef]) -> str | None:
     ]
     if not amounts:
         return None
-    scales = {"亿元": 1e8, "亿": 1e8, "万元": 1e4, "万": 1e4}
-    max_yuan = max(abs(float(r.value)) * scales.get(r.unit, 1.0) for r in amounts)
-    if max_yuan >= 1e8 or any(r.unit in ("亿元", "亿") for r in amounts):
-        return "亿元"
-    if max_yuan >= 1e4 or any(r.unit in ("万元", "万") for r in amounts):
-        return "万元"
-    return "元"
+    # P-14：与 metric_guard.determine_series_currency_unit 共用同一套规则：
+    # 先按来源单位还原到「元」，再按同轴最大绝对金额选 亿元/万元/元。
+    chosen = choose_display_money_unit(
+        [r.value for r in amounts], [r.unit for r in amounts]
+    )
+    return chosen or None
 
 
 class DataFormulator:
@@ -211,8 +217,9 @@ class DataFormulator:
         # unresolved monetary point. Leave the whole candidate unplottable.
         for ref in records:
             dimension = resolve_metric_meta(ref.metric).dimension
-            if (dimension == MetricDimension.CURRENCY_AMOUNT
-                    and ref.unit not in ("元", "万", "万元", "亿", "亿元")):
+            if dimension == MetricDimension.CURRENCY_AMOUNT and money_scale(ref.unit) is None:
+                # P-19/P-14：金额单位必须是**已登记**的单位（元/千元/万元/百万元/千万元/亿元/万亿元）。
+                # 空串、unknown、未登记单位一律整条候选不可出图，禁止借用邻点单位。
                 return None
             if (dimension == MetricDimension.PERCENTAGE_RATIO
                     and str(ref.unit or "").strip().casefold()
@@ -742,23 +749,15 @@ class DataFormulator:
             target1 = _currency_axis_unit([dict1[e] for e in common_entities])
             target2 = _currency_axis_unit([dict2[e] for e in common_entities])
 
-            # Check if this is Total + Float Market Cap pair
-            is_market_cap_ratio = False
-
             for ent in common_entities:
                 ref1 = dict1[ent]
                 ref2 = dict2[ent]
                 v1_raw, u1_raw = float(ref1.value), ref1.unit
                 v2_raw, u2_raw = float(ref2.value), ref2.unit
-                if is_market_cap_ratio:
-                    v1_norm, unit1 = DimensionGuard.normalize_financial_value(v1_raw, m1, u1_raw, target_unit=target1)
-                    total_yuan, _ = DimensionGuard.normalize_financial_value(v1_raw, m1, u1_raw, target_unit="元")
-                    float_yuan, _ = DimensionGuard.normalize_financial_value(v2_raw, m2, u2_raw, target_unit="元")
-                    v2_norm, unit2 = (round((float_yuan / total_yuan) * 100, 2) if total_yuan > 0 else 100.0), "%"
-                    lbl2 = "流通市值占比"
-                else:
-                    v1_norm, unit1 = DimensionGuard.normalize_financial_value(v1_raw, m1, u1_raw, target_unit=target1)
-                    v2_norm, unit2 = DimensionGuard.normalize_financial_value(v2_raw, m2, u2_raw, target_unit=target2)
+                # P-13：原先固定关闭的「总市值/流通市值 → 占比」分支（含 total<=0 → 100%
+                # 兜底）已删除，金额组合直接走规范化路径，不自动推导 100% 占比。
+                v1_norm, unit1 = DimensionGuard.normalize_financial_value(v1_raw, m1, u1_raw, target_unit=target1)
+                v2_norm, unit2 = DimensionGuard.normalize_financial_value(v2_raw, m2, u2_raw, target_unit=target2)
                 vals1.append(v1_norm)
                 vals2.append(v2_norm)
                 eids1.append(str(getattr(ref1, "record_id", "") or ""))
@@ -803,9 +802,8 @@ class DataFormulator:
         if any(u in ("%", "百分比") for u in units):
             return "%"
 
-        # 判断是否金额量纲：任一单位是金额单位，或其 metric 被识别为 CURRENCY_AMOUNT
-        amount_units = {"元", "万", "万元", "亿", "亿元"}
-        has_amount_unit = any(u in amount_units for u in units)
+        # 判断是否金额量纲：任一单位是**已登记**金额单位，或其 metric 被识别为 CURRENCY_AMOUNT
+        has_amount_unit = any(money_scale(u) is not None for u in units)
         metrics_amount = any(
             resolve_metric_meta(r.metric).dimension == MetricDimension.CURRENCY_AMOUNT
             for r in refs
@@ -818,29 +816,10 @@ class DataFormulator:
         if not has_amount_unit:
             return ""
 
-        base_values: list[float] = []
-        for r in refs:
-            try:
-                v = float(r.value)
-            except (TypeError, ValueError):
-                continue
-            unit = getattr(r, "unit", None)
-            if unit == "亿元" or unit == "亿":
-                base_values.append(v * 1e8)
-            elif unit in ("万元", "万"):
-                base_values.append(v * 1e4)
-            elif unit == "元":
-                base_values.append(v)
-            else:
-                # 单位缺失：量级不可推断，按原值参与，但不据此猜倍率
-                base_values.append(v)
-
-        max_abs = max((abs(v) for v in base_values), default=0.0)
-        if max_abs >= 1e8:
-            return "亿元"
-        if max_abs >= 1e4:
-            return "万元"
-        return "元"
+        # P-14：先还原到元，再按最大绝对值选单位；百万元/千万元/万亿元与元/万元/亿元同表处理。
+        return choose_display_money_unit(
+            [r.value for r in refs], [r.unit for r in refs]
+        )
 
     @staticmethod
     def _formulate_time_series(

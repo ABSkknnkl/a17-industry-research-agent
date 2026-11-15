@@ -10,6 +10,12 @@ from dataclasses import dataclass
 from enum import Enum
 import re
 
+from agents_core.financial_semantics import (
+    choose_display_money_unit,
+    money_scale,
+    normalize_money_unit,
+)
+
 
 class MetricDimension(str, Enum):
     """Broad financial/market dimension families."""
@@ -397,29 +403,17 @@ class DimensionGuard:
     def determine_series_currency_unit(values: list[float], units: list[str | None]) -> str:
         """Determines a single unified currency unit for an entire series.
 
-        Prevents dimensional fracturing where entity A is in '亿元' and entity B is in '万元'.
+        P-14：旧实现用**原始值**判断量级（万元要 >= 10000 才升亿元），而
+        `data_formulation._currency_axis_unit` 先把数值还原成「元」再判断，
+        同一组数据在两条路径会选出不同单位（差 1 万倍）。现在统一委托给
+        `choose_display_money_unit`：先还原到元，再按最大绝对值选单位。
         """
         if any(u in ("%", "百分比") for u in units if u):
             return "%"
         if not values:
             return "亿元"
-        # If any record explicitly uses 亿元, or any converted value exceeds 1e8, unify to 亿元
-        has_yi = any(u in ("亿元", "亿") for u in units if u)
-        max_abs = max((abs(v) for v in values), default=0.0)
-        has_wan = any(u in ("万元", "万") for u in units if u)
-
-        if has_yi:
-            return "亿元"
-        if has_wan:
-            # If in 万元 and max value >= 10000 万元 (1 亿元), convert all to 亿元
-            if max_abs >= 10000:
-                return "亿元"
-            return "万元"
-        if max_abs >= 1e8:
-            return "亿元"
-        if max_abs >= 1e4:
-            return "万元"
-        return "元"
+        chosen = choose_display_money_unit(values, list(units))
+        return chosen or "元"
 
     @staticmethod
     def normalize_financial_value(
@@ -452,42 +446,28 @@ class DimensionGuard:
             if not raw_unit and not target_unit:
                 return value, ""
 
+            src_scale = money_scale(raw_unit)
             dest_unit = target_unit
             if not dest_unit:
-                if raw_unit in ("亿元", "亿"):
+                if src_scale is None:
+                    return value, ""
+                if src_scale == 1:
+                    # 元：按量级选择更易读的展示单位
+                    magnitude = abs(value)
+                    dest_unit = "亿元" if magnitude >= 1e8 else ("万元" if magnitude >= 1e4 else "元")
+                elif src_scale == 10_000 and abs(value) >= 10_000:
+                    # 显式万元且量级已达亿元：沿用旧行为升到亿元，避免 10000 万元这种读数
                     dest_unit = "亿元"
-                elif raw_unit in ("万元", "万"):
-                    dest_unit = "亿元" if abs(value) >= 10000 else "万元"
-                elif abs(value) >= 1e8:
-                    dest_unit = "亿元"
-                elif abs(value) >= 1e4:
-                    dest_unit = "万元"
                 else:
-                    dest_unit = "元"
+                    dest_unit = normalize_money_unit(raw_unit) or "元"
 
             # 缺来源单位却指定了目标单位：无法可靠换算，保持不可比较
-            if not raw_unit:
+            if not raw_unit or src_scale is None:
                 return value, ""
-
-            # Convert from raw_unit into dest_unit
-            if dest_unit == "亿元":
-                if raw_unit in ("亿元", "亿"):
-                    return _round(value), "亿元"
-                if raw_unit in ("万元", "万"):
-                    return _round(value / 10000.0), "亿元"
-                return _round(value / 1e8), "亿元"
-            elif dest_unit == "万元":
-                if raw_unit in ("亿元", "亿"):
-                    return _round(value * 10000.0), "万元"
-                if raw_unit in ("万元", "万"):
-                    return _round(value), "万元"
-                return _round(value / 1e4), "万元"
-            else:
-                if raw_unit in ("亿元", "亿"):
-                    return _round(value * 1e8), "元"
-                if raw_unit in ("万元", "万"):
-                    return _round(value * 1e4), "元"
-                return _round(value), "元"
+            dst_scale = money_scale(dest_unit)
+            if dst_scale is None:
+                return value, ""
+            return _round(value * src_scale / dst_scale), dest_unit
 
         if meta.dimension == MetricDimension.PERCENTAGE_RATIO:
             # If raw_unit already explicitly indicates percentage (%, 百分比), DO NOT multiply by 100!
@@ -496,7 +476,8 @@ class DimensionGuard:
             if unit_key in ("%", "％", "百分比", "百分点", "percent", "percentage"):
                 return _round(value), "%"
 
-            if unit_key in ("小数", "ratio", "decimal", "倍"):
+            if unit_key in ("小数", "ratio", "decimal"):
+                # P-16：「倍」是估值/净现比语义，必须走 VALUATION_MULTIPLE 分支，不得乘 100。
                 return _round(value * 100.0), "%"
             if not unit_key:
                 return value, ""

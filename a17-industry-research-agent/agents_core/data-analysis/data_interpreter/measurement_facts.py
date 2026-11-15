@@ -12,7 +12,7 @@ import math
 import re
 from typing import Any
 
-from agents_core.financial_semantics import REPORT_BASIS_LABELS, measurement_period, metric_family
+from agents_core.financial_semantics import REPORT_BASIS_LABELS, measurement_period, metric_family, money_scale
 
 PERCENT_UNITS = {"%", "％", "百分比", "percent", "percentage"}
 METRIC_TERMS = {
@@ -23,6 +23,8 @@ METRIC_TERMS = {
     "net_profit_yoy": ("归母净利润同比增长率", "净利润同比", "净利同比", "利润增速"),
     "gross_margin": ("毛利率",), "net_margin": ("净利率",),
     "operating_cash_flow": ("经营现金流", "经营活动现金流"),
+    # 仅新能源汽车渗透率的可核验别名；「当月值/年度」是期间限定词，不进入指标白名单。
+    "nev_penetration": ("国内零售渗透率", "新能源汽车零售渗透率", "新能源乘用车零售渗透率", "新能源汽车渗透率"),
 }
 
 
@@ -54,6 +56,36 @@ def comparison_type(previous: date, current: date) -> str:
     if (previous.month, previous.day) == (current.month, current.day):
         return "yoy" if current.year - previous.year == 1 else "historical_same_period"
     return "period_observation_change"
+
+
+def reconcile_data_limitations(text: str, evidence: dict[str, Any]) -> str:
+    """Replace broad missing-data claims with what the admitted source records show."""
+    refs = list(evidence.values())
+    if re.search(r"单位.{0,25}(?:推断|推定|猜测).{0,12}(?:元|人民币)|量级.{0,8}(?:推断|推定)", text):
+        return "部分金额记录的来源单位待核。此类记录暂不用于金额比较或派生计算。"
+    if not re.search(r"缺失|缺乏|缺少|没有|不足", text):
+        return text
+    if re.search(r"月度|当月|逐月", text) and "渗透率" in text:
+        dates = sorted({
+            period[1].isoformat()
+            for ref in refs if metric_family(ref.metric) == "nev_penetration"
+            and (period := measurement_period(ref)) is not None and period[2] == "month"
+            and ref.value is not None
+        })
+        if dates:
+            return (f"国内零售渗透率已有 {len(dates)} 个可定位的月度观测（{dates[0]} 至 {dates[-1]}）。"
+                    "完整历史序列及指定期间的缺口以覆盖矩阵为准。")
+    if re.search(r"营业收入|营收|经营现金流", text):
+        entities = {ref.entity for ref in refs if ref.entity and ref.entity in text}
+        unqualified = {
+            ref.entity for ref in refs if ref.entity in entities and ref.value is not None
+            and metric_family(ref.metric) in {"revenue", "operating_cash_flow"}
+            and (money_scale(ref.unit) is None or getattr(ref, "unit_provenance", None) == "unknown")
+        }
+        if unqualified:
+            return (f"{'、'.join(sorted(unqualified))}已有部分营收或经营现金流数值，部分金额记录缺少可核验的来源单位。"
+                    "同口径比较范围以证据矩阵为准。")
+    return text
 
 
 def claim_years(sentence: str) -> set[int]:

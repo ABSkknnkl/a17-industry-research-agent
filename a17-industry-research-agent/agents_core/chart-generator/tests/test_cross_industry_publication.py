@@ -89,11 +89,12 @@ def test_out_of_range_numeric_record_cannot_crash_the_fallback():
     assert all("overflow" not in chart.evidence_ids for chart in result.charts)
 
 
-def test_compact_annual_volume_uses_one_combo_and_leaves_the_first_yoy_empty():
+@pytest.mark.parametrize("domain", ["industry", "macro"])
+def test_compact_annual_volume_uses_one_combo_and_leaves_the_first_yoy_empty(domain):
     from chart_generator.models import ChartPreferences
 
     rows = [
-        {**evidence(str(year), "中国", year, value, domain="industry"),
+        {**evidence(str(year), "中国", year, value, domain=domain),
          "metric": "新能源汽车:销量:累计值", "unit": "辆", "period_start": f"{year}-01-01"}
         for year, value in ((2023, 100000), (2024, 120000), (2025, 108000))
     ]
@@ -112,6 +113,33 @@ def test_compact_annual_volume_uses_one_combo_and_leaves_the_first_yoy_empty():
     assert [axis["name"] for axis in chart.option["yAxis"]] == ["万辆", "%"]
     growth = [point for point in chart.data_contract["points"] if point.get("calculation") == "yoy_percent"]
     assert [point["source_record_ids"] for point in growth] == [["2024", "2023"], ["2025", "2024"]]
+
+
+def test_reconciled_monthly_series_keeps_each_source_identity_and_covers_the_exact_window():
+    from chart_generator.models import ChartSpec
+    from chart_generator.question_planner import build_candidate_cards, parse_question_briefs
+
+    rows = [
+        {**evidence(rid, entity, 2025, value, domain="macro"),
+         "metric": "国内零售渗透率:新能源汽车:当月值", "period": period,
+         "period_start": f"{period[:7]}-01", "period_type": "month"}
+        for rid, entity, value, period in (
+            ("m2", "宏观", 42, "2025-02-28"), ("m3", "中国", 45, "2025-03-31"),
+        )
+    ]
+    matrix = [{"requirement": {"metric_families": ["nev_penetration"], "label": "月度零售渗透率"},
+               "coverage": {"passed": True, "evidence_record_ids": ["m3", "m2"]}}]
+    a2 = report("新能源汽车", rows, data_quality_appendix={"requirement_evidence_matrix": matrix})
+    candidate, = ChartGeneratorAgent()._covered_monthly_series(a2)
+    assert candidate.option["series"][0]["data"] == [42, 45]
+    assert [point["entity"] for point in candidate.data_contract["points"]] == ["宏观", "中国"]
+    chart = ChartSpec(chart_id="monthly", chart_type="area", title=candidate.title,
+                      option=candidate.option, evidence_ids=candidate.evidence_ids,
+                      insight_goal="核对窗口", data_fingerprint=candidate.fingerprint,
+                      data_contract=candidate.data_contract)
+    briefs = parse_question_briefs(["2025年2月至2025年3月国内新能源乘用车零售渗透率如何变化？"])
+    card, = build_candidate_cards([chart], briefs, a2)
+    assert card.sub_requirements == ["Q-1:渗透率"]
 
 
 def test_question_plan_binds_indicator_entity_and_full_window():

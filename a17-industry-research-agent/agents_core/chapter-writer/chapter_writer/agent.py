@@ -1,9 +1,12 @@
 """Bounded generate-audit-repair chapter writing agent."""
 
 from __future__ import annotations
+
+from collections import defaultdict
 from agents_core.financial_semantics import (
     CLAIM_METRICS,
     QUANTITY_RE,
+    financial_calculation_rows,
     measurement_period,
     metric_family,
     quantity_issues,
@@ -28,6 +31,9 @@ from chapter_writer.llm import ChapterLLM, OpenAICompatibleLLM
 from chapter_writer.models import (
     AppliedSkill, ChapterDraft, ChapterQualityReport, ChapterWritingRequest, ChapterWritingResult,
     ParagraphDraft, SectionDraft,
+)
+from chapter_writer.net_cash_ratio import (
+    apply_net_cash_ratio_guard, build_net_cash_ratio_policy,
 )
 from chapter_writer.outline import DEFAULT_OUTLINE, OUTLINE_VERSION
 from chapter_writer.retriever import DynamicEvidenceRetriever
@@ -60,7 +66,9 @@ def prepare_chapter_context(payload: dict[str, Any], system: str) -> tuple[str, 
     # New assignment hints are optional guidance: compress them before the
     # requirement matrix, financial assets and evidence. Requirement rows and
     # the evidence whitelist are never removed here.
-    for key in ('assignment_hints', 'primary_requirements',
+    for key in ('question_coverage', 'suppressed_charts', 'verdict_diagnostics',
+                'semantic_checks', 'analysis_facts', 'hypothesis_verdicts',
+                'assignment_hints', 'primary_requirements',
                 'requirement_evidence_matrix.details', 'comps_matrix', 'financial_ratios',
                 'industry_chain_segments', 'findings', 'outline_hints', 'insights', None):
         try:
@@ -84,8 +92,11 @@ def prepare_chapter_context(payload: dict[str, Any], system: str) -> tuple[str, 
                                       'requires_entity_code','requires_period_end','requires_published_at',
                                       'acceptable_skill_ids','entity_names','period_ends','metric_families')
                         cov_fields = ('requirement_id','label','domain','hard','passed','evidence_count','evidence_record_ids','missing')
-                        compacted.append({'requirement':{k:requirement[k] for k in req_fields if k in requirement},
-                                          'coverage':{k:coverage[k] for k in cov_fields if k in coverage}})
+                        entry = {'requirement':{k:requirement[k] for k in req_fields if k in requirement},
+                                 'coverage':{k:coverage[k] for k in cov_fields if k in coverage}}
+                        if row.get('section_id'):
+                            entry['section_id'] = row['section_id']
+                        compacted.append(entry)
                     if compacted != matrix:
                         context['requirement_evidence_matrix'] = compacted
                         omitted.append('context.requirement_evidence_matrix.details')
@@ -101,6 +112,236 @@ YEAR_OR_ORDINAL_RE=re.compile(r"^(?:19\d\d|20\d\d|[1-9]|10)$")
 # 审计隔离后，只保留图表占位符而无论述的段落会被改写为显式缺口句。
 # 该标记用于豁免段落去重检查（不同小节可以出现相同的缺口说明）。
 GAP_NOTICE_MARK = "本项量化解读未通过证据核验"
+
+_CHART_TAG_RE = re.compile(r"\[[^\]]*\]")
+_CHART_BODY_NOISE_RE = re.compile(r"[，,。；;、：:！!？?\s]")
+_CHART_LEAD_RE = re.compile(r"如图\s*所示[，,]\s*")
+
+
+_CC_PERIOD_RE = re.compile(
+    r"(20\d{2}\s*年(?:\s*(?:全年|年度|上半年|前三季度|第[一二三四1-4]季度|一季度|二季度|三季度|四季度))?"
+    r"|全年|年度|上半年|前三季度|当季|单季)"
+)
+_CC_SCOPE_RE = re.compile(
+    r"(中国市场|国内市场|全球市场|海外市场|行业整体|合并口径|母公司口径|中国|国内|全球|海外|行业)"
+)
+_CC_CLAUSE_RE = re.compile(r"[。；;\n！？!?]")
+_CC_METRIC_BOUNDARY = "，,；;：:（("
+_CC_ENTITY_RE = re.compile(
+    r"[\u4e00-\u9fff]{2,10}(?:时代|汽车|锂能|股份|集团|科技|能源|电子|半导体|材料|电池|控股|电气|重工|工业|装备|新能源|有限公司)"
+)
+
+
+def _claim_entity(text: str, start: int, refs: list[Any]) -> str:
+    """优先用段落证据的实体名绑定数值；没有证据时退回公司名后缀识别。"""
+    candidates: list[tuple[int, str]] = []
+    for ref in refs:
+        if hasattr(ref, "model_dump"):
+            ref = ref.model_dump(mode="json")
+        if not isinstance(ref, dict):
+            continue
+        name = str(ref.get("entity") or ref.get("entity_name") or "")
+        if not name:
+            continue
+        for match in re.finditer(re.escape(name), text):
+            if match.start() < start:
+                candidates.append((match.start(), name))
+    if candidates:
+        return max(candidates)[1]
+    matches = [m for m in _CC_ENTITY_RE.finditer(text) if m.start() < start]
+    return matches[-1].group(0) if matches else ""
+
+
+def _nearest_metric(text: str, number_start: int) -> tuple[str, str] | None:
+    """把数值绑定到同一子句内紧邻的指标，避免把别家公司的数字配给前文指标。"""
+    boundary = max((text.rfind(ch, 0, number_start) for ch in _CC_METRIC_BOUNDARY), default=-1) + 1
+    window = text[boundary:number_start]
+    terms = [(window.rfind(term), term) for term in CLAIM_METRICS if term in window]
+    if not terms:
+        return None
+    position, term = max(terms)
+    gap = len(window) - (position + len(term))
+    if gap > 8:
+        return None
+    return term, CLAIM_METRICS[term]
+
+
+def _cross_chapter_claim_audit(
+    chapters: list[ChapterDraft], evidence: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
+    """Flag same-key numeric conclusions that contradict across chapters.
+
+    Only report, never rewrite text. Different period/scope/unit are distinct
+    keys and are never treated as conflicts. At most two conflicts are recorded.
+    """
+    rows = []
+    for chapter in chapters:
+        for section in chapter.sections:
+            for paragraph in section.paragraphs:
+                refs = [
+                    evidence[rid] for rid in paragraph.evidence_ids
+                    if evidence and rid in evidence
+                ]
+                for sentence in _CC_CLAUSE_RE.split(paragraph.text):
+                    text = sentence.strip()
+                    if not text:
+                        continue
+                    period_match = _CC_PERIOD_RE.search(text)
+                    scope_match = _CC_SCOPE_RE.search(text)
+                    for match in QUANTITY_RE.finditer(text):
+                        unit = match.group(2)
+                        if not unit:
+                            continue
+                        metric = _nearest_metric(text, match.start())
+                        if metric is None:
+                            continue
+                        term, family = metric
+                        entity = _claim_entity(text, match.start(), refs)
+                        raw = match.group(1).replace(",", "").replace("−", "-")
+                        try:
+                            value = float(raw)
+                        except ValueError:
+                            continue
+                        unit = "%" if unit in ("%", "％") else unit
+                        decimals = len(raw.split(".", 1)[1]) if "." in raw else 0
+                        rows.append({
+                            "family": family, "metric": term, "entity": entity,
+                            "value": value, "unit": unit, "decimals": decimals,
+                            "period": re.sub(r"\s+", "", period_match.group(1)) if period_match else "",
+                            "scope": scope_match.group(1) if scope_match else "",
+                            "chapter_id": chapter.chapter_id, "section_id": section.section_id,
+                            "paragraph_id": paragraph.paragraph_id, "text": text,
+                        })
+    by_key: dict[tuple[str, str, str, str, str], list[dict[str, Any]]] = {}
+    for row in rows:
+        by_key.setdefault(
+            (row["family"], row["entity"], row["period"], row["scope"], row["unit"]),
+            [],
+        ).append(row)
+    conflicts = []
+    for key, group in by_key.items():
+        pair = None
+        for i, left in enumerate(group):
+            for right in group[i + 1:]:
+                if left["chapter_id"] == right["chapter_id"]:
+                    continue
+                tolerance = 0.5 * 10 ** (-min(left["decimals"], right["decimals"]))
+                if abs(left["value"] - right["value"]) > tolerance:
+                    pair = (left, right)
+                    break
+            if pair:
+                break
+        if not pair:
+            continue
+        left, right = pair
+        claim = (
+            f"{left['entity'] + ' ' if left['entity'] else ''}{left['metric']}"
+            f"（{left['period'] or '未标注期间'}／{left['scope'] or '未标注范围'}）"
+            f"{left['chapter_id']} 为 {left['value']:g}{left['unit']}，"
+            f"{right['chapter_id']} 为 {right['value']:g}{right['unit']}"
+        )
+        conflicts.append({
+            "code": "cross_chapter_claim_conflict",
+            "location": f"{left['section_id']}/{right['section_id']}",
+            "section_id": left["section_id"],
+            "claim": claim,
+            "disposition": "flagged",
+            "chapter_ids": [left["chapter_id"], right["chapter_id"]],
+            "paragraph_ids": [left["paragraph_id"], right["paragraph_id"]],
+        })
+        for chapter in chapters:
+            if chapter.chapter_id in (left["chapter_id"], right["chapter_id"]):
+                entry = dict(conflicts[-1])
+                if not any(
+                    existing.get("code") == entry["code"]
+                    and existing.get("claim") == entry["claim"]
+                    and existing.get("location") == entry["location"]
+                    for existing in chapter.content_audit
+                ):
+                    chapter.content_audit.append(entry)
+        if len(conflicts) >= 2:
+            break
+    return conflicts
+
+
+def paragraph_body(text: str) -> str:
+    """去掉图表占位符与格式标点后，段落的实际论述部分。"""
+    body = _CHART_TAG_RE.sub("", text or "")
+    body = body.replace("如图", "").replace("所示", "")
+    return _CHART_BODY_NOISE_RE.sub("", body)
+
+
+def has_chart_discussion(text: str) -> bool:
+    """段落是否有可挂图的论述；显式缺口句属于已隔离正文，不算解读。"""
+    body = paragraph_body(text)
+    return bool(body) and GAP_NOTICE_MARK not in body
+
+
+def strip_chart_tag(text: str, chart_id: str) -> str:
+    """移除未就绪图表的图号，并清掉只为该图号存在的「如图…所示」引子。"""
+    cleaned = (text or "").replace(f"[{chart_id}]", "")
+    cleaned = _CHART_LEAD_RE.sub("", cleaned)
+    return cleaned.strip()
+
+
+def chart_section_score(section: Any, chart_evidence: set[str]) -> tuple:
+    """优先选择已有对齐解读的 chart_readout 小节，其次有正文且证据重叠的小节。"""
+    discussion = [p for p in section.paragraphs if has_chart_discussion(p.text)]
+    readouts = [p for p in discussion if p.kind == "chart_readout"]
+    aligned = [p for p in readouts if chart_evidence & set(p.evidence_ids)]
+    section_evidence = {e for p in section.paragraphs for e in p.evidence_ids}
+    return (bool(aligned), bool(chart_evidence & section_evidence), bool(readouts), bool(discussion),
+            len(chart_evidence & section_evidence))
+
+
+def _align_chart_reference(section: Any, chart_id: str, chart: Any) -> bool:
+    evidence_ids = set(chart.get("evidence_ids", []) if isinstance(chart, dict) else chart.evidence_ids)
+    contract = (chart.get("data_contract") if isinstance(chart, dict) else getattr(chart, "data_contract", {})) or {}
+    points = contract.get("points") or []
+    families = {metric_family(str(point.get("metric") or "")) for point in points}
+    metric_terms = CLAIM_METRICS | {
+        "销量": "nev_sales", "出口量": "nev_exports", "出口": "nev_exports",
+        "渗透率": "nev_penetration",
+    }
+    tag = f"[{chart_id}]"
+    matched = []
+    for paragraph in section.paragraphs:
+        if not has_chart_discussion(paragraph.text):
+            continue
+        first_sentence = re.split(r"[。；;！？!?]", _CHART_TAG_RE.sub("", paragraph.text), maxsplit=1)[0].casefold()
+        # Auto-insertion puts the chart at the opening claim, so use the
+        # same local check for pre-existing and newly added chart references.
+        lead = re.split(r"限制|上述|仍需|尚需", first_sentence, maxsplit=1)[0]
+        mentions = {family for term, family in metric_terms.items() if term.casefold() in lead}
+        if (not evidence_ids or evidence_ids.intersection(paragraph.evidence_ids)) and (
+            not families or families.intersection(mentions)
+        ):
+            matched.append(paragraph)
+        elif tag in paragraph.text:
+            paragraph.text = strip_chart_tag(paragraph.text, chart_id)
+    if not matched:
+        note = f"{chart_id} 暂无与图表证据对应的正文解读。"
+        if note not in section.uncertainties:
+            section.uncertainties.append(note)
+        return any(has_chart_discussion(p.text) for p in section.paragraphs)
+    if not any(tag in paragraph.text for paragraph in matched):
+        target = next((paragraph for paragraph in matched if paragraph.kind == "chart_readout"), matched[0])
+        target.text = f"如图 {tag} 所示，{target.text}"
+    note = f"{chart_id} 暂无与图表证据对应的正文解读。"
+    section.uncertainties = [item for item in section.uncertainties if item != note]
+    return True
+
+
+def drop_chart_tag_from_section(section: Any, chart_id: str) -> None:
+    """移除本小节里不再合法的图号；只剩引子时写成显式缺口句，不造空段。"""
+    for para in section.paragraphs:
+        if f"[{chart_id}]" not in (para.text or ""):
+            continue
+        cleaned = strip_chart_tag(para.text, chart_id)
+        para.text = cleaned or (
+            f"关于「{section.title}」，{GAP_NOTICE_MARK}；"
+            "相关图表引用已移除，待补充可核验解读。"
+        )
 
 # 单章写作规范的默认预算；强制规范与用户显式选择优先保留。
 CHAPTER_SKILL_LIMIT = 10
@@ -121,12 +362,28 @@ def _lists_numbers(paragraph: ParagraphDraft) -> bool:
 
 SYSTEM_PROMPT="""你是机构级证券与行业研究报告章节写作智能体。你必须将内容组织成可直接供前端/PDF排版的结构化组件，而不是连续长文章。
 严格要求：
-1. 只使用输入 context 中的 evidence、insights、findings、comps_matrix、financial_ratios、industry_chain_segments 和 charts 信息，严禁捏造事实和数字。
+1. 只使用输入 context 中的 evidence、insights、findings、hypothesis_verdicts、analysis_facts、semantic_checks、question_coverage、suppressed_charts、comps_matrix、financial_ratios、industry_chain_segments 和 charts 信息，严禁捏造事实和数字。
+   - `hypothesis_verdicts` 的 `verdict` 可用于表述假设的验证状态；`covered_evidence`/`required_evidence` 是覆盖说明，不是 record_id，不得当作证据引用。
+   - `analysis_facts` 与 `semantic_checks` 只用于已核实事实、期间和校验状态；`semantic_checks` 中的原始错误句不提供，不得复述或改写为结论。
+   - 保留原始计量单位，或只作可复算的同维度换算（例如辆转万辆）。同比、复合增速、占比和百分点变化必须写明指标、期间及口径，并在该段 evidence_ids 绑定全部原始操作数。缺任一操作数时改写为证据缺口。
+   - 复用图表的数值时同时引用该值所需的原始证据。图号不能充当数值或因果依据，且只能用于讨论该图实际绘制的对象和指标。
+   - `requirement_evidence_matrix` 中带 section_id 的必答缺口须在指定小节的 uncertainties 和正文结论里明确交代。
+   - 上游告警及缺口提示仅用于定位待核事项。正文以证据和覆盖矩阵为准，区分「没有观测」「序列不全」「有数值但单位或口径待核」。
+   - `question_coverage`、`suppressed_charts` 及其 `reason_code` 只能用于说明数据或图表限制，本身不构成事实依据。
+   - 正文只能引用本章提示包 `evidence`/`charts` 中实际存在的 record_id；图表脚注与 `data_contract` 的单位、期间、范围和来源必须保留，不得改写为其它口径。
 2. 写作风格采用“断言主旨驱动 (Thesis-Driven)”：
    - 先回答本节问题，再选支撑判断的关键数字。把明细、平行指标和重复读数留给表格或指标卡；`key_points` 与摘要只保留读者需要记住的结论。
    - 每段只承担一个判断：给出证据对应的主体、期间和口径，然后说明变化、差异或业务含义。同一段的核心数字共用一次解读，无需逐个数字补一句归因。
    - 有同口径对照时解释方向和差异。有直接披露时注明谁披露了什么，才写成因。只有单期数字时交代该数字能回答什么；若要继续解释，指出具体还缺哪项数据。避免“值得关注”“总体向好”等空句。
    - 摘要概括本章最重要的判断，篇幅随证据和问题决定；无需为了凑字增加背景或重复结论。
+   - 有连续序列或跨企业可比证据的小节，分别写清主判断、最有信息量的拐点或对照、以及这个变化对行业判断的含义。三者可各用一段。写出读者需要跟踪的指标和能推翻判断的观测结果。
+   - 数值集中于证据段、图表或表格；分析段解释结构与经营含义。章节摘要和要点优先用有证据支持的定性概括，避免将带数字的长句在各处重复。缺少驱动证据时，仍可说明这个观察对哪些判断有用，并提出可验证的解释。
+   - 每个数值句写全主体、观测期、指标、单位和绑定的记录。优先沿用证据的 ISO 日期及期间类型。百分比必须写明是水平、同比、环比还是百分点差。只写已核的单个转折或具体对照，先核对完整窗口再写「最高」「首次」或「持续」。年度总量、年末当月值与累计值分别表述。
+   - 涉及用户问题时，逐项回答。将完整数列留给图或表，正文解释最关键的变化。比较分组时先比较组内离散与组间差异，再解释各指标对不同业务模式的含义。区分研发费用率与技术效果、现金转换与利润规模。场景与跟踪指标只描述可验证条件，缺少模型或明确资料时省略预测阈值。
+   - 对已经由图表或计算表回答的指标，正文只选最能区分结论的一处对照。除图表解读段外，每段至多保留一个关键数字。其余篇幅用于解释如何检验判断、应观察哪些指标及什么变化会推翻判断。
+   - 月度指标必须依据已验收的记录陈述覆盖情况。若题面起止月均在完整序列内，不得声称仅覆盖最近一年或缺失中间年份。集团分产品收入占比统一按年报项目原名叙述，不能自行缩窄成纯整车或动力电池业务。
+   - evidence 只是本章检索结果。未看到某个字段不能推断本次研究缺失该数据。资料缺口须对应明确未通过的覆盖项，或限定为当前证据无法回答的具体机制。已覆盖的分产品项目与研发费用率可按年报和财务表分析，不把缺少分部利润、资本化明细等同于缺少收入或研发费用。
+   - 暂无直接依据的原因、情景和传导机制仅作待检验解释。写清什么证据能验证它，避免把上游假设编号或机器状态词直接写进报告。
 3. `kind` 必须选用受控枚举：
    - `thesis`：本节核心判断与影响；
    - `evidence`：直接数据论据与口径引用；
@@ -374,6 +631,7 @@ class ChapterWriterAgent:
         ready_charts={c.chart_id:c for c in (request.charts.charts if request.charts else []) if c.status=="ready"}
         global_facts=extract_global_quantitative_anchor(request.report)
         global_facts_prompt=format_global_facts_prompt(global_facts)
+        net_cash_policy = build_net_cash_ratio_policy(request.report)
         retriever = DynamicEvidenceRetriever(request)
         concurrency = getattr(self.settings, "max_concurrency", 7)
         semaphore = asyncio.Semaphore(concurrency)
@@ -397,6 +655,7 @@ class ChapterWriterAgent:
                 context = retriever.retrieve(outline_chapter.chapter_id, outline_chapter)
                 context["global_facts"] = global_facts
                 context["global_facts_prompt"] = global_facts_prompt
+                context["net_cash_ratio_policy"] = net_cash_policy["prompt"]
                 planned_skills = await self._plan_chapter_skills(outline_chapter, context, request)
                 selected_by_chapter[outline_chapter.chapter_id] = [skill for skill, _, _ in planned_skills]
                 for skill, reason, route_type in planned_skills:
@@ -423,9 +682,16 @@ class ChapterWriterAgent:
         chapter_results = await asyncio.gather(*[_write_chapter(c) for c in outline])
         await record("skills_planned", skills={chapter_id: [skill.name for skill in skills] for chapter_id, skills in selected_by_chapter.items()})
         chapters: list[ChapterDraft] = [item[0] for item in chapter_results]
+        net_cash_corrections = apply_net_cash_ratio_guard(chapters, net_cash_policy)
+        if net_cash_corrections:
+            await record("net_cash_ratio_guard_applied", corrections=len(net_cash_corrections),
+                         verified=len(net_cash_policy["verified"]), missing=len(net_cash_policy["missing"]))
         fallback_ids = [item[1] for item in chapter_results if item[1] is not None]
         warnings = list(request.report.warnings) + [item[2] for item in chapter_results if item[2] is not None] + list(dict.fromkeys(foreign_drops))
-        issues=self._audit_package(chapters,allowed_evidence,ready_charts,global_facts)
+        if net_cash_corrections:
+            warnings.append(f"净现比口径修正 {len(net_cash_corrections)} 处（A2 无可引用值，禁止自算）")
+        issues=self._audit_package(chapters,allowed_evidence,ready_charts,global_facts,
+            evidence=request.report.evidence_index)
         issues.extend(item[2] for item in chapter_results if item[2] and item[2].startswith("段落资料缺口："))
         cited={eid for chapter in chapters for section in chapter.sections for para in section.paragraphs for eid in para.evidence_ids}
         coverage=len(cited)/len(allowed_evidence) if allowed_evidence else 0
@@ -439,6 +705,7 @@ class ChapterWriterAgent:
                 adaptation = skill_reasons.get(skill.name, skill.adaptation)
                 applied.append(AppliedSkill(name=skill.name,description=skill.description,source=skill.source,adaptation=adaptation,chapters=chapters_used))
         result=ChapterWritingResult(run_id=run_id,source_report_id=request.report.report_id,subject=request.report.subject,as_of=request.report.as_of,status=status,outline_version=OUTLINE_VERSION if request.outline is None else "custom-1",model_name=self.settings.llm_model if self.llm.is_available else "deterministic-fallback",applied_skills=applied,chapters=chapters,quality=quality,warnings=warnings+issues+[f"写作阶段没有对应技能：{name}" for name in unavailable_skills],artifact_dir=str(artifact_dir.resolve()) if artifact_dir else None)
+        result.question_answers = retriever.summarize_question_answers(chapters)
         await record("chapter_writing_completed",status=status,chapters=len(chapters),fallbacks=len(fallback_ids))
         if artifact_dir:
             artifact_dir.mkdir(parents=True,exist_ok=True)
@@ -473,13 +740,30 @@ class ChapterWriterAgent:
                         "instruction": request.options.instruction,
                         "context": context,
                         "global_facts": global_facts_prompt,
-                        "previous_errors": errors,
+                        "previous_errors": errors[:24],
                     }
                     # The model client owns request retries; do not multiply them here.
-                    prompt, packing = prepare_chapter_context(payload, SYSTEM_PROMPT)
+                    system = SYSTEM_PROMPT
+                    if errors:
+                        system += (
+                            "\n上一版未通过事实核验。保留已有大纲与小节编号。凡上一版包含密集数字，"
+                            "把完整序列留给现有图表，将正文重写为判断、经营含义和跟踪条件。"
+                            "仅在主体、指标、期间和全部记录能逐句对应时保留数字。"
+                            "没有直接来源的原因写成可检验的假设。每节仍须有独立的实质分析。"
+                        )
+                    if context.get("question_assignments"):
+                        system += (
+                            "\n本章逐题主答见 context.question_assignments。每题在指定 section_id 直接给出"
+                            "可验证的结论与边界。优先引用题目关联的已核证据和本章已有图表。"
+                            "只在 evidence 中核对并引用 record_id。逐题写独立的主判断段，禁止把同组图中的其他指标张冠李戴。没有图时用已核事实或表格回答。"
+                            "缺证或部分可比时说明缺少的指标、主体或期间，不补写未经验证的数字。"
+                            "supporting_chart_sections 仅用于提示读者参阅对应章节，不能在本章挂接这些图。"
+                            "related_question_sections 可用于指向相关主答小节，避免重复展开。"
+                        )
+                    prompt, packing = prepare_chapter_context(payload, system)
                     await record("context_budget_checked", chapter_id=outline_chapter.chapter_id,
                                  **packing)
-                    raw = await self.llm.generate_json(SYSTEM_PROMPT, prompt)
+                    raw = await self.llm.generate_json(system, prompt)
                     chapter = ChapterDraft.model_validate(raw)
                     chapter.content_audit = []
                     if any(not section.paragraphs for section in chapter.sections):
@@ -521,6 +805,14 @@ class ChapterWriterAgent:
                                 for pid in positions}
                     failures = {pid: issues for pid, issues in failures.items() if issues}
                     if failures and all(any(issue in group for group in failures.values()) for issue in errors):
+                        if (attempt == 0 and request.options.max_repairs >= 2
+                                and len(failures) > request.options.max_repairs
+                                and any(all(p.paragraph_id in failures for p in section.paragraphs)
+                                        for section in chapter.sections)):
+                            await record("chapter_redraft_requested", chapter_id=chapter.chapter_id,
+                                         failing_paragraphs=len(failures))
+                            chapter = None
+                            continue
                         unresolved = list(quarantined)
                         remaining_repairs = request.options.max_repairs - attempt
                         for pid, para_issues in failures.items():
@@ -559,10 +851,12 @@ class ChapterWriterAgent:
                             if not repaired:
                                 evidence = context.get("evidence", {})
                                 refs = [evidence[rid] for rid in original.evidence_ids if rid in evidence]
-                                refs.extend(verified_calculations(context.get("financial_ratios", []), evidence, original.evidence_ids))
+                                ratios = financial_calculation_rows(context.get("financial_ratios") or [], context.get("comps_matrix"))
+                                refs.extend(verified_calculations(ratios, evidence, original.evidence_ids))
                                 retained = retain_supported_claims(original.text, lambda clause: not quantity_issues(
                                     clause, refs, universe=list(evidence.values()),
                                     assumption_note=original.assumption_note, kind=original.kind,
+                                    comparisons=(context.get("analysis_facts") or {}).get("comparisons") or [],
                                 ))
                                 trial = chapter.model_copy(deep=True)
                                 if retained and retained != original.text:
@@ -598,6 +892,7 @@ class ChapterWriterAgent:
                         break
                     chapter = None
                 except Exception as exc:
+                    chapter = None
                     errors = [str(exc)[:500] if isinstance(exc, ContextBudgetExceeded) else type(exc).__name__]
                     await record("chapter_attempt_failed", chapter_id=outline_chapter.chapter_id, attempt=attempt + 1, error=errors[0])
                     if isinstance(exc, (ContextBudgetExceeded, httpx.HTTPError, TimeoutError)):
@@ -685,8 +980,25 @@ class ChapterWriterAgent:
             issues.append("section_id 或章节顺序与大纲不一致")
         seen_text = set()
         evidence_dict = (context.get("evidence") or {}) if context else {}
+        context = context or {}
+        ratios = financial_calculation_rows(context.get("financial_ratios") or [], context.get("comps_matrix"))
         if context is not None and "evidence" in context:
             allowed = allowed.intersection(evidence_dict)
+
+        for row in context.get("requirement_evidence_matrix") or []:
+            requirement = row.get("requirement") or {}
+            coverage = row.get("coverage") or {}
+            # Annual penetration has an explicit section owner and can be
+            # independently missing even when monthly observations exist.
+            if (coverage.get("passed") is not False
+                    or not requirement.get("hard")
+                    or "nev_penetration" not in (requirement.get("metric_families") or [])
+                    or not re.search(r"全年|年度", requirement.get("label") or "")):
+                continue
+            owner = next((section for section in chapter.sections
+                          if section.section_id == row.get("section_id")), None)
+            if owner and "年度全口径渗透率缺少完整的同口径证据。" not in owner.uncertainties:
+                owner.uncertainties.append("年度全口径渗透率缺少完整的同口径证据。")
 
         # Consistency repair: fix 22.14万亿 vs 2.21万亿 scale anomaly in chapter summary
         if global_facts and global_facts.get("market_cap_wan_yi"):
@@ -769,23 +1081,18 @@ class ChapterWriterAgent:
                     issues.append(f"{para.paragraph_id} 数字缺少证据支撑（假设说明不能替代证据）")
 
                 semantic_refs = [evidence_dict[eid] for eid in para.evidence_ids if eid in evidence_dict]
-                semantic_refs.extend(verified_calculations((context or {}).get("financial_ratios", []), evidence_dict, para.evidence_ids))
-                for sentence in re.split(r"[。；;\n]", para.text):
-                    proposition = re.sub(r"“[^”]*”|《[^》]*》", "", sentence)
-                    if not re.search(r"由于.+[，,].+|(?:导致|驱动|推动|带动|造成)(?!因素)", proposition):
-                        continue
-                    if re.search(r"资料缺|数据缺|证据不足|假设|情景", sentence):
-                        continue
-                    claim = re.sub(r"\s+", "", sentence).strip()
-                    supporting_texts = [re.sub(r"\s+", "", str(ref.get("value", "")))
-                                        for ref in semantic_refs if isinstance(ref, dict)]
-                    if claim and not any(claim in text for text in supporting_texts):
-                        issues.append(f"{para.paragraph_id} 因果判断缺少独立依据")
+                semantic_refs.extend(verified_calculations(ratios, evidence_dict, para.evidence_ids))
                 semantic_issues = quantity_issues(para.text,
                     semantic_refs,
                     universe=list(evidence_dict.values()), assumption_note=para.assumption_note,
-                    kind=para.kind, location=para.paragraph_id)
-                issues.extend(f"{para.paragraph_id} 数值语义未通过：{item['claim']}（需同实体、指标和期间证据）" for item in semantic_issues)
+                    kind=para.kind, location=para.paragraph_id,
+                    comparisons=((context or {}).get("analysis_facts") or {}).get("comparisons") or [])
+                issues.extend(
+                    f"{para.paragraph_id} 因果判断缺少独立依据：{item['claim']}"
+                    if item["code"] == "unsupported_causal_claim"
+                    else f"{para.paragraph_id} 数值语义未通过：{item['claim']}（需同实体、指标和期间证据）"
+                    for item in semantic_issues
+                )
                 normalized = "".join(para.text.split())
                 # 空壳段落（只有图表占位符、尚待改写）与显式缺口句都是审计
                 # 隔离的标准化产物，允许多节复用，不应触发重复重写。
@@ -820,10 +1127,33 @@ class ChapterWriterAgent:
                     # 承载数值却无任何合法证据绑定，必须计入审计问题，
                     # 不能因为"看起来结构化"就默认可信。
                     mc_value = str(getattr(mc, "value", "") or "")
+                    claim = f"{mc.label} {mc.period or ''} {mc_value}{mc.unit or ''}"
+                    if not mc.evidence_ids and mc.period:
+                        candidates = []
+                        for entry in (context.get("comps_matrix") or {}).get("entries") or []:
+                            company = entry.get("company_name") or ""
+                            if not company or company not in mc.label:
+                                continue
+                            family = next((CLAIM_METRICS[term] for term in sorted(CLAIM_METRICS, key=len, reverse=True)
+                                           if term.casefold() in mc.label.casefold()), None)
+                            source = (entry.get("metric_provenance") or {}).get(family) or {}
+                            ids = source.get("input_record_ids") or [source.get("record_id")]
+                            if ids and set(ids) <= allowed:
+                                refs = [evidence_dict[eid] for eid in ids]
+                                refs += verified_calculations(ratios, evidence_dict, ids)
+                                if not quantity_issues(claim, refs, universe=list(evidence_dict.values())):
+                                    candidates.append(tuple(ids))
+                        if len(set(candidates)) == 1:
+                            mc.evidence_ids = list(candidates[0])
                     if mc_value and extract_numbers(mc_value) and not getattr(mc, "evidence_ids", None):
                         issues.append(
                             f"{section.section_id} 指标卡「{getattr(mc, 'label', '')}」数值缺少证据绑定"
                         )
+                    elif mc_value and mc.evidence_ids and evidence_dict:
+                        refs = [evidence_dict[eid] for eid in mc.evidence_ids if eid in evidence_dict]
+                        refs += verified_calculations(ratios, evidence_dict, mc.evidence_ids)
+                        if quantity_issues(claim, refs, universe=list(evidence_dict.values())):
+                            issues.append(f"{section.section_id} 指标卡「{mc.label}」数值缺少证据绑定")
                     if global_facts and global_facts.get("market_cap_wan_yi") and "市值" in mc.label:
                         cw = global_facts["market_cap_wan_yi"]
                         if "22.14" in str(mc.value):
@@ -857,7 +1187,8 @@ class ChapterWriterAgent:
                         _note_dropped("callout ", set(co.evidence_ids) - allowed)
                         co.evidence_ids = [e for e in co.evidence_ids if e in allowed]
 
-        # Auto-attach any unattached charts designated for this chapter
+        # Auto-attach any unattached charts designated for this chapter.
+        # 优先挂到已有对齐解读的小节；全章无正文时保留首个合法挂接，不造段。
         attached_cids = {cid for s in chapter.sections for cid in s.chart_ids}
         chapter_charts = [
             cid for cid, c in charts.items()
@@ -865,29 +1196,20 @@ class ChapterWriterAgent:
         ]
         for cid in chapter_charts:
             if cid not in attached_cids:
-                c_eids = set(getattr(charts[cid], "evidence_ids", []))
-                best_sec = None
-                best_overlap = -1
-                for s in chapter.sections:
-                    sec_eids = {e for p in s.paragraphs for e in p.evidence_ids}
-                    overlap = len(c_eids & sec_eids)
-                    if overlap > best_overlap:
-                        best_overlap = overlap
-                        best_sec = s
+                chart_evidence = set(getattr(charts[cid], "evidence_ids", []) or [])
+                best_sec = max(
+                    chapter.sections,
+                    key=lambda s: chart_section_score(s, chart_evidence),
+                    default=None,
+                )
                 if best_sec is not None:
                     best_sec.chart_ids.append(cid)
                     attached_cids.add(cid)
 
-        # Enforce and auto-repair [CHART-xx] placeholders in paragraph text
         for section in chapter.sections:
             for cid in section.chart_ids:
-                tag = f"[{cid}]"
-                if not any(tag in p.text for p in section.paragraphs):
-                    target_p = next((p for p in section.paragraphs if p.kind == "chart_readout"), None)
-                    if not target_p and section.paragraphs:
-                        target_p = section.paragraphs[0]
-                    if target_p:
-                        target_p.text = f"如图 {tag} 所示，{target_p.text}"
+                if not _align_chart_reference(section, cid, charts[cid]):
+                    issues.append(f"{section.section_id} 图表解读缺少可核验证据")
 
         # 审计隔离后可能留下「如图 [CHART-xx] 所示，」这类只有占位符、没有
         # 任何论述的空壳段落。改写为显式缺口句并保留图表引用：既不让空句
@@ -895,7 +1217,7 @@ class ChapterWriterAgent:
         for section in chapter.sections:
             for para in section.paragraphs:
                 text = para.text or ""
-                body = re.sub(r"如图|所示|[,，。；;\s]", "", re.sub(r"\[[^\]]*\]", "", text))
+                body = paragraph_body(text)
                 # 完全空的段落留给 repair 分支按既有语义删除（无证据数字必须
                 # 被隔离，不得借缺口句复活）；这里只处理有占位符却无论述的空壳句。
                 if not text.strip() or body:
@@ -924,6 +1246,9 @@ class ChapterWriterAgent:
         evidence_ids = list(evidence_by_id)
         universe = list(evidence_by_id.values())
         insights = context["insights"]
+        questions_by_section = defaultdict(list)
+        for question in context.get("question_assignments") or []:
+            questions_by_section[question["section_id"]].append(question)
         chapters = []
         ch_charts = [
             c.chart_id
@@ -968,13 +1293,37 @@ class ChapterWriterAgent:
                         base, chosen = claim + f"该数字是单期观察，判断{label}变化仍需核对同口径的前期数据。", [eid]
                         break
             text = chart_prefix + (base or f"“{section.title}”缺少可用于判断的直接证据。")
+            question_paragraphs = []
+            for question in questions_by_section[section.section_id]:
+                refs = {
+                    rid for row in question["requirements"] for rid in row["evidence_record_ids"]
+                }
+                supported = next(
+                    (
+                        (claim, ids)
+                        for insight in insights
+                        if (ids := insight.get("evidence_record_ids") or []) and set(ids) <= refs
+                        and all(rid in evidence_by_id for rid in ids)
+                        and (claim := str(insight.get("conclusion") or "").strip())
+                        and not quantity_issues(claim, [evidence_by_id[rid] for rid in ids], universe=universe)
+                    ),
+                    None,
+                )
+                question_id = question["question_id"]
+                body = supported[0] if supported else "现有证据尚不足以给出可核验的综合判断。"
+                if supported and any(row["status"] != "covered" for row in question["requirements"]):
+                    body += "其余相关指标或期间仍有证据缺口。"
+                question_paragraphs.append(ParagraphDraft(
+                    paragraph_id=f"P-{outline.chapter_id[-2:]}-{index+1:02d}-{question_id}",
+                    kind="analysis", text=f"{question_id}：{body}", evidence_ids=supported[1] if supported else [],
+                ))
             chapters.append(
                 SectionDraft(
                     section_id=section.section_id,
                     title=section.title,
                     purpose=section.purpose,
                     key_points=[],
-                    paragraphs=[
+                    paragraphs=question_paragraphs + [
                         ParagraphDraft(
                             paragraph_id=f"P-{outline.chapter_id[-2:]}-{index+1:02d}-01",
                             kind="chart_readout" if possible else "analysis",
@@ -1004,6 +1353,7 @@ class ChapterWriterAgent:
         allowed: set[str],
         charts: dict[str, Any],
         global_facts: dict[str, Any] | None = None,
+        evidence: dict[str, Any] | None = None,
     ) -> list[str]:
         issues = []
         if len(chapters) != 7:
@@ -1025,6 +1375,7 @@ class ChapterWriterAgent:
                 for cid in section.chart_ids:
                     if cid not in charts:
                         issues.append(f"{section.section_id} 存在未就绪图表引用 {cid}")
+                        drop_chart_tag_from_section(section, cid)
                         continue
                     chart_obj = charts[cid]
                     rec_ch = getattr(chart_obj, "recommended_chapter_id", None) or (
@@ -1032,16 +1383,19 @@ class ChapterWriterAgent:
                     )
                     # If chart was explicitly recommended for another chapter, remove from here
                     if rec_ch and rec_ch != chapter.chapter_id:
+                        drop_chart_tag_from_section(section, cid)
                         continue
                     # If chart was already placed elsewhere, enforce single placement
                     if cid in seen_cids:
+                        drop_chart_tag_from_section(section, cid)
                         continue
                     seen_cids[cid] = (chapter.chapter_id, section.section_id)
                     clean_cids.append(cid)
                 section.chart_ids = clean_cids
             chapter.chart_ids = list(dict.fromkeys(c for s in chapter.sections for c in s.chart_ids))
 
-        # Ensure all ready charts designated for a chapter are placed in that chapter
+        # Ensure all ready charts designated for a chapter are placed in that chapter.
+        # 空节必须显式处理：可保留合法挂接，但不得访问 paragraphs[0]，也不补空壳图注。
         for cid, chart_obj in charts.items():
             rec_ch = getattr(chart_obj, "recommended_chapter_id", None) or (
                 chart_obj.get("recommended_chapter_id") if isinstance(chart_obj, dict) else None
@@ -1049,14 +1403,24 @@ class ChapterWriterAgent:
             if rec_ch and cid not in seen_cids:
                 target_ch = next((c for c in chapters if c.chapter_id == rec_ch), None)
                 if target_ch and target_ch.sections:
-                    target_sec = target_ch.sections[0]
+                    chart_evidence = set(getattr(chart_obj, "evidence_ids", []) or [])
+                    target_sec = max(
+                        target_ch.sections,
+                        key=lambda s: chart_section_score(s, chart_evidence),
+                        default=None,
+                    )
+                    if target_sec is None:
+                        continue
                     target_sec.chart_ids.append(cid)
                     target_ch.chart_ids = list(dict.fromkeys(c for s in target_ch.sections for c in s.chart_ids))
                     seen_cids[cid] = (target_ch.chapter_id, target_sec.section_id)
-                    tag = f"[{cid}]"
-                    if not any(tag in p.text for p in target_sec.paragraphs):
-                        target_p = next((p for p in target_sec.paragraphs if p.kind == "chart_readout"), target_sec.paragraphs[0])
-                        target_p.text = f"如图 {tag} 所示，{target_p.text}"
+
+        # 已挂图但全节没有实际论述（空节或只剩隔离句）：保留合法挂接，记录解读缺口。
+        for chapter in chapters:
+            for section in chapter.sections:
+                for cid in section.chart_ids:
+                    if not _align_chart_reference(section, cid, charts[cid]):
+                        issues.append(f"{section.section_id} 图表解读缺少可核验证据")
 
         # Cross-chapter market cap consistency audit
         mc_values = []
@@ -1071,5 +1435,8 @@ class ChapterWriterAgent:
             vals = [v for _, v in mc_values]
             if max(vals) > min(vals) * 3.0:
                 issues.append(f"跨章节总市值存在量级冲突：最高 {max(vals)} 万亿，最低 {min(vals)} 万亿")
+
+        # P3：跨章同键结论只报告，不改正文；是否阻断由 A5 按严重级别决定。
+        _cross_chapter_claim_audit(chapters, evidence)
 
         return list(dict.fromkeys(issues))

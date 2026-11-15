@@ -4,13 +4,30 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from hashlib import sha256
 from math import isfinite
 from pathlib import Path
 import json
 import re
-from agents_core.financial_semantics import measurement_period, metric_family, period_shape, source_report_period
+from agents_core.financial_semantics import (
+    MONEY_METRIC_FAMILIES,
+    _MONEY_PREFIX_SCALES,
+    decimal_step_from_text,
+    matches_disclosed,
+    measurement_conflict_verdict,
+    measurement_period,
+    metric_family,
+    money_scale,
+    money_value_yuan,
+    normalize_money_unit,
+    period_shape,
+    record_step,
+    resolve_source_period,
+    round_to_step,
+    rounding_verdict,
+    source_report_period,
+)
 from typing import Any
 
 from data_fetcher.models import (
@@ -66,7 +83,7 @@ ENTITY_NAME_KEYS = (
     "股票简称", "证券简称", "公司简称", "公司名称", "成分简称", "成分名称", "名称", "company_name",
     "指数简称", "板块名称", "板块简称", "行业名称", "指数名称", "index_name",
 )
-PERIOD_KEYS = ("报告期", "报告日期", "截止日期", "period_end", "REPORT_DATE")
+PERIOD_KEYS = ("报告期", "报告日期", "报告期截止日", "截止日期", "period_end", "REPORT_DATE")
 PUBLISHED_KEYS = (
     "发布日期", "公告日期", "发布时间", "publish_date", "published_at", "publish_time", "date"
 )
@@ -256,17 +273,35 @@ def _split_value_unit(value: Any) -> tuple[Any, str | None]:
     if not isinstance(value, str):
         return value, None
     text = value.strip().replace(",", "")
-    match = re.fullmatch(r"([-+]?\d+(?:\.\d+)?)\s*(万亿元|亿元|万元|万|亿|元|%|倍|家|只|人|台|辆|万辆|套|吨|万吨)?", text)
+    # P-01/P-20：先用「数值 + 任意后缀」拆开，再按完整单位判定语义。
+    # 旧正则把「万元|亿|元…」写死在候选里，「百万元」「万套」「亿台」会整体匹配失败，
+    # 退化成 (原值, None)/(原字符串, None)，等于把量级 1:1 灌进数值。
+    match = re.fullmatch(r"([-+]?\d+(?:\.\d+)?)\s*([^\d\s]*)", text)
     if not match:
         return value, None
     number = float(match.group(1))
-    unit = match.group(2)
-    multipliers = {"万亿元": 1e12, "亿元": 1e8, "万元": 1e4, "万": 1e4, "亿": 1e8}
-    if unit in multipliers:
-        return round(number * multipliers[unit], 4), "元"
-    if unit in ("万辆", "万吨"):
-        return round(number * 1e4, 4), unit.replace("万", "")
-    return number, unit
+    suffix = match.group(2)
+    if not suffix:
+        return number, None
+    if suffix in ("%", "％"):
+        return number, "%"
+    if suffix == "倍":
+        return number, "倍"
+    if "/" in suffix:
+        # 复合单位（万元/吨、元/千瓦时）不做换算，原样交给有对应契约的消费者。
+        return number, suffix
+    money_unit = normalize_money_unit(suffix)
+    if money_unit is not None:
+        scale = money_scale(money_unit)
+        if scale is not None:
+            return round(number * scale, 4), "元"
+    # 数量前缀：万套/亿台/万辆/万吨…只换算一次，返回基本单位。
+    quantity = re.fullmatch(r"(万亿|亿|百万|千万|万|千)([^\d\s]+)", suffix)
+    if quantity and quantity.group(2) not in ("元", "%", "％", "倍"):
+        prefix_scale = _MONEY_PREFIX_SCALES.get(quantity.group(1))
+        if prefix_scale:
+            return round(number * prefix_scale, 4), quantity.group(2)
+    return number, suffix
 
 
 def infer_default_unit(metric: str, raw_key: str = "", domain: Domain | None = None) -> str | None:
@@ -347,16 +382,21 @@ def _period_from_key(key: str) -> date | None:
     return _parse_date(match.group(1)) if match else None
 
 
-def _record_qualifiers(raw: dict[str, Any], end: date | None, label: str = "", *, point: bool = False) -> dict[str, Any]:
-    shape = period_shape(end, label, point=point)
-    kind = raw.get("period_type") or raw.get("期间类型")
-    if kind:
-        shape["period_type"] = str(kind)
-        if kind == "quarter":
-            shape.update(period_shape(end, "单季"))
-    explicit_start = raw.get("period_start") or raw.get("起始日期")
-    if explicit_start:
-        shape["period_start"] = _parse_date(explicit_start)
+def _record_qualifiers(
+    raw: dict[str, Any], end: date | None, label: str = "", *, point: bool = False,
+    issues: list[str] | None = None,
+) -> dict[str, Any]:
+    """期间/口径限定。期间优先级由共享解析统一决定，冲突写入 period_conflict。"""
+    shape, conflict = resolve_source_period(
+        end,
+        label,
+        source_period=raw.get("周期") or raw.get("数据周期") or raw.get("统计周期"),
+        explicit_type=raw.get("period_type") or raw.get("期间类型"),
+        explicit_start=raw.get("period_start") or raw.get("起始日期"),
+        point=point,
+    )
+    if conflict and issues is not None and "period_conflict" not in issues:
+        issues.append("period_conflict")
     currency = str(raw.get("currency") or raw.get("reporting_currency") or raw.get("币种") or "CNY").strip()
     currency = {"人民币":"CNY", "美元":"USD", "港元":"HKD", "欧元":"EUR"}.get(currency, currency.upper())
     scope = str(raw.get("scope") or raw.get("口径") or "consolidated").strip()
@@ -367,6 +407,35 @@ def _record_qualifiers(raw: dict[str, Any], end: date | None, label: str = "", *
 def _record_id(parts: list[Any]) -> str:
     encoded = json.dumps(parts, ensure_ascii=False, sort_keys=True, default=str).encode("utf-8")
     return "R-" + sha256(encoded).hexdigest()[:20]
+
+
+# --- P-11 / P-12：披露精度与舍入等价 -----------------------------------------
+# 实现集中在 agents_core.financial_semantics，A1 冲突判定与 A2 复核共用同一套规则，
+# 避免「A1 放行、A2 拦截」。重算值的十进制小数位不是披露精度。
+_decimal_step = decimal_step_from_text
+_matches_disclosed = matches_disclosed
+_round_to_step = round_to_step
+
+
+def _record_step(record: Any) -> Decimal | None:
+    return record_step(record)
+
+
+def _rounding_verdict(records: list[Any], values: list[Decimal]) -> bool | None:
+    return rounding_verdict(records, values)
+
+
+def _computed_match(stored: Decimal, stored_step: Decimal | None, computed: Decimal) -> bool | None:
+    """P-12：公告只给分子分母时，重算值的小数位不能当作披露精度。
+
+    只做两件事：完全相等即匹配；否则用**已存值**的精度复核重算值。
+    精度不可确认时返回 None（调用方保留待核）。
+    """
+    if stored == computed:
+        return True
+    if stored_step is None:
+        return None
+    return _round_to_step(computed, stored_step) == stored
 
 
 def _is_target_entity_match(target_entity: str, record_entity: str) -> bool:
@@ -580,7 +649,7 @@ def _fuse_long_table_row(
         unit=m_unit,
         unit_provenance=m_provenance,
         period_end=m_date,
-        **_record_qualifiers(raw, m_date, m_name),
+        **_record_qualifiers(raw, m_date, m_name, issues=m_issues),
         period_provenance="row",
         published_at=published or m_date,
         source=source,
@@ -965,7 +1034,8 @@ class DataFusion:
                         continue
                     compact_raw = raw
                     if len(raw) > 15:
-                        ident_keys = ("股票代码", "股票简称", "指标名称", "指标单位", "时间", "日期", "行业名称", "国家", "地区")
+                        ident_keys = ("股票代码", "股票简称", "指标名称", "指标单位", "时间", "日期", "行业名称", "国家", "地区",
+                                      "项目名称", "分类标准", "报告期截止日")
                         compact_raw = {k: raw[k] for k in ident_keys if k in raw}
                         compact_raw[raw_key_str] = raw_value
 
@@ -979,7 +1049,7 @@ class DataFusion:
                         unit=unit,
                         unit_provenance=unit_provenance,
                         period_end=metric_period,
-                        **_record_qualifiers(raw, metric_period, raw_key_str, point=is_snapshot_market_data or metric in ("market_cap", "circulating_market_cap", "pe", "pe_ttm", "pe_dynamic", "pe_lyr", "pb", "ps")),
+                        **_record_qualifiers(raw, metric_period, raw_key_str, point=is_snapshot_market_data or metric in ("market_cap", "circulating_market_cap", "pe", "pe_ttm", "pe_dynamic", "pe_lyr", "pb", "ps"), issues=issues),
                         period_provenance=period_origin,
                         published_at=record_published,
                         source=source,
@@ -1328,14 +1398,25 @@ class DataFusion:
                     if "pending_restatement" not in record.issues:
                         record.issues = [*record.issues, "pending_restatement"]
                     continue
-                if abs(old_value - corrected) < 0.00005:
+                # P-12：用「已存值 vs 调整前 / 调整后」的精度匹配矩阵替换原先的
+                # 0.005 / 0.00005 固定浮点阈值。公告只给分子/分母时，重算值的小数位
+                # 不能当作披露精度，只用已存值自身的精度复核重算值；无法确认则待核。
+                stored = Decimal(str(record.value))
+                stored_step = _record_step(record)
+                match_before = _computed_match(stored, stored_step, before)
+                match_after = _computed_match(stored, stored_step, after)
+                already_official = (
+                    getattr(record, "period_provenance", "") == "official_restatement"
+                    or bool((record.raw_fields or {}).get("superseded_record_id"))
+                )
+                if match_after is True and (match_before is not True or already_official):
                     previous = next((change for change in changes if change['replacement_record_id'] == record.record_id), None)
                     changes.append({'original_record': previous['original_record'] if previous else record.model_dump(mode='json'),
                         'replacement_record_id': record.record_id, 'source_url': ref['source_url'],
                         'source_locator': ref['source_locator'], 'basis': ref['basis'], 'calculation':inputs,
                         'status':'already_adjusted'})
                     continue
-                if abs(old_value - float(before)) > 0.005:
+                if not (match_before is True and match_after is False):
                     if "pending_restatement" not in record.issues:
                         record.issues = [*record.issues, "pending_restatement"]
                     continue
@@ -1522,6 +1603,12 @@ class DataFusion:
         return mined
 
     def _find_conflicts(self, dataset: StructuredResearchDataset) -> list[ConflictRecord]:
+        """P-11：财务测量先按「主体/指标/观测期/范围/币种」归并，再按披露精度与单位换算判定。
+
+        金额指标不再把单位写进分组键：万元/亿元等不同展示单位的同一口径记录必须
+        先换算到元再比较（`10,000 万元` 与 `1 亿元` 等价，`100 万元` 与 `1 亿元` 冲突）。
+        非金额单位（%、倍）仍按单位分组，避免把不同维度的数字硬凑成冲突。
+        """
         grouped: dict[tuple, list[ResearchRecord]] = defaultdict(list)
         for domain in Domain:
             if domain == Domain.COMPANIES:
@@ -1538,45 +1625,58 @@ class DataFusion:
                         None,
                     )
                 entity = entity or domain.value
-                financial_metric = metric_family(record.metric) in {'revenue', 'net_profit', 'parent_net_profit', 'operating_cash_flow', 'gross_margin', 'net_margin'}
-                basis = (record.unit, record.scope, record.currency, record.period_start, record.period_type) if domain == Domain.FINANCIALS or financial_metric else ()
-                normalized_metric = metric_family(record.metric) if domain == Domain.FINANCIALS else record.metric
+                family = metric_family(record.metric)
+                financial_metric = family in {'revenue', 'net_profit', 'parent_net_profit', 'operating_cash_flow', 'gross_margin', 'net_margin'}
+                financial = domain == Domain.FINANCIALS or financial_metric
+                basis = (record.scope, record.currency, record.period_start, record.period_type) if financial else ()
+                normalized_metric = family if domain == Domain.FINANCIALS else record.metric
                 grouped[(entity, normalized_metric, record.period_end or record.published_at, basis)].append(record)
 
         conflicts: list[ConflictRecord] = []
         for (entity, metric, period, basis), records in grouped.items():
-            distinct = {json.dumps(record.value, ensure_ascii=False, sort_keys=True, default=str) for record in records}
-            sources = {record.source.skill_id for record in records}
             financial = any(record.domain == Domain.FINANCIALS for record in records)
+            sources = {record.source.skill_id for record in records}
+
             if financial:
-                try:
-                    if all(not isinstance(record.value, bool) and Decimal(str(record.value)).is_finite() for record in records):
-                        distinct = {Decimal(str(record.value)) for record in records}
-                except (InvalidOperation, ValueError):
-                    pass
-            if len(distinct) > 1 and (financial or len(sources) > 1):
-                # 针对价格、市值等实时市场指标，支持0.5%以内合理市场波动的容差消除，避免虚假冲突
-                is_tolerable = False
-                try:
-                    num_vals = [float(record.value) for record in records if record.value is not None]
-                    if not financial and len(num_vals) == len(records) and len(num_vals) >= 2:
-                        min_v, max_v = min(num_vals), max(num_vals)
-                        base = max(abs(min_v), abs(max_v))
-                        if base > 0 and (max_v - min_v) / base <= 0.005:  # 0.5% tolerance
-                            is_tolerable = True
-                except (ValueError, TypeError):
-                    pass
-
-                if is_tolerable:
+                verdict = measurement_conflict_verdict(records)
+                if verdict is True:
                     continue
+                if len(records) > 1:
+                    key = _record_id([entity, metric, period, *([basis] if basis else [])])
+                    conflicts.append(ConflictRecord(
+                        conflict_key=key,
+                        entity=entity,
+                        metric=metric,
+                        period=period,
+                        values=[record.value for record in records],
+                        record_ids=[record.record_id for record in records],
+                    ))
+                    continue
+                continue
 
-                key = _record_id([entity, metric, period, *([basis] if basis else [])])
-                conflicts.append(ConflictRecord(
-                    conflict_key=key,
-                    entity=entity,
-                    metric=metric,
-                    period=period,
-                    values=[record.value for record in records],
-                    record_ids=[record.record_id for record in records],
-                ))
+            distinct = {json.dumps(record.value, ensure_ascii=False, sort_keys=True, default=str) for record in records}
+            if len(distinct) <= 1 or len(sources) <= 1:
+                continue
+            # 针对价格、市值等实时市场指标，支持0.5%以内合理市场波动的容差消除，避免虚假冲突
+            is_tolerable = False
+            try:
+                num_vals = [float(record.value) for record in records if record.value is not None]
+                if len(num_vals) == len(records) and len(num_vals) >= 2:
+                    min_v, max_v = min(num_vals), max(num_vals)
+                    base = max(abs(min_v), abs(max_v))
+                    if base > 0 and (max_v - min_v) / base <= 0.005:  # 0.5% tolerance
+                        is_tolerable = True
+            except (ValueError, TypeError):
+                pass
+            if is_tolerable:
+                continue
+            key = _record_id([entity, metric, period, *([basis] if basis else [])])
+            conflicts.append(ConflictRecord(
+                conflict_key=key,
+                entity=entity,
+                metric=metric,
+                period=period,
+                values=[record.value for record in records],
+                record_ids=[record.record_id for record in records],
+            ))
         return conflicts

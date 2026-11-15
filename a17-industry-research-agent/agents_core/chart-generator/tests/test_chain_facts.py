@@ -289,7 +289,9 @@ def test_group_comparison_never_overclaims_hypotheses() -> None:
             for metric, value in (("rd_expense", 1.8e10), ("revenue", 3.6e11)):
                 rows.append(SimpleNamespace(
                     entity_name=company, period_end=date(year, 12, 31),
-                    metric=metric, value=value, record_id=f"R-{metric}-{company}-{year}",
+                    metric=metric, value=value, unit="元",
+                    scope="consolidated", currency="CNY",
+                    record_id=f"R-{metric}-{company}-{year}",
                 ))
     dataset = SimpleNamespace(all_records=lambda: rows)
     facts = try_load_chain_facts("新能源汽车")

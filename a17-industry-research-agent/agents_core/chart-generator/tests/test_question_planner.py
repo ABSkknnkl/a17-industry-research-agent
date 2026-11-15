@@ -268,6 +268,56 @@ def test_settle_coverage_uses_actual_published_charts():
     assert legacy[0]["status"] == "partially_published"
 
 
+def test_revised_question_uses_monthly_retail_penetration_and_gross_margin_only():
+    briefs = qp.parse_question_briefs([
+        "2024—2025年销量及国内零售渗透率（月度口径）如何变化？",
+        "宁德时代与整车企业的毛利率有何差异？",
+    ])
+    assert briefs[1].metrics == ["毛利率"]
+    annual = _chart("ANNUAL", "line", metrics=("nev_penetration",))
+    monthly = _chart("MONTHLY", "line", metrics=("国内零售渗透率:新能源汽车:当月值",))
+    monthly.data_contract["points"] = [
+        {"metric": "国内零售渗透率:新能源汽车:当月值", "entity": "中国",
+         "period": f"{year}-06-30", "period_type": "month"}
+        for year in (2024, 2025)
+    ]
+    cards = qp.build_candidate_cards([annual, monthly], briefs, _report())
+    assert not cards[0].question_ids
+    assert cards[1].question_ids == ["Q-1"]
+    assert cards[1].sub_requirements == []
+
+
+def test_question_budget_reserves_other_primary_charts_before_extra_charts():
+    plan = qp.QuestionChartPlan(mode="apply", questions=[
+        qp.QuestionPlanItem(question_id="Q-1", priority="P0",
+                            primary_card_ids=["CARD-A", "CARD-B"], supporting_card_ids=["CARD-C"]),
+        qp.QuestionPlanItem(question_id="Q-2", priority="P0", primary_card_ids=["CARD-A"]),
+        qp.QuestionPlanItem(question_id="Q-3", priority="P1", primary_card_ids=["CARD-D"]),
+    ])
+    charts = [_chart(key, "line") for key in "ABCD"]
+    assert [chart.chart_id for chart in qp.apply_plan_to_charts(plan, charts, max_charts=2)] == ["A", "D"]
+
+
+def test_question_links_keep_monthly_requirement_separate_from_annual():
+    briefs = qp.parse_question_briefs([
+        "2024—2025年国内零售渗透率（月度口径）如何变化？",
+        "2024—2025年销量、渗透率如何变化？",
+    ])
+    matrix = [
+        {"requirement": {"requirement_id": rid, "domain": "industry", "label": label,
+                         "metric_families": [metric], "period_ends": ["2025-12-31"]},
+         "coverage": {"passed": False}}
+        for rid, label, metric in [
+            ("MONTH", "月度渗透率", "nev_penetration"), ("YEAR", "年度渗透率", "nev_penetration"),
+            ("SALES", "年度销量", "nev_sales"),
+        ]
+    ]
+    links = qp.link_question_requirements(briefs, matrix)
+    assert {qid: [row["requirement"]["requirement_id"] for row in rows] for qid, rows in links.items()} == {
+        "Q-1": ["MONTH"], "Q-2": ["YEAR", "SALES"],
+    }
+
+
 def test_zero_candidate_records_evidence_gap():
     briefs = qp.parse_question_briefs(FOUR_QUESTIONS[:1])
     plan = asyncio.run(qp.build_question_plan(briefs, [], mode="apply", llm=StubLLM()))

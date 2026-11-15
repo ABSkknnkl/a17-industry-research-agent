@@ -17,7 +17,7 @@ def row(rid, metric, value, end, entity="公司甲", domain=Domain.FINANCIALS, *
                          retrieved_at=datetime(2026, 11, 2, tzinfo=timezone.utc)), **extra)
 
 
-def run_report(rows, tmp_path, text=None, citation_ids=None):
+def run_report(rows, tmp_path, text=None, citation_ids=None, subject="测试行业"):
     class FixtureLLM:
         is_available = text is not None
         async def generate_json(self, system_prompt, user_prompt):
@@ -27,7 +27,7 @@ def run_report(rows, tmp_path, text=None, citation_ids=None):
                 "evidence_record_ids": citation_ids or [r.record_id for r in rows]}]}
     domains = {d.value: [r for r in rows if r.domain == d] for d in Domain}
     return asyncio.run(DataInterpreterAgent(llm=FixtureLLM(), settings=Settings(output_dir=tmp_path)).run(
-        StructuredResearchDataset(**domains), AnalysisRequest(subject="测试行业"), save_artifacts=False))
+        StructuredResearchDataset(**domains), AnalysisRequest(subject=subject), save_artifacts=False))
 
 
 def test_gdp_quarters_have_distinct_ids_and_explicit_yoy_comparison():
@@ -296,3 +296,284 @@ def test_conflicting_scalar_claim_stays_explicitly_unresolved(tmp_path):
     assert "冲突" in report.executive_summary and "待核" in report.executive_summary
     assert not report.key_metrics and not report.trends
     assert set(report.analysis_facts["conflicts"][0]["evidence_record_ids"]) == {"current-a", "current-z"}
+
+
+# ---------------------------------------------------------------------------
+# P-06 / P-07 / P-09：组内均值口径与研发费用率量纲
+# ---------------------------------------------------------------------------
+
+def _group_fixture(unit="元"):
+    from types import SimpleNamespace
+
+    def rec(rid, entity, metric, value, u):
+        return ResearchRecord(
+            record_id=rid, domain=Domain.FINANCIALS, entity_name=entity,
+            metric=metric, value=value, unit=u,
+            period_start=date(2024, 1, 1), period_end=date(2024, 12, 31),
+            period_type="annual", scope="consolidated", currency="CNY",
+            source=SourceRef(task_id="audit", skill_id="fixture", trace_id="fixture",
+                             retrieved_at=datetime(2026, 11, 2, tzinfo=timezone.utc)),
+        )
+
+    rows = [
+        rec("gm-a", "公司甲", "gross_margin", 10, "%"),
+        rec("gm-b", "公司乙", "gross_margin", 30, "%"),
+        rec("rd-a", "公司甲", "rd_expense", 1, unit),
+        rec("rev-a", "公司甲", "revenue", 10, unit),
+        rec("rd-b", "公司乙", "rd_expense", 9, unit),
+        rec("rev-b", "公司乙", "revenue", 30, unit),
+    ]
+    facts = SimpleNamespace(
+        comparison_groups=[{"group": "电池组", "members": ["公司甲", "公司乙"]}],
+        interpretive_hypotheses=[],
+        comparison_rules=[],
+        forbidden=[],
+    )
+    return SimpleNamespace(all_records=lambda: rows), facts
+
+
+def test_group_means_separate_equal_weight_and_aggregate_ratio():
+    """毛利率是等权均值（10/30→20），研发费用率是金额加权（10/40→25%）。"""
+    from data_interpreter.analysis_guard import build_group_comparison
+
+    dataset, facts = _group_fixture()
+    result = build_group_comparison(dataset, facts, as_of=date(2026, 11, 9))
+    series = result["groups"]["电池组"]["series"]
+
+    assert series["gross_margin"]["group_mean"]["2024"] == pytest.approx(20.0)
+    assert series["gross_margin"]["aggregation_method"] == "equal_weighted_mean"
+    assert series["gross_margin"]["value_unit"] == "%"
+
+    rd = series["rd_ratio_derived"]
+    assert rd["group_mean"]["2024"] == pytest.approx(0.25)
+    assert rd["aggregation_method"] == "aggregate_ratio"
+    assert rd["value_unit"] == "ratio"
+    assert set(rd["evidence_by_year"]["2024"]["numerator_ids"]) == {"rd-a", "rd-b"}
+    assert set(rd["evidence_by_year"]["2024"]["denominator_ids"]) == {"rev-a", "rev-b"}
+
+
+def test_group_rd_ratio_gaps_when_units_are_unverified():
+    """研发费用与营收都缺单位时不得沿用「同源倍率一致」假设，该年判缺口。"""
+    from data_interpreter.analysis_guard import build_group_comparison
+
+    dataset, facts = _group_fixture(unit=None)
+    result = build_group_comparison(dataset, facts, as_of=date(2026, 11, 9))
+    rd = result["groups"]["电池组"]["series"]["rd_ratio_derived"]
+    assert "group_mean" not in rd
+    assert rd["gaps_by_year"]["2024"]["reason"] == "unverified_member_value"
+
+
+# ---------------------------------------------------------------------------
+# P-10：净现比只用同一对「经营现金流 / 归母净利润」记录
+# ---------------------------------------------------------------------------
+
+def _cash_rec(rid, metric, value, unit="亿元", *, scope="consolidated", currency="CNY",
+              end="2025-12-31", ptype="annual"):
+    return ResearchRecord(
+        record_id=rid, domain=Domain.FINANCIALS, entity_name="公司甲", metric=metric,
+        value=value, unit=unit, period_end=date.fromisoformat(end), period_type=ptype,
+        period_start=date(date.fromisoformat(end).year, 1, 1), scope=scope, currency=currency,
+        source=SourceRef(task_id="audit", skill_id="fixture", trace_id="fixture",
+                         retrieved_at=datetime(2026, 11, 2, tzinfo=timezone.utc)),
+    )
+
+
+def _cash_ratio(rows):
+    return DeterministicAnalysisEngine()._paired_calculation(
+        StructuredResearchDataset(financials=list(rows)), "公司甲",
+        "operating_cash_flow", "parent_net_profit",
+    )
+
+
+def test_cash_ratio_uses_parent_not_consolidated_profit():
+    rows = [_cash_rec("ocf", "operating_cash_flow", 80),
+            _cash_rec("pnp", "parent_net_profit", 100),
+            _cash_rec("np", "net_profit", 200)]
+    calc = _cash_ratio(rows)
+    assert calc["value"] == pytest.approx(0.80)
+    assert calc["input_record_ids"] == ["ocf", "pnp"]
+    assert calc["denominator_metric"] == "parent_net_profit"
+
+
+def test_cash_ratio_denominator_threshold_is_exact():
+    """0.049 亿元不算，0.05 亿元（5,000,000 元）进入计算。"""
+    assert _cash_ratio([_cash_rec("ocf", "operating_cash_flow", 0.04),
+                        _cash_rec("pnp", "parent_net_profit", 0.049)]) is None
+    calc = _cash_ratio([_cash_rec("ocf", "operating_cash_flow", 0.04),
+                        _cash_rec("pnp", "parent_net_profit", 0.05)])
+    assert calc is not None and calc["value"] == pytest.approx(0.8)
+
+
+def test_cash_ratio_is_order_invariant():
+    from itertools import permutations
+
+    rows = [_cash_rec("ocf", "operating_cash_flow", 80),
+            _cash_rec("pnp", "parent_net_profit", 100),
+            _cash_rec("np", "net_profit", 200)]
+    results = [_cash_ratio(list(order)) for order in permutations(rows)]
+    assert {tuple(r["input_record_ids"]) for r in results} == {("ocf", "pnp")}
+
+
+def test_cash_ratio_rejects_cross_scope_and_currency_pairs():
+    assert _cash_ratio([_cash_rec("ocf", "operating_cash_flow", 80),
+                        _cash_rec("pnp", "parent_net_profit", 100, scope="parent_only")]) is None
+    assert _cash_ratio([_cash_rec("ocf", "operating_cash_flow", 80),
+                        _cash_rec("pnp", "parent_net_profit", 100, currency="USD")]) is None
+
+
+# ---------------------------------------------------------------------------
+# P-08：正负基数、同比与百分点分开处理
+# ---------------------------------------------------------------------------
+
+def test_negative_base_has_no_yoy_percentage(tmp_path):
+    report = run_report([row("p0", "净利润", -100, "2024-12-31"),
+                         row("p1", "净利润", 50, "2025-12-31")], tmp_path,
+                        "公司甲2025年净利润扭亏。")
+    metric = report.key_metrics[0]
+    assert metric.change_pct is None
+    assert metric.absolute_change == pytest.approx(150)
+    assert metric.change_basis == "turnaround"
+
+
+def test_positive_base_keeps_yoy_and_rate_level_keeps_points(tmp_path):
+    report = run_report([row("r0", "营业收入", 100, "2024-12-31"),
+                         row("r1", "营业收入", 125, "2025-12-31"),
+                         row("g0", "毛利率", 15, "2024-12-31"),
+                         row("g1", "毛利率", 20, "2025-12-31")], tmp_path)
+    by_name = {m.name: m for m in report.key_metrics}
+    assert by_name["营业收入"].change_pct == pytest.approx(0.25)
+    assert by_name["毛利率"].percentage_point_change == pytest.approx(5.0)
+    assert by_name["毛利率"].change_pct == pytest.approx(5 / 15)
+
+
+def test_turnaround_claim_cannot_be_written_as_yoy_growth():
+    from agents_core.financial_semantics import quantity_issues
+
+    base = _cash_rec("p0", "净利润", -100, end="2024-12-31")
+    current = _cash_rec("p1", "净利润", 50, end="2025-12-31")
+    issues = quantity_issues("公司甲2025年净利润同比增长150%。", [base, current],
+                             universe=[base, current])
+    assert issues, "扭亏不得写成同比增长 150%"
+    absolute = quantity_issues("公司甲2025年净利润按基期绝对值计算的相对变化为150%。",
+                               [base, current], universe=[base, current])
+    assert not absolute
+
+
+# ---------------------------------------------------------------------------
+# P-02：市值字段名与量纲（亿元）
+# ---------------------------------------------------------------------------
+
+def test_market_cap_exposes_semantic_field_and_keeps_legacy_alias():
+    from types import SimpleNamespace
+    from data_interpreter.models import Domain as D
+
+    def rec(rid, domain, metric, value, unit):
+        return ResearchRecord(
+            record_id=rid, domain=domain, entity_name="公司甲", entity_code="000001.SZ",
+            metric=metric, value=value, unit=unit, unit_provenance="source_field",
+            period_end=date(2025, 12, 31), period_type="annual",
+            source=SourceRef(task_id="t", skill_id="f", skill_version="1", query="",
+                             trace_id="t", retrieved_at=datetime(2026, 1, 1, tzinfo=timezone.utc)),
+        )
+
+    dataset = StructuredResearchDataset(
+        financials=[rec("rev", D.FINANCIALS, "营业收入", 100, "亿元"),
+                    rec("np", D.FINANCIALS, "净利润", 10, "亿元")],
+        companies=[rec("mc", D.COMPANIES, "总市值", 12.5, "亿元")],
+    )
+    item = DeterministicAnalysisEngine().compute_financial_ratios(dataset)[0]
+    assert item["market_cap_100m_cny"] == pytest.approx(12.5)
+    assert item["market_cap_billion"] == pytest.approx(12.5)
+    assert item["market_cap_unit"] == "亿元"
+
+
+# ---------------------------------------------------------------------------
+# P-11（口径确认后）：A2 与 A1 共用跨单位判定
+# ---------------------------------------------------------------------------
+
+def test_cross_unit_money_conflict_suppresses_metric_and_trend():
+    rows = [
+        row("a", "营业收入", 100, "2025-12-31").model_copy(update={"unit": "万元", "unit_provenance": "source_field"}),
+        row("b", "营业收入", 1, "2025-12-31").model_copy(update={"unit": "亿元", "unit_provenance": "source_field"}),
+    ]
+    metrics, trends, *_ = DeterministicAnalysisEngine().analyze(
+        StructuredResearchDataset(financials=rows), AnalysisRequest(enable_semantic_analysis=False))
+    assert not [m for m in metrics if m.metric.strip() == "营业收入"]
+    assert not [t for t in trends if t.metric.strip() == "营业收入"]
+
+
+def test_cross_unit_equivalent_money_is_not_suppressed():
+    rows = [
+        row("a", "营业收入", 10000, "2025-12-31").model_copy(update={"unit": "万元", "unit_provenance": "source_field"}),
+        row("b", "营业收入", 1, "2025-12-31").model_copy(update={"unit": "亿元", "unit_provenance": "source_field"}),
+    ]
+    metrics, trends, *_ = DeterministicAnalysisEngine().analyze(
+        StructuredResearchDataset(financials=rows), AnalysisRequest(enable_semantic_analysis=False))
+    assert metrics, "换算后相等的跨单位金额不应被整体降级"
+    assert all(t.metric.strip() == "营业收入" for t in trends)
+
+
+# P0-1：月度观测不得被年末日期形状放行成全年口径。
+def test_explicit_month_without_start_uses_month_start():
+    from agents_core.financial_semantics import measurement_period
+    record = row("dec", "国内零售渗透率:新能源汽车:当月值", 59.1, "2025-12-31",
+                 "中国", Domain.INDUSTRY, period_type="month")
+    assert measurement_period(record) == (date(2025, 12, 1), date(2025, 12, 31), "month")
+
+
+def test_legacy_monthly_metric_stored_as_annual_is_read_as_month():
+    """旧产物把当月值写成 annual + 1/1 起日；兼容防线至少不能让它支撑全年断言。"""
+    from agents_core.financial_semantics import measurement_period
+    legacy = row("legacy", "国内零售渗透率:新能源汽车:当月值", 59.1, "2025-12-31",
+                 "中国", Domain.INDUSTRY, period_type="annual", period_start=date(2025, 1, 1))
+    period = measurement_period(legacy)
+    assert period is not None and period[2] == "month"
+    assert period[0] == date(2025, 12, 1)
+
+
+def test_evidence_projection_does_not_backfill_january_first_for_a_month_record():
+    records = [row("dec", "国内零售渗透率:新能源汽车:当月值", 59.1, "2025-12-31",
+                   "中国", Domain.INDUSTRY, period_type="month")]
+    _, _, _, _, evidence, _ = DeterministicAnalysisEngine().analyze(
+        StructuredResearchDataset(industry=records), AnalysisRequest(enable_semantic_analysis=False))
+    ref = evidence["dec"]
+    assert ref.period_start == date(2025, 12, 1)
+    assert ref.period_type == "month"
+
+
+def test_annual_penetration_claim_cannot_use_a_monthly_observation(tmp_path):
+    records = [row("dec", "国内零售渗透率:新能源汽车:当月值", 59.1, "2025-12-31",
+                   "中国", Domain.INDUSTRY, period_type="month")]
+    report = run_report(
+        records, tmp_path,
+        "2025 年全年国内新能源汽车零售渗透率达 59.1%。2025 年 12 月当月国内零售渗透率为 59.1%。",
+        ["dec"], subject="中国",
+    )
+    summary = report.executive_summary
+    assert "全年国内新能源汽车零售渗透率达 59.1%" not in summary
+    assert "59.1" in summary, "月度观测本身仍应作为可用观测保留"
+
+
+def test_independent_annual_observation_supports_the_annual_claim(tmp_path):
+    records = [row("annual", "国内零售渗透率:新能源汽车:年度值", 59.1, "2025-12-31",
+                   "中国", Domain.INDUSTRY, period_type="annual", period_start=date(2025, 1, 1))]
+    report = run_report(
+        records, tmp_path, "2025 年全年国内新能源汽车零售渗透率达 59.1%。", ["annual"], subject="中国")
+    assert "2025 年全年国内新能源汽车零售渗透率达 59.1%" not in report.executive_summary
+    assert "59.1" in report.executive_summary
+    assert "缺乏可核对的结构化观察值" not in report.executive_summary
+
+
+def test_model_warning_distinguishes_missing_series_from_existing_observation(tmp_path):
+    from data_interpreter.measurement_facts import reconcile_data_limitations
+
+    report = run_report([
+        row("m", "国内零售渗透率:新能源汽车:当月值", 59.1, "2025-12-31", "中国", Domain.INDUSTRY,
+            period_type="month"),
+    ], tmp_path, subject="中国新能源汽车")
+    corrected = reconcile_data_limitations("月度销量与渗透率序列缺失。", report.evidence_index)
+    assert "1 个可定位的月度观测" in corrected
+    assert "完整历史序列" in corrected
+    assert "来源单位待核" in reconcile_data_limitations(
+        "部分财务数据单位未知，但结合数值量级推断为人民币元。", report.evidence_index,
+    )

@@ -144,3 +144,41 @@ def test_resolve_snapshot_fixes_mode_params_and_stays_redacted(monkeypatch):
 
     monkeypatch.setattr(runtime_settings, "CHART_QUESTION_PLANNER_MODE", "bogus")
     assert resolve_execution_snapshot(req).question_planner_mode == "off"
+
+
+def test_run_can_enable_question_planning_without_changing_global_mode(monkeypatch, tmp_path):
+    import asyncio
+    import json
+    from unittest.mock import AsyncMock
+
+    from backend.app.agents.adapters import AgentExecutionError, load_writing_questions
+    from backend.app.core.config import settings
+    from backend.app.core.storage import storage
+    from backend.app.engine.state_machine import WorkflowEngine, load_execution_snapshot
+    from backend.app.schemas.workflow import RunCreateRequest
+    from chapter_writer.models import InterpretationReport
+
+    monkeypatch.setattr(settings, "CHART_QUESTION_PLANNER_MODE", "off")
+    req = RunCreateRequest.model_validate({
+        "project_id": "questions",
+        "input_data": {
+            "industry_topic": "新能源汽车", "focus_questions": ["销量如何变化？"],
+            "chart_generate_options": {"question_planner_mode": "apply"},
+        },
+    })
+    monkeypatch.setattr(storage, "base_dir", tmp_path)
+    engine = WorkflowEngine()
+    monkeypatch.setattr(engine, "_execute_stage", AsyncMock())
+    state = asyncio.run(engine.create_run(req))
+    assert load_execution_snapshot(state.run_id).question_planner_mode == "apply"
+    folder = storage.get_run_dir(state.run_id)
+    report = InterpretationReport(report_id="a2", subject="新能源汽车", as_of=date(2026, 11, 13), status="completed")
+    question, = load_writing_questions(state.run_id, report, {}, folder)
+    assert question.text == "销量如何变化？"
+    assert question.chart_ids == []
+    contract = folder / "question_contract.json"
+    payload = json.loads(contract.read_text())
+    payload["questions"][0]["text"] = "不同的题面"
+    contract.write_text(json.dumps(payload))
+    with pytest.raises(AgentExecutionError, match="哈希"):
+        load_writing_questions(state.run_id, report, {}, folder)

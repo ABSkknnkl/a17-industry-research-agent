@@ -14,11 +14,12 @@ from typing import Any
 
 from pydantic import ValidationError
 from agents_core.call_ledger import safe_error
+from agents_core.financial_semantics import covered_data_gap_filter
 from data_interpreter.context_pack import prepare_analysis_context
 
 from data_interpreter.config import Settings
 from data_interpreter.engine import DeterministicAnalysisEngine
-from data_interpreter.measurement_facts import build_analysis_facts, reconcile_text
+from data_interpreter.measurement_facts import build_analysis_facts, reconcile_data_limitations, reconcile_text
 from data_interpreter.input_contracts import missing_inputs
 from data_interpreter.sensitivity import calculate_sensitivity
 from data_interpreter.llm import OpenAICompatibleLLM, SemanticLLM
@@ -821,6 +822,17 @@ class DataInterpreterAgent:
         )
         if guard_log:
             data_quality_appendix["analysis_guards"] = guard_log
+        warnings = list(dict.fromkeys(reconcile_data_limitations(warning, evidence) for warning in warnings))
+        quality.limitations = list(dict.fromkeys(
+            reconcile_data_limitations(warning, evidence) for warning in quality.limitations
+        ))
+        reconcile_gap = covered_data_gap_filter(
+            evidence, data_quality_appendix["requested_requirement_coverage"], financial_ratios,
+        )
+        warnings = list(dict.fromkeys(filter(None, map(reconcile_gap, warnings))))
+        quality.limitations = list(dict.fromkeys(filter(None, map(reconcile_gap, quality.limitations))))
+        executive_summary = reconcile_gap(executive_summary)
+        data_quality_appendix["sample_info"]["limitations"] = quality.limitations
         report = InterpretationReport(
             report_id=report_id,
             subject=request.subject,

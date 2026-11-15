@@ -4,13 +4,17 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import date
+from decimal import Decimal
 from hashlib import sha256
 import math
 import re
 from statistics import median
 from typing import Any, Iterable
 
-from agents_core.financial_semantics import comparable_key, metric_family, period_shape
+from agents_core.financial_semantics import (
+    comparable_key, measurement_conflict_verdict, measurement_period, metric_family, money_scale,
+    money_to_yi, money_to_yuan, period_shape,
+)
 from data_interpreter.measurement_facts import comparison_type, percentage_value
 
 from data_interpreter.models import (
@@ -205,16 +209,53 @@ def _period(record: ResearchRecord) -> date | None:
     return record.period_end
 
 
+def _resolved_period(record: ResearchRecord) -> tuple[date | None, str]:
+    period = measurement_period(record)
+    if period is None:
+        return None, "unknown"
+    return period[0], period[2]
+
+
 def _metric_key(record: ResearchRecord) -> str:
     return record.metric.strip().casefold()
 
 
 def _has_conflicting_measurement(values: list[tuple[ResearchRecord, float]]) -> bool:
-    """No record ordering may arbitrate two values for one measurement."""
-    by_measurement: dict[tuple | None, set[float]] = defaultdict(set)
-    for record, value in values:
-        by_measurement[comparable_key(record)].add(value)
-    return any(len(observed) > 1 for observed in by_measurement.values())
+    """No record ordering may arbitrate two values for one measurement.
+
+    P-11：与 A1 共用同一判定——披露精度可确认时，舍入等价的记录不算冲突；
+    精度不可确认时仍按保守门禁处理，避免 A1 放行、A2 拦截。
+    """
+    by_measurement: dict[tuple | None, list[ResearchRecord]] = defaultdict(list)
+    for record, _value in values:
+        by_measurement[comparable_key(record)].append(record)
+    for records in by_measurement.values():
+        if len(records) <= 1:
+            continue
+        if measurement_conflict_verdict(records) is not True:
+            return True
+    return False
+
+
+def _cross_unit_ambiguous(numeric: list[tuple[ResearchRecord, float]]) -> set[tuple]:
+    """P-11：金额跨单位（万元/亿元）先换算再比较，冲突或待核的测量整体降级。
+
+    分组键仍是「主体/指标/观测期形态」，与 A1 的跨单位判定对齐；返回的键用于
+    屏蔽该测量在所有单位分组下的关键指标与趋势，避免一边按万元、一边按亿元各算一条。
+    """
+    grouped: dict[tuple, list[ResearchRecord]] = defaultdict(list)
+    for record, _value in numeric:
+        key = comparable_key(record, include_year=False)
+        if key is None:
+            continue
+        grouped[(_entity(record), _metric_key(record), key)].append(record)
+    ambiguous: set[tuple] = set()
+    for key, records in grouped.items():
+        if len({str(record.unit) for record in records}) <= 1:
+            continue
+        if measurement_conflict_verdict(records) is not True:
+            ambiguous.add(key)
+    return ambiguous
 
 
 def _is_analytic_numeric(record: ResearchRecord) -> bool:
@@ -325,6 +366,8 @@ class DeterministicAnalysisEngine:
 
     @staticmethod
     def _evidence(record: ResearchRecord) -> EvidenceRef:
+        # P0-1：期间以共享解析为准；冲突或无法确认时保留缺口，不再用日期形状补 1 月 1 日。
+        period = measurement_period(record)
         return EvidenceRef(
             record_id=record.record_id,
             domain=record.domain,
@@ -334,13 +377,15 @@ class DeterministicAnalysisEngine:
             unit=record.unit,
             unit_provenance=getattr(record, "unit_provenance", "legacy_unknown"),
             period=_period(record),
-            period_start=record.period_start or period_shape(record.period_end)["period_start"],
-            period_type=record.period_type if record.period_type != "unknown" else period_shape(record.period_end)["period_type"],
+            period_start=period[0] if period else None,
+            period_type=period[2] if period else "unknown",
             period_provenance=record.period_provenance, scope=record.scope, currency=record.currency, issues=record.issues,
             skill_id=record.source.skill_id,
             trace_id=record.source.trace_id,
-            source_url=record.raw_fields.get("source_url"), source_locator=record.raw_fields.get("source_locator"),
+            source_url=record.raw_fields.get("source_url") or record.raw_fields.get("url"),
+            source_locator=record.raw_fields.get("source_locator"),
             published_at=record.published_at, document_sha256=record.raw_fields.get("document_sha256"),
+            segment_name=record.raw_fields.get("product") if record.metric == "business_composition" else None,
         )
 
     @staticmethod
@@ -370,6 +415,8 @@ class DeterministicAnalysisEngine:
             unit=None,
             period=ev.announce_date,
             published_at=ev.announce_date,
+            source_url=ev.raw_fields.get("source_url") or ev.raw_fields.get("url"),
+            source_locator=ev.raw_fields.get("source_locator"),
             skill_id=ev.source.skill_id if ev.source else "",
             trace_id=ev.source.trace_id if ev.source else "",
         )
@@ -382,11 +429,15 @@ class DeterministicAnalysisEngine:
             key = comparable_key(record, include_year=False)
             if key is not None:
                 grouped[(_entity(record), (_metric_key(record), key, record.unit))].append((record, value))
+        cross_unit_ambiguous = _cross_unit_ambiguous(numeric)
         ranked: list[tuple[float, KeyMetric]] = []
         for (entity, _), values in grouped.items():
             # Keep the evidence index intact, but withhold a deterministic
             # key/comparison for an unresolved measurement series.
-            if _has_conflicting_measurement(values):
+            first_record = values[0][0]
+            measurement_key = (_entity(first_record), _metric_key(first_record),
+                               comparable_key(first_record, include_year=False))
+            if measurement_key in cross_unit_ambiguous or _has_conflicting_measurement(values):
                 continue
             dated = sorted(values, key=lambda pair: (_period(pair[0]) or date.min, pair[0].record_id))
             current_record, current = dated[-1]
@@ -396,7 +447,17 @@ class DeterministicAnalysisEngine:
             previous_period = _period(previous_pair[0]) if previous_pair else None
             change = current - previous if previous is not None else None
             comparison = comparison_type(previous_period, _period(current_record)) if previous_period else None
-            change_pct = change / previous if previous and previous > 0 and comparison != "historical_same_period" else None
+            # P-08：同比/同口径增长率只在基期为正时输出百分比；基期为零或负时保留
+            # absolute_change 与方向，并写明原因，不得算出「从亏 1 亿到赚 1 亿 = -200%」。
+            change_pct = change / previous if change is not None and previous is not None and previous > 0 and comparison != "historical_same_period" else None
+            if change is None or previous is None or previous > 0:
+                change_basis = None
+            elif previous == 0:
+                change_basis = "zero_base"
+            elif current > 0:
+                change_basis = "turnaround"
+            else:
+                change_basis = "non_positive_base"
             token_score = 1.0 if any(token in current_record.metric.casefold() for token in IMPORTANT_TOKENS) else 0.35
             date_score = 0.2 if _period(current_record) else 0.0
             history_score = min(0.25, 0.05 * (len(dated) - 1))
@@ -411,11 +472,12 @@ class DeterministicAnalysisEngine:
                 previous_value=previous,
                 previous_period=previous_period,
                 comparison_type=comparison,
-                period_start=current_record.period_start or period_shape(current_record.period_end)["period_start"],
-                period_type=current_record.period_type if current_record.period_type != "unknown" else period_shape(current_record.period_end)["period_type"],
+                period_start=_resolved_period(current_record)[0],
+                period_type=_resolved_period(current_record)[1],
                 scope=current_record.scope,
                 absolute_change=change,
                 change_pct=change_pct,
+                change_basis=change_basis,
                 percentage_point_change=percentage_value(current_record.unit, change) if change is not None else None,
                 importance_score=score,
                 evidence_record_ids=([previous_pair[0].record_id] if previous_pair else []) + [current_record.record_id],
@@ -445,9 +507,14 @@ class DeterministicAnalysisEngine:
                 if key is not None:
                     grouped[(_entity(record), (_metric_key(record), key, record.unit))].append((record, value))
         findings: list[TrendFinding] = []
+        cross_unit_ambiguous = _cross_unit_ambiguous(numeric)
         ambiguous = {key for key, values in grouped.items() if _has_conflicting_measurement(values)}
         for group_key, values in grouped.items():
             if group_key in ambiguous:
+                continue
+            first_record = values[0][0]
+            if (_entity(first_record), _metric_key(first_record),
+                    comparable_key(first_record, include_year=False)) in cross_unit_ambiguous:
                 continue
             entity = group_key[0]
             by_period: dict[date, tuple[ResearchRecord, float]] = {}
@@ -481,6 +548,9 @@ class DeterministicAnalysisEngine:
                 period_end=_period(ordered[-1][0]),  # type: ignore[arg-type]
                 observations=len(ordered),
                 total_change_pct=total_pct,
+                # P-08：首期非正时 total_pct 的分母是 |首期|，属于「按基期绝对值」的
+                # 描述性变化，必须显式标注，不能与同比混用。
+                total_change_basis=("absolute_base" if first is not None and first <= 0 and total_pct is not None else "positive_base"),
                 percentage_point_change=percentage_value(ordered[-1][0].unit, last-first),
                 comparison_type="same_duration_observation_change",
                 monotonicity=monotonicity,
@@ -548,8 +618,9 @@ class DeterministicAnalysisEngine:
         buckets: dict[tuple[Domain, str, date | None], dict[str, tuple[ResearchRecord, float]]] = defaultdict(dict)
         for record, value in numeric:
             entity = _entity(record)
-            if entity:
-                buckets[(record.domain, _metric_key(record), _period(record))].setdefault(entity, (record, value))
+            period = _period(record)
+            if entity and period and "period_conflict" not in record.issues:
+                buckets[(record.domain, _metric_key(record), period)].setdefault(entity, (record, value))
         for entity_values in buckets.values():
             values = list(entity_values.values())
             if len(values) < 5:
@@ -676,7 +747,11 @@ class DeterministicAnalysisEngine:
                 value = normalized
             if any(k in m_k for k in ("operating_cash_flow", "经营活动产生的现金流量净额", "经营现金流")):
                 company_fin_period[(ent, per)]["cash_flow"] = (value, record.record_id)
-            elif any(k in m_k for k in ("parent_net_profit", "归属于母公司", "归母净利润", "净利润")) and "同比" not in m_k:
+            elif any(k in m_k for k in ("parent_net_profit", "归属于母公司", "归母净利润")) and "同比" not in m_k:
+                company_fin_period[(ent, per)]["parent_net_profit"] = (value, record.record_id)
+            elif any(k in m_k for k in ("net_profit", "净利润")) and "同比" not in m_k:
+                # P-10：归母与合并净利润分列存放。旧实现让两者共用一个 net_profit 键，
+                # 后写入者覆盖，导致净现比的分母口径随记录顺序漂移。
                 company_fin_period[(ent, per)]["net_profit"] = (value, record.record_id)
             elif any(k in m_k for k in ("pe_ttm", "动态市盈率", "市盈率")) and "平均" not in m_k and "中值" not in m_k:
                 company_fin_period[(ent, per)]["pe"] = (value, record.record_id)
@@ -686,20 +761,23 @@ class DeterministicAnalysisEngine:
         for (ent, period_key), fin in company_fin_period.items():
             per = period_key[0]
             # 1. 净现比 / 盈利现金流勾稽
-            if "cash_flow" in fin and "net_profit" in fin:
+            # P-10：净现比的分母固定为**归母净利润**（与 compute_financial_ratios 的
+            # _paired_calculation(operating_cash_flow, parent_net_profit) 保持同一对记录）。
+            # 合并净利润仍保留在 fin["net_profit"] 中，但不得在此处替代归母口径。
+            if "cash_flow" in fin and "parent_net_profit" in fin:
                 cf_val, cf_id = fin["cash_flow"]
-                np_val, np_id = fin["net_profit"]
+                np_val, np_id = fin["parent_net_profit"]
                 cf_norm = cf_val
                 np_norm = np_val
                 if np_norm > 0 and cf_norm < 0:
                     findings.append(CrossValidationFinding(
                         validation_id=_id("V-CF-NP", ent, per),
-                        claim=f"{ent}在{per or '最新报告期'}出现净现背离（净利润为正但经营现金流为负）",
+                        claim=f"{ent}在{per or '最新报告期'}出现净现背离（归母净利润为正但经营现金流为负）",
                         status="contradicted",
                         kind="financial_difference",
-                        method="净现比一致性检验：对比经营活动产生的现金流量净额与归母净利润符号及现金转化效率",
+                        method="净现比一致性检验：经营活动产生的现金流量净额 ÷ 归母净利润，核验符号与现金转化效率（分母口径：归母净利润）",
                         sources=["financial_statements"],
-                        explanation=f"净利润为正({np_norm:.2f}亿)，但经营现金流为负({cf_norm:.2f}亿)，属于不同会计指标的经济差异；应收账款、存货或其他原因待核，不构成同指标多来源冲突。",
+                        explanation=f"归母净利润为正({np_norm:.2f}亿)，但经营现金流为负({cf_norm:.2f}亿)，属于不同会计指标的经济差异；应收账款、存货或其他原因待核，不构成同指标多来源冲突。",
                         evidence_record_ids=[cf_id, np_id],
                     ))
                 elif np_norm > 0 and cf_norm > 0:
@@ -709,12 +787,13 @@ class DeterministicAnalysisEngine:
                         claim=f"{ent}在{per or '最新报告期'}盈利现金造血健康（净现比约为{c2n}）",
                         status="confirmed" if c2n >= 0.7 else "insufficient",
                         kind="financial_difference",
-                        method="净现比一致性检验：对比经营活动产生的现金流量净额与归母净利润符号及现金转化效率",
+                        method="净现比一致性检验：经营活动产生的现金流量净额 ÷ 归母净利润，核验符号与现金转化效率（分母口径：归母净利润）",
                         sources=["financial_statements"],
-                        explanation=f"经营现金流与净利润方向一致(净现比={c2n})，符合健康商业回款规律。" if c2n >= 0.7 else f"经营现金流为正但低于净利润(净现比={c2n})，部分利润尚未完全变现。",
+                        explanation=f"经营现金流与归母净利润方向一致(净现比={c2n})，符合健康商业回款规律。" if c2n >= 0.7 else f"经营现金流为正但低于归母净利润(净现比={c2n})，部分利润尚未完全变现。",
                         evidence_record_ids=[cf_id, np_id],
                     ))
-            # 2. 估值与成长匹配度校验 (PEG)
+            # 2. 估值与成长匹配度校验（P-17：本检验只做「高估值 + 负增长」双条件背离告警，
+            # 不计算 PEG = PE/g；方法名不得再写成「PEG 一致性检验」。）
             if "pe" in fin and "np_yoy" in fin:
                 pe_val, pe_id = fin["pe"]
                 yoy_val, yoy_id = fin["np_yoy"]
@@ -724,7 +803,7 @@ class DeterministicAnalysisEngine:
                         claim=f"{ent}估值与业绩成长性背离（市盈率处于高位但净利润同比下滑）",
                         status="contradicted",
                         kind="valuation_growth_difference",
-                        method="PEG基本面一致性检验：对比PE(TTM)与归母净利润同比增速",
+                        method="高估值与负增长背离检验：PE(TTM) > 100 且归母净利润同比 < 0（未计算 PEG）",
                         sources=["valuation_and_growth"],
                         explanation=f"动态市盈率高达{pe_val:.1f}倍，但归母净利润下滑{abs(yoy_val):.1f}%，基本面短期内难以支撑高估值溢价。",
                         evidence_record_ids=[pe_id, yoy_id],
@@ -790,23 +869,16 @@ class DeterministicAnalysisEngine:
     def _normalize_money(val: float | None, unit: str | None) -> float | None:
         if val is None:
             return None
-        u = str(unit or "").strip().lower()
         # AB-1：未知/缺失单位的金额尺度歧义（元/万元/亿元），不得按绝对值猜尺度。
         # 返回 None 使其被金额比较、比率与量化覆盖排除；原值仍保留在记录中供审计。
-        if not u or u in ("unknown", "legacy_unknown", "none", "nan"):
+        # P-01：单位换算统一走共享词表（元/千元/万元/百万元/千万元/亿元/万亿元），
+        # 以「元」为基准精确换算后再包装成「亿元」，禁止再做子串包含判断。
+        if money_scale(unit) is None:
             return None
-        if "万" in u and "亿" not in u:
-            return val / 10000.0
-        if "千" in u or "k" in u:
-            return val / 100000.0
-        if "百" in u and "亿" not in u:
-            return val / 1000000.0
-        if "亿" in u:
-            return val
-        if u in ("元", "cny", "rmb", "¥"):
-            return val / 1e8
-        # 其它无法识别的单位同样视为尺度不可信，不参与金额规范化。
-        return None
+        yi = money_to_yi(val, unit)
+        if yi is None:
+            return None
+        return float(yi)
 
     @staticmethod
     def _normalize_pct(val: float | None, unit: str | None) -> float | None:
@@ -815,7 +887,8 @@ class DeterministicAnalysisEngine:
         u = str(unit or "").strip().casefold()
         if u in ("%", "％", "百分比", "百分点", "percent", "percentage"):
             return val
-        if u in ("ratio", "decimal", "小数", "倍"):
+        # P-16：「倍」是估值倍数/净现比的独立语义，不得乘 100（PE=20 倍不能变成 2000%）。
+        if u in ("ratio", "decimal", "小数"):
             return val * 100
         # AB-1：无单位不得仅凭 0.12 的大小推断口径（可能是 12%、0.12% 或 0.12 个百分点）。
         # 原样返回，由调用方按显式口径处理；不做 *100 猜测。
@@ -968,12 +1041,15 @@ class DeterministicAnalysisEngine:
 
             nm_val, nm_unit, nm_id = get_val(["net_margin", "销售净利率", "净利率"])
             net_margin = self._normalize_pct(nm_val, nm_unit)
+            net_margin_calculation = None
             if net_margin is None:
                 pair = self._paired_calculation(dataset, d["name"] or ent, "net_profit", "revenue", scale=100)
-                if pair:
+                if pair and pair["value"] is not None:
                     net_margin = round(pair["value"], 2)
+                    net_margin_calculation = pair
             if net_margin is not None and not (-1000.0 <= net_margin <= 500.0):
                 net_margin = None
+                net_margin_calculation = None
 
             cf_val, cf_unit, cf_id = get_val(["operating_cash_flow", "经营活动产生的现金流量净额", "经营现金流"], monetary=True)
             cash_flow = self._normalize_money(cf_val, cf_unit)
@@ -1028,11 +1104,15 @@ class DeterministicAnalysisEngine:
                     )
 
                 e_ids = [val for val in (mc_id, pe_id, pb_id, ps_id, rev_id, ryoy_id, np_id, nyoy_id, gm_id, nm_id, cf_id, roe_id, dr_id) if val]
+                provenance = {k: dict(record_id=r.record_id, period_end=str(r.period_end) if r.period_end else None,
+                    period_type=_resolved_period(r)[1], scope=r.scope, currency=r.currency,
+                    unit=r.unit, value=r.value) for k, r in d["records"].items()}
+                if net_margin_calculation:
+                    provenance["net_margin"] = net_margin_calculation
+                    e_ids.extend(net_margin_calculation["input_record_ids"])
                 entries.append(PeerCompsEntry(
                     peer_membership=("core" if subject and subject.strip() in c_ind else "unknown") if subject else "unscoped_sample",
-                    metric_provenance={k: dict(record_id=r.record_id, period_end=str(r.period_end) if r.period_end else None,
-                        period_type=(getattr(r, "period_type", "unknown") if getattr(r, "period_type", "unknown") != "unknown" else period_shape(r.period_end)["period_type"]),
-                        scope=r.scope, currency=r.currency, unit=r.unit, value=r.value) for k, r in d["records"].items()},
+                    metric_provenance=provenance,
                     company_name=clean_name or ent,
                     company_code=d["code"],
                     market_cap=round(market_cap, 2) if market_cap is not None else None,
@@ -1498,7 +1578,10 @@ class DeterministicAnalysisEngine:
 
     def _paired_calculation(self, dataset: StructuredResearchDataset, entity: str,
                             numerator: str, denominator: str, *, scale: float = 1) -> dict[str, Any] | None:
-        sides: list[dict[tuple, ResearchRecord]] = [{}, {}]
+        # P-10：同一可比键下可能同时存在「归母净利润」与「净利润」两条记录。
+        # 旧实现用 dict[key]=r 直接覆盖，后写入者获胜，等于让记录顺序决定分母口径。
+        # 这里改为候选列表，去重后若仍有多个不同取值，则该期判为缺口，不猜赢家。
+        sides: list[dict[tuple, list[ResearchRecord]]] = [{}, {}]
         for r in dataset.all_records():
             if _entity(r) != entity or _number(r.value) is None:
                 continue
@@ -1507,25 +1590,49 @@ class DeterministicAnalysisEngine:
                 continue
             key = comparable_key(r)
             if key is not None:
-                sides[0 if family == numerator else 1][key] = r
+                sides[0 if family == numerator else 1].setdefault(key, []).append(r)
+
+        def _resolve(records: list[ResearchRecord]) -> ResearchRecord | None:
+            # 单位不可信（缺失/未知/非金额）的记录不得进入比率计算（AB-1）。
+            usable = [
+                r for r in records
+                if money_scale(r.unit) is not None
+                and getattr(r, "unit_provenance", "legacy_unknown") != "unknown"
+            ]
+            if not usable:
+                return None
+            by_value: dict[Decimal, list[ResearchRecord]] = defaultdict(list)
+            for r in usable:
+                yuan = money_to_yuan(r.value, r.unit)
+                if yuan is None:
+                    continue
+                by_value[yuan].append(r)
+            if len(by_value) != 1:
+                # 同期同口径出现多个不同金额且无裁定 → 不给结果，保留缺口。
+                return None
+            return sorted(next(iter(by_value.values())), key=lambda r: r.record_id)[0]
+
         common = sides[0].keys() & sides[1].keys()
         for key in sorted(common, key=lambda k: k[0], reverse=True):
-            a, b = sides[0][key], sides[1][key]
-            # Unknown monetary units cannot silently become a common currency.
-            units = ("元", "万元", "亿元", "CNY", "RMB")
-            if a.unit not in units or b.unit not in units:
+            a = _resolve(sides[0][key])
+            b = _resolve(sides[1][key])
+            if a is None or b is None:
                 continue
-            # AB-1：单位来源不可信（金额尺度歧义）的记录不得进入比率计算。
-            if getattr(a, "unit_provenance", "legacy_unknown") == "unknown" or getattr(b, "unit_provenance", "legacy_unknown") == "unknown":
+            av_yuan = money_to_yuan(a.value, a.unit)
+            bv_yuan = money_to_yuan(b.value, b.unit)
+            if av_yuan is None or bv_yuan is None:
                 continue
-            av, bv = self._normalize_money(float(a.value), a.unit), self._normalize_money(float(b.value), b.unit)
-            if bv is None or av is None or abs(bv) < 0.05:
+            # 「0.05 亿元」分母下限用精确规范值判断（5,000,000 元），避免浮点边界抖动。
+            if abs(bv_yuan) < Decimal(5_000_000):
                 continue
-            if numerator in {"operating_cash_flow", "rd_expense"} and bv <= 0:
+            if numerator in {"operating_cash_flow", "rd_expense"} and bv_yuan <= 0:
                 continue
-            return {"value": av / bv * scale, "formula": f"{numerator}/{denominator}" + ("*100" if scale == 100 else ""),
+            value = float((av_yuan / bv_yuan) * Decimal(scale))
+            return {"value": value, "formula": f"{numerator}/{denominator}" + ("*100" if scale == 100 else ""),
                     "input_record_ids": [a.record_id, b.record_id], "period_end": str(a.period_end),
-                    "period_type": key[1], "scope": key[3], "currency": key[4], "unit": "%" if scale == 100 else "倍"}
+                    "period_type": key[1], "scope": key[3], "currency": key[4],
+                    "unit": "%" if scale == 100 else "倍",
+                    "denominator_metric": denominator}
         return None
 
     def compute_financial_ratios(self, dataset: StructuredResearchDataset) -> list[dict[str, Any]]:
@@ -1551,10 +1658,16 @@ class DeterministicAnalysisEngine:
 
             pe_ref = comps.profitable_median_pe or comps.median_pe
             pe_premium = round((e.pe_ttm - pe_ref) / pe_ref * 100, 1) if e.pe_ttm and pe_ref and pe_ref > 0 and 0 < e.pe_ttm <= 150 else None
+            # P-02：`market_cap_billion` 的字段名与实际量纲不符——`_normalize_money` 一直以
+            # 「亿元」为基准，字段却写 billion（十亿），按名字理解会放大 10 倍。
+            # 新增语义正确的 `market_cap_100m_cny`（亿元），旧键保留为兼容别名并注明量纲。
+            cny = str(getattr(comps, "currency", "CNY") or "CNY").upper() == "CNY"
             item: dict[str, Any] = {
                 "company": e.company_name,
                 "code": e.company_code,
-                "market_cap_billion": e.market_cap,
+                "market_cap_100m_cny": e.market_cap if cny else None,
+                "market_cap_billion": e.market_cap,  # 兼容别名：历史值一直以亿元保存
+                "market_cap_unit": "亿元" if e.market_cap is not None else None,
                 "gross_margin_pct": e.gross_margin,
                 "net_margin_pct": e.net_margin,
                 "roe_pct": e.roe,

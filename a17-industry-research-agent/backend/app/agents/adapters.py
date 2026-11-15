@@ -142,21 +142,85 @@ def _report_chain_delivery(run_id: str) -> dict[str, Any]:
     return dict(delivery) if isinstance(delivery, dict) else {}
 
 
-def _question_context_marker(run_id: str) -> dict[str, Any]:
-    """A3 用户问题驱动选图（方案 3.2）：把系统题号附到前序阶段产物标记上。
+def _load_question_briefs(run_dir: Path, snapshot: Any) -> list[Any]:
+    from chart_generator.models import QuestionBrief
+    from chart_generator.question_planner import question_contract_sha256
 
-    off 或旧 run 没有 question_contract.json 时返回空 dict，既有产物结构不变。
-    """
+    mode = snapshot.question_planner_mode
+    if mode == "off":
+        return []
     try:
-        path = storage.get_run_dir(run_id) / "question_contract.json"
-        if not path.exists():
-            return {}
-        payload = json.loads(path.read_text(encoding="utf-8"))
-        ids = [str(q.get("question_id")) for q in (payload.get("questions") or [])
-               if isinstance(q, dict) and q.get("question_id")]
-        return {"question_ids": ids} if ids else {}
-    except Exception:
+        payload = json.loads((run_dir / "question_contract.json").read_text(encoding="utf-8"))
+        expected = snapshot.question_contract_sha256
+        if expected and question_contract_sha256(payload) != expected:
+            raise ValueError("题面哈希与执行快照不符")
+        briefs = [QuestionBrief.model_validate(row) for row in payload["questions"]]
+        if mode == "apply" and not briefs:
+            raise ValueError("题面为空")
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise AgentExecutionError(f"无法读取本次运行的题面（{mode}）：{exc}") from exc
+    return briefs
+
+
+def question_stage_coverage(
+    run_id: str, matrix: list[dict[str, Any]], groups: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    from backend.app.engine.state_machine import load_execution_snapshot
+    from chart_generator.question_planner import link_question_requirements
+
+    snapshot = load_execution_snapshot(run_id)
+    briefs = _load_question_briefs(storage.get_run_dir(run_id), snapshot)
+    if not briefs:
         return {}
+    data = {"question_ids": [brief.question_id for brief in briefs]}
+    if snapshot.question_planner_mode == "apply":
+        data["question_requirement_coverage"] = [
+            {"question_id": qid, "requirements": [
+                {"requirement_id": row["requirement"]["requirement_id"],
+                 "passed": row["coverage"].get("passed"),
+                 "evidence_record_ids": row["coverage"].get("evidence_record_ids") or [],
+                 "missing": row["coverage"].get("missing") or []}
+                for row in rows
+            ]}
+            for qid, rows in link_question_requirements(briefs, matrix, groups).items()
+        ]
+    return data
+
+
+def load_writing_questions(
+    run_id: str, report: Any, chart_payload: dict[str, Any], run_dir: Path,
+) -> list[Any]:
+    from backend.app.engine.state_machine import load_execution_snapshot
+    from chapter_writer.models import WritingQuestion
+    from chart_generator.question_planner import link_question_requirements, parse_question_briefs
+
+    snapshot = load_execution_snapshot(run_id)
+    if snapshot.question_planner_mode == "off":
+        input_path = run_dir / "input_data.json"
+        if not input_path.is_file():
+            return []
+        inputs = json.loads(input_path.read_text(encoding="utf-8")).get("input_data") or {}
+        options = inputs.get("chart_generate_options") or {}
+        briefs = parse_question_briefs(inputs.get("focus_questions") or [],
+                                       defaulted_focus=bool(options.get("defaulted_focus")))
+    else:
+        briefs = _load_question_briefs(run_dir, snapshot)
+    briefs = [brief for brief in briefs if not brief.defaulted_focus]
+    appendix = report.data_quality_appendix
+    groups = (report.chain_analysis or {}).get("groups")
+    links = link_question_requirements(briefs, appendix.get("requirement_evidence_matrix") or [], groups)
+    plan = chart_payload.get("question_plan") or {}
+    coverage = {row["question_id"]: row for row in plan.get("coverage") or []} if plan.get("mode") == "apply" else {}
+    return [
+        WritingQuestion(
+            question_id=brief.question_id, text=brief.text, relation_tags=brief.relation_tags,
+            requirement_ids=list(dict.fromkeys(row["requirement"]["requirement_id"] for row in links[brief.question_id])),
+            chart_ids=coverage.get(brief.question_id, {}).get("chart_ids") or [],
+            chart_gaps=coverage.get(brief.question_id, {}).get("uncovered") or [],
+            chart_status=coverage.get(brief.question_id, {}).get("status"),
+        )
+        for brief in briefs
+    ]
 
 
 def _chart_svg_content(chart: Any, report: Any) -> str:
@@ -438,7 +502,7 @@ class FiveAgentsAdapter:
     ) -> StageResult:
         """阶段 1: 数据获取智能体 (Data Fetcher)"""
         import backend.app.core.setup_env
-        from data_fetcher.agent import DataFetcherAgent
+        from data_fetcher.agent import DataFetcherAgent, requires_intent_clarification
         from data_fetcher.models import ResearchRequest
 
         logger.info(
@@ -583,7 +647,8 @@ class FiveAgentsAdapter:
         fetch_chain_requested = getattr(_snapshot, "chain_requested", None)
         if fetch_chain_requested is None:
             fetch_chain_requested = "产业链" in (industry + " ".join(map(str, foci)))
-        if _chain_v2 and fetch_chain_requested:
+        intent_blocked = requires_intent_clarification(request)
+        if _chain_v2 and fetch_chain_requested and not intent_blocked:
             from chain_research.project import research_project
             try:
                 chain_bundle = await research_project(run_id, industry, research_as_of or __import__('datetime').date.today().isoformat(), storage.get_run_dir(run_id), emit=on_fetch_event,
@@ -618,7 +683,11 @@ class FiveAgentsAdapter:
         ]
         blocking_issues = [e.message for e in fetch_errors]
         stage_error = None
-        if run_res.status == "blocked" and not dataset.all_records() and not getattr(dataset, "events", []) and not (chain_bundle and chain_bundle.supported_assertions()):
+        if run_res.stop_reason == "clarification_needed":
+            stage_error = next((error.message for error in run_res.errors if error.stage == "intent"),
+                               "请确认可核验的研究范围。")
+            blocking_issues.append(stage_error)
+        elif run_res.status == "blocked" and not dataset.all_records() and not getattr(dataset, "events", []) and not (chain_bundle and chain_bundle.supported_assertions()):
             stage_error = "数据获取阶段未命中任何有效记录（empty_dataset），已阻止下游生成量化结论；请调整研究主题或检索词后重试。"
             if not blocking_issues:
                 blocking_issues = [stage_error]
@@ -722,9 +791,10 @@ class FiveAgentsAdapter:
                     "question": (
                         "当前研究主题及关注点在数据源中未检索到足量有效指标数据，请确认检索关键词或补充关注标的。"
                         if run_res.stop_reason == "empty_dataset"
-                        else f"数据获取阶段出现未决问题 ({run_res.stop_reason})，请确认研究重点与关注维度。"
+                        else stage_error or f"数据获取阶段出现未决问题 ({run_res.stop_reason})，请确认研究重点与关注维度。"
                     ),
                     "reason": run_res.stop_reason,
+                    "blocking": run_res.stop_reason == "clarification_needed",
                     "affected_dimensions": ["industry", "companies"] if not dataset.all_records() else [],
                 }] if (run_res.status == "blocked" or run_res.stop_reason in ("empty_dataset", "invalid_planner_decision", "planner_blocked", "clarification_needed")) else [])
             ),
@@ -761,7 +831,7 @@ class FiveAgentsAdapter:
             )
         ]
 
-        data.update(_question_context_marker(run_id))
+        data.update(question_stage_coverage(run_id, dataset.quality_summary.get("requirement_evidence_matrix") or []))
         return StageResult(
             stage="data_fetch",
             status="waiting_review",
@@ -1068,7 +1138,10 @@ class FiveAgentsAdapter:
             )
         ]
 
-        data.update(_question_context_marker(run_id))
+        data.update(question_stage_coverage(
+            run_id, report.data_quality_appendix.get("requirement_evidence_matrix") or [],
+            (report.chain_analysis or {}).get("groups"),
+        ))
         return StageResult(
             stage="data_interpret",
             status="waiting_review",
@@ -1102,19 +1175,7 @@ class FiveAgentsAdapter:
         plan_mode = str(getattr(plan_snapshot, "question_planner_mode", "off") or "off").strip().lower()
         if plan_mode not in {"off", "observe", "apply"}:
             plan_mode = "off"
-        plan_briefs: list[dict[str, Any]] = []
-        if plan_mode in {"observe", "apply"}:
-            from chart_generator.question_planner import question_contract_sha256
-            contract_path = run_dir / "question_contract.json"
-            if not contract_path.exists():
-                raise AgentExecutionError(f"question_contract.json 缺失（mode={plan_mode}），无法按题选图")
-            contract = json.loads(contract_path.read_text(encoding="utf-8"))
-            expected = getattr(plan_snapshot, "question_contract_sha256", None)
-            if expected and question_contract_sha256(contract) != expected:
-                raise AgentExecutionError("question_contract.json 与执行快照哈希不符，拒绝按题选图")
-            plan_briefs = [q for q in (contract.get("questions") or []) if isinstance(q, dict)]
-            if plan_mode == "apply" and not plan_briefs:
-                raise AgentExecutionError("apply 模式问题上下文为空，拒绝按题选图")
+        plan_briefs = [brief.model_dump(mode="json") for brief in _load_question_briefs(run_dir, plan_snapshot)]
         report_path = run_dir / "artifacts" / "interpretation_report.json"
         if not report_path.exists():
             raise AgentExecutionError("缺少阶段2解读产物 interpretation_report.json")
@@ -1542,7 +1603,7 @@ class FiveAgentsAdapter:
             )
             _briefs = [_QuestionBrief.model_validate(b) for b in plan_briefs]
             _cards = _build_cards(result.charts, _briefs, report)
-            _settle_coverage(result.question_plan, result.charts, _cards)
+            _settle_coverage(result.question_plan, result.charts, _cards, _briefs)
             result.question_coverage = _legacy_coverage(result.question_plan)
 
         record_requested_chart_shortfall(result, req_count)
@@ -1654,7 +1715,8 @@ class FiveAgentsAdapter:
             report_raw = json.load(f)
             report = InterpretationReport.model_validate(report_raw)
         with open(chart_path, "r", encoding="utf-8") as f:
-            chart_res = ChartResult.model_validate(json.load(f))
+            chart_raw = json.load(f)
+            chart_res = ChartResult.model_validate(chart_raw)
 
         expert_bg = str(report_raw.get("expert_background") or "").strip()
         if expert_bg:
@@ -1697,26 +1759,6 @@ class FiveAgentsAdapter:
             instructions.append(f"【用户人工协同写作优化指导】: {feedback}。请在相关章节中针对性深化与体现该要求。")
             event_hub.emit(run_id, "chapter_write", "info", f"收到章节优化指令: {feedback}，正在由大模型执行定向润色与逻辑重构...", tool="ChapterWriterAgent")
 
-        # A3 用户问题驱动选图（方案 3.2）：ChartResult 会忽略 question_plan 附加字段，
-        # 因此在模型校验前从原始 A3 JSON 读取逐题覆盖，按题安排主答、缺口如实说明。
-        try:
-            with open(chart_path, "r", encoding="utf-8") as _plan_file:
-                _plan_raw = (json.load(_plan_file) or {}).get("question_plan") or {}
-            _coverage = _plan_raw.get("coverage") or []
-            if _plan_raw.get("mode") == "apply" and _coverage:
-                _lines = ["【用户问题逐题覆盖（来自 A3 选图计划）】"]
-                for _item in _coverage:
-                    _lines.append(
-                        f"- {_item.get('question_id')}: {_item.get('status')}；"
-                        f"已发布图 {len(_item.get('chart_ids') or [])} 张；"
-                        f"未覆盖 {', '.join(_item.get('uncovered') or []) or '无'}；"
-                        f"{_item.get('reason') or ''}"
-                    )
-                _lines.append("请按题安排主答小节；图表未覆盖或存在缺口时必须如实说明，不得编造数据补图。")
-                instructions.append("\n".join(_lines))
-        except Exception as exc:  # 附加产物缺失不得阻断既有写作链路
-            logger.warning("[%s] question_plan coverage 读取失败（不阻断写作）: %s", run_id, type(exc).__name__)
-
         if instructions:
             writing_options.instruction = "\n".join(instructions)
 
@@ -1725,6 +1767,7 @@ class FiveAgentsAdapter:
             selected_skills=selected_skills or [],
             charts=chart_res,
             options=writing_options,
+            questions=load_writing_questions(run_id, report, chart_raw, run_dir),
         ), emit=on_chapter_event, save_artifacts=False)
 
         chapter_result_path = run_dir / "artifacts" / "chapter_result.json"
@@ -1808,6 +1851,8 @@ class FiveAgentsAdapter:
                 "warnings": a4_warnings,
             },
         }
+        if getattr(result, "question_answers", None):
+            data["question_answers"] = result.question_answers
 
         artifacts = [
             ArtifactRef(

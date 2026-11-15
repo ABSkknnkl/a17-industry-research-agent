@@ -262,6 +262,7 @@ class EvidenceRef(BaseModel):
     source_locator: str | None = None
     published_at: date | None = None
     document_sha256: str | None = None
+    segment_name: str | None = None
 
 
 class KeyMetric(BaseModel):
@@ -279,6 +280,7 @@ class KeyMetric(BaseModel):
     scope: str = "consolidated"
     absolute_change: float | None = None
     change_pct: float | None = None
+    change_basis: str | None = None
     percentage_point_change: float | None = None
     importance_score: float = Field(ge=0.0, le=1.0)
     evidence_record_ids: list[str]
@@ -294,6 +296,7 @@ class TrendFinding(BaseModel):
     period_end: date | None = None
     observations: int = Field(ge=1)
     total_change_pct: float | None = None
+    total_change_basis: str | None = None
     percentage_point_change: float | None = None
     comparison_type: str | None = None
     monotonicity: float = Field(ge=0.0, le=1.0)

@@ -146,3 +146,59 @@ def test_explicit_decimal_ratio_above_one_converts_to_percent():
     value, unit = DimensionGuard.normalize_financial_value(1.5, '毛利率', 'decimal')
     assert value == pytest.approx(150.0)
     assert unit == '%'
+
+
+# ---------------------------------------------------------------------------
+# P-14 / P-19：同轴单位唯一规则、未登记单位不继承
+# ---------------------------------------------------------------------------
+
+def test_amount_axis_matches_across_chart_paths():
+    """同一组金额（50 万元 + 10,000 元）在横截面与时序路径必须选同一单位。"""
+    from chart_generator.metric_guard import DimensionGuard
+    from agents_core.financial_semantics import choose_display_money_unit
+
+    assert DimensionGuard.determine_series_currency_unit([50.0, 10_000.0], ["万元", "元"]) == "万元"
+    assert DataFormulator._resolve_series_target_unit([
+        EvidenceRef(record_id="R1", domain="financials", entity="甲", metric="营业收入",
+                    value=50.0, unit="万元", period=date(2024, 12, 31)),
+        EvidenceRef(record_id="R2", domain="financials", entity="甲", metric="营业收入",
+                    value=10_000.0, unit="元", period=date(2025, 12, 31)),
+    ]) == "万元"
+    assert choose_display_money_unit([50.0, 10_000.0], ["万元", "元"]) == "万元"
+
+    table = _formulate([
+        ("甲公司", "营业收入", 50.0, "万元", date(2024, 12, 31), "R1"),
+        ("甲公司", "营业收入", 10_000.0, "元", date(2025, 12, 31), "R2"),
+    ], "line")
+    assert table is not None
+    assert set(table.series_units.values()) == {"万元"}
+    values = next(iter(table.series_data.values()))
+    assert values == pytest.approx([50.0, 1.0])
+
+
+def test_back_million_units_are_accepted_on_axis():
+    """百万元/千万元是已登记金额单位，不得被旧的局部名单挡在出图之外。"""
+    table = _formulate([
+        ("甲公司", "营业收入", 100.0, "百万元", date(2024, 12, 31), "R1"),
+        ("甲公司", "营业收入", 120.0, "百万元", date(2025, 12, 31), "R2"),
+    ], "line")
+    assert table is not None
+    assert set(table.series_units.values()) == {"亿元"}
+    values = next(iter(table.series_data.values()))
+    assert values == pytest.approx([1.0, 1.2])
+
+
+def test_unknown_amount_unit_does_not_inherit_axis_unit():
+    """空串 / unknown / 未登记单位不得借用邻点单位。"""
+    for bad in ("", "unknown", "百亿", None):
+        refs = [
+            EvidenceRef(record_id="R1", domain="financials", entity="甲", metric="营业收入",
+                        value=100.0, unit="万元", period=date(2025, 12, 31)),
+            EvidenceRef(record_id="R2", domain="financials", entity="甲", metric="营业收入",
+                        value=200.0, unit=bad, period=date(2024, 12, 31)),
+        ]
+        table = _formulate([
+            ("甲公司", "营业收入", 100.0, "万元", date(2025, 12, 31), "R1"),
+            ("甲公司", "营业收入", 200.0, bad, date(2024, 12, 31), "R2"),
+        ], "line")
+        assert table is None, f"{bad!r} 借用了邻点单位"

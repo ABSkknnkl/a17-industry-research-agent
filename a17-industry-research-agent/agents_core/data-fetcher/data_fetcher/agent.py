@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from agents_core.financial_semantics import metric_family
+from agents_core.financial_semantics import measurement_period, metric_family, money_to_yuan
 from datetime import date, timedelta
 
 import asyncio
@@ -44,6 +44,18 @@ from data_fetcher.skillhub import IwencaiAuthenticationError, SkillHub, SkillVal
 
 
 EventEmitter = Callable[[dict[str, Any]], Awaitable[None]]
+
+_UNSUPPORTED_RESEARCH_INTENT = re.compile(
+    r"随便(?:给|填|编)|编造(?:数据|数值)|(?:没数据|数据不够|数据不足).{0,24}(?:给(?:我)?(?:一)?个大概|编个|估个|填个)"
+    r"|直接告诉我.{0,8}买不买|(?:给|报|预测)(?:我)?(?:一个|个|出)?目标价|收益承诺"
+)
+
+
+def requires_intent_clarification(request: ResearchRequest) -> bool:
+    return any(
+        _UNSUPPORTED_RESEARCH_INTENT.search(re.sub(r"(?:不要|禁止|不能|不得|无需)\s*(?:编造数据|编造数值|预测目标价|给出目标价|收益承诺)", "", value))
+        for value in (request.industry, *request.focus_points, *request.data_requirements)
+    )
 
 # 主题 → 必须同轮覆盖的关联画像主题。
 # 只放「上下游强耦合、缺了就答不了题」的关系，避免把预算摊到无关主题。
@@ -515,6 +527,16 @@ class DataFetcherAgent:
                     await emit(item.model_dump(mode="json"))
                 except Exception:
                     pass
+
+        if requires_intent_clarification(request):
+            reason = "请确认可核验的研究问题。数据缺失时需保留缺口，买卖结论、目标价和收益承诺超出取数范围。"
+            await record_event("intent_intercepted", reason="clarification_needed")
+            errors.append(RunError(stage="intent", message=reason))
+            result = self._result(
+                run_id, "blocked", "clarification_needed", request, all_results, trace, errors, artifact_dir
+            )
+            self._save_artifacts(artifact_dir, request, all_results, result)
+            return result
 
         if not self.llm.is_available:
             message = "Agent planning requires a configured LLM; no rule fallback is enabled."
@@ -1196,7 +1218,11 @@ class DataFetcherAgent:
                 or not identity_matches):
                 continue
             text = f"{event.title or ''} {event.body or ''}"
-            event_years = {year for year in years if str(year) in text or str(year + 1) in text}
+            report_years = {int(year) for year in re.findall(r"(20\d{2})\s*年?\s*(?:年度报告|年报)", event.title or "")}
+            if report_years:
+                event_years = years & report_years
+            else:
+                event_years = {year for year in years if str(year) in text}
             if years and not event_years:
                 continue
             matches.append(event.record_id)
@@ -1208,6 +1234,25 @@ class DataFetcherAgent:
             evidence_record_ids=matches,
             missing=[f"{year}年度公告检索未返回可用线索，仍需核验" for year in missing_years]
                     if missing_years else ([] if matches else ["指定公司公告检索未返回可用线索，仍需核验"]))
+
+    def reevaluate_requirements(self, dataset: Any, objective: ResearchObjective) -> None:
+        """Recheck supplemental data with the same rules used by the original run."""
+        tasks = {task.task_id.removeprefix("ann_"): task
+                 for task in self._announcement_restatement_tasks(objective, [])}
+        matrix = []
+        for requirement in objective.requirements:
+            key = requirement.requirement_id.removeprefix("announcement_search_")
+            task = tasks.get(key) if requirement.requirement_id.startswith("announcement_search_") else None
+            coverage = (self._announcement_search_coverage(task, objective, dataset) if task
+                        else self._evaluate_requirement(dataset, requirement))
+            matrix.append({"requirement": requirement.model_dump(mode="json"),
+                           "coverage": coverage.model_dump(mode="json")})
+        dataset.quality_summary.update(
+            requirement_evidence_matrix=matrix,
+            requested_requirement_coverage=[row["coverage"] for row in matrix],
+            requested_financial_coverage=[row["coverage"] for row in matrix
+                                          if row["requirement"]["requirement_id"].startswith("annual_")],
+        )
 
     @staticmethod
     def _fill_requirement_slots(
@@ -2202,7 +2247,51 @@ class DataFetcherAgent:
 
     @staticmethod
     def _evaluate_requirement(dataset: Any, requirement: ResearchRequirement) -> RequirementCoverage:
+        if (requirement.entity_names and requirement.domain in (Domain.COMPANIES, Domain.INDUSTRY_CHAIN)
+                and any(term in requirement.label for term in ("主营业务构成", "分部收入", "分产品收入"))):
+            from data_fetcher.official_filing import _eligible_url
+
+            as_of = dataset.research_as_of or date.today()
+            records = [record for record in dataset.records_for(Domain.INDUSTRY_CHAIN)
+                       if record.entity_name in requirement.entity_names and record.metric == "business_composition"
+                       and record.source.skill_id == "official-segment"
+                       and record.period_end and record.period_type == "annual"
+                       and record.published_at and _eligible_url(
+                           str(record.raw_fields.get("source_url") or ""), record.published_at, as_of)
+                       and re.fullmatch(r"[0-9a-f]{64}", str(record.raw_fields.get("document_sha256") or ""))
+                       and re.match(r"PDF 第\d+页", str(record.raw_fields.get("source_locator") or ""))
+                       and record.raw_fields.get("product") and record.source.status == "verified"
+                       and record.unit == "%" and type(record.value) in (int, float) and 0 <= record.value <= 100
+                       and not record.issues
+                       and (not requirement.period_ends or record.period_end in requirement.period_ends)
+                       and (not requirement.requires_entity_code or record.entity_code)
+                       and (not requirement.acceptable_skill_ids or record.source.skill_id in requirement.acceptable_skill_ids)]
+            missing = [entity for entity in requirement.entity_names if not any(
+                record.entity_name == entity for record in records)]
+            if requirement.period_ends:
+                missing.extend(f"{entity} {period}" for entity in requirement.entity_names
+                               for period in requirement.period_ends if not any(
+                                   record.entity_name == entity and record.period_end == period for record in records))
+            if len(records) >= requirement.min_records and not missing:
+                return RequirementCoverage(
+                    requirement_id=requirement.requirement_id, label=requirement.label,
+                    domain=requirement.domain, hard=requirement.hard, passed=True,
+                    evidence_count=len(records), evidence_record_ids=[record.record_id for record in records],
+                )
+        monthly_dates = re.findall(r"(20\d{2})\s*年\s*(\d{1,2})\s*月", requirement.label)
+        monthly_window = (len(monthly_dates) == 2 and "月度" in requirement.label
+                          and requirement.metric_families == ["nev_penetration"]
+                          and requirement.domain in (Domain.INDUSTRY, Domain.MACRO)
+                          and all(1 <= int(month) <= 12 for _, month in monthly_dates))
+        financial_group = (requirement.domain == Domain.FINANCIALS and requirement.entity_names
+                           and all(term in requirement.label for term in ("研发", "毛利率", "现金流")))
         records = list(dataset.records_for(requirement.domain))
+        if monthly_window and requirement.domain == Domain.INDUSTRY:
+            records.extend(dataset.records_for(Domain.MACRO))
+        if monthly_window:
+            first_month, last_month = (int(year) * 12 + int(month) for year, month in monthly_dates)
+        families = (["revenue", "rd_expense", "gross_margin", "operating_cash_flow"] if financial_group
+                    else requirement.metric_families)
         entity_codes: dict[str, set[tuple[str, str]]] = {}
         for identity in getattr(dataset, "companies", []) or []:
             if identity.entity_name in requirement.entity_names and identity.entity_code:
@@ -2243,16 +2332,37 @@ class DataFetcherAgent:
                     or not record.source.query or record.source.query not in excerpt or '产业链' not in excerpt
                     or sum(term in excerpt for term in ('上游','中游','下游')) < 2):
                     reasons.append('unverified_official_source')
+            if requirement.domain == Domain.INDUSTRY_CHAIN and record.source.skill_id == "official-segment":
+                from data_fetcher.official_filing import _eligible_url
+                raw = record.raw_fields or {}
+                if (not as_of or not record.published_at or record.source.status != "verified"
+                        or not _eligible_url(str(raw.get("source_url") or ""), record.published_at, as_of)
+                        or not re.fullmatch(r"[0-9a-f]{64}", str(raw.get("document_sha256") or ""))
+                        or not re.match(r"PDF 第[1-9]\d*页", str(raw.get("source_locator") or ""))):
+                    reasons.append("unverified_official_source")
             if requirement.acceptable_skill_ids and record.source.skill_id not in requirement.acceptable_skill_ids and not (
                 requirement.domain == Domain.FINANCIALS and record.source.skill_id == "official-restatement"
             ):
                 reasons.append("source_mismatch")
             if requirement.entity_names and target_entity(record) is None:
                 reasons.append("entity_mismatch")
-            if requirement.period_ends and (record.period_end not in requirement.period_ends or
+            if monthly_window and (
+                    not record.period_end or record.period_type != "month" or "period_conflict" in record.issues
+                    or not first_month <= record.period_end.year * 12 + record.period_end.month <= last_month
+                    or not measurement_period(record) or "零售" not in record.metric or record.unit != "%"):
+                reasons.append("period_or_series_mismatch")
+            elif not monthly_window and requirement.period_ends and (record.period_end not in requirement.period_ends or
                     record.period_type not in ("annual", "unknown") or "period_conflict" in record.issues):
                 reasons.append("period_mismatch")
-            if requirement.metric_families and metric_family(record.metric) not in requirement.metric_families:
+            if financial_group and (record.period_type != "annual" or record.scope != "consolidated"
+                    or record.currency != "CNY" or not measurement_period(record)
+                    or record.record_id in conflict_ids
+                    or (metric_family(record.metric) == "gross_margin" and record.unit != "%")
+                    or (metric_family(record.metric) in {"rd_expense", "revenue", "operating_cash_flow"}
+                        and money_to_yuan(record.value, record.unit) is None)
+                    or (metric_family(record.metric) == "revenue" and (DataFetcherAgent._numeric_value(record.value) or 0) <= 0)):
+                reasons.append("incompatible_financial_basis")
+            if families and metric_family(record.metric) not in families:
                 reasons.append("metric_mismatch")
             if requirement.metric_families and DataFetcherAgent._numeric_value(record.value) is None:
                 reasons.append("non_numeric_value")
@@ -2294,11 +2404,11 @@ class DataFetcherAgent:
             ]
         if requirement.entity_names:
             records = [r for r in records if target_entity(r) is not None]
-        if requirement.period_ends:
+        if requirement.period_ends and not monthly_window:
             records = [r for r in records if r.period_end in requirement.period_ends
                        and r.period_type in ("annual", "unknown") and "period_conflict" not in r.issues]
-        if requirement.metric_families:
-            records = [r for r in records if metric_family(r.metric) in requirement.metric_families
+        if families:
+            records = [r for r in records if metric_family(r.metric) in families
                        and DataFetcherAgent._numeric_value(r.value) is not None]
         if requirement.domain == Domain.FINANCIALS and requirement.period_ends:
             conflict_ids = {rid for conflict in getattr(dataset, "conflicts", []) for rid in conflict.record_ids}
@@ -2325,7 +2435,7 @@ class DataFetcherAgent:
                     seen_sources.add(source_key)
                 distinct_records.append(record)
             records = distinct_records
-        if requirement.domain == Domain.FINANCIALS and requirement.entity_names and requirement.period_ends and requirement.metric_families:
+        if not financial_group and requirement.domain == Domain.FINANCIALS and requirement.entity_names and requirement.period_ends and requirement.metric_families:
             cell_bases: dict[tuple[Any, ...], set[tuple[Any, ...]]] = {}
             for record in records:
                 cell = (target_entity(record), record.period_end, metric_family(record.metric))
@@ -2349,7 +2459,38 @@ class DataFetcherAgent:
                     rejected.setdefault(record.record_id, []).append("duplicate_cell")
             records = unique_records
         missing: list[str] = []
-        if requirement.domain == Domain.FINANCIALS and requirement.entity_names and requirement.period_ends and requirement.metric_families:
+        if monthly_window:
+            by_series: dict[tuple, dict[int, dict[float, ResearchRecord]]] = defaultdict(lambda: defaultdict(dict))
+            for record in records:
+                ordinal = record.period_end.year * 12 + record.period_end.month
+                raw = record.raw_fields or {}
+                source_indicator = raw.get("macro_id") or raw.get("宏观@id")
+                key = (source_indicator or record.entity_name, record.metric, record.scope, record.currency)
+                if source_indicator and record.entity_name not in {"中国", "宏观", None}:
+                    key = (*key, record.entity_name)
+                by_series[key][ordinal][DataFetcherAgent._numeric_value(record.value)] = record
+            complete = [series for series in by_series.values()
+                        if set(range(first_month, last_month + 1)) == series.keys()
+                        and all(len(values) == 1 for values in series.values())]
+            if len(complete) == 1:
+                records = [next(iter(values.values())) for _, values in sorted(complete[0].items())]
+            else:
+                missing.append("缺少唯一且完整的同口径月度序列")
+        if financial_group:
+            cells = defaultdict(dict)
+            for record in records:
+                key = (target_entity(record), record.period_end, metric_family(record.metric))
+                cells[key][DataFetcherAgent._numeric_value(record.value)] = record
+            years = set(requirement.period_ends or [record.period_end for record in records])
+            complete_periods = {period for period in years if all(
+                len(cells.get((name, period, metric), {})) == 1
+                for name in requirement.entity_names for metric in families
+            )}
+            if not complete_periods or (requirement.period_ends and complete_periods != years):
+                missing.append("缺少同年度、同口径的研发费用和营业收入、毛利率或经营现金流")
+            else:
+                records = [record for record in records if record.period_end in complete_periods]
+        if not financial_group and requirement.domain == Domain.FINANCIALS and requirement.entity_names and requirement.period_ends and requirement.metric_families:
             observed = {(target_entity(record), record.period_end, metric_family(record.metric)) for record in records}
             for entity in requirement.entity_names:
                 for period in requirement.period_ends:
@@ -2365,7 +2506,7 @@ class DataFetcherAgent:
         if requirement.requires_published_at and not any(item.published_at for item in records):
             missing.append("缺少发布日期")
         metrics = [item.metric.casefold() for item in records]
-        for group in requirement.expected_metric_groups:
+        for group in ([] if financial_group else requirement.expected_metric_groups):
             if not any(any(token.casefold() in metric or
                            (requirement.domain == Domain.FINANCIALS and metric_family(token) == metric_family(metric))
                            for token in group) for metric in metrics):
@@ -2396,7 +2537,8 @@ class DataFetcherAgent:
             hard=requirement.hard,
             passed=not missing,
             evidence_count=len(records),
-            evidence_record_ids=[item.record_id for item in (records if requirement.domain == Domain.FINANCIALS and requirement.entity_names and requirement.period_ends and requirement.metric_families else records[:20])],
+            evidence_record_ids=[item.record_id for item in (records if monthly_window or financial_group or
+                (requirement.domain == Domain.FINANCIALS and requirement.entity_names and requirement.period_ends and requirement.metric_families) else records[:20])],
             rejected_evidence=rejected,
             missing=missing,
         )
@@ -2414,7 +2556,7 @@ class DataFetcherAgent:
             ],
             Domain.FINANCIALS: ["hithink-finance-query"],
             Domain.MACRO: ["hithink-macro-query"],
-            Domain.INDUSTRY_CHAIN: ["hithink-business-query", "hithink-futures-query", "official-disclosure"],
+            Domain.INDUSTRY_CHAIN: ["hithink-business-query", "hithink-futures-query", "official-disclosure", "official-segment"],
             Domain.REPORTS: ["report-search", "hithink-insresearch-query"],
             Domain.NEWS: ["news-search", "announcement-search", "hithink-event-query"],
         }
