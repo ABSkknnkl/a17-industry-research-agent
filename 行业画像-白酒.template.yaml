@@ -1,0 +1,140 @@
+# industry_profile.yaml —— 行业画像模板（白酒）
+# 用途：这是「AI 自适配行业」唯一允许改写的配置文件之一。
+# 约束：不含任何代码；字段名固定，新增字段必须先在 schema 里登记。
+# 校验：闸2 R1–R7 逐条断言，任一不满足直接拒收。
+
+profile_version: "baijiu-0.1"        # 每次改动递增，写进交付台账
+industry: 白酒
+industry_code: 申万二级-白酒Ⅱ         # 用于 R1 行业归属校验
+as_of: 2026-11-14
+
+# ---------- 1. 研究样本（R1/R2 强校验） ----------
+universe:
+  locked: true                        # true = AI 不得增删，只能由人审修改
+  companies:
+    - name: 贵州茅台
+      code: "600519"
+      role: 龙头
+    - name: 五粮液
+      code: "000858"
+      role: 次高端/浓香
+    - name: 泸州老窖
+      code: "000568"
+      role: 浓香
+    - name: 山西汾酒
+      code: "600809"
+      role: 清香
+exclude:
+  hard_block:                         # 命中即拒，不得进入估值/对比样本
+    - 巨力索具                        # 历史缺陷：非白酒公司混入估值分析
+    - 洋河股份                        # 仅可作对照，不得替换点名公司
+    - 古井贡酒
+  peer_reference_only: [洋河股份, 古井贡酒]
+
+# ---------- 2. 期间与口径（R3/R4） ----------
+period:
+  window: [2023, 2024, 2025]
+  period_type: annual                 # annual | quarter | h1 | q1q3
+  forbid_substitute: [quarter, q1q3]  # 禁止用前三季度冒充年度或同比
+  fiscal_note: 年报口径，含合并报表；分部数据仅在披露时使用
+
+# ---------- 3. 必备指标与派生口径（R4/R5） ----------
+metrics:
+  required:
+    - key: revenue
+      label: 营业收入
+      unit: 元
+      caliber: 合并
+      source: 年报-利润表
+    - key: net_profit_parent
+      label: 归母净利润
+      unit: 元
+      caliber: 合并-归属母公司
+      source: 年报-利润表
+    - key: gross_margin
+      label: 毛利率
+      unit: "%"
+      caliber: 毛利率=毛利/营业收入
+      source: 年报-利润表
+    - key: ocf
+      label: 经营活动现金流净额
+      unit: 元
+      caliber: 合并-经营活动
+      source: 年报-现金流量表
+  probes:                             # 现金流成因必须靠这三项，缺则结论降级
+    - key: contract_liability
+      label: 合同负债
+      unit: 元
+      why: 解释预收款/渠道打款对现金流的影响
+    - key: receivables
+      label: 应收款项（应收票据+应收账款）
+      unit: 元
+      why: 解释渠道政策与回款质量
+    - key: inventory
+      label: 存货
+      unit: 元
+      why: 解释基酒储备与现金流占用
+derived:
+  - key: ocf_to_np
+    formula: ocf / net_profit_parent
+    unit: 倍
+    rule: 比率；不得与金额同图同轴
+  - key: gm_yoy
+    formula: gm_t - gm_{t-1}
+    unit: 百分点
+    rule: 同比必须画「变化」，严禁画「水平」
+  - key: retail_growth_pp
+    formula: 社零同比增速差值
+    unit: 百分点
+    rule: 百分点计算单独核验（历史缺陷点）
+
+# ---------- 4. 产业链（R6 跨环节只计一次） ----------
+chain:
+  upstream: [高粱/小麦, 包材, 玻璃瓶]
+  midstream: [酿造, 灌装]
+  downstream: [经销-批发代理, 经销-直销, 电商, 团购]
+  count_once: true                    # 跨环节公司只计一次
+  evidence_level: [实际经营, 有待核验, 仅概念关联]   # 三类分开，不得混排
+
+# ---------- 5. 图表期望（R5：图跟随问题） ----------
+charts:
+  - question_id: "酒-1"
+    expect: [四家OCF与净利润分组柱, OCF/净利润比率趋势]
+    forbid: [用营收顶替现金流]
+  - question_id: "酒-2"
+    expect: [三年趋势-年度序列, 四家横向对比, 毛利率同比-百分点]
+    forbid: [毛利率水平图冒充同比, 单点截面顶替趋势]
+  - question_id: "酒-3"
+    expect: [OCF/净利润比率变化, 合同负债/应收/存货明细]
+    forbid: [无营运资金明细的因果断言]
+  - question_id: "酒-4"
+    expect: [渠道结构对比, 产品结构对比]
+    forbid: [把不可比口径强行同表]
+
+# ---------- 6. 章节边界（R7） ----------
+chapters:
+  outline_ref: A4-seven-chapter
+  must_include_limitation: true        # 每章必须写数据局限
+  special_clause:
+    - chapter: 渠道与产品结构
+      clause: 批发代理 vs 直销、茅台酒 vs 系列酒口径不一致处必须显式标注，并对结论加限定条件
+
+# ---------- 7. 验收矩阵（20 格） ----------
+acceptance:
+  questions: 4
+  per_question:
+    check: [样本齐全, 期间一致, 口径标注, 图表匹配, 证据可回溯record_id, 受限原因明确]
+  pdf_check: [页码连续, 目录页码与正文一致, 附录含缺口, 受限标识]
+  negative_set:                        # 来自真实试跑反馈，必须全不复发
+    - 非白酒公司进入估值样本
+    - 2026前三季度冒充2023-2025年度
+    - 毛利率水平图被当作同比
+    - 社零增速百分点计算错误
+    - 样本数量前后不一致
+
+# ---------- 8. 门禁（只声明，不判定） ----------
+gates:
+  stop_points: [data_fetch, data_interpret, chart_generate, chapter_write]
+  formal_requires: [pdf_check_all_pass, negative_set_clear]
+  restricted_requires: [reason_written]     # 受限必须写明缺什么
+  forbidden: [accept_with_risks_bypass_when_A4_passed_false]
