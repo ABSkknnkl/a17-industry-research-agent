@@ -1,13 +1,18 @@
 from __future__ import annotations
 import asyncio
+import hashlib
 import json
 import logging
 import os
 import re
+import threading
+import time
 import mimetypes
-from typing import Literal
+from dataclasses import dataclass
+from typing import Any, Literal
 from fastapi import APIRouter, HTTPException, Query, status
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse, Response, StreamingResponse
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger("api_routes")
 
@@ -25,6 +30,92 @@ from backend.app.schemas.workflow import (
 )
 
 router = APIRouter(prefix="/api/v1")
+
+
+@dataclass(frozen=True)
+class ReportDownloadEligibility:
+    """报告类产物的当前版本与正式/草稿下载资格结论。"""
+
+    eligible: bool
+    draft_download: bool
+    explicit_draft: bool
+    generation_ok: bool
+    built_at_revision: int | None
+
+
+def _report_download_eligibility(
+    state: WorkflowState | None, artifact_id: str, mode: str
+) -> ReportDownloadEligibility:
+    """S-02 / R1 / P4 资格计算，由下载 GET 与紧凑交付包 POST 共用。
+
+    这段逻辑原样来自 download_artifact_endpoint，抽函数时不改变任何判据：
+    GET 的历史兼容、别名与错误响应仍按原行为执行。
+    """
+    fusion = state.stage_results.get("report_fusion") if state else None
+    fusion_data = fusion.data if (fusion and isinstance(fusion.data, dict)) else {}
+    built_at = fusion_data.get("built_at_revision")
+    status_ok = bool(fusion and fusion.status in ("approved", "completed"))
+    generation_ok = False
+    built_at_revision: int | None = None
+    if built_at is not None:
+        try:
+            built_at_revision = int(built_at)
+            generation_ok = bool(state) and built_at_revision == state.revision
+        except (TypeError, ValueError):
+            generation_ok = False
+        eligible = status_ok and generation_ok and not fusion_data.get("delivery_blocked")
+    else:
+        stale_any = any(
+            (sr.data or {}).get("downstream_stale")
+            for sr in (state.stage_results.values() if state else [])
+            if isinstance(sr.data, dict)
+        )
+        eligible = status_ok and not stale_any and not fusion_data.get("delivery_blocked")
+
+    draft_download = mode == "draft"
+    if built_at is not None:
+        quality = fusion_data.get("quality") or {}
+        content_ok = not fusion_data.get("hard_blocked")
+        formal_ok = (fusion_data.get("agent_status") != "partial"
+                     and quality.get("passed") is not False)
+        # P4：ready_with_limits 只能走受限草稿/预览入口，正式下载不接受宽松组合。
+        delivery_status = fusion_data.get("delivery_status")
+        if delivery_status and delivery_status != "ready":
+            formal_ok = False
+        chain = fusion_data.get("chain_delivery") or {}
+        if chain.get("requested") and chain.get("status") != "complete":
+            formal_ok = False
+        eligible = eligible and content_ok and (draft_download or formal_ok)
+
+    # 编辑预览仅对本地重渲染的 MD/HTML 生效；PDF 仍受门禁约束。
+    preview_kind = {
+        "report_markdown": "report_markdown", "report.md": "report_markdown",
+        "report_html": "report_html", "report.html": "report_html",
+    }.get(artifact_id)
+    edited_preview = bool(
+        preview_kind and fusion and state
+        and fusion.status == "waiting_review"
+        and fusion_data.get("quality_notice")
+        and not fusion_data.get("exports_stale")
+        and not fusion_data.get("delivery_blocked")
+        and any(a.kind == preview_kind and a.revision == state.revision for a in fusion.artifacts)
+    )
+    explicit_draft = bool(
+        mode == "draft" and fusion and state and generation_ok
+        and fusion_data.get("draft_available") and fusion_data.get("draft_sanitized")
+        and not fusion_data.get("exports_stale") and not fusion_data.get("delivery_blocked")
+        and any(a.artifact_id == {"report.md": "report_markdown", "report.html": "report_html",
+                                  "report.pdf": "report_pdf"}.get(artifact_id, artifact_id)
+                and a.revision == state.revision for a in fusion.artifacts)
+    ) if built_at is not None else False
+    eligible = eligible or explicit_draft or (edited_preview and mode == "draft")
+    return ReportDownloadEligibility(
+        eligible=bool(eligible),
+        draft_download=draft_download,
+        explicit_draft=explicit_draft,
+        generation_ok=generation_ok,
+        built_at_revision=built_at_revision,
+    )
 
 
 @router.post("/runs", response_model=WorkflowState, status_code=status.HTTP_201_CREATED)
@@ -233,66 +324,11 @@ async def download_artifact_endpoint(run_id: str, artifact_id: str, mode: Litera
     )
     draft_download = False
     if is_report_artifact:
+        # 资格判定已抽为共享函数，GET 的历史兼容与错误响应保持原样。
         state = storage.load_state(run_id)
-        fusion = state.stage_results.get("report_fusion") if state else None
-        fusion_data = fusion.data if (fusion and isinstance(fusion.data, dict)) else {}
-
-        # R1：下载资格按「构建代次 vs 当前版本」判定，替代旧的永久
-        # downstream_stale 布尔（重建后永不被消费 → 永久 409）。
-        #
-        # - 新 run：融合完成时登记 built_at_revision；此后任何编辑都会使
-        #   state.revision 前进 → 代次不一致 → 409；重建/重导出后重新登记 → 恢复。
-        # - 历史 run（无 built_at_revision）：退化为旧口径——融合获批且无
-        #   未消费的 stale 标记即可下载，保持既有报告可访问。
-        built_at = fusion_data.get("built_at_revision")
-        status_ok = bool(fusion and fusion.status in ("approved", "completed"))
-        if built_at is not None:
-            try:
-                generation_ok = int(built_at) == state.revision
-            except (TypeError, ValueError):
-                generation_ok = False
-            eligible = status_ok and generation_ok and not fusion_data.get("delivery_blocked")
-        else:
-            stale_any = any(
-                (sr.data or {}).get("downstream_stale")
-                for sr in (state.stage_results.values() if state else [])
-                if isinstance(sr.data, dict)
-            )
-            eligible = status_ok and not stale_any and not fusion_data.get("delivery_blocked")
-
-        draft_download = mode == "draft"
-        if built_at is not None:
-            quality = fusion_data.get("quality") or {}
-            content_ok = not fusion_data.get("hard_blocked")
-            formal_ok = (fusion_data.get("agent_status") != "partial"
-                         and quality.get("passed") is not False)
-            chain = fusion_data.get("chain_delivery") or {}
-            if chain.get("requested") and chain.get("status") != "complete":
-                formal_ok = False
-            eligible = eligible and content_ok and (draft_download or formal_ok)
-        # A locally re-rendered editable view is safe to preview before approval.
-        # Its manifest revision must match the current review; PDF remains gated.
-        preview_kind = {
-            "report_markdown": "report_markdown", "report.md": "report_markdown",
-            "report_html": "report_html", "report.html": "report_html",
-        }.get(artifact_id)
-        edited_preview = bool(
-            preview_kind and fusion and state
-            and fusion.status == "waiting_review"
-            and fusion_data.get("quality_notice")
-            and not fusion_data.get("exports_stale")
-            and not fusion_data.get("delivery_blocked")
-            and any(a.kind == preview_kind and a.revision == state.revision for a in fusion.artifacts)
-        )
-        explicit_draft = bool(
-            mode == "draft" and fusion and state and generation_ok
-            and fusion_data.get("draft_available") and fusion_data.get("draft_sanitized")
-            and not fusion_data.get("exports_stale") and not fusion_data.get("delivery_blocked")
-            and any(a.artifact_id == {"report.md":"report_markdown", "report.html":"report_html", "report.pdf":"report_pdf"}.get(artifact_id, artifact_id)
-                    and a.revision == state.revision for a in fusion.artifacts)
-        ) if built_at is not None else False
-        eligible = eligible or explicit_draft or (edited_preview and mode == "draft")
-        if not eligible:
+        decision = _report_download_eligibility(state, artifact_id, mode)
+        draft_download = decision.draft_download
+        if not decision.eligible:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="当前报告产物已失效（内容已编辑待重建，或融合未获批），请重建后再下载",
@@ -357,6 +393,173 @@ async def download_artifact_endpoint(run_id: str, artifact_id: str, mode: Litera
         media_type=mime_type,
         filename=("draft-" + target_path.name) if draft_download else target_path.name,
         headers={"X-Report-Mode": "draft" if draft_download else "formal", "X-Report-Release-Mode": "draft_with_warnings" if draft_download else "formal"},
+    )
+
+
+class CompactExportRequest(BaseModel):
+    """工作台紧凑交付包请求：模式必填，版本号用于拦住渲染期间的并发修改。"""
+
+    mode: Literal["formal", "draft"]
+    expected_revision: int = Field(ge=0, strict=True)
+
+
+@dataclass(frozen=True)
+class CompactSnapshot:
+    view: Any
+    view_sha256: str
+    revision: int
+    report_id: str
+    mode: str
+    view_path: Any
+
+
+# 单进程只允许一个紧凑包渲染位：避免一键连点启动多个 Chromium。
+_COMPACT_EXPORT_SLOT = threading.Lock()
+_COMPACT_EXPORT_TIMEOUT = float(os.getenv("A5_COMPACT_EXPORT_TIMEOUT_SECONDS", "190"))
+
+
+def _compact_snapshot(state, artifacts_dir, body: CompactExportRequest) -> CompactSnapshot:
+    """锁内执行：版本、资格、文件可用性与视图一致性；只返回制包所需快照。"""
+    from report_fusion.models import ReportViewModel
+
+    if state.revision != body.expected_revision:
+        raise HTTPException(409, "报告版本已更新，请刷新页面后重新下载")
+    if state.status in ("cancelled", "rejected", "failed", "running", "pending"):
+        raise HTTPException(409, "当前任务状态不允许导出交付包")
+    fusion = state.stage_results.get("report_fusion")
+    fusion_data = fusion.data if (fusion and isinstance(fusion.data, dict)) else {}
+    decision = _report_download_eligibility(state, "report_pdf", body.mode)
+    if not decision.eligible or not decision.generation_ok:
+        raise HTTPException(409, "当前报告产物已失效，请刷新或重新生成当前报告")
+    if decision.built_at_revision is None or decision.built_at_revision != body.expected_revision:
+        raise HTTPException(409, "历史报告缺少构建代次，请先重建当前报告")
+    if any(fusion_data.get(k) for k in ("exports_stale", "needs_reexport", "delivery_blocked")):
+        raise HTTPException(409, "当前导出文件需要重新生成，请刷新后重试")
+    if body.mode == "draft" and not decision.explicit_draft:
+        raise HTTPException(409, "当前版本未获明确的受限草稿下载资格")
+
+    pdf_path = artifacts_dir / "report.pdf"
+    if not pdf_path.is_file() or pdf_path.stat().st_size == 0:
+        raise HTTPException(409, "当前 PDF 不可用，请重新生成后再导出")
+    view_path = artifacts_dir / "report_view.json"
+    if not view_path.is_file():
+        raise HTTPException(409, "缺少当前报告视图，请重新生成")
+    if not view_path.resolve().is_relative_to(artifacts_dir.resolve()):
+        raise HTTPException(400, "报告视图不得位于任务目录之外")
+
+    raw_bytes = view_path.read_bytes()
+    try:
+        raw = json.loads(raw_bytes.decode("utf-8"))
+        # 编辑导出会在视图里混入工作流附加字段；按声明字段投影后再校验。
+        canonical = {k: v for k, v in raw.items() if k in ReportViewModel.model_fields}
+        view = ReportViewModel.model_validate(canonical)
+    except (ValueError, TypeError, UnicodeDecodeError) as exc:
+        raise HTTPException(409, f"当前报告视图无法解析，请重新生成：{exc}") from exc
+
+    fused_report_id = fusion_data.get("report_id")
+    if fused_report_id and str(fused_report_id) != view.report_id:
+        raise HTTPException(409, "报告视图与融合结果不一致，请重新生成")
+    fused_delivery = fusion_data.get("delivery_status")
+    if fused_delivery and fused_delivery != view.delivery_status:
+        raise HTTPException(409, "报告视图与交付级别不一致，请重新生成")
+    if body.mode == "formal" and view.delivery_status != "ready":
+        raise HTTPException(409, "正式交付要求报告状态为 ready；受限草稿请改用草稿下载")
+    if body.mode == "draft" and view.delivery_status != "ready_with_limits":
+        raise HTTPException(409, "草稿视图缺少受限标识，请重新生成当前报告")
+
+    return CompactSnapshot(
+        view=view,
+        view_sha256=hashlib.sha256(raw_bytes).hexdigest(),
+        revision=state.revision,
+        report_id=view.report_id,
+        mode=body.mode,
+        view_path=view_path,
+    )
+
+
+@router.post("/runs/{run_id}/exports/compact")
+async def export_compact_report(run_id: str, body: CompactExportRequest):
+    """工作台一次性紧凑交付包：锁内取快照 → 锁外渲染 → 回锁复核，ZIP 只在内存中。"""
+    from report_fusion.export_view import build_package_bytes
+
+    run_dir = storage.get_run_dir(run_id)
+    artifacts_dir = (run_dir / "artifacts").resolve()
+    if not run_dir.is_dir():
+        raise HTTPException(404, f"任务不存在: {run_id}")
+
+    # 1) 短时持锁取快照
+    try:
+        async with engine._run_lock(run_id):
+            engine._ensure_not_clearing()
+            state = storage.load_state(run_id)
+            if state is None:
+                raise HTTPException(404, f"任务不存在: {run_id}")
+            snapshot = _compact_snapshot(state, artifacts_dir, body)
+    except ReviewConflictError as exc:
+        raise HTTPException(409, "正在清空任务，请稍后重试") from exc
+
+    # 2) 释放 run 锁后再渲染，编辑与取消可正常提交；仅本端点受单渲染位限制
+    if not _COMPACT_EXPORT_SLOT.acquire(blocking=False):
+        raise HTTPException(429, "紧凑交付包正在生成，请稍后手动重试")
+    started = time.monotonic()
+    try:
+        try:
+            data = await asyncio.wait_for(
+                build_package_bytes(
+                    snapshot.view, "compact",
+                    pdf_timeout_seconds=max(10.0, _COMPACT_EXPORT_TIMEOUT - 10),
+                ),
+                timeout=_COMPACT_EXPORT_TIMEOUT,
+            )
+        except (asyncio.TimeoutError, TimeoutError) as exc:
+            raise HTTPException(504, "PDF 渲染超时，请稍后重试") from exc
+        except Exception as exc:
+            logger.exception("紧凑交付包生成失败 run_id=%s", run_id)
+            raise HTTPException(500, f"紧凑交付包生成失败：{type(exc).__name__}") from exc
+    finally:
+        _COMPACT_EXPORT_SLOT.release()
+
+    # 3) 回锁复核：版本、资格、视图字节或报告标识变化一律丢弃内存 ZIP
+    try:
+        async with engine._run_lock(run_id):
+            fresh = storage.load_state(run_id)
+            if fresh is None:
+                raise HTTPException(404, f"任务不存在: {run_id}")
+            if fresh.revision != snapshot.revision:
+                raise HTTPException(409, "渲染期间报告版本已变化，请刷新后重新下载")
+            try:
+                current = snapshot.view_path.read_bytes()
+            except OSError as exc:
+                raise HTTPException(409, "渲染期间报告视图已变化，请刷新后重新下载") from exc
+            if hashlib.sha256(current).hexdigest() != snapshot.view_sha256:
+                raise HTTPException(409, "渲染期间报告内容已变化，请刷新后重新下载")
+            decision = _report_download_eligibility(fresh, "report_pdf", snapshot.mode)
+            if not decision.eligible or not decision.generation_ok:
+                raise HTTPException(409, "渲染期间下载资格已变化，请刷新后重新下载")
+            fusion = fresh.stage_results.get("report_fusion")
+            fdata = fusion.data if (fusion and isinstance(fusion.data, dict)) else {}
+            if fdata.get("report_id") and str(fdata["report_id"]) != snapshot.report_id:
+                raise HTTPException(409, "渲染期间报告标识已变化，请刷新后重新下载")
+    except ReviewConflictError as exc:
+        raise HTTPException(409, "正在清空任务，请稍后重试") from exc
+
+    filename = (
+        ("draft-" if snapshot.mode == "draft" else "")
+        + f"report-compact-r{snapshot.revision}.zip"
+    )
+    logger.info(
+        "紧凑交付包 run_id=%s revision=%s mode=%s bytes=%d elapsed=%.2fs",
+        run_id, snapshot.revision, snapshot.mode, len(data), time.monotonic() - started,
+    )
+    return Response(
+        content=data,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "private, no-store",
+            "X-Report-Mode": snapshot.mode,
+            "X-Report-Release-Mode": "draft_with_warnings" if snapshot.mode == "draft" else "formal",
+        },
     )
 
 
