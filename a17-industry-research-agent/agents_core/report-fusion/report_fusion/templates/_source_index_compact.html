@@ -1,0 +1,80 @@
+{# 附录二紧凑版共用片段：auto / rich 共用，且仅在 compact 模式输出。
+   自带样式与交互脚本，保证 full 模式的模板输出字节完全不变。
+   可用变量：view / source_groups / source_id_prefixes / source_row_prefix / evidence_csv_name #}
+<style>
+  .source-summary { margin: 2mm 0 3mm; }
+  .source-summary table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 2mm 0; }
+  .source-summary th, .source-summary td { border: .5pt solid #cbd5e1; padding: 1.2mm 2mm; text-align: left; }
+  .source-summary th { background: #0f4c81; color: #fff; }
+  .source-summary td:nth-child(2), .source-summary td:nth-child(3) { text-align: right; }
+  .source-summary-note { font-size: 9pt; line-height: 1.6; margin: 2mm 0; }
+  .source-summary-download { font-size: 9pt; margin: 1mm 0 2mm; }
+  .source-number-cloud { font-size: 8.5pt; line-height: 2.1; margin: 2mm 0 4mm; overflow-wrap: anywhere; }
+  .source-number-cloud .source-num { display: inline-block; margin: 0 1.2mm 0 0; padding: 0 .8mm; color: #0f4c81; cursor: pointer; }
+  .source-number-cloud .source-num:focus { outline: 1pt solid #0f4c81; }
+  .source-index-details { margin: 2mm 0 4mm; }
+  .source-index-details > summary { font-size: 9pt; cursor: pointer; padding: 1mm 0; }
+  @media print {
+    .source-index-details { display: none !important; }
+    .source-summary-download { display: none !important; }
+    .source-number-cloud { font-size: 8pt; line-height: 1.9; }
+    .source-number-cloud .source-num { cursor: default; break-inside: avoid; page-break-inside: avoid; }
+  }
+</style>
+<div class="source-summary">
+  <table>
+    <caption><span class="table-section-title">表附-1 · 数据来源与口径汇总</span></caption>
+    <thead>
+      <tr><th>数据领域</th><th style="text-align:right">记录数</th><th style="text-align:right">有可用原文链接的记录数</th></tr>
+    </thead>
+    <tbody>
+      {% if source_groups %}
+      {% for group in source_groups %}
+      <tr><td>{{ group.label }}</td><td style="text-align:right">{{ group.count }}</td><td style="text-align:right">{{ group.link_count }}</td></tr>
+      {% endfor %}
+      <tr><td><strong>合计</strong></td><td style="text-align:right"><strong>{{ view.evidence_catalog | length }}</strong></td><td style="text-align:right"><strong>{{ source_groups | sum(attribute='link_count') }}</strong></td></tr>
+      {% else %}
+      <tr><td colspan="3">本报告暂无证据记录</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+  <p class="source-summary-note">本附录按数据领域汇总，共 {{ view.evidence_catalog | length }} 条证据记录。正文中的「来源N」对应下列编号；逐条明细（含记录编号、原始数值、期间与原文链接）见同一交付包内的 <code>{{ evidence_csv_name }}</code>，按该文件的 <code>number</code> 列查找。PDF 版本不附逐条明细表，请解压交付包后打开 CSV。</p>
+  <p class="source-summary-download"><a href="{{ evidence_csv_name }}" download>下载完整证据索引（{{ evidence_csv_name }}）</a></p>
+</div>
+<p class="source-number-cloud" aria-label="来源编号索引">
+{% for s in view.evidence_catalog %}<span class="source-num" id="{{ source_id_prefixes[0] }}{{ s.number }}" data-row="{{ source_row_prefix }}{{ s.number }}"><span{% if source_id_prefixes | length > 1 %} id="{{ source_id_prefixes[1] }}{{ s.number }}"{% endif %}>{{ s.number }}</span></span> {% endfor %}
+</p>
+<script>
+(function () {
+  /* 本片段在 <details> 之前输出，必须等 DOM 就绪才能取到它。 */
+  function init() {
+    var details = document.getElementById('source-index-details');
+    if (!details) { return; }
+    var nums = document.querySelectorAll('.source-number-cloud .source-num[data-row]');
+    Array.prototype.forEach.call(nums, function (el) {
+      var label = el.textContent.trim();
+      el.setAttribute('role', 'button');
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('aria-label', '展开证据索引并定位来源 ' + label);
+      function open(ev) {
+        if (ev && ev.type === 'keydown' && ev.key !== 'Enter' && ev.key !== ' ' && ev.key !== 'Spacebar') { return; }
+        if (ev && ev.type === 'keydown') { ev.preventDefault(); }
+        details.open = true;
+        var row = document.getElementById(el.getAttribute('data-row'));
+        if (row) {
+          row.scrollIntoView({ block: 'center' });
+          row.setAttribute('tabindex', '-1');
+          try { row.focus({ preventScroll: true }); } catch (err) { row.focus(); }
+        }
+      }
+      el.addEventListener('click', open);
+      el.addEventListener('keydown', open);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>

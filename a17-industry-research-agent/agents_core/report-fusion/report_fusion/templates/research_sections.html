@@ -1,0 +1,79 @@
+{% macro citations(ids, lookup, prefix) -%}
+  {%- for n in citation_numbers(ids, lookup) -%}
+  <a class="reference-link" href="#{{ prefix }}{{ n }}">[{{ n }}]</a>{% if not loop.last %} {% endif %}
+  {%- endfor -%}
+{%- endmacro %}
+
+{% macro question_index(questions, lookup, prefix) %}
+{% if questions %}
+<section class="chapter research-index" id="research-questions">
+  <h2>研究问题与结论索引</h2>
+  {% for row in questions %}
+  <div class="research-question">
+    <h3>{{ row.question_id }}　{{ row.text }}</h3>
+    {% if row.excerpt %}
+    <p>{{ row.excerpt.text }} {{ citations(row.excerpt.evidence_ids, lookup, prefix) }}</p>
+    {% elif not row.series_tables %}
+    <p>本轮尚无可列入索引的核验结论，证据与判断边界见正文。</p>
+    {% endif %}
+    {% if row.comparison %}
+    <p>{{ row.comparison.text }} {{ citations(row.comparison.evidence_ids, lookup, prefix) }}</p>
+    {% endif %}
+    <p class="research-references">
+      <a href="#{{ row.section_id }}">{{ row.section_title }}</a>
+      {% for chart in row.figures %} · <a href="#figure-{{ chart.chart_id }}">{{ chart.figure_number or chart.title }}</a>{% endfor %}
+    </p>
+    {% if row.missing %}<p class="research-references">待核资料　{{ row.missing | join("、") }}</p>{% endif %}
+    {% for table in row.series_tables %}
+    <table class="data-sheet report-table">
+      <caption>{{ table.title }}</caption>
+      <thead><tr>{% for col in table.columns %}<th>{{ col }}</th>{% endfor %}<th>依据</th></tr></thead>
+      <tbody>
+        {% for cells, ids in table.rows %}
+        <tr>{% for cell in cells %}<td>{{ cell }}</td>{% endfor %}<td>{{ citations(ids, lookup, prefix) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if table.note %}<p class="research-references">{{ table.note }}</p>{% endif %}
+    {% if table.readout %}<p>{{ table.readout }} {% if not table.monthly %}{{ citations(table.readout_evidence, lookup, prefix) }}{% endif %}</p>{% endif %}
+    {% endfor %}
+  </div>
+  {% endfor %}
+</section>
+{% endif %}
+{% endmacro %}
+
+{% macro conclusions(summary, lookup, prefix) %}
+{% if summary.conclusions or conclusion_evidence %}
+<section class="chapter research-index" id="research-conclusions">
+  <h2>研究结论与适用边界</h2>
+  {% if summary.conclusions and not conclusion_evidence %}
+  <ol class="research-findings">
+    {% for item in summary.conclusions %}
+    <li>{{ item.text }} {{ citations(item.evidence_ids, lookup, prefix) }}
+      {% if item.uncertainty %}<p class="research-references">{{ item.uncertainty }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+  {% endif %}
+  {% if conclusion_evidence %}
+  <h3>由图表与财务记录复算的结论</h3>
+  <ul class="research-findings">
+    {% for item in conclusion_evidence %}<li>{{ item.text }} {{ citations(item.evidence_ids, lookup, prefix) }}{% if item.section %} <a href="#{{ item.section }}">见逐题数据表</a>{% endif %}</li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% if summary.research_boundaries %}
+  <h3>结论适用范围</h3>
+  <ul>{% for boundary in summary.research_boundaries %}<li>{{ boundary }}</li>{% endfor %}</ul>
+  {% endif %}
+  {% if follow_up_metrics %}
+  <h3>跟踪指标</h3>
+  <dl class="research-follow-up">
+    {% for name, check in follow_up_metrics %}
+    <div><dt><strong>{{ name }}</strong></dt><dd>{{ check }}</dd></div>
+    {% endfor %}
+  </dl>
+  {% endif %}
+</section>
+{% endif %}
+{% endmacro %}

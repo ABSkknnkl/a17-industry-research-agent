@@ -470,10 +470,12 @@ def test_radar_preserves_units_per_indicator_for_a5_contract():
             "margin": {"record_id": "margin", "domain": "financials", "entity": "甲公司",
                        "metric": "net_margin", "value": 18.12, "unit": "%", "period": "2025-12-31"},
             "rd": {"record_id": "rd", "domain": "financials", "entity": "甲公司",
-                   "metric": "rd_expense", "value": 22147000000, "unit": "元", "period": "2025-12-31"},
+                   "metric": "rd_ratio", "value": 5.23, "unit": "%", "period": "2025-12-31"},
+            "gross": {"record_id": "gross", "domain": "financials", "entity": "甲公司",
+                      "metric": "gross_margin", "value": 27.5, "unit": "%", "period": "2025-12-31"},
         },
     })
-    candidate = _Candidate("财务对照", "radar", {}, ["margin", "rd"], "", "CH-05")
+    candidate = _Candidate("财务对照", "radar", {}, ["margin", "rd", "gross"], "", "CH-05")
     assert ChartGeneratorAgent()._verify_numeric_candidate(candidate, report) is None
     chart = ChartSpec(chart_id="C-RADAR", title=candidate.title, chart_type=candidate.chart_type,
                       option=candidate.option, data_contract=candidate.data_contract)

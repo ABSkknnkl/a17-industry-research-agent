@@ -1018,6 +1018,7 @@
     <div class="mode-banner">更多图表 · 本项目模板 · 多图并排 · 数据手册风</div>
 <div class="report-container">
   <!-- Cover Page -->
+  {% import "research_sections.html" as research with context %}
   {% include "cover.html" %}
 
   <!-- 目录（结构同同花顺七章二十一节） -->
@@ -1026,6 +1027,7 @@
     <p class="toc-subtitle">共 {{ view.chapters|length }} 章　·　收录图表 {{ view.charts|length }} 张　·　研究基准日 {{ view.as_of.isoformat() }}</p>
     <div class="toc-head"><span>章节</span><span class="leader"></span><span class="pg">页码</span></div>
     <ol class="toc-list">
+      {% if questions %}<li class="toc-chapter"><a href="#research-questions"><span class="t">研究问题与结论索引</span></a><span class="leader"></span><span class="pg"></span></li>{% endif %}
       {% for ch in view.chapters %}
       <li class="toc-chapter">
         <a href="#{{ ch.chapter_id }}" style="text-decoration:none;color:inherit;flex:1;display:flex;align-items:baseline;gap:8px;">
@@ -1040,6 +1042,7 @@
       </li>
       {% endfor %}
       {% endfor %}
+      {% if view.executive_summary.conclusions or conclusion_evidence %}<li class="toc-chapter"><a href="#research-conclusions"><span class="t">研究结论与适用边界</span></a><span class="leader"></span><span class="pg"></span></li>{% endif %}
       <li class="toc-chapter toc-back">
         <a href="#appendix-evidence"><span class="t">来源与证据索引</span></a>
         <span class="leader"></span><span class="pg"></span>
@@ -1054,6 +1057,7 @@
 <p class="delivery-notice" data-delivery-status="ready_with_limits" aria-label="受限草稿说明">受限草稿。<a href="#quality-audit">核验详情见附录一</a>。</p>
 {% endif %}
     {% include "executive_summary.html" %}
+  {{ research.question_index(questions, lookup, "src-") }}
 
   <!-- Chapters -->
   {% import "section.html" as sec_macro with context %}
@@ -1077,6 +1081,7 @@
   {% endfor %}
 
 
+  {{ research.conclusions(view.executive_summary, lookup, "src-") }}
   <!-- Appendix I: Data Quality & Outlier Appendix -->
   {% include "data_quality_appendix.html" %}
 
@@ -1087,7 +1092,8 @@
       <h2 class="chapter-title">附录二：原始数据穿透与事实证据索引</h2>
       <div class="chapter-divider"></div>
     </div>
-    <table class="evidence-table">
+{% if source_index_mode == 'compact' %}{% include "_source_index_compact.html" %}
+    <details class="source-index-details" id="source-index-details"><summary>展开逐条证据明细（{{ view.evidence_catalog | length }} 条）</summary>{% endif %}    <table class="evidence-table">
       <thead>
         <tr>
           <th style="width:70px;">序号</th>
@@ -1099,16 +1105,16 @@
       </thead>
       <tbody>
         {% for src in view.evidence_catalog %}
-        <tr id="src-{{ src.number }}">
+        <tr id="{% if source_index_mode == 'compact' %}{{ source_row_prefix }}{% else %}src-{% endif %}{{ src.number }}">
           <td style="text-align:center;font-weight:600;">来源{{ src.number }}</td>
-          <td><strong>{{ src.entity or view.subject }}</strong> · {{ src.metric | format_metric }}{% if src.source_url %}<br>公告：{{ src.source_url }} {{ src.source_locator or "" }}{% if src.published_at %}；披露日 {{ src.published_at }}{% endif %}{% if src.document_sha256 %}；SHA-256 {{ src.document_sha256 }}{% endif %}{% endif %}</td>
+          <td><strong>{{ src.entity or view.subject }}</strong> · {{ src.metric | format_metric }}{% if src.source_url %}<br>公告：{{ src.source_url }} {{ src.source_locator or "" }}{% if src.published_at %}；披露日 {{ src.published_at }}{% endif %}{% if src.document_sha256 %}；SHA-256 {{ src.document_sha256 }}{% endif %}{% endif %}{% if source_index_mode == 'compact' %}<br><span class="research-references">{{ src.record_id }}</span>{% endif %}</td>
           <td style="text-align:right;font-variant-numeric:tabular-nums;"><strong>{{ src.value | evidence_val(src.unit, src.metric) }}</strong></td>
           <td style="text-align:center;">{{ src.period or "-" }}</td>
           <td style="text-align:center;">{{ src.domain | format_domain }}</td>
         </tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table>{% if source_index_mode == 'compact' %}</details>{% endif %}
   </section>
 
   <!-- Disclaimer Footer -->

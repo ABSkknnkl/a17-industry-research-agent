@@ -17,6 +17,7 @@ class EvidenceRef(BaseModel):
     source_locator: str | None = None
     published_at: date | None = None
     document_sha256: str | None = None
+    segment_name: str | None = None
 
 
 class InterpretationReport(BaseModel):
@@ -28,6 +29,8 @@ class InterpretationReport(BaseModel):
     comps_matrix:dict[str,Any]|None=None
     industry_chain_segments:list[dict[str,Any]]=Field(default_factory=list)
     financial_ratios:list[dict[str,Any]]=Field(default_factory=list)
+    analysis_facts:dict[str,Any]=Field(default_factory=dict)
+    chain_analysis:dict[str,Any]|None=None
     data_quality:dict[str,Any]=Field(default_factory=dict)
     data_quality_appendix:dict[str,Any]=Field(default_factory=dict)
     warnings:list[str]=Field(default_factory=list)
@@ -76,12 +79,14 @@ class ChapterResult(BaseModel):
     run_id:str;source_report_id:str="";subject:str;as_of:date;status:str;outline_version:str="";chapters:list[ChapterDraft];warnings:list[str]=Field(default_factory=list)
 
     quality: dict[str, Any] = Field(default_factory=dict)
+    question_answers: list[dict[str, Any]] = Field(default_factory=list)
 class ChartSpec(BaseModel):
     model_config=ConfigDict(extra="ignore")
     chart_id:str;title:str;chart_type:str;status:str="ready";option:dict[str,Any]=Field(default_factory=dict);evidence_ids:list[str]=Field(default_factory=list);insight_goal:str="";recommended_chapter_id:str|None=None;footnotes:list[str]=Field(default_factory=list);svg_uri:str|None=None
     data_contract: dict[str, Any] = Field(default_factory=dict)
     figure_number:str|None=None;subtitle:str|None=None;source_line:str|None=None
     render_mode:str="echarts";image_uri:str|None=None;image_mime_type:str|None=None
+    inline_svg:str|None=None
     generation_prompt:str|None=None;generation_prompt_model:str|None=None;generation_image_model:str|None=None
     chain_template:str|None=None;chain_graph:dict[str,Any]|None=None
     # 补充视图（2026-10-17）：产业链「HTML 排版版」与主图（确定性 SVG）并存。
@@ -158,6 +163,7 @@ class EvidenceSource(BaseModel):
     number:int;record_id:str;label:str;domain:str;metric:str;entity:str|None=None;value:Any=None;unit:str|None=None;period:date|None=None
     source_url:str|None=None;source_locator:str|None=None
     published_at:date|None=None;document_sha256:str|None=None
+    period_type:str="unknown"
 
 class ReportViewModel(BaseModel):
     model_config=ConfigDict(extra="forbid")
@@ -167,6 +173,7 @@ class ReportViewModel(BaseModel):
     comps_matrix:dict[str,Any]|None=None
     quality_issues: list[dict[str, Any]] = Field(default_factory=list)
     fact_audit: dict[str, Any] = Field(default_factory=dict)
+    question_answers: list[dict[str, Any]] = Field(default_factory=list)
 class ConsistencyReport(BaseModel):
     model_config=ConfigDict(extra="forbid")
     passed:bool;issues:list[str]=Field(default_factory=list);warnings:list[str]=Field(default_factory=list);accepted_edits:int=0;rejected_edits:int=0;terminology_map:dict[str,str]=Field(default_factory=dict)

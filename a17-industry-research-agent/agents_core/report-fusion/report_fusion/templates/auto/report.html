@@ -218,7 +218,31 @@
       body { padding-top: 0; padding-bottom: 0; }
       .source-usage-details > summary { display: none; }
       .source-usage-details > .source-usage-list { display: block !important; }
+      .research-index { break-inside: auto; }
+      #research-conclusions li, .research-follow-up > div { break-inside: avoid; }
+      .appendix-section { break-before: page; }
+      #research-conclusions + .appendix-section { break-before: auto; margin-top: 6mm !important; padding-top: 3mm !important; }
+      .appendix-section .chapter-header-wrap { break-inside: avoid; }
+      .toc-page { --toc-gap: .15mm; --toc-lh: 1.2; }
+      .toc-page .toc-chapter { padding-top: .45mm; }
+      .source-index table.source-table th, .source-index table.source-table td {
+        padding: .8mm 1.2mm;
+        font-size: 8.1pt;
+        overflow-wrap: anywhere;
+      }
+      .source-index .source-text .source-full { display: none; }
+      .source-index .source-text .source-short { display: inline; }
     }
+    .source-index .source-short { display: none; }
+    .research-index h3 { margin: 4mm 0 1.5mm; }
+    .research-question { border-bottom: .5pt solid var(--rule); padding: 0 0 2mm; }
+    .research-findings li { margin-bottom: 3mm; }
+    .research-follow-up dd { margin: 0 0 2mm; }
+    .research-references, .reference-link { font-size: 8.5pt; color: var(--muted); }
+    .reference-link { white-space: nowrap; }
+    .chart-print-notes { font-size: 8.5pt; line-height: 1.35; color: var(--muted); }
+    .chart-print-notes p { margin: 0; }
+    .report-section > h3, .research-question > h3 { break-after: avoid; }
 
     p { margin: 0 0 3mm 0; text-align: left; orphans: 3; widows: 3; }
     a { color: inherit; }
@@ -304,7 +328,6 @@
          3. `.pg` 预留固定宽度 —— 页码由导出阶段二次渲染回填，预留宽度保证
             回填前后**行高完全一致**，页码不会把分页挤歪。 */
     .toc-page { page-break-after: always; break-after: page; }
-    @media print { .appendix-section { break-before: page; } }
     .toc-title { font-size: 20pt; font-weight: 700; color: var(--brand); margin: 0 0 3mm 0; border-bottom: 2pt solid var(--brand); padding-bottom: 3mm; }
     .toc-subtitle { margin: 0 0 4.5mm 0; font-size: 9.8pt; color: var(--muted); }
     /* 表头行：与条目共用同一套 flex + leader，列位天然对齐 */
@@ -312,7 +335,7 @@
     .toc-head .leader { flex: 1; }
     .toc { list-style: none; padding: 0; margin: 0; font-size: 11.6pt; line-height: var(--toc-lh); }
     .toc li { display: flex; align-items: baseline; }
-    .toc .t { white-space: nowrap; }
+    .toc .t { overflow-wrap: anywhere; }
     /* 点线引导。2026-09-18：原先 `.leader` 带 `margin-bottom: 2mm`，
        而 `align-items: baseline` 下空 span 的基线就是它的**外边距底边** ——
        于是每行高度被这 2mm 顶住，`line-height` 完全失去作用（实测把
@@ -701,6 +724,7 @@
   <a href="#source-index">来源与证据索引</a>
 </nav>
 
+{% import "research_sections.html" as research with context %}
 <main>
 
   <section class="cover cover-two_column_headline" data-page-role="cover">
@@ -711,6 +735,18 @@
     </div>
     <h1 class="cover-title">{{ view.title }}</h1>
     <div class="cover-subtitle">{{ view.executive_summary.headline }}</div>
+    {% set cards = view.executive_summary.metric_cards[:4] %}
+    {% if cards %}
+    <div class="cover-hero-band count-{{ cards|length }}">
+      {% for mc in cards %}
+      <div class="hero-fact">
+        <span class="hf-value">{{ format_card_value(mc.value, mc.unit) }}</span>
+        <span class="hf-name">{{ mc.label }}</span>
+        <span class="hf-entity">{{ mc.period or "" }} {{ research.citations(mc.evidence_ids, lookup, "source-") }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
     <div class="cover-info">
       <h3>报告信息</h3>
       <div class="cover-info-grid">
@@ -730,6 +766,8 @@
     <p class="toc-subtitle">共 {{ view.chapters|length }} 章　·　收录图表 {{ view.charts|length }} 张　·　研究基准日 {{ view.as_of.isoformat() }}</p>
     <div class="toc-head"><span>章节</span><span class="leader"></span><span class="pg">页码</span></div>
     <ol class="toc">
+      <li class="toc-chapter"><a href="#executive-summary"><span class="t">执行摘要</span></a><span class="leader"></span><span class="pg"></span></li>
+      {% if questions %}<li class="toc-chapter"><a href="#research-questions"><span class="t">研究问题与结论索引</span></a><span class="leader"></span><span class="pg"></span></li>{% endif %}
       {% for ch in view.chapters %}
       <li class="toc-chapter">
         <a href="#chapter-{{ loop.index }}" style="text-decoration:none;color:inherit"><span class="t"><span class="n">第{{ loop.index }}章</span>　{{ ch.title }}</span></a>
@@ -739,8 +777,17 @@
       <li class="toc-section"><a href="#{{ sec.section_id }}"><span class="t">{{ sec.title }}</span></a><span class="leader"></span><span class="pg"></span></li>
       {% endfor %}
       {% endfor %}
+      {% if view.executive_summary.conclusions or conclusion_evidence %}<li class="toc-chapter"><a href="#research-conclusions"><span class="t">研究结论与适用边界</span></a><span class="leader"></span><span class="pg"></span></li>{% endif %}
       <li class="toc-chapter toc-back"><a href="#source-index"><span class="t">来源与证据索引</span></a><span class="leader"></span><span class="pg"></span></li>
     </ol>
+    {% if view.charts %}
+    <h3>图表目录</h3>
+    <ol class="toc">
+      {% for chart in view.charts %}
+      <li class="toc-section"><a href="#figure-{{ chart.chart_id }}">{{ chart.figure_number }}　{{ chart.title }}</a><span class="leader"></span><span class="pg"></span></li>
+      {% endfor %}
+    </ol>
+    {% endif %}
   </section>
 
   <section class="chapter" id="executive-summary" data-page-role="narrative">
@@ -751,21 +798,11 @@
     <header class="chapter-heading"><h2>执行摘要与核心研判</h2></header>
       <p class="chapter-summary">{{ view.executive_summary.headline }}</p>
     </div>
-    {% if view.executive_summary.metric_cards %}
-    <div class="cover-hero-facts" style="margin:4mm 0">
-      {% for mc in view.executive_summary.metric_cards %}
-      <div class="hero-fact">
-        <span class="hf-value">{{ format_card_value(mc.value, mc.unit) }}</span>
-        <span class="hf-label">{{ mc.label }}</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
     <h3>核心结论与驱动</h3>
     <ul>
       {% for c in view.executive_summary.conclusions %}
       <li>{{ c.text }}
-        {% if c.evidence_ids %}<span class="citation">{{ lookup.get(c.evidence_ids[0], "") }}</span>{% endif %}
+        {{ research.citations(c.evidence_ids, lookup, "source-") }}
         <span class="reference">置信度：{{ c.confidence | format_confidence }}</span>
       </li>
       {% endfor %}
@@ -780,7 +817,16 @@
     {% endif %}
   </section>
 
-  {% set ns = namespace(fig=0) %}
+  {{ research.question_index(questions, lookup, "source-") }}
+  {% macro figure(chart) %}
+  <figure class="chart chart-area chart-size-half" id="figure-{{ chart.chart_id }}" data-chart-id="{{ chart.figure_number }}">
+    <div class="chart-svg-wrap">{{ chart.svg | safe }}</div>
+    <figcaption class="chart-print-notes">
+      {% if chart.chart_type == "industry_chain" %}<strong>{{ chart.figure_number }}　{{ chart.title }}</strong>{% endif %}
+      {% for note in chart_caption_notes(chart) %}<p>{{ note }}</p>{% endfor %}
+    </figcaption>
+  </figure>
+  {% endmacro %}
   {% for ch in view.chapters %}
   <article class="chapter" id="chapter-{{ loop.index }}" data-layout-pattern="narrative" data-page-role="narrative">
     <div class="chapter-intro">
@@ -793,6 +839,8 @@
     </div>
 
     {% for sec in ch.sections %}
+    {% set sec_charts = charts_by_section.get(sec.section_id, []) %}
+    {% set shown = namespace(count=0) %}
     <section class="report-section" id="{{ sec.section_id }}">
       <h3>{{ sec.title }}</h3>
       {% if sec.key_points %}
@@ -801,14 +849,19 @@
       </ul>
       {% endif %}
       {% for para in sec.paragraphs %}
-      <p>{{ para.text }}
-        {% if para.evidence_ids %}<span class="citation">{{ lookup.get(para.evidence_ids[0], "") }}</span>{% endif %}
+      <p id="{{ para.paragraph_id }}">{{ para.text }}
+        {{ research.citations(para.evidence_ids, lookup, "source-") }}
       </p>
+      {% set chart = sec_charts[shown.count] if shown.count < sec_charts|length else none %}
+      {% if chart and mentions_figure(para.text, chart) %}
+        {{ figure(chart) }}
+        {% set shown.count = shown.count + 1 %}
+      {% endif %}
       {% endfor %}
 
       {% if sec.metric_cards %}
       <ul class="section-metrics">
-        {% for mc in sec.metric_cards %}<li><strong>{{ mc.label }}</strong>：{{ format_card_value(mc.value, mc.unit) }}（{{ mc.period or '期间见证据' }}）</li>{% endfor %}
+        {% for mc in sec.metric_cards %}<li><strong>{{ mc.label }}</strong>：{{ format_card_value(mc.value, mc.unit) }}（{{ mc.period or '期间见证据' }}） {{ research.citations(mc.evidence_ids, lookup, "source-") }}</li>{% endfor %}
       </ul>
       {% endif %}
       {% if sec.comparison_table and sec.comparison_table.columns %}
@@ -817,21 +870,9 @@
         <tbody>{% for row in sec.comparison_table.rows %}<tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
       </table>
       {% endif %}
-      {% for callout in sec.callouts %}<aside class="section-callout"><strong>{{ callout.title }}</strong><p>{{ callout.text }}</p></aside>{% endfor %}
-      {% set sec_charts = charts_by_section.get(sec.section_id, []) %}
-      {% for chart in sec_charts %}
-      {% set ns.fig = ns.fig + 1 %}
-      <figure class="chart chart-area chart-size-half" data-chart-id="{{ chart.figure_number or ('图' ~ ns.fig) }}">
-        <div class="figure-heading sr-only" style="display:none">{{ chart.figure_number or ("图" ~ ns.fig) }}　{{ chart.title }}</div>
-        <div class="chart-svg-wrap">{{ chart.svg | safe }}</div>
-        <figcaption style="display:none">
-          {% if chart.insight_goal %}<div class="chart-goal">研判焦点：{{ chart.insight_goal }}</div>{% endif %}
-          {% set raw_src = chart.source_line or "同花顺问财、企业财报与行业公开数据" %}
-          {% set clean_src = raw_src | replace("数据来源：", "") | replace("数据来源:", "") | trim %}
-          <div class="chart-source">数据来源：{{ clean_src }}</div>
-        </figcaption>
-        <div class="chart-print-notes">{% if chart.source_line %}<p>{{ chart.source_line }}</p>{% endif %}{% for note in chart.footnotes %}<p>{{ note }}</p>{% endfor %}</div>
-      </figure>
+      {% for callout in sec.callouts %}<aside class="section-callout"><strong>{{ callout.title }}</strong><p>{{ callout.text }} {{ research.citations(callout.evidence_ids, lookup, "source-") }}</p></aside>{% endfor %}
+      {% for chart in sec_charts[shown.count:] %}
+        {{ figure(chart) }}
       {% endfor %}
 
       {% if sec.uncertainties %}
@@ -842,12 +883,14 @@
   </article>
   {% endfor %}
 
+  {{ research.conclusions(view.executive_summary, lookup, "source-") }}
   <!-- Appendix I: Data Quality & Outlier Appendix -->
   {% include "data_quality_appendix.html" %}
 
   <section class="source-index chapter" id="source-index">
     <div class="chapter-heading"><span class="chapter-number">S</span><span class="chapter-pill" style="display:none">APPENDIX II</span><h2>附录二：原始数据穿透与事实证据索引</h2></div>
-    <div class="table-block">
+{% if source_index_mode == 'compact' %}{% include "_source_index_compact.html" %}
+    <details class="source-index-details" id="source-index-details"><summary>展开逐条证据明细（{{ view.evidence_catalog | length }} 条）</summary>{% endif %}    <div class="table-block">
       <table class="data-sheet source-table">
         <caption><span class="table-section-title">表附-1 · 来源与证据索引</span></caption>
         <thead>
@@ -861,17 +904,27 @@
         </thead>
         <tbody>
           {% for s in view.evidence_catalog %}
-          <tr id="source-{{ s.number }}">
+          <tr id="{% if source_index_mode == 'compact' %}{{ source_row_prefix }}{% else %}source-{% endif %}{{ s.number }}">
             <td style="text-align: center; font-weight: 600;">来源{{ s.number }}</td>
-            <td><strong>{{ s.entity or view.subject }}</strong> · {{ s.metric | format_metric }}{% if s.source_url %}<br>公告：{{ s.source_url }} {{ s.source_locator or "" }}{% if s.published_at %}；披露日 {{ s.published_at }}{% endif %}{% if s.document_sha256 %}；SHA-256 {{ s.document_sha256 }}{% endif %}{% endif %}</td>
+          <td><strong>{{ s.entity or view.subject }}</strong> · {{ s.metric | format_metric }}
+              {% if s.source_url | evidence_href %}<br><a href="{{ s.source_url | evidence_href }}">查看原文</a>{% endif %}
+              {% if s.source_locator %} {{ s.source_locator }}{% endif %}
+              {% if s.published_at %} · 披露日 {{ s.published_at }}{% endif %}
+              {% if s.document_sha256 %}<br><span class="research-references">SHA-256 {{ s.document_sha256 }}</span>{% endif %}
+              <br><span class="research-references">{{ s.record_id }}</span>
+            </td>
+            {% if s.domain in ("events", "reports", "news") and s.value is string and s.source_url | evidence_href %}
+            <td class="source-text"><span class="source-full">{{ s.value | evidence_val(s.unit, s.metric) }}</span><span class="source-short">{{ s.value | truncate(52, true, "…") }}</span></td>
+            {% else %}
             <td style="text-align: right; font-variant-numeric: tabular-nums; font-weight: 600;">{{ s.value | evidence_val(s.unit, s.metric) }}</td>
-            <td style="text-align: center;">{{ s.period or "-" }}</td>
+            {% endif %}
+            <td style="text-align: center;">{{ s.period or "-" }}{% if s.period_type | format_period_kind %}<br>{{ s.period_type | format_period_kind }}{% endif %}</td>
             <td style="text-align: center;"><span class="domain-tag">{{ s.domain | format_domain }}</span></td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-    </div>
+    </div>{% if source_index_mode == 'compact' %}</details>{% endif %}
     <p class="cover-disclosure" style="margin-top:6mm">{{ view.disclaimer }}</p>
   </section>
 

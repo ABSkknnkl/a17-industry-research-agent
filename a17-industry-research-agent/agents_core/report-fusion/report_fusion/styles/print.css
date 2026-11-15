@@ -58,12 +58,8 @@
     padding-bottom: 24px !important;
     margin-bottom: 0 !important;
   }
-  .chapter-article {
-    page-break-before: always;
-  }
   .executive-summary-page {
     page-break-before: always;
-    page-break-after: always;
     margin: 0 !important;
     padding-bottom: 0 !important;
     border-bottom: 0 !important;
@@ -80,7 +76,7 @@
     page-break-inside: avoid;
     break-inside: avoid;
   }
-  .chart-figure, .comparison-table-wrapper, .callout-box {
+  .chart-figure, .callout-box {
     page-break-inside: avoid;
     break-inside: avoid;
   }

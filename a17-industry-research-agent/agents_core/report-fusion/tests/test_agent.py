@@ -213,7 +213,7 @@ def test_chart_reference_normalization_and_data_quality_appendix(tmp_path):
 
     # Verify chart reference normalization
     assert "[CHART-01]" not in md_text
-    assert "详见 图表 1 及分析" in md_text
+    assert "详见 图表 1 及分析" not in md_text
 
     # Verify Appendix I & II in Markdown
     assert "## 附录一：数据质量、异常值剔除与口径说明附录" in md_text
@@ -327,3 +327,31 @@ def test_editorial_failure_does_not_include_raw_exception_in_output(tmp_path):
         ReportFusionRequest(report=report,chapters=chapters,options=FusionOptions(formats=['markdown']))))
     assert secret not in result.model_dump_json()
     assert secret not in (Path(result.artifact_dir)/'events.jsonl').read_text()
+
+
+@pytest.mark.parametrize("chart_mode, source_anchor", [("auto", "source-1"), ("rich", "src-1")])
+def test_question_and_conclusion_indices_use_final_report_evidence(tmp_path, chart_mode, source_anchor):
+    report, chapters = inputs()
+    chapters.question_answers = [{
+        "question_id": "Q-1",
+        "text": "本期市场规模如何？",
+        "section_id": "SEC-01-01",
+        "paragraph_ids": ["P-1-1", "removed-paragraph"],
+        "evidence_record_ids": ["R1", "removed-evidence"],
+        "chart_ids": ["removed-chart"],
+    }]
+    result = asyncio.run(ReportFusionAgent(settings=Settings(output_dir=tmp_path)).run(
+        ReportFusionRequest(report=report, chapters=chapters,
+                            options=FusionOptions(formats=["markdown", "html"],
+                                                  chart_mode=chart_mode, enable_editorial_llm=False))))
+    root = Path(result.artifact_dir)
+    question, = json.loads((root / "report_view.json").read_text())["question_answers"]
+    assert question["paragraph_ids"] == ["P-1-1"]
+    assert question["evidence_record_ids"] == ["R1"]
+    assert question["chart_ids"] == []
+    html = (root / "report.html").read_text()
+    assert 'href="#research-questions"' in html
+    assert 'href="#research-conclusions"' in html
+    assert f'href="#{source_anchor}">[1]</a>' in html
+    assert 'id="SEC-01-01"' in html
+    assert "本期市场规模如何？" in (root / "report.md").read_text()

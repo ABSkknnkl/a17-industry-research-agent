@@ -113,7 +113,7 @@
     {% if sec_charts %}
     <div class="chart-column rich-chart-grid">
       {% for chart in sec_charts %}
-      <figure class="chart-figure chart-block">
+      <figure class="chart-figure chart-block" id="figure-{{ chart.chart_id }}">
         <div class="chart-figure-header">
           <span class="figure-num-badge">{{ chart.figure_number or "图表" }}</span>
           <span class="figure-title-text">{{ chart.title }}</span>

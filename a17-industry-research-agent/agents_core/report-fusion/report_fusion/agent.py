@@ -1,10 +1,13 @@
 """Editorial fusion, consistency checks and multi-format export."""
 from __future__ import annotations
-from agents_core.financial_semantics import quantity_issues, metric_family, measurement_period, retain_supported_claims, verified_calculations
+from agents_core.financial_semantics import (
+    financial_calculation_rows, measurement_period, metric_family, money_to_yuan, quantity_issues,
+    covered_data_gap_filter, retain_supported_claims, verified_calculations,
+)
 from agents_core.context_budget import ContextBudgetExceeded, serialize_context
 from collections.abc import Awaitable,Callable
 from datetime import datetime
-import hashlib,json,re,secrets
+import hashlib,json,math,re,secrets
 from pathlib import Path
 from typing import Any
 
@@ -51,17 +54,23 @@ def _rewrite(artifact_dir: Path | None, name: str, data: bytes) -> None:
 def _audit_numeric_components(chapters: list[Any], summary: Any, request: Any, *, sanitize: bool = False) -> list[dict]:
     issues = []
     index = request.report.evidence_index
+    ratios = financial_calculation_rows(request.report.financial_ratios, request.report.comps_matrix)
+    comparisons = request.report.analysis_facts.get("comparisons") or []
     def local_text(text: str, ids: list[str], **qualifiers) -> str:
         refs = [index[e] for e in ids if e in index]
-        refs.extend(verified_calculations(request.report.financial_ratios, index, ids))
-        return retain_supported_claims(text, lambda clause: not quantity_issues(
-            clause, refs, universe=list(index.values()), **qualifiers,
-        ))
+        refs.extend(verified_calculations(ratios, index, ids))
+        def supported(claim: str) -> bool:
+            return not quantity_issues(
+                claim, refs, universe=list(index.values()), comparisons=comparisons, **qualifiers,
+            )
+
+        retained = retain_supported_claims(text, supported)
+        return retained if supported(retained) else ""
     def audit(text: str, ids: list[str], location: str, **qualifiers) -> list[dict]:
         refs = [index[e] for e in ids if e in index]
-        refs.extend(verified_calculations(request.report.financial_ratios, index, ids))
+        refs.extend(verified_calculations(ratios, index, ids))
         found = quantity_issues(text, refs,
-            universe=list(index.values()), location=location, **qualifiers)
+            universe=list(index.values()), location=location, comparisons=comparisons, **qualifiers)
         if sanitize:
             for issue in found:
                 issue.update(original=text, disposition="isolated")
@@ -72,15 +81,6 @@ def _audit_numeric_components(chapters: list[Any], summary: Any, request: Any, *
         if audit(ch.summary, ch_ids, ch.chapter_id + ".summary") and sanitize:
             ch.summary = local_text(ch.summary, ch_ids)
         for sec in ch.sections:
-            sec_ids = list(dict.fromkeys(e for p in sec.paragraphs for e in p.evidence_ids))
-            new_points = []
-            for i, point in enumerate(sec.key_points):
-                bad = audit(point, sec_ids, f"{sec.section_id}.key_points[{i}]")
-                retained = local_text(point, sec_ids) if bad and sanitize else point
-                if retained:
-                    new_points.append(retained)
-            if sanitize:
-                sec.key_points = new_points
             for para in sec.paragraphs:
                 bad = audit(para.text, para.evidence_ids, para.paragraph_id,
                     assumption_note=para.assumption_note, kind=para.kind)
@@ -99,6 +99,15 @@ def _audit_numeric_components(chapters: list[Any], summary: Any, request: Any, *
                     })
             if sanitize:
                 sec.paragraphs = [para for para in sec.paragraphs if para.text.strip()]
+            sec_ids = list(dict.fromkeys(e for p in sec.paragraphs for e in p.evidence_ids))
+            new_points = []
+            for i, point in enumerate(sec.key_points):
+                bad = audit(point, sec_ids, f"{sec.section_id}.key_points[{i}]")
+                retained = local_text(point, sec_ids) if bad and sanitize else point
+                if retained:
+                    new_points.append(retained)
+            if sanitize:
+                sec.key_points = new_points
             cards = []
             for i, card in enumerate(sec.metric_cards):
                 bad = audit(f"{card.label} {card.period or ''} {card.value}{card.unit or ''}", card.evidence_ids, f"{sec.section_id}.cards[{i}]")
@@ -177,7 +186,219 @@ def _audit_numeric_components(chapters: list[Any], summary: Any, request: Any, *
     return issues
 
 
-def _chart_contract_issues(chart: Any, index: dict[str, Any]) -> list[str]:
+def _annual_financial_observations(index: dict, companies: set[str], years: list[int]) -> dict:
+    observations = {}
+    for rid, ref in index.items():
+        period = measurement_period(ref)
+        if (ref.domain != "financials" or not period or period[2] != "annual" or ref.entity not in companies
+                or (years and not min(years) <= period[1].year <= max(years))
+                or ref.metric not in {"revenue", "gross_margin", "operating_cash_flow", "rd_expense", "parent_net_profit"}
+                or any("conflict" in issue for issue in ref.issues)):
+            continue
+        if ref.metric == "gross_margin":
+            value = ref.value if ref.unit == "%" and type(ref.value) in (int, float) else None
+        else:
+            amount = money_to_yuan(ref.value, ref.unit)
+            value = amount if amount is not None and amount.is_finite() else None
+        if value is not None and math.isfinite(value):
+            observations.setdefault((ref.entity, ref.scope, ref.currency, period[1].year, ref.metric), {})[value] = rid
+    return {key: next(iter(values.items())) for key, values in observations.items() if len(values) == 1}
+
+
+def _annual_cash_ratios(question: str, index: dict, existing_rows: list[dict]) -> list:
+    years = [int(year) for year in re.findall(r"20\d{2}", question)]
+    companies = {ref.entity for ref in index.values() if ref.entity and ref.entity in question}
+    observations = _annual_financial_observations(index, companies, years)
+    candidates = []
+    for key, (_, cash_id) in observations.items():
+        company, scope, currency, _, metric = key
+        if metric != "operating_cash_flow" or scope != "consolidated" or currency != "CNY":
+            continue
+        if net_profit := observations.get((*key[:-1], "parent_net_profit")):
+            candidates.append({"company": company, "calculations": {"cash_to_net_profit": {
+                "formula": "operating_cash_flow/parent_net_profit",
+                "input_record_ids": [cash_id, net_profit[1]],
+            }}})
+    ratios = verified_calculations([*existing_rows, *candidates], index, list(index))
+    by_company_year = {}
+    for ratio in ratios:
+        entity, period = ratio["entity"], ratio["period"]
+        year = int(period[:4])
+        if (ratio["metric"] != "cash_to_net_profit" or ratio["period_type"] != "annual" or entity not in companies
+                or ratio["scope"] != "consolidated" or ratio["currency"] != "CNY"
+                or (years and not min(years) <= year <= max(years))):
+            continue
+        ids = ratio["record_id"].removeprefix("derived:").split("/")
+        operands = {observations.get((entity, "consolidated", "CNY", year, metric), (None, None))[1]
+                    for metric in ("operating_cash_flow", "parent_net_profit")}
+        if set(ids) != operands:
+            continue
+        by_company_year.setdefault((entity, year), {})[ratio["value"]] = ids
+    return [([entity, str(year), f"{value:.2f} 倍"], ids)
+            for (entity, year), values in sorted(by_company_year.items()) if len(values) == 1
+            for value, ids in values.items()]
+
+
+def _revenue_cash_divergence(question: str, index: dict) -> list:
+    years = [int(y) for y in re.findall(r"20\d{2}", question)]
+    if len(years) < 2:
+        return []
+    companies = {ref.entity for ref in index.values() if ref.entity and ref.entity in question}
+    observations = _annual_financial_observations(index, companies, years)
+    rows = []
+    for entity, scope, currency, year, metric in sorted(observations):
+        if metric != "revenue" or year == min(years):
+            continue
+        series = [observations.get((entity, scope, currency, y, m))
+                  for m in ("revenue", "operating_cash_flow") for y in (year - 1, year)]
+        if any(item is None for item in series):
+            continue
+        values, refs = zip(*series)
+        prior_sales, current_sales, prior_cash, current_cash = values
+        if current_sales > prior_sales and current_cash <= prior_cash:
+            sales_from, sales_to, cash_from, cash_to = (f"{v / 100_000_000:,.2f}" for v in values)
+            rows.append(([entity, str(year), f"{sales_from} → {sales_to}", f"{cash_from} → {cash_to}", currency, scope], list(refs)))
+    return rows
+
+
+def _financial_question_tables(question: str, index: dict, groups: dict) -> list[dict]:
+    if not all(term in question for term in ("毛利率", "现金流")):
+        return []
+    named_companies = {ref.entity for ref in index.values() if ref.entity and ref.entity in question}
+    compare_groups = "研发" in question and "分组" in question and bool(groups)
+    selected_groups = {
+        name: set(info.get("members") or []) for name, info in groups.items()
+        if isinstance(info, dict) and (name in question or named_companies.intersection(info.get("members") or []))
+    } if compare_groups else {}
+    # Some questions refer to an upstream group by its industry role.
+    if compare_groups:
+        selected_groups.update({name: set(info.get("members") or []) for name, info in groups.items()
+                                if isinstance(info, dict) and name.removesuffix("组") in question})
+    if compare_groups and len(selected_groups) >= 2:
+        companies = set.union(*selected_groups.values())
+    elif not compare_groups and ("营业收入" in question or "营收" in question):
+        companies = named_companies
+    else:
+        return []
+    years = [int(y) for y in re.findall(r"20\d{2}", question)]
+    observations = _annual_financial_observations(index, companies, years)
+    periods = sorted({year for _, scope, currency, year, _ in observations
+                      if scope == "consolidated" and currency == "CNY"})
+    if not periods:
+        return []
+    rows = []
+    if selected_groups:
+        latest_margins = []
+        for year in periods:
+            for group, members in selected_groups.items():
+                cells, refs = [group, str(year), "、".join(sorted(members))], []
+                for metric in ("gross_margin", "operating_cash_flow", "rd_expense"):
+                    pairs = [observations.get((name, "consolidated", "CNY", year, metric))
+                             for name in sorted(members)]
+                    if any(pair is None for pair in pairs) or not pairs:
+                        cells.append("—")
+                        continue
+                    amounts, ids = zip(*pairs)
+                    if metric == "gross_margin":
+                        cells.append(f"{sum(amounts) / len(amounts):.2f}%（{min(amounts):.2f}%–{max(amounts):.2f}%）")
+                        if year == periods[-1]:
+                            latest_margins.append((group, sum(amounts) / len(amounts),
+                                                   max(amounts) - min(amounts), ids))
+                    elif metric == "operating_cash_flow":
+                        cells.append(f"{sum(amounts) / len(amounts) / 100_000_000:,.2f}")
+                    else:
+                        sales = [observations.get((name, "consolidated", "CNY", year, "revenue"))
+                                 for name in sorted(members)]
+                        if not all(pair and pair[0] > 0 for pair in sales):
+                            cells.append("—")
+                            continue
+                        values, sales_ids = zip(*sales)
+                        cells.append(f"{sum(amounts) / sum(values) * 100:.2f}%")
+                        refs.extend(sales_ids)
+                    refs.extend(ids)
+                if refs:
+                    rows.append((cells, refs))
+        readout, readout_evidence = "", []
+        if len(latest_margins) == 2:
+            (first, first_mean, first_range, first_ids), (second, second_mean, second_range, second_ids) = latest_margins
+            difference = abs(first_mean - second_mean)
+            if difference < min(first_range, second_range):
+                readout = (f"{periods[-1]} 年两组样本毛利率均值相差 {difference:.2f} 个百分点，"
+                           f"{first}与{second}的组内极差分别为 {first_range:.2f} 和 {second_range:.2f} 个百分点。"
+                           "组内差异更大，评价企业盈利能力应优先与同一环节的企业比较。")
+                readout_evidence = [*first_ids, *second_ids]
+        return [{
+            "title": "同年度分组对照（合并报表）",
+            "columns": ["组别", "年度", "样本", "毛利率均值（区间）", "经营现金流均值（亿元）", "研发费用率（加权）"],
+            "rows": rows,
+            "note": "毛利率和经营现金流按组内公司等权。研发费用率为组内研发费用合计除以营业收入合计。组别代表研究样本，集团合并财务包含其他业务。",
+            "readout": readout,
+            "readout_evidence": readout_evidence,
+        }] if rows else []
+    for company in sorted(companies):
+        for year in periods:
+            cells, refs = [company, str(year)], []
+            for metric in ("revenue", "gross_margin", "operating_cash_flow"):
+                pair = observations.get((company, "consolidated", "CNY", year, metric))
+                if pair is None:
+                    cells.append("—")
+                    continue
+                value, rid = pair
+                cells.append(f"{value:.2f}%" if metric == "gross_margin" else f"{value / 100_000_000:,.2f}")
+                refs.append(rid)
+            if refs:
+                rows.append((cells, refs))
+    return [{"title": "年度收入、毛利率与经营现金流（合并报表）",
+             "columns": ["公司", "年度", "营业收入（亿元）", "毛利率", "经营现金流（亿元）"],
+             "rows": rows}] if rows else []
+
+
+def _derived_chart_value(point: dict, index: dict, chart: Any, groups: dict) -> float:
+    ids = point.get("source_record_ids") or []
+    if (len(ids) != len(set(ids)) or not set(ids) <= set(chart.evidence_ids)
+            or point["record_id"] not in ids or point.get("unit") != "%"):
+        raise ValueError("derived evidence")
+    refs = [index[rid] for rid in ids]
+    if any("period_conflict" in getattr(ref, "issues", []) for ref in refs):
+        raise ValueError("period conflict")
+    if point.get("calculation") == "yoy_percent":
+        current, previous = refs
+        if (ids[0] != point["record_id"] or current.metric != previous.metric
+                or current.entity != previous.entity or current.scope != previous.scope
+                or current.currency != previous.currency or current.unit != previous.unit
+                or current.period_type != previous.period_type
+                or current.period_type not in {"annual", "ytd_month"}
+                or any(ref.period is None or (ref.period.month, ref.period.day) != (12, 31)
+                       or ref.period_start is None or ref.period_start.isoformat() != f"{ref.period.year}-01-01"
+                       for ref in refs)
+                or current.period.year != previous.period.year + 1 or float(previous.value) <= 0):
+            raise ValueError("year-over-year basis")
+        return (float(current.value) / float(previous.value) - 1) * 100
+
+    group = groups.get(point.get("entity")) or {}
+    members = set(group.get("members") or [])
+    expenses = [ref for ref in refs if ref.metric == "rd_expense"]
+    revenues = [ref for ref in refs if ref.metric == "revenue"]
+    if (point.get("series") != point.get("entity") or not members
+            or len(refs) != 2 * len(members)
+            or {ref.entity for ref in expenses} != members or {ref.entity for ref in revenues} != members
+            or point["record_id"] not in {ref.record_id for ref in expenses}
+            or len({(ref.scope, ref.currency) for ref in refs}) != 1
+            or any(ref.domain != "financials" or ref.period_type != "annual"
+                   or str(ref.period) != point.get("period")
+                   or str(ref.period_start) != point.get("period_start") for ref in refs)):
+        raise ValueError("research expense ratio basis")
+    amounts = {ref.record_id: money_to_yuan(ref.value, ref.unit) for ref in refs}
+    if any(value is None or not value.is_finite() for value in amounts.values()):
+        raise ValueError("research expense ratio units")
+    numerator = sum(amounts[ref.record_id] for ref in expenses)
+    denominator = sum(amounts[ref.record_id] for ref in revenues)
+    if denominator <= 0:
+        raise ValueError("research expense ratio denominator")
+    return float(numerator / denominator * 100)
+
+
+def _chart_contract_issues(chart: Any, index: dict[str, Any], groups: dict | None = None) -> list[str]:
     if getattr(chart, "chart_type", "") == "industry_chain":
         return []
     contract = getattr(chart, "data_contract", {}) or {}
@@ -189,12 +410,17 @@ def _chart_contract_issues(chart: Any, index: dict[str, Any]) -> list[str]:
     rendered_series = source_option.get("series", [])
     series_order = contract.get("series_order") or list(dict.fromkeys(p.get("series") for p in points))
     for point in points:
+        is_group_ratio = point.get("metric") == "rd_ratio_derived"
+        is_gap = point.get("value") is None and point.get("insufficient") is True
         ref = index.get(point.get("record_id"))
-        if ref is None:
+        if ref is None and not is_gap:
             problems.append("数据点证据不存在")
             continue
-        if (point.get("entity") != ref.entity or metric_family(str(point.get("metric"))) != metric_family(ref.metric)
+        if not (is_group_ratio or is_gap) and (
+                point.get("entity") != ref.entity or metric_family(str(point.get("metric"))) != metric_family(ref.metric)
                 or point.get("period") != (str(ref.period) if ref.period else None)
+                or (point.get("period_type") and point["period_type"] != getattr(ref, "period_type", None))
+                or (point.get("period_start") and point["period_start"] != str(getattr(ref, "period_start", None)))
                 or point.get("scope", "consolidated") != ref.scope
                 or point.get("currency", "CNY") != ref.currency):
             problems.append("数据点实体、指标或期间与证据不符")
@@ -236,17 +462,31 @@ def _chart_contract_issues(chart: Any, index: dict[str, Any]) -> list[str]:
                 raise ValueError("point value")
         except (ValueError, KeyError, TypeError, IndexError):
             problems.append("数据点与实际类别、系列或坐标位置不一致")
+        if is_gap:
+            continue
         scales = {"元": 1, "万元": 1e4, "亿元": 1e8, "万亿元": 1e12}
         try:
             unit = point.get("unit")
-            expected = float(ref.value)
-            if unit in scales and ref.unit in scales:
-                expected *= scales[ref.unit] / scales[unit]
-            elif unit != ref.unit:
-                raise ValueError("unit mismatch")
+            calculation = point.get("calculation")
+            if is_group_ratio or calculation == "yoy_percent":
+                expected = _derived_chart_value(point, index, chart, groups or {})
+            else:
+                if calculation:
+                    raise ValueError("unknown calculation")
+                expected = float(ref.value)
+                if unit in scales and ref.unit in scales:
+                    expected *= scales[ref.unit] / scales[unit]
+                elif unit == "万辆" and ref.unit == "辆" and point.get("source_unit") == "辆" and point.get("unit_scale") == 10000:
+                    expected /= 10000
+                elif unit != ref.unit:
+                    raise ValueError("unit mismatch")
             value = float(point["value"])
-            digits = len(str(point["value"]).split(".")[1]) if "." in str(point["value"]) else 0
-            if abs(value - expected) > 0.5 * 10 ** -digits + 1e-9:
+            digits = len(str(point["value"]).partition(".")[2].split("e")[0])
+            if is_group_ratio:
+                digits = 4
+            elif calculation == "yoy_percent" or unit == "万辆":
+                digits = 6
+            if not math.isfinite(expected) or not math.isfinite(value) or abs(value - expected) > 0.5 * 10 ** -digits + 1e-9:
                 problems.append("图中数值无法由证据按声明单位换算")
         except (TypeError, ValueError, KeyError):
             problems.append("数据点数值或单位无可验证定义")
@@ -301,12 +541,26 @@ def _check_final_view(
         blocking.append("报告正文没有可交付的核验段落")
     allowed = set(request.report.evidence_index)
     appendix = request.report.data_quality_appendix or {}
+    blocked_requirement_ids: set[str] = set()
     for cell in appendix.get("requested_requirement_coverage") or []:
-        if cell.get("hard") and not cell.get("passed") and not str(cell.get("requirement_id", "")).startswith("annual_"):
+        # 必答缺口按需求的实际 hard 属性阻断；不再按 annual_ 前缀豁免。
+        # 可选需求（hard=False）保持可放行，比较基期规则由上游 requirement 决定。
+        requirement_id = str(cell.get("requirement_id", "") or "")
+        if cell.get("hard") and not cell.get("passed"):
+            if requirement_id and requirement_id in blocked_requirement_ids:
+                continue
+            if requirement_id:
+                blocked_requirement_ids.add(requirement_id)
             blocking.append(f"必需研究数据缺口：{cell.get('label', cell.get('requirement_id'))}")
     required_cells = appendix.get("requested_financial_coverage") or appendix.get("sample_info", {}).get("requested_financial_coverage") or []
     for cell in required_cells:
         if not cell.get("passed"):
+            requirement_id = str(cell.get("requirement_id", "") or "")
+            # 同一缺口已在必答覆盖检查登记时按 requirement_id 去重。
+            if requirement_id and requirement_id in blocked_requirement_ids:
+                continue
+            if requirement_id:
+                blocked_requirement_ids.add(requirement_id)
             blocking.append(f"指定年度指标缺口：{cell.get('label', cell.get('requirement_id'))}")
 
     def check_references(value: Any, location: str) -> None:
@@ -359,9 +613,10 @@ def _check_final_view(
                 if cid not in embedded_map:
                     warnings.append(f"{getattr(section, 'section_id', '?')} 引用的图表 {cid} 未就绪")
 
+    groups = (request.report.chain_analysis or {}).get("groups") or {}
     for declared in (request.charts.charts if request.charts else []):
         if getattr(declared, "status", "") == "ready":
-            blocking.extend(f"{getattr(declared, 'chart_id', '?')} {p}" for p in _chart_contract_issues(declared, request.report.evidence_index))
+            blocking.extend(f"{getattr(declared, 'chart_id', '?')} {p}" for p in _chart_contract_issues(declared, request.report.evidence_index, groups))
             blocking.extend(f"{getattr(declared, 'chart_id', '?')} {p}" for p in _chart_comparability_issues(declared, request.report.evidence_index))
     for chart in embedded:
         cid = getattr(chart, "chart_id", "?")
@@ -400,6 +655,23 @@ def _check_final_view(
                 pass
     numeric_issues = _audit_numeric_components(chapters, summary, request)
     blocking.extend(f"{issue['location']} 数值断言无匹配证据：{issue['claim']}" for issue in numeric_issues)
+    # P3：读取当前版本 A4 content_audit 的跨章冲突，纳入验收记录但只告警。
+    # 最终正文的错数/错期/错口径仍由上面的 numeric_issues 与证据门禁阻断。
+    seen_cross_chapter_conflicts: set[tuple[str, str]] = set()
+    for chapter in chapters:
+        for entry in getattr(chapter, "content_audit", []) or []:
+            if not isinstance(entry, dict) or entry.get("code") != "cross_chapter_claim_conflict":
+                continue
+            key = (str(entry.get("claim") or ""), str(entry.get("location") or ""))
+            if key in seen_cross_chapter_conflicts:
+                continue
+            seen_cross_chapter_conflicts.add(key)
+            paragraphs = [str(pid) for pid in (entry.get("paragraph_ids") or []) if str(pid)]
+            warnings.append(
+                "跨章结论冲突（告警，不阻断）："
+                f"{entry.get('claim') or '同键结论数值不一致'}"
+                f"；涉及段落 {', '.join(paragraphs) or entry.get('location') or '未标注'}"
+            )
     return list(dict.fromkeys(blocking)), list(dict.fromkeys(warnings))
 
 
@@ -452,7 +724,9 @@ SYSTEM_PROMPT="""你是行业研究报告总编辑。只能编辑已有内容，
    - 映射后的目标词（value）必须是极简短的专有名词（不超过 8 个字），严禁包含逗号、句号、冒号、分号或任何解释性描述语句；如果不需别名归一，保持 terminology_map 为空字典 {}。
 2. chapter_transitions 是 chapter_id 到承上启下过渡句的映射；
 3. paragraph_edits 是 paragraph_id 到 {text, evidence_ids} 的微调映射（正文各章节内容已完成严格证据核对，通常必须保持为空字典 {}。严禁无故大段重写！保留已有证据支撑的比较、业务解释和判断边界，避免把解释压缩成数字复述。严禁改动任何数字、严禁增加任何未在原文中出现的数字，包括股票代码如 002085、年份、列表序号等；必须 100% 原样保留所有数字与精确字面值；必须完全复用原段落的 evidence_ids，严禁伪造不存在的证据编号）；
-4. 所有证据ID必须来自输入；所有数字必须已存在于输入。"""
+4. 所有证据ID必须来自输入；所有数字必须已存在于输入。
+5. 摘要先写一句有内容的全篇判断，再提炼三至五条互不重复的发现，优先覆盖用户的问题。每条结论写清主体、比较维度和研究含义，引用具体证据。不得把单一序列的不同时点或章节摘要依次抄成结论。缺少充分的原因证据时，区分实际观察与待验证解释。摘要和结论以定性归纳为主；保留必要数字时，每句只写一个明确主体、指标和报告期的观测。
+6. 用结构化覆盖结果校对研究边界，禁止根据部分章节的检索内容推断全报告缺数据。覆盖通过的年报、分产品项目和报告期均不得列为缺失。可以说明这些资料还不足以回答的因果机制、未覆盖的企业或期间。把内部状态词改成自然语言。"""
 
 def _sha(data:bytes)->str:return hashlib.sha256(data).hexdigest()
 def _numbers(value:object)->set[str]:return set(NUMBER_RE.findall(json.dumps(value,ensure_ascii=False,default=str)))
@@ -627,6 +901,8 @@ class ReportFusionAgent:
     async def _repair_final_paragraphs(self, chapters, request, issues, record) -> None:
         """One bounded call for failed paragraphs, with local citations and a full recheck."""
         index = request.report.evidence_index
+        ratios = financial_calculation_rows(request.report.financial_ratios, request.report.comps_matrix)
+        comparisons = request.report.analysis_facts.get("comparisons") or []
         by_location: dict[str, list[dict]] = {}
         for issue in issues:
             by_location.setdefault(issue["location"], []).append(issue)
@@ -667,11 +943,11 @@ class ReportFusionAgent:
             if not isinstance(proposed, str) or not proposed.strip() or proposed.strip() == paragraph.text:
                 continue
             evidence = list(refs.values())
-            evidence.extend(verified_calculations(request.report.financial_ratios, index, list(refs)))
+            evidence.extend(verified_calculations(ratios, index, list(refs)))
 
             def supported(text: str) -> bool:
                 return not quantity_issues(text, evidence, universe=list(index.values()),
-                    assumption_note=paragraph.assumption_note, kind=paragraph.kind)
+                    assumption_note=paragraph.assumption_note, kind=paragraph.kind, comparisons=comparisons)
 
             retained = retain_supported_claims(paragraph.text, supported)
             if not supported(proposed) or (retained and retained not in proposed):
@@ -721,7 +997,10 @@ class ReportFusionAgent:
             await record("skill_linter_checked", passed=not issues, issues=issues)
         else:
             await record("skill_linter_checked", passed=not issues, issues=issues)
-        embedded=self._embed_charts(request,chapters,warnings)
+        groups = (request.report.chain_analysis or {}).get("groups") or {}
+        invalid_chart_ids = {c.chart_id for c in (request.charts.charts if request.charts else [])
+                             if c.status == "ready" and _chart_contract_issues(c, request.report.evidence_index, groups)}
+        embedded = self._embed_charts(request, chapters, warnings, invalid_chart_ids)
         # S-05：输入诊断（_check_inputs）只作内部审计基线；真正的交付判定
         # 必须针对**归位后的最终章节与嵌入图**再校验一次。
         requirement_matrix = (request.report.data_quality_appendix or {}).get("requirement_evidence_matrix") or []
@@ -729,6 +1008,24 @@ class ReportFusionAgent:
             initial_issues = _audit_numeric_components(chapters, summary, request)
             await self._repair_final_paragraphs(chapters, request, initial_issues, record)
         quality_issues = _audit_numeric_components(chapters, summary, request, sanitize=True)
+        coverage_rows = request.report.data_quality_appendix.get("requested_requirement_coverage") or []
+        reconcile_gap = covered_data_gap_filter(request.report.evidence_index, coverage_rows,
+                                                request.report.financial_ratios)
+        summary.headline = reconcile_gap(summary.headline)
+        summary.risks = list(dict.fromkeys(filter(None, map(reconcile_gap, summary.risks))))
+        summary.research_boundaries = list(dict.fromkeys(filter(None, map(reconcile_gap, summary.research_boundaries))))
+        for chapter in chapters:
+            chapter.summary = reconcile_gap(chapter.summary)
+            for section in chapter.sections:
+                section.uncertainties = list(dict.fromkeys(filter(None, map(reconcile_gap, section.uncertainties))))
+                section.key_points = list(dict.fromkeys(filter(None, map(reconcile_gap, section.key_points))))
+                for paragraph in section.paragraphs:
+                    paragraph.text = reconcile_gap(paragraph.text)
+                section.paragraphs = [paragraph for paragraph in section.paragraphs if paragraph.text]
+        if not summary.headline or summary.headline.startswith(("确定性结果", "数据限制", "当前限制", "研究限制")):
+            summary.headline = next((item.text for item in summary.conclusions
+                                     if item.evidence_ids and len(item.text) <= 100),
+                                    "行业研究要点")
         content_audit = [entry for chapter in chapters for entry in chapter.content_audit]
         input_chapter_issues = request.chapters.quality.get("issues") or []
         recovered_chapter_claims = bool(
@@ -742,33 +1039,22 @@ class ReportFusionAgent:
         if recovered_chapter_claims:
             issues = [issue for issue in issues if issue != _CHAPTER_QUALITY_BLOCK]
         safe_appendix, appendix_issues = audit_appendix(request.report)
+        if sample := safe_appendix.get("sample_info"):
+            sample["limitations"] = list(dict.fromkeys(filter(None, map(reconcile_gap, sample.get("limitations") or []))))
         quality_issues.extend(appendix_issues)
         quality_issues.extend(dict(code="chart_comparability", severity="error", location=c.chart_id,
             claim=problem, evidence_ids=c.evidence_ids, suggestion="补齐共同期间和测量范围后再比较")
             for c in (request.charts.charts if request.charts else []) if c.status == "ready"
             for problem in _chart_comparability_issues(c, request.report.evidence_index))
-        invalid_chart_ids = {c.chart_id for c in (request.charts.charts if request.charts else [])
-                             if _chart_contract_issues(c, request.report.evidence_index)}
         if invalid_chart_ids:
-            embedded = [c for c in embedded if c.chart_id not in invalid_chart_ids]
-            for chapter in chapters:
-                for section in chapter.sections:
-                    section.chart_ids = [cid for cid in section.chart_ids if cid not in invalid_chart_ids]
+            embedded = [chart for chart in embedded if chart.chart_id not in invalid_chart_ids]
             quality_issues.extend(dict(code="chart_contract", severity="error", location=cid,
                 evidence_ids=[], suggestion="修正图表语义契约后重新生成") for cid in sorted(invalid_chart_ids))
         final_blocking, final_warnings = _check_final_view(chapters, embedded, request, summary)
-        output_links = link_requirement_outputs(requirement_matrix, chapters, embedded, summary)
         baseline_ids = {
             row["requirement"]["requirement_id"] for row in requirement_matrix
             if (row.get("requirement") or {}).get("comparison_baseline")
         }
-        for row in output_links:
-            requirement_id = str(row["requirement_id"] or "")
-            if (row["hard"] and row["status"] == "not_cited" and row["evidence_record_ids"]
-                    and requirement_id not in baseline_ids and not requirement_id.startswith("domain_")):
-                row["status"] = "answer_withheld"
-                final_blocking.append(f"必答内容尚未通过核验：{row['label'] or requirement_id}")
-        safe_appendix["requirement_output_links"] = output_links
         appendix = request.report.data_quality_appendix or {}
         cells = appendix.get("requested_financial_coverage") or appendix.get("sample_info", {}).get("requested_financial_coverage") or []
         quality_issues.extend(dict(code="required_financial_cell", severity="error", location=cell.get("requirement_id"),
@@ -777,11 +1063,6 @@ class ReportFusionAgent:
         known_claims = {str(q.get("claim", "")) for q in quality_issues}
         quality_issues.extend(dict(code="delivery_rule", severity="error", location="report", claim=problem,
             evidence_ids=[], suggestion="解决质量问题后重新融合") for problem in issues if problem not in known_claims)
-        if artifact_dir and (quality_issues or content_audit):
-            artifact_dir.mkdir(parents=True, exist_ok=True)
-            (artifact_dir / "fact_audit.json").write_text(json.dumps({
-                "quality_issues": quality_issues, "content_audit": content_audit,
-            }, ensure_ascii=False, indent=2), encoding="utf-8")
         for w in final_warnings:
             if w not in warnings:
                 warnings.append(w)
@@ -806,6 +1087,9 @@ class ReportFusionAgent:
             if isinstance(value, dict):
                 found = set()
                 for key, child in value.items():
+                    if key in ("content_audit", "requirement_evidence_matrix", "requested_requirement_coverage",
+                               "requested_financial_coverage", "rejected_evidence"):
+                        continue
                     if key in ("evidence_ids", "evidence_record_ids") and isinstance(child, list):
                         found.update(e for e in child if isinstance(e, str))
                     else:
@@ -817,12 +1101,117 @@ class ReportFusionAgent:
         used_evidence.update(referenced_ids(chapters))
         used_evidence.update(referenced_ids(summary))
         used_evidence.update(referenced_ids(safe_appendix))
+        used_evidence.update(rid for cell in cells if not cell.get("passed")
+                             for rid in cell.get("evidence_record_ids", []))
+        ratio_rows = financial_calculation_rows(request.report.financial_ratios, request.report.comps_matrix)
+        question_answers = []
+        question_table_evidence = set()
+        for answer in request.chapters.question_answers:
+            section = next((s for c in chapters for s in c.sections
+                            if s.section_id == answer.get("section_id")), None)
+            if not section or not answer.get("text"):
+                continue
+            candidates = set(answer.get("paragraph_ids") or [])
+            refs = set(answer.get("evidence_record_ids") or [])
+            paragraphs = [p for p in section.paragraphs
+                          if p.paragraph_id in candidates and refs.intersection(p.evidence_ids)]
+            cash_ratios = []
+            revenue_cash_divergence = []
+            question = answer["text"]
+            linked_charts = [c for c in embedded if c.chart_id in (answer.get("chart_ids") or [])
+                             and 'data-placeholder="true"' not in c.svg]
+            chart_records = {rid for chart in linked_charts for rid in chart.evidence_ids}
+            if chart_records:
+                paragraphs = [p for p in paragraphs if chart_records.intersection(p.evidence_ids)]
+            if re.search(r"净现比|现金流.{0,20}利润.{0,12}倍数", question):
+                cash_ratios = _annual_cash_ratios(question, request.report.evidence_index, ratio_rows)
+                question_table_evidence.update(rid for _, ids in cash_ratios for rid in ids)
+            if "增收不增现" in question:
+                revenue_cash_divergence = _revenue_cash_divergence(question, request.report.evidence_index)
+                question_table_evidence.update(rid for _, ids in revenue_cash_divergence for rid in ids)
+            financial_tables = _financial_question_tables(question, request.report.evidence_index, groups)
+            if "主营业务构成" in question:
+                selected_companies = {name for info in groups.values() if isinstance(info, dict)
+                                      for name in info.get("members", []) if name}
+                selected_companies.update(ref.entity for ref in request.report.evidence_index.values()
+                                          if ref.entity and ref.entity in question)
+                segment_rows = [
+                    ([ref.entity, ref.period.isoformat()[:4], ref.segment_name, f"{ref.value:.2f}%"], [rid])
+                    for rid, ref in request.report.evidence_index.items()
+                    if ref.entity in selected_companies
+                    and ref.metric == "business_composition" and ref.skill_id == "official-segment"
+                    and ref.segment_name and ref.source_url and ref.source_locator and ref.document_sha256
+                    and ref.period_type == "annual" and ref.period and ref.unit == "%"
+                    and ref.period <= request.report.as_of and ref.published_at and ref.published_at <= request.report.as_of
+                    and type(ref.value) in (int, float) and 0 <= ref.value <= 100 and not ref.issues
+                ]
+                if segment_rows:
+                    financial_tables.append({
+                        "title": "年报分产品项目占合并营业收入比重",
+                        "columns": ["公司", "年度", "年报分产品项目", "收入占比"],
+                        "rows": segment_rows,
+                        "note": "分子为年报列示的该项目收入，分母为当年合并营业收入。各家公司项目范围以年报名称为准。",
+                        "readout": "先按披露项目理解集中度，再比较同一环节内企业。整车样本涉及销售商品、汽车相关产品和新能源汽车等不同范围，电池样本使用年报披露的动力电池项目。项目定义不同会影响占比，因此单列各家年报口径。",
+                        "readout_evidence": [rid for _, ids in segment_rows for rid in ids],
+                    })
+            if "渗透率" in question:
+                annual_market_share = [
+                    ([ref.period.isoformat()[:4], f"{ref.value:g}%"], [rid])
+                    for rid, ref in request.report.evidence_index.items()
+                    if ref.metric == "新能源汽车:市场渗透率:中汽协全口径"
+                    and ref.period_type == "annual" and ref.period and ref.period <= request.report.as_of
+                    and ref.unit == "%" and type(ref.value) in (int, float) and 0 <= ref.value <= 100
+                    and not ref.issues
+                ]
+                if annual_market_share:
+                    financial_tables.append({
+                        "title": "全年新能源新车销量占比",
+                        "columns": ["年度", "占汽车新车总销量比重"],
+                        "rows": annual_market_share,
+                        "note": "全年全口径以汽车新车总销量为分母，月度图以国内乘用车零售为分母。两者分别用于判断全年市场结构和短期变化。",
+                    })
+            question_table_evidence.update(rid for table in financial_tables for _, ids in table["rows"] for rid in ids)
+            question_answers.append({
+                **answer,
+                "section_title": section.title,
+                "paragraph_ids": [p.paragraph_id for p in paragraphs],
+                "evidence_record_ids": sorted(refs.intersection(
+                    rid for p in paragraphs for rid in p.evidence_ids
+                ).intersection(request.report.evidence_index)),
+                "chart_ids": [c.chart_id for c in linked_charts],
+                "cash_ratios": cash_ratios,
+                "revenue_cash_divergence": revenue_cash_divergence,
+                "financial_tables": financial_tables,
+            })
+        used_evidence.update(question_table_evidence)
+        filing_ids = {
+            rid for row in requirement_matrix
+            if str(row.get("requirement", {}).get("requirement_id") or "").startswith("announcement_search_")
+            and row.get("coverage", {}).get("passed")
+            for rid in row["coverage"].get("evidence_record_ids", [])
+            if rid in request.report.evidence_index and request.report.evidence_index[rid].source_url
+        }
+        used_evidence.update(filing_ids)
+        output_links = link_requirement_outputs(requirement_matrix, chapters, embedded, summary,
+                                               question_table_evidence | filing_ids)
+        for row in output_links:
+            requirement_id = str(row["requirement_id"] or "")
+            if (row["hard"] and row["status"] == "not_cited" and row["evidence_record_ids"]
+                    and requirement_id not in baseline_ids and not requirement_id.startswith("domain_")):
+                row["status"] = "answer_withheld"
+                final_blocking.append(f"必答内容尚未通过核验：{row['label'] or requirement_id}")
+        safe_appendix["requirement_output_links"] = output_links
+        if artifact_dir and (quality_issues or content_audit):
+            artifact_dir.mkdir(parents=True, exist_ok=True)
+            (artifact_dir / "fact_audit.json").write_text(json.dumps({
+                "quality_issues": quality_issues, "content_audit": content_audit,
+            }, ensure_ascii=False, indent=2), encoding="utf-8")
         ordered_evidence = [
             evidence
             for evidence_id, evidence in request.report.evidence_index.items()
             if evidence_id in used_evidence
         ]
-        catalog=[EvidenceSource(number=i,record_id=e.record_id,label=f"{e.entity or request.report.subject} / {e.metric}",domain=e.domain,metric=e.metric,entity=e.entity,value=e.value,unit=e.unit,period=e.period,source_url=e.source_url,source_locator=e.source_locator,published_at=e.published_at,document_sha256=e.document_sha256) for i,e in enumerate(ordered_evidence,1)]
+        catalog=[EvidenceSource(number=i,record_id=e.record_id,label=f"{e.entity or request.report.subject} / {e.metric}",domain=e.domain,metric=e.metric,entity=e.entity,value=e.value,unit=e.unit,period=e.period,period_type=e.period_type,source_url=e.source_url,source_locator=e.source_locator,published_at=e.published_at,document_sha256=e.document_sha256) for i,e in enumerate(ordered_evidence,1)]
         all_warnings=_deduplicate_warnings([*request.report.warnings,*request.chapters.warnings,*(request.charts.warnings if request.charts else []),*warnings,*issues])
         consistency=ConsistencyReport(passed=not issues,issues=issues,warnings=warnings,accepted_edits=accepted,rejected_edits=rejected,terminology_map=term_map)
         km_list = []
@@ -862,6 +1251,7 @@ class ReportFusionAgent:
             fact_audit={"schema_version": "1", "unsupported_quantities": sum(q.get("code") == "unsupported_quantity" for q in quality_issues), "formal_verified": not (issues or final_blocking), "chapter_claims_recovered": recovered_chapter_claims},
             key_metrics=km_list,
             comps_matrix=cm_dict,
+            question_answers=question_answers,
         )
         artifacts=[];successful=[]
         if artifact_dir:artifact_dir.mkdir(parents=True,exist_ok=True)
@@ -1114,9 +1504,16 @@ class ReportFusionAgent:
 
     def _default_summary(self,request:ReportFusionRequest)->ExecutiveSummary:
         conclusions=[]
-        for item in request.report.insights[:10]:
+        seen_metrics = set()
+        for item in request.report.insights:
             ids=[x for x in item.get("evidence_record_ids",[]) if x in request.report.evidence_index]
+            families = tuple(sorted({metric_family(request.report.evidence_index[rid].metric) for rid in ids}))
+            if families in seen_metrics:
+                continue
+            seen_metrics.add(families)
             conclusions.append(ReportConclusion(text=str(item.get("conclusion") or item.get("title") or ""),evidence_ids=ids,confidence=item.get("confidence","medium") if item.get("confidence") in {"high","medium","low"} else "medium",uncertainty="结论受当前样本、口径与研究时点限制"))
+            if len(conclusions) == 5:
+                break
         if not conclusions:
             for chapter in request.chapters.chapters:
                 if chapter.summary:
@@ -1126,8 +1523,8 @@ class ReportFusionAgent:
             existing_texts = " ".join(c.text for c in conclusions)
             for chapter in request.chapters.chapters:
                 if chapter.chapter_id in {"CH-05", "CH-06", "CH-07"} and chapter.summary:
-                    if len(conclusions) < 12 and chapter.summary[:30] not in existing_texts:
-                        conclusions.append(ReportConclusion(text=f"【{chapter.title}】{chapter.summary}",evidence_ids=chapter.evidence_ids[:8],confidence="high",uncertainty="结合公司披露与行业对标口径"))
+                    if len(conclusions) < 5 and chapter.summary[:30] not in existing_texts:
+                        conclusions.append(ReportConclusion(text=f"【{chapter.title}】{chapter.summary}",evidence_ids=chapter.evidence_ids[:8],confidence="medium",uncertainty="结合公司披露与行业对标口径"))
 
         metric_cards: list[MetricCardDraft] = []
         seen_card_labels: set[str] = set()
@@ -1174,7 +1571,18 @@ class ReportFusionAgent:
         )
 
     def _editorial_payload(self,request:ReportFusionRequest)->dict[str,Any]:
-        return {"subject":request.report.subject,"as_of":request.report.as_of,"existing_summary":self._default_summary(request).model_dump(mode="json"),"chapters":[c.model_dump(mode="json") for c in request.chapters.chapters],"allowed_evidence_ids":list(request.report.evidence_index),"evidence":{k:v.model_dump(mode="json") for k,v in request.report.evidence_index.items()},"final_instruction":request.options.final_instruction}
+        coverage = request.report.data_quality_appendix.get("requested_requirement_coverage") or []
+        return {
+            "subject": request.report.subject,
+            "as_of": request.report.as_of,
+            "existing_summary": self._default_summary(request).model_dump(mode="json"),
+            "chapters": [c.model_dump(mode="json", exclude={"content_audit"}) for c in request.chapters.chapters],
+            "questions": request.chapters.question_answers,
+            "coverage": [{k: row[k] for k in ("label", "passed", "missing") if k in row} for row in coverage],
+            "allowed_evidence_ids": list(request.report.evidence_index),
+            "evidence": {k: v.model_dump(mode="json") for k, v in request.report.evidence_index.items()},
+            "final_instruction": request.options.final_instruction,
+        }
 
     def _apply_editorial(self,raw:dict[str,Any],request:ReportFusionRequest,chapters:list[ChapterDraft])->tuple[ExecutiveSummary,list[ChapterDraft],dict[str,str],int,int,list[str]]:
         allowed_ids=set(request.report.evidence_index)
@@ -1242,6 +1650,8 @@ class ReportFusionAgent:
                     if section := sections.get(item.get("section_id")):
                         withheld[item["location"]] = (section, item)
         rejected_pids: list[str] = []
+        ratios = financial_calculation_rows(request.report.financial_ratios, request.report.comps_matrix)
+        comparisons = request.report.analysis_facts.get("comparisons") or []
         for pid, edit in raw.get("paragraph_edits", {}).items():
             para = paragraph_map.get(pid)
             restoration = withheld.get(pid) if para is None else None
@@ -1253,13 +1663,13 @@ class ReportFusionAgent:
                 rejected_pids.append(pid)
                 continue
             refs = [request.report.evidence_index[rid] for rid in ids]
-            refs.extend(verified_calculations(request.report.financial_ratios, request.report.evidence_index, ids))
+            refs.extend(verified_calculations(ratios, request.report.evidence_index, ids))
             if (legacy_gap or restoration) and (not refs or not _MEASURED_CLAIM.search(text)):
                 rejected_pids.append(pid)
                 continue
             if quantity_issues(text, refs, universe=list(request.report.evidence_index.values()),
                                assumption_note=para.assumption_note if para else None,
-                               kind=para.kind if para else "analysis"):
+                               kind=para.kind if para else "analysis", comparisons=comparisons):
                 rejected_pids.append(pid)
                 continue
             if restoration:
@@ -1289,8 +1699,9 @@ class ReportFusionAgent:
                     for para in section.paragraphs:para.text=para.text.replace(old,new)
         return summary,chapters,term_map,accepted,rejected,warnings
 
-    def _embed_charts(self,request:ReportFusionRequest,chapters:list[ChapterDraft],warnings:list[str])->list[EmbeddedChart]:
-        chart_map={c.chart_id:c for c in (request.charts.charts if request.charts else []) if c.status=="ready"}
+    def _embed_charts(self,request:ReportFusionRequest,chapters:list[ChapterDraft],warnings:list[str], excluded: set[str] | None = None)->list[EmbeddedChart]:
+        chart_map={c.chart_id:c for c in (request.charts.charts if request.charts else [])
+                   if c.status=="ready" and c.chart_id not in (excluded or set())}
         
         # 1. Map candidate sections where chapters referenced cid
         chart_sec_candidates: dict[str, list[tuple[ChapterDraft, SectionDraft]]] = {}
@@ -1420,6 +1831,8 @@ class ReportFusionAgent:
             if not svg and chart.svg_uri:
                 try:svg=Path(chart.svg_uri).read_text(encoding="utf-8")
                 except OSError:warnings.append(f"图表 {cid} 的 SVG 文件不可读")
+            if not svg and render_mode == "svg":
+                svg = chart.inline_svg or ""
             if not svg:
                 # S-05：缺图时**保留图位与编号**（编号重排依赖图位存在），
                 # 但插入的占位图带 data-placeholder 标记，最终校验据此判为不可交付，
@@ -1441,7 +1854,7 @@ class ReportFusionAgent:
             if svg and "<svg" in svg:
                 old_fig = getattr(chart, "figure_number", None)
                 if old_fig and old_fig in svg:
-                    svg = svg.replace(f"{old_fig}：", f"{fig_number}：").replace(f"{old_fig} ", f"{fig_number} ").replace(old_fig, fig_number)
+                    svg = re.sub(rf"(?<!\w){re.escape(old_fig)}(?!\d)", fig_number, svg)
                 else:
                     svg = re.sub(r'图\s*\d+\s*[：:]\s*', f'{fig_number}：', svg, count=1)
 
@@ -1541,7 +1954,7 @@ class ReportFusionAgent:
                 ch.summary = _clean_chart_text(ch.summary)
             for s in ch.sections:
                 sec_charts = [ec for ec in result if ec.chart_id in s.chart_ids]
-                sec_default_fn = sec_charts[0].figure_number if sec_charts else None
+                sec_default_fn = sec_charts[0].figure_number if sec_charts and not excluded else None
                 # 构建小节专属映射，优先将小节内引用的 [CHART-xx] 精准映射为对应图表在报告中的实际图序
                 sec_map = dict(chart_ref_map)
                 for sc in sec_charts:

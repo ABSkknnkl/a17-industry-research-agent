@@ -4,10 +4,11 @@ from typing import Any
 
 def link_requirement_outputs(
     matrix: list[dict[str, Any]], chapters: list[Any], charts: list[Any], summary: Any = None,
+    question_table_evidence: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     paragraphs = [(p.paragraph_id, set(p.evidence_ids)) for c in chapters for s in c.sections for p in s.paragraphs]
     figures = [(c.chart_id, set(c.evidence_ids)) for c in charts]
-    components = set()
+    components = set(question_table_evidence or ())
     for chapter in chapters:
         for section in chapter.sections:
             for item in (*getattr(section, "metric_cards", []), *getattr(section, "callouts", [])):
