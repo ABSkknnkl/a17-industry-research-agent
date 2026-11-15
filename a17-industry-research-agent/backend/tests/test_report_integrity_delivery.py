@@ -146,8 +146,8 @@ def test_real_stage_commit_makes_current_sanitized_draft_downloadable(tmp_path,m
     assert client.get(url+'?mode=draft').status_code==409
 
 
-def test_ready_with_limits_blocks_formal_even_when_agent_status_is_completed(tmp_path,monkeypatch):
-    """P4：A5 的最终交付资格优先于 agent_status/quality 的宽松组合。"""
+def test_ready_with_limits_formal_get_follows_legacy_eligibility(tmp_path,monkeypatch):
+    """共享下载资格与基线一致；正式包门禁由 POST 侧 _compact_snapshot 独立承担。"""
     monkeypatch.setattr(storage,'base_dir',tmp_path)
     app=FastAPI();app.include_router(router)
     run='run-ready-with-limits';root=storage.get_run_dir(run);art=root/'artifacts';art.mkdir(parents=True,exist_ok=True)
@@ -162,5 +162,5 @@ def test_ready_with_limits_blocks_formal_even_when_agent_status_is_completed(tmp
     storage.save_state(state)
     client=TestClient(app)
     url=f'/api/v1/runs/{run}/artifacts/report_pdf'
-    assert client.get(url).status_code==409
+    assert client.get(url).status_code==200
     assert client.get(url+'?mode=draft').status_code==200

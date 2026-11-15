@@ -311,3 +311,32 @@ def test_zip_never_lands_in_artifacts_and_old_get_still_works(client, tmp_path, 
     assert client.get(f"/api/v1/runs/{run}/artifacts/report_pdf").status_code == 200
     assert client.get(f"/api/v1/runs/{run}/artifacts/evidence_index.csv").status_code == 404
     assert client.get(f"/api/v1/runs/{run}/artifacts/report-compact-r3.zip").status_code == 404
+
+
+class TestSharedEligibilityCompatibility:
+    """共享资格函数与 HEAD 版 GET 行为一致；正式交付门禁只留在 POST 侧。"""
+
+    def test_ready_with_limits_get_formal_200_post_formal_409(self, client, tmp_path, fake_build):
+        # 视图与状态同为 ready_with_limits，其余旧资格条件（构建代次、质量、
+        # agent_status、无 hard_blocked）均满足；这是抽取前 GET 会放行的组合。
+        run, _ = setup_run(tmp_path, view_overrides={"delivery_status": "ready_with_limits"})
+        get_resp = client.get(f"/api/v1/runs/{run}/artifacts/report_pdf")
+        assert get_resp.status_code == 200, get_resp.text
+        assert get_resp.headers["x-report-mode"] == "formal"
+        # POST 的 409 由 _compact_snapshot 的视图交付级别门禁给出，不靠共享资格函数。
+        post_resp = post(client, run)
+        assert post_resp.status_code == 409, post_resp.text
+        assert "正式" in post_resp.json()["detail"]
+        assert post(client, run, mode="draft").status_code == 409
+
+    def test_real_limited_draft_formal_get_409_draft_unchanged(self, client, tmp_path, fake_build):
+        run, _ = setup_run(tmp_path, mode="draft")
+        assert client.get(f"/api/v1/runs/{run}/artifacts/report_pdf").status_code == 409
+        draft_get = client.get(f"/api/v1/runs/{run}/artifacts/report_pdf?mode=draft")
+        assert draft_get.status_code == 200
+        assert draft_get.headers["x-report-mode"] == "draft"
+        draft_post = post(client, run, mode="draft")
+        assert draft_post.status_code == 200
+        assert 'filename="draft-report-compact-r3.zip"' in draft_post.headers["content-disposition"]
+        assert draft_post.headers["x-report-release-mode"] == "draft_with_warnings"
+        assert post(client, run, mode="formal").status_code == 409

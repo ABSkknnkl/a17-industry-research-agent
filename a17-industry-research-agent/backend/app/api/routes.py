@@ -78,10 +78,6 @@ def _report_download_eligibility(
         content_ok = not fusion_data.get("hard_blocked")
         formal_ok = (fusion_data.get("agent_status") != "partial"
                      and quality.get("passed") is not False)
-        # P4：ready_with_limits 只能走受限草稿/预览入口，正式下载不接受宽松组合。
-        delivery_status = fusion_data.get("delivery_status")
-        if delivery_status and delivery_status != "ready":
-            formal_ok = False
         chain = fusion_data.get("chain_delivery") or {}
         if chain.get("requested") and chain.get("status") != "complete":
             formal_ok = False
