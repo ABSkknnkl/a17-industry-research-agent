@@ -1,6 +1,0 @@
-
-agents_core/report-fusion/tests/test_agent.py::test_official_evidence_source_locator_reaches_rendered_report
-  <frozen importlib._bootstrap>:488: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
-
--- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-35 passed, 4 skipped, 5 warnings in 7.49s

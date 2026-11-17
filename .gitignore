@@ -110,3 +110,19 @@ _restore_backup_*/
 # 根目录报告成品：本地保留，不随 main 推送
 /A17_*.html
 /A17_*.pdf
+
+# ── main 纯代码：历史报告/运行数据/图表候选不随仓库推送 ──
+/a5_compact_delivery/
+/nev_a5_layout/
+/nev_agent3_charts/
+/新能源复现验证-交接版-20261116/
+/新能源行业优化报告样例/
+/白酒行业优化报告样例/
+/图表改法候选/*
+!/图表改法候选/make_candidates.py
+/答辩封面/
+/产业链图_单跑/
+/A17_*.svg
+/a17-industry-research-agent/data/
+/a17-industry-research-agent/deliverables/
+/a17-industry-research-agent/agents_core/chart-generator/chart_kb/
