@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { UserAnnotation } from '../api/types'
-import { computed, ref } from 'vue'
+import type { ChainDeliveryInfo, UserAnnotation } from '../api/types'
+import { computed, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ApiError } from '../api/http'
 import { submitReview } from '../api/client'
@@ -16,6 +16,7 @@ import {
 import { showPipelineOverlay, hidePipelineOverlay } from '../composables/usePipelineOverlay'
 import { Cpu, View, EditPen, Promotion } from '@element-plus/icons-vue'
 import StageInterventionModal from './StageInterventionModal.vue'
+import { isReportSignoffBlocked, isReportSignoffOnHold } from '../api/reportGate'
 
 const props = defineProps<{
   runId: string
@@ -39,11 +40,99 @@ const decisionPackage = computed<DecisionPackage | null>(() => {
   return raw && typeof raw === 'object' ? (raw as DecisionPackage) : null
 })
 
+const blockingRisks = computed(() =>
+  (decisionPackage.value?.risks ?? []).filter((risk) => risk.blocking === true)
+)
+const hasBlockingRisks = computed(() => Boolean(decisionPackage.value?.blocking_risk_codes?.length))
 const ackRequiredCodes = computed<string[]>(() => {
   return decisionPackage.value?.acknowledgement_required_codes ?? []
 })
 
+type RiskSeverity = 'high' | 'medium' | 'low'
+
+interface RiskGroup {
+  title: string
+  severity: RiskSeverity
+  count: number
+  codes: string[]
+}
+
+const SEVERITY_RANK: Record<RiskSeverity, number> = { high: 0, medium: 1, low: 2 }
+
+function normalizeSeverity(value: unknown): RiskSeverity {
+  return value === 'high' || value === 'low' ? value : 'medium'
+}
+
+/**
+ * 决策包里的确认项只有哈希码，可读标题在 risks[] 内。
+ * 同标题风险（如多个「离群异常: roe」）聚合为一行，避免几十条同质条目刷屏。
+ */
+const groupedRisks = computed<RiskGroup[]>(() => {
+  const packageValue = decisionPackage.value
+  const codes = packageValue?.acknowledgement_required_codes ?? []
+  if (!packageValue || codes.length === 0) return []
+
+  const byCode = new Map<string, Record<string, unknown>>()
+  for (const risk of packageValue.risks ?? []) {
+    if (typeof risk?.code === 'string' && risk.code) byCode.set(risk.code, risk)
+  }
+
+  const groups = new Map<string, RiskGroup>()
+  for (const code of codes) {
+    const risk = byCode.get(code)
+    const title = String(risk?.title || risk?.description || risk?.message || code)
+    const severity = normalizeSeverity(risk?.severity)
+    const existing = groups.get(title)
+    if (existing) {
+      existing.count += 1
+      existing.codes.push(code)
+      if (SEVERITY_RANK[severity] < SEVERITY_RANK[existing.severity]) {
+        existing.severity = severity
+      }
+    } else {
+      groups.set(title, { title, severity, count: 1, codes: [code] })
+    }
+  }
+
+  return [...groups.values()].sort(
+    (a, b) =>
+      SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity] ||
+      b.count - a.count ||
+      a.title.localeCompare(b.title, 'zh-Hans-CN')
+  )
+})
+
 const hasError = computed(() => Boolean(props.result.error))
+
+// The chapter writer reports content gaps in quality.issues. Only derive
+// guidance from those entries, so timeouts and unrelated errors keep their own recovery path.
+const chapterGapNumbers = computed(() => {
+  if (props.stage !== 'chapter_write' || !hasError.value) return []
+  const quality = props.result.data.quality as { issues?: unknown } | undefined
+  const issues = Array.isArray(quality?.issues) ? quality.issues : []
+  const numbers = issues.flatMap((issue: unknown) => {
+    if (typeof issue !== 'string' || !issue.includes('段落资料缺口')) return []
+    return [...issue.matchAll(/CH-(\d{2})/g)].map((match) => Number(match[1]))
+  })
+  return [...new Set(numbers)].sort((a, b) => a - b)
+})
+const chapterGapLabel = computed(() => `第 ${chapterGapNumbers.value.join('、')} 章`)
+const chapterRepairSuggestion = computed(
+  () =>
+    `请重点修订${chapterGapLabel.value}：核对数值的公司、年份、指标口径和证据来源，删除重复内容。无法核实的数据请明确标注资料缺口，不要推测或编造。`
+)
+const useChapterRepairSuggestion = ref(false)
+const canContinueChapterWithGaps = computed(
+  () =>
+    props.stage === 'chapter_write' &&
+    props.result.status === 'waiting_review' &&
+    props.result.data.agent_status === 'partial' &&
+    chapterGapNumbers.value.length > 0 &&
+    props.result.data.hard_blocked !== true &&
+    !recoveryBlocked.value &&
+    !hasBlockingRisks.value &&
+    ackRequiredCodes.value.length > 0
+)
 
 /** 运行时预算告警（阶段耗尽重试上限/超时时由后端写入 result.data） */
 const runtimeAlert = computed<{ code?: string; recoverable?: boolean } | null>(() => {
@@ -53,12 +142,6 @@ const runtimeAlert = computed<{ code?: string; recoverable?: boolean } | null>((
 
 /** 不可恢复（如重试上限耗尽）：重跑类按钮全部禁用，只留取消 */
 const recoveryBlocked = computed(() => runtimeAlert.value?.recoverable === false)
-
-function riskText(risk: unknown): string {
-  if (typeof risk === 'string') return risk
-  const r = risk as Record<string, unknown>
-  return String(r.title || r.description || r.message || JSON.stringify(risk).slice(0, 150))
-}
 
 /** 错误码 → 可读说明与恢复指引 */
 const errorGuide = computed(() => {
@@ -88,6 +171,9 @@ const errorGuide = computed(() => {
 
 const releaseMode = ref<'formal' | 'draft_with_warnings'>('formal')
 const riskDialogVisible = ref(false)
+watch([() => props.revision, () => decisionPackage.value?.decision_id], () => {
+  riskDialogVisible.value = false
+})
 
 type ReviewPayload = Omit<ReviewRequest, 'run_id' | 'stage' | 'expected_revision'>
 
@@ -114,7 +200,11 @@ async function run(payload: ReviewPayload): Promise<void> {
   submitting.value = true
   const actionLabel = ACTION_LABELS[payload.action]
   if (actionLabel && payload.action !== 'cancel') {
-    showPipelineOverlay(executingStageFor(payload.action), actionLabel)
+    const certifying = payload.edited_data?.certify_chain === true
+    showPipelineOverlay(
+      certifying ? 'chart_generate' : executingStageFor(payload.action),
+      certifying ? '认证后重新生成' : actionLabel
+    )
   }
   try {
     const state = await submitReview({
@@ -136,7 +226,11 @@ async function run(payload: ReviewPayload): Promise<void> {
         ElMessage.success(`修改已保存${labels ? `，已更新 ${labels}` : ''}${pdfNotice}`)
       }
     } else {
-      ElMessage.success('操作已提交')
+      ElMessage.success(
+        payload.edited_data?.certify_chain === true
+          ? '认证已记录，正在重新生成图表、章节和报告'
+          : '操作已提交'
+      )
     }
     emit('submitted', state, { stage: props.stage, action: payload.action })
   } catch (e) {
@@ -175,16 +269,84 @@ function buildDecisionFields(): Partial<ReviewRequest> {
 }
 
 async function approve(): Promise<void> {
+  if (signoffBlocked.value || hasBlockingRisks.value) return
+  if (decisionPackage.value?.blocking_risk_codes?.length) {
+    ElMessage.error('当前阶段存在硬阻塞风险，不能批准或通过接受风险绕过')
+    return
+  }
+  if (ackRequiredCodes.value.length) {
+    riskDialogVisible.value = true
+    return
+  }
   await run({ action: 'approve', ...buildDecisionFields() })
+}
+
+// ---- B42：产业链认证通路（后端 B36-P7：approve + edited_data.certify_chain=true） ----
+
+const chainDelivery = computed<ChainDeliveryInfo | null>(() => {
+  const raw = (props.result.data as Record<string, unknown>).chain_delivery
+  return raw && typeof raw === 'object' ? (raw as ChainDeliveryInfo) : null
+})
+
+const chainRequested = computed(() => chainDelivery.value?.requested === true)
+const chainCertified = computed(() => chainDelivery.value?.status === 'complete')
+
+/** 仅 report_fusion、bundle 存在且未认证时提供认证入口 */
+const canCertifyChain = computed(
+  () =>
+    isFusionStage.value &&
+    Boolean(chainDelivery.value?.certification_available) &&
+    !chainCertified.value
+)
+
+async function certifyChain(): Promise<void> {
+  const fields = buildDecisionFields()
+  try {
+    await ElMessageBox.confirm(
+      '认证表示您已人工核验产业链环节归属与代表企业。正式交付还需要有原文支持的工序关系。确认后将从图表生成阶段开始，重新生成图表、章节和报告；最终交付状态以重新核验结果为准。确认认证？',
+      '认证产业链归属',
+      { confirmButtonText: '确认认证', cancelButtonText: '返回', type: 'warning' }
+    )
+  } catch {
+    return
+  }
+  if (fields.decision_id !== decisionPackage.value?.decision_id) return
+  await run({ action: 'approve', edited_data: { certify_chain: true }, ...fields })
+}
+
+async function continueChapterWithGaps(): Promise<void> {
+  const fields = buildDecisionFields()
+  const codes = [...ackRequiredCodes.value]
+  try {
+    await ElMessageBox.confirm(
+      `${chapterGapLabel.value}存在资料缺口。继续后将生成报告并进行最终质检，结果可能仍为受限草稿，不能保证正式交付。确认继续？`,
+      '确认章节缺口',
+      { confirmButtonText: '确认并继续质检', cancelButtonText: '返回修订', type: 'warning' }
+    )
+  } catch {
+    return
+  }
+  if (fields.decision_id !== decisionPackage.value?.decision_id) return
+  await run({
+    action: 'accept_with_risks',
+    comment: '已知晓章节内容缺口，继续生成报告并接受最终质检',
+    accepted_risk_codes: codes,
+    ...fields,
+  })
 }
 
 /** 有风险时：打开风险提示，用户点同意后进入下一阶段 */
 async function acceptWithRisks(): Promise<void> {
+  const decisionFields = buildDecisionFields()
+  if (!decisionFields.decision_id || !decisionFields.risk_snapshot_sha256) {
+    ElMessage.error('缺少可校验的决策包，请重新执行该阶段后再审核')
+    return
+  }
   riskDialogVisible.value = false
   await run({
     action: 'accept_with_risks',
     accepted_risk_codes: [...ackRequiredCodes.value],
-    ...buildDecisionFields(),
+    ...decisionFields,
   })
 }
 
@@ -206,6 +368,9 @@ async function cancelRun(): Promise<void> {
  * 阶段五（报告融合）用报告语义的按钮文案，其余阶段沿用通用文案。
  */
 const isFusionStage = computed(() => props.stage === 'report_fusion')
+const signoffBlocked = computed(
+  () => isFusionStage.value && isReportSignoffBlocked(props.result.data)
+)
 const approveLabel = computed(() => {
   const map: Record<StageName, string> = {
     data_fetch: '确认数据完备，进入解读分析',
@@ -260,7 +425,14 @@ const stageInterventionVisible = ref(false)
 const stageInterventionTab = ref('scope_keywords')
 
 function openStageModal(tab: string): void {
+  useChapterRepairSuggestion.value = false
   stageInterventionTab.value = tab
+  stageInterventionVisible.value = true
+}
+
+function openChapterRepair(): void {
+  useChapterRepairSuggestion.value = true
+  stageInterventionTab.value = 'revision_requirements'
   stageInterventionVisible.value = true
 }
 
@@ -288,19 +460,57 @@ async function onStageDirectEditSubmit(payload: {
 </script>
 
 <template>
-  <div class="review-actions" data-testid="review-actions">
-    <el-alert
-      v-if="hasError"
-      type="error"
-      show-icon
-      :closable="false"
-      :title="`阶段错误: ${result.error}`"
-      :description="errorGuide"
-      style="margin-bottom: 16px"
-    />
+  <!-- B43：语义分组 + aria-label，让读屏用户知道这是一组「审阅决策」而非普通按钮 -->
+  <div
+    class="review-actions"
+    data-testid="review-actions"
+    role="group"
+    aria-label="当前阶段审阅决策"
+  >
+    <div v-if="hasError && !isReportSignoffOnHold(result)" class="review-error">
+      <el-alert
+        type="error"
+        show-icon
+        :closable="false"
+        :title="chapterGapNumbers.length ? '部分章节需要修订' : '阶段处理需要关注'"
+        :description="
+          chapterGapNumbers.length
+            ? `${chapterGapLabel}有内容未通过质量核验，存在资料缺口。请修订后重新检查；证据不足时需补充资料。`
+            : errorGuide
+        "
+      />
+      <el-button
+        v-if="chapterGapNumbers.length && !recoveryBlocked"
+        type="primary"
+        plain
+        :disabled="submitting"
+        data-testid="repair-chapters"
+        @click="openChapterRepair"
+        >修订问题章节</el-button
+      >
+      <el-button
+        v-if="canContinueChapterWithGaps"
+        :disabled="submitting"
+        :loading="submitting"
+        data-testid="continue-with-gaps"
+        @click="continueChapterWithGaps"
+        >确认缺口并继续质检</el-button
+      >
+      <details class="stage-error-details">
+        <summary>查看异常明细</summary>
+        <p>{{ result.error }}</p>
+      </details>
+    </div>
+
+    <section v-if="blockingRisks.length" class="stage-error-details" aria-label="待处理的阻断项">
+      <h4>待处理的阻断项</h4>
+      <ul>
+        <li v-for="risk in blockingRisks" :key="String(risk.code)">{{ risk.title }}</li>
+      </ul>
+    </section>
 
     <!-- report_fusion：发布模式（仅正式报告） -->
-    <template v-if="!hasError && stage === 'report_fusion'">
+    <template v-if="!hasError && isFusionStage && !signoffBlocked">
       <h4 class="action-title">发布模式</h4>
       <el-radio-group v-model="releaseMode">
         <el-radio value="formal">正式报告</el-radio>
@@ -343,9 +553,50 @@ async function onStageDirectEditSubmit(payload: {
         </div>
       </div>
 
-      <p v-if="nextStepHint" class="next-step-hint" data-testid="next-step-hint">
+      <p
+        v-if="nextStepHint && !signoffBlocked && !hasError"
+        class="next-step-hint"
+        data-testid="next-step-hint"
+      >
         {{ nextStepHint }}
       </p>
+
+      <!-- B42：产业链认证卡（数据源 = fusion data.chain_delivery；仅链路 run 的终审阶段出现） -->
+      <div
+        v-if="isFusionStage && chainDelivery && chainRequested"
+        class="chain-certify-card"
+        data-testid="chain-certify-card"
+      >
+        <div class="chain-certify-head">
+          <span class="chain-certify-title">产业链证据包</span>
+          <el-tag
+            v-if="chainCertified"
+            type="success"
+            size="small"
+            data-testid="chain-certified-badge"
+          >
+            已认证 · 完整交付
+          </el-tag>
+          <el-tag v-else type="warning" size="small" data-testid="chain-partial-badge">
+            未认证 · 受限交付
+          </el-tag>
+        </div>
+        <div class="chain-certify-meta">
+          <span>参与企业 {{ chainDelivery.accepted_participations ?? 0 }}</span>
+          <span>已核关系 {{ chainDelivery.verified_relations ?? 0 }}</span>
+        </div>
+        <p v-if="chainDelivery.reason" class="chain-certify-reason">{{ chainDelivery.reason }}</p>
+        <el-button
+          v-if="canCertifyChain"
+          type="warning"
+          :loading="submitting"
+          data-testid="btn-certify-chain"
+          class="btn-certify-chain"
+          @click="certifyChain"
+        >
+          认证产业链归属并重新生成
+        </el-button>
+      </div>
 
       <div class="intervention-header">
         <div class="header-left">
@@ -371,7 +622,7 @@ async function onStageDirectEditSubmit(payload: {
       <!-- 阶段专属精准介入按钮组 -->
       <div class="intervention-actions">
         <!-- 阶段专属主通过按钮 -->
-        <template v-if="decisionPackage || !hasError">
+        <template v-if="!signoffBlocked && !hasBlockingRisks && (decisionPackage || !hasError)">
           <el-button
             v-if="ackRequiredCodes.length === 0 && !hasError"
             type="primary"
@@ -392,7 +643,7 @@ async function onStageDirectEditSubmit(payload: {
             data-testid="btn-risk-notice"
             @click="riskDialogVisible = true"
           >
-            风险提示（{{ ackRequiredCodes.length }}）
+            风险提示（{{ groupedRisks.length }} 类 / {{ ackRequiredCodes.length }} 处）
           </el-button>
         </template>
 
@@ -525,6 +776,11 @@ async function onStageDirectEditSubmit(payload: {
       :data="(result.data as Record<string, unknown>) || {}"
       :annotations="annotations"
       :initial-tab="stageInterventionTab"
+      :chapter-repair="
+        useChapterRepairSuggestion
+          ? { chapters: chapterGapNumbers, instruction: chapterRepairSuggestion }
+          : undefined
+      "
       :submitting="submitting"
       @submit-revise="onStageReviseSubmit"
       @submit-direct-edit="onStageDirectEditSubmit"
@@ -532,16 +788,29 @@ async function onStageDirectEditSubmit(payload: {
     />
 
     <!-- 风险提示确认窗 -->
-    <el-dialog v-model="riskDialogVisible" title="风险提示" width="480px" data-testid="risk-dialog">
+    <el-dialog
+      v-model="riskDialogVisible"
+      title="风险提示"
+      width="720px"
+      class="risk-notice-dialog"
+      data-testid="risk-dialog"
+    >
       <el-alert type="warning" show-icon :closable="false" style="margin-bottom: 12px">
         <template #title
-          >本阶段检测到 {{ ackRequiredCodes.length }} 项风险，同意后进入下一阶段</template
+          >本阶段检出 {{ groupedRisks.length }} 类风险（共
+          {{ ackRequiredCodes.length }} 处），确认后进入下一阶段</template
         >
       </el-alert>
       <ul class="risk-list">
-        <li v-for="code in ackRequiredCodes" :key="code" data-testid="risk-item">
-          <el-tag size="small" type="warning" effect="plain">{{ code }}</el-tag>
-          <span class="risk-desc">{{ riskText(code) }}</span>
+        <li
+          v-for="group in groupedRisks"
+          :key="group.title"
+          :title="group.title"
+          data-testid="risk-item"
+        >
+          <span class="risk-dot" :class="`is-${group.severity}`" aria-hidden="true" />
+          <span class="risk-title">{{ group.title }}</span>
+          <span v-if="group.count > 1" class="risk-count">×{{ group.count }}</span>
         </li>
       </ul>
       <template #footer>
@@ -564,6 +833,9 @@ async function onStageDirectEditSubmit(payload: {
   margin: 0 0 12px;
   color: var(--el-text-color-secondary);
   font-size: 13px;
+}
+.review-error {
+  margin-bottom: 16px;
 }
 .action-title {
   margin: 16px 0 8px;
@@ -616,6 +888,98 @@ async function onStageDirectEditSubmit(payload: {
 }
 .step-text {
   letter-spacing: 0.3px;
+}
+.chain-certify-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 4px 0 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+.chain-certify-head,
+.chain-certify-meta,
+.chain-tier-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.chain-certify-head {
+  gap: 8px;
+}
+.chain-certify-title {
+  color: var(--el-text-color-primary);
+  font-size: 15px;
+  font-weight: 700;
+}
+.chain-certify-meta {
+  gap: 8px 16px;
+  color: var(--el-text-color-regular);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.chain-certify-meta > span:not(.chain-tier-badges) {
+  white-space: nowrap;
+}
+.chain-tier-badges {
+  gap: 6px;
+}
+.chain-certify-reason {
+  margin: 0;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.btn-certify-chain {
+  max-width: 100%;
+  min-height: 36px;
+  height: auto;
+  white-space: normal;
+  line-height: 1.4;
+}
+@media (max-width: 480px) {
+  .closed-loop-stepper {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .step-arrow {
+    display: none;
+  }
+  .loop-step {
+    white-space: nowrap;
+  }
+  .chain-certify-card {
+    align-items: stretch;
+  }
+  .btn-certify-chain {
+    min-height: 44px;
+  }
+  .header-left,
+  .header-right {
+    flex-wrap: wrap;
+  }
+  .intervention-badge {
+    white-space: nowrap;
+  }
+  .intervention-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .intervention-actions :deep(.el-button) {
+    width: 100%;
+    min-height: 44px;
+    height: auto;
+    margin: 0;
+    white-space: normal;
+  }
+}
+@media (max-width: 360px) {
+  .closed-loop-stepper {
+    grid-template-columns: 1fr;
+  }
 }
 .intervention-header {
   display: flex;
@@ -675,20 +1039,65 @@ async function onStageDirectEditSubmit(payload: {
   font-weight: 600;
   padding: 12px 22px;
 }
+/* 风险确认窗：内容区限高滚动，避免几十条把页面顶出屏幕 */
+:global(.risk-notice-dialog .el-dialog__body) {
+  max-height: 62vh;
+  overflow: auto;
+  padding-top: 4px;
+}
 .risk-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
   margin: 0;
-  padding-left: 4px;
+  padding: 0;
   list-style: none;
 }
 .risk-list li {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  background: var(--el-fill-color-lighter);
   font-size: 12.5px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
-.risk-desc {
+.risk-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.risk-dot.is-high {
+  background: var(--el-color-danger);
+}
+.risk-dot.is-medium {
+  background: var(--el-color-warning);
+}
+.risk-dot.is-low {
+  background: var(--el-color-info);
+}
+.risk-title {
+  flex: 1;
+  min-width: 0;
   color: var(--el-text-color-regular);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.risk-count {
+  flex: none;
+  color: var(--el-text-color-secondary);
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 720px) {
+  .risk-list {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

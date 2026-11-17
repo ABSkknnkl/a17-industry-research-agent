@@ -210,6 +210,10 @@ def test_financial_question_cash_ratios_use_same_year_positive_parent_profit():
     assert _annual_cash_ratios(question, index, []) == [
         (["样本甲", "2024", "0.50 倍"], ["operating_cash_flow-2024", "parent_net_profit-2024"]),
     ]
+    assert _annual_cash_ratios(question, index, [], show_nonpositive=True)[-1] == (
+        ["样本甲", "2025", "亏损，净现比不具可比性"],
+        ["operating_cash_flow-2025", "parent_net_profit-2025"],
+    )
     index["parent_net_profit-2024"].currency = "USD"
     assert _annual_cash_ratios(question, index, []) == []
 

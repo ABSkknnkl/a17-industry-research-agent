@@ -1,0 +1,62 @@
+{
+  "project_id": "proj-mwgfcuv4-fc9f4o",
+  "input_data": {
+    "industry_topic": "新能源汽车",
+    "market_scope": [
+      "中国 A 股",
+      "港股",
+      "美股",
+      "中国 B 股"
+    ],
+    "security_types": [
+      "股票",
+      "基金",
+      "期货",
+      "指数"
+    ],
+    "reporting_currency": "CNY",
+    "research_as_of": "2026-11-14",
+    "focus_questions": [
+      "2021—2025年中国新能源汽车销量及国内零售渗透率（月度口径）如何变化？请比较比亚迪、长安汽车和赛力斯在2023—2025年的营业收入、毛利率及经营现金流，并分析整车与动力电池产业链的主要关系，形成包含数据表、趋势图、产业链结构和证据来源的完整行业研究报告。",
+      "2. 2021—2025年中国新能源汽车销量、渗透率及出口量如何变化？",
+      "3. 比亚迪、长安汽车、赛力斯2023—2025年的营收、毛利率及经营现金流如何分化？",
+      "4. 宁德时代、亿纬锂能与整车企业在研发强度、毛利率及现金流方面有何差异？为什么应按动力电池与整车环节分组分析？"
+    ],
+    "data_fetch_options": null,
+    "analysis_depth": "deep",
+    "risk_preference": "balanced",
+    "research_brief": null,
+    "chart_generate_options": {
+      "want_industry_chain": null,
+      "defaulted_focus": false,
+      "chain_scope": null,
+      "chart_mode": null,
+      "question_planner_mode": null,
+      "chart_type": null,
+      "requested_chart_count": 15,
+      "requested_chart_types": null,
+      "chart_question_ids": [],
+      "user_priority": null,
+      "allow_multiple_charts_per_dataset": false,
+      "bar_variant": null,
+      "metric_ids": null,
+      "title": null,
+      "color_theme": null,
+      "emphasis": null
+    },
+    "selected_skills": [
+      "竞争格局分析",
+      "产业链全景拆解",
+      "财务报表与杜邦分析",
+      "科技炒作与基本面"
+    ],
+    "sensitivity_scenarios": []
+  },
+  "review_stages": [
+    "data_fetch",
+    "data_interpret",
+    "chart_generate",
+    "chapter_write",
+    "report_fusion"
+  ]
+}

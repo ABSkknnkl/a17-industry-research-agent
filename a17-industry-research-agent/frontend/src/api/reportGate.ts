@@ -1,21 +1,29 @@
 import type { ArtifactRef, StageName, WorkflowState } from './types'
 
-/**
- * 「报告下载」入口门控。
- *
- * 为什么必须显式门控：
- * 后端下载接口（backend/app/api/routes.py:206-252）只校验任务归属与文件存在，
- * **不看任务状态**。而勾了审核门时会出现「阶段已完成、产物已落盘，但 run 仍是
- * waiting_review（尚未人工批准）」的合法组合——若不设门控，未批准的正式报告
- * 会被当成已交付产物放出去。
- *
- * 但不能一刀切只认 completed：
- * 后端 _finish（backend/app/workflow/graph.py:570-581）是 fail-closed 的——
- * 任一阶段结果带 error 时终态是 waiting_review 而不是 completed，此时阶段可能
- * 都跑过了、产物也在。这种情况要放行，但必须强告警。
- *
- * 所以按三态分类：normal（正常交付）/ exception（异常终态，放行+告警）/ blocked（禁下载）。
- */
+import type { StageResult } from './types'
+
+export function isReportSignoffBlocked(data: Record<string, unknown>): boolean {
+  const decision = data.decision_package as { blocking_risk_codes?: string[] } | undefined
+  return Boolean(data.quality_notice || data.exports_stale || decision?.blocking_risk_codes?.length)
+}
+
+export function isReportSignoffOnHold(result: StageResult): boolean {
+  return (
+    result.stage === 'report_fusion' &&
+    result.status === 'waiting_review' &&
+    isReportSignoffBlocked(result.data)
+  )
+}
+
+export function artifactDownloadMode(
+  run: WorkflowState,
+  artifactId: string
+): 'formal' | 'draft' | undefined {
+  const options = run.report_download
+  if (!options) return classifyReportDownload(run).mode ?? 'formal'
+  if (options.formal_artifact_ids.includes(artifactId)) return 'formal'
+  if (options.draft_artifact_ids.includes(artifactId)) return 'draft'
+}
 
 export type ReportDownloadLevel = 'normal' | 'exception' | 'blocked'
 
@@ -40,6 +48,50 @@ export function classifyReportDownload(run: WorkflowState): ReportDownloadGate {
   const artifactCount = reportArtifacts(run).length
   const fusion = run.stage_results.report_fusion
   const data = (fusion?.data ?? {}) as Record<string, unknown>
+  if (run.report_download) {
+    const { formal_artifact_ids, draft_artifact_ids } = run.report_download
+    if (formal_artifact_ids.length) {
+      return data.validation_version
+        ? {
+            level: 'normal',
+            mode: 'formal',
+            downloadable: true,
+            reason: '',
+            alertType: 'success',
+            artifactCount,
+          }
+        : {
+            level: 'exception',
+            mode: 'formal',
+            downloadable: true,
+            alertType: 'warning',
+            artifactCount,
+            reason: '历史报告可供查阅，旧的通过标记不代表本轮核验结论。',
+          }
+    }
+    if (draft_artifact_ids.length) {
+      return {
+        level: 'exception',
+        mode: 'draft',
+        downloadable: true,
+        alertType: 'warning',
+        artifactCount,
+        reason: '当前产物仅供审阅，请勿作为正式报告发布。',
+      }
+    }
+    return {
+      level: 'blocked',
+      downloadable: false,
+      alertType: 'warning',
+      artifactCount,
+      reason:
+        typeof data.delivery_block_reason === 'string'
+          ? data.delivery_block_reason
+          : run.status === 'waiting_review'
+            ? '正式报告尚待审核，请返回任务工作台。'
+            : '当前版本没有可下载的报告产物。',
+    }
+  }
   const builtAt = data.built_at_revision
   if (
     artifactCount > 0 &&
@@ -188,7 +240,9 @@ export const isDecisionAction = (action?: string | null): boolean =>
  */
 export function shouldAutoJumpToDownload(
   reviewedStage: StageName | null,
-  action?: string | null
+  action?: string | null,
+  status?: WorkflowState['status']
 ): boolean {
+  if (status && status !== 'completed' && status !== 'approved') return false
   return reviewedStage === 'report_fusion' && isDecisionAction(action)
 }

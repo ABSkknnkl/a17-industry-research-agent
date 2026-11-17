@@ -355,6 +355,13 @@ class QuestionBrief(BaseModel):
     defaulted_focus: bool = False
 
 
+class ChartGroupCoverage(BaseModel):
+    """Complete group observations for one question metric, separated by basis."""
+
+    required_groups: list[str]
+    by_basis: dict[str, list[str]]
+
+
 class CandidateCard(BaseModel):
     """候选图卡（方案 5.2）：由上游证据确定性生成。
 
@@ -366,6 +373,7 @@ class CandidateCard(BaseModel):
     card_id: str
     question_ids: list[str] = Field(default_factory=list)
     sub_requirements: list[str] = Field(default_factory=list)
+    group_coverage: dict[str, ChartGroupCoverage] = Field(default_factory=dict)
     chart_type: ChartType
     ideal_role: str = ""
     feasible_expression: str = ""

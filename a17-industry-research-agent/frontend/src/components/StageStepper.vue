@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { isReportSignoffOnHold } from '../api/reportGate'
+import { showStageError } from '../api/stageStatus'
 import { STAGE_LABELS, STAGE_ORDER, type StageName, type StageResult } from '../api/types'
 
 const props = defineProps<{
@@ -24,8 +26,13 @@ const asArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? (value as T
 
 function summarize(name: StageName, result: StageResult | undefined): string {
   if (!result) return '待执行'
-  if (result.error) return `错误：${result.error}`
+  if (isReportSignoffOnHold(result)) return '正式签发暂缓'
   if (result.status === 'running') return '正在执行…'
+  if (result.status === 'pending') return '待执行'
+  if (result.error && ['approved', 'completed'].includes(result.status))
+    return '已通过，存在质量缺口'
+  if (result.status === 'waiting_review' && result.error) return '待审核，需处理问题'
+  if (showStageError(result)) return '有异常，查看阶段详情'
   const data = d(result)
   switch (name) {
     case 'data_fetch': {
@@ -145,11 +152,10 @@ function onStepClick(step: StepItem): void {
 </script>
 
 <template>
-  <el-steps :active="steps.length" align-center>
+  <el-steps :active="steps.length" align-center class="stage-steps">
     <el-step
       v-for="step in steps"
       :key="step.name"
-      :title="step.title"
       :description="step.description"
       :status="step.status"
       :class="{
@@ -158,13 +164,41 @@ function onStepClick(step: StepItem): void {
       }"
       :data-testid="`stage-step-${step.name}`"
       @click="onStepClick(step)"
-    />
+    >
+      <template #title>
+        <button
+          v-if="step.clickable"
+          type="button"
+          class="step-button"
+          :aria-pressed="selectedStage === step.name"
+          @click.stop="onStepClick(step)"
+        >
+          {{ step.title }}
+        </button>
+        <span v-else>{{ step.title }}</span>
+      </template>
+    </el-step>
   </el-steps>
 </template>
 
 <style scoped>
 .step-clickable {
   cursor: pointer;
+}
+.step-button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.step-button:focus-visible {
+  outline: 2px solid var(--rp-navy);
+  outline-offset: 2px;
+}
+.stage-steps :deep(.el-step__description) {
+  overflow-wrap: anywhere;
 }
 .step-clickable :deep(.el-step__title) {
   transition: color 0.15s;
@@ -179,5 +213,15 @@ function onStepClick(step: StepItem): void {
 .step-selected :deep(.el-step__head.is-success .el-step__icon) {
   background: var(--rp-gold);
   border-color: var(--rp-gold);
+}
+@media (max-width: 600px) {
+  .stage-steps :deep(.el-step__title) {
+    font-size: 12px;
+    line-height: 1.5;
+    margin-top: 4px;
+  }
+  .stage-steps :deep(.el-step__description) {
+    display: none;
+  }
 }
 </style>

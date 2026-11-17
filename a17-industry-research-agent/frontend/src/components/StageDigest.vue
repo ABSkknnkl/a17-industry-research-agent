@@ -69,6 +69,37 @@ const chartSpecs = computed<Record<string, unknown>[]>(() =>
   asArray<Record<string, unknown>>(d.value.chart_specs)
 )
 
+interface ChartQuestionCoverage {
+  question_id: string
+  status: string
+  chart_ids: string[]
+  uncovered: string[]
+  reason?: string
+}
+
+const chartCoverage = computed(() => {
+  const plan = d.value.question_plan as { mode?: string; coverage?: unknown } | undefined
+  return plan?.mode === 'apply' ? asArray<ChartQuestionCoverage>(plan.coverage) : []
+})
+
+const chartQuestionTitles = computed(
+  () => (d.value.question_chart_titles ?? {}) as Record<string, string>
+)
+
+const chartLabels = computed(
+  () =>
+    new Map(
+      chartSpecs.value.map((spec, index) => [
+        String(spec.chart_id),
+        String(spec.figure_number || `图 ${index + 1}`),
+      ])
+    )
+)
+
+function revealChart(chartId: string): void {
+  document.getElementById(`workbench-chart-${chartId}`)?.scrollIntoView({ block: 'center' })
+}
+
 /** chapter_write：章节 */
 const chapters = computed<Record<string, unknown>[]>(() => {
   const raw = d.value.chapters ?? d.value.sections
@@ -344,11 +375,35 @@ const scalarEntries = computed(() => {
 
     <!-- chart_generate：内嵌图表卡片（替代候选表） -->
     <template v-else-if="stage === 'chart_generate'">
+      <section v-if="chartCoverage.length" class="question-charts" aria-label="按研究问题核对图表">
+        <h4 class="digest-title">按研究问题核对图表</h4>
+        <ul>
+          <li v-for="item in chartCoverage" :key="item.question_id">
+            <strong>{{ item.question_id }} {{ chartQuestionTitles[item.question_id] }}</strong>
+            <div class="question-chart-links">
+              <el-button
+                v-for="id in item.chart_ids"
+                v-show="chartLabels.has(id)"
+                :key="id"
+                link
+                type="primary"
+                @click="revealChart(id)"
+              >
+                {{ chartLabels.get(id) }}
+              </el-button>
+              <span v-if="item.status === 'published'" class="muted">图表覆盖完成</span>
+              <span v-else class="muted">
+                {{ item.uncovered.length ? `图表缺口：${item.uncovered.join('、')}` : item.reason }}
+              </span>
+            </div>
+          </li>
+        </ul>
+      </section>
       <template v-if="chartSpecs.length > 0">
         <h4 class="digest-title">生成的图表（{{ chartSpecs.length }} 张）</h4>
         <ChartGallery :specs="chartSpecs" :run-id="runId" />
       </template>
-      <template v-else>
+      <template v-else-if="!chartCoverage.length">
         <div class="stage-pending-box">
           <div class="pending-lead">
             <span class="spinner-dot" />
@@ -501,6 +556,23 @@ const scalarEntries = computed(() => {
 </template>
 
 <style scoped>
+.question-charts ul {
+  padding-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.question-charts li + li {
+  margin-top: 0.6rem;
+}
+
+.question-chart-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin-top: 0.15rem;
+}
+
 .digest-title {
   margin: 16px 0 8px;
   font-size: 14px;

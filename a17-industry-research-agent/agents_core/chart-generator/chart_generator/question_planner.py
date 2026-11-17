@@ -23,6 +23,7 @@ from agents_core.financial_semantics import metric_family
 from .models import (
     CandidateCard,
     ChartGenerationResult,
+    ChartGroupCoverage,
     ChartSpec,
     InterpretationReport,
     QuestionBrief,
@@ -74,6 +75,7 @@ METRIC_ALIASES: dict[str, tuple[str, ...]] = {
 NO_CHART_PATTERNS = ("不需要图", "不用图", "无需图", "不要图", "不需要图表", "仅文字")
 EXPLICIT_CHART_PATTERNS = ("趋势图", "图表", "画图", "出图", "结构图", "产业链图", "配图")
 _YEAR_RE = re.compile(r"(20\d{2})")
+_SUBANNUAL_RE = re.compile(r"季度|上半年|下半年|半年度|单季|Q[1-4]\b", re.I)
 
 
 class QuestionPlanLLM(Protocol):
@@ -287,49 +289,151 @@ def question_financial_snapshots(briefs: Sequence[QuestionBrief], report: Interp
                 yield list(signature), "CH-04" if "分组" in brief.relation_tags else "CH-05"
 
 
-def _card_requirements(brief: QuestionBrief, kind: str, points, report):
-    """Return whether the card is relevant and which obligations it fully covers."""
+def _financial_years(clause: str, brief: QuestionBrief, rows: Sequence[dict[str, Any]]) -> set[int]:
+    years = _required_years(clause)
+    if years or "分组" not in brief.relation_tags:
+        return years
+    return {
+        int(str(period)[:4])
+        for row in rows if row["requirement"].get("domain") == "financials"
+        for period in row["requirement"].get("period_ends") or []
+        if str(period)[:4].isdigit() and str(period).endswith("-12-31")
+    }
+
+
+def question_financial_trends(briefs: Sequence[QuestionBrief], report: InterpretationReport):
+    """Keep the full question window available before ordinary chart ranking."""
+    matrix = report.data_quality_appendix.get("requirement_evidence_matrix") or []
+    groups = (report.chain_analysis or {}).get("groups") or {}
+    links = link_question_requirements(briefs, matrix, groups)
+    emitted = set()
+    for brief in briefs:
+        if brief.chart_forbidden:
+            continue
+        rows = links[brief.question_id]
+        names = _question_entities(brief, brief.text, _named_entities(brief.text, report), groups)
+        if len(names) < 2:
+            continue
+        by_group = {
+            group: names.intersection(info.get("members") or [])
+            for group, info in groups.items()
+        }
+        cohorts = [members for members in by_group.values() if members] or [names]
+        for metric in brief.metrics:
+            clause = _metric_text(brief, metric)
+            years = _financial_years(clause, brief, rows)
+            if len(years) < 2 or _requires_monthly(clause, metric) or _SUBANNUAL_RE.search(clause):
+                continue
+            for members in cohorts:
+                cells: dict[tuple[str, int], str] = {}
+                for row in rows:
+                    if row["requirement"].get("domain") != "financials" or not row["coverage"].get("passed"):
+                        continue
+                    for rid in row["coverage"].get("evidence_record_ids") or []:
+                        ref = report.evidence_index.get(rid)
+                        if (ref and ref.entity in members and ref.period and ref.period.year in years
+                                and ref.period_type == "annual" and ref.period.month == 12
+                                and ref.period.day == 31 and _metric_covered(metric, {ref.metric})):
+                            cells.setdefault((ref.entity, ref.period.year), rid)
+                if set(cells) != {(entity, year) for entity in members for year in years}:
+                    continue
+                ids = tuple(cells[key] for key in sorted(cells))
+                if ids not in emitted:
+                    emitted.add(ids)
+                    yield list(ids), "CH-04" if "分组" in brief.relation_tags else "CH-05"
+
+
+def _group_coverage(named, groups, matched, years, report) -> ChartGroupCoverage | None:
+    member_sets = {group: named.intersection(info.get("members") or []) for group, info in groups.items()}
+    member_sets = {group: members for group, members in member_sets.items() if members}
+    if (len(member_sets) < 2 or set().union(*member_sets.values()) != named
+            or sum(map(len, member_sets.values())) != len(named)):
+        return None
+    by_basis = {}
+    for group, members in member_sets.items():
+        observations = {}
+        for point in matched:
+            period = str(point.get("period") or "")
+            if (not period[:4].isdigit() or not period.endswith("-12-31")
+                    or point.get("period_type") != "annual"):
+                continue
+            year = int(period[:4])
+            entity = point.get("entity")
+            basis = (point.get("scope"), point.get("currency"), point.get("unit"))
+            if point.get("metric") == "rd_ratio_derived" and entity == group:
+                refs = [report.evidence_index.get(rid) for rid in point.get("source_record_ids") or []]
+                if not refs or not all(refs) or {ref.entity for ref in refs} != members:
+                    continue
+                bases = {(ref.scope, ref.currency) for ref in refs}
+                if len(bases) != 1:
+                    continue
+                scope, currency = next(iter(bases))
+                basis = (scope, currency, point.get("unit"))
+                represented = members
+            elif entity in members:
+                represented = [entity]
+            else:
+                continue
+            if basis[0] == "consolidated" and all(basis):
+                observations.setdefault(basis, set()).update((name, year) for name in represented)
+        needed = {(name, year) for name in members for year in years}
+        for basis, cells in observations.items():
+            if needed <= cells:
+                by_basis.setdefault("|".join(basis), []).append(group)
+    return ChartGroupCoverage(required_groups=sorted(member_sets), by_basis=by_basis) if by_basis else None
+
+
+def _card_requirements(brief: QuestionBrief, kind: str, points, report, rows):
+    """Return relevance, complete metrics, and evidence for split group comparisons."""
+    group_coverage = {}
     if brief.chart_forbidden:
-        return False, []
+        return False, [], group_coverage
     if kind == "industry_chain":
         relevant = any(term in brief.text for term in ("产业链", "供应链", "上下游", "上中下游"))
-        return relevant, [f"{brief.question_id}:产业链结构"] if relevant else []
+        return relevant, [f"{brief.question_id}:产业链结构"] if relevant else [], group_coverage
     if kind in ("scatter", "bubble") and not any(
         term in brief.text for term in ("相关", "散点", "四象限", "相关性", "同步")
     ):
-        return False, []
+        return False, [], group_coverage
     relevant = False
     covered = []
     for metric in brief.metrics:
-        direct = [p for p in points if _metric_covered(metric, {str(p.get("metric") or "")})]
-        supporting = [p for p in points if _related_growth(metric, {str(p.get("metric") or "")})]
+        direct = [point for point in points if point.get("calculation") != "yoy_percent"
+                  and _metric_covered(metric, {str(point.get("metric") or "")})]
+        supporting = [point for point in points if _related_growth(metric, {str(point.get("metric") or "")})]
         matched = direct or supporting
         if not matched:
             continue
         clause = _metric_text(brief, metric)
-        years = _required_years(clause)
+        financial = metric in {"营业收入", "毛利率", "经营现金流", "研发强度", "利润率", "净利润"}
+        years = _financial_years(clause, brief, rows) if financial else _required_years(clause)
         monthly = _requires_monthly(clause, metric)
         year_labels = {str(year) for year in years}
         groups = ((getattr(report, "chain_analysis", None) or {}).get("groups") or {})
         named = _question_entities(brief, clause, _named_entities(clause, report), groups)
         matched = [
-            p for p in matched
-            if (not named or p.get("entity") in named
-                or (metric == "研发强度" and p.get("metric") == "rd_ratio_derived"
-                    and named.intersection(groups.get(p.get("entity"), {}).get("members") or [])))
-            and (not years or str(p.get("period") or "")[:4] in year_labels)
-            and (not monthly or p.get("observation_period_type", p.get("period_type")) in ("month", "monthly"))
+            point for point in matched
+            if (not named or point.get("entity") in named
+                or (metric == "研发强度" and point.get("metric") == "rd_ratio_derived"
+                    and named.intersection(groups.get(point.get("entity"), {}).get("members") or [])))
+            and (not years or str(point.get("period") or "")[:4] in year_labels)
+            and (not monthly or point.get("observation_period_type", point.get("period_type")) in ("month", "monthly"))
             and (metric != "渗透率" or "零售渗透率" not in clause
-                 or "零售" in str(p.get("metric") or "") or p.get("scope") == "retail")
+                 or "零售" in str(point.get("metric") or "") or point.get("scope") == "retail")
         ]
         if not matched:
             continue
         relevant = True
         if not direct:
             continue
+        key = f"{brief.question_id}:{metric}"
+        if (financial and "分组" in brief.relation_tags and named and years and not monthly
+                and not _SUBANNUAL_RE.search(clause)):
+            if details := _group_coverage(named, groups, matched, years, report):
+                group_coverage[key] = details
         if years:
             if monthly:
-                dates = {(p.get("entity"), str(p.get("period") or "")[:7]) for p in matched}
+                dates = {(point.get("entity"), str(point.get("period") or "")[:7]) for point in matched}
                 needed = _month_window(clause) or {
                     f"{year}-{month:02d}" for year in years for month in range(1, 13)
                 }
@@ -338,11 +442,11 @@ def _card_requirements(brief: QuestionBrief, kind: str, points, report):
                     continue
             annual = not monthly and len(years) > 1 and any(term in clause for term in ("年", "年度"))
             cells = {
-                (p.get("entity"), str(p.get("period") or "")[:4])
-                for p in matched
+                (point.get("entity"), str(point.get("period") or "")[:4])
+                for point in matched
                 if not annual or (
-                    str(p.get("period") or "").endswith("-12-31")
-                    and p.get("observation_period_type", p.get("period_type")) in ("annual", "ytd_month")
+                    str(point.get("period") or "").endswith("-12-31")
+                    and point.get("observation_period_type", point.get("period_type")) in ("annual", "ytd_month")
                 )
             }
             if named:
@@ -350,12 +454,12 @@ def _card_requirements(brief: QuestionBrief, kind: str, points, report):
                     continue
             elif {year for _, year in cells} != year_labels:
                 continue
-        elif named and not named <= {p.get("entity") for p in matched}:
+        elif named and not named <= {point.get("entity") for point in matched}:
             continue
-        covered.append(f"{brief.question_id}:{metric}")
+        covered.append(key)
     if not brief.metrics:
         relevant = _chart_relation(kind) in brief.relation_tags
-    return relevant, covered
+    return relevant, covered, group_coverage
 
 
 def _required_for(brief: QuestionBrief) -> list[str]:
@@ -366,8 +470,36 @@ def _required_for(brief: QuestionBrief) -> list[str]:
 
 def _covered_for(brief: QuestionBrief, cards: Sequence[CandidateCard]) -> set[str]:
     prefix = f"{brief.question_id}:"
-    return {key.removeprefix(prefix) for card in cards for key in card.sub_requirements
-            if key.startswith(prefix)}
+    covered = {key.removeprefix(prefix) for card in cards for key in card.sub_requirements
+               if key.startswith(prefix)}
+    for metric in brief.metrics:
+        if _group_cards(prefix + metric, cards) is not None:
+            covered.add(metric)
+    return covered
+
+
+def _group_cards(key: str, cards: Sequence[CandidateCard]) -> list[CandidateCard] | None:
+    """Pick a complete set under one comparable basis."""
+    qualified = [card for card in cards if key in card.group_coverage]
+    if not qualified:
+        return None
+    required = set(qualified[0].group_coverage[key].required_groups)
+    bases = sorted({basis for card in qualified for basis in card.group_coverage[key].by_basis})
+    complete = []
+    for basis in bases:
+        missing = set(required)
+        chosen = []
+        for card in sorted(qualified, key=lambda card: (
+            -len(card.group_coverage[key].by_basis.get(basis, [])), card.rank,
+        )):
+            members = set(card.group_coverage[key].by_basis.get(basis, []))
+            if members & missing:
+                chosen.append(card)
+                missing -= members
+            if not missing:
+                complete.append(chosen)
+                break
+    return min(complete, key=lambda items: (len(items), sum(card.rank for card in items)), default=None)
 
 
 def _fill_requirements(brief: QuestionBrief, cards: Sequence[CandidateCard], ids: list[str]) -> list[str]:
@@ -377,27 +509,33 @@ def _fill_requirements(brief: QuestionBrief, cards: Sequence[CandidateCard], ids
     for metric in _required_for(brief):
         if metric in _covered_for(brief, selected):
             continue
-        full = [card for card in eligible if metric in _covered_for(brief, [card])]
+        key = f"{brief.question_id}:{metric}"
+        full = [card for card in eligible if key in card.sub_requirements]
         related = [card for card in eligible if any(
             _metric_covered(metric, {name}) or _related_growth(metric, {name})
             for name in card.metrics
         )]
         if full:
-            pick = min(full, key=lambda card: card.rank)
+            picks = [min(full, key=lambda card: card.rank)]
+        elif groups := _group_cards(key, eligible):
+            picks = groups
         elif related and not any(card in selected for card in related):
-            pick = min(related, key=lambda card: (
+            picks = [min(related, key=lambda card: (
                 not any(_metric_covered(metric, {name}) for name in card.metrics), card.rank,
-            ))
+            ))]
         else:
             continue
-        if pick not in selected:
-            selected.append(pick)
-            extra.append(pick.card_id)
+        for pick in picks:
+            if pick not in selected:
+                selected.append(pick)
+                extra.append(pick.card_id)
     return extra
 
 
 def _prioritize_group_comparison(brief: QuestionBrief, cards: Sequence[CandidateCard], ids: list[str]) -> list[str]:
-    if "分组" not in brief.relation_tags:
+    if "分组" not in brief.relation_tags or "毛利率" in _covered_for(
+        brief, [card for card in cards if card.card_id in ids],
+    ):
         return ids
     by_period: dict[str, dict[str, CandidateCard]] = {}
     for card in cards:
@@ -469,6 +607,9 @@ def build_candidate_cards(
 ) -> list[CandidateCard]:
     """候选卡来自已经通过发布契约的图，因此不需要重新编译或渲染。"""
     cards: list[CandidateCard] = []
+    groups = (getattr(report, "chain_analysis", None) or {}).get("groups") or {}
+    appendix = getattr(report, "data_quality_appendix", None) or {}
+    links = link_question_requirements(briefs, appendix.get("requirement_evidence_matrix") or [], groups)
     for chart in charts:
         ctype = str(chart.chart_type)
         relation = _chart_relation(ctype)
@@ -480,15 +621,20 @@ def build_candidate_cards(
         units = sorted({str(p.get("unit")) for p in points if p.get("unit")})
         qids = []
         requirements = []
+        group_coverage = {}
         for brief in briefs:
-            relevant, covered = _card_requirements(brief, ctype, points, report)
+            relevant, covered, group_details = _card_requirements(
+                brief, ctype, points, report, links[brief.question_id],
+            )
             if relevant:
                 qids.append(brief.question_id)
                 requirements.extend(covered)
+                group_coverage.update(group_details)
         cards.append(CandidateCard(
             card_id=f"CARD-{chart.chart_id}",
             question_ids=qids,
             sub_requirements=requirements,
+            group_coverage=group_coverage,
             chart_type=ctype,  # type: ignore[arg-type]
             ideal_role=ideal,
             feasible_expression=ctype,
@@ -686,7 +832,10 @@ def _trim_cards(
     ordered_briefs = sorted(briefs, key=lambda b: (0 if b.requests_chart else 1, b.priority))
     keep: dict[str, CandidateCard] = {}
     for brief in ordered_briefs:
-        for card in [c for c in cards if brief.question_id in c.question_ids][:per_question]:
+        eligible = [c for c in cards if brief.question_id in c.question_ids]
+        priority_ids = set(_fill_requirements(brief, eligible, []))
+        eligible.sort(key=lambda card: (card.card_id not in priority_ids, card.rank))
+        for card in eligible[:per_question]:
             keep[card.card_id] = card
         if len(keep) >= total:
             break
@@ -753,7 +902,7 @@ def apply_plan_to_charts(
         refs[depth] for depth in range(1, max(map(len, selections), default=0))
         for refs in selections if depth < len(refs) and refs[depth] not in first
     ))
-    required = {card.candidate_ref for card in cards if card.sub_requirements}
+    required = {card.candidate_ref for card in cards if card.sub_requirements or card.group_coverage}
     ordered = first + sorted(extras, key=lambda ref: ref not in required)
     if max_charts and max_charts > 0:
         ordered = ordered[:max_charts]
@@ -799,6 +948,13 @@ def settle_coverage(
             reason=reason, chart_digest=digest,
         ))
     plan.coverage = coverage
+    if plan.mode == "apply":
+        questions_by_chart: dict[str, list[str]] = {}
+        for row in coverage:
+            for chart_id in row.chart_ids:
+                questions_by_chart.setdefault(chart_id, []).append(row.question_id)
+        for chart in charts:
+            chart.data_contract["question_ids"] = questions_by_chart.get(chart.chart_id, [])
     return plan
 
 

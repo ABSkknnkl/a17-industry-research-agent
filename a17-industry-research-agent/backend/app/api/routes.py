@@ -17,8 +17,18 @@ from pydantic import BaseModel, Field
 logger = logging.getLogger("api_routes")
 
 from backend.app.core.event_hub import event_hub
+from backend.app.core.report_delivery import (
+    report_download_eligibility as _report_download_eligibility,
+    report_download_options,
+)
 from backend.app.core.storage import storage
-from backend.app.engine.state_machine import ReviewConflictError, RevisionConflictError, engine
+from backend.app.engine.state_machine import (
+    ReviewConflictError,
+    RevisionConflictError,
+    UnsupportedChainCertificationError,
+    engine,
+    expose_current_review,
+)
 from backend.app.schemas.workflow import (
     AgentTraceEvent,
     RevisionListResponse,
@@ -32,93 +42,17 @@ from backend.app.schemas.workflow import (
 router = APIRouter(prefix="/api/v1")
 
 
-@dataclass(frozen=True)
-class ReportDownloadEligibility:
-    """报告类产物的当前版本与正式/草稿下载资格结论。"""
-
-    eligible: bool
-    draft_download: bool
-    explicit_draft: bool
-    generation_ok: bool
-    built_at_revision: int | None
-
-
-def _report_download_eligibility(
-    state: WorkflowState | None, artifact_id: str, mode: str
-) -> ReportDownloadEligibility:
-    """S-02 / R1 / P4 资格计算，由下载 GET 与紧凑交付包 POST 共用。
-
-    这段逻辑原样来自 download_artifact_endpoint，抽函数时不改变任何判据：
-    GET 的历史兼容、别名与错误响应仍按原行为执行。
-    """
-    fusion = state.stage_results.get("report_fusion") if state else None
-    fusion_data = fusion.data if (fusion and isinstance(fusion.data, dict)) else {}
-    built_at = fusion_data.get("built_at_revision")
-    status_ok = bool(fusion and fusion.status in ("approved", "completed"))
-    generation_ok = False
-    built_at_revision: int | None = None
-    if built_at is not None:
-        try:
-            built_at_revision = int(built_at)
-            generation_ok = bool(state) and built_at_revision == state.revision
-        except (TypeError, ValueError):
-            generation_ok = False
-        eligible = status_ok and generation_ok and not fusion_data.get("delivery_blocked")
-    else:
-        stale_any = any(
-            (sr.data or {}).get("downstream_stale")
-            for sr in (state.stage_results.values() if state else [])
-            if isinstance(sr.data, dict)
-        )
-        eligible = status_ok and not stale_any and not fusion_data.get("delivery_blocked")
-
-    draft_download = mode == "draft"
-    if built_at is not None:
-        quality = fusion_data.get("quality") or {}
-        content_ok = not fusion_data.get("hard_blocked")
-        formal_ok = (fusion_data.get("agent_status") != "partial"
-                     and quality.get("passed") is not False)
-        chain = fusion_data.get("chain_delivery") or {}
-        if chain.get("requested") and chain.get("status") != "complete":
-            formal_ok = False
-        eligible = eligible and content_ok and (draft_download or formal_ok)
-
-    # 编辑预览仅对本地重渲染的 MD/HTML 生效；PDF 仍受门禁约束。
-    preview_kind = {
-        "report_markdown": "report_markdown", "report.md": "report_markdown",
-        "report_html": "report_html", "report.html": "report_html",
-    }.get(artifact_id)
-    edited_preview = bool(
-        preview_kind and fusion and state
-        and fusion.status == "waiting_review"
-        and fusion_data.get("quality_notice")
-        and not fusion_data.get("exports_stale")
-        and not fusion_data.get("delivery_blocked")
-        and any(a.kind == preview_kind and a.revision == state.revision for a in fusion.artifacts)
-    )
-    explicit_draft = bool(
-        mode == "draft" and fusion and state and generation_ok
-        and fusion_data.get("draft_available") and fusion_data.get("draft_sanitized")
-        and not fusion_data.get("exports_stale") and not fusion_data.get("delivery_blocked")
-        and any(a.artifact_id == {"report.md": "report_markdown", "report.html": "report_html",
-                                  "report.pdf": "report_pdf"}.get(artifact_id, artifact_id)
-                and a.revision == state.revision for a in fusion.artifacts)
-    ) if built_at is not None else False
-    eligible = eligible or explicit_draft or (edited_preview and mode == "draft")
-    return ReportDownloadEligibility(
-        eligible=bool(eligible),
-        draft_download=draft_download,
-        explicit_draft=explicit_draft,
-        generation_ok=generation_ok,
-        built_at_revision=built_at_revision,
-    )
+def _current_state_response(state: WorkflowState) -> WorkflowState:
+    directory = storage.get_run_dir(state.run_id) / "artifacts"
+    state.report_download = report_download_options(state, directory)
+    return expose_current_review(state)
 
 
 @router.post("/runs", response_model=WorkflowState, status_code=status.HTTP_201_CREATED)
 async def create_run_endpoint(req: RunCreateRequest) -> WorkflowState:
     """创建并启动研报任务（首阶段异步推进，返回初始状态）"""
     try:
-        return await engine.create_run(req)
+        return _current_state_response(await engine.create_run(req))
     except ReviewConflictError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
@@ -141,7 +75,7 @@ async def get_run_endpoint(run_id: str) -> WorkflowState:
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"未找到研报任务: {run_id}",
         )
-    return state
+    return _current_state_response(state)
 
 
 @router.get("/runs/{run_id}/revisions", response_model=RevisionListResponse)
@@ -166,7 +100,7 @@ async def get_revision_endpoint(run_id: str, revision: int) -> WorkflowState:
 async def restore_revision_endpoint(run_id: str, revision: int) -> WorkflowState:
     """从指定的历史版本快照回滚并恢复为新版本"""
     try:
-        return await engine.restore_revision(run_id, revision)
+        return _current_state_response(await engine.restore_revision(run_id, revision))
     except ValueError as e:
         err_msg = str(e)
         if "未找到" in err_msg or "不存在" in err_msg:
@@ -195,7 +129,9 @@ async def submit_review_endpoint(run_id: str, req: ReviewRequest) -> WorkflowSta
     if req.run_id != run_id:
         req.run_id = run_id
     try:
-        return await engine.handle_review(req)
+        return _current_state_response(await engine.handle_review(req))
+    except UnsupportedChainCertificationError as e:
+        raise HTTPException(status_code=422, detail=str(e))
     except (ReviewConflictError, RevisionConflictError) as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
@@ -208,7 +144,7 @@ async def submit_review_endpoint(run_id: str, req: ReviewRequest) -> WorkflowSta
 async def cancel_run_endpoint(run_id: str) -> WorkflowState:
     """中途强行中断并取消运行中或等待审核的任务"""
     try:
-        return await engine.cancel_run(run_id)
+        return _current_state_response(await engine.cancel_run(run_id))
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
@@ -225,7 +161,7 @@ async def resume_run_endpoint(
 ) -> WorkflowState:
     """断点恢复执行：从中断/失败阶段或指定阶段一键继续推进流水线"""
     try:
-        return await engine.resume_run(run_id, from_stage=from_stage)
+        return _current_state_response(await engine.resume_run(run_id, from_stage=from_stage))
     except ReviewConflictError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     except ValueError as e:
@@ -297,6 +233,33 @@ async def delete_run_endpoint(run_id: str):
         )
     await engine.delete_run(run_id)
     return {"status": "ok", "message": f"任务 {run_id} 已成功删除"}
+
+
+@router.get("/runs/{run_id}/report-preview", response_class=FileResponse)
+async def preview_report_endpoint(run_id: str):
+    """Serve current HTML for review without enabling formal downloads."""
+    state = storage.load_state(run_id)
+    if not state:
+        raise HTTPException(404, "未找到研报任务")
+    directory = storage.get_run_dir(run_id) / "artifacts"
+    if not report_download_options(state, directory).preview_available:
+        raise HTTPException(409, "当前版本没有可预览的报告")
+    headers = {"Cache-Control": "private, no-store", "Content-Security-Policy": "sandbox"}
+    fusion = state.stage_results["report_fusion"]
+    if not fusion.data.get("quality_notice") and (directory / "report_view.json").is_file():
+        from report_fusion.render import render_html
+
+        try:
+            view, _, _ = _read_report_view(directory)
+        except HTTPException as exc:
+            if exc.status_code != 409:
+                raise
+            logger.warning("任务 %s 的历史视图无法按当前结构渲染，使用已保存的报告预览", run_id)
+        else:
+            if not fusion.data.get("report_id") or fusion.data["report_id"] == view.report_id:
+                content = render_html(view, source_index_mode="compact", embedded_preview=True)
+                return Response(content, media_type="text/html", headers=headers)
+    return FileResponse(directory / "report.html", media_type="text/html", headers=headers)
 
 
 @router.get("/runs/{run_id}/artifacts/{artifact_id}")
@@ -414,10 +377,31 @@ _COMPACT_EXPORT_SLOT = threading.Lock()
 _COMPACT_EXPORT_TIMEOUT = float(os.getenv("A5_COMPACT_EXPORT_TIMEOUT_SECONDS", "190"))
 
 
-def _compact_snapshot(state, artifacts_dir, body: CompactExportRequest) -> CompactSnapshot:
-    """锁内执行：版本、资格、文件可用性与视图一致性；只返回制包所需快照。"""
+def _read_report_view(artifacts_dir):
     from report_fusion.models import ReportViewModel
 
+    view_path = artifacts_dir / "report_view.json"
+    if not view_path.is_file():
+        raise HTTPException(409, "缺少当前报告视图，请重新生成")
+    if not view_path.resolve().is_relative_to(artifacts_dir.resolve()):
+        raise HTTPException(400, "报告视图不得位于任务目录之外")
+
+    raw_bytes = view_path.read_bytes()
+    try:
+        raw = json.loads(raw_bytes.decode("utf-8"))
+        if not isinstance(raw, dict):
+            raise ValueError("报告视图必须是 JSON 对象")
+        # 编辑导出会在视图里混入工作流附加字段；按声明字段投影后再校验。
+        canonical = {k: v for k, v in raw.items() if k in ReportViewModel.model_fields}
+        view = ReportViewModel.model_validate(canonical)
+    except (ValueError, TypeError, UnicodeDecodeError) as exc:
+        raise HTTPException(409, f"当前报告视图无法解析，请重新生成：{exc}") from exc
+
+    return view, raw_bytes, view_path
+
+
+def _compact_snapshot(state, artifacts_dir, body: CompactExportRequest) -> CompactSnapshot:
+    """锁内执行：版本、资格、文件可用性与视图一致性；只返回制包所需快照。"""
     if state.revision != body.expected_revision:
         raise HTTPException(409, "报告版本已更新，请刷新页面后重新下载")
     if state.status in ("cancelled", "rejected", "failed", "running", "pending"):
@@ -437,20 +421,7 @@ def _compact_snapshot(state, artifacts_dir, body: CompactExportRequest) -> Compa
     pdf_path = artifacts_dir / "report.pdf"
     if not pdf_path.is_file() or pdf_path.stat().st_size == 0:
         raise HTTPException(409, "当前 PDF 不可用，请重新生成后再导出")
-    view_path = artifacts_dir / "report_view.json"
-    if not view_path.is_file():
-        raise HTTPException(409, "缺少当前报告视图，请重新生成")
-    if not view_path.resolve().is_relative_to(artifacts_dir.resolve()):
-        raise HTTPException(400, "报告视图不得位于任务目录之外")
-
-    raw_bytes = view_path.read_bytes()
-    try:
-        raw = json.loads(raw_bytes.decode("utf-8"))
-        # 编辑导出会在视图里混入工作流附加字段；按声明字段投影后再校验。
-        canonical = {k: v for k, v in raw.items() if k in ReportViewModel.model_fields}
-        view = ReportViewModel.model_validate(canonical)
-    except (ValueError, TypeError, UnicodeDecodeError) as exc:
-        raise HTTPException(409, f"当前报告视图无法解析，请重新生成：{exc}") from exc
+    view, raw_bytes, view_path = _read_report_view(artifacts_dir)
 
     fused_report_id = fusion_data.get("report_id")
     if fused_report_id and str(fused_report_id) != view.report_id:
@@ -471,6 +442,34 @@ def _compact_snapshot(state, artifacts_dir, body: CompactExportRequest) -> Compa
         mode=body.mode,
         view_path=view_path,
     )
+
+
+@router.get("/runs/{run_id}/exports/evidence-index")
+async def download_evidence_index(
+    run_id: str, expected_revision: int = Query(ge=0), mode: Literal["formal", "draft"] = "formal",
+):
+    """Download the current delivery's full evidence catalog without rendering the PDF."""
+    from report_fusion.render import EVIDENCE_CSV_NAME, render_evidence_csv
+
+    try:
+        async with engine._run_lock(run_id):
+            engine._ensure_not_clearing()
+            state = storage.load_state(run_id)
+            if state is None:
+                raise HTTPException(404, "未找到研报任务")
+            directory = storage.get_run_dir(run_id) / "artifacts"
+            body = CompactExportRequest(mode=mode, expected_revision=expected_revision)
+            snapshot = _compact_snapshot(state, directory, body)
+            content = render_evidence_csv(snapshot.view)
+    except ReviewConflictError as exc:
+        raise HTTPException(409, "报告已更新或正在清理，请刷新后重试") from exc
+
+    filename = ("draft-" if mode == "draft" else "") + EVIDENCE_CSV_NAME
+    return Response(content=content, media_type="text/csv", headers={
+        "Content-Disposition": f'attachment; filename="{filename}"',
+        "Cache-Control": "private, no-store",
+        "X-Report-Mode": mode,
+    })
 
 
 @router.post("/runs/{run_id}/exports/compact")

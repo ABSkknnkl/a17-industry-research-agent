@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import EvidenceIndexDownload from '../components/EvidenceIndexDownload.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { downloadArtifact, downloadCompactReport, getRun, triggerBlobDownload } from '../api/client'
@@ -46,6 +47,9 @@ let compactController: AbortController | null = null
 
 const compactReady = computed(() => {
   if (!gate.value.downloadable || !workflow.value) return false
+  if (workflow.value.report_download) {
+    return workflow.value.report_download.compact_mode === (gate.value.mode ?? 'formal')
+  }
   const stage = workflow.value.stage_results.report_fusion
   const currentRevision = workflow.value.revision
   const hasCurrentPdf = (stage?.artifacts ?? []).some(
@@ -96,6 +100,7 @@ const phase = ref<'idle' | 'downloading' | 'done' | 'partial' | 'error'>('idle')
 const completedCount = ref(0)
 const failedItems = ref<DownloadItem[]>([])
 let cancelled = false
+let loadGeneration = 0
 
 /** ArtifactList 展示的产物（与批量下载同一顺序） */
 const tableArtifacts = computed<ArtifactRef[]>(() => items.value.map((item) => item.artifact))
@@ -112,14 +117,21 @@ const INTER_DOWNLOAD_MS = 400
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function load(): Promise<void> {
+  const generation = ++loadGeneration
   loading.value = true
   loadError.value = ''
   try {
     const state = await getRun(runId.value)
+    if (generation !== loadGeneration) return
     workflow.value = state
     gate.value = classifyReportDownload(state)
+    const options = state.report_download
+    const allowed =
+      gate.value.mode === 'draft' ? options?.draft_artifact_ids : options?.formal_artifact_ids
     items.value = reportArtifacts(state)
-      .slice()
+      .filter(
+        (artifact) => !gate.value.downloadable || !allowed || allowed.includes(artifact.artifact_id)
+      )
       .sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind))
       .map((artifact) => ({
         artifact,
@@ -127,9 +139,11 @@ async function load(): Promise<void> {
         status: 'pending' as ItemStatus,
       }))
   } catch (e) {
-    loadError.value = e instanceof ApiError ? e.message : '加载任务失败，请稍后重试'
+    if (generation === loadGeneration) {
+      loadError.value = e instanceof ApiError ? e.message : '加载任务失败，请稍后重试'
+    }
   } finally {
-    loading.value = false
+    if (generation === loadGeneration) loading.value = false
   }
 }
 
@@ -141,24 +155,30 @@ async function downloadAll(): Promise<void> {
   completedCount.value = 0
   items.value.forEach((item) => (item.status = 'pending'))
 
+  const generation = loadGeneration
+  const id = runId.value
+  const mode = gate.value.mode
+  const interrupted = () => cancelled || generation !== loadGeneration
   let done = 0
   for (const item of items.value) {
-    if (cancelled) break
+    if (interrupted()) break
     item.status = 'downloading'
     try {
-      const { blob, filename } = await downloadArtifact(runId.value, item.artifact, gate.value.mode)
+      const { blob, filename } = await downloadArtifact(id, item.artifact, mode)
       // 取到之后也要复查：用户可能在这期间取消了，不该再落一份
-      if (cancelled) break
+      if (interrupted()) break
       triggerBlobDownload(blob, filename)
       item.status = 'done'
       completedCount.value = ++done
     } catch {
+      if (interrupted()) break
       item.status = 'failed'
       failedItems.value.push(item)
     }
-    if (!cancelled) await sleep(INTER_DOWNLOAD_MS)
+    if (!interrupted()) await sleep(INTER_DOWNLOAD_MS)
   }
 
+  if (generation !== loadGeneration) return
   if (cancelled) {
     phase.value = 'idle'
     return
@@ -217,9 +237,16 @@ watch(runId, () => {
   compactController = null
   compactPhase.value = 'idle'
   compactMessage.value = ''
+  cancelled = true
+  phase.value = 'idle'
+  workflow.value = null
+  gate.value = EMPTY_GATE
+  items.value = []
+  void load()
 })
 // 卸载即中止循环，避免"离开页面后还在后台继续落文件"
 onBeforeUnmount(() => {
+  loadGeneration += 1
   cancelled = true
   compactController?.abort()
   compactController = null
@@ -311,6 +338,7 @@ onBeforeUnmount(() => {
       >
         {{ gate.mode === 'draft' ? '下载紧凑草稿包' : '下载紧凑交付包' }}
       </el-button>
+      <EvidenceIndexDownload :workflow="workflow" />
       <span class="muted" data-testid="report-download-compact-hint">
         单个 ZIP，含报告三格式与完整证据索引 CSV
       </span>

@@ -1,0 +1,2742 @@
+{
+  "run_id": "chapters-20261115162829-1d0926fa",
+  "source_report_id": "analysis-20261115-86b0b0b3",
+  "subject": "低空经济",
+  "as_of": "2026-11-15",
+  "status": "partial",
+  "generated_at": "2026-11-15T08:29:55.820145Z",
+  "outline_version": "2026.1",
+  "model_name": "deepseek-v4-flash",
+  "applied_skills": [
+    {
+      "name": "chapter-quality-control",
+      "description": "对章节完整性、重复、长句、术语堆叠、逻辑衔接和图证关系进行质量检查。",
+      "source": "skills包/投行材料质检/SKILL.md",
+      "adaptation": "保留数字、叙事、语言和视觉四维质检；移除人工审阅动作和演示文稿专属检查。",
+      "chapters": [
+        "CH-01",
+        "CH-02",
+        "CH-03",
+        "CH-04",
+        "CH-05",
+        "CH-06",
+        "CH-07"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "competitive-landscape-writing",
+      "description": "使用同期间、同定义指标组织参与者分层、定位、比较和竞争壁垒。",
+      "source": "skills包/竞争格局分析/SKILL.md",
+      "adaptation": "用户显式选择；按适用章节加载",
+      "chapters": [
+        "CH-04"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "evidence-grounded-writing",
+      "description": "将上游事实和洞察写成可追溯段落，严格区分事实、解释、假设和未知。",
+      "source": "skills包/投行材料质检/SKILL.md; skills包/行业概览/SKILL.md",
+      "adaptation": "提炼数字一致性、来源可追溯和数据叙事匹配；不引入外部检索、投资建议或审批流程。",
+      "chapters": [
+        "CH-01",
+        "CH-02",
+        "CH-03",
+        "CH-04",
+        "CH-05",
+        "CH-06",
+        "CH-07"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "financial-analysis-writing",
+      "description": "从增长、盈利质量、现金流、资产负债和运营效率组织财务章节。",
+      "source": "skills包/财务报表深度解读/financial-statement/SKILL.md",
+      "adaptation": "用户显式选择；按适用章节加载",
+      "chapters": [
+        "CH-05"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "geopolitical-risk-writing",
+      "description": "指导第6章风险评估的撰写，针对出海关税变动、海外技术出口管制与供应链核心卡脖子断供进行结构化情景推演。",
+      "source": "skills包/地缘政治风险分析/geopolitical-risk/SKILL.md",
+      "adaptation": "指导第6章量化海外出海关税、进出口管制与核心部件断供的极端情景推演；移除资产配置与对冲。",
+      "chapters": [
+        "CH-06"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "industry-chain-writing",
+      "description": "按价值流拆解产业链环节、节点关系、壁垒、议价权和可验证传导路径。",
+      "source": "skills包/产业链解读/SKILL.md",
+      "adaptation": "用户显式选择；按适用章节加载",
+      "chapters": [
+        "CH-03"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "industry-overview-writing",
+      "description": "组织行业定义、边界、规模、增长、结构、驱动和研究限制。",
+      "source": "skills包/行业概览/SKILL.md",
+      "adaptation": "保留行业全景、增长与驱动框架；移除主动调研、投资含义和个股建议。",
+      "chapters": [
+        "CH-01",
+        "CH-02",
+        "CH-06"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "risk-scenario-writing",
+      "description": "将风险、情景假设、触发条件、影响路径和监测指标写成可验证的结论边界。",
+      "source": "skills包/风险分析与压力测试/risk-analysis/SKILL.md",
+      "adaptation": "保留情景、尾部风险、触发条件和模型限制；移除组合风险计算、交易风控和资产配置建议。",
+      "chapters": [
+        "CH-07"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "tech-fundamentals-writing",
+      "description": "指导高成长与新兴科技赛道章节的撰写，以商业化落地订单、现金流与真实研发产出对冲概念炒作，增强论证客观性。",
+      "source": "skills包/科技炒作与基本面/SKILL.md",
+      "adaptation": "用户显式选择；按适用章节加载",
+      "chapters": [
+        "CH-01",
+        "CH-03",
+        "CH-05"
+      ],
+      "status": "applied"
+    },
+    {
+      "name": "thesis-tracking-writing",
+      "description": "指导研报最终展望章节撰写对冲基金标准的投资逻辑跟踪台账（Thesis Scorecard），明确三大驱动支柱、前瞻验证信号与证伪红线。",
+      "source": "skills包/投资逻辑跟踪/SKILL.md",
+      "adaptation": "指导在结论章节输出对冲基金标准的 Thesis 框架，梳理核心假说、前瞻观测指标与证伪红线；移除仓位指令。",
+      "chapters": [
+        "CH-07"
+      ],
+      "status": "applied"
+    }
+  ],
+  "chapters": [
+    {
+      "chapter_id": "CH-01",
+      "title": "行业定义与研究基础",
+      "summary": "低空经济以1000米以下低空空域为主要活动空间，载体以直升机、电动垂直起降型飞机和无人驾驶航空器为主，产业链涵盖低空制造、低空飞行、低空保障、综合服务四大环节。2023年12月中央经济工作会议将其确定为战略性新兴产业，2025年中国低空经济规模达7151.2亿元、同比增长16.8%，产业正从规模扩张转向质量爬坡，标准化建设成为关键变量。但eVTOL适航取证进展、低空应用场景市场容量等核心需求指标均无合格证据记录，无法对产业化落地节奏和市场空间进行量化验证，本章结论以行业定义、产业链结构和可核验的财务数据为边界。",
+      "sections": [
+        {
+          "section_id": "SEC-01-01",
+          "title": "行业定义、研究边界与证券范围",
+          "purpose": "界定行业、市场和研究范围。",
+          "key_points": [
+            "低空经济以1000米以下低空空域为主要活动空间，载体以直升机、电动垂直起降型飞机和无人驾驶航空器为主。",
+            "产业链涵盖低空制造、低空飞行、低空保障、综合服务四大环节。",
+            "2023年12月中央经济工作会议将低空经济确定为战略性新兴产业。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-01-01-01",
+              "kind": "thesis",
+              "text": "低空经济是以低空空域为主要活动空间、围绕低空飞行器制造与运营形成的综合经济形态，其研究边界由空域范围、载体类型和产业链结构共同界定。载体以直升机、电动垂直起降型飞机和无人驾驶航空器为主。这一界定将低空经济与传统高空航空领域区分开，构成后续市场规模与产业链分析的空间基础。",
+              "evidence_ids": [
+                "R-bbdbdeb72c0a62ac71fc",
+                "R-e9470d4df7cade3987bd"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-01-01-02",
+              "kind": "evidence",
+              "text": "产业链结构上，低空经济涵盖低空飞行、低空制造、综合服务、低空保障四大板块，具体包括航空器制造、零部件、机载设备、低空空域管控系统、无人机飞行信息、基础设施建设运营等环节。该结构为后续分析产业链价值分配和企业映射提供了框架，但当前证据仅能支撑环节划分，无法量化各环节的价值占比。",
+              "evidence_ids": [
+                "R-08f9750cd441dfd18e05",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-01-01-03",
+              "kind": "evidence",
+              "text": "政策定位方面，2023年12月中央经济工作会议明确将“低空经济”确定为战略性新兴产业，高层到地方政策密集出台，空域管理、飞行管理标准不断完善。这一政策定位为行业提供了顶层战略支撑，但空域开放的具体节奏和标准落地进度缺乏可核验的数据记录，属于后续需补充的证据缺口。",
+              "evidence_ids": [
+                "R-e9470d4df7cade3987bd"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "低空经济各细分环节的市场规模与价值占比缺乏量化数据，产业链价值分配无法精确测算。",
+            "空域管理政策开放的具体时间表与标准落地进度无合格证据记录。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [],
+          "layout_hint": "text_only"
+        },
+        {
+          "section_id": "SEC-01-02",
+          "title": "数据口径、研究时点与分析方法",
+          "purpose": "说明数据时点、单位和可比性边界。",
+          "key_points": [
+            "研究时点为2026-11-15，行业数据以2026-11-13为观测日。",
+            "财务数据以年度合并报表口径为主，万丰奥威归母净利润存在unit_unknown质量标记。",
+            "核心需求指标（eVTOL适航取证、低空应用场景市场容量）无合格证据记录，无法量化验证。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-01-02-01",
+              "kind": "methodology",
+              "text": "本报告研究时点为2026-11-15，行业估值数据以2026-11-13为观测日（如国防军工行业市盈率67.56倍），财务数据以年度合并报表口径为主，币种为人民币。宏观数据采用中国GDP累计同比（ytd_month口径），需注意增长率的变化不直接代表收入或利润金额的变化。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-1e0973f08f882cb89d13"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-01-02-02",
+              "kind": "methodology",
+              "text": "财务数据可比性方面，万丰奥威归母净利润存在unit_unknown质量标记，虽不影响数值解读，但单位一致性需注意；中信海直、莱斯信息等公司财务数据覆盖2021-2025年完整年度序列，毛利率等指标可用于纵向对比。净现比（经营活动现金流/归母净利润）因缺少同口径归母净利润，本次无法计算，不得给出倍数。",
+              "evidence_ids": [
+                "R-ebb3c32714ebe56051df",
+                "R-29f08589f36c8c964338",
+                "R-545cef1a7603d446afe3"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-01-02-03",
+              "kind": "risk",
+              "text": "证据覆盖边界方面，eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录，无法进行量化验证。超过一半的数值记录缺少日期，存在3组未消解的来源冲突，相关结论需谨慎对待。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "万丰奥威财务数据存在unit_unknown质量标记，可能影响数值解读。",
+            "超过一半的数值记录缺少日期，存在3组未消解的来源冲突。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "数据覆盖边界声明",
+              "text": "本报告证据库中缺少eVTOL适航取证、低空应用场景市场容量等核心需求指标的直接数据，相关结论无法验证。任何关于低空经济市场容量或产业化节奏的结论均属猜测，需优先补齐适航取证、政策、市场数据。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        },
+        {
+          "section_id": "SEC-01-03",
+          "title": "行业发展阶段与当前核心矛盾",
+          "purpose": "概括有证据支持的发展阶段与核心矛盾。",
+          "key_points": [
+            "2025年中国低空经济规模达7151.2亿元，同比增长16.8%，产业正从规模扩张转向质量爬坡。",
+            "标准化建设成为关键变量，我国从标准跟随者转向制定者。",
+            "eVTOL适航取证进展无合格证据记录，无法评估产业化落地节奏。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-01-03-01",
+              "kind": "thesis",
+              "text": "低空经济产业正处于从规模扩张转向质量爬坡的阶段，标准化建设成为关键变量。要让低空经济“飞得快”的同时“飞得稳”，标准化建设是关键变量。",
+              "evidence_ids": [
+                "R-9cdcf567c5433101c380"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-01-03-02",
+              "kind": "evidence",
+              "text": "标准化进程方面，我国已从标准“跟随者”转向“制定者”，国际标准化组织（ISO）无人机系统分技术委员会公布的国际标准中，我国联合牵头制定了《无人机感知与避障系统》国际标准。这一转变有助于提升产业国际竞争力，利好具备标准制定能力的企业，是投资分析的重要考量。",
+              "evidence_ids": [
+                "R-9cdcf567c5433101c380"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-01-03-03",
+              "kind": "risk",
+              "text": "针对eVTOL飞行器产业化商业化落地节奏问题，当前证据库中无适航取证进展、型号合格证（TC）等合格证据记录，无法评估eVTOL产业化落地节奏、企业竞争格局或市场空间。现有证据仅能支撑对万丰奥威等个别公司的财务分析，无法对低空经济整体商业化进程做出判断。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-01-03-04",
+              "kind": "analysis",
+              "text": "宏观环境方面，中国GDP累计同比增速从2025-03-31的5.4%回落至2026-09-30的4.6%，宏观增速放缓可能影响低空经济商业化落地节奏，但政策逆周期调节可能加速空域开放和基础设施建设。该判断仅基于宏观增速与行业政策方向的关联，缺乏直接传导机制证据，属于待检验解释。",
+              "evidence_ids": [
+                "R-1e0973f08f882cb89d13",
+                "R-3274a4e963fea3471763",
+                "R-3558520de5ddcdaedba0",
+                "R-be77076a0682691dc081"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "eVTOL适航取证进展无合格证据记录，无法评估产业化落地节奏。",
+            "低空应用场景市场容量无合格证据记录，无法量化市场空间。",
+            "宏观增速与低空经济商业化之间的传导机制缺乏直接证据。"
+          ],
+          "metric_cards": [
+            {
+              "label": "国防军工行业市盈率",
+              "value": "67.56",
+              "unit": "倍",
+              "period": "2026-11-13",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ]
+            }
+          ],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "risk",
+              "title": "核心问询数据缺口",
+              "text": "eVTOL适航取证进展、低空应用场景市场容量等核心需求指标均无合格证据记录，无法进行量化验证。相关结论需谨慎对待，需优先补齐适航取证、政策、市场数据。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ]
+            }
+          ],
+          "layout_hint": "metrics_grid"
+        }
+      ],
+      "evidence_ids": [
+        "R-bbdbdeb72c0a62ac71fc",
+        "R-e9470d4df7cade3987bd",
+        "R-08f9750cd441dfd18e05",
+        "R-c8537811466f907bcaa2",
+        "R-5ac23ba3462b1c910e3b",
+        "R-1e0973f08f882cb89d13",
+        "R-ebb3c32714ebe56051df",
+        "R-29f08589f36c8c964338",
+        "R-545cef1a7603d446afe3",
+        "R-9cdcf567c5433101c380",
+        "R-3274a4e963fea3471763",
+        "R-3558520de5ddcdaedba0",
+        "R-be77076a0682691dc081"
+      ],
+      "chart_ids": [],
+      "used_fallback": false,
+      "content_audit": [
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-01-03",
+          "section_id": "SEC-01-03",
+          "claim": "SEC-01-03 指标卡「中国低空经济规模」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-01-03",
+          "section_id": "SEC-01-03",
+          "claim": "SEC-01-03 指标卡「低空经济规模同比增速」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-01-01-01",
+          "section_id": "SEC-01-01",
+          "original": "低空经济是以低空空域为主要活动空间、围绕低空飞行器制造与运营形成的综合经济形态，其研究边界由空域范围、载体类型和产业链结构共同界定。据硕远咨询《中国低空经济产业链全景研究报告》，低空通常指距正下方地平面垂直距离1000米以内的空域，根据不同地区特点可延伸至3000米；载体以直升机、电动垂直起降型飞机和无人驾驶航空器为主。这一界定将低空经济与传统高空航空领域区分开，构成后续市场规模与产业链分析的空间基础。",
+          "claim": "P-01-01-01 数值语义未通过：1000（需同实体、指标和期间证据）；P-01-01-01 数值语义未通过：3000（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-bbdbdeb72c0a62ac71fc",
+            "R-e9470d4df7cade3987bd"
+          ],
+          "disposition": "partially_retained",
+          "reason": "ValidationError"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-01-03-01",
+          "section_id": "SEC-01-03",
+          "original": "低空经济产业正处于从规模扩张转向质量爬坡的阶段，标准化建设成为关键变量。据经济日报报道，2026低空经济产业发展大会发布的《中国低空经济发展研究报告（2026）》显示，2025年中国低空经济规模达7151.2亿元，同比增长16.8%，产业正从规模扩张转向质量爬坡。要让低空经济“飞得快”的同时“飞得稳”，标准化建设是关键变量。",
+          "claim": "P-01-03-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-01-03-01 数值语义未通过：16.8%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-9cdcf567c5433101c380"
+          ],
+          "disposition": "partially_retained",
+          "reason": "ValidationError"
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH-02",
+      "title": "市场规模与成长性",
+      "summary": "低空经济处于规模化前夜，但核心需求侧证据（适航取证、空域政策、应用场景容量）缺失，无法量化产业周期位置。可追溯的财务证据仅覆盖三家样本公司，且2025年普遍出现利润或现金流的异常波动，盈利质量与低空业务贡献均待核。",
+      "sections": [
+        {
+          "section_id": "SEC-02-01",
+          "title": "市场规模与历史增长趋势",
+          "purpose": "呈现可追溯的规模与增长证据。",
+          "key_points": [
+            "2025年中国低空经济规模达7151.2亿元，同比增长16.8%，产业从规模扩张转向质量爬坡。",
+            "标准化建设成为关键变量，我国从标准跟随者转向制定者。",
+            "核心需求侧指标（适航取证、空域政策、应用场景容量）无合格证据，无法量化产业周期位置。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-02-01-01",
+              "kind": "thesis",
+              "text": "低空经济已进入规模化前夜，但产业周期位置无法从现有证据确认。该数据为单一来源的行业总量读数，缺乏分环节、分场景的结构性拆分，无法据此判断产业处于导入期、成长期还是成熟期。",
+              "evidence_ids": [
+                "R-9cdcf567c5433101c380"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-02-01-02",
+              "kind": "evidence",
+              "text": "标准化建设成为产业从规模扩张转向质量提升的关键变量。我国已从标准跟随者转向制定者，国际标准化组织（ISO）无人机系统分技术委员会公布的国际标准中，我国联合牵头制定了《无人机感知与避障系统》国际标准。这一进展意味着行业准入门槛和竞争格局可能随之重塑，利好具备标准制定能力的企业，但标准落地对市场规模的量化影响尚无证据。",
+              "evidence_ids": [
+                "R-9cdcf567c5433101c380"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-02-01-03",
+              "kind": "risk",
+              "text": "核心需求侧指标——eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量——均无合格证据记录，无法评估eVTOL产业化落地节奏、企业竞争格局或市场空间。现有证据仅能支撑对个别公司的财务分析，无法对低空经济整体商业化进程做出判断。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "低空经济规模数据仅单一来源，缺乏分环节、分场景的结构性拆分。",
+            "eVTOL适航取证进展、空域政策开放节奏、应用场景市场容量等核心需求指标无合格证据。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "数据边界声明",
+              "text": "本节的低空经济规模与增速数据来自《中国低空经济发展研究报告（2026）》单一来源，未获得分环节、分场景的结构性数据，无法据此线性外推至整个产业或细分市场。",
+              "evidence_ids": [
+                "R-9cdcf567c5433101c380"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        },
+        {
+          "section_id": "SEC-02-02",
+          "title": "需求驱动因素与细分市场变化",
+          "purpose": "说明需求驱动及其边界。",
+          "key_points": [
+            "宏观经济增长动能减弱，低空经济政策或需加码。",
+            "产业链四大环节（低空制造、低空飞行、低空保障、综合服务）结构清晰，但企业映射缺失，价值分配无法量化。",
+            "低空基础设施竞争正从单一产品向平台化、全链条解决方案演进。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-02-02-01",
+              "kind": "thesis",
+              "text": "宏观经济增长动能减弱，低空经济政策或需加码。这一判断依赖宏观数据与产业政策的间接关联，缺乏低空经济自身的需求弹性证据。",
+              "evidence_ids": [],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-02-02-02",
+              "kind": "evidence",
+              "text": "低空经济产业链结构清晰，涵盖低空制造、低空飞行、低空保障、综合服务四大环节，但企业映射缺失，价值分配无法量化。低空基础设施竞争正从单一产品向平台化、全链条解决方案演进，中科星图推出“五位一体”低空产品体系，为国内首个完整低空基础设施解决方案。",
+              "evidence_ids": [
+                "R-08f9750cd441dfd18e05",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-02-02-03",
+              "kind": "risk",
+              "text": "低空应用场景市场容量、城市空中交通、物流配送、应急救援等核心需求指标均无合格证据记录，无法量化验证。任何关于低空经济市场容量或产业化节奏的结论均属猜测，需优先补齐适航取证、政策、市场数据。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "低空应用场景市场容量、城市空中交通、物流配送、应急救援等核心需求指标无合格证据。",
+            "产业链各环节的企业映射缺失，价值分配无法量化。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "需求侧证据缺口",
+              "text": "低空应用场景市场容量、空域政策开放节奏、适航取证进展等核心需求指标均无合格证据记录，无法进行量化验证，相关结论需谨慎对待。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        },
+        {
+          "section_id": "SEC-02-03",
+          "title": "供需关系、产能与行业周期",
+          "purpose": "分析供需、产能和周期传导。",
+          "key_points": [
+            "三家样本公司2025年普遍出现利润或现金流的异常波动，盈利质量与低空业务贡献均待核。",
+            "莱斯信息2025年营收下滑、净利率下降、经营现金流为负，呈现收缩特征。",
+            "万丰奥威2025年归母净利润跃升为时间序列尖峰异常，需关注利润构成与可持续性。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-02-03-01",
+              "kind": "thesis",
+              "text": "样本公司2025年财务表现分化明显，但均出现异常波动，无法据此判断行业周期位置。中信海直营收增速降至3.33%，但毛利率和净利率保持相对稳定；万丰奥威归母净利润跃升为时间序列尖峰异常。",
+              "evidence_ids": [
+                "R-dbdd2d38d0846a856db5",
+                "R-6eb32e35f9e8a81d189f",
+                "R-66c857361c6cfac43d33",
+                "R-ebb3c32714ebe56051df"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-02-03-02",
+              "kind": "chart_readout",
+              "text": "展示了中信海直与莱斯信息2021-2025年营业收入同比增速的对比。莱斯信息增速从2021年的19.96%波动下行，2025年降至-20.89%。",
+              "evidence_ids": [
+                "R-db4571e1d278bd72e33e",
+                "R-a7a2a382d385f00a7ab8",
+                "R-a1caaa372f1b85a9d421",
+                "R-4f199720e7113ac78fb9",
+                "R-66c857361c6cfac43d33",
+                "R-fba7874280ab07ffe549",
+                "R-0fbaeaa3f10ef1365a7f",
+                "R-632012136ac646511c43",
+                "R-b3272106d966acd5ceaf",
+                "R-dbdd2d38d0846a856db5"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-02-03-03",
+              "kind": "analysis",
+              "text": "莱斯信息2025年营收下滑、净利率下降、经营现金流为负，呈现收缩特征。这些变化可能源于项目验收节奏或费用确认，但缺乏分部数据，无法归因于低空业务。",
+              "evidence_ids": [
+                "R-dbdd2d38d0846a856db5",
+                "R-6eb32e35f9e8a81d189f",
+                "R-b878e163aab260341d30",
+                "R-545cef1a7603d446afe3"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-02-03-04",
+              "kind": "risk",
+              "text": "万丰奥威2025年归母净利润跃升为时间序列尖峰异常，触发高严重度预警。若盈利改善来自低空业务贡献，则具有战略意义；若来自一次性因素，则需警惕可持续性。",
+              "evidence_ids": [
+                "R-ebb3c32714ebe56051df",
+                "R-a33820a81702f7560f9d",
+                "R-be858a324d733e58c2c8",
+                "R-2e6a0cf6353381c47b23"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-02-03-05",
+              "kind": "methodology",
+              "text": "净现比（经营活动现金流/归母净利润）口径：本次没有任何已核验的净现比可引用。中信海直、万丰奥威、莱斯信息等公司缺少同口径归母净利润，净现比无法计算。缺值时仍可分别描述有证据支持的经营现金流与净利润，但不得把两者相除得出净现比。",
+              "evidence_ids": [],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [
+            "CHART-11-C2C056AC"
+          ],
+          "uncertainties": [
+            "万丰奥威2025年归母净利润跃升的利润构成与可持续性待核。",
+            "莱斯信息2025年经营现金流为负的具体原因（回款、费用或减值）缺乏分部数据。",
+            "样本公司财务数据存在unit_unknown质量标记，可能影响数值解读。",
+            "CHART-11-C2C056AC 暂无与图表证据对应的正文解读。"
+          ],
+          "metric_cards": [
+            {
+              "label": "莱斯信息2025年营收同比",
+              "value": "-20.89",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-dbdd2d38d0846a856db5"
+              ]
+            }
+          ],
+          "comparison_table": {
+            "title": "样本公司2025年度关键财务指标对比",
+            "columns": [
+              "公司",
+              "营收同比(%)",
+              "毛利率(%)",
+              "净利率(%)",
+              "经营现金流(元)"
+            ],
+            "rows": [
+              [
+                "中信海直",
+                3.33,
+                23.78,
+                13.07,
+                988071142.74
+              ],
+              [
+                "万丰奥威",
+                null,
+                16.96,
+                7.14,
+                1463761442.75
+              ],
+              [
+                "莱斯信息",
+                -20.89,
+                32.25,
+                4.47,
+                -208603793.09
+              ]
+            ],
+            "evidence_ids": [
+              "R-66c857361c6cfac43d33",
+              "R-721dc2dd25f525bcb31a",
+              "R-c3a2bc36426386628b99",
+              "R-7b7c2512486ee8d038b5",
+              "R-ddd2553ae2cd1b31be10",
+              "R-dbdd2d38d0846a856db5",
+              "R-545cef1a7603d446afe3",
+              "R-6eb32e35f9e8a81d189f"
+            ]
+          },
+          "callouts": [
+            {
+              "type": "risk",
+              "title": "非外推声明",
+              "text": "本节的财务分析仅基于三家样本公司（中信海直、万丰奥威、莱斯信息）的合并报表数据，样本结构代表性有限，期间跨度仅覆盖2021-2025年，禁止线性外推至整个低空经济产业。",
+              "evidence_ids": [
+                "R-66c857361c6cfac43d33",
+                "R-7b7c2512486ee8d038b5",
+                "R-dbdd2d38d0846a856db5"
+              ]
+            }
+          ],
+          "layout_hint": "comparison_table"
+        }
+      ],
+      "evidence_ids": [
+        "R-9cdcf567c5433101c380",
+        "R-5ac23ba3462b1c910e3b",
+        "R-c8537811466f907bcaa2",
+        "R-08f9750cd441dfd18e05",
+        "R-dbdd2d38d0846a856db5",
+        "R-6eb32e35f9e8a81d189f",
+        "R-66c857361c6cfac43d33",
+        "R-ebb3c32714ebe56051df",
+        "R-db4571e1d278bd72e33e",
+        "R-a7a2a382d385f00a7ab8",
+        "R-a1caaa372f1b85a9d421",
+        "R-4f199720e7113ac78fb9",
+        "R-fba7874280ab07ffe549",
+        "R-0fbaeaa3f10ef1365a7f",
+        "R-632012136ac646511c43",
+        "R-b3272106d966acd5ceaf",
+        "R-b878e163aab260341d30",
+        "R-545cef1a7603d446afe3",
+        "R-a33820a81702f7560f9d",
+        "R-be858a324d733e58c2c8",
+        "R-2e6a0cf6353381c47b23"
+      ],
+      "chart_ids": [
+        "CHART-11-C2C056AC"
+      ],
+      "used_fallback": false,
+      "content_audit": [
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-02-01",
+          "section_id": "SEC-02-01",
+          "claim": "SEC-02-01 指标卡「中国低空经济规模」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-02-01",
+          "section_id": "SEC-02-01",
+          "claim": "SEC-02-01 指标卡「低空经济规模同比增速」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-02-03",
+          "section_id": "SEC-02-03",
+          "claim": "SEC-02-03 指标卡「万丰奥威2025年归母净利润」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-02-01-01",
+          "section_id": "SEC-02-01",
+          "original": "低空经济已进入规模化前夜，但产业周期位置无法从现有证据确认。2026低空经济产业发展大会发布的《中国低空经济发展研究报告（2026）》显示，2025年中国低空经济规模达7151.2亿元，同比增长16.8%，产业正从规模扩张转向质量爬坡。该数据为单一来源的行业总量读数，缺乏分环节、分场景的结构性拆分，无法据此判断产业处于导入期、成长期还是成熟期。",
+          "claim": "P-02-01-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-02-01-01 数值语义未通过：16.8%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-9cdcf567c5433101c380"
+          ],
+          "disposition": "partially_retained",
+          "reason": "ValidationError"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-02-02-01",
+          "section_id": "SEC-02-02",
+          "original": "宏观经济增长动能减弱，低空经济政策或需加码。中国GDP累计同比增速从2025年一季度的5.4%逐步回落至2026年前三季度的4.6%，宏观增速放缓可能影响低空经济商业化落地节奏，但政策逆周期调节可能加速空域开放和基础设施建设。这一判断依赖宏观数据与产业政策的间接关联，缺乏低空经济自身的需求弹性证据。",
+          "claim": "P-02-02-01 数字缺少证据支撑（假设说明不能替代证据）；P-02-02-01 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-02-02-01 数值语义未通过：4.6%（需同实体、指标和期间证据）",
+          "evidence_ids": [],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-02-02-02",
+          "section_id": "SEC-02-02",
+          "original": "低空经济产业链结构清晰，涵盖低空制造、低空飞行、低空保障、综合服务四大环节，但企业映射缺失，价值分配无法量化。低空基础设施竞争正从单一产品向平台化、全链条解决方案演进，中科星图推出“五位一体”低空产品体系，为国内首个完整低空基础设施解决方案。这一进展表明需求驱动正从单一产品采购转向系统级解决方案，但各环节的市场容量与增速缺乏数据支撑。",
+          "claim": "P-02-02-02 因果判断缺少独立依据：这一进展表明需求驱动正从单一产品采购转向系统级解决方案",
+          "evidence_ids": [
+            "R-08f9750cd441dfd18e05",
+            "R-c8537811466f907bcaa2"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-02-03-01",
+          "section_id": "SEC-02-03",
+          "original": "样本公司2025年财务表现分化明显，但均出现异常波动，无法据此判断行业周期位置。莱斯信息2025年营业收入同比下滑20.89%，净利率降至4.47%，经营现金流为负，呈现收缩特征；中信海直营收增速降至3.33%，但毛利率和净利率保持相对稳定；万丰奥威归母净利润跃升为时间序列尖峰异常。这些波动更多反映个体经营变化，而非统一的行业周期信号。",
+          "claim": "P-02-03-01 因果判断缺少独立依据：这些波动更多反映个体经营变化；P-02-03-01 数值语义未通过：20.89%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-dbdd2d38d0846a856db5",
+            "R-6eb32e35f9e8a81d189f",
+            "R-66c857361c6cfac43d33",
+            "R-ebb3c32714ebe56051df"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-02-03-02",
+          "section_id": "SEC-02-03",
+          "original": "展示了中信海直与莱斯信息2021-2025年营业收入同比增速的对比。中信海直增速在2023-2024年回升至9.5%-9.8%区间，2025年回落至3.33%；莱斯信息增速从2021年的19.96%波动下行，2025年降至-20.89%。两条曲线的分化表明，低空经济相关企业的收入增长并未呈现同步的行业性加速，个体差异显著。",
+          "claim": "P-02-03-02 因果判断缺少独立依据：两条曲线的分化表明；P-02-03-02 数值语义未通过：9.5%（需同实体、指标和期间证据）；P-02-03-02 数值语义未通过：-9.8%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-db4571e1d278bd72e33e",
+            "R-a7a2a382d385f00a7ab8",
+            "R-a1caaa372f1b85a9d421",
+            "R-4f199720e7113ac78fb9",
+            "R-66c857361c6cfac43d33",
+            "R-fba7874280ab07ffe549",
+            "R-0fbaeaa3f10ef1365a7f",
+            "R-632012136ac646511c43",
+            "R-b3272106d966acd5ceaf",
+            "R-dbdd2d38d0846a856db5"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-02-03-03",
+          "section_id": "SEC-02-03",
+          "original": "莱斯信息2025年营收下滑、净利率下降、经营现金流为负，呈现收缩特征。其毛利率从2024年的29.48%升至2025年的32.25%，但净利率从8.23%降至4.47%，表明费用或减值侵蚀利润。经营现金流为负，反映回款或营运资金压力。这些变化可能源于项目验收节奏或费用确认，但缺乏分部数据，无法归因于低空业务。",
+          "claim": "P-02-03-03 因果判断缺少独立依据：表明费用或减值侵蚀利润；P-02-03-03 因果判断缺少独立依据：反映回款或营运资金压力；P-02-03-03 数值语义未通过：8.23%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-dbdd2d38d0846a856db5",
+            "R-6eb32e35f9e8a81d189f",
+            "R-b878e163aab260341d30",
+            "R-545cef1a7603d446afe3"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-02-03-04",
+          "section_id": "SEC-02-03",
+          "original": "万丰奥威2025年归母净利润跃升为时间序列尖峰异常，触发高严重度预警。其归母净利润从2024年的6.53亿元升至2025年的9.87亿元，而同期营业收入从162.64亿元降至159.87亿元，收入下滑但利润大增，提示利润来源可能包含非经常性损益。若盈利改善来自低空业务贡献，则具有战略意义；若来自一次性因素，则需警惕可持续性。",
+          "claim": "P-02-03-04 数值语义未通过：6.53亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：9.87亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：162.64亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：159.87亿元（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-ebb3c32714ebe56051df",
+            "R-a33820a81702f7560f9d",
+            "R-be858a324d733e58c2c8",
+            "R-2e6a0cf6353381c47b23"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH-03",
+      "title": "产业链与利润分配",
+      "summary": "低空经济产业链结构清晰，但企业映射与价值分配数据缺失，无法量化各环节利润分配。中科星图推出国内首个完整低空基础设施解决方案，显示该领域正从单一产品向平台化演进，但缺乏竞争对手业务数据，竞争格局不明确。核心需求指标（适航取证、市场容量、空域政策）均无合格证据，商业化落地检验无法开展。万丰奥威2025年归母净利润同比大幅增长，但毛利率下滑，盈利质量需关注。",
+      "sections": [
+        {
+          "section_id": "SEC-03-01",
+          "title": "上游资源、原材料与关键供应环节",
+          "purpose": "说明上游供应与约束。",
+          "key_points": [
+            "低空经济产业链涵盖低空制造、低空飞行、低空保障、综合服务四大环节，上游包括航空器制造、零部件、机载设备、低空空域管控系统等。",
+            "中科星图推出国内首个完整低空基础设施解决方案，覆盖全链条，显示该领域正从单一产品向综合平台演进。",
+            "缺乏其他竞争对手（如莱斯信息、四川九洲等）的详细业务数据，无法进行竞争优势对比。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-03-01-01",
+              "kind": "thesis",
+              "text": "低空经济产业链结构清晰，但企业映射与价值分配数据缺失，无法量化各环节利润分配。产业链涵盖低空制造、低空飞行、低空保障、综合服务四大环节，具体包括航空器制造、零部件、机载设备、低空空域管控系统、无人机飞行信息、基础设施建设运营等环节。",
+              "evidence_ids": [],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-03-01-03",
+              "kind": "comparison",
+              "text": "低空基础设施竞争正从单一产品向平台化、全链条解决方案演进，但缺乏其他竞争对手（如莱斯信息、四川九洲等）的详细业务数据，无法进行竞争优势对比。",
+              "evidence_ids": [],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-03-01-04",
+              "kind": "risk",
+              "text": "eVTOL适航取证进展、低空基础设施企业竞争优势对比、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录，无法进行量化验证。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [
+            "CHART-01-BAD8AC9B"
+          ],
+          "uncertainties": [
+            "低空基础设施关键企业竞争优势对比数据缺失，无法评估竞争格局。",
+            "供应链上下游关系（供应商/客户/合作伙伴）数据缺失，无法分析上游供应约束。",
+            "CHART-01-BAD8AC9B 暂无与图表证据对应的正文解读。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "数据边界声明",
+              "text": "本小节仅能基于中科星图单一企业的产品发布信息，无法对低空基础设施竞争格局进行横向对比。",
+              "evidence_ids": []
+            }
+          ],
+          "layout_hint": "chart_right"
+        },
+        {
+          "section_id": "SEC-03-02",
+          "title": "中游核心产品、制造与服务环节",
+          "purpose": "说明中游价值创造和竞争因素。",
+          "key_points": [
+            "万丰奥威2025年归母净利润同比大幅增长51.1%，但毛利率下滑至16.96%，净利率提升至7.14%。",
+            "中信海直2025年毛利率23.78%，净利率13.07%，ROE 5.7%，负债率27.7%。",
+            "莱斯信息2025年毛利率32.25%，但净利率仅4.47%，ROE 2.88%，营收同比下滑20.89%。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-03-02-04",
+              "kind": "risk",
+              "text": "万丰奥威2025年净利润跃升为时间序列尖峰异常，需关注利润构成与可持续性，避免将一次性因素误判为持续盈利能力。",
+              "evidence_ids": [
+                "R-ebb3c32714ebe56051df",
+                "R-ae57194db7d2f84d79c8",
+                "R-89c0d2efddd8c57a5cde",
+                "R-a33820a81702f7560f9d",
+                "R-cedea62f3a1330c9de19"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "万丰奥威财务数据存在unit_unknown质量标记，可能影响数值解读。",
+            "缺少同口径归母净利润，净现比无法计算。"
+          ],
+          "metric_cards": [
+            {
+              "label": "万丰奥威毛利率",
+              "value": "16.96",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-7b7c2512486ee8d038b5"
+              ]
+            }
+          ],
+          "comparison_table": {
+            "title": "中游核心企业2025年度财务指标对比",
+            "columns": [
+              "公司",
+              "毛利率(%)",
+              "净利率(%)",
+              "ROE(%)",
+              "负债率(%)"
+            ],
+            "rows": [
+              [
+                "中信海直",
+                "23.78",
+                "13.07",
+                "5.7",
+                "27.7"
+              ],
+              [
+                "万丰奥威",
+                "16.96",
+                "7.14",
+                "13.41",
+                "44.77"
+              ],
+              [
+                "莱斯信息",
+                "32.25",
+                "4.47",
+                "2.88",
+                "45.38"
+              ]
+            ],
+            "evidence_ids": [
+              "R-7b7c2512486ee8d038b5",
+              "R-ddd2553ae2cd1b31be10"
+            ]
+          },
+          "callouts": [
+            {
+              "type": "risk",
+              "title": "盈利质量风险提示",
+              "text": "万丰奥威2025年净利润跃升为时间序列尖峰异常，需关注利润构成与可持续性。",
+              "evidence_ids": [
+                "R-ebb3c32714ebe56051df",
+                "R-ae57194db7d2f84d79c8"
+              ]
+            }
+          ],
+          "layout_hint": "comparison_table"
+        },
+        {
+          "section_id": "SEC-03-03",
+          "title": "下游需求、议价关系与利润迁移",
+          "purpose": "说明下游需求及利润传导。",
+          "key_points": [
+            "低空应用场景市场容量数据缺失，无法评估下游需求规模。",
+            "标准化建设成为产业从规模扩张转向质量提升的关键变量，我国已牵头制定《无人机感知与避障系统》国际标准。",
+            "宏观经济增长动能减弱，低空经济政策或需加码。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-03-03-01",
+              "kind": "thesis",
+              "text": "下游需求与利润传导无法量化，核心需求指标证据缺失，商业化落地检验无法开展。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-03-03-04",
+              "kind": "risk",
+              "text": "低空应用场景市场容量数据缺失，无法评估下游需求规模，任何关于低空经济市场容量或产业化节奏的结论均属猜测。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "低空应用场景市场容量数据缺失，无法评估下游需求规模。",
+            "eVTOL适航取证进展、空域政策开放节奏等核心需求指标均无合格证据记录。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "非外推声明",
+              "text": "本小节基于有限样本与宏观数据，无法线性外推至整个低空经济产业，下游需求与利润迁移结论需谨慎对待。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        }
+      ],
+      "evidence_ids": [
+        "R-5ac23ba3462b1c910e3b",
+        "R-ebb3c32714ebe56051df",
+        "R-ae57194db7d2f84d79c8",
+        "R-89c0d2efddd8c57a5cde",
+        "R-a33820a81702f7560f9d",
+        "R-cedea62f3a1330c9de19"
+      ],
+      "chart_ids": [
+        "CHART-01-BAD8AC9B"
+      ],
+      "used_fallback": false,
+      "content_audit": [
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-03-02",
+          "section_id": "SEC-03-02",
+          "claim": "SEC-03-02 指标卡「万丰奥威归母净利润同比增速」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-03-02",
+          "section_id": "SEC-03-02",
+          "claim": "SEC-03-02 指标卡「莱斯信息毛利率」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-03-01-02",
+          "section_id": "SEC-03-01",
+          "original": "中科星图于2025年1月18日发布星图低空云v1.0，并推出覆盖低空规划、安全保障、协同监管、飞行服务、场景应用全链条的“五位一体”低空产品体系，为国内首个完整低空基础设施解决方案。",
+          "claim": "P-03-01-02 数字缺少证据支撑（假设说明不能替代证据）",
+          "evidence_ids": [],
+          "disposition": "isolated",
+          "reason": "ValidationError"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-03-02-01",
+          "section_id": "SEC-03-02",
+          "original": "中游核心产品与制造环节的价值创造能力分化明显，毛利率与净利率的背离反映不同业务模式的成本结构与费用管控差异。",
+          "claim": "P-03-02-01 因果判断缺少独立依据：毛利率与净利率的背离反映不同业务模式的成本结构与费用管控差异",
+          "evidence_ids": [
+            "R-7b7c2512486ee8d038b5",
+            "R-ddd2553ae2cd1b31be10"
+          ],
+          "disposition": "isolated",
+          "reason": "ValidationError"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-03-02-02",
+          "section_id": "SEC-03-02",
+          "original": "万丰奥威2025-12-31（年度，合并报表）归母净利润为9.87215e+08元，较2024-12-31的6.53314e+08元同比增长51.1%；同期毛利率为16.9596%，较2023-12-31的20.3302%下降3.37个百分点；净利率为7.1355%，较2023-12-31的6.3798%提升0.76个百分点。",
+          "claim": "P-03-02-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：51.1%（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：3.37个百分点（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：0.76个百分点（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-ebb3c32714ebe56051df",
+            "R-a33820a81702f7560f9d",
+            "R-7b7c2512486ee8d038b5",
+            "R-0862668e311490ebb423",
+            "R-ddd2553ae2cd1b31be10",
+            "R-1ad2da7def6fd33fc481"
+          ],
+          "disposition": "isolated",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-03-02-03",
+          "section_id": "SEC-03-02",
+          "original": "横向对比2025年度（合并报表）毛利率，莱斯信息为32.2504%，中信海直为23.7776%，万丰奥威为16.9596%，显示中游不同环节的盈利水平差异显著。",
+          "claim": "P-03-02-03 数值语义未通过：32.2504%（需同实体、指标和期间证据）；P-03-02-03 数值语义未通过：23.7776%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-7b7c2512486ee8d038b5"
+          ],
+          "disposition": "isolated",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-03-03-02",
+          "section_id": "SEC-03-03",
+          "original": "2023年12月中央经济工作会议将低空经济确定为战略性新兴产业，顶层设计不断完善；我国已牵头制定《无人机感知与避障系统》国际标准，标准化建设成为关键变量。",
+          "claim": "P-03-03-02 数字缺少证据支撑（假设说明不能替代证据）",
+          "evidence_ids": [],
+          "disposition": "isolated",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-03-03-03",
+          "section_id": "SEC-03-03",
+          "original": "宏观经济增长动能减弱，中国GDP累计同比从2025-03-31的5.4%降至2026-09-30的4.6%，可能影响低空经济商业化落地节奏，但政策逆周期调节可能加速空域开放和基础设施建设。",
+          "claim": "P-03-03-03 数字缺少证据支撑（假设说明不能替代证据）；P-03-03-03 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-03-03-03 数值语义未通过：4.6%（需同实体、指标和期间证据）",
+          "evidence_ids": [],
+          "disposition": "isolated",
+          "reason": "repair_disabled"
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH-04",
+      "title": "竞争格局",
+      "summary": "低空经济产业链结构清晰（低空制造、低空飞行、低空保障、综合服务四大环节），但企业映射与价值分配数据缺失，无法量化竞争格局。低空基础设施领域出现首个完整解决方案提供商（中科星图），竞争正从单一产品向平台化演进，但缺乏同业对比数据。样本企业财务表现分化：莱斯信息毛利率最高（32.25%）但净利率异常下滑至4.47%，中信海直盈利质量最优（净利率13.07%），万丰奥威盈利改善但低空业务贡献待核。核心需求指标（适航取证、市场容量、空域政策）均无合格证据，产业化节奏判断受限。",
+      "sections": [
+        {
+          "section_id": "SEC-04-01",
+          "title": "市场结构、集中度与竞争阶段",
+          "purpose": "概括可验证的竞争结构。",
+          "key_points": [
+            "低空经济产业链四大环节（低空制造、低空飞行、低空保障、综合服务）结构清晰，但企业映射缺失，价值分配无法量化。",
+            "低空基础设施领域出现首个完整解决方案提供商，竞争从单一产品向平台化演进。",
+            "标准化建设成为产业从规模扩张转向质量提升的关键变量。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-04-01-01",
+              "kind": "thesis",
+              "text": "低空经济产业链结构清晰，但企业映射缺失，价值分配无法量化。据行业报告，低空经济产业链涵盖低空飞行、低空制造、综合服务、低空保障四大板块，具体包括航空器制造、零部件、机载设备、低空空域管控系统、无人机飞行信息、基础设施建设运营等环节。然而，当前证据库缺乏各环节对应的企业业务构成数据，无法将产业链价值分配量化到具体企业，这限制了竞争格局的深入分析。",
+              "evidence_ids": [
+                "R-c8537811466f907bcaa2",
+                "R-08f9750cd441dfd18e05"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-04-01-02",
+              "kind": "evidence",
+              "text": "低空基础设施领域竞争正从单一产品向平台化、全链条解决方案演进。中科星图于2025年1月18日发布星图低空云v1.0，并推出覆盖低空规划、安全保障、协同监管、飞行服务、场景应用全链条的“五位一体”低空产品体系，成为国内首个完整的低空基础设施解决方案。这一进展显示该领域竞争格局正在形成，但缺乏其他竞争对手（如莱斯信息、四川九洲等）的详细业务数据，无法进行竞争优势对比。",
+              "evidence_ids": [
+                "R-5a4433f2790ec15468f6"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-04-01-03",
+              "kind": "analysis",
+              "text": "标准化建设成为产业从规模扩张转向质量提升的关键变量。我国在无人机感知与避障等国际标准制定中从跟随者转向制定者，这有助于提升产业国际竞争力，并可能影响行业准入门槛和竞争格局，利好具备标准制定能力的企业。但当前证据仅支持标准化进程的存在，其对具体企业竞争地位的影响尚需更多数据验证。",
+              "evidence_ids": [],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "产业链各环节的企业映射缺失，价值分配无法量化。",
+            "低空基础设施领域缺乏同业对比数据，竞争格局尚不明确。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [],
+          "layout_hint": "text_only"
+        },
+        {
+          "section_id": "SEC-04-02",
+          "title": "主要参与者及其竞争位置",
+          "purpose": "按可比口径说明参与者位置。",
+          "key_points": [
+            "莱斯信息毛利率最高（32.25%）但净利率异常下滑至4.47%，盈利质量待核。",
+            "中信海直盈利质量最优（净利率13.07%），资产负债率最低（27.7%）。",
+            "万丰奥威盈利改善但低空业务贡献待核，财务数据存在unit_unknown标记。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-04-02-01",
+              "kind": "thesis",
+              "text": "如图 [CHART-02-DE826904] 所示，2025年度（合并报表）毛利率方面，莱斯信息为32.25%，中信海直为23.78%，万丰奥威为16.96%；净利率方面，中信海直为13.07%，万丰奥威为7.14%，莱斯信息为4.47%。",
+              "evidence_ids": [
+                "R-545cef1a7603d446afe3",
+                "R-721dc2dd25f525bcb31a",
+                "R-7b7c2512486ee8d038b5",
+                "R-c3a2bc36426386628b99",
+                "R-ddd2553ae2cd1b31be10",
+                "R-6eb32e35f9e8a81d189f"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-04-02-03",
+              "kind": "chart_readout",
+              "text": "[CHART-03-2EBD0817] 显示，2025年度净利率样本对比中，中信海直（13.07%）最高，万丰奥威（7.14%）居中，莱斯信息（4.47%）最低。",
+              "evidence_ids": [
+                "R-c3a2bc36426386628b99",
+                "R-ddd2553ae2cd1b31be10",
+                "R-6eb32e35f9e8a81d189f"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-04-02-04",
+              "kind": "comparison",
+              "text": "资产负债率方面，[CHART-05-7638798F] 显示，2025年度中信海直（27.7%）显著低于万丰奥威（44.77%）和莱斯信息（45.38%），财务杠杆最低。中信海直资产负债率从2024年的历史水平出现显著偏离（2025年27.7%），需关注其资本结构变化。万丰奥威和莱斯信息杠杆水平相近，但莱斯信息净利率异常下滑，财务风险相对更高。",
+              "evidence_ids": [
+                "R-54bc6768d48dfe84f19e",
+                "R-88d7a3d8600cce7fd0de",
+                "R-7b95913b0380bce034c7"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-04-02-05",
+              "kind": "analysis",
+              "text": "万丰奥威作为低空经济概念标的，其财务表现可能仍主要来自传统业务。盈利改善若来自低空业务贡献，则具有战略意义；若来自非经常性损益，则需警惕。当前缺乏低空业务的收入与利润贡献数据，无法从财务角度评估其实际贡献。",
+              "evidence_ids": [
+                "R-ebb3c32714ebe56051df",
+                "R-be858a324d733e58c2c8",
+                "R-ddd2553ae2cd1b31be10",
+                "R-a33820a81702f7560f9d"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [
+            "CHART-02-DE826904",
+            "CHART-03-2EBD0817",
+            "CHART-05-7638798F"
+          ],
+          "uncertainties": [
+            "莱斯信息净利率异常下滑的原因（利润构成与可持续性）待核。",
+            "万丰奥威低空业务收入与利润贡献数据缺失。",
+            "万丰奥威财务数据存在unit_unknown质量标记，可能影响数值解读。"
+          ],
+          "metric_cards": [
+            {
+              "label": "莱斯信息毛利率",
+              "value": "32.25",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-545cef1a7603d446afe3"
+              ]
+            },
+            {
+              "label": "中信海直净利率",
+              "value": "13.07",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-c3a2bc36426386628b99"
+              ]
+            }
+          ],
+          "comparison_table": {
+            "title": "低空经济样本企业财务指标对比（2025-12-31，年度，合并报表）",
+            "columns": [
+              "企业",
+              "毛利率(%)",
+              "净利率(%)",
+              "资产负债率(%)",
+              "ROE(%)"
+            ],
+            "rows": [
+              [
+                "万丰奥威",
+                "16.96",
+                "7.14",
+                "44.77",
+                "13.41"
+              ],
+              [
+                "中信海直",
+                "23.78",
+                "13.07",
+                "27.70",
+                "5.70"
+              ],
+              [
+                "莱斯信息",
+                "32.25",
+                "4.47",
+                "45.38",
+                "2.88"
+              ]
+            ],
+            "evidence_ids": [
+              "R-7b7c2512486ee8d038b5",
+              "R-ddd2553ae2cd1b31be10",
+              "R-88d7a3d8600cce7fd0de",
+              "R-721dc2dd25f525bcb31a",
+              "R-c3a2bc36426386628b99",
+              "R-54bc6768d48dfe84f19e",
+              "R-545cef1a7603d446afe3",
+              "R-6eb32e35f9e8a81d189f",
+              "R-7b95913b0380bce034c7"
+            ]
+          },
+          "callouts": [
+            {
+              "type": "risk",
+              "title": "莱斯信息净利率异常下滑",
+              "text": "莱斯信息2025年度净利率为4.47%，较2024年的8.23%下降3.76个百分点，为时间序列尖峰异常。需关注利润构成与可持续性，避免将毛利率优势直接等同于盈利质量。",
+              "evidence_ids": [
+                "R-6eb32e35f9e8a81d189f"
+              ]
+            }
+          ],
+          "layout_hint": "comparison_table"
+        },
+        {
+          "section_id": "SEC-04-03",
+          "title": "竞争壁垒、差异化因素与潜在进入者",
+          "purpose": "分析壁垒及可持续性。",
+          "key_points": [
+            "标准化建设成为产业从规模扩张转向质量提升的关键变量，利好具备标准制定能力的企业。",
+            "低空基础设施领域出现首个完整解决方案提供商，平台化能力成为差异化因素。",
+            "核心需求指标（适航取证、市场容量、空域政策）均无合格证据，产业化节奏判断受限。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-04-03-01",
+              "kind": "thesis",
+              "text": "竞争壁垒方面，标准化建设成为产业从规模扩张转向质量提升的关键变量。我国在无人机感知与避障等国际标准制定中从跟随者转向制定者，这有助于提升产业国际竞争力，并可能影响行业准入门槛和竞争格局，利好具备标准制定能力的企业。但当前证据仅支持标准化进程的存在，其对具体企业竞争地位的影响尚需更多数据验证。",
+              "evidence_ids": [],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-04-03-02",
+              "kind": "evidence",
+              "text": "低空基础设施领域出现首个完整解决方案提供商，平台化能力成为差异化因素。中科星图推出“五位一体”低空产品体系，覆盖低空规划、安全保障、协同监管、飞行服务、场景应用全链条，成为国内首个完整的低空基础设施解决方案。这一进展显示该领域竞争正从单一产品向平台化、全链条解决方案演进，具备平台化能力的企业可能获得竞争优势。",
+              "evidence_ids": [
+                "R-5a4433f2790ec15468f6"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-04-03-03",
+              "kind": "risk",
+              "text": "核心需求指标证据缺失，产业化节奏判断受限。eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录，无法评估eVTOL产业化落地节奏、企业竞争格局或市场空间。现有证据仅能支撑对万丰奥威等个别公司的财务分析，无法对低空经济整体商业化进程做出判断。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录。",
+            "标准化建设对具体企业竞争地位的影响尚需更多数据验证。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "非外推声明",
+              "text": "本报告基于有限样本（11家）和特定期间（2021-2025年度）的证据，样本结构代表性边界有限，禁止线性外推至整个低空经济产业。核心需求指标（适航取证、市场容量、空域政策）均无合格证据，相关结论需谨慎对待。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        }
+      ],
+      "evidence_ids": [
+        "R-c8537811466f907bcaa2",
+        "R-08f9750cd441dfd18e05",
+        "R-5a4433f2790ec15468f6",
+        "R-545cef1a7603d446afe3",
+        "R-721dc2dd25f525bcb31a",
+        "R-7b7c2512486ee8d038b5",
+        "R-c3a2bc36426386628b99",
+        "R-ddd2553ae2cd1b31be10",
+        "R-6eb32e35f9e8a81d189f",
+        "R-54bc6768d48dfe84f19e",
+        "R-88d7a3d8600cce7fd0de",
+        "R-7b95913b0380bce034c7",
+        "R-ebb3c32714ebe56051df",
+        "R-be858a324d733e58c2c8",
+        "R-a33820a81702f7560f9d",
+        "R-5ac23ba3462b1c910e3b"
+      ],
+      "chart_ids": [
+        "CHART-02-DE826904",
+        "CHART-03-2EBD0817",
+        "CHART-05-7638798F"
+      ],
+      "used_fallback": false,
+      "content_audit": [
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-04-02",
+          "section_id": "SEC-04-02",
+          "claim": "SEC-04-02 指标卡「万丰奥威归母净利润同比」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-04-02-01",
+          "section_id": "SEC-04-02",
+          "original": "样本企业财务表现分化明显，莱斯信息毛利率最高但净利率异常下滑，中信海直盈利质量最优，万丰奥威盈利改善但低空业务贡献待核。2025年度（合并报表）毛利率方面，莱斯信息为32.25%，中信海直为23.78%，万丰奥威为16.96%；净利率方面，中信海直为13.07%，万丰奥威为7.14%，莱斯信息为4.47%。",
+          "claim": "P-04-02-01 数值语义未通过：中信海直盈利质量最优（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-545cef1a7603d446afe3",
+            "R-721dc2dd25f525bcb31a",
+            "R-7b7c2512486ee8d038b5",
+            "R-c3a2bc36426386628b99",
+            "R-ddd2553ae2cd1b31be10",
+            "R-6eb32e35f9e8a81d189f"
+          ],
+          "disposition": "partially_retained",
+          "reason": "ValidationError"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-04-02-02",
+          "section_id": "SEC-04-02",
+          "original": "[CHART-02-DE826904] 显示，2025年度毛利率样本对比中，莱斯信息（32.25%）显著高于中信海直（23.78%）和万丰奥威（16.96%），差距分别约8.5和15.3个百分点。莱斯信息毛利率连续五年上升（从2021年的25.48%升至2025年的32.25%），反映其产品或服务定价能力增强，但需结合净利率判断盈利质量。",
+          "claim": "P-04-02-02 数值语义未通过：莱斯信息毛利率连续五年上升（从2021年的25.48%升至2025年的32.25%）（需同实体、指标和期间证据）；P-04-02-02 因果判断缺少独立依据：反映其产品或服务定价能力增强；P-04-02-02 数值语义未通过：8.5（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：15.3个百分点（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：25.48%（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：32.25%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-545cef1a7603d446afe3",
+            "R-721dc2dd25f525bcb31a",
+            "R-7b7c2512486ee8d038b5",
+            "R-69694511aa9ea4f7ca9f",
+            "R-e9e5eadedede23bc1ac8",
+            "R-fe689ebdc7eda2145e41",
+            "R-b878e163aab260341d30"
+          ],
+          "disposition": "isolated",
+          "reason": "ValidationError"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-04-02-03",
+          "section_id": "SEC-04-02",
+          "original": "[CHART-03-2EBD0817] 显示，2025年度净利率样本对比中，中信海直（13.07%）最高，万丰奥威（7.14%）居中，莱斯信息（4.47%）最低。莱斯信息净利率从2024年的8.23%大幅下降3.76个百分点至2025年的4.47%，为时间序列尖峰异常，需关注利润构成与可持续性。中信海直净利率虽从2024年的13.40%微降至13.07%，但整体保持稳定，盈利质量相对最优。",
+          "claim": "P-04-02-03 数值语义未通过：8.23%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：3.76个百分点（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：4.47%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：13.40%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：13.07%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-c3a2bc36426386628b99",
+            "R-ddd2553ae2cd1b31be10",
+            "R-6eb32e35f9e8a81d189f"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-04-02-05",
+          "section_id": "SEC-04-02",
+          "original": "万丰奥威作为低空经济概念标的，其财务表现可能仍主要来自传统业务。2025年度（合并报表）归母净利润为9.87亿元，同比增长51.1%，净利率提升至7.14%，但营业收入同比下降1.7%至159.87亿元。盈利改善若来自低空业务贡献，则具有战略意义；若来自非经常性损益，则需警惕。当前缺乏低空业务的收入与利润贡献数据，无法从财务角度评估其实际贡献。",
+          "claim": "P-04-02-05 数值语义未通过：9.87亿元（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：51.1%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：1.7%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：159.87亿元（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-ebb3c32714ebe56051df",
+            "R-be858a324d733e58c2c8",
+            "R-ddd2553ae2cd1b31be10",
+            "R-a33820a81702f7560f9d"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH-05",
+      "title": "财务质量与估值参照",
+      "summary": "本章基于万丰奥威、中信海直、莱斯信息三家样本公司的合并报表数据，呈现收入、盈利、现金流与资产负债结构，并给出估值参照。核心判断：三家公司在毛利率、净利率与资产负债率上分化明显，莱斯信息毛利率最高但2025年净利率与ROE大幅下滑，万丰奥威净利率回升但归母净利润波动大，中信海直盈利与负债结构相对稳定。估值方面，样本公司PE(TTM)与净利润数据缺失，无法计算行业估值中枢，仅能给出国防军工行业PE与部分公司PB作为参照。低空经济业务对样本公司财务的贡献缺乏直接证据，相关判断需谨慎。",
+      "sections": [
+        {
+          "section_id": "SEC-05-01",
+          "title": "收入、利润与盈利能力",
+          "purpose": "呈现盈利指标及其持续性边界。",
+          "key_points": [
+            "万丰奥威2025年净利率7.14%，较2024年上升1.97个百分点，但归母净利润波动大，2025年同比上升51.1%，需关注利润构成。",
+            "莱斯信息2025年净利率4.47%，较2024年下降3.76个百分点，净利润同比下滑57.18%，毛利率却持续上升至32.25%，盈利质量出现背离。",
+            "中信海直盈利相对稳定，2025年净利率13.07%，毛利率23.78%，净利率与毛利率均处于三家样本中游。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-05-01-01",
+              "kind": "thesis",
+              "text": "三家样本公司中，莱斯信息毛利率最高但净利率最低，且2025年净利率大幅下滑，显示其盈利质量与毛利率水平出现背离；万丰奥威净利率回升但归母净利润波动大，盈利持续性存疑；中信海直盈利相对稳定。",
+              "evidence_ids": [
+                "R-545cef1a7603d446afe3",
+                "R-6eb32e35f9e8a81d189f",
+                "R-ddd2553ae2cd1b31be10",
+                "R-c3a2bc36426386628b99"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-05-01-02",
+              "kind": "evidence",
+              "text": "万丰奥威2025-12-31（年度，合并报表）净利率为7.1355%，较2024-12-31的5.1668%上升1.9687个百分点；",
+              "evidence_ids": [
+                "R-ddd2553ae2cd1b31be10",
+                "R-83b6a8b3385a5d86edfa",
+                "R-ebb3c32714ebe56051df",
+                "R-a33820a81702f7560f9d",
+                "R-be858a324d733e58c2c8",
+                "R-2e6a0cf6353381c47b23"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-05-01-04",
+              "kind": "evidence",
+              "text": "中信海直2025-12-31（年度，合并报表）毛利率为23.7776%，净利率为13.0681%，均处于三家样本中游；其净利率自2022-12-31的9.4529%回升至2025-12-31的13.0681%，但2025年净利润同比增速仅为1.79%，增长趋缓。",
+              "evidence_ids": [
+                "R-721dc2dd25f525bcb31a",
+                "R-c3a2bc36426386628b99",
+                "R-9beffdfb9cfbfb80e209",
+                "R-7005a56d09a02ce649da"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-05-01-05",
+              "kind": "chart_readout",
+              "text": "[CHART-06-C1612281] 显示万丰奥威与莱斯信息毛利率趋势（2021-12-31至2025-12-31）。",
+              "evidence_ids": [
+                "R-69694511aa9ea4f7ca9f",
+                "R-545cef1a7603d446afe3",
+                "R-0862668e311490ebb423",
+                "R-7b7c2512486ee8d038b5"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-05-01-06",
+              "kind": "chart_readout",
+              "text": "[CHART-07-C3ED00BB] 显示三家样本公司净利率趋势（2021-12-31至2025-12-31）。莱斯信息净利率在2025-12-31骤降至4.4723%，为三家最低；万丰奥威净利率在2025-12-31为7.1355%，处于中游。",
+              "evidence_ids": [
+                "R-d66e0987a0e34a8adc55",
+                "R-c3a2bc36426386628b99",
+                "R-6eb32e35f9e8a81d189f",
+                "R-ddd2553ae2cd1b31be10"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [
+            "CHART-06-C1612281",
+            "CHART-07-C3ED00BB",
+            "CHART-08-504179BC",
+            "CHART-10-CC341D59",
+            "CHART-12-210DD48B"
+          ],
+          "uncertainties": [
+            "万丰奥威归母净利润2025年大幅上升，但缺乏利润构成明细，无法区分经营性利润与一次性损益。",
+            "莱斯信息2025年净利率下滑原因（费用、减值或收入结构）缺乏分部数据，无法进一步归因。",
+            "三家样本公司均未披露低空经济业务的收入与利润贡献，无法评估低空业务对盈利的影响。",
+            "CHART-08-504179BC 暂无与图表证据对应的正文解读。",
+            "CHART-10-CC341D59 暂无与图表证据对应的正文解读。",
+            "CHART-12-210DD48B 暂无与图表证据对应的正文解读。"
+          ],
+          "metric_cards": [
+            {
+              "label": "万丰奥威净利率",
+              "value": "7.14",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-ddd2553ae2cd1b31be10"
+              ]
+            },
+            {
+              "label": "莱斯信息毛利率",
+              "value": "32.25",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-545cef1a7603d446afe3"
+              ]
+            },
+            {
+              "label": "中信海直净利率",
+              "value": "13.07",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-c3a2bc36426386628b99"
+              ]
+            }
+          ],
+          "comparison_table": null,
+          "callouts": [],
+          "layout_hint": "chart_right"
+        },
+        {
+          "section_id": "SEC-05-02",
+          "title": "现金流、资产负债与财务质量",
+          "purpose": "说明现金流和财务质量。",
+          "key_points": [
+            "中信海直资产负债率2025年为27.70%，为三家最低，但较2024年上升4.56个百分点，触发高严重度异常预警。",
+            "莱斯信息资产负债率从2021年的67.66%降至2025年的45.38%，但2025年经营现金流为负，财务质量承压。",
+            "万丰奥威资产负债率从2021年的55.75%降至2025年的44.77%，但经营现金流与归母净利润的匹配性缺乏同口径数据，净现比无法计算。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-05-02-01",
+              "kind": "thesis",
+              "text": "三家样本公司中，中信海直资产负债率最低且盈利稳定，但2025年负债率上升触发异常预警；莱斯信息负债率下降但经营现金流为负，财务质量存在隐忧；",
+              "evidence_ids": [
+                "R-54bc6768d48dfe84f19e",
+                "R-7b95913b0380bce034c7",
+                "R-88d7a3d8600cce7fd0de"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-05-02-05",
+              "kind": "chart_readout",
+              "text": "[CHART-09-56AEE8F2] 显示三家样本公司资产负债率趋势（2021-12-31至2025-12-31）。莱斯信息资产负债率从2021-12-31的67.6605%降至2025-12-31的45.382%，降幅最大；万丰奥威从55.7458%降至44.765%；中信海直在2023-12-31降至16.9836%后回升至2025-12-31的27.6999%。",
+              "evidence_ids": [
+                "R-194e2b54758d52abdd69",
+                "R-7b95913b0380bce034c7",
+                "R-d398a578bb1698a50c0c",
+                "R-88d7a3d8600cce7fd0de",
+                "R-a621ccf17260327dbb46",
+                "R-54bc6768d48dfe84f19e"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-05-02-06",
+              "kind": "chart_readout",
+              "text": "[CHART-04-3D6A2F9E] 展示2025-12-31三家样本公司的资产负债率与毛利率对比。莱斯信息毛利率最高（32.2504%）但资产负债率也较高（45.382%）；中信海直毛利率23.7776%且资产负债率最低（27.6999%）；万丰奥威毛利率16.9596%且资产负债率44.765%。",
+              "evidence_ids": [
+                "R-545cef1a7603d446afe3",
+                "R-7b95913b0380bce034c7",
+                "R-721dc2dd25f525bcb31a",
+                "R-54bc6768d48dfe84f19e",
+                "R-7b7c2512486ee8d038b5",
+                "R-88d7a3d8600cce7fd0de"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [
+            "CHART-09-56AEE8F2",
+            "CHART-04-3D6A2F9E"
+          ],
+          "uncertainties": [
+            "中信海直2025年资产负债率上升原因（负债结构变化）缺乏明细数据。",
+            "莱斯信息经营现金流为负的具体原因（应收账款、存货或费用）缺乏附表数据。",
+            "万丰奥威净现比无法计算，因缺少同口径归母净利润的完整数据。"
+          ],
+          "metric_cards": [
+            {
+              "label": "中信海直资产负债率",
+              "value": "27.70",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-54bc6768d48dfe84f19e"
+              ]
+            },
+            {
+              "label": "莱斯信息资产负债率",
+              "value": "45.38",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-7b95913b0380bce034c7"
+              ]
+            },
+            {
+              "label": "万丰奥威资产负债率",
+              "value": "44.77",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-88d7a3d8600cce7fd0de"
+              ]
+            }
+          ],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "risk",
+              "title": "净现比无法计算",
+              "text": "由于缺少同口径归母净利润数据，中信海直、万丰奥威、莱斯信息的净现比均无法计算，不得将经营现金流与净利润相除得出倍数。",
+              "evidence_ids": []
+            }
+          ],
+          "layout_hint": "chart_right"
+        },
+        {
+          "section_id": "SEC-05-03",
+          "title": "估值水平、历史区间与跨市场可比性",
+          "purpose": "在口径校验后呈现估值参照。",
+          "key_points": [
+            "样本公司PE(TTM)与净利润数据缺失，无法计算行业估值中枢，估值分层待核。",
+            "国防军工行业PE为67.56倍（2026-11-13），可作为低空经济相关标的的行业参照。",
+            "部分可比公司PB数据可用，但样本结构代表性有限，禁止线性外推。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-05-03-02",
+              "kind": "evidence",
+              "text": "国防军工行业2026-11-13的PE为67.564553倍，可作为低空经济相关标的的行业估值参照；但样本公司中万丰奥威、中信海直、莱斯信息的PE(TTM)与净利润数据均缺失，无法计算个股估值倍数。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-05-03-03",
+              "kind": "evidence",
+              "text": "这些PB数据可作为跨市场参照，但样本结构代表性有限。",
+              "evidence_ids": [],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-05-03-04",
+              "kind": "methodology",
+              "text": "估值口径说明：行业PE中位数仅统计成熟盈利梯队，本次样本中无盈利成熟标的，因此行业PE中位数无法计算；未盈利或高弹性标的采用PB中位数与PS分层评价。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "样本公司PE(TTM)与净利润数据缺失，无法计算个股估值倍数。",
+            "行业PE中位数无法计算，因样本中无盈利成熟标的。",
+            "可比公司PB数据为横截面离群值，需谨慎解读。"
+          ],
+          "metric_cards": [
+            {
+              "label": "国防军工行业PE",
+              "value": "67.56",
+              "unit": "倍",
+              "period": "2026-11-13",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ]
+            }
+          ],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "非外推声明",
+              "text": "本次估值参照基于11家样本公司，其中无盈利成熟标的，样本结构代表性有限，且数据期间跨度有限，禁止将上述估值水平线性外推至整个低空经济产业。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ]
+            }
+          ],
+          "layout_hint": "comparison_table"
+        }
+      ],
+      "evidence_ids": [
+        "R-545cef1a7603d446afe3",
+        "R-6eb32e35f9e8a81d189f",
+        "R-ddd2553ae2cd1b31be10",
+        "R-c3a2bc36426386628b99",
+        "R-83b6a8b3385a5d86edfa",
+        "R-ebb3c32714ebe56051df",
+        "R-a33820a81702f7560f9d",
+        "R-be858a324d733e58c2c8",
+        "R-2e6a0cf6353381c47b23",
+        "R-721dc2dd25f525bcb31a",
+        "R-9beffdfb9cfbfb80e209",
+        "R-7005a56d09a02ce649da",
+        "R-69694511aa9ea4f7ca9f",
+        "R-0862668e311490ebb423",
+        "R-7b7c2512486ee8d038b5",
+        "R-d66e0987a0e34a8adc55",
+        "R-54bc6768d48dfe84f19e",
+        "R-7b95913b0380bce034c7",
+        "R-88d7a3d8600cce7fd0de",
+        "R-194e2b54758d52abdd69",
+        "R-d398a578bb1698a50c0c",
+        "R-a621ccf17260327dbb46",
+        "R-5ac23ba3462b1c910e3b"
+      ],
+      "chart_ids": [
+        "CHART-06-C1612281",
+        "CHART-07-C3ED00BB",
+        "CHART-08-504179BC",
+        "CHART-10-CC341D59",
+        "CHART-12-210DD48B",
+        "CHART-09-56AEE8F2",
+        "CHART-04-3D6A2F9E"
+      ],
+      "used_fallback": false,
+      "content_audit": [
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-05-03",
+          "section_id": "SEC-05-03",
+          "claim": "SEC-05-03 对比表数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-01-02",
+          "section_id": "SEC-05-01",
+          "original": "万丰奥威2025-12-31（年度，合并报表）净利率为7.1355%，较2024-12-31的5.1668%上升1.9687个百分点；同期归母净利润为9.87215e+08元，较2024-12-31的6.53314e+08元同比上升51.11%。但2025-12-31营业收入为1.59872e+10元，较2024-12-31的1.62643e+10元同比下降1.70%，收入下滑而利润大幅上升，提示利润增长可能来自非经营性因素。",
+          "claim": "P-05-01-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：51.11%（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.59872（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：10元（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.62643（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.70%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-ddd2553ae2cd1b31be10",
+            "R-83b6a8b3385a5d86edfa",
+            "R-ebb3c32714ebe56051df",
+            "R-a33820a81702f7560f9d",
+            "R-be858a324d733e58c2c8",
+            "R-2e6a0cf6353381c47b23"
+          ],
+          "disposition": "partially_retained",
+          "reason": "ValidationError"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-01-03",
+          "section_id": "SEC-05-01",
+          "original": "莱斯信息2025-12-31（年度，合并报表）毛利率为32.2504%，为三家样本中最高，且自2021-12-31的25.4795%持续上升；但同期净利率仅为4.4723%，较2024-12-31的8.2282%下降3.7559个百分点，净利润同比下滑57.18%。毛利率上升而净利率大幅下滑，表明费用或减值等中间环节侵蚀了利润。",
+          "claim": "P-05-01-03 数值语义未通过：且自2021-12-31的25.4795%持续上升（需同实体、指标和期间证据）；P-05-01-03 因果判断缺少独立依据：表明费用或减值等中间环节侵蚀了利润；P-05-01-03 数值语义未通过：25.4795%（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：3.7559个百分点（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：57.18%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-545cef1a7603d446afe3",
+            "R-6eb32e35f9e8a81d189f",
+            "R-0701a2cf01a09de87ef1",
+            "R-97aac7270f82fd996416"
+          ],
+          "disposition": "isolated",
+          "reason": "audit_failed"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-01-05",
+          "section_id": "SEC-05-01",
+          "original": "[CHART-06-C1612281] 显示万丰奥威与莱斯信息毛利率趋势（2021-12-31至2025-12-31）。莱斯信息毛利率从2021-12-31的25.4795%持续上升至2025-12-31的32.2504%，呈稳定上行；万丰奥威毛利率在2023-12-31达到20.3302%后回落至2025-12-31的16.9596%，两者差距从2021年的约9个百分点扩大至2025年的约15个百分点。",
+          "claim": "P-05-01-05 数值语义未通过：莱斯信息毛利率从2021-12-31的25.4795%持续上升至2025-12-31的32.2504%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：32.2504%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：16.9596%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：9个百分点（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：15个百分点（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-69694511aa9ea4f7ca9f",
+            "R-545cef1a7603d446afe3",
+            "R-0862668e311490ebb423",
+            "R-7b7c2512486ee8d038b5"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-01-06",
+          "section_id": "SEC-05-01",
+          "original": "[CHART-07-C3ED00BB] 显示三家样本公司净利率趋势（2021-12-31至2025-12-31）。中信海直净利率在2021-12-31为14.8009%，2022年回落至9.4529%后回升至2025-12-31的13.0681%，整体高于万丰奥威与莱斯信息；莱斯信息净利率在2025-12-31骤降至4.4723%，为三家最低；万丰奥威净利率在2025-12-31为7.1355%，处于中游。",
+          "claim": "P-05-01-06 数值语义未通过：9.4529%（需同实体、指标和期间证据）；P-05-01-06 数值语义未通过：13.0681%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-d66e0987a0e34a8adc55",
+            "R-c3a2bc36426386628b99",
+            "R-6eb32e35f9e8a81d189f",
+            "R-ddd2553ae2cd1b31be10"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-02-01",
+          "section_id": "SEC-05-02",
+          "original": "三家样本公司中，中信海直资产负债率最低且盈利稳定，但2025年负债率上升触发异常预警；莱斯信息负债率下降但经营现金流为负，财务质量存在隐忧；万丰奥威负债率持续下降，但现金流与利润的匹配性无法验证。",
+          "claim": "P-05-02-01 数值语义未通过：万丰奥威负债率持续下降（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-54bc6768d48dfe84f19e",
+            "R-7b95913b0380bce034c7",
+            "R-88d7a3d8600cce7fd0de"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-02-02",
+          "section_id": "SEC-05-02",
+          "original": "中信海直2025-12-31（年度，合并报表）资产负债率为27.6999%，较2024-12-31的23.1432%上升4.5567个百分点，该变化相对历史相邻期变化中位数-3.7857出现显著偏离，触发高严重度时间序列尖峰异常。",
+          "claim": "P-05-02-02 数值语义未通过：-3.7857（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-54bc6768d48dfe84f19e",
+            "R-435b24ccb83657c8e404"
+          ],
+          "disposition": "isolated",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-02-03",
+          "section_id": "SEC-05-02",
+          "original": "莱斯信息2025-12-31（年度，合并报表）资产负债率为45.382%，较2021-12-31的67.6605%显著下降，但2025年经营活动现金流为-2.08604e+08元，为负值，表明经营造血能力不足。",
+          "claim": "P-05-02-03 因果判断缺少独立依据：表明经营造血能力不足；P-05-02-03 数值语义未通过：-2.08604（需同实体、指标和期间证据）；P-05-02-03 数值语义未通过：08元（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-7b95913b0380bce034c7",
+            "R-194e2b54758d52abdd69"
+          ],
+          "disposition": "isolated",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-02-04",
+          "section_id": "SEC-05-02",
+          "original": "万丰奥威2025-12-31（年度，合并报表）资产负债率为44.765%，较2021-12-31的55.7458%持续下降，但经营活动现金流为1.46376e+09元，归母净利润为9.87215e+08元，由于缺少同口径归母净利润的完整数据，净现比无法计算。",
+          "claim": "P-05-02-04 数值语义未通过：较2021-12-31的55.7458%持续下降（需同实体、指标和期间证据）；P-05-02-04 因果判断缺少独立依据：由于缺少同口径归母净利润的完整数据；P-05-02-04 数值语义未通过：1.46376（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：09元（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：08元（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-88d7a3d8600cce7fd0de",
+            "R-d398a578bb1698a50c0c",
+            "R-ebb3c32714ebe56051df"
+          ],
+          "disposition": "isolated",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-03-01",
+          "section_id": "SEC-05-03",
+          "original": "由于样本公司PE(TTM)与净利润数据缺失，无法计算低空经济板块的估值中枢，仅能提供国防军工行业PE与部分公司PB作为参照，估值结论需谨慎。",
+          "claim": "P-05-03-01 因果判断缺少独立依据：由于样本公司PE(TTM)与净利润数据缺失",
+          "evidence_ids": [
+            "R-5ac23ba3462b1c910e3b"
+          ],
+          "disposition": "isolated",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-03-03",
+          "section_id": "SEC-05-03",
+          "original": "可比公司中，中国移动2026-11-13的PB为1.5773倍，宁德时代为2.843倍，万华化学为1.8327倍，国电南瑞为3.5535倍，中航成飞为8.6231倍，中国联通为0.7715倍，亿纬锂能为1.9716倍，航发动力为2.4889倍。这些PB数据可作为跨市场参照，但样本结构代表性有限。",
+          "claim": "P-05-03-03 数字缺少证据支撑（假设说明不能替代证据）；P-05-03-03 数值语义未通过：1.5773倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：2.843倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：1.8327倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：3.5535倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：8.6231倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：0.7715倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：1.9716倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：2.4889倍（需同实体、指标和期间证据）",
+          "evidence_ids": [],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-05-03-04",
+          "section_id": "SEC-05-03",
+          "original": "估值口径说明：行业PE中位数仅统计成熟盈利梯队，本次样本中无盈利成熟标的，因此行业PE中位数无法计算；未盈利或高弹性标的采用PB中位数与PS分层评价。样本包含11家早期/亏损/极高估值标的，估值分层待核。",
+          "claim": "P-05-03-04 数值语义未通过：11家（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-5ac23ba3462b1c910e3b"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH-06",
+      "title": "宏观、政策与技术催化",
+      "summary": "本章基于现有证据，确认低空经济已获顶层战略定位（2023年12月中央经济工作会议确定为战略性新兴产业），2025年市场规模达7151.2亿元、同比增长16.8%，产业从规模扩张转向质量爬坡，标准化建设成为关键变量。宏观层面，中国GDP累计同比从2025年一季度的5.4%回落至2026年三季度的4.6%，增长动能减弱，但政策逆周期调节可能加速空域开放与基础设施建设。然而，eVTOL适航取证进展、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录，无法对商业化落地节奏、竞争格局或市场空间做出量化判断。中科星图于2025年1月18日发布星图低空云v1.0并推出“五位一体”低空产品体系，为国内首个完整低空基础设施解决方案，显示该领域正从单一产品向平台化演进，但缺乏其他竞争对手详细数据，竞争格局尚不明确。",
+      "sections": [
+        {
+          "section_id": "SEC-06-01",
+          "title": "宏观经济变量与行业传导路径",
+          "purpose": "说明宏观变量的行业传导。",
+          "key_points": [
+            "中国GDP累计同比从2025年一季度5.4%回落至2026年三季度4.6%，增长动能减弱。",
+            "宏观增速放缓可能影响低空经济商业化落地节奏，但政策逆周期调节可能加速空域开放和基础设施建设。",
+            "宏观数据维度单一，无法确认产业周期位置，需补充更多宏观与行业数据。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-06-01-01",
+              "kind": "thesis",
+              "text": "另一方面，政策逆周期调节可能加速空域开放和基础设施建设，形成对冲。",
+              "evidence_ids": [
+                "R-1e0973f08f882cb89d13",
+                "R-3274a4e963fea3471763",
+                "R-3558520de5ddcdaedba0",
+                "R-be77076a0682691dc081"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-06-01-02",
+              "kind": "evidence",
+              "text": "中国GDP累计同比（合并报表，ytd_month口径）从2025-03-31的5.4%回落至2025-09-30的5.2%，2026-03-31进一步降至5.0%，2026-09-30降至4.6%；同期2026-06-30为4.7%。增长率的变化不直接代表收入或利润金额的变化。",
+              "evidence_ids": [
+                "R-1e0973f08f882cb89d13",
+                "R-07a87e697656ba9c636b",
+                "R-3274a4e963fea3471763",
+                "R-3558520de5ddcdaedba0",
+                "R-be77076a0682691dc081"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-06-01-03",
+              "kind": "analysis",
+              "text": "宏观数据维度单一（仅GDP累计同比），无法确认低空经济产业周期位置。要验证宏观传导路径，需补充固定资产投资、消费、制造业PMI等指标，以及低空经济细分领域的订单、飞行小时数等高频数据。",
+              "evidence_ids": [
+                "R-1e0973f08f882cb89d13",
+                "R-07a87e697656ba9c636b",
+                "R-3274a4e963fea3471763",
+                "R-3558520de5ddcdaedba0",
+                "R-be77076a0682691dc081"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "宏观数据仅覆盖GDP累计同比，缺乏固定资产投资、消费等维度，无法完整刻画宏观传导路径。"
+          ],
+          "metric_cards": [
+            {
+              "label": "中国GDP累计同比",
+              "value": "4.6",
+              "unit": "%",
+              "period": "2026-09-30",
+              "evidence_ids": [
+                "R-1e0973f08f882cb89d13"
+              ]
+            }
+          ],
+          "comparison_table": null,
+          "callouts": [],
+          "layout_hint": "text_only"
+        },
+        {
+          "section_id": "SEC-06-02",
+          "title": "政策、监管与合规环境",
+          "purpose": "说明政策时点、范围和可能影响。",
+          "key_points": [
+            "2023年12月中央经济工作会议将低空经济确定为战略性新兴产业，顶层设计不断完善。",
+            "我国已牵头制定《无人机感知与避障系统》国际标准，从标准跟随者转向制定者。",
+            "空域管理政策开放节奏无合格证据记录，无法量化评估。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-06-02-01",
+              "kind": "thesis",
+              "text": "低空经济已获顶层战略定位，政策环境从自下而上探索转向顶层设计完善，标准化建设成为产业从规模扩张转向质量提升的关键变量。",
+              "evidence_ids": [
+                "R-e9470d4df7cade3987bd",
+                "R-9cdcf567c5433101c380"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-06-02-02",
+              "kind": "evidence",
+              "text": "2023年12月，中央经济工作会议明确将“低空经济”确定为战略性新兴产业，高层到地方政策密集出台，空域管理、飞行管理标准不断完善。我国已联合牵头制定《无人机感知与避障系统》国际标准，从标准“跟随者”转向“制定者”。",
+              "evidence_ids": [
+                "R-e9470d4df7cade3987bd",
+                "R-9cdcf567c5433101c380"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-06-02-03",
+              "kind": "risk",
+              "text": "空域管理政策开放节奏是低空经济商业化的核心前提，但当前证据库中无合格记录，无法量化评估开放节奏与时间表。eVTOL适航取证进展同样缺乏证据，无法判断产业化落地时间。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-06-02-04",
+              "kind": "analysis",
+              "text": "标准化进程将影响行业准入门槛和竞争格局，利好具备标准制定能力的企业。但缺乏具体政策文件、时间表与实施细则，无法评估政策对市场容量的量化影响。",
+              "evidence_ids": [
+                "R-9cdcf567c5433101c380"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "空域管理政策开放节奏无合格证据记录，无法量化评估。",
+            "eVTOL适航取证进展无合格证据记录，无法判断产业化落地时间。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "政策数据缺口",
+              "text": "空域管理政策开放节奏与eVTOL适航取证进展均无合格证据记录，相关结论无法量化验证。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        },
+        {
+          "section_id": "SEC-06-03",
+          "title": "技术趋势、事件催化与监测指标",
+          "purpose": "说明催化条件和监测指标。",
+          "key_points": [
+            "中科星图于2025年1月18日发布星图低空云v1.0，推出“五位一体”低空产品体系，为国内首个完整低空基础设施解决方案。",
+            "低空基础设施竞争正从单一产品向平台化、全链条解决方案演进。",
+            "缺乏其他竞争对手详细数据，竞争格局尚不明确。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-06-03-01",
+              "kind": "thesis",
+              "text": "低空基础设施领域出现完整解决方案提供商，显示该领域正从单一产品向平台化、全链条解决方案演进，但竞争格局尚不明确。",
+              "evidence_ids": [
+                "R-5a4433f2790ec15468f6",
+                "R-f8462876230870d1ce12"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-06-03-02",
+              "kind": "evidence",
+              "text": "中科星图于2025年1月18日发布星图低空云v1.0，以超级计算机为支撑打造低空场景下的综合服务平台和产品底座，通过空域网格化管理实现航线规划、安全评估、飞行保障。随后推出覆盖低空规划、安全保障、协同监管、飞行服务、场景应用全链条的“五位一体”低空产品体系，成为国内首个完整的低空基础设施解决方案。",
+              "evidence_ids": [
+                "R-5a4433f2790ec15468f6",
+                "R-f8462876230870d1ce12"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-06-03-03",
+              "kind": "analysis",
+              "text": "低空基础设施是低空经济的关键支撑，竞争格局的明确将影响产业链价值分配。当前缺乏莱斯信息、四川九洲等其他竞争对手的详细业务数据，无法进行竞争优势对比。",
+              "evidence_ids": [
+                "R-5a4433f2790ec15468f6",
+                "R-f8462876230870d1ce12"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-06-03-04",
+              "kind": "risk",
+              "text": "低空应用场景市场容量（城市空中交通、物流配送、应急救援）无合格证据记录，无法量化评估商业模式与市场空间。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "低空应用场景市场容量无合格证据记录，无法量化评估。",
+            "缺乏其他竞争对手详细数据，竞争格局不明确。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "市场容量数据缺口",
+              "text": "低空应用场景市场容量（城市空中交通、物流配送、应急救援）无合格证据记录，无法量化评估。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        }
+      ],
+      "evidence_ids": [
+        "R-1e0973f08f882cb89d13",
+        "R-3274a4e963fea3471763",
+        "R-3558520de5ddcdaedba0",
+        "R-be77076a0682691dc081",
+        "R-07a87e697656ba9c636b",
+        "R-e9470d4df7cade3987bd",
+        "R-9cdcf567c5433101c380",
+        "R-5ac23ba3462b1c910e3b",
+        "R-c8537811466f907bcaa2",
+        "R-5a4433f2790ec15468f6",
+        "R-f8462876230870d1ce12"
+      ],
+      "chart_ids": [],
+      "used_fallback": false,
+      "content_audit": [
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-06-01-01",
+          "section_id": "SEC-06-01",
+          "original": "中国宏观经济增长动能自2025年以来持续减弱，这一趋势可能通过需求与政策两条路径传导至低空经济：一方面，宏观增速放缓可能抑制下游应用场景的付费能力与商业化落地节奏；另一方面，政策逆周期调节可能加速空域开放和基础设施建设，形成对冲。",
+          "claim": "P-06-01-01 数值语义未通过：中国宏观经济增长动能自2025年以来持续减弱（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-1e0973f08f882cb89d13",
+            "R-3274a4e963fea3471763",
+            "R-3558520de5ddcdaedba0",
+            "R-be77076a0682691dc081"
+          ],
+          "disposition": "partially_retained",
+          "reason": "ValidationError"
+        }
+      ]
+    },
+    {
+      "chapter_id": "CH-07",
+      "title": "情景、风险与研究结论",
+      "summary": "低空经济处于规模化前夜，但核心商业化证据（适航取证、基础设施竞争、空域政策、应用市场容量）缺失，无法量化验证产业化节奏与市场空间。现有财务证据仅支撑对万丰奥威、中信海直、莱斯信息三家标的的盈利质量分析：万丰奥威2025年归母净利润跃升为时间序列尖峰异常，需核查利润构成；莱斯信息毛利率连续五年上行但净利率2025年大幅回落，收入与利润增速转负。宏观GDP累计同比自2025年一季度5.4%逐季回落至2026年三季度4.6%，政策逆周期调节或加速空域开放。本章给出基准、乐观、悲观三档情景，均以可验证条件而非预测阈值表述，并明确反证条件与跟踪指标。",
+      "sections": [
+        {
+          "section_id": "SEC-07-01",
+          "title": "基准、乐观和悲观三种情景",
+          "purpose": "基于共享事实呈现三种情景。",
+          "key_points": [
+            "基准情景：低空经济处于规模化前夜，但核心商业化证据缺失，产业化节奏无法量化验证。",
+            "乐观情景：宏观增速放缓背景下政策逆周期调节加速空域开放与基础设施建设，低空经济商业化提速。",
+            "悲观情景：适航取证、空域政策、市场容量等关键条件未达预期，商业化落地持续延后。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-07-01-01",
+              "kind": "thesis",
+              "text": "低空经济产业处于规模化前夜，但当前证据库无法支撑对产业化落地节奏或市场空间的量化判断。然而，eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录（R-5ac23ba3462b1c910e3b、R-c8537811466f907bcaa2），任何关于市场容量或产业化节奏的结论均属猜测。",
+              "evidence_ids": [
+                "R-9cdcf567c5433101c380",
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-07-01-02",
+              "kind": "scenario",
+              "text": "基准情景：低空经济保持现有政策框架下的渐进式发展，产业规模延续当前增速，但商业化落地节奏取决于适航取证与空域政策等关键条件的推进速度。该情景下，现有财务证据仅能支撑对万丰奥威、中信海直、莱斯信息三家标的的盈利质量分析，无法对行业整体商业化进程做出判断。",
+              "evidence_ids": [
+                "R-9cdcf567c5433101c380",
+                "R-5ac23ba3462b1c910e3b"
+              ],
+              "assumption_note": "基准情景假设现有政策框架不变，产业规模增速延续当前水平。"
+            },
+            {
+              "paragraph_id": "P-07-01-03",
+              "kind": "scenario",
+              "text": "该情景需以适航取证进展、空域政策开放节奏等可验证条件为前提。",
+              "evidence_ids": [],
+              "assumption_note": "乐观情景假设政策逆周期调节力度加大，空域开放和基础设施建设加速。"
+            },
+            {
+              "paragraph_id": "P-07-01-04",
+              "kind": "scenario",
+              "text": "悲观情景：若适航取证、空域政策、市场容量等关键条件未达预期，低空经济商业化落地将持续延后。当前证据库中缺乏这些核心需求指标，无法量化验证悲观情景的触发阈值，但可观察的指标包括：eVTOL适航取证进展停滞、低空基础设施企业竞争优势不明、空域管理政策开放节奏放缓、低空应用场景市场容量不及预期。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": "悲观情景假设关键条件未达预期，但具体阈值因证据缺失无法量化。"
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录，无法量化验证产业化节奏。",
+            "万丰奥威财务数据存在unit_unknown质量标记，可能影响数值解读。",
+            "超过一半的数值记录缺少日期，存在3组未消解的来源冲突。"
+          ],
+          "metric_cards": [],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "非外推声明",
+              "text": "本情景基于当前证据库的有限样本（11家公司，其中估值分层待核11家）与期间跨度（财务数据覆盖2021-2025年，宏观数据截至2026年三季度），样本结构代表性边界有限，禁止线性外推至整个低空经济产业。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        },
+        {
+          "section_id": "SEC-07-02",
+          "title": "核心风险、反证条件与跟踪指标",
+          "purpose": "说明风险、反证和跟踪指标。",
+          "key_points": [
+            "核心风险：低空经济商业化证据缺失，产业化节奏无法验证。",
+            "反证条件：若适航取证、空域政策、市场容量等关键指标出现合格证据，可验证或推翻当前判断。",
+            "跟踪指标：eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-07-02-01",
+              "kind": "risk",
+              "text": "核心风险在于低空经济商业化证据缺失，导致产业化节奏与市场空间无法量化验证。eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录（R-5ac23ba3462b1c910e3b、R-c8537811466f907bcaa2），任何关于市场容量或产业化节奏的结论均属猜测。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-07-02-02",
+              "kind": "risk",
+              "text": "万丰奥威2025年归母净利润跃升为时间序列尖峰异常，触发高严重度预警，需深入核查利润来源，避免将一次性因素误判为持续盈利能力。",
+              "evidence_ids": [
+                "R-ebb3c32714ebe56051df",
+                "R-a33820a81702f7560f9d",
+                "R-cedea62f3a1330c9de19",
+                "R-ae57194db7d2f84d79c8",
+                "R-89c0d2efddd8c57a5cde"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-07-02-03",
+              "kind": "risk",
+              "text": "莱斯信息2025年收入与利润增速转负，净利率大幅回落，盈利质量承压。",
+              "evidence_ids": [
+                "R-545cef1a7603d446afe3",
+                "R-0701a2cf01a09de87ef1",
+                "R-6eb32e35f9e8a81d189f"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-07-02-04",
+              "kind": "methodology",
+              "text": "反证条件：若出现eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标的合格证据，可验证或推翻当前关于低空经济商业化进程的判断。当前证据库中这些指标均无合格记录（R-5ac23ba3462b1c910e3b、R-c8537811466f907bcaa2），需优先补齐。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-07-02-05",
+              "kind": "analysis",
+              "text": "跟踪指标：建议跟踪eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标。这些指标是评估低空经济商业化落地节奏的关键，当前证据库中均无合格记录，需在后续研究中优先补齐。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "万丰奥威财务数据存在unit_unknown质量标记，可能影响数值解读。",
+            "超过一半的数值记录缺少日期，存在3组未消解的来源冲突。",
+            "莱斯信息2025年收入与利润增速转负，但具体原因（是否低空业务拖累）待核。"
+          ],
+          "metric_cards": [
+            {
+              "label": "莱斯信息净利率",
+              "value": "4.47",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-6eb32e35f9e8a81d189f"
+              ]
+            }
+          ],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "risk",
+              "title": "高严重度预警",
+              "text": "万丰奥威2025年归母净利润跃升为时间序列尖峰异常，触发高严重度预警，需深入核查利润来源，避免将一次性因素误判为持续盈利能力。",
+              "evidence_ids": [
+                "R-ebb3c32714ebe56051df",
+                "R-a33820a81702f7560f9d"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        },
+        {
+          "section_id": "SEC-07-03",
+          "title": "核心结论、适用边界与待验证事项",
+          "purpose": "汇总结论并保留不确定性。",
+          "key_points": [
+            "核心结论：低空经济处于规模化前夜，但核心商业化证据缺失，无法量化验证产业化节奏与市场空间。",
+            "适用边界：现有证据仅能支撑对万丰奥威、中信海直、莱斯信息三家标的的财务分析，无法对低空经济整体商业化进程做出判断。",
+            "待验证事项：eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标。"
+          ],
+          "paragraphs": [
+            {
+              "paragraph_id": "P-07-03-01",
+              "kind": "thesis",
+              "text": "核心结论：低空经济处于规模化前夜，但核心商业化证据缺失，无法量化验证产业化节奏与市场空间。然而，eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录（R-5ac23ba3462b1c910e3b、R-c8537811466f907bcaa2），任何关于市场容量或产业化节奏的结论均属猜测。",
+              "evidence_ids": [
+                "R-9cdcf567c5433101c380",
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-07-03-02",
+              "kind": "evidence",
+              "text": "现有财务证据仅能支撑对万丰奥威、中信海直、莱斯信息三家标的的盈利质量分析。这些数据仅能支撑对个别公司的财务分析，无法对低空经济整体商业化进程做出判断。",
+              "evidence_ids": [
+                "R-ddd2553ae2cd1b31be10",
+                "R-ebb3c32714ebe56051df",
+                "R-be858a324d733e58c2c8",
+                "R-721dc2dd25f525bcb31a",
+                "R-c3a2bc36426386628b99",
+                "R-545cef1a7603d446afe3",
+                "R-6eb32e35f9e8a81d189f"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-07-03-03",
+              "kind": "methodology",
+              "text": "适用边界：本报告结论仅适用于当前证据库覆盖的样本与期间。财务数据覆盖2021-2025年，宏观数据截至2026年三季度。禁止线性外推至整个低空经济产业。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ],
+              "assumption_note": null
+            },
+            {
+              "paragraph_id": "P-07-03-04",
+              "kind": "analysis",
+              "text": "待验证事项：eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标。这些指标是评估低空经济商业化落地节奏的关键，当前证据库中均无合格记录，需在后续研究中优先补齐。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b",
+                "R-c8537811466f907bcaa2"
+              ],
+              "assumption_note": null
+            }
+          ],
+          "chart_ids": [],
+          "uncertainties": [
+            "eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录。",
+            "万丰奥威财务数据存在unit_unknown质量标记，可能影响数值解读。",
+            "超过一半的数值记录缺少日期，存在3组未消解的来源冲突。"
+          ],
+          "metric_cards": [
+            {
+              "label": "万丰奥威净利率",
+              "value": "7.1355",
+              "unit": "%",
+              "period": "2025-12-31",
+              "evidence_ids": [
+                "R-ddd2553ae2cd1b31be10"
+              ]
+            }
+          ],
+          "comparison_table": null,
+          "callouts": [
+            {
+              "type": "boundary",
+              "title": "非外推声明",
+              "text": "本报告结论基于当前证据库的有限样本（11家公司，其中估值分层待核11家）与期间跨度（财务数据覆盖2021-2025年，宏观数据截至2026年三季度），样本结构代表性边界有限，禁止线性外推至整个低空经济产业。",
+              "evidence_ids": [
+                "R-5ac23ba3462b1c910e3b"
+              ]
+            }
+          ],
+          "layout_hint": "text_only"
+        }
+      ],
+      "evidence_ids": [
+        "R-9cdcf567c5433101c380",
+        "R-5ac23ba3462b1c910e3b",
+        "R-c8537811466f907bcaa2",
+        "R-ebb3c32714ebe56051df",
+        "R-a33820a81702f7560f9d",
+        "R-cedea62f3a1330c9de19",
+        "R-ae57194db7d2f84d79c8",
+        "R-89c0d2efddd8c57a5cde",
+        "R-545cef1a7603d446afe3",
+        "R-0701a2cf01a09de87ef1",
+        "R-6eb32e35f9e8a81d189f",
+        "R-ddd2553ae2cd1b31be10",
+        "R-be858a324d733e58c2c8",
+        "R-721dc2dd25f525bcb31a",
+        "R-c3a2bc36426386628b99"
+      ],
+      "chart_ids": [],
+      "used_fallback": false,
+      "content_audit": [
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-07-01",
+          "section_id": "SEC-07-01",
+          "claim": "SEC-07-01 指标卡「低空经济规模」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-07-01",
+          "section_id": "SEC-07-01",
+          "claim": "SEC-07-01 指标卡「低空经济规模同比增速」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-07-01",
+          "section_id": "SEC-07-01",
+          "claim": "SEC-07-01 指标卡「GDP累计同比」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-07-02",
+          "section_id": "SEC-07-02",
+          "claim": "SEC-07-02 指标卡「万丰奥威归母净利润同比增速」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-07-02",
+          "section_id": "SEC-07-02",
+          "claim": "SEC-07-02 指标卡「莱斯信息收入同比增速」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-07-03",
+          "section_id": "SEC-07-03",
+          "claim": "SEC-07-03 指标卡「低空经济规模」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_component_isolation",
+          "location": "SEC-07-03",
+          "section_id": "SEC-07-03",
+          "claim": "SEC-07-03 指标卡「低空经济规模同比增速」数值缺少证据绑定",
+          "disposition": "isolated"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-07-01-01",
+          "section_id": "SEC-07-01",
+          "original": "低空经济产业处于规模化前夜，但当前证据库无法支撑对产业化落地节奏或市场空间的量化判断。2025年中国低空经济规模达7151.2亿元，同比增长16.8%，产业正从规模扩张转向质量爬坡（R-9cdcf567c5433101c380）。然而，eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录（R-5ac23ba3462b1c910e3b、R-c8537811466f907bcaa2），任何关于市场容量或产业化节奏的结论均属猜测。",
+          "claim": "P-07-01-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-07-01-01 数值语义未通过：16.8%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-9cdcf567c5433101c380",
+            "R-5ac23ba3462b1c910e3b",
+            "R-c8537811466f907bcaa2"
+          ],
+          "disposition": "partially_retained",
+          "reason": "ValidationError"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-07-01-03",
+          "section_id": "SEC-07-01",
+          "original": "乐观情景：宏观经济增长动能减弱背景下，政策逆周期调节可能加速空域开放和基础设施建设，从而推动低空经济商业化提速。中国GDP累计同比自2025年一季度5.4%逐季回落至2026年三季度4.6%（R-1e0973f08f882cb89d13、R-3274a4e963fea3471763、R-3558520de5ddcdaedba0、R-be77076a0682691dc081），宏观增速放缓可能促使政策加码，加速低空经济商业化落地。该情景需以适航取证进展、空域政策开放节奏等可验证条件为前提。",
+          "claim": "P-07-01-03 因果判断缺少独立依据：从而推动低空经济商业化提速；P-07-01-03 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：3274（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：3558520（需同实体、指标和期间证据）",
+          "evidence_ids": [],
+          "disposition": "partially_retained",
+          "reason": "ValidationError"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-07-02-02",
+          "section_id": "SEC-07-02",
+          "original": "万丰奥威2025年归母净利润跃升为时间序列尖峰异常，触发高严重度预警，需深入核查利润来源，避免将一次性因素误判为持续盈利能力。万丰奥威2025-12-31（年度，合并报表）归母净利润为9.87215e+08元，较2024年同期的6.53314e+08元上升51.11%（R-ebb3c32714ebe56051df、R-a33820a81702f7560f9d），但该跃升为时间序列尖峰异常（R-cedea62f3a1330c9de19、R-ae57194db7d2f84d79c8、R-89c0d2efddd8c57a5cde、R-a33820a81702f7560f9d、R-ebb3c32714ebe56051df、R-28d17e22539ccd541e8f、R-5f553d8d8dcc593c49de），需关注利润构成与可持续性。",
+          "claim": "P-07-02-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：51.11%（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：89（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：28（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-ebb3c32714ebe56051df",
+            "R-a33820a81702f7560f9d",
+            "R-cedea62f3a1330c9de19",
+            "R-ae57194db7d2f84d79c8",
+            "R-89c0d2efddd8c57a5cde"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-07-02-03",
+          "section_id": "SEC-07-02",
+          "original": "莱斯信息2025年收入与利润增速转负，净利率大幅回落，盈利质量承压。莱斯信息2025-12-31（年度，合并报表）营业收入为1.27353e+09元，同比下滑20.89%；归母净利润为5.52617e+07元，同比下滑57.18%（R-dcf02332270fd4d82ff7、R-dbdd2d38d0846a856db5、R-28d17e22539ccd541e8f、R-97aac7270f82fd996416）。尽管毛利率连续五年上行至32.25%（R-545cef1a7603d446afe3），但净利率从2024年的8.23%降至2025年的4.47%（R-0701a2cf01a09de87ef1、R-6eb32e35f9e8a81d189f），收入与利润的双重下滑可能反映低空经济业务尚未形成规模化贡献。",
+          "claim": "P-07-02-03 数值语义未通过：1.27353（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：09元（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：20.89%（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：5.52617（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：07元（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：57.18%（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：28（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：97（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：545（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：0701（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：6（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-545cef1a7603d446afe3",
+            "R-0701a2cf01a09de87ef1",
+            "R-6eb32e35f9e8a81d189f"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-07-03-01",
+          "section_id": "SEC-07-03",
+          "original": "核心结论：低空经济处于规模化前夜，但核心商业化证据缺失，无法量化验证产业化节奏与市场空间。2025年中国低空经济规模达7151.2亿元，同比增长16.8%，产业正从规模扩张转向质量爬坡（R-9cdcf567c5433101c380）。然而，eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录（R-5ac23ba3462b1c910e3b、R-c8537811466f907bcaa2），任何关于市场容量或产业化节奏的结论均属猜测。",
+          "claim": "P-07-03-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-07-03-01 数值语义未通过：16.8%（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-9cdcf567c5433101c380",
+            "R-5ac23ba3462b1c910e3b",
+            "R-c8537811466f907bcaa2"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-07-03-02",
+          "section_id": "SEC-07-03",
+          "original": "现有财务证据仅能支撑对万丰奥威、中信海直、莱斯信息三家标的的盈利质量分析。万丰奥威2025-12-31（年度，合并报表）净利率为7.1355%，归母净利润为9.87215e+08元，营业收入为1.59872e+10元（R-ddd2553ae2cd1b31be10、R-ebb3c32714ebe56051df、R-be858a324d733e58c2c8）；中信海直2025-12-31（年度，合并报表）毛利率为23.7776%，净利率为13.0681%（R-721dc2dd25f525bcb31a、R-c3a2bc36426386628b99）；莱斯信息2025-12-31（年度，合并报表）毛利率为32.2504%，净利率为4.4723%（R-545cef1a7603d446afe3、R-6eb32e35f9e8a81d189f）。这些数据仅能支撑对个别公司的财务分析，无法对低空经济整体商业化进程做出判断。",
+          "claim": "P-07-03-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：1.59872（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：10元（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：721（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：545（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：6（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-ddd2553ae2cd1b31be10",
+            "R-ebb3c32714ebe56051df",
+            "R-be858a324d733e58c2c8",
+            "R-721dc2dd25f525bcb31a",
+            "R-c3a2bc36426386628b99",
+            "R-545cef1a7603d446afe3",
+            "R-6eb32e35f9e8a81d189f"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        },
+        {
+          "code": "chapter_claim_repair",
+          "location": "P-07-03-03",
+          "section_id": "SEC-07-03",
+          "original": "适用边界：本报告结论仅适用于当前证据库覆盖的样本与期间。样本包含11家公司，其中估值分层待核11家，缺少可回指证据，归属待核；财务数据覆盖2021-2025年，宏观数据截至2026年三季度。禁止线性外推至整个低空经济产业。",
+          "claim": "P-07-03-03 数值语义未通过：11家（需同实体、指标和期间证据）",
+          "evidence_ids": [
+            "R-5ac23ba3462b1c910e3b"
+          ],
+          "disposition": "partially_retained",
+          "reason": "repair_disabled"
+        }
+      ]
+    }
+  ],
+  "quality": {
+    "passed": false,
+    "chapter_count": 7,
+    "section_count": 21,
+    "evidence_coverage": 0.03811659192825112,
+    "issues": [
+      "段落资料缺口：CH-01 SEC-01-03 指标卡「中国低空经济规模」数值缺少证据绑定；SEC-01-03 指标卡「低空经济规模同比增速」数值缺少证据绑定；P-01-01-01 数值语义未通过：1000（需同实体、指标和期间证据）；P-01-01-01 数值语义未通过：3000（需同实体、指标和期间证据）；P-01-03-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-01-03-01 数值语义未通过：16.8%（需同实体、指标和期间证据）",
+      "段落资料缺口：CH-02 SEC-02-01 指标卡「中国低空经济规模」数值缺少证据绑定；SEC-02-01 指标卡「低空经济规模同比增速」数值缺少证据绑定；SEC-02-03 指标卡「万丰奥威2025年归母净利润」数值缺少证据绑定；P-02-01-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-02-01-01 数值语义未通过：16.8%（需同实体、指标和期间证据）；P-02-02-01 数字缺少证据支撑（假设说明不能替代证据）；P-02-02-01 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-02-02-01 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-02-02-02 因果判断缺少独立依据：这一进展表明需求驱动正从单一产品采购转向系统级解决方案；P-02-03-01 因果判断缺少独立依据：这些波动更多反映个体经营变化；P-02-03-01 数值语义未通过：20.89%（需同实体、指标和期间证据）；P-02-03-02 因果判断缺少独立依据：两条曲线的分化表明；P-02-03-02 数值语义未通过：9.5%（需同实体、指标和期间证据）；P-02-03-02 数值语义未通过：-9.8%（需同实体、指标和期间证据）；P-02-03-03 因果判断缺少独立依据：表明费用或减值侵蚀利润；P-02-03-03 因果判断缺少独立依据：反映回款或营运资金压力；P-02-03-03 数值语义未通过：8.23%（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：6.53亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：9.87亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：162.64亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：159.87亿元（需同实体、指标和期间证据）",
+      "段落资料缺口：CH-03 SEC-03-02 指标卡「万丰奥威归母净利润同比增速」数值缺少证据绑定；SEC-03-02 指标卡「莱斯信息毛利率」数值缺少证据绑定；P-03-01-02 数字缺少证据支撑（假设说明不能替代证据）；P-03-02-01 因果判断缺少独立依据：毛利率与净利率的背离反映不同业务模式的成本结构与费用管控差异；P-03-02-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：51.1%（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：3.37个百分点（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：0.76个百分点（需同实体、指标和期间证据）；P-03-02-03 数值语义未通过：32.2504%（需同实体、指标和期间证据）；P-03-02-03 数值语义未通过：23.7776%（需同实体、指标和期间证据）；P-03-03-02 数字缺少证据支撑（假设说明不能替代证据）；P-03-03-03 数字缺少证据支撑（假设说明不能替代证据）；P-03-03-03 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-03-03-03 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-03-02-01 与其他段落重复；P-03-02-02 与其他段落重复；P-03-02-03 与其他段落重复；P-03-03-02 与其他段落重复；P-03-03-03 与其他段落重复",
+      "段落资料缺口：CH-04 SEC-04-02 指标卡「万丰奥威归母净利润同比」数值缺少证据绑定；P-04-02-01 数值语义未通过：中信海直盈利质量最优（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：莱斯信息毛利率连续五年上升（从2021年的25.48%升至2025年的32.25%）（需同实体、指标和期间证据）；P-04-02-02 因果判断缺少独立依据：反映其产品或服务定价能力增强；P-04-02-02 数值语义未通过：8.5（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：15.3个百分点（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：25.48%（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：32.25%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：8.23%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：3.76个百分点（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：4.47%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：13.40%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：13.07%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：9.87亿元（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：51.1%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：1.7%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：159.87亿元（需同实体、指标和期间证据）",
+      "段落资料缺口：CH-05 SEC-05-03 对比表数值缺少证据绑定；P-05-01-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：51.11%（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.59872（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：10元（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.62643（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.70%（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：且自2021-12-31的25.4795%持续上升（需同实体、指标和期间证据）；P-05-01-03 因果判断缺少独立依据：表明费用或减值等中间环节侵蚀了利润；P-05-01-03 数值语义未通过：25.4795%（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：3.7559个百分点（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：57.18%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：莱斯信息毛利率从2021-12-31的25.4795%持续上升至2025-12-31的32.2504%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：32.2504%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：16.9596%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：9个百分点（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：15个百分点（需同实体、指标和期间证据）；P-05-01-06 数值语义未通过：9.4529%（需同实体、指标和期间证据）；P-05-01-06 数值语义未通过：13.0681%（需同实体、指标和期间证据）；P-05-02-01 数值语义未通过：万丰奥威负债率持续下降（需同实体、指标和期间证据）；P-05-02-02 数值语义未通过：-3.7857（需同实体、指标和期间证据）；P-05-02-03 因果判断缺少独立依据：表明经营造血能力不足；P-05-02-03 数值语义未通过：-2.08604（需同实体、指标和期间证据）；P-05-02-03 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：较2021-12-31的55.7458%持续下降（需同实体、指标和期间证据）；P-05-02-04 因果判断缺少独立依据：由于缺少同口径归母净利润的完整数据；P-05-02-04 数值语义未通过：1.46376（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：09元（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-03-01 因果判断缺少独立依据：由于样本公司PE(TTM)与净利润数据缺失；P-05-03-03 数字缺少证据支撑（假设说明不能替代证据）；P-05-03-03 数值语义未通过：1.5773倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：2.843倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：1.8327倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：3.5535倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：8.6231倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：0.7715倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：1.9716倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：2.4889倍（需同实体、指标和期间证据）；P-05-03-04 数值语义未通过：11家（需同实体、指标和期间证据）；P-05-02-02 与其他段落重复；P-05-02-03 与其他段落重复；P-05-02-04 与其他段落重复；P-05-03-01 与其他段落重复",
+      "段落资料缺口：CH-06 P-06-01-01 数值语义未通过：中国宏观经济增长动能自2025年以来持续减弱（需同实体、指标和期间证据）",
+      "段落资料缺口：CH-07 SEC-07-01 指标卡「低空经济规模」数值缺少证据绑定；SEC-07-01 指标卡「低空经济规模同比增速」数值缺少证据绑定；SEC-07-01 指标卡「GDP累计同比」数值缺少证据绑定；SEC-07-02 指标卡「万丰奥威归母净利润同比增速」数值缺少证据绑定；SEC-07-02 指标卡「莱斯信息收入同比增速」数值缺少证据绑定；SEC-07-03 指标卡「低空经济规模」数值缺少证据绑定；SEC-07-03 指标卡「低空经济规模同比增速」数值缺少证据绑定；P-07-01-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-07-01-01 数值语义未通过：16.8%（需同实体、指标和期间证据）；P-07-01-03 因果判断缺少独立依据：从而推动低空经济商业化提速；P-07-01-03 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：3274（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：3558520（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：51.11%（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：89（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：28（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：1.27353（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：09元（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：20.89%（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：5.52617（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：07元（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：57.18%（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：28（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：97（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：545（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：0701（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：6（需同实体、指标和期间证据）；P-07-03-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-07-03-01 数值语义未通过：16.8%（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：1.59872（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：10元（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：721（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：545（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：6（需同实体、指标和期间证据）；P-07-03-03 数值语义未通过：11家（需同实体、指标和期间证据）"
+    ],
+    "fallback_chapter_ids": []
+  },
+  "warnings": [
+    "超过一半的数值记录缺少可用于趋势分析的日期，存在3组未消解的来源冲突。",
+    "存在 3 组未消解的来源冲突",
+    "个股财务报表附表细项（如应收账款账龄、存货跌价等）未充分覆盖，营运资金变动原因需结合财报附注定性研判",
+    "eVTOL适航取证进展、低空基础设施企业竞争优势、空域管理政策开放节奏、低空应用场景市场容量等核心需求指标均无合格证据记录，无法进行量化验证。",
+    "万丰奥威财务数据存在unit_unknown质量标记，可能影响数值解读。",
+    "中航成飞、中国移动、宁德时代等公司估值数据为横截面离群值，需谨慎解读。",
+    "证据库中缺少eVTOL适航取证、低空基础设施、空域政策及市场容量等核心问询的直接数据，相关结论无法验证。",
+    "万丰奥威的财务数据存在unit_unknown质量标记，虽不影响数值解读，但单位一致性需注意。",
+    "段落资料缺口：CH-01 SEC-01-03 指标卡「中国低空经济规模」数值缺少证据绑定；SEC-01-03 指标卡「低空经济规模同比增速」数值缺少证据绑定；P-01-01-01 数值语义未通过：1000（需同实体、指标和期间证据）；P-01-01-01 数值语义未通过：3000（需同实体、指标和期间证据）；P-01-03-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-01-03-01 数值语义未通过：16.8%（需同实体、指标和期间证据）",
+    "段落资料缺口：CH-02 SEC-02-01 指标卡「中国低空经济规模」数值缺少证据绑定；SEC-02-01 指标卡「低空经济规模同比增速」数值缺少证据绑定；SEC-02-03 指标卡「万丰奥威2025年归母净利润」数值缺少证据绑定；P-02-01-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-02-01-01 数值语义未通过：16.8%（需同实体、指标和期间证据）；P-02-02-01 数字缺少证据支撑（假设说明不能替代证据）；P-02-02-01 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-02-02-01 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-02-02-02 因果判断缺少独立依据：这一进展表明需求驱动正从单一产品采购转向系统级解决方案；P-02-03-01 因果判断缺少独立依据：这些波动更多反映个体经营变化；P-02-03-01 数值语义未通过：20.89%（需同实体、指标和期间证据）；P-02-03-02 因果判断缺少独立依据：两条曲线的分化表明；P-02-03-02 数值语义未通过：9.5%（需同实体、指标和期间证据）；P-02-03-02 数值语义未通过：-9.8%（需同实体、指标和期间证据）；P-02-03-03 因果判断缺少独立依据：表明费用或减值侵蚀利润；P-02-03-03 因果判断缺少独立依据：反映回款或营运资金压力；P-02-03-03 数值语义未通过：8.23%（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：6.53亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：9.87亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：162.64亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：159.87亿元（需同实体、指标和期间证据）",
+    "段落资料缺口：CH-03 SEC-03-02 指标卡「万丰奥威归母净利润同比增速」数值缺少证据绑定；SEC-03-02 指标卡「莱斯信息毛利率」数值缺少证据绑定；P-03-01-02 数字缺少证据支撑（假设说明不能替代证据）；P-03-02-01 因果判断缺少独立依据：毛利率与净利率的背离反映不同业务模式的成本结构与费用管控差异；P-03-02-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：51.1%（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：3.37个百分点（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：0.76个百分点（需同实体、指标和期间证据）；P-03-02-03 数值语义未通过：32.2504%（需同实体、指标和期间证据）；P-03-02-03 数值语义未通过：23.7776%（需同实体、指标和期间证据）；P-03-03-02 数字缺少证据支撑（假设说明不能替代证据）；P-03-03-03 数字缺少证据支撑（假设说明不能替代证据）；P-03-03-03 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-03-03-03 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-03-02-01 与其他段落重复；P-03-02-02 与其他段落重复；P-03-02-03 与其他段落重复；P-03-03-02 与其他段落重复；P-03-03-03 与其他段落重复",
+    "段落资料缺口：CH-04 SEC-04-02 指标卡「万丰奥威归母净利润同比」数值缺少证据绑定；P-04-02-01 数值语义未通过：中信海直盈利质量最优（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：莱斯信息毛利率连续五年上升（从2021年的25.48%升至2025年的32.25%）（需同实体、指标和期间证据）；P-04-02-02 因果判断缺少独立依据：反映其产品或服务定价能力增强；P-04-02-02 数值语义未通过：8.5（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：15.3个百分点（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：25.48%（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：32.25%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：8.23%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：3.76个百分点（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：4.47%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：13.40%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：13.07%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：9.87亿元（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：51.1%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：1.7%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：159.87亿元（需同实体、指标和期间证据）",
+    "段落资料缺口：CH-05 SEC-05-03 对比表数值缺少证据绑定；P-05-01-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：51.11%（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.59872（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：10元（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.62643（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.70%（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：且自2021-12-31的25.4795%持续上升（需同实体、指标和期间证据）；P-05-01-03 因果判断缺少独立依据：表明费用或减值等中间环节侵蚀了利润；P-05-01-03 数值语义未通过：25.4795%（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：3.7559个百分点（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：57.18%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：莱斯信息毛利率从2021-12-31的25.4795%持续上升至2025-12-31的32.2504%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：32.2504%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：16.9596%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：9个百分点（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：15个百分点（需同实体、指标和期间证据）；P-05-01-06 数值语义未通过：9.4529%（需同实体、指标和期间证据）；P-05-01-06 数值语义未通过：13.0681%（需同实体、指标和期间证据）；P-05-02-01 数值语义未通过：万丰奥威负债率持续下降（需同实体、指标和期间证据）；P-05-02-02 数值语义未通过：-3.7857（需同实体、指标和期间证据）；P-05-02-03 因果判断缺少独立依据：表明经营造血能力不足；P-05-02-03 数值语义未通过：-2.08604（需同实体、指标和期间证据）；P-05-02-03 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：较2021-12-31的55.7458%持续下降（需同实体、指标和期间证据）；P-05-02-04 因果判断缺少独立依据：由于缺少同口径归母净利润的完整数据；P-05-02-04 数值语义未通过：1.46376（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：09元（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-03-01 因果判断缺少独立依据：由于样本公司PE(TTM)与净利润数据缺失；P-05-03-03 数字缺少证据支撑（假设说明不能替代证据）；P-05-03-03 数值语义未通过：1.5773倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：2.843倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：1.8327倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：3.5535倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：8.6231倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：0.7715倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：1.9716倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：2.4889倍（需同实体、指标和期间证据）；P-05-03-04 数值语义未通过：11家（需同实体、指标和期间证据）；P-05-02-02 与其他段落重复；P-05-02-03 与其他段落重复；P-05-02-04 与其他段落重复；P-05-03-01 与其他段落重复",
+    "段落资料缺口：CH-06 P-06-01-01 数值语义未通过：中国宏观经济增长动能自2025年以来持续减弱（需同实体、指标和期间证据）",
+    "段落资料缺口：CH-07 SEC-07-01 指标卡「低空经济规模」数值缺少证据绑定；SEC-07-01 指标卡「低空经济规模同比增速」数值缺少证据绑定；SEC-07-01 指标卡「GDP累计同比」数值缺少证据绑定；SEC-07-02 指标卡「万丰奥威归母净利润同比增速」数值缺少证据绑定；SEC-07-02 指标卡「莱斯信息收入同比增速」数值缺少证据绑定；SEC-07-03 指标卡「低空经济规模」数值缺少证据绑定；SEC-07-03 指标卡「低空经济规模同比增速」数值缺少证据绑定；P-07-01-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-07-01-01 数值语义未通过：16.8%（需同实体、指标和期间证据）；P-07-01-03 因果判断缺少独立依据：从而推动低空经济商业化提速；P-07-01-03 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：3274（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：3558520（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：51.11%（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：89（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：28（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：1.27353（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：09元（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：20.89%（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：5.52617（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：07元（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：57.18%（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：28（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：97（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：545（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：0701（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：6（需同实体、指标和期间证据）；P-07-03-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-07-03-01 数值语义未通过：16.8%（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：1.59872（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：10元（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：721（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：545（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：6（需同实体、指标和期间证据）；P-07-03-03 数值语义未通过：11家（需同实体、指标和期间证据）",
+    "CH-04 段落 P-04-01-02 引用了非本章/未授权证据 ['R-f8462876230870d1ce12']，已剔除（越界留痕）",
+    "CH-04 段落 P-04-01-03 引用了非本章/未授权证据 ['R-9cdcf567c5433101c380']，已剔除（越界留痕）",
+    "CH-04 段落 P-04-02-03 引用了非本章/未授权证据 ['R-0701a2cf01a09de87ef1', 'R-21dc772f962a19acd0fc']，已剔除（越界留痕）",
+    "CH-04 对比表 引用了非本章/未授权证据 ['R-12a689460618c81dc973', 'R-520917df89ac91ad6e35', 'R-f00b9dc5db1c7e2f166e']，已剔除（越界留痕）",
+    "CH-04 callout 引用了非本章/未授权证据 ['R-21dc772f962a19acd0fc']，已剔除（越界留痕）",
+    "CH-04 段落 P-04-03-01 引用了非本章/未授权证据 ['R-9cdcf567c5433101c380']，已剔除（越界留痕）",
+    "CH-04 段落 P-04-03-02 引用了非本章/未授权证据 ['R-f8462876230870d1ce12']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-01-01 引用了非本章/未授权证据 ['R-08f9750cd441dfd18e05', 'R-c8537811466f907bcaa2']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-01-02 引用了非本章/未授权证据 ['R-5a4433f2790ec15468f6', 'R-f8462876230870d1ce12']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-01-03 引用了非本章/未授权证据 ['R-5a4433f2790ec15468f6', 'R-f8462876230870d1ce12']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-01-04 引用了非本章/未授权证据 ['R-c8537811466f907bcaa2']，已剔除（越界留痕）",
+    "CH-03 callout 引用了非本章/未授权证据 ['R-5a4433f2790ec15468f6', 'R-f8462876230870d1ce12']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-02-01 引用了非本章/未授权证据 ['R-545cef1a7603d446afe3', 'R-6eb32e35f9e8a81d189f', 'R-721dc2dd25f525bcb31a', 'R-c3a2bc36426386628b99']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-02-03 引用了非本章/未授权证据 ['R-545cef1a7603d446afe3', 'R-721dc2dd25f525bcb31a']，已剔除（越界留痕）",
+    "CH-03 指标卡 引用了非本章/未授权证据 ['R-545cef1a7603d446afe3']，已剔除（越界留痕）",
+    "CH-03 对比表 引用了非本章/未授权证据 ['R-12a689460618c81dc973', 'R-520917df89ac91ad6e35', 'R-545cef1a7603d446afe3', 'R-54bc6768d48dfe84f19e', 'R-6eb32e35f9e8a81d189f', 'R-721dc2dd25f525bcb31a', 'R-7b95913b0380bce034c7', 'R-88d7a3d8600cce7fd0de', 'R-c3a2bc36426386628b99', 'R-f00b9dc5db1c7e2f166e']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-03-01 引用了非本章/未授权证据 ['R-c8537811466f907bcaa2']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-03-02 引用了非本章/未授权证据 ['R-9cdcf567c5433101c380', 'R-e9470d4df7cade3987bd']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-03-03 引用了非本章/未授权证据 ['R-07a87e697656ba9c636b', 'R-1e0973f08f882cb89d13', 'R-3274a4e963fea3471763', 'R-3558520de5ddcdaedba0', 'R-83549242744f2e98fe78', 'R-a9d6f4944090188dce1b', 'R-be77076a0682691dc081']，已剔除（越界留痕）",
+    "CH-03 段落 P-03-03-04 引用了非本章/未授权证据 ['R-c8537811466f907bcaa2']，已剔除（越界留痕）",
+    "CH-03 callout 引用了非本章/未授权证据 ['R-c8537811466f907bcaa2']，已剔除（越界留痕）",
+    "CH-02 段落 P-02-02-02 引用了非本章/未授权证据 ['R-07a87e697656ba9c636b', 'R-1e0973f08f882cb89d13', 'R-3274a4e963fea3471763', 'R-3558520de5ddcdaedba0', 'R-83549242744f2e98fe78', 'R-a9d6f4944090188dce1b', 'R-be77076a0682691dc081']，已剔除（越界留痕）",
+    "CH-02 段落 P-02-02-03 引用了非本章/未授权证据 ['R-5a4433f2790ec15468f6', 'R-f8462876230870d1ce12']，已剔除（越界留痕）",
+    "CH-02 指标卡 引用了非本章/未授权证据 ['R-be77076a0682691dc081']，已剔除（越界留痕）",
+    "CH-02 段落 P-02-03-01 引用了非本章/未授权证据 ['R-97aac7270f82fd996416']，已剔除（越界留痕）",
+    "CH-02 段落 P-02-03-03 引用了非本章/未授权证据 ['R-82cbf0e2cba82745c03b', 'R-948ca3543a208d6cecb8']，已剔除（越界留痕）",
+    "CH-02 指标卡 引用了非本章/未授权证据 ['R-82cbf0e2cba82745c03b']，已剔除（越界留痕）",
+    "CH-02 对比表 引用了非本章/未授权证据 ['R-3d464bc2e35cc301843e', 'R-82cbf0e2cba82745c03b', 'R-948ca3543a208d6cecb8']，已剔除（越界留痕）",
+    "CH-07 段落 P-07-01-03 引用了非本章/未授权证据 ['R-1e0973f08f882cb89d13', 'R-3274a4e963fea3471763', 'R-3558520de5ddcdaedba0', 'R-be77076a0682691dc081']，已剔除（越界留痕）",
+    "CH-07 指标卡 引用了非本章/未授权证据 ['R-be77076a0682691dc081']，已剔除（越界留痕）",
+    "CH-07 段落 P-07-02-02 引用了非本章/未授权证据 ['R-28d17e22539ccd541e8f', 'R-5f553d8d8dcc593c49de']，已剔除（越界留痕）",
+    "CH-07 段落 P-07-02-03 引用了非本章/未授权证据 ['R-28d17e22539ccd541e8f', 'R-97aac7270f82fd996416', 'R-dbdd2d38d0846a856db5', 'R-dcf02332270fd4d82ff7']，已剔除（越界留痕）",
+    "CH-07 指标卡 引用了非本章/未授权证据 ['R-dbdd2d38d0846a856db5']，已剔除（越界留痕）",
+    "CH-05 段落 P-05-02-03 引用了非本章/未授权证据 ['R-82cbf0e2cba82745c03b']，已剔除（越界留痕）",
+    "CH-05 段落 P-05-02-04 引用了非本章/未授权证据 ['R-3d464bc2e35cc301843e']，已剔除（越界留痕）",
+    "CH-05 callout 引用了非本章/未授权证据 ['R-3d464bc2e35cc301843e', 'R-82cbf0e2cba82745c03b', 'R-948ca3543a208d6cecb8']，已剔除（越界留痕）",
+    "CH-05 段落 P-05-03-03 引用了非本章/未授权证据 ['R-57cf6e315f86df4e4f84', 'R-726ba047499ce8e4ddca', 'R-8bf877c43d676eb39b90', 'R-a1c639edaf1133136636', 'R-b8e6ff9877245303948e', 'R-b936dd3adb13ac96a432', 'R-d57a0403c0b99c4d8886', 'R-ea6ebb3e947102f06680']，已剔除（越界留痕）",
+    "CH-05 对比表 引用了非本章/未授权证据 ['R-57cf6e315f86df4e4f84', 'R-726ba047499ce8e4ddca', 'R-8bf877c43d676eb39b90', 'R-a1c639edaf1133136636', 'R-b8e6ff9877245303948e', 'R-b936dd3adb13ac96a432', 'R-d57a0403c0b99c4d8886', 'R-ea6ebb3e947102f06680']，已剔除（越界留痕）",
+    "CH-02 段落 P-02-02-01 引用了非本章/未授权证据 ['R-07a87e697656ba9c636b', 'R-1e0973f08f882cb89d13', 'R-3274a4e963fea3471763', 'R-3558520de5ddcdaedba0', 'R-be77076a0682691dc081']，已剔除（越界留痕）",
+    "CH-02 段落 P-02-02-02 引用了非本章/未授权证据 ['R-5a4433f2790ec15468f6', 'R-f8462876230870d1ce12']，已剔除（越界留痕）",
+    "CH-02 段落 P-02-03-01 引用了非本章/未授权证据 ['R-82cbf0e2cba82745c03b']，已剔除（越界留痕）",
+    "CH-02 段落 P-02-03-03 引用了非本章/未授权证据 ['R-82cbf0e2cba82745c03b']，已剔除（越界留痕）",
+    "CH-02 段落 P-02-03-05 引用了非本章/未授权证据 ['R-3d464bc2e35cc301843e', 'R-82cbf0e2cba82745c03b', 'R-948ca3543a208d6cecb8']，已剔除（越界留痕）",
+    "段落资料缺口：CH-01 SEC-01-03 指标卡「中国低空经济规模」数值缺少证据绑定；SEC-01-03 指标卡「低空经济规模同比增速」数值缺少证据绑定；P-01-01-01 数值语义未通过：1000（需同实体、指标和期间证据）；P-01-01-01 数值语义未通过：3000（需同实体、指标和期间证据）；P-01-03-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-01-03-01 数值语义未通过：16.8%（需同实体、指标和期间证据）",
+    "段落资料缺口：CH-02 SEC-02-01 指标卡「中国低空经济规模」数值缺少证据绑定；SEC-02-01 指标卡「低空经济规模同比增速」数值缺少证据绑定；SEC-02-03 指标卡「万丰奥威2025年归母净利润」数值缺少证据绑定；P-02-01-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-02-01-01 数值语义未通过：16.8%（需同实体、指标和期间证据）；P-02-02-01 数字缺少证据支撑（假设说明不能替代证据）；P-02-02-01 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-02-02-01 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-02-02-02 因果判断缺少独立依据：这一进展表明需求驱动正从单一产品采购转向系统级解决方案；P-02-03-01 因果判断缺少独立依据：这些波动更多反映个体经营变化；P-02-03-01 数值语义未通过：20.89%（需同实体、指标和期间证据）；P-02-03-02 因果判断缺少独立依据：两条曲线的分化表明；P-02-03-02 数值语义未通过：9.5%（需同实体、指标和期间证据）；P-02-03-02 数值语义未通过：-9.8%（需同实体、指标和期间证据）；P-02-03-03 因果判断缺少独立依据：表明费用或减值侵蚀利润；P-02-03-03 因果判断缺少独立依据：反映回款或营运资金压力；P-02-03-03 数值语义未通过：8.23%（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：6.53亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：9.87亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：162.64亿元（需同实体、指标和期间证据）；P-02-03-04 数值语义未通过：159.87亿元（需同实体、指标和期间证据）",
+    "段落资料缺口：CH-03 SEC-03-02 指标卡「万丰奥威归母净利润同比增速」数值缺少证据绑定；SEC-03-02 指标卡「莱斯信息毛利率」数值缺少证据绑定；P-03-01-02 数字缺少证据支撑（假设说明不能替代证据）；P-03-02-01 因果判断缺少独立依据：毛利率与净利率的背离反映不同业务模式的成本结构与费用管控差异；P-03-02-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：51.1%（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：3.37个百分点（需同实体、指标和期间证据）；P-03-02-02 数值语义未通过：0.76个百分点（需同实体、指标和期间证据）；P-03-02-03 数值语义未通过：32.2504%（需同实体、指标和期间证据）；P-03-02-03 数值语义未通过：23.7776%（需同实体、指标和期间证据）；P-03-03-02 数字缺少证据支撑（假设说明不能替代证据）；P-03-03-03 数字缺少证据支撑（假设说明不能替代证据）；P-03-03-03 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-03-03-03 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-03-02-01 与其他段落重复；P-03-02-02 与其他段落重复；P-03-02-03 与其他段落重复；P-03-03-02 与其他段落重复；P-03-03-03 与其他段落重复",
+    "段落资料缺口：CH-04 SEC-04-02 指标卡「万丰奥威归母净利润同比」数值缺少证据绑定；P-04-02-01 数值语义未通过：中信海直盈利质量最优（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：莱斯信息毛利率连续五年上升（从2021年的25.48%升至2025年的32.25%）（需同实体、指标和期间证据）；P-04-02-02 因果判断缺少独立依据：反映其产品或服务定价能力增强；P-04-02-02 数值语义未通过：8.5（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：15.3个百分点（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：25.48%（需同实体、指标和期间证据）；P-04-02-02 数值语义未通过：32.25%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：8.23%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：3.76个百分点（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：4.47%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：13.40%（需同实体、指标和期间证据）；P-04-02-03 数值语义未通过：13.07%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：9.87亿元（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：51.1%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：1.7%（需同实体、指标和期间证据）；P-04-02-05 数值语义未通过：159.87亿元（需同实体、指标和期间证据）",
+    "段落资料缺口：CH-05 SEC-05-03 对比表数值缺少证据绑定；P-05-01-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：51.11%（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.59872（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：10元（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.62643（需同实体、指标和期间证据）；P-05-01-02 数值语义未通过：1.70%（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：且自2021-12-31的25.4795%持续上升（需同实体、指标和期间证据）；P-05-01-03 因果判断缺少独立依据：表明费用或减值等中间环节侵蚀了利润；P-05-01-03 数值语义未通过：25.4795%（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：3.7559个百分点（需同实体、指标和期间证据）；P-05-01-03 数值语义未通过：57.18%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：莱斯信息毛利率从2021-12-31的25.4795%持续上升至2025-12-31的32.2504%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：32.2504%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：16.9596%（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：9个百分点（需同实体、指标和期间证据）；P-05-01-05 数值语义未通过：15个百分点（需同实体、指标和期间证据）；P-05-01-06 数值语义未通过：9.4529%（需同实体、指标和期间证据）；P-05-01-06 数值语义未通过：13.0681%（需同实体、指标和期间证据）；P-05-02-01 数值语义未通过：万丰奥威负债率持续下降（需同实体、指标和期间证据）；P-05-02-02 数值语义未通过：-3.7857（需同实体、指标和期间证据）；P-05-02-03 因果判断缺少独立依据：表明经营造血能力不足；P-05-02-03 数值语义未通过：-2.08604（需同实体、指标和期间证据）；P-05-02-03 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：较2021-12-31的55.7458%持续下降（需同实体、指标和期间证据）；P-05-02-04 因果判断缺少独立依据：由于缺少同口径归母净利润的完整数据；P-05-02-04 数值语义未通过：1.46376（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：09元（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-05-02-04 数值语义未通过：08元（需同实体、指标和期间证据）；P-05-03-01 因果判断缺少独立依据：由于样本公司PE(TTM)与净利润数据缺失；P-05-03-03 数字缺少证据支撑（假设说明不能替代证据）；P-05-03-03 数值语义未通过：1.5773倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：2.843倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：1.8327倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：3.5535倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：8.6231倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：0.7715倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：1.9716倍（需同实体、指标和期间证据）；P-05-03-03 数值语义未通过：2.4889倍（需同实体、指标和期间证据）；P-05-03-04 数值语义未通过：11家（需同实体、指标和期间证据）；P-05-02-02 与其他段落重复；P-05-02-03 与其他段落重复；P-05-02-04 与其他段落重复；P-05-03-01 与其他段落重复",
+    "段落资料缺口：CH-06 P-06-01-01 数值语义未通过：中国宏观经济增长动能自2025年以来持续减弱（需同实体、指标和期间证据）",
+    "段落资料缺口：CH-07 SEC-07-01 指标卡「低空经济规模」数值缺少证据绑定；SEC-07-01 指标卡「低空经济规模同比增速」数值缺少证据绑定；SEC-07-01 指标卡「GDP累计同比」数值缺少证据绑定；SEC-07-02 指标卡「万丰奥威归母净利润同比增速」数值缺少证据绑定；SEC-07-02 指标卡「莱斯信息收入同比增速」数值缺少证据绑定；SEC-07-03 指标卡「低空经济规模」数值缺少证据绑定；SEC-07-03 指标卡「低空经济规模同比增速」数值缺少证据绑定；P-07-01-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-07-01-01 数值语义未通过：16.8%（需同实体、指标和期间证据）；P-07-01-03 因果判断缺少独立依据：从而推动低空经济商业化提速；P-07-01-03 数值语义未通过：5.4%（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：4.6%（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：3274（需同实体、指标和期间证据）；P-07-01-03 数值语义未通过：3558520（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：6.53314（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：51.11%（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：89（需同实体、指标和期间证据）；P-07-02-02 数值语义未通过：28（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：1.27353（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：09元（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：20.89%（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：5.52617（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：07元（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：57.18%（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：28（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：97（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：545（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：0701（需同实体、指标和期间证据）；P-07-02-03 数值语义未通过：6（需同实体、指标和期间证据）；P-07-03-01 数值语义未通过：7151.2亿元（需同实体、指标和期间证据）；P-07-03-01 数值语义未通过：16.8%（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：9.87215（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：08元（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：1.59872（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：10元（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：721（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：545（需同实体、指标和期间证据）；P-07-03-02 数值语义未通过：6（需同实体、指标和期间证据）；P-07-03-03 数值语义未通过：11家（需同实体、指标和期间证据）"
+  ],
+  "artifact_dir": null,
+  "question_answers": [
+    {
+      "question_id": "Q-1",
+      "text": "eVTOL飞行器产业化商业化落地节奏、适航取证进展与核心技术路线演进如何？",
+      "section_id": "SEC-01-03",
+      "paragraph_ids": [],
+      "evidence_record_ids": [],
+      "chart_ids": [],
+      "unmet_requirement_ids": [],
+      "chart_gaps": []
+    },
+    {
+      "question_id": "Q-2",
+      "text": "低空基础设施（通信、导航、监视、空域管控系统）与整机制造供应链关键企业竞争优势对比？",
+      "section_id": "SEC-03-01",
+      "paragraph_ids": [],
+      "evidence_record_ids": [],
+      "chart_ids": [],
+      "unmet_requirement_ids": [
+        "chain_structure",
+        "supply_chain_relations"
+      ],
+      "chart_gaps": []
+    },
+    {
+      "question_id": "Q-3",
+      "text": "空域管理政策开放节奏与低空应用场景（城市空中交通、物流配送、应急救援）的市场容量与商业模式？",
+      "section_id": "SEC-06-02",
+      "paragraph_ids": [],
+      "evidence_record_ids": [],
+      "chart_ids": [],
+      "unmet_requirement_ids": [],
+      "chart_gaps": []
+    }
+  ]
+}

@@ -1,0 +1,118 @@
+{
+  "tooltip": {
+    "trigger": "axis"
+  },
+  "grid": {
+    "containLabel": true,
+    "left": 50,
+    "right": 32,
+    "top": 38,
+    "bottom": 28
+  },
+  "xAxis": {
+    "type": "category",
+    "data": [
+      "东山精密",
+      "中国中车",
+      "工业富联",
+      "格力电器",
+      "潍柴动力",
+      "生益科技",
+      "立讯精密",
+      "阳光电源"
+    ],
+    "axisLine": {
+      "lineStyle": {
+        "color": "#94a3b8"
+      }
+    },
+    "axisLabel": {
+      "interval": 0,
+      "fontSize": 12,
+      "lineHeight": 16,
+      "hideOverlap": false,
+      "width": 85.0,
+      "overflow": "break"
+    }
+  },
+  "yAxis": {
+    "type": "value",
+    "name": "倍",
+    "min": 0,
+    "splitNumber": 3,
+    "splitLine": {
+      "lineStyle": {
+        "type": "dashed",
+        "color": "#e2e8f0"
+      }
+    },
+    "max": 30,
+    "interval": 10
+  },
+  "series": [
+    {
+      "name": "pe_dynamic",
+      "type": "bar",
+      "data": [
+        23.2757,
+        13.4189,
+        14.7818,
+        9.7184,
+        11.3996,
+        18.4548,
+        22.248,
+        18.2587
+      ],
+      "itemStyle": {
+        "color": "#1B365D",
+        "borderRadius": [
+          3,
+          3,
+          0,
+          0
+        ]
+      },
+      "label": {
+        "show": true,
+        "position": "top",
+        "fontSize": 10
+      }
+    }
+  ],
+  "research_as_of": "2026-11-14",
+  "observation_as_of": "2026-11-13",
+  "observation_range": {
+    "start": "2026-11-13",
+    "end": "2026-11-13"
+  },
+  "as_of": "2026-11-13",
+  "presentation": {
+    "version": 1,
+    "short_title": "",
+    "period_labels": "auto",
+    "plot_height": "regular",
+    "axes": [
+      {
+        "series_index": 0,
+        "min": 0,
+        "max": 30,
+        "interval": 10
+      }
+    ],
+    "labels": [
+      {
+        "series_index": 0,
+        "mode": "key",
+        "point_indices": [
+          0,
+          7
+        ],
+        "decimals": 2
+      }
+    ],
+    "note": "",
+    "reference_lines": [],
+    "role": "generic",
+    "fallback_reason": ""
+  }
+}

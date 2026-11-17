@@ -95,14 +95,9 @@ type PresentationConfig = {
 
 function applyPresentation(option: ChartOption): void {
   const pres = (option as unknown as Record<string, unknown>).presentation as
-    | PresentationConfig
-    | undefined
+    PresentationConfig | undefined
   if (!pres || pres.version !== 1) return
-  const series = Array.isArray(option.series)
-    ? option.series
-    : option.series
-      ? [option.series]
-      : []
+  const series = Array.isArray(option.series) ? option.series : option.series ? [option.series] : []
 
   // 短日期只影响显示，xAxis.data 保留原始完整日期供逐点核对与悬浮详情使用
   if (pres.period_labels === 'year' || pres.period_labels === 'month') {
@@ -112,9 +107,9 @@ function applyPresentation(option: ChartOption): void {
       if (!rawAxis || typeof rawAxis !== 'object') continue
       const axis = rawAxis as Record<string, unknown>
       if (String(axis.type ?? 'category') !== 'category' || !Array.isArray(axis.data)) continue
-      const prev = (axis.axisLabel && typeof axis.axisLabel === 'object'
-        ? axis.axisLabel
-        : {}) as Record<string, unknown>
+      const prev = (
+        axis.axisLabel && typeof axis.axisLabel === 'object' ? axis.axisLabel : {}
+      ) as Record<string, unknown>
       axis.axisLabel = {
         ...prev,
         formatter: (value: string) => {
@@ -139,9 +134,10 @@ function applyPresentation(option: ChartOption): void {
       if (rule.mode === 'endpoints') return index === 0 || index === count - 1
       return keyIndices.has(index)
     }
-    const label = (target.label && typeof target.label === 'object'
-      ? target.label
-      : {}) as Record<string, unknown>
+    const label = (target.label && typeof target.label === 'object' ? target.label : {}) as Record<
+      string,
+      unknown
+    >
     label.show = true
     label.position = 'top'
     label.fontSize = 10
@@ -1304,6 +1300,7 @@ export default { name: 'ChartGallery' }
       <article
         v-for="(spec, index) in ordered"
         :key="spec.chart_id ?? index"
+        :id="spec.chart_id ? `workbench-chart-${spec.chart_id}` : undefined"
         :class="[
           'chart-card',
           displaySizeOf(spec) === 'full' ? 'chart-full' : 'chart-half',

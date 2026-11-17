@@ -14,6 +14,11 @@ from typing import Any
 from backend.app.agents.adapters import FiveAgentsAdapter
 from backend.app.core.event_hub import event_hub
 from backend.app.core.storage import storage
+from backend.app.engine.review_decisions import (
+    DecisionValidationError,
+    build_decision_package,
+    validate_review_request,
+)
 from backend.app.schemas.workflow import (
     STAGE_ORDER,
     ReviewRequest,
@@ -25,6 +30,10 @@ from backend.app.schemas.workflow import (
 )
 
 logger = logging.getLogger("workflow_engine")
+
+
+class UnsupportedChainCertificationError(ValueError):
+    """The current evidence bundle cannot be certified."""
 
 
 class ReviewConflictError(ValueError):
@@ -159,6 +168,21 @@ def assess_stage_progression(result: StageResult, stage: str | None = None) -> t
         return True, ""
 
     return True, ""
+
+
+def current_review_package(state: WorkflowState, result: StageResult) -> dict[str, Any]:
+    allowed, reason = assess_stage_progression(result, result.stage)
+    if result.stage == "report_fusion" and result.data.get("quality_notice"):
+        allowed, reason = False, "报告经人工修改，需重新融合并完成质检后定稿"
+    return build_decision_package(result, state.run_id, state.revision, "" if allowed else reason)
+
+
+def expose_current_review(state: WorkflowState) -> WorkflowState:
+    """Derive current review fields for new and legacy persisted runs."""
+    result = state.stage_results.get(state.current_stage)
+    if state.status == "waiting_review" and result and result.status == "waiting_review":
+        result.data["decision_package"] = current_review_package(state, result)
+    return state
 
 
 def morph_echarts_option(opt: dict, target_type: str) -> dict:
@@ -320,8 +344,9 @@ def resolve_execution_snapshot(req: RunCreateRequest) -> RunExecutionSnapshot:
     input_digest = sha256(json.dumps(req.input_data.model_dump(mode="json"), ensure_ascii=False, sort_keys=True).encode()).hexdigest()
     # A3 用户问题驱动选图：创建 run 时固定模式与参数，后续阶段 / resume 不再重读环境。
     # 非法取值一律按 off 处理，避免误开新链路（方案第 3.1、5.5 节）。
+    default_planner = "apply" if req.delivery_profile == "competition" and req.input_data.focus_questions else None
     planner_mode = str((options.question_planner_mode if options else None)
-                       or runtime_settings.CHART_QUESTION_PLANNER_MODE or "off").strip().lower()
+                       or default_planner or runtime_settings.CHART_QUESTION_PLANNER_MODE or "off").strip().lower()
     if planner_mode not in {"off", "observe", "apply"}:
         planner_mode = "off"
     planner_params = {
@@ -970,10 +995,10 @@ class WorkflowEngine:
 
         outputs: dict[str, Path] = {}
         md_path = art_dir / "report.md"
-        md_path.write_text(render_markdown(view), encoding="utf-8")
+        md_path.write_text(render_markdown(view, source_index_mode="compact"), encoding="utf-8")
         outputs["markdown"] = md_path
 
-        html_text = render_html(view)
+        html_text = render_html(view, source_index_mode="compact")
         html_path = art_dir / "report.html"
         html_path.write_text(html_text, encoding="utf-8")
         outputs["html"] = html_path
@@ -1364,12 +1389,104 @@ class WorkflowEngine:
             except asyncio.TimeoutError:
                 pass
             result = storage.load_state(req.run_id) or result
-        return result
+        return expose_current_review(result)
+
+    def _certify_chain_locked(self, state: WorkflowState, req: ReviewRequest) -> WorkflowState:
+        from chain_research.graph_spec import bundle_to_chain_spec
+        from chain_research.models import ChainKnowledgeBundle
+        from chain_research.store import ChainStore
+
+        if state.revision != req.expected_revision:
+            raise RevisionConflictError(req.run_id, req.expected_revision, state.revision)
+        fusion = state.stage_results.get("report_fusion")
+        chart = state.stage_results.get("chart_generate")
+        task = self._running_tasks.get(state.run_id)
+        if (
+            req.stage != "report_fusion" or req.action != "approve"
+            or state.current_stage != "report_fusion" or state.status != "waiting_review"
+            or not fusion or fusion.status != "waiting_review"
+            or (task is not None and not task.done())
+        ):
+            raise ReviewConflictError("仅可在报告融合待审核时认证产业链")
+        delivery = fusion.data.get("chain_delivery") or {}
+        if not delivery.get("certification_available") or not chart:
+            raise UnsupportedChainCertificationError("当前版本没有可认证的产业链证据包")
+
+        package = current_review_package(state, fusion)
+        if (req.decision_id != package["decision_id"]
+                or req.risk_snapshot_sha256 != package["risk_snapshot_sha256"]):
+            raise ReviewConflictError("审核决策已更新，请刷新后重新确认")
+        run_dir = storage.get_run_dir(state.run_id)
+        chain_store = ChainStore(run_dir)
+        path = chain_store.v2_dir / "bundle.json"
+        if not path.is_file() or not path.resolve().is_relative_to((run_dir / "artifacts").resolve()):
+            raise UnsupportedChainCertificationError("当前版本的产业链证据包不可用")
+        bundle_bytes = path.read_bytes()
+        if hashlib.sha256(bundle_bytes).hexdigest() != delivery.get("certification_bundle_sha256"):
+            raise ReviewConflictError("产业链证据包已变化，请重新生成图表后再认证")
+        bundle = ChainKnowledgeBundle.model_validate_json(bundle_bytes)
+        spec = bundle_to_chain_spec(bundle)
+        if (
+            bundle.run_id != state.run_id or bundle.quality.release_status != "partial"
+            or not any(node.companies for node in spec.nodes)
+            or not any(edge.evidence_record_ids and edge.assertion_ids for edge in spec.edges)
+        ):
+            raise UnsupportedChainCertificationError("产业链证据包缺少可核验的企业归属或工序关系")
+        input_request = RunCreateRequest.model_validate_json(
+            (run_dir / "input_data.json").read_text(encoding="utf-8")
+        )
+
+        previous = state.model_copy(deep=True)
+        state.revision += 1
+        self._invalidate_following_stages(state, "chart_generate")
+        state.current_stage = "chart_generate"
+        state.status = "running"
+        state.stage_results["chart_generate"] = StageResult(
+            stage="chart_generate", status="running", revision=state.revision
+        )
+        state.updated_at = datetime.now().isoformat()
+        certified = bundle.model_dump(mode="python")
+        certified["revision"] = bundle.revision + 1
+        certified["manifest"]["revision"] = certified["revision"]
+        certified["manifest"]["notes"].append("阶段五审核人工确认产业链证据")
+        certified["quality"]["release_status"] = "verified"
+        certified["quality"]["coverage_values"]["certified_by_review"] = True
+        certified_bundle = ChainKnowledgeBundle.model_validate(certified)
+        backups: dict[Path, bytes | None] = {}
+
+        def backup(target: Path) -> None:
+            if target not in backups:
+                backups[target] = target.read_bytes() if target.exists() else None
+
+        try:
+            for name in ("bundle.json", "manifest.json", "quality.json"):
+                backup(chain_store.v2_dir / name)
+            chain_store.save_bundle(certified_bundle)
+            self._commit_state_with_history(
+                run_dir, state, action="certify_chain", stage=req.stage,
+                from_revision=previous.revision, to_revision=state.revision,
+                comment=req.comment, changed_fields=["chain_delivery"],
+                snapshot_state=previous, backup=backup,
+            )
+        except Exception:
+            for target, content in backups.items():
+                if content is None:
+                    target.unlink(missing_ok=True)
+                else:
+                    target.write_bytes(content)
+            raise
+
+        self._running_tasks[state.run_id] = asyncio.create_task(
+            self._execute_stage(state.run_id, "chart_generate", input_request.review_stages)
+        )
+        return state
 
     async def _handle_review_locked(self, req: ReviewRequest) -> WorkflowState:
         state = storage.load_state(req.run_id)
         if not state:
             raise ValueError(f"任务不存在: {req.run_id}")
+        if (req.edited_data or {}).get("certify_chain") is True:
+            return self._certify_chain_locked(state, req)
         self._validate_review(state, req)
 
         # Validate the entire batch before saving snapshots or editing any data.
@@ -1436,6 +1553,10 @@ class WorkflowEngine:
             target = state.stage_results.get(req.stage)
             if target is not None:
                 if req.stage == "report_fusion" and req.release_mode is not None:
+                    if (req.decision_id or req.risk_snapshot_sha256) and (
+                        req.release_mode != target.data.get("release_mode", "formal")
+                    ):
+                        raise ReviewConflictError("交付模式已变化，请重新生成交付版本后审核")
                     target.data = {**target.data, "release_mode": req.release_mode}
                 allowed, block_reason = assess_stage_progression(target, req.stage)
                 if not allowed:
@@ -1444,6 +1565,23 @@ class WorkflowEngine:
                     )
                     raise StageBlockedError(req.run_id, req.stage, block_reason)
 
+            package = current_review_package(state, target_result)
+            signed = bool(req.decision_id or req.risk_snapshot_sha256 or req.accepted_risk_codes)
+            legacy_draft = (
+                not signed and req.action == "accept_with_risks"
+                and req.stage == "report_fusion" and req.release_mode == "draft_with_warnings"
+            )
+            if package["blocking_risk_codes"]:
+                raise ReviewConflictError("存在硬阻塞风险，请先处理阻断项")
+            if signed or (req.action != "approve" and not legacy_draft):
+                try:
+                    state.review_decisions.append(validate_review_request(package, req))
+                except DecisionValidationError as exc:
+                    raise ReviewConflictError(str(exc)) from exc
+            elif not legacy_draft and package["acknowledgement_required_codes"]:
+                raise ReviewConflictError("请刷新任务并确认当前风险后再批准")
+
+            previous_revision = state.revision
             state.revision += 1
             # 批准当前阶段，推进到下一阶段
             current_stage = req.stage
@@ -1485,6 +1623,10 @@ class WorkflowEngine:
 
                 # R1：批准即当前版本——登记构建代次，供下载资格做比较
                 fusion_result.data = {**fusion_data, "built_at_revision": state.revision}
+                fusion_result.revision = state.revision
+                for artifact in fusion_result.artifacts:
+                    if artifact.revision == previous_revision:
+                        artifact.revision = state.revision
                 fusion_result.status = "completed"
                 state.status = "completed"
                 state.updated_at = datetime.now().isoformat()
@@ -2127,6 +2269,7 @@ class WorkflowEngine:
                     security_types=security_types,
                     reporting_currency=reporting_currency,
                     research_as_of=research_as_of,
+                    delivery_profile=req_data.delivery_profile,
                 )
             else:
                 raise ValueError(f"未知阶段: {stage}")

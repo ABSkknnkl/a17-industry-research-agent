@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { UserAnnotation } from '../api/types'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import EvidenceIndexDownload from '../components/EvidenceIndexDownload.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { CloseBold, Download, ArrowDown } from '@element-plus/icons-vue'
@@ -13,8 +14,10 @@ import {
   triggerBlobDownload,
 } from '../api/client'
 import { ApiError } from '../api/http'
+import { showStageError } from '../api/stageStatus'
 import {
   STAGE_LABELS,
+  STAGE_ORDER,
   type ArtifactRef,
   type ReportFusionData,
   type RevisionListResponse,
@@ -33,7 +36,12 @@ import ProjectTree from '../components/ProjectTree.vue'
 import AgentLiveTrace from '../components/AgentLiveTrace.vue'
 import RevisionDiffViewer from '../components/RevisionDiffViewer.vue'
 import EvidenceDrawer from '../components/EvidenceDrawer.vue'
-import { classifyReportDownload, shouldAutoJumpToDownload } from '../api/reportGate'
+import {
+  artifactDownloadMode,
+  classifyReportDownload,
+  isReportSignoffOnHold,
+  shouldAutoJumpToDownload,
+} from '../api/reportGate'
 
 const route = useRoute()
 const router = useRouter()
@@ -47,6 +55,7 @@ const timeByRevision = ref<Record<number, string>>({})
 const projectTreeRef = ref<InstanceType<typeof ProjectTree> | null>(null)
 const selectedStageOverride = ref<StageName | null>(null)
 const traceDrawerVisible = ref(false)
+const projectTreeOpen = ref(false)
 const currentAnnotations = ref<UserAnnotation[]>([])
 
 const evidenceDrawerVisible = ref(false)
@@ -84,9 +93,47 @@ const currentStageResult = computed<StageResult | null>(() => {
 })
 
 const isRunning = computed(() => workflow.value?.status === 'running')
+const viewingPastStage = computed(() =>
+  Boolean(workflow.value && currentStageName.value !== workflow.value.current_stage)
+)
+const incompletePreviousStages = computed(() => {
+  if (!workflow.value || !workflow.value.current_stage) return []
+  const currentIndex = STAGE_ORDER.indexOf(workflow.value.current_stage)
+  if (currentIndex < 0) return []
+  return STAGE_ORDER.slice(0, currentIndex).filter((stage) => {
+    const result = workflow.value?.stage_results[stage]
+    return result && !['approved', 'completed'].includes(result.status)
+  })
+})
+
+/**
+ * B43（前端 C6）：当前阶段是否正等待人工审阅。
+ * 为真时审阅动作卡上移到阶段内容之前——「现在该做什么」必须一眼可见，
+ * 而不是滚过指标、摘要、图表后才发现操作区。
+ */
+const isAwaitingReview = computed(
+  () =>
+    workflow.value?.status === 'waiting_review' &&
+    !!workflow.value?.current_stage &&
+    currentStageName.value === workflow.value.current_stage
+)
+
+/** 质量面板默认折叠，卡片头给出摘要（分数 / 待确认项） */
+const qualityExpanded = ref(false)
+const qualitySummary = computed(() => {
+  const q = fusionData.value?.quality
+  if (!q) return ''
+  const parts: string[] = []
+  if (typeof q.overall_score === 'number') parts.push(`综合 ${q.overall_score} 分`)
+  if (typeof q.consistency_score === 'number') parts.push(`一致性 ${q.consistency_score}`)
+  const issues = Array.isArray(q.issues) ? q.issues.length : 0
+  if (issues > 0) parts.push(`${issues} 项待确认`)
+  else if (q.passed === true) parts.push('检查通过')
+  return parts.join(' · ')
+})
 
 const currentStageLabel = computed(() => {
-  const s = currentStageName.value || workflow.value?.current_stage
+  const s = workflow.value?.current_stage
   return s ? STAGE_LABELS[s] || s : '全链路分析'
 })
 
@@ -96,8 +143,23 @@ const currentStageLabel = computed(() => {
 const fusionResult = computed<StageResult | null>(
   () => workflow.value?.stage_results.report_fusion ?? null
 )
-const fusionArtifacts = computed<ArtifactRef[]>(() => fusionResult.value?.artifacts ?? [])
+const fusionArtifacts = computed<ArtifactRef[]>(() => {
+  const available = fusionResult.value?.artifacts ?? []
+  const state = workflow.value
+  if (!state?.report_download) return available
+  return available.filter((artifact) => artifactDownloadMode(state, artifact.artifact_id))
+})
 const hasReportArtifacts = computed(() => fusionArtifacts.value.length > 0)
+const reportDownload = computed(() =>
+  workflow.value ? classifyReportDownload(workflow.value) : null
+)
+const draftDownloadable = computed(
+  () => reportDownload.value?.mode === 'draft' && reportDownload.value.downloadable
+)
+const showSignoffHold = computed(() => {
+  const result = currentStageResult.value
+  return isAwaitingReview.value && result !== null && isReportSignoffOnHold(result)
+})
 
 const pdfArtifact = computed(
   () => fusionArtifacts.value.find((a) => a.kind === 'report_pdf') ?? null
@@ -128,11 +190,12 @@ async function handleExportCommand(cmd: string): Promise<void> {
 
   exportingKind.value = cmd
   try {
-    const { blob, filename } = await downloadArtifact(
-      runId.value,
-      target,
-      workflow.value ? classifyReportDownload(workflow.value).mode : 'formal'
-    )
+    const mode = workflow.value && artifactDownloadMode(workflow.value, target.artifact_id)
+    if (!mode) {
+      ElMessage.warning('当前版本不允许下载该格式')
+      return
+    }
+    const { blob, filename } = await downloadArtifact(runId.value, target, mode)
     triggerBlobDownload(blob, filename)
     ElMessage.success(`《${filename}》导出成功`)
   } catch (e) {
@@ -276,7 +339,7 @@ async function onSubmitted(
   selectedStageOverride.value = null
   schedulePoll()
   // 阶段五通过 → 报告已定稿，直接带去下载页（其余动作/阶段留在工作台）
-  if (shouldAutoJumpToDownload(meta?.stage ?? null, meta?.action)) {
+  if (shouldAutoJumpToDownload(meta?.stage ?? null, meta?.action, state.status)) {
     await router.push({ name: 'report-download', params: { runId: runId.value } })
   }
 }
@@ -404,21 +467,21 @@ export default { name: 'ReviewView' }
 
 <template>
   <div class="workbench">
-    <!-- 左栏：项目导航树 -->
-    <aside class="wb-left">
-      <el-card class="page-card" shadow="never">
-        <ProjectTree ref="projectTreeRef" :active-run-id="runId" />
-      </el-card>
-    </aside>
-
-    <!-- 中栏：任务工作台 -->
-    <main class="wb-center">
+    <header class="wb-heading">
       <div class="workbench-header">
         <div class="header-main">
-          <h2 class="page-title" style="margin: 0">任务工作台</h2>
+          <h1 class="page-title">任务工作台</h1>
           <StatusTag v-if="workflow" :status="workflow.status" />
         </div>
         <div class="header-actions">
+          <el-button
+            class="project-tree-toggle"
+            :aria-expanded="projectTreeOpen"
+            aria-controls="workbench-projects"
+            @click="projectTreeOpen = !projectTreeOpen"
+          >
+            {{ projectTreeOpen ? '收起历史任务' : '历史任务' }}
+          </el-button>
           <el-button
             v-if="isRunning"
             type="danger"
@@ -438,17 +501,22 @@ export default { name: 'ReviewView' }
           >
             <span v-if="isRunning" class="live-pulse-dot" />
             <span>智能体执行动线</span>
-            <span v-if="isRunning" class="btn-live-badge">{{ formattedLiveElapsed }}</span>
           </el-button>
-          <el-dropdown v-if="hasReportArtifacts" trigger="click" @command="handleExportCommand">
+          <el-dropdown
+            v-if="hasReportArtifacts"
+            :disabled="!reportDownload?.downloadable"
+            trigger="click"
+            @command="handleExportCommand"
+          >
             <el-button
               type="success"
               plain
               :loading="exportingKind !== null"
+              :disabled="!reportDownload?.downloadable"
               data-testid="btn-export-report"
             >
               <el-icon style="margin-right: 4px"><Download /></el-icon>
-              导出报告
+              {{ draftDownloadable ? '导出受限草稿' : '导出报告' }}
               <el-icon class="el-icon--right"><ArrowDown /></el-icon>
             </el-button>
             <template #dropdown>
@@ -484,28 +552,32 @@ export default { name: 'ReviewView' }
         项目 {{ workflow.project_id }} · 任务 {{ runId }} · 版本 r{{ workflow.revision }} · 创建于
         {{ formatTime(workflow.created_at) }}
       </div>
+    </header>
 
-      <!-- 智能体实时执行提示条（经典研报风，不割裂主屏，提供实时进度与动线抽屉入口） -->
+    <aside
+      id="workbench-projects"
+      class="wb-left"
+      :class="{ 'is-open': projectTreeOpen }"
+      aria-label="历史任务"
+    >
+      <el-card class="page-card" shadow="never">
+        <ProjectTree
+          ref="projectTreeRef"
+          :active-run-id="runId"
+          @navigate="projectTreeOpen = false"
+        />
+      </el-card>
+    </aside>
+
+    <section class="wb-center" aria-label="任务详情">
+      <!-- 当前执行阶段与已用时间 -->
       <div v-if="isRunning" class="live-running-strip" data-testid="live-running-strip">
         <div class="strip-left">
           <span class="strip-pulse-dot" />
-          <span class="strip-lead">全链路智能体执行中：</span>
+          <span class="strip-lead">正在执行</span>
           <span class="strip-stage">{{ currentStageLabel }}</span>
-          <span class="strip-divider">·</span>
-          <span class="strip-hint">实时调度金融量化与问财技能链</span>
         </div>
-        <div class="strip-right">
-          <span class="strip-timer">已执行 {{ formattedLiveElapsed }}</span>
-          <el-button
-            link
-            type="primary"
-            class="strip-drawer-link"
-            data-testid="strip-open-drawer"
-            @click="traceDrawerVisible = true"
-          >
-            查看微观动线与调度 ↗
-          </el-button>
-        </div>
+        <span class="strip-timer">已执行 {{ formattedLiveElapsed }}</span>
       </div>
 
       <el-alert
@@ -534,79 +606,193 @@ export default { name: 'ReviewView' }
         />
       </el-card>
 
-      <!-- 人机协同版本演进对比 (Revision Diff) -->
-      <RevisionDiffViewer
-        v-if="workflow"
-        :run-id="runId"
-        :current-revision="workflow.revision"
-        @restored="reload"
-      />
-
       <!-- 未加载到任务时的空状态 -->
       <el-card v-if="!loading && !workflow" class="page-card" shadow="never">
-        <el-empty description="未找到任务数据，请在首页创建新任务或在左侧选择历史任务" />
+        <el-empty description="未找到任务数据">
+          <el-button @click="router.push({ name: 'runs' })">返回任务列表</el-button>
+        </el-empty>
       </el-card>
 
-      <!-- 融合质量：仅在阶段五（report_fusion）时展示 -->
+      <el-alert
+        v-if="incompletePreviousStages.length && !isRunning"
+        type="warning"
+        show-icon
+        :closable="false"
+        title="任务阶段状态不一致"
+        :description="`前序阶段${incompletePreviousStages.map((stage) => STAGE_LABELS[stage]).join('、')}尚未审核，当前报告无法正式签发。请返回原任务完成审核后重新生成。`"
+        style="margin-bottom: 10px"
+      />
+
+      <!-- 待审阅时的主行动区：置顶，收工只需看这一块（B43 / C6） -->
+      <el-card
+        v-if="isAwaitingReview && currentStageResult && !incompletePreviousStages.length"
+        class="page-card review-primary-card"
+        shadow="never"
+        data-testid="review-primary-card"
+      >
+        <template #header>
+          <div class="card-header stage-card-header">
+            <span class="card-title">
+              待你审阅：{{ STAGE_LABELS[currentStageResult.stage] }}
+              <StatusTag :status="workflow?.status ?? 'waiting_review'" style="margin-left: 8px" />
+            </span>
+            <el-button
+              v-if="showSignoffHold && draftDownloadable"
+              type="primary"
+              size="small"
+              data-testid="btn-download-draft"
+              @click="handleExportCommand('all')"
+            >
+              下载受限草稿
+            </el-button>
+            <span v-else-if="!showSignoffHold" class="muted">
+              {{
+                currentStageResult.stage === 'report_fusion'
+                  ? '审核通过后可交付报告'
+                  : '通过后自动进入下一阶段'
+              }}
+            </span>
+          </div>
+        </template>
+        <el-alert
+          v-if="showSignoffHold"
+          type="warning"
+          show-icon
+          :closable="false"
+          class="stage-error"
+          title="正式签发暂缓"
+          :description="
+            draftDownloadable
+              ? '可下载当前草稿。签发前请展开「交付质量与融合检查」核对待补项。'
+              : '请查看交付质量明细，处理待补项后重新融合。'
+          "
+        />
+        <ReviewActions
+          :key="`${currentStageResult.stage}-${currentStageResult.revision}`"
+          :run-id="runId"
+          :stage="currentStageResult.stage"
+          :result="currentStageResult"
+          :revision="workflow!.revision"
+          :annotations="currentAnnotations"
+          @submitted="onSubmitted"
+          @conflict="reloadWithSpinner"
+        />
+      </el-card>
+
+      <!-- 融合质量：仅在阶段五（report_fusion）时展示；默认折叠，头部给摘要 -->
       <el-card
         v-if="fusionData?.quality && currentStageName === 'report_fusion'"
         class="page-card"
         shadow="never"
       >
         <template #header>
-          <span class="card-title">交付质量与融合检查</span>
+          <div class="card-header stage-card-header">
+            <span class="card-title">
+              交付质量与融合检查
+              <span v-if="qualitySummary" class="quality-summary muted">{{ qualitySummary }}</span>
+            </span>
+            <el-button
+              link
+              type="primary"
+              size="small"
+              data-testid="btn-toggle-quality"
+              @click="qualityExpanded = !qualityExpanded"
+            >
+              {{ qualityExpanded ? '收起明细' : '展开明细' }}
+            </el-button>
+          </div>
         </template>
-        <QualityPanel :fusion="fusionData" />
+        <QualityPanel v-if="qualityExpanded" :fusion="fusionData" />
+        <p v-else class="muted quality-collapsed-hint" data-testid="quality-collapsed-hint">
+          明细已折叠；确认交付前建议展开核对检查项与评分依据。
+        </p>
       </el-card>
 
       <!-- 当前阶段 -->
       <el-card v-if="currentStageResult" class="page-card" shadow="never">
         <template #header>
-          <div class="card-header">
+          <div class="card-header stage-card-header">
             <span class="card-title">
-              当前阶段：{{ STAGE_LABELS[currentStageResult.stage] }}
+              {{ viewingPastStage ? '正在查看' : '当前阶段' }}：{{
+                STAGE_LABELS[currentStageResult.stage]
+              }}
               <StatusTag :status="currentStageResult.status" style="margin-left: 8px" />
             </span>
-            <span class="muted">阶段版本 r{{ currentStageResult.revision }}</span>
+            <span class="muted">
+              <el-button
+                v-if="viewingPastStage"
+                link
+                type="primary"
+                data-testid="return-current-stage"
+                @click="selectedStageOverride = null"
+                >返回当前阶段</el-button
+              >
+              阶段版本 r{{ currentStageResult.revision }}
+            </span>
           </div>
         </template>
 
-        <el-alert
-          v-if="currentStageResult.status === 'failed' || currentStageResult.error"
-          type="error"
-          show-icon
-          :closable="false"
-          style="margin-bottom: 16px"
+        <div
+          v-if="
+            !isRunning &&
+            !showSignoffHold &&
+            !isAwaitingReview &&
+            showStageError(currentStageResult)
+          "
+          class="stage-error"
         >
-          <template #title>
-            <div
-              style="
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                width: 100%;
-                flex-wrap: wrap;
-                gap: 8px;
-              "
-            >
-              <span
-                >阶段执行异常：{{ currentStageResult.error || '执行过程中发生未捕获异常' }}</span
-              >
-              <el-button
-                type="danger"
-                size="small"
-                :loading="resuming"
-                @click="handleResumeStage(currentStageResult.stage)"
-              >
-                重试本阶段
-              </el-button>
-            </div>
-          </template>
-        </el-alert>
+          <el-alert type="error" show-icon :closable="false">
+            <template #title>
+              <span class="stage-error-heading">
+                <span>{{
+                  currentStageResult.status === 'failed' ? '阶段执行失败' : '阶段存在待核查问题'
+                }}</span>
+                <el-button
+                  v-if="currentStageResult.status === 'failed' && !viewingPastStage"
+                  type="danger"
+                  size="small"
+                  :loading="resuming"
+                  @click="handleResumeStage(currentStageResult.stage)"
+                >
+                  重试本阶段
+                </el-button>
+              </span>
+            </template>
+          </el-alert>
+          <details
+            v-if="!isAwaitingReview || !currentStageResult.error"
+            class="stage-error-details"
+          >
+            <summary>查看异常明细</summary>
+            <p>{{ currentStageResult.error || '执行过程中发生未捕获异常' }}</p>
+          </details>
+        </div>
+
+        <div
+          v-if="
+            !isRunning &&
+            currentStageResult.error &&
+            ['approved', 'completed'].includes(currentStageResult.status)
+          "
+          class="stage-error"
+        >
+          <el-alert type="warning" show-icon :closable="false" title="该阶段已通过，仍有质量缺口">
+            <template #default>已保留本阶段的质量说明，请结合最终报告质检结果审阅。</template>
+          </el-alert>
+          <details class="stage-error-details">
+            <summary>查看质量说明</summary>
+            <p>{{ currentStageResult.error }}</p>
+          </details>
+        </div>
 
         <MetricCards :stage="currentStageResult.stage" :data="currentStageResult.data" />
 
         <el-divider />
+
+        <EvidenceIndexDownload
+          v-if="currentStageResult.stage === 'report_fusion'"
+          :workflow="workflow"
+        />
 
         <StageDigest
           :stage="currentStageResult.stage"
@@ -618,30 +804,14 @@ export default { name: 'ReviewView' }
           @view-evidence="onStageViewEvidence"
         />
 
-        <el-divider />
+        <el-divider v-if="!isAwaitingReview" />
 
-        <template
-          v-if="
-            workflow?.status === 'waiting_review' && currentStageName === workflow?.current_stage
-          "
-        >
-          <ReviewActions
-            :key="`${currentStageResult.stage}-${currentStageResult.revision}`"
-            :run-id="runId"
-            :stage="currentStageResult.stage"
-            :result="currentStageResult"
-            :revision="workflow!.revision"
-            :annotations="currentAnnotations"
-            @submitted="onSubmitted"
-            @conflict="reloadWithSpinner"
-          />
-        </template>
-        <p v-else class="muted" style="margin: 0">
+        <p v-if="!isAwaitingReview" class="muted" style="margin: 0">
           {{
             workflow?.status === 'cancelled'
               ? '该任务已被中途终止，未继续执行后续阶段。'
               : workflow?.status === 'failed' || currentStageResult.status === 'failed'
-                ? `该阶段发生异常暂停（${currentStageResult.error || '执行中断'}）。可点击上方「重试本阶段」或顶部「一键断点恢复」继续推进。`
+                ? '该阶段发生异常暂停。可点击上方「重试本阶段」或顶部「一键断点恢复」继续推进。'
                 : currentStageResult.status === 'running' || workflow?.status === 'running'
                   ? '该阶段正在执行，完成后将进入人工审核（若配置了审核门）。'
                   : currentStageName !== workflow?.current_stage
@@ -650,13 +820,21 @@ export default { name: 'ReviewView' }
           }}
         </p>
       </el-card>
-    </main>
+
+      <!-- 人机协同版本演进对比 (Revision Diff) -->
+      <RevisionDiffViewer
+        v-if="workflow"
+        :run-id="runId"
+        :current-revision="workflow.revision"
+        @restored="reload"
+      />
+    </section>
   </div>
 
   <el-dialog
     v-model="revisionsVisible"
     title="历史版本"
-    width="640px"
+    width="min(640px, calc(100vw - 24px))"
     data-testid="revisions-dialog"
   >
     <el-table v-if="revisions" :data="revisions.revisions" size="small" border>
@@ -679,7 +857,7 @@ export default { name: 'ReviewView' }
   <el-drawer
     v-model="traceDrawerVisible"
     direction="rtl"
-    size="720px"
+    size="min(720px, 100%)"
     :destroy-on-close="false"
     class="agent-trace-drawer"
   >
@@ -713,6 +891,20 @@ export default { name: 'ReviewView' }
 </template>
 
 <style scoped>
+/* 待审阅主行动卡：左侧金色竖线，和研报刊头呼应，强调「这是当前要做的事」 */
+.review-primary-card {
+  border-left: 3px solid var(--rp-gold, #b8892b);
+}
+.quality-summary {
+  margin-left: 10px;
+  font-size: 12px;
+  font-weight: 400;
+}
+.quality-collapsed-hint {
+  margin: 0;
+  font-size: 12.5px;
+}
+
 /* 智能体动线呼出按钮：研报工作台雅致风格 */
 .btn-trace-trigger {
   border-color: var(--rp-line, #e3ddcd);
@@ -734,18 +926,6 @@ export default { name: 'ReviewView' }
   background: #faf6ee;
   border-color: #ebd9b3;
   color: var(--rp-navy, #1e3a5c);
-}
-.btn-live-badge {
-  font-family: var(--rp-serif, serif);
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  font-size: 11px;
-  background: #f0e8d5;
-  color: var(--rp-gold, #a9853f);
-  padding: 1px 5px;
-  border-radius: 2px;
-  border: 1px solid #dfd2b6;
-  margin-left: 2px;
 }
 /* 实时运行轻量提示条 (精品研报风) */
 .live-running-strip {
@@ -784,18 +964,6 @@ export default { name: 'ReviewView' }
   color: var(--rp-gold, #a9853f);
   font-weight: 700;
 }
-.strip-divider {
-  color: var(--el-text-color-secondary, #8f8a7a);
-}
-.strip-hint {
-  color: var(--el-text-color-secondary, #8f8a7a);
-  font-size: 12px;
-}
-.strip-right {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 .strip-timer {
   font-family: var(--rp-serif, serif);
   font-variant-numeric: tabular-nums;
@@ -803,15 +971,6 @@ export default { name: 'ReviewView' }
   font-size: 13px;
   color: var(--rp-gold, #a9853f);
   letter-spacing: 0.5px;
-}
-.strip-drawer-link {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--rp-navy, #1e3a5c);
-  padding: 0;
-}
-.strip-drawer-link:hover {
-  color: var(--rp-gold, #a9853f);
 }
 .live-pulse-dot {
   width: 6px;
@@ -856,19 +1015,35 @@ export default { name: 'ReviewView' }
 
 .workbench {
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr);
-  gap: 16px;
+  grid-template-columns: clamp(220px, 17vw, 250px) minmax(0, 1fr);
+  grid-template-areas:
+    'heading heading'
+    'projects content';
+  gap: 14px 16px;
   align-items: start;
 }
+.wb-heading {
+  grid-area: heading;
+  min-width: 0;
+  border-bottom: 3px double var(--rp-navy);
+  padding-bottom: 10px;
+}
 .wb-left {
+  grid-area: projects;
   position: sticky;
   top: 16px;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+}
+.wb-center {
+  grid-area: content;
+  min-width: 0;
 }
 .workbench-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
 }
 .header-main {
@@ -876,33 +1051,62 @@ export default { name: 'ReviewView' }
   align-items: center;
   gap: 10px;
 }
+.header-main .page-title {
+  margin: 0;
+}
 .header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  justify-content: flex-end;
+}
+.header-actions :deep(.el-button + .el-button) {
+  margin-left: 0;
 }
 .header-meta {
-  margin: 4px 0 10px;
+  margin-top: 6px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
-@media (max-width: 1400px) {
-  .workbench {
-    grid-template-columns: 220px minmax(0, 1fr);
-  }
+.stage-card-header {
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.stage-error {
+  margin-bottom: 16px;
+}
+.stage-error-heading {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.project-tree-toggle {
+  display: none;
 }
 @media (max-width: 1100px) {
   .workbench {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'heading' 'projects' 'content';
+    row-gap: 0;
+  }
+  .wb-heading {
+    margin-bottom: 12px;
   }
   .wb-left {
+    display: none;
     position: static;
+    max-height: 45dvh;
+    margin-bottom: 12px;
   }
-}
-@media (max-width: 1024px) {
-  .workbench {
-    grid-template-columns: 1fr;
-    overflow-x: hidden;
+  .wb-left.is-open {
+    display: block;
+  }
+  .wb-left .page-card {
+    margin-bottom: 0;
+  }
+  .project-tree-toggle {
+    display: inline-flex;
   }
 }
 </style>

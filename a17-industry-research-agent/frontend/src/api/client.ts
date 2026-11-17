@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { ApiError, http, API_BASE_URL } from './http'
 import type {
   AgentTraceEvent,
@@ -102,6 +103,27 @@ export async function downloadArtifact(
   })
   const filename = artifact.uri.split(/[\\/]/).pop() || artifact.artifact_id
   return { blob: data, filename: mode === 'draft' ? `draft-${filename}` : filename }
+}
+
+export async function downloadEvidenceIndex(
+  runId: string,
+  revision: number,
+  mode: 'formal' | 'draft',
+  signal?: AbortSignal
+): Promise<{ blob: Blob; filename: string }> {
+  const { data } = await http.get<Blob>(`/runs/${runId}/exports/evidence-index`, {
+    params: { mode, expected_revision: revision },
+    responseType: 'blob',
+    signal,
+  })
+  return { blob: data, filename: `${mode === 'draft' ? 'draft-' : ''}evidence_index.csv` }
+}
+
+export async function getReportPreview(runId: string): Promise<Blob> {
+  const { data } = await http.get<Blob>(`/runs/${runId}/report-preview`, {
+    responseType: 'blob',
+  })
+  return data
 }
 
 /**
@@ -264,5 +286,22 @@ export async function resumeRun(runId: string, fromStage?: string): Promise<Work
     params: fromStage ? { from_stage: fromStage } : undefined,
     ...LONG_TIMEOUT,
   })
+  return data
+}
+
+/** 后端健康状态（`/health`，不在 /api/v1 前缀下） */
+export interface HealthStatus {
+  status: string
+  llm_model?: string
+  agents_ready?: boolean
+}
+
+/**
+ * 健康探测：基址去掉 `/api/v1` 末缀后拼 `/health`。
+ * 直接复用外部后端地址（VITE_API_BASE_URL）时也能正确落点。
+ */
+export async function getHealth(): Promise<HealthStatus> {
+  const base = API_BASE_URL.replace(/\/api\/v1\/?$/, '')
+  const { data } = await axios.get<HealthStatus>(`${base}/health`, { timeout: 5_000 })
   return data
 }

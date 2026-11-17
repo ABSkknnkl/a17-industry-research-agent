@@ -98,9 +98,12 @@ class ChartResult(BaseModel):
     model_config=ConfigDict(extra="ignore")
     run_id:str="";charts:list[ChartSpec]=Field(default_factory=list);warnings:list[str]=Field(default_factory=list)
     quality:dict[str,Any]=Field(default_factory=dict)
+    question_plan:dict[str,Any]|None=None
 
 class FusionOptions(BaseModel):
     model_config=ConfigDict(extra="forbid")
+    delivery_profile:Literal["standard","competition"]="standard"
+    source_index_mode:Literal["full","compact"]="full"
     formats:list[Literal["markdown","html","pdf"]]=Field(default_factory=lambda:["markdown","html","pdf"],min_length=1)
     visual_style:Literal["data_manual","analysis_note","deep_research"]="deep_research"
     report_depth:Literal["brief","standard","deep"]="standard"

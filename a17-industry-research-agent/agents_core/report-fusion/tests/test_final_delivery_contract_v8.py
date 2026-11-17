@@ -221,11 +221,11 @@ def test_rerender_failure_revokes_format(monkeypatch):
     real_markdown = A.render_markdown
     calls = {"n": 0}
 
-    def flaky(view):
+    def flaky(view, **kwargs):
         calls["n"] += 1
         if calls["n"] >= 2:  # 首次正常，重渲染时失败
             raise RuntimeError("模拟重渲染失败")
-        return real_markdown(view)
+        return real_markdown(view, **kwargs)
 
     # 构造需要重渲染的场景：PDF 失败 → 最终 status 需要重写视图
     monkeypatch.setattr(A, "render_markdown", flaky)
@@ -410,10 +410,10 @@ def test_pdf_is_revoked_if_final_html_cannot_render(monkeypatch, tmp_path):
     actual_html = module.render_html
     actual_write = Path.write_bytes
 
-    def fail_limited_html(view):
+    def fail_limited_html(view, **kwargs):
         if view.delivery_status == "ready_with_limits":
             raise ValueError("simulated HTML failure")
-        return actual_html(view)
+        return actual_html(view, **kwargs)
 
     def fail_markdown(path, data):
         if path.name == "report.md":

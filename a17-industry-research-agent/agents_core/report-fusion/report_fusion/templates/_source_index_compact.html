@@ -38,8 +38,10 @@
       {% endif %}
     </tbody>
   </table>
-  <p class="source-summary-note">本附录按数据领域汇总，共 {{ view.evidence_catalog | length }} 条证据记录。正文中的「来源N」对应下列编号；逐条明细（含记录编号、原始数值、期间与原文链接）见同一交付包内的 <code>{{ evidence_csv_name }}</code>，按该文件的 <code>number</code> 列查找。PDF 版本不附逐条明细表，请解压交付包后打开 CSV。</p>
+  <p class="source-summary-note">本附录按数据领域汇总，共 {{ view.evidence_catalog | length }} 条证据记录。正文中的「来源N」对应下列编号；完整明细可按证据索引 CSV 的 <code>number</code> 列查找。{% if embedded_preview %}请使用工作台的「证据索引 CSV」按钮下载。{% else %}PDF 版本不附逐条明细表，请打开随报告提供的 CSV。{% endif %}</p>
+  {% if not embedded_preview %}
   <p class="source-summary-download"><a href="{{ evidence_csv_name }}" download>下载完整证据索引（{{ evidence_csv_name }}）</a></p>
+  {% endif %}
 </div>
 <p class="source-number-cloud" aria-label="来源编号索引">
 {% for s in view.evidence_catalog %}<span class="source-num" id="{{ source_id_prefixes[0] }}{{ s.number }}" data-row="{{ source_row_prefix }}{{ s.number }}"><span{% if source_id_prefixes | length > 1 %} id="{{ source_id_prefixes[1] }}{{ s.number }}"{% endif %}>{{ s.number }}</span></span> {% endfor %}

@@ -1,0 +1,109 @@
+{
+  "tooltip": {
+    "trigger": "axis"
+  },
+  "grid": {
+    "containLabel": true,
+    "left": 50,
+    "right": 32,
+    "top": 38,
+    "bottom": 28
+  },
+  "xAxis": {
+    "type": "category",
+    "data": [
+      "比亚迪",
+      "赛力斯",
+      "长安汽车"
+    ],
+    "axisLine": {
+      "lineStyle": {
+        "color": "#94a3b8"
+      }
+    },
+    "axisLabel": {
+      "interval": 0,
+      "fontSize": 12,
+      "lineHeight": 16,
+      "hideOverlap": false,
+      "width": 235.0,
+      "overflow": "break"
+    }
+  },
+  "yAxis": {
+    "type": "value",
+    "name": "%",
+    "min": 0,
+    "splitNumber": 4,
+    "splitLine": {
+      "lineStyle": {
+        "type": "dashed",
+        "color": "#e2e8f0"
+      }
+    },
+    "max": 20,
+    "interval": 5
+  },
+  "series": [
+    {
+      "name": "营业收入同比增速",
+      "type": "bar",
+      "data": [
+        3.4568,
+        13.6922,
+        2.6712
+      ],
+      "itemStyle": {
+        "color": "#1B365D",
+        "borderRadius": [
+          3,
+          3,
+          0,
+          0
+        ]
+      },
+      "label": {
+        "show": true,
+        "position": "top",
+        "fontSize": 10
+      }
+    }
+  ],
+  "research_as_of": "2026-11-14",
+  "observation_as_of": "2025-12-31",
+  "observation_range": {
+    "start": "2025-12-31",
+    "end": "2025-12-31"
+  },
+  "as_of": "2025-12-31",
+  "presentation": {
+    "version": 1,
+    "short_title": "",
+    "period_labels": "auto",
+    "plot_height": "compact",
+    "axes": [
+      {
+        "series_index": 0,
+        "min": 0,
+        "max": 20,
+        "interval": 5
+      }
+    ],
+    "labels": [
+      {
+        "series_index": 0,
+        "mode": "all",
+        "point_indices": [
+          0,
+          1,
+          2
+        ],
+        "decimals": 2
+      }
+    ],
+    "note": "",
+    "reference_lines": [],
+    "role": "generic",
+    "fallback_reason": ""
+  }
+}

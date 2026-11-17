@@ -75,6 +75,26 @@ class AgentTraceEvent(BaseModel):
     details: dict[str, Any] = Field(default_factory=dict)
 
 
+class ReviewDecision(BaseModel):
+    run_id: str
+    stage: StageName
+    revision: int
+    action: Literal["approve", "accept_with_risks"]
+    actor: Literal["user"] = "user"
+    decision_id: str
+    risk_snapshot_sha256: str
+    accepted_risk_codes: list[str] = Field(default_factory=list)
+    created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
+    comment: str | None = None
+
+
+class ReportDownloadOptions(BaseModel):
+    preview_available: bool = False
+    formal_artifact_ids: list[str] = Field(default_factory=list)
+    draft_artifact_ids: list[str] = Field(default_factory=list)
+    compact_mode: Literal["formal", "draft"] | None = None
+
+
 class WorkflowState(BaseModel):
     project_id: str
     run_id: str
@@ -82,6 +102,8 @@ class WorkflowState(BaseModel):
     status: StageStatus = "pending"
     revision: int = 1
     stage_results: dict[StageName, StageResult] = Field(default_factory=dict)
+    review_decisions: list[ReviewDecision] = Field(default_factory=list)
+    report_download: ReportDownloadOptions | None = None
     created_at: str = Field(default_factory=lambda: datetime.now().isoformat())
     updated_at: str = Field(default_factory=lambda: datetime.now().isoformat())
 
@@ -97,10 +119,12 @@ class RunSummary(BaseModel):
     updated_at: str
     artifact_count: int = 0
     report_available: bool = False
+    draft_available: bool = False
 
 
 class RunListResponse(BaseModel):
     total: int
+    waiting_review_count: int = 0
     offset: int
     limit: int
     items: list[RunSummary]
@@ -219,6 +243,7 @@ class RunExecutionSnapshot(BaseModel):
 
 class RunCreateRequest(BaseModel):
     project_id: str
+    delivery_profile: Literal["standard", "competition"] = "standard"
     input_data: ResearchInput
     review_stages: list[StageName] = Field(
         default_factory=lambda: [

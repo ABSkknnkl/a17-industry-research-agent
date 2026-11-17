@@ -333,3 +333,27 @@ def test_selection_prompt_excludes_values_and_evidence_ids():
     assert "万辆" not in user
     assert "Q-1" in user and "CARD-CH-1" in user
     assert "不得判定为无需图" in system
+
+
+def test_split_group_charts_cover_question_only_with_matching_bases():
+    from chart_generator.models import CandidateCard, ChartGroupCoverage
+    from chart_generator.question_planner import _covered_for
+
+    brief, = qp.parse_question_briefs(["整车与动力电池组的2023—2025年毛利率有何差异？"])
+
+    def card(group, basis):
+        return CandidateCard(
+            card_id=f"CARD-{group}", chart_type="line", question_ids=[brief.question_id],
+            group_coverage={
+                f"{brief.question_id}:毛利率": ChartGroupCoverage(
+                    required_groups=["整车组", "电池组"], by_basis={basis: [group]},
+                ),
+            },
+        )
+
+    vehicle = card("整车组", "consolidated|CNY|%")
+    battery = card("电池组", "consolidated|CNY|%")
+    foreign = card("电池组", "parent|USD|%")
+    assert _covered_for(brief, [vehicle]) == set()
+    assert _covered_for(brief, [vehicle, foreign]) == set()
+    assert _covered_for(brief, [vehicle, battery]) == {"毛利率"}

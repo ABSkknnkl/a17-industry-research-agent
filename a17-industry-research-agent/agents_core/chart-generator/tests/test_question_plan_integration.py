@@ -132,3 +132,41 @@ def test_apply_compacts_frozen_nev_charts_before_rendering(tmp_path):
     art = Path(result.artifact_dir)
     assert {p.stem for p in (art / "charts").glob("*.svg")} == links
     assert (art / "preview.html").read_text().count("<svg ") == len(result.charts)
+
+
+def test_competition_nev_charts_answer_all_four_questions(tmp_path):
+    archive = GOLDEN_A2.parents[4] / "nev_template_quality/official_publication"
+    request_path = next((archive / "a3" / "runs").glob("*/request.json"), None)
+    if request_path is None:
+        pytest.skip("冻结发布样本不存在")
+    request = ChartGenerationRequest.model_validate_json(request_path.read_bytes())
+    answers = json.loads((archive / "chapters.json").read_bytes())["question_answers"]
+    request.question_plan_mode = "apply"
+    request.question_briefs = [
+        brief.model_dump(mode="json") for brief in parse_question_briefs([answer["text"] for answer in answers])
+    ]
+    request.preferences.max_charts = 15
+    agent = ChartGeneratorAgent(settings=Settings(output_dir=tmp_path), llm=OfflinePlanLLM())
+    result = asyncio.run(agent.run(request))
+    assert result.question_plan is not None
+    by_question = {row.question_id: row for row in result.question_plan.coverage}
+    assert list(by_question) == ["Q-1", "Q-2", "Q-3", "Q-4"]
+    assert {qid: row.uncovered for qid, row in by_question.items()} == {
+        qid: [] for qid in by_question
+    }
+    assert all(row.status == "published" for row in by_question.values())
+
+    charts = {chart.chart_id: chart for chart in result.charts}
+    assert set(charts) == {cid for row in by_question.values() for cid in row.chart_ids}
+    for metric in ("revenue", "gross_margin", "operating_cash_flow"):
+        related = [charts[cid] for cid in by_question["Q-3"].chart_ids]
+        assert any(
+            {(point["entity"], point["period"][:4]) for point in chart.data_contract["points"]
+             if point["metric"] == metric} == {
+                (company, str(year))
+                for company in ("比亚迪", "长安汽车", "赛力斯") for year in range(2023, 2026)
+            }
+            for chart in related
+        )
+    monthly = [charts[cid] for cid in by_question["Q-2"].chart_ids]
+    assert any(len(c.data_contract["points"]) == 59 for c in monthly)

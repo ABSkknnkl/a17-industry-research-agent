@@ -1,0 +1,145 @@
+{
+  "tooltip": {
+    "trigger": "axis"
+  },
+  "grid": {
+    "containLabel": true,
+    "left": 50,
+    "right": 32,
+    "top": 38,
+    "bottom": 28
+  },
+  "xAxis": {
+    "type": "category",
+    "data": [
+      "2021-12-31",
+      "2022-12-31",
+      "2023-12-31",
+      "2024-12-31",
+      "2025-12-31"
+    ],
+    "axisLine": {
+      "lineStyle": {
+        "color": "#94a3b8"
+      }
+    }
+  },
+  "yAxis": {
+    "type": "value",
+    "name": "%",
+    "splitNumber": 6,
+    "splitLine": {
+      "lineStyle": {
+        "type": "dashed",
+        "color": "#e2e8f0"
+      }
+    },
+    "min": -75.0,
+    "max": 75.0,
+    "interval": 25.0
+  },
+  "series": [
+    {
+      "name": "中信海直",
+      "type": "line",
+      "data": [
+        12.878,
+        -21.199,
+        23.1133,
+        26.8091,
+        1.7938
+      ],
+      "connectNulls": false,
+      "itemStyle": {
+        "color": "#1B365D"
+      },
+      "lineStyle": {
+        "width": 2.2
+      },
+      "symbol": "circle",
+      "symbolSize": 5,
+      "label": {
+        "show": true,
+        "position": "top",
+        "fontSize": 10
+      }
+    },
+    {
+      "name": "莱斯信息",
+      "type": "line",
+      "data": [
+        0.5053,
+        -7.6251,
+        47.5987,
+        -2.3089,
+        -57.1759
+      ],
+      "connectNulls": false,
+      "itemStyle": {
+        "color": "#D52B1E"
+      },
+      "lineStyle": {
+        "width": 2.2
+      },
+      "symbol": "circle",
+      "symbolSize": 5,
+      "label": {
+        "show": true,
+        "position": "top",
+        "fontSize": 10
+      }
+    }
+  ],
+  "legend": {
+    "data": [
+      "中信海直",
+      "莱斯信息"
+    ],
+    "top": 4
+  },
+  "research_as_of": "2026-11-15",
+  "observation_as_of": null,
+  "observation_range": {
+    "start": "2021-12-31",
+    "end": "2025-12-31"
+  },
+  "as_of": "",
+  "presentation": {
+    "version": 1,
+    "short_title": "",
+    "period_labels": "auto",
+    "plot_height": "regular",
+    "axes": [
+      {
+        "series_index": 0,
+        "min": -75.0,
+        "max": 75.0,
+        "interval": 25.0
+      }
+    ],
+    "labels": [
+      {
+        "series_index": 0,
+        "mode": "key",
+        "point_indices": [
+          0,
+          4
+        ],
+        "decimals": 2
+      },
+      {
+        "series_index": 1,
+        "mode": "key",
+        "point_indices": [
+          0,
+          4
+        ],
+        "decimals": 2
+      }
+    ],
+    "note": "",
+    "reference_lines": [],
+    "role": "generic",
+    "fallback_reason": ""
+  }
+}

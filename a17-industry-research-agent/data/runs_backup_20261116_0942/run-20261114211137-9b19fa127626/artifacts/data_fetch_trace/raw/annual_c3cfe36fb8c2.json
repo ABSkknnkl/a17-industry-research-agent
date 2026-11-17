@@ -1,0 +1,79 @@
+{
+  "QTime": 342,
+  "query": "宁德时代 全年 营业收入 销售毛利率 经营活动产生的现金流量净额 2023年 2024年 2025年",
+  "condition": "[{\"score\":0.0,\"source\":\"new_parser\",\"children\":[],\"node_type\":\"op\",\"sonSize\":6.0,\"chunkedResult\":\"宁德时代 _&_全年 营业收入 _&_销售毛利率 _&_经营活动产生的现金流量净额 _&_2023年 2024年 2025年\",\"ci\":false,\"opName\":\"and\",\"opPropertyMap\":{},\"opPropertiesMap\":{},\"opProperty\":\"\"},{\"score\":0.0,\"source\":\"new_parser\",\"type\":\"index\",\"domain\":\"abs_股票领域\",\"node_type\":\"index\",\"sonSize\":0.0,\"uiText\":\"股票简称是宁德时代\",\"ci\":false,\"indexName\":\"股票简称\",\"indexPropertiesMap\":{\"概念id\":\"306912\",\"包含\":\"宁德时代\"},\"reportType\":\"null\",\"valueType\":\"_股票简称\",\"dateText\":\"\",\"indexProperties\":[\"概念id 306912\",\"包含宁德时代\"]},{\"score\":0.0,\"source\":\"new_parser\",\"children\":[],\"node_type\":\"op\",\"sonSize\":4.0,\"ci\":false,\"opName\":\"and\",\"opPropertyMap\":{},\"opPropertiesMap\":{},\"opProperty\":\"\"},{\"score\":0.0,\"source\":\"new_parser\",\"type\":\"index\",\"domain\":\"abs_股票领域\",\"node_type\":\"index\",\"sonSize\":0.0,\"uiText\":\"今年的营业收入\",\"ci\":false,\"indexName\":\"营业收入\",\"indexPropertiesMap\":{\"交易日期\":\"20260930\"},\"reportType\":\"QUARTER\",\"valueType\":\"_浮点型数值(元)\",\"dateType\":\"报告期\",\"dateText\":\"今年\",\"dateUnit\":\"年\",\"indexProperties\":[\"交易日期 20260930\"]},{\"score\":0.0,\"source\":\"new_parser\",\"children\":[],\"node_type\":\"op\",\"sonSize\":2.0,\"ci\":false,\"opName\":\"and\",\"opPropertyMap\":{},\"opPropertiesMap\":{},\"opProperty\":\"\"},{\"score\":0.0,\"source\":\"new_parser\",\"type\":\"index\",\"domain\":\"abs_股票领域\",\"node_type\":\"index\",\"sonSize\":0.0,\"uiText\":\"今年的销售毛利率\",\"ci\":false,\"indexName\":\"销售毛利率\",\"indexPropertiesMap\":{\"交易日期\":\"20260930\"},\"reportType\":\"QUARTER\",\"valueType\":\"_浮点型数值(%)\",\"dateType\":\"报告期\",\"dateText\":\"今年\",\"dateUnit\":\"年\",\"indexProperties\":[\"交易日期 20260930\"]},{\"score\":0.0,\"source\":\"new_parser\",\"type\":\"index\",\"domain\":\"abs_股票领域\",\"node_type\":\"index\",\"sonSize\":0.0,\"uiText\":\"2023年2024年2025年的经营活动产生的现金流量净额\",\"ci\":false,\"indexName\":\"经营活动产生的现金流量净额\",\"indexPropertiesMap\":{\"交易日期\":\"20261231\"},\"reportType\":\"QUARTER\",\"valueType\":\"_浮点型数值(元|港元|美元|英镑)\",\"dateType\":\"报告期\",\"dateText\":\"2023年2024年2025年\",\"dateUnit\":\"年\",\"indexProperties\":[\"交易日期 20261231\"]}]",
+  "columns": [
+    {
+      "unit": "",
+      "domain": "abs_股票领域",
+      "source": "fixed_index",
+      "label": "code",
+      "feKey": "股票代码",
+      "type": "STR",
+      "index_name": "股票代码",
+      "key": "股票代码"
+    },
+    {
+      "unit": "",
+      "domain": "abs_股票领域",
+      "source": "fixed_index",
+      "label": "name",
+      "feKey": "股票简称",
+      "type": "STR",
+      "index_name": "股票简称",
+      "key": "股票简称"
+    },
+    {
+      "unit": "元",
+      "domain": "abs_股票领域",
+      "source": "new_parser",
+      "label": "财务报表",
+      "quarterTime": "2026财年3季报",
+      "feKey": "营业收入[20260930]",
+      "type": "DOUBLE",
+      "index_name": "营业收入",
+      "key": "营业收入[20260930]",
+      "timestamp": "20260930"
+    },
+    {
+      "unit": "%",
+      "domain": "abs_股票领域",
+      "source": "new_parser",
+      "label": "财务报表",
+      "quarterTime": "2026财年3季报",
+      "feKey": "销售毛利率[20260930]",
+      "type": "DOUBLE",
+      "index_name": "销售毛利率",
+      "key": "销售毛利率[20260930]",
+      "timestamp": "20260930"
+    },
+    {
+      "unit": "元",
+      "domain": "abs_股票领域",
+      "indexId": "",
+      "source": "new_parser",
+      "label": "财务报表",
+      "quarterTime": "2026财年4季报",
+      "feKey": "经营活动产生的现金流量净额[20261231]",
+      "type": "DOUBLE",
+      "index_name": "经营活动产生的现金流量净额",
+      "key": "经营活动产生的现金流量净额[20261231]",
+      "timestamp": "20261231"
+    }
+  ],
+  "datas": [
+    {
+      "股票代码": "300750.SZ",
+      "股票简称": "宁德时代",
+      "营业收入[20260930]": 442137424000.0,
+      "销售毛利率[20260930]": "22.7175"
+    }
+  ],
+  "row_count": 1.0,
+  "code_count": 1.0,
+  "domain": "stock",
+  "status_code": 0.0,
+  "status_msg": "ok",
+  "token": "0ac9b8b117946619478036800",
+  "chunks_info": "[\"股票简称是宁德时代 (1)\",\"今年的营业收入 (1)\",\"今年的销售毛利率 (1)\",\"2023年2024年2025年的经营活动产生的现金流量净额 (1)\"]"
+}

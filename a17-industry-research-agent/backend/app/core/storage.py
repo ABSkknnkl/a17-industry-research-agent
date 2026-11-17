@@ -4,6 +4,7 @@ import re
 import shutil
 from pathlib import Path
 from backend.app.core.config import settings
+from backend.app.core.report_delivery import report_download_options
 from backend.app.schemas.workflow import (
     WorkflowState,
     RunSummary,
@@ -141,15 +142,18 @@ class StorageManager:
                 for sr in d.get("stage_results", {}).values():
                     art_count += len(sr.get("artifacts", []))
 
-                fusion_res = d.get("stage_results", {}).get("report_fusion")
-                report_available = bool(
-                    fusion_res
-                    and fusion_res.get("status") in ["approved", "completed"]
-                )
+                state = WorkflowState.model_validate(d)
+                options = report_download_options(state, run_dir / "artifacts")
 
                 # 提取标题
                 title = f"研报任务: {d.get('run_id')}"
                 req_input = d.get("input_data") or {}
+                input_path = run_dir / "input_data.json"
+                if not req_input and input_path.is_file():
+                    try:
+                        req_input = json.loads(input_path.read_text(encoding="utf-8")).get("input_data") or {}
+                    except (OSError, ValueError, AttributeError):
+                        req_input = {}
                 if isinstance(req_input, dict) and req_input.get("industry_topic"):
                     title = f"《{req_input['industry_topic']}》行业研究报告"
 
@@ -164,7 +168,8 @@ class StorageManager:
                         created_at=d.get("created_at", ""),
                         updated_at=d.get("updated_at", ""),
                         artifact_count=art_count,
-                        report_available=report_available,
+                        report_available=bool(options.formal_artifact_ids),
+                        draft_available=bool(options.draft_artifact_ids),
                     )
                 )
             except Exception:
@@ -174,7 +179,13 @@ class StorageManager:
         runs.sort(key=lambda r: r.created_at, reverse=True)
         total = len(runs)
         paged_items = runs[offset : offset + limit]
-        return RunListResponse(total=total, offset=offset, limit=limit, items=paged_items)
+        return RunListResponse(
+            total=total,
+            waiting_review_count=sum(run.status == "waiting_review" for run in runs),
+            offset=offset,
+            limit=limit,
+            items=paged_items,
+        )
 
     def save_artifact_file(self, run_id: str, filename: str, content: bytes | str) -> Path:
         run_dir = self.get_run_dir(run_id)

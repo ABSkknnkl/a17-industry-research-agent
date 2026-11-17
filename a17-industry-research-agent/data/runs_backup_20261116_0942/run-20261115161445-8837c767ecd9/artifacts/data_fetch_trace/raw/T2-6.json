@@ -1,0 +1,68 @@
+{
+  "QTime": 568,
+  "query": "亿航智能 主营构成 收入占比",
+  "model_sql": "[{\"chunk\":\"亿航智能 主营构成 收入占比\",\"condition\":\"[{\\\"indexName\\\":\\\"所属概念\\\",\\\"indexOrg\\\":\\\"所属概念\\\",\\\"indexPropertiesMap\\\":{\\\"包含\\\":\\\"ENT(智能)\\\"},\\\"sonSize\\\":0,\\\"uiText\\\":\\\"所属概念包含智能\\\",\\\"datetext\\\":\\\"\\\"}]\",\"domain\":\"threeboard\"}]",
+  "condition": "[{\"score\":0.0,\"source\":\"text2sql\",\"type\":\"index\",\"domain\":\"abs_新三板领域\",\"node_type\":\"index\",\"sonSize\":0.0,\"uiText\":\"所属概念包含智能\",\"chunkedResult\":\"亿航智能 主营构成 收入占比\",\"ci\":false,\"ciChunk\":\"亿航智能 主营构成 收入占比\",\"indexName\":\"新三板@所属概念\",\"indexPropertiesMap\":{\"包含\":\"人工智能\"},\"reportType\":\"null\",\"valueType\":\"_新三板所属概念\",\"dateText\":\"\",\"indexProperties\":[\"包含人工智能\"]}]",
+  "columns": [
+    {
+      "unit": "",
+      "domain": "abs_新三板领域",
+      "source": "fixed_index",
+      "label": "code",
+      "feKey": "股票代码",
+      "type": "STR",
+      "index_name": "股票代码",
+      "key": "股票代码"
+    },
+    {
+      "unit": "",
+      "domain": "abs_新三板领域",
+      "source": "fixed_index",
+      "label": "name",
+      "feKey": "股票简称",
+      "type": "STR",
+      "index_name": "股票简称",
+      "key": "股票简称"
+    },
+    {
+      "unit": "",
+      "domain": "abs_新三板领域",
+      "source": "text2sql",
+      "feKey": "所属概念",
+      "type": "STR",
+      "index_name": "新三板@所属概念",
+      "key": "新三板@所属概念",
+      "timestamp": ""
+    }
+  ],
+  "datas": [
+    {
+      "股票代码": "832682.NQ",
+      "股票简称": "像素数据",
+      "新三板@所属概念": "人工智能||安防"
+    },
+    {
+      "股票代码": "832950.NQ",
+      "股票简称": "益盟股份",
+      "新三板@所属概念": "人工智能||互联网金融"
+    },
+    {
+      "股票代码": "834134.NQ",
+      "股票简称": "中业科技",
+      "新三板@所属概念": "人工智能"
+    },
+    {
+      "股票代码": "834878.NQ",
+      "股票简称": "ST华尊",
+      "新三板@所属概念": "人工智能||安防"
+    }
+  ],
+  "row_count": 4.0,
+  "code_count": 4.0,
+  "domain": "threeboard",
+  "intent": "iwencai",
+  "status_code": 0.0,
+  "status_msg": "ok",
+  "token": "0ac9be7f17947305465488883",
+  "chunks_info": "[\"所属概念包含智能 (4)\"]"
+}

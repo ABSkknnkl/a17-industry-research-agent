@@ -146,15 +146,15 @@ class ChainStore:
     def save_bundle(self, bundle: ChainKnowledgeBundle) -> Path:
         """bundle.json 原子落盘 + SQLite revision 登记。"""
         path = self.v2_dir / "bundle.json"
-        _atomic_write_text(path, bundle.model_dump_json(indent=2, ensure_ascii=False))
+        _atomic_write_text(path, bundle.model_dump_json(indent=2))
         quality_path = self.v2_dir / "quality.json"
         _atomic_write_text(
             quality_path,
-            bundle.quality.model_dump_json(indent=2, ensure_ascii=False))
+            bundle.quality.model_dump_json(indent=2))
         manifest_path = self.v2_dir / "manifest.json"
         _atomic_write_text(
             manifest_path,
-            bundle.manifest.model_dump_json(indent=2, ensure_ascii=False))
+            bundle.manifest.model_dump_json(indent=2))
         if self._cache_db is not None:
             with self._conn() as conn:
                 conn.execute(

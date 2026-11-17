@@ -1,0 +1,64 @@
+{
+  "QTime": 671,
+  "query": "国防军工行业 估值 市盈率 市净率",
+  "columns": [
+    {
+      "index_name": "全量指数@指数代码",
+      "key": "指数代码",
+      "feKey": "指数代码",
+      "type": "STR",
+      "unit": "",
+      "label": "code",
+      "source": "index"
+    },
+    {
+      "index_name": "全量指数@指数简称",
+      "key": "指数简称",
+      "feKey": "指数简称",
+      "type": "STR",
+      "unit": "",
+      "label": "name",
+      "source": "index"
+    },
+    {
+      "index_name": "全量指数@最新涨跌幅:前复权",
+      "key": "涨跌幅",
+      "feKey": "涨跌幅",
+      "type": "DOUBLE",
+      "unit": "%",
+      "label": "ratio",
+      "source": "index"
+    },
+    {
+      "index_name": "全量指数@最新收盘价:不复权",
+      "key": "收盘价",
+      "feKey": "收盘价",
+      "type": "DOUBLE",
+      "unit": "点",
+      "label": "price",
+      "source": "index"
+    },
+    {
+      "index_name": "市盈率(pe,ttm)",
+      "key": "市盈率(pe,ttm)[20261113]",
+      "feKey": "市盈率(pe,ttm)[20261113]",
+      "type": "DOUBLE",
+      "unit": "倍",
+      "label": "",
+      "timestamp": "20261113",
+      "source": "field"
+    }
+  ],
+  "datas": [
+    {
+      "指数代码": "801740.SL",
+      "指数简称": "国防军工",
+      "市盈率(pe,ttm)[20261113]": 67.564553
+    }
+  ],
+  "row_count": 1,
+  "code_count": 1,
+  "chunks_info": "[\"国防军工行业,估值 (1)\",\"国防军工行业,市盈率 (1)\",\"国防军工行业,市净率 (0)\"]",
+  "status_code": 0,
+  "token": "0ac9e0ca17947305211655557"
+}

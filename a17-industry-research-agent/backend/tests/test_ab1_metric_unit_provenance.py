@@ -292,6 +292,8 @@ def test_verified_observations_keep_quarter_and_recompute_coverage(tmp_path, mon
                               entity_names=["合成样本"], period_ends=[date(2025, 12, 31)], metric_families=["revenue"])
     coverage = DataFetcherAgent._evaluate_requirement(dataset, req)
     assert coverage.passed
+    trusted_cutoff = req.model_copy(update={"acceptable_skill_ids": ["hithink-finance-query"]})
+    assert DataFetcherAgent._evaluate_requirement(dataset, trusted_cutoff).passed
     assert coverage.evidence_record_ids == DataFetcherAgent._evaluate_requirement(fuse(date(2026, 11, 6)), req).evidence_record_ids
     assert not DataFetcherAgent._evaluate_requirement(fuse(date(2026, 1, 1)), req).passed
 

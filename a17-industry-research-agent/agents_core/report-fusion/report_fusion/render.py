@@ -64,6 +64,9 @@ METRIC_DISPLAY_NAMES = {
     "cash_flow": "经营现金流",
     "net_margin": "销售净利率",
     "gross_margin": "毛利率",
+    "nev_penetration": "新能源汽车渗透率",
+    "nev_sales": "新能源汽车销量",
+    "nev_exports": "新能源汽车出口量",
     "roe": "净资产收益率(ROE)",
     "roa": "总资产收益率(ROA)",
     "debt_ratio": "资产负债率",
@@ -242,11 +245,12 @@ def _question_index(view: ReportViewModel) -> list[dict[str, Any]]:
                 excerpt = None
         result.append({
             **answer,
-            "excerpt": excerpt,
+            "excerpt": None if "competition_relaxations" in view.fact_audit else excerpt,
             "figures": figures,
             "series_tables": tables,
             "comparison": comparison,
-            "missing": list(dict.fromkeys(requirements[rid] for rid in answer.get("unmet_requirement_ids", [])
+            "missing": list(dict.fromkeys(_reading_text(requirements[rid])
+                                           for rid in answer.get("unmet_requirement_ids", [])
                                            if requirements.get(rid))),
         })
     return result
@@ -675,7 +679,8 @@ def _reading_view(view: ReportViewModel) -> ReportViewModel:
         seen_card_evidence.add(key)
         unique_cards.append(card)
     summary.metric_cards = unique_cards
-    summary.headline = _reading_text(summary.headline)
+    headline = retain_supported_claims(summary.headline, lambda sentence: not prose_metadata.search(sentence))
+    summary.headline = _reading_text(headline or "从已核验的指标与样本对比提炼本轮研究结论。")
     summary.risks = list(map(reading_boundary, summary.risks))
     summary.research_boundaries = list(map(reading_boundary, summary.research_boundaries))
     for conclusion in summary.conclusions:
@@ -952,7 +957,9 @@ def render_markdown(view: ReportViewModel, *, source_index_mode: str = "full") -
     return "\n".join(lines) + "\n"
 
 
-def render_html(view: ReportViewModel, *, source_index_mode: str = "full") -> str:
+def render_html(
+    view: ReportViewModel, *, source_index_mode: str = "full", embedded_preview: bool = False,
+) -> str:
     index_mode = normalize_source_index_mode(source_index_mode)
     view = _reading_view(view)
     lookup = {x.record_id: x.number for x in view.evidence_catalog}
@@ -1004,6 +1011,7 @@ def render_html(view: ReportViewModel, *, source_index_mode: str = "full") -> st
         source_row_prefix="source-row-",
         source_appendix_id=("source-index" if mode == "auto" else "appendix-evidence"),
         evidence_csv_name=EVIDENCE_CSV_NAME,
+        embedded_preview=embedded_preview,
     )
 
     return rendered

@@ -1283,6 +1283,9 @@ class DataFusion:
                 if (not matches or not record.period_end or (years and record.period_end.year not in years)
                     or record.record_id in verified_ids):
                     continue
+                if (record.source.skill_id == "verified-observation" and record.source.status == "verified"
+                        and event.announce_date and record.published_at and event.announce_date < record.published_at):
+                    continue
                 if "pending_restatement" not in record.issues:
                     record.issues = [*record.issues, "pending_restatement"]
                 affected.append(record.record_id)
@@ -1638,6 +1641,11 @@ class DataFusion:
             sources = {record.source.skill_id for record in records}
 
             if financial:
+                # A unitless amount cannot contradict a qualified annual filing.
+                # Keep the unqualified raw observation in the dataset for audit.
+                if any(record.source.skill_id == "verified-observation"
+                       and record.source.status == "verified" for record in records):
+                    records = [record for record in records if "unit_unknown" not in record.issues]
                 verdict = measurement_conflict_verdict(records)
                 if verdict is True:
                     continue

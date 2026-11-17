@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Download, ArrowDown } from '@element-plus/icons-vue'
-import { downloadArtifact, triggerBlobDownload } from '../api/client'
+import { downloadArtifact, getReportPreview, triggerBlobDownload } from '../api/client'
 import type { ChapterDraftLoose, DownloadableArtifact, ReportFusionData } from '../api/types'
 
 /**
@@ -16,7 +16,7 @@ import type { ChapterDraftLoose, DownloadableArtifact, ReportFusionData } from '
  * 3. 明确引导 —— 底部常驻一句「点击即可查看最终成果」+ 主按钮。
  *
  * 数据来源：全部取自 fusion（report_fusion 阶段 data），无需父级另传字段。
- * 缩略图取数：fusion.artifacts 里的 report_html → blob → iframe（sandbox="" 最严格隔离）。
+ * 缩略图复用报告预览接口，使用紧凑附录并在 sandbox iframe 中展示。
  * 报告为纯静态 HTML（无脚本、无外链），故连 allow-scripts 都不需要。
  */
 
@@ -129,7 +129,7 @@ const sectionCount = computed(() =>
 // ---------------- 缩略图（缩放 iframe 渲染真实报告） ----------------
 const objectUrl = ref('')
 const thumbLoading = ref(false)
-let disposed = false
+let thumbnailRequest = 0
 
 function revokeThumb(): void {
   if (objectUrl.value) {
@@ -139,19 +139,22 @@ function revokeThumb(): void {
 }
 
 async function loadThumbnail(): Promise<void> {
-  const artifact = htmlArtifact.value
-  if (!artifact || !props.runId) return
+  const request = ++thumbnailRequest
+  if (!htmlArtifact.value || !props.runId) {
+    thumbLoading.value = false
+    return
+  }
   thumbLoading.value = true
   try {
-    const { blob } = await downloadArtifact(props.runId, artifact)
-    if (disposed) return
+    const blob = await getReportPreview(props.runId)
+    if (request !== thumbnailRequest) return
     revokeThumb()
     objectUrl.value = URL.createObjectURL(blob)
   } catch {
     // 缩略图失败不打断主流程：留空态，用户仍可点主按钮进预览页
-    revokeThumb()
+    if (request === thumbnailRequest) revokeThumb()
   } finally {
-    thumbLoading.value = false
+    if (request === thumbnailRequest) thumbLoading.value = false
   }
 }
 
@@ -165,16 +168,15 @@ function formatTime(value: string | undefined): string {
 }
 
 onMounted(loadThumbnail)
-// 产物可能在阶段重跑后变化（artifact_id 变了），重新取缩略图
 watch(
-  () => htmlArtifact.value?.artifact_id,
+  [() => props.runId, () => htmlArtifact.value?.artifact_id, () => props.fusion?.report_id],
   () => {
     revokeThumb()
     void loadThumbnail()
   }
 )
 onBeforeUnmount(() => {
-  disposed = true
+  thumbnailRequest += 1
   revokeThumb()
 })
 </script>

@@ -4,7 +4,7 @@ import logging
 import shutil
 from pathlib import Path
 import re
-from typing import Any
+from typing import Any, Literal
 
 from backend.app.core.config import settings
 from backend.app.core.event_hub import event_hub
@@ -1416,7 +1416,8 @@ class FiveAgentsAdapter:
             from dataclasses import asdict
             from chart_generator.models import ChartSpec
             import hashlib
-            cb = ChainKnowledgeBundle.model_validate_json(v2_bundle_path.read_text(encoding='utf-8'))
+            bundle_bytes = v2_bundle_path.read_bytes()
+            cb = ChainKnowledgeBundle.model_validate_json(bundle_bytes)
             # 辅助视图（V2 自带四栏文字版）：保留为证据视图 / evidence.html
             aux_svg, mapping = render_bundle(cb)
             # 主图必须走**研报级模板**（lane_grid：分列卡网格 + 画像列头 + 品牌卡），
@@ -1437,6 +1438,11 @@ class FiveAgentsAdapter:
             chain_delivery["accepted_participations"] = admitted_companies
             verified_edges = [edge for edge in chain_spec.edges if edge.evidence_record_ids and edge.assertion_ids]
             chain_delivery["verified_relations"] = len(verified_edges)
+            chain_delivery["certification_available"] = bool(
+                cb.quality.release_status == "partial" and admitted_companies and verified_edges
+            )
+            if chain_delivery["certification_available"]:
+                chain_delivery["certification_bundle_sha256"] = hashlib.sha256(bundle_bytes).hexdigest()
             if cb.supported_assertions() and cb.quality.release_status in ('partial', 'verified'):
                 result.charts = [c for c in result.charts if c.chart_type != 'industry_chain']
                 from chart_generator.selection import question_intents
@@ -1642,8 +1648,8 @@ class FiveAgentsAdapter:
             "warnings": result.warnings,
             "upstream_warnings": result.upstream_warnings,
             "question_coverage": result.question_coverage,
-            # 附加产物：A4 从原始阶段数据读取 question_plan.coverage；A5 不消费该字段。
             "question_plan": result.question_plan.model_dump(mode="json") if result.question_plan else None,
+            "question_chart_titles": {brief["question_id"]: brief["text"] for brief in plan_briefs},
             "report_tables": result.report_tables,
             # D3：链图交付资格（requested/status/reason）随阶段产物透传，
             # 前端与评审核对"用户要的链图到底交付到什么程度"。
@@ -1884,6 +1890,7 @@ class FiveAgentsAdapter:
         security_types: list[str] | None = None,
         reporting_currency: str = "CNY",
         research_as_of: str | None = None,
+        delivery_profile: Literal["standard", "competition"] = "standard",
     ) -> StageResult:
         """阶段 5: 研报融合智能体 (Report Fusion)"""
         import backend.app.core.setup_env
@@ -1964,6 +1971,8 @@ class FiveAgentsAdapter:
         from report_fusion.models import FusionOptions
         fusion_options = FusionOptions(
             final_instruction=feedback,
+            delivery_profile=delivery_profile,
+            source_index_mode="compact",
         )
 
         # Retire managed exports before rendering a new version. A failed PDF

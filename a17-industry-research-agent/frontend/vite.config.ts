@@ -29,6 +29,11 @@ export default defineConfig(({ mode }) => {
           target: proxyTarget,
           changeOrigin: true,
         },
+        // 健康探测在根路径（backend/app/main.py 的 /health），不在 /api/v1 下
+        '/health': {
+          target: proxyTarget,
+          changeOrigin: true,
+        },
       },
     },
   }

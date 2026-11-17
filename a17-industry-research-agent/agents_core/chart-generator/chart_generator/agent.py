@@ -136,6 +136,7 @@ class _Candidate:
         derived_group: str = "",
         auto_time_series: bool = False,
         period_type: str = "",
+        reported_annual_trend: bool = False,
     ):
         self.title = title
         self.chart_type = chart_type
@@ -155,6 +156,7 @@ class _Candidate:
         self.selection_source = selection_source
         self.derived_group = derived_group
         self.auto_time_series = auto_time_series
+        self.reported_annual_trend = reported_annual_trend
         # 图表意图的观测期间：annual / month / 空（由证据推断）。
         # 年度缺口检查只能作用于年度意图，不能按指标族连带拦截月度图。
         self.period_type = period_type
@@ -768,10 +770,19 @@ class ChartGeneratorAgent:
             candidates = sorted([*combined, *remaining], key=compact_priority)
 
         if apply_question_plan:
-            from .question_planner import question_financial_snapshots
+            from .question_planner import question_financial_snapshots, question_financial_trends
 
             monthly_series = self._covered_monthly_series(request.report)
             pool = [*monthly_series, *([*combined, *candidates] if not compact else candidates)]
+            trends = []
+            for ids, chapter in question_financial_trends(plan_briefs, request.report):
+                candidate = _Candidate(
+                    "年度企业原始报表指标", "line", {}, ids, "", chapter,
+                    period_type="annual", reported_annual_trend=True,
+                )
+                if not self._verify_numeric_candidate(candidate, request.report):
+                    trends.append(candidate)
+            pool = [*trends, *pool]
             if reviewed_company_groups(request.report):
                 alternatives, _ = self._deterministic_fallback(request)
                 for candidate in alternatives:
@@ -1680,13 +1691,6 @@ class ChartGeneratorAgent:
             settle_coverage(question_plan, charts, plan_cards, plan_briefs)
             if apply_question_plan:
                 question_coverage = legacy_question_coverage(question_plan)
-                questions_by_chart: dict[str, list[str]] = defaultdict(list)
-                for row in question_plan.coverage:
-                    for cid in row.chart_ids:
-                        questions_by_chart[cid].append(row.question_id)
-                for chart in charts:
-                    if chart.chart_id in questions_by_chart:
-                        chart.data_contract["question_ids"] = questions_by_chart[chart.chart_id]
             await record("question_plan_coverage", items=len(question_plan.coverage))
 
         result = ChartGenerationResult(
@@ -2467,6 +2471,24 @@ class ChartGeneratorAgent:
         if item.chart_type in ("heatmap", "boxplot", "treemap"):
             return "此候选缺少可核验的聚合或统计变换定义，已抑制"
         included_ids, excluded_points = isolate_anomalous_evidence(item.evidence_ids, report)
+        retained_outliers = []
+        if item.reported_annual_trend:
+            outlier_ids = {
+                rid for anomaly in report.anomalies if anomaly.get("kind") == "cross_sectional_outlier"
+                for rid in anomaly.get("evidence_record_ids") or []
+            }
+            disqualified_ids = {
+                rid for anomaly in report.anomalies if anomaly.get("kind") != "cross_sectional_outlier"
+                and anomaly.get("charting_guidance") == "suppress_or_isolate"
+                for rid in anomaly.get("evidence_record_ids") or []
+            }
+            retained_outliers = [
+                p for p in excluded_points
+                if p["record_id"] in outlier_ids - disqualified_ids
+                and not report.evidence_index[p["record_id"]].issues
+            ]
+            included_ids.extend(p["record_id"] for p in retained_outliers)
+            excluded_points = [p for p in excluded_points if p not in retained_outliers]
         groups = reviewed_company_groups(report)
         refs = [report.evidence_index[rid] for rid in included_ids if rid in report.evidence_index]
         entities = comparison_entities(report)
@@ -2645,6 +2667,13 @@ class ChartGeneratorAgent:
             notes.append(f"观测日期缺失：{missing_dates}/{len(points)}个数据点；仅作描述性样本展示，不作正式时点比较。")
         elif not comparison_eligible:
             notes.append("观测期间不一致：仅作描述性样本展示，不作正式同期比较。")
+        plotted_ids = set(item.evidence_ids)
+        marked = [p for p in retained_outliers if p["record_id"] in plotted_ids]
+        if marked:
+            item.data_contract["marked_outlier_record_ids"] = [p["record_id"] for p in marked]
+            marked_labels = "、".join(f"{point['entity']} {point['period'][:4]} 年"
+                                    for point in marked)
+            notes.append(f"{marked_labels}为已核验的横截面极端观测，在纵向趋势中按原值列示，不纳入横截面基准。")
         for point in excluded_points:
             notes.append(f"异常观测单列（不纳入主图与比较基准）：{point['entity']} / {point['metric']} = "
                          f"{point['value']} {point['unit'] or ''}；观测日期：{point['period'] or '缺失'}；"

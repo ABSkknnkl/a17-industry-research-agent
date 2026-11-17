@@ -205,16 +205,22 @@ def _annual_financial_observations(index: dict, companies: set[str], years: list
     return {key: next(iter(values.items())) for key, values in observations.items() if len(values) == 1}
 
 
-def _annual_cash_ratios(question: str, index: dict, existing_rows: list[dict]) -> list:
+def _annual_cash_ratios(
+    question: str, index: dict, existing_rows: list[dict], *, show_nonpositive: bool = False,
+) -> list:
     years = [int(year) for year in re.findall(r"20\d{2}", question)]
     companies = {ref.entity for ref in index.values() if ref.entity and ref.entity in question}
     observations = _annual_financial_observations(index, companies, years)
     candidates = []
+    nonpositive = {}
     for key, (_, cash_id) in observations.items():
-        company, scope, currency, _, metric = key
+        company, scope, currency, year, metric = key
         if metric != "operating_cash_flow" or scope != "consolidated" or currency != "CNY":
             continue
         if net_profit := observations.get((*key[:-1], "parent_net_profit")):
+            if show_nonpositive and net_profit[0] <= 0:
+                label = "亏损，净现比不具可比性" if net_profit[0] < 0 else "归母净利润为零，净现比不适用"
+                nonpositive[(company, year)] = (label, [cash_id, net_profit[1]])
             candidates.append({"company": company, "calculations": {"cash_to_net_profit": {
                 "formula": "operating_cash_flow/parent_net_profit",
                 "input_record_ids": [cash_id, net_profit[1]],
@@ -234,9 +240,13 @@ def _annual_cash_ratios(question: str, index: dict, existing_rows: list[dict]) -
         if set(ids) != operands:
             continue
         by_company_year.setdefault((entity, year), {})[ratio["value"]] = ids
-    return [([entity, str(year), f"{value:.2f} 倍"], ids)
-            for (entity, year), values in sorted(by_company_year.items()) if len(values) == 1
-            for value, ids in values.items()]
+    qualified = {
+        key: (f"{value:.2f} 倍", ids)
+        for key, values in by_company_year.items() if len(values) == 1
+        for value, ids in values.items()
+    }
+    return [([entity, str(year), label], ids)
+            for (entity, year), (label, ids) in sorted({**qualified, **nonpositive}.items())]
 
 
 def _revenue_cash_divergence(question: str, index: dict) -> list:
@@ -514,8 +524,28 @@ def _chart_contract_issues(chart: Any, index: dict[str, Any], groups: dict | Non
     return list(dict.fromkeys(problems))
 
 
+def _resolve_answer_chart_links(request: "ReportFusionRequest") -> "ReportFusionRequest":
+    plan = (request.charts.question_plan or {}) if request.charts else {}
+    if plan.get("mode") != "apply":
+        return request
+    coverage = {item["question_id"]: item for item in plan.get("coverage") or []
+                if isinstance(item, dict) and item.get("question_id")}
+    answers = []
+    for answer in request.chapters.question_answers:
+        actual = coverage.get(answer.get("question_id"))
+        answers.append({
+            **answer,
+            "chart_ids": list(actual.get("chart_ids") or []),
+            "chart_gaps": list(actual.get("uncovered") or []),
+        } if actual is not None else answer)
+    return request.model_copy(update={
+        "chapters": request.chapters.model_copy(update={"question_answers": answers}),
+    })
+
+
 def _check_final_view(
-    chapters: list[Any], embedded: list[Any], request: "ReportFusionRequest", summary: Any = None
+    chapters: list[Any], embedded: list[Any], request: "ReportFusionRequest", summary: Any = None,
+    *, competition_relaxations: list[str] | None = None,
 ) -> tuple[list[str], list[str]]:
     """对**最终要导出的对象**做校验，而不是复用编辑前的输入诊断。
 
@@ -535,7 +565,20 @@ def _check_final_view(
         blocking.append("产业链关系未完整核验：" + str(chain_delivery.get("reason") or "证据不足"))
     requested_count = chart_quality.get('requested_count') if isinstance(chart_quality, dict) else None
     if isinstance(requested_count, int) and not isinstance(requested_count, bool) and requested_count > len(embedded):
-        blocking.append(f"用户要求 {requested_count} 张图表，最终报告嵌入 {len(embedded)} 张")
+        finding = f"用户要求 {requested_count} 张图表，最终报告嵌入 {len(embedded)} 张"
+        placed = {chart.chart_id for chart in embedded}
+        answers = request.chapters.question_answers if competition_relaxations is not None else []
+        chart_answers = [
+            answer for answer in answers
+            if answer.get("chart_ids") or answer.get("chart_gaps")
+        ]
+        if (competition_relaxations is not None and chart_answers
+                and all(set(answer.get("chart_ids") or []) & placed and not answer.get("chart_gaps")
+                        for answer in chart_answers)):
+            competition_relaxations.append(finding)
+            warnings.append(finding)
+        else:
+            blocking.append(finding)
     if chapters and not any(para.text.strip() for chapter in chapters
                             for section in chapter.sections for para in section.paragraphs):
         blocking.append("报告正文没有可交付的核验段落")
@@ -965,6 +1008,7 @@ class ReportFusionAgent:
         await record("final_claim_repair_completed", selected=len(pending), repaired=repaired)
 
     async def run(self,request:ReportFusionRequest,emit:EventEmitter|None=None,save_artifacts:bool=True)->ReportFusionResult:
+        request = _resolve_answer_chart_links(request)
         run_id=f"report-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}";report_id=f"REPORT-{secrets.token_hex(6).upper()}";artifact_dir=self.settings.output_dir/"runs"/run_id if save_artifacts else None;events=[]
         async def record(event:str,**details):
             item={"timestamp":datetime.now().astimezone().isoformat(),"event":event,"details":details};events.append(item)
@@ -975,6 +1019,8 @@ class ReportFusionAgent:
         skills, skill_reasons = await self._plan_editorial_skills(request, record)
         await record("skills_applied",skills=[skill.name for skill in skills])
         issues,warnings=self._check_inputs(request)
+        competition = request.options.delivery_profile == "competition"
+        competition_relaxations: list[str] = []
         chapters=[c.model_copy(deep=True) for c in request.chapters.chapters]
         self._reconcile_market_cap_consistency(chapters, request)
         summary=self._default_summary(request)
@@ -1050,7 +1096,10 @@ class ReportFusionAgent:
             embedded = [chart for chart in embedded if chart.chart_id not in invalid_chart_ids]
             quality_issues.extend(dict(code="chart_contract", severity="error", location=cid,
                 evidence_ids=[], suggestion="修正图表语义契约后重新生成") for cid in sorted(invalid_chart_ids))
-        final_blocking, final_warnings = _check_final_view(chapters, embedded, request, summary)
+        final_blocking, final_warnings = _check_final_view(
+            chapters, embedded, request, summary,
+            competition_relaxations=competition_relaxations if competition else None,
+        )
         baseline_ids = {
             row["requirement"]["requirement_id"] for row in requirement_matrix
             if (row.get("requirement") or {}).get("comparison_baseline")
@@ -1060,9 +1109,6 @@ class ReportFusionAgent:
         quality_issues.extend(dict(code="required_financial_cell", severity="error", location=cell.get("requirement_id"),
             claim=cell.get("label"), evidence_ids=cell.get("evidence_record_ids", []), suggestion="补齐指定年度指标")
             for cell in cells if not cell.get("passed"))
-        known_claims = {str(q.get("claim", "")) for q in quality_issues}
-        quality_issues.extend(dict(code="delivery_rule", severity="error", location="report", claim=problem,
-            evidence_ids=[], suggestion="解决质量问题后重新融合") for problem in issues if problem not in known_claims)
         for w in final_warnings:
             if w not in warnings:
                 warnings.append(w)
@@ -1124,7 +1170,9 @@ class ReportFusionAgent:
             if chart_records:
                 paragraphs = [p for p in paragraphs if chart_records.intersection(p.evidence_ids)]
             if re.search(r"净现比|现金流.{0,20}利润.{0,12}倍数", question):
-                cash_ratios = _annual_cash_ratios(question, request.report.evidence_index, ratio_rows)
+                cash_ratios = _annual_cash_ratios(
+                    question, request.report.evidence_index, ratio_rows, show_nonpositive=competition,
+                )
                 question_table_evidence.update(rid for _, ids in cash_ratios for rid in ids)
             if "增收不增现" in question:
                 revenue_cash_divergence = _revenue_cash_divergence(question, request.report.evidence_index)
@@ -1179,6 +1227,11 @@ class ReportFusionAgent:
                     rid for p in paragraphs for rid in p.evidence_ids
                 ).intersection(request.report.evidence_index)),
                 "chart_ids": [c.chart_id for c in linked_charts],
+                "chart_gaps": list(dict.fromkeys([
+                    *(answer.get("chart_gaps") or []),
+                    *(["部分关联图表未进入终稿"] if set(answer.get("chart_ids") or [])
+                      - {c.chart_id for c in linked_charts} else []),
+                ])),
                 "cash_ratios": cash_ratios,
                 "revenue_cash_divergence": revenue_cash_divergence,
                 "financial_tables": financial_tables,
@@ -1201,10 +1254,47 @@ class ReportFusionAgent:
                 row["status"] = "answer_withheld"
                 final_blocking.append(f"必答内容尚未通过核验：{row['label'] or requirement_id}")
         safe_appendix["requirement_output_links"] = output_links
-        if artifact_dir and (quality_issues or content_audit):
+        answered_sections = {answer["section_id"] for answer in question_answers if (
+            answer.get("paragraph_ids") or answer.get("chart_ids") or answer.get("financial_tables")
+            or answer.get("cash_ratios") or answer.get("revenue_cash_divergence")
+        )}
+        question_sections = {answer.get("section_id") for answer in request.chapters.question_answers}
+        if (
+            competition and _CHAPTER_QUALITY_BLOCK in issues and not final_blocking
+            and question_sections <= answered_sections
+            and input_chapter_issues
+            and all(str(issue).startswith("段落资料缺口：") for issue in input_chapter_issues)
+            and content_audit
+            and all(
+                entry.get("code") in {"chapter_claim_repair", "chapter_component_isolation"}
+                and entry.get("disposition") in {"repaired", "isolated", "partially_retained"}
+                for entry in content_audit
+            )
+            and not any(chapter.used_fallback for chapter in chapters)
+            and all(
+                any(p.text.strip() and p.kind != "transition" for p in section.paragraphs)
+                or section.section_id in answered_sections
+                or (section.section_id not in question_sections and any(
+                    note.strip() and not note.lstrip().startswith("CHART-") for note in section.uncertainties
+                ))
+                for chapter in chapters for section in chapter.sections
+            )
+        ):
+            recovered_chapter_claims = True
+            issues.remove(_CHAPTER_QUALITY_BLOCK)
+            competition_relaxations.append(_CHAPTER_QUALITY_BLOCK)
+            warnings.append("章节局部缺口已处置，保留审计记录，交付以最终成稿核验为准。")
+        if competition and rejected:
+            competition_relaxations.append(f"已拒绝 {rejected} 条缺乏证据的编辑建议")
+        rejected_blocks_delivery = bool(rejected and not competition)
+        known_claims = {str(q.get("claim", "")) for q in quality_issues}
+        quality_issues.extend(dict(code="delivery_rule", severity="error", location="report", claim=problem,
+            evidence_ids=[], suggestion="解决质量问题后重新融合") for problem in issues if problem not in known_claims)
+        if artifact_dir and (quality_issues or content_audit or competition):
             artifact_dir.mkdir(parents=True, exist_ok=True)
             (artifact_dir / "fact_audit.json").write_text(json.dumps({
                 "quality_issues": quality_issues, "content_audit": content_audit,
+                **({"competition_relaxations": competition_relaxations} if competition else {}),
             }, ensure_ascii=False, indent=2), encoding="utf-8")
         ordered_evidence = [
             evidence
@@ -1248,7 +1338,13 @@ class ReportFusionAgent:
             data_quality_appendix=safe_appendix,
             warnings=all_warnings,
             quality_issues=quality_issues,
-            fact_audit={"schema_version": "1", "unsupported_quantities": sum(q.get("code") == "unsupported_quantity" for q in quality_issues), "formal_verified": not (issues or final_blocking), "chapter_claims_recovered": recovered_chapter_claims},
+            fact_audit={
+                "schema_version": "1",
+                "unsupported_quantities": sum(q.get("code") == "unsupported_quantity" for q in quality_issues),
+                "formal_verified": not (issues or final_blocking),
+                "chapter_claims_recovered": recovered_chapter_claims,
+                **({"competition_relaxations": competition_relaxations} if competition else {}),
+            },
             key_metrics=km_list,
             comps_matrix=cm_dict,
             question_answers=question_answers,
@@ -1260,7 +1356,9 @@ class ReportFusionAgent:
             final_charts_dir.mkdir(parents=True, exist_ok=True)
             for chart in view.charts:
                 (final_charts_dir / f"{chart.chart_id}.svg").write_text(chart.svg, encoding="utf-8")
-        md=render_markdown(view);html=render_html(view)
+        index_mode = request.options.source_index_mode
+        md = render_markdown(view, source_index_mode=index_mode)
+        html = render_html(view, source_index_mode=index_mode)
         async def save(kind:str,name:str,data:bytes):
             if artifact_dir:
                 path=artifact_dir/name;path.write_bytes(data);artifacts.append(ArtifactEntry(kind=kind,uri=str(path.resolve()),sha256=_sha(data),size_bytes=len(data)))
@@ -1295,7 +1393,7 @@ class ReportFusionAgent:
 
         if not successful:
             status = "failed"
-        elif missing_formats or final_blocking or rejected:
+        elif missing_formats or final_blocking or rejected_blocks_delivery:
             status = "partial"
         else:
             status = "completed"
@@ -1304,7 +1402,7 @@ class ReportFusionAgent:
         # - failed / partial / 缺格式 / 仍有阻塞项  → ready_with_limits
         # - 仅剩非阻断的技术性提示                  → ready
         has_substantive_limit = bool(
-            missing_formats or final_blocking or empty_outputs or rejected or not successful
+            missing_formats or final_blocking or empty_outputs or rejected_blocks_delivery or not successful
         )
         final_delivery = "ready_with_limits" if has_substantive_limit else "ready"
         previous_delivery = view.delivery_status
@@ -1317,7 +1415,7 @@ class ReportFusionAgent:
             revoked: list[str] = []
             if "markdown" in successful:
                 try:
-                    md = render_markdown(view)
+                    md = render_markdown(view, source_index_mode=index_mode)
                     _rewrite(artifact_dir, "report.md", md.encode())
                 except Exception as exc:
                     revoked.append("markdown")
@@ -1326,7 +1424,7 @@ class ReportFusionAgent:
             html_formats = [fmt for fmt in ("html", "pdf") if fmt in successful]
             if html_formats:
                 try:
-                    final_html = render_html(view)
+                    final_html = render_html(view, source_index_mode=index_mode)
                 except Exception as exc:
                     for fmt in html_formats:
                         revoked.append(fmt)

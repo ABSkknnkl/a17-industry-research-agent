@@ -1,0 +1,35 @@
+{
+  "engine": "five_agents",
+  "chain_engine": "",
+  "chain_requested": true,
+  "research_strategy": "profile_guided",
+  "profile_id": null,
+  "profile_version": null,
+  "reference_release_id": "2026-10-31-r1",
+  "model_configuration": {
+    "model": "deepseek-v4-flash",
+    "base_url": "https://ark.cn-beijing.volces.com/api/plan/v3",
+    "timeout_seconds": 600,
+    "reasoning_effort": "low",
+    "thinking": "disabled"
+  },
+  "input_sha256": "3f452a47f689215ac69bd6c704a4b5e8042b99da4462cfec5d53555ee9fee768",
+  "source_sha256": "bbbcbbbf9a6590d163cddc6c30c3ea2d1661c4665d7f7ce4f2f2f7577f0f7d02",
+  "validation_version": "report-integrity-1",
+  "usage_capture": "not_exposed_by_provider_client",
+  "source_policy_version": "source-policy-v1",
+  "resolved_at": "2026-11-14T21:11:37.911198",
+  "legacy": false,
+  "question_planner_mode": "off",
+  "question_planner_params": {
+    "max_cards_per_question": 12,
+    "max_prompt_cards": 48,
+    "timeout_seconds": 60,
+    "completion_budget": 4096
+  },
+  "question_contract_sha256": null,
+  "notes": [
+    "缺少已审画像且未启用开放研究，产业链仅按环节分类呈现",
+    "reference_release=2026-10-31-r1"
+  ]
+}

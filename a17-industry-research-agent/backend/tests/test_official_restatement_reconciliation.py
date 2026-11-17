@@ -480,3 +480,20 @@ def test_replaying_same_restatement_does_not_duplicate_effective_replacement():
     assert len(first) == 1
     assert all(change.get("status") == "already_adjusted" for change in second)
     assert len(dataset.financials) == 1 and abs(dataset.financials[0].value - 17.14) < 1e-9
+
+
+def test_verified_newer_filing_is_not_blocked_by_an_older_search_hit():
+ from data_fetcher.models import EventRecord, SourceRef
+ src=SourceRef(task_id='announcement',skill_id='announcement-search',skill_version='1',query='',
+               trace_id='t',retrieved_at=datetime(2026,7,1,tzinfo=timezone.utc))
+ dataset=DataFusion().fuse([result()],date(2025,4,23))
+ item=dataset.financials[0]
+ item.published_at=date(2026,3,12)
+ item.source=item.source.model_copy(update={'skill_id':'verified-observation','status':'verified'})
+ dataset.events=[EventRecord(record_id='clue',entity_name='国轩高科',entity_code='002074.SZ',
+  title='关于更正2023年财务报告的公告',event_type='announcement',announce_date=date(2025,4,1),source=src)]
+ assert DataFusion._mark_unverified_restatement_clues(dataset,date(2026,7,1),[])==[]
+ assert 'pending_restatement' not in item.issues
+ dataset.events[0].announce_date=date(2026,4,1)
+ assert DataFusion._mark_unverified_restatement_clues(dataset,date(2026,7,1),[])
+ assert 'pending_restatement' in item.issues

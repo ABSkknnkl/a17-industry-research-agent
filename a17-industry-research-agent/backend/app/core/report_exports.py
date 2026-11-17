@@ -72,7 +72,8 @@ def refresh_edited_exports(state: WorkflowState, run_dir: Path, edits: dict[str,
             ]
         canonical = {k: v for k, v in raw.items() if k in ReportViewModel.model_fields}
         view = ReportViewModel.model_validate(canonical)
-        markdown, html = render_markdown(view), render_html(view)
+        markdown = render_markdown(view, source_index_mode="compact")
+        html = render_html(view, source_index_mode="compact", embedded_preview=True)
         rating = str(raw.get("investment_rating") or "").strip()
         if rating:
             markdown += f"\n\n## 人工确认评级\n\n{rating}\n"

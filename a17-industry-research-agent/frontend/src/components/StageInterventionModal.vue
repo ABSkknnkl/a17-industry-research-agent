@@ -78,6 +78,7 @@ const props = defineProps<{
   annotations?: UserAnnotation[]
   submitting?: boolean
   initialTab?: string
+  chapterRepair?: { chapters: number[]; instruction: string }
 }>()
 
 const emit = defineEmits<{
@@ -1124,6 +1125,15 @@ watch(
         initChartData()
       } else if (props.stage === 'chapter_write') {
         initChapterEditData()
+        if (props.chapterRepair) {
+          const { chapters, instruction } = props.chapterRepair
+          selectedRevisionTags.value = []
+          revisionScope.value = chapters.length === 1 ? 'single' : 'all'
+          if (chapters.length === 1) {
+            targetChapterId.value = `CH-${String(chapters[0]).padStart(2, '0')}`
+          }
+          revisionRequirementText.value = instruction
+        }
       } else if (props.stage === 'report_fusion') {
         initMetricCards()
         initFusionSummary()

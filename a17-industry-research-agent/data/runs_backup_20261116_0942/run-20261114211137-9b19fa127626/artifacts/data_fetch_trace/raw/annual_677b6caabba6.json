@@ -1,0 +1,95 @@
+{
+  "QTime": 310,
+  "query": "亿纬锂能 2025年营业收入 2025年经营活动产生的现金流量净额",
+  "columns": [
+    {
+      "index_name": "股票代码",
+      "key": "股票代码",
+      "feKey": "股票代码",
+      "type": "STR",
+      "label": "code",
+      "source": "index"
+    },
+    {
+      "index_name": "股票简称",
+      "key": "股票简称",
+      "feKey": "股票简称",
+      "type": "STR",
+      "label": "name",
+      "source": "index"
+    },
+    {
+      "index_name": "最新股价",
+      "key": "最新价",
+      "feKey": "最新价",
+      "type": "DOUBLE",
+      "label": "price",
+      "source": "index"
+    },
+    {
+      "index_name": "最新涨跌幅",
+      "key": "最新涨跌幅",
+      "feKey": "最新涨跌幅",
+      "type": "DOUBLE",
+      "unit": "%",
+      "label": "ratio",
+      "source": "index"
+    },
+    {
+      "index_name": "营业收入",
+      "key": "营业收入[20251231]",
+      "feKey": "营业收入[20251231]",
+      "type": "DOUBLE",
+      "unit": "元",
+      "label": "财务报表",
+      "timestamp": "20251231",
+      "source": "index"
+    },
+    {
+      "index_name": "经营活动产生的现金流量净额",
+      "key": "经营活动产生的现金流量净额[20251231]",
+      "feKey": "经营活动产生的现金流量净额[20251231]",
+      "type": "DOUBLE",
+      "unit": "元",
+      "label": "财务报表",
+      "timestamp": "20251231",
+      "source": "index"
+    },
+    {
+      "index_name": "营业收入(同比增长率)",
+      "key": "营业收入同比增长率[20251231]",
+      "feKey": "营业收入同比增长率[20251231]",
+      "type": "DOUBLE",
+      "unit": "%",
+      "label": "风险等级B",
+      "timestamp": "20251231",
+      "source": "index"
+    },
+    {
+      "index_name": "归属于母公司所有者的净利润_off",
+      "key": "归母净利润[20251231]",
+      "feKey": "归母净利润[20251231]",
+      "type": "DOUBLE",
+      "unit": "元",
+      "timestamp": "20251231",
+      "source": "index"
+    }
+  ],
+  "datas": [
+    {
+      "股票代码": "300014.SZ",
+      "股票简称": "亿纬锂能",
+      "最新价": "45.84",
+      "最新涨跌幅": -2.468085,
+      "营业收入[20251231]": 61469630776.09,
+      "经营活动产生的现金流量净额[20251231]": 7492131666.79,
+      "营业收入同比增长率[20251231]": 26.4428,
+      "归母净利润[20251231]": 4134303670.89
+    }
+  ],
+  "row_count": 1,
+  "code_count": 1,
+  "chunks_info": "[\"亿纬锂能 (1)\",\"2025年亿纬锂能的营业收入,经营活动产生的现金流量净额 (1)\"]",
+  "status_code": 0,
+  "token": "0ac9b60017946619494651316"
+}

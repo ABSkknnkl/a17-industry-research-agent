@@ -2314,6 +2314,16 @@ class DataFetcherAgent:
                 if record.entity_name == name and len(codes) <= 1:
                     return name
             return None
+        def accepted_source(record: ResearchRecord) -> bool:
+            source = record.source
+            return (
+                not requirement.acceptable_skill_ids
+                or source.skill_id in requirement.acceptable_skill_ids
+                or (requirement.domain == Domain.FINANCIALS and source.skill_id == "official-restatement")
+                or (requirement.domain in (Domain.FINANCIALS, Domain.INDUSTRY)
+                    and source.skill_id == "verified-observation" and source.status == "verified")
+            )
+
         rejected: dict[str, list[str]] = {}
         conflict_ids = {rid for conflict in getattr(dataset, "conflicts", []) for rid in conflict.record_ids}
         as_of = getattr(dataset, "research_as_of", None)
@@ -2340,9 +2350,7 @@ class DataFetcherAgent:
                         or not re.fullmatch(r"[0-9a-f]{64}", str(raw.get("document_sha256") or ""))
                         or not re.match(r"PDF 第[1-9]\d*页", str(raw.get("source_locator") or ""))):
                     reasons.append("unverified_official_source")
-            if requirement.acceptable_skill_ids and record.source.skill_id not in requirement.acceptable_skill_ids and not (
-                requirement.domain == Domain.FINANCIALS and record.source.skill_id == "official-restatement"
-            ):
+            if not accepted_source(record):
                 reasons.append("source_mismatch")
             if requirement.entity_names and target_entity(record) is None:
                 reasons.append("entity_mismatch")
@@ -2398,10 +2406,7 @@ class DataFetcherAgent:
                 rejected[record.record_id] = reasons
         records = [record for record in records if record.record_id not in rejected]
         if requirement.acceptable_skill_ids:
-            records = [
-                item for item in records if item.source.skill_id in requirement.acceptable_skill_ids
-                or (requirement.domain == Domain.FINANCIALS and item.source.skill_id == "official-restatement")
-            ]
+            records = [item for item in records if accepted_source(item)]
         if requirement.entity_names:
             records = [r for r in records if target_entity(r) is not None]
         if requirement.period_ends and not monthly_window:

@@ -355,3 +355,108 @@ def test_question_and_conclusion_indices_use_final_report_evidence(tmp_path, cha
     assert f'href="#{source_anchor}">[1]</a>' in html
     assert 'id="SEC-01-01"' in html
     assert "本期市场规模如何？" in (root / "report.md").read_text()
+
+
+@pytest.mark.parametrize(
+    ("profile", "required_gap", "expected"),
+    [
+        ("standard", False, "ready_with_limits"),
+        ("competition", False, "ready"),
+        ("competition", True, "ready_with_limits"),
+    ],
+)
+def test_competition_rechecks_final_draft_after_optional_isolation(tmp_path, profile, required_gap, expected):
+    report, chapters = inputs()
+    chapters.status = "partial"
+    chapters.quality = {"passed": False, "issues": ["段落资料缺口：非核心指标卡被隔离"]}
+    chapters.chapters[0].content_audit = [{
+        "code": "chapter_component_isolation",
+        "disposition": "isolated",
+        "location": "SEC-01-01",
+        "claim": "非核心指标卡被隔离",
+    }]
+    if required_gap:
+        report.data_quality_appendix["requested_requirement_coverage"] = [{
+            "requirement_id": "annual_revenue",
+            "hard": True,
+            "passed": False,
+            "label": "指定年度营收",
+        }]
+    options = FusionOptions(
+        delivery_profile=profile, formats=["markdown", "html"], enable_editorial_llm=False,
+    )
+    result = asyncio.run(ReportFusionAgent(settings=Settings(output_dir=tmp_path)).run(
+        ReportFusionRequest(report=report, chapters=chapters, options=options),
+    ))
+    view = json.loads((Path(result.artifact_dir) / "report_view.json").read_text())
+    assert view["delivery_status"] == expected
+    assert result.consistency.passed is (expected == "ready")
+    if required_gap:
+        assert any("指定年度营收" in item for item in result.consistency.issues)
+    elif profile == "competition":
+        assert view["fact_audit"]["chapter_claims_recovered"] is True
+        assert view["fact_audit"]["competition_relaxations"]
+
+
+def test_competition_can_discard_unsafe_editorial_suggestion_without_downgrading(tmp_path):
+    report, chapters = inputs()
+    agent = ReportFusionAgent(settings=Settings(output_dir=tmp_path), llm=UnsafeLLM())
+    result = asyncio.run(agent.run(ReportFusionRequest(
+        report=report, chapters=chapters,
+        options=FusionOptions(delivery_profile="competition", formats=["markdown"]),
+    )))
+    assert result.status == "completed"
+    assert result.consistency.rejected_edits >= 1
+    report_path = Path(result.artifact_dir) / "report.md"
+    assert "9999" not in report_path.read_text()
+
+
+def test_report_does_not_repeat_question_excerpt_or_expose_internal_fields(tmp_path):
+    from report_fusion.models import ReportViewModel
+    from report_fusion.render import render_html, render_markdown
+
+    report, chapters = inputs()
+    chapters.question_answers = [
+        {
+            "question_id": f"Q-{i}",
+            "text": f"市场如何变化（问题 {i}）？",
+            "section_id": "SEC-01-01",
+            "paragraph_ids": ["P-1-1"],
+            "evidence_record_ids": ["R1"],
+        }
+        for i in (1, 2)
+    ]
+    result = asyncio.run(ReportFusionAgent(settings=Settings(output_dir=tmp_path)).run(
+        ReportFusionRequest(report=report, chapters=chapters,
+                            options=FusionOptions(formats=["markdown"], enable_editorial_llm=False)),
+    ))
+    view = ReportViewModel.model_validate_json((Path(result.artifact_dir) / "report_view.json").read_bytes())
+    text = "行业供需规模应结合适用样本与报告期判断。"
+    view.chapters[0].sections[0].paragraphs[0].text = text
+    view.executive_summary.headline = "从现有资料看市场结构。逐年数值见 evidence_record_ids。"
+    view.fact_audit["competition_relaxations"] = []
+    view.question_answers[0]["unmet_requirement_ids"] = ["M1"]
+    view.data_quality_appendix["requirement_output_links"] = [
+        {"requirement_id": "M1", "label": "测试公司 2025年全年 operating_cash_flow"}
+    ]
+    for rendered in (render_markdown(view), render_html(view)):
+        assert rendered.count(text) == 1
+        assert "evidence_record_ids" not in rendered
+        assert "测试公司 2025年全年 经营性现金流净额" in rendered
+
+
+def test_report_uses_current_published_chart_links_instead_of_old_a4_links():
+    from report_fusion.agent import _resolve_answer_chart_links
+    from report_fusion.models import ChartResult
+
+    report, chapters = inputs()
+    chapters.question_answers = [{"question_id": "Q-1", "text": "走势如何？", "chart_ids": ["old"]}]
+    charts = ChartResult(question_plan={
+        "mode": "apply",
+        "coverage": [{"question_id": "Q-1", "chart_ids": ["current"], "uncovered": ["出口量"]}],
+    })
+    request = ReportFusionRequest(report=report, chapters=chapters, charts=charts)
+    resolved = _resolve_answer_chart_links(request)
+    assert resolved.chapters.question_answers[0]["chart_ids"] == ["current"]
+    assert resolved.chapters.question_answers[0]["chart_gaps"] == ["出口量"]
+    assert request.chapters.question_answers[0]["chart_ids"] == ["old"]

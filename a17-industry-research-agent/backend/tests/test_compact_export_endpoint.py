@@ -340,3 +340,50 @@ class TestSharedEligibilityCompatibility:
         assert 'filename="draft-report-compact-r3.zip"' in draft_post.headers["content-disposition"]
         assert draft_post.headers["x-report-release-mode"] == "draft_with_warnings"
         assert post(client, run, mode="formal").status_code == 409
+
+
+def test_non_object_report_view_requires_regeneration(client, tmp_path, fake_build):
+    run_id, _ = setup_run(tmp_path)
+    view = storage.get_run_dir(run_id) / "artifacts" / "report_view.json"
+    view.write_text("[]", encoding="utf-8")
+    response = client.post(
+        f"/api/v1/runs/{run_id}/exports/compact",
+        json={"mode": "formal", "expected_revision": 3},
+    )
+    assert response.status_code == 409
+
+
+@pytest.mark.parametrize("mode", ["formal", "draft"])
+def test_evidence_index_download_is_separate_and_revision_checked(client, tmp_path, mode):
+    import csv
+    run_id, _ = setup_run(tmp_path, mode=mode)
+    url = f"/api/v1/runs/{run_id}/exports/evidence-index"
+    response = client.get(url, params={"mode": mode, "expected_revision": 3})
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert response.headers["cache-control"] == "private, no-store"
+    name = ("draft-" if mode == "draft" else "") + "evidence_index.csv"
+    assert f'filename="{name}"' in response.headers["content-disposition"]
+    rows = list(csv.DictReader(io.StringIO(response.content.decode("utf-8-sig"))))
+    assert [(row["number"], row["record_id"]) for row in rows] == [("1", "R1")]
+    assert client.get(url, params={"mode": mode, "expected_revision": 2}).status_code == 409
+    other_mode = "formal" if mode == "draft" else "draft"
+    assert client.get(url, params={"mode": other_mode, "expected_revision": 3}).status_code == 409
+    assert not (storage.get_run_dir(run_id) / "artifacts" / "evidence_index.csv").exists()
+
+
+def test_workbench_preview_uses_compact_index_for_an_existing_full_report(client, tmp_path):
+    run_id, _ = setup_run(tmp_path)
+    root = storage.get_run_dir(run_id) / "artifacts"
+    html = root / "report.html"
+    html.write_text("<p>原来的附录</p>", encoding="utf-8")
+    state = storage.load_state(run_id)
+    state.stage_results["report_fusion"].artifacts.append(
+        ArtifactRef(artifact_id="report_html", kind="report_html", uri=str(html), revision=3)
+    )
+    storage.save_state(state)
+    response = client.get(f"/api/v1/runs/{run_id}/report-preview")
+    assert response.status_code == 200
+    assert 'class="source-summary-note"' in response.text
+    assert 'href="evidence_index.csv"' not in response.text
+    assert "原来的附录" in html.read_text()

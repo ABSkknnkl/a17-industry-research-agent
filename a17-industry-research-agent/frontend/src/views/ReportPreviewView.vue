@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import EvidenceIndexDownload from '../components/EvidenceIndexDownload.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { downloadArtifact, triggerBlobDownload, getRun } from '../api/client'
+import { downloadArtifact, triggerBlobDownload, getRun, getReportPreview } from '../api/client'
 import { ApiError } from '../api/http'
+import { artifactDownloadMode, classifyReportDownload } from '../api/reportGate'
 import { ElMessage } from 'element-plus'
 import { Download } from '@element-plus/icons-vue'
 import {
@@ -36,15 +38,23 @@ const fusion = computed<ReportFusionData | null>(() => {
   return raw && typeof raw === 'object' ? (raw as unknown as ReportFusionData) : null
 })
 
-const artifacts = computed<ArtifactRef[]>(() => fusionResult.value?.artifacts ?? [])
+const artifacts = computed<ArtifactRef[]>(() => {
+  const current = workflow.value
+  const available = fusionResult.value?.artifacts ?? []
+  if (!current?.report_download) return available
+  return available.filter((artifact) => artifactDownloadMode(current, artifact.artifact_id))
+})
 
 const htmlArtifact = computed(() => artifacts.value.find((a) => a.kind === 'report_html') ?? null)
 const pdfArtifact = computed(() => artifacts.value.find((a) => a.kind === 'report_pdf') ?? null)
 const mdArtifact = computed(() => artifacts.value.find((a) => a.kind === 'report_markdown') ?? null)
 
-const downloadMode = computed<'formal' | 'draft'>(() =>
-  fusion.value?.draft_available || fusion.value?.quality_notice ? 'draft' : 'formal'
-)
+function downloadMode(artifact: ArtifactRef): 'formal' | 'draft' {
+  const current = workflow.value
+  if (current?.report_download)
+    return artifactDownloadMode(current, artifact.artifact_id) ?? 'formal'
+  return fusion.value?.draft_available || fusion.value?.quality_notice ? 'draft' : 'formal'
+}
 const exportingKind = ref<string | null>(null)
 
 async function exportSingle(kind: 'pdf' | 'html' | 'markdown'): Promise<void> {
@@ -60,7 +70,7 @@ async function exportSingle(kind: 'pdf' | 'html' | 'markdown'): Promise<void> {
 
   exportingKind.value = kind
   try {
-    const { blob, filename } = await downloadArtifact(runId.value, target, downloadMode.value)
+    const { blob, filename } = await downloadArtifact(runId.value, target, downloadMode(target))
     triggerBlobDownload(blob, filename)
     ElMessage.success(`《${filename}》导出成功`)
   } catch (e) {
@@ -81,6 +91,13 @@ function goToDownloadAll(): void {
  * 但审核人仍需知道「为什么受限、有多少项、具体是哪几项」。把明细
  * 收进可展开区，既不打扰阅读，也不隐瞒限制（计划 T5）。
  */
+const previewOnly = computed(() =>
+  Boolean(
+    workflow.value?.report_download?.preview_available &&
+    !classifyReportDownload(workflow.value).downloadable
+  )
+)
+
 const limitedDelivery = computed(() => {
   const data = fusion.value
   if (!data) return false
@@ -109,6 +126,7 @@ const title = computed(() => fusion.value?.title ?? '报告预览')
 const objectUrl = ref('')
 const frameSrc = ref('')
 const frameLoading = ref(false)
+let loadGeneration = 0
 const previewError = ref('')
 
 /**
@@ -129,36 +147,51 @@ function revokeFrame(): void {
   frameSrc.value = ''
 }
 
-async function loadReportHtml(): Promise<void> {
+async function loadReportHtml(generation: number): Promise<void> {
+  const options = workflow.value?.report_download
   const artifact = htmlArtifact.value
-  if (!artifact) return
+  if (options ? !options.preview_available : !artifact) return
   frameLoading.value = true
   previewError.value = ''
   try {
-    const { blob } = await downloadArtifact(runId.value, artifact, downloadMode.value)
+    const blob = options
+      ? await getReportPreview(runId.value)
+      : artifact && (await downloadArtifact(runId.value, artifact, downloadMode(artifact))).blob
+    if (!blob || generation !== loadGeneration) return
     revokeFrame()
     objectUrl.value = URL.createObjectURL(blob)
     frameSrc.value = requestedAnchor.value
       ? `${objectUrl.value}#${requestedAnchor.value}`
       : objectUrl.value
   } catch (e) {
-    previewError.value = e instanceof ApiError ? e.message : '报告加载失败，请稍后重试'
+    if (generation === loadGeneration) {
+      previewError.value = e instanceof ApiError ? e.message : '报告加载失败，请稍后重试'
+    }
   } finally {
-    frameLoading.value = false
+    if (generation === loadGeneration) frameLoading.value = false
   }
 }
 
 // ---------------- 加载 ----------------
 async function load(): Promise<void> {
+  const generation = ++loadGeneration
   loading.value = true
+  revokeFrame()
+  frameLoading.value = false
+  previewError.value = ''
+  workflow.value = null
   loadError.value = ''
   try {
-    workflow.value = await getRun(runId.value)
-    await loadReportHtml()
+    const state = await getRun(runId.value)
+    if (generation !== loadGeneration) return
+    workflow.value = state
+    await loadReportHtml(generation)
   } catch (e) {
-    loadError.value = e instanceof ApiError ? e.message : '加载任务失败，请稍后重试'
+    if (generation === loadGeneration) {
+      loadError.value = e instanceof ApiError ? e.message : '加载任务失败，请稍后重试'
+    }
   } finally {
-    loading.value = false
+    if (generation === loadGeneration) loading.value = false
   }
 }
 
@@ -167,7 +200,11 @@ function goBack(): void {
 }
 
 onMounted(load)
-onBeforeUnmount(revokeFrame)
+watch([runId, requestedAnchor], () => void load())
+onBeforeUnmount(() => {
+  loadGeneration += 1
+  revokeFrame()
+})
 </script>
 
 <template>
@@ -220,11 +257,13 @@ onBeforeUnmount(revokeFrame)
           导出 Markdown
         </el-button>
       </el-button-group>
+      <EvidenceIndexDownload :workflow="workflow" />
       <el-button
         type="success"
         plain
         style="margin-left: 10px"
         data-testid="btn-preview-export-all"
+        :disabled="previewOnly"
         @click="goToDownloadAll"
       >
         批量交付物下载
@@ -239,6 +278,14 @@ onBeforeUnmount(revokeFrame)
     :closable="false"
     :title="loadError"
     style="margin-bottom: 12px"
+  />
+
+  <el-alert
+    v-if="previewOnly"
+    type="info"
+    title="待审阅报告，完成终审后可下载正式版本"
+    :closable="false"
+    show-icon
   />
 
   <div v-if="limitedDelivery" class="limited-delivery" data-testid="limited-delivery-banner">

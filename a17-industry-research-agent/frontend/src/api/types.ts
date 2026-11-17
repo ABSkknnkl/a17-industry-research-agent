@@ -71,6 +71,26 @@ export interface StageResult {
   error: string | null
 }
 
+export interface ReportDownloadOptions {
+  preview_available?: boolean
+  formal_artifact_ids: string[]
+  draft_artifact_ids: string[]
+  compact_mode?: 'formal' | 'draft' | null
+}
+
+export interface ReviewDecision {
+  run_id: string
+  stage: StageName
+  revision: number
+  action: 'approve' | 'accept_with_risks'
+  actor: 'user'
+  decision_id: string
+  risk_snapshot_sha256: string
+  accepted_risk_codes: string[]
+  created_at: string
+  comment?: string | null
+}
+
 export interface WorkflowState {
   project_id: string
   run_id: string
@@ -78,6 +98,8 @@ export interface WorkflowState {
   status: StageStatus
   revision: number
   stage_results: Partial<Record<StageName, StageResult>>
+  review_decisions?: ReviewDecision[]
+  report_download?: ReportDownloadOptions | null
   created_at: string
   updated_at: string
 }
@@ -93,10 +115,12 @@ export interface RunSummary {
   updated_at: string
   artifact_count: number
   report_available: boolean
+  draft_available?: boolean
 }
 
 export interface RunListResponse {
   total: number
+  waiting_review_count?: number
   offset: number
   limit: number
   items: RunSummary[]
@@ -320,7 +344,10 @@ export interface ChartFeedbackInterpretation {
 }
 
 /** ChartGenerationOptions（workflow.py L158-169），全部字段可选 */
+export type ChartMode = 'standard' | 'rich' | 'minimal' | 'none' | 'auto'
+
 export interface ChartGenerationOptions {
+  chart_mode?: ChartMode
   question_planner_mode?: 'off' | 'observe' | 'apply'
   chart_type?: ChartTypeName
   requested_chart_count?: number
@@ -355,6 +382,7 @@ export interface ResearchInput {
 
 export interface RunCreateRequest {
   project_id: string
+  delivery_profile?: 'standard' | 'competition'
   input_data: ResearchInput
   review_stages: StageName[]
 }
@@ -369,7 +397,9 @@ export interface DecisionPackage {
   run_id: string
   revision: number
   stage: string
+  risks?: Array<Record<string, unknown>>
   risk_notices?: Array<Record<string, unknown>>
+  recommended_action?: 'approve' | 'accept_with_risks' | 'blocked'
   blocking_risk_codes?: string[]
   acknowledgement_required_codes?: string[]
   risk_snapshot_sha256?: string
@@ -731,4 +761,13 @@ export interface UserAnnotation {
   title: string
   type: 'emphasize' | 'accept' | 'doubt' | 'reject'
   note?: string
+}
+
+export interface ChainDeliveryInfo {
+  requested?: boolean
+  status?: 'not_requested' | 'complete' | 'partial' | 'failed'
+  reason?: string
+  accepted_participations?: number
+  verified_relations?: number
+  certification_available?: boolean
 }
