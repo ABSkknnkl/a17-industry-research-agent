@@ -168,6 +168,7 @@ class ChartGenerationOptions(BaseModel):
     chain_scope: Literal["entity", "industry"] | None = None
     chart_mode: str | None = None
     question_planner_mode: Literal["off", "observe", "apply"] | None = None
+    figure_profile: Literal["default", "a17_nev_2025"] | None = None
     chart_type: str | None = None
     requested_chart_count: int | None = None
     requested_chart_types: list[str] | None = None

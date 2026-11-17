@@ -452,6 +452,13 @@ class ChartGeneratorAgent:
             })
             await record("chart_evidence_excluded", count=len(rejected_evidence))
 
+        if request.figure_profile == "a17_nev_2025":
+            from .nev_template import matches_template, run_template
+
+            if not matches_template(request.report.subject, [brief.text for brief in plan_briefs]):
+                raise ValueError("A17 新能源汽车模板需要对应的五道研究问题")
+            return await run_template(request, run_id, artifact_dir, record, events)
+
         # Check if we have evidence to work with
         has_evidence = bool(request.report.evidence_index)
         has_numeric_or_chain = any(

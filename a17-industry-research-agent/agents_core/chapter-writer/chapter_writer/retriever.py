@@ -326,7 +326,9 @@ class DynamicEvidenceRetriever:
                 chart.recommended_chapter_id for chart in self.charts
                 if chart.status == "ready" and chart.chart_id in question.chart_ids and chart.recommended_chapter_id
             )
-            if chart_chapters:
+            if question.primary_section_id in section_ids:
+                section_id = question.primary_section_id
+            elif chart_chapters:
                 chapter_id = chart_chapters.most_common(1)[0][0]
                 candidates = [section for chapter in outline if chapter.chapter_id == chapter_id for section in chapter.sections]
                 query = Counter(_tokenize(question.text))
@@ -344,7 +346,7 @@ class DynamicEvidenceRetriever:
             if section_id not in section_ids:
                 section_id = sections[-1].section_id
             result.append({
-                **question.model_dump(exclude={"relation_tags", "requirement_ids"}),
+                **question.model_dump(exclude={"relation_tags", "requirement_ids", "primary_section_id"}),
                 "section_id": section_id,
                 "requirements": [
                     {"requirement_id": entry.requirement_id, "label": entry.label,

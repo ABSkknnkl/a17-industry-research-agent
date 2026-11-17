@@ -2,7 +2,7 @@
 from __future__ import annotations
 from agents_core.financial_semantics import (
     financial_calculation_rows, measurement_period, metric_family, money_to_yuan, quantity_issues,
-    covered_data_gap_filter, retain_supported_claims, verified_calculations,
+    covered_data_gap_filter, repair_prose_opening, retain_supported_claims, verified_calculations,
 )
 from agents_core.context_budget import ContextBudgetExceeded, serialize_context
 from collections.abc import Awaitable,Callable
@@ -65,6 +65,8 @@ def _audit_numeric_components(chapters: list[Any], summary: Any, request: Any, *
             )
 
         retained = retain_supported_claims(text, supported)
+        context_refs = [index[rid].model_dump(mode="json") for rid in ids if rid in index]
+        retained = repair_prose_opening(text, retained, context_refs)
         return retained if supported(retained) else ""
     def audit(text: str, ids: list[str], location: str, **qualifiers) -> list[dict]:
         refs = [index[e] for e in ids if e in index]
@@ -408,7 +410,13 @@ def _derived_chart_value(point: dict, index: dict, chart: Any, groups: dict) -> 
     return float(numerator / denominator * 100)
 
 
-def _chart_contract_issues(chart: Any, index: dict[str, Any], groups: dict | None = None) -> list[str]:
+def _chart_contract_issues(
+    chart: Any, index: dict[str, Any], groups: dict | None = None, as_of=None,
+) -> list[str]:
+    if (getattr(chart, "data_contract", {}) or {}).get("template_figure") is not None:
+        from chart_generator.nev_template import validate_template_chart
+
+        return validate_template_chart(chart, index, as_of) if as_of else ["缺少模板图表核验基准日"]
     if getattr(chart, "chart_type", "") == "industry_chain":
         return []
     contract = getattr(chart, "data_contract", {}) or {}
@@ -559,6 +567,12 @@ def _check_final_view(
     """
     blocking: list[str] = []
     warnings: list[str] = []
+    if getattr(request.charts, "figure_profile", None) == "a17_nev_2025":
+        from chart_generator.nev_template import QUESTIONS
+
+        present = [c.data_contract.get("template_figure") for c in embedded]
+        if sorted(number for number in present if type(number) is int) != sorted(QUESTIONS):
+            blocking.append("A17 五问模板未完整嵌入 15 张指定图表")
     chart_quality = getattr(request.charts, 'quality', {}) if request.charts else {}
     chain_delivery = chart_quality.get("chain_delivery", {}) if isinstance(chart_quality, dict) else {}
     if chain_delivery.get("requested") and chain_delivery.get("status") != "complete":
@@ -659,7 +673,7 @@ def _check_final_view(
     groups = (request.report.chain_analysis or {}).get("groups") or {}
     for declared in (request.charts.charts if request.charts else []):
         if getattr(declared, "status", "") == "ready":
-            blocking.extend(f"{getattr(declared, 'chart_id', '?')} {p}" for p in _chart_contract_issues(declared, request.report.evidence_index, groups))
+            blocking.extend(f"{getattr(declared, 'chart_id', '?')} {p}" for p in _chart_contract_issues(declared, request.report.evidence_index, groups, request.report.as_of))
             blocking.extend(f"{getattr(declared, 'chart_id', '?')} {p}" for p in _chart_comparability_issues(declared, request.report.evidence_index))
     for chart in embedded:
         cid = getattr(chart, "chart_id", "?")
@@ -720,6 +734,9 @@ def _check_final_view(
 
 def _chart_comparability_issues(chart: Any, index: dict[str, Any]) -> list[str]:
     """Check source contracts independently of a generated eligibility flag."""
+    if (getattr(chart, "data_contract", {}) or {}).get("template_figure") is not None:
+        # The template validator checks date window, cohort, and basis per figure.
+        return []
     if getattr(chart, "chart_type", "") == "industry_chain":
         return []
     refs = [index[p["record_id"]] for p in (getattr(chart, "data_contract", {}) or {}).get("points", [])
@@ -1009,6 +1026,18 @@ class ReportFusionAgent:
 
     async def run(self,request:ReportFusionRequest,emit:EventEmitter|None=None,save_artifacts:bool=True)->ReportFusionResult:
         request = _resolve_answer_chart_links(request)
+        if getattr(request.charts, "figure_profile", None) == "a17_nev_2025":
+            from chart_generator.nev_template import template_evidence
+
+            original = request.report.evidence_index
+            combined = {**original, **template_evidence(request.report)}
+            appendix = request.report.data_quality_appendix
+            sample = appendix.get("sample_info") or {}
+            if sample.get("total_records") == len(original):
+                appendix = {**appendix, "sample_info": {**sample, "total_records": len(combined)}}
+            request = request.model_copy(update={"report": request.report.model_copy(update={
+                "evidence_index": combined, "data_quality_appendix": appendix,
+            })})
         run_id=f"report-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(4)}";report_id=f"REPORT-{secrets.token_hex(6).upper()}";artifact_dir=self.settings.output_dir/"runs"/run_id if save_artifacts else None;events=[]
         async def record(event:str,**details):
             item={"timestamp":datetime.now().astimezone().isoformat(),"event":event,"details":details};events.append(item)
@@ -1045,7 +1074,7 @@ class ReportFusionAgent:
             await record("skill_linter_checked", passed=not issues, issues=issues)
         groups = (request.report.chain_analysis or {}).get("groups") or {}
         invalid_chart_ids = {c.chart_id for c in (request.charts.charts if request.charts else [])
-                             if c.status == "ready" and _chart_contract_issues(c, request.report.evidence_index, groups)}
+                             if c.status == "ready" and _chart_contract_issues(c, request.report.evidence_index, groups, request.report.as_of)}
         embedded = self._embed_charts(request, chapters, warnings, invalid_chart_ids)
         # S-05：输入诊断（_check_inputs）只作内部审计基线；真正的交付判定
         # 必须针对**归位后的最终章节与嵌入图**再校验一次。
@@ -1266,8 +1295,10 @@ class ReportFusionAgent:
             and all(str(issue).startswith("段落资料缺口：") for issue in input_chapter_issues)
             and content_audit
             and all(
-                entry.get("code") in {"chapter_claim_repair", "chapter_component_isolation"}
-                and entry.get("disposition") in {"repaired", "isolated", "partially_retained"}
+                (entry.get("code") in {"chapter_claim_repair", "chapter_component_isolation"}
+                 and entry.get("disposition") in {"repaired", "isolated", "partially_retained"})
+                or (entry.get("code") == "net_cash_ratio_correction"
+                    and entry.get("disposition") in {"corrected", "removed"})
                 for entry in content_audit
             )
             and not any(chapter.used_fallback for chapter in chapters)
@@ -1815,9 +1846,12 @@ class ReportFusionAgent:
             candidates = chart_sec_candidates.get(cid, [])
             rec_ch_id = getattr(chart, "recommended_chapter_id", None)
 
-            target_sec_id = None
+            contract = chart.data_contract or {}
+            target_sec_id = contract.get("placement_section_id") if contract.get("template_figure") else None
+            if target_sec_id and not any(s.section_id == target_sec_id for ch in chapters for s in ch.sections):
+                target_sec_id = None
             # Priority 1: Candidate section matching recommended_chapter_id
-            if rec_ch_id and candidates:
+            if not target_sec_id and rec_ch_id and candidates:
                 for ch, s in candidates:
                     if ch.chapter_id == rec_ch_id:
                         target_sec_id = s.section_id
@@ -1926,6 +1960,8 @@ class ReportFusionAgent:
                         )
                 except OSError:
                     warnings.append(f"图表 {cid} 的 AI 产业链图不可读，回退 SVG")
+            if contract.get("template_figure") and chart.inline_svg:
+                svg = chart.inline_svg
             if not svg and chart.svg_uri:
                 try:svg=Path(chart.svg_uri).read_text(encoding="utf-8")
                 except OSError:warnings.append(f"图表 {cid} 的 SVG 文件不可读")
@@ -1977,9 +2013,12 @@ class ReportFusionAgent:
 
         # Cross-reference normalization: replace [CHART-xx] placeholders in paragraph texts with canonical figure numbers
         chart_ref_map: dict[str, str] = {}
+        template_figures = getattr(request.charts, "figure_profile", None) == "a17_nev_2025"
         for idx, ec in enumerate(result, 1):
             fn = ec.figure_number or f"图 {idx}"
             chart_ref_map[f"[{ec.chart_id}]"] = fn
+            if template_figures:
+                continue
             chart_ref_map[ec.chart_id] = fn
             parts = ec.chart_id.split("-")
             if len(parts) >= 2:
@@ -2052,12 +2091,14 @@ class ReportFusionAgent:
                 ch.summary = _clean_chart_text(ch.summary)
             for s in ch.sections:
                 sec_charts = [ec for ec in result if ec.chart_id in s.chart_ids]
-                sec_default_fn = sec_charts[0].figure_number if sec_charts and not excluded else None
+                sec_default_fn = sec_charts[0].figure_number if sec_charts and not excluded and not template_figures else None
                 # 构建小节专属映射，优先将小节内引用的 [CHART-xx] 精准映射为对应图表在报告中的实际图序
                 sec_map = dict(chart_ref_map)
                 for sc in sec_charts:
                     fn = sc.figure_number or f"图 {result.index(sc) + 1}"
                     sec_map[f"[{sc.chart_id}]"] = fn
+                    if template_figures:
+                        continue
                     sec_map[sc.chart_id] = fn
                     parts = sc.chart_id.split("-")
                     if len(parts) >= 2:
@@ -2069,7 +2110,11 @@ class ReportFusionAgent:
                 if s.key_points:
                     s.key_points = [_clean_chart_text(kp, sec_default_fn, sec_map) for kp in s.key_points]
                 for p in s.paragraphs:
-                    p.text = _clean_chart_text(p.text, sec_default_fn, sec_map)
+                    original = p.text
+                    cleaned = _clean_chart_text(original, sec_default_fn, sec_map)
+                    refs = [request.report.evidence_index[rid].model_dump(mode="json")
+                            for rid in p.evidence_ids if rid in request.report.evidence_index]
+                    p.text = repair_prose_opening(original, cleaned, refs)
 
         return result
 

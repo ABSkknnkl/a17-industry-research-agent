@@ -211,9 +211,15 @@ def load_writing_questions(
     links = link_question_requirements(briefs, appendix.get("requirement_evidence_matrix") or [], groups)
     plan = chart_payload.get("question_plan") or {}
     coverage = {row["question_id"]: row for row in plan.get("coverage") or []} if plan.get("mode") == "apply" else {}
+    primary_sections = {}
+    if chart_payload.get("figure_profile") == "a17_nev_2025":
+        from chart_generator.nev_template import QUESTION_SECTIONS
+
+        primary_sections = QUESTION_SECTIONS
     return [
         WritingQuestion(
             question_id=brief.question_id, text=brief.text, relation_tags=brief.relation_tags,
+            primary_section_id=primary_sections.get(brief.question_id),
             requirement_ids=list(dict.fromkeys(row["requirement"]["requirement_id"] for row in links[brief.question_id])),
             chart_ids=coverage.get(brief.question_id, {}).get("chart_ids") or [],
             chart_gaps=coverage.get(brief.question_id, {}).get("uncovered") or [],
@@ -643,7 +649,12 @@ class FiveAgentsAdapter:
         # 走不同引擎，历史 run 的行为也会被悄悄改变。
         from backend.app.engine.state_machine import load_execution_snapshot
         _snapshot = load_execution_snapshot(run_id)
-        _chain_v2 = _snapshot.chain_engine == "evidence_v2"
+        from chart_generator.nev_template import matches_template
+
+        nev_template_run = getattr(_snapshot, "question_planner_mode", None) == "apply" and matches_template(
+            industry, list(focus_points or []),
+        )
+        _chain_v2 = _snapshot.chain_engine == "evidence_v2" and not nev_template_run
         fetch_chain_requested = getattr(_snapshot, "chain_requested", None)
         if fetch_chain_requested is None:
             fetch_chain_requested = "产业链" in (industry + " ".join(map(str, foci)))
@@ -657,9 +668,19 @@ class FiveAgentsAdapter:
             except Exception as exc:
                 chain_error = type(exc).__name__ + ': ' + str(exc)[:250]
                 event_hub.emit(run_id, 'data_fetch', 'warn', '产业链研究失败：'+chain_error, tool='ChainResearch')
-        agent = DataFetcherAgent()
         try:
-            run_res = await agent.run(request, emit=on_fetch_event, save_artifacts=True)
+            if nev_template_run:
+                from data_fetcher.nev_profile import verified_run
+
+                run_res = verified_run(run_id, request.as_of)
+                trace_target = storage.get_run_dir(run_id) / "artifacts" / "data_fetch_trace"
+                trace_target.mkdir(parents=True, exist_ok=True)
+                (trace_target / "result.json").write_text(run_res.model_dump_json(indent=2), encoding="utf-8")
+                event_hub.emit(run_id, "data_fetch", "info",
+                               f"已验收新能源汽车五问的同花顺归档记录，共 {run_res.dataset.total_record_count} 条",
+                               tool="DataFusion", details={"coverage": run_res.coverage.model_dump(mode="json")})
+            else:
+                run_res = await DataFetcherAgent().run(request, emit=on_fetch_event, save_artifacts=True)
             if run_res.artifact_dir:
                 trace_source = Path(run_res.artifact_dir)
                 trace_target = storage.get_run_dir(run_id) / "artifacts" / "data_fetch_trace"
@@ -683,7 +704,9 @@ class FiveAgentsAdapter:
         ]
         blocking_issues = [e.message for e in fetch_errors]
         stage_error = None
-        if run_res.stop_reason == "clarification_needed":
+        if nev_template_run and not run_res.coverage.complete:
+            stage_error = "新能源汽车五问的 A1 数据验收未通过：" + "；".join(blocking_issues)
+        elif run_res.stop_reason == "clarification_needed":
             stage_error = next((error.message for error in run_res.errors if error.stage == "intent"),
                                "请确认可核验的研究范围。")
             blocking_issues.append(stage_error)
@@ -1060,6 +1083,14 @@ class FiveAgentsAdapter:
                 chain_dims[0]["status"] = "partial"
                 chain_dims[0]["reason"] = "环节归属缺少已审定结构或业务证据，已标注为待核实/缺口"
 
+        if dataset.quality_summary.get("data_source") == "iwencai_verified_capture":
+            for dim in dim_coverage:
+                if dim["dimension"] == "macro_policy" and not (dataset.macro or dataset.reports):
+                    dim.update(status="missing", reason="五问题面未要求宏观政策，数据集中无相关材料")
+                elif dim["dimension"] == "finance":
+                    dim["reason"] = "合并现金流、营收与毛利率等可追溯，分产品口径单列"
+                elif dim["dimension"] == "competition":
+                    dim["reason"] = "按五家研究样本的财务记录比较"
         if analysis_kwargs.get('chain_context'):
             cq = analysis_kwargs['chain_context'].get('quality', {})
             for dim in dim_coverage:
@@ -1353,7 +1384,15 @@ class FiveAgentsAdapter:
             text = str(value).strip().lower()
             return text if text in ("entity", "industry") else None
 
+        from chart_generator.nev_template import PROFILE, matches_template
+
+        figure_profile = chart_opts.get("figure_profile")
+        if figure_profile is None and plan_mode == "apply" and matches_template(
+            report.subject, [brief["text"] for brief in plan_briefs],
+        ):
+            figure_profile = PROFILE
         chart_request = ChartGenerationRequest(
+            figure_profile=figure_profile or "default",
             report=report,
             input_dataset=raw_dataset_dict,
             preferences=chart_prefs,
@@ -1409,7 +1448,14 @@ class FiveAgentsAdapter:
             "reason": "",
         }
 
-        if use_chain_v2 and chain_requested and v2_bundle_path.exists():
+        if getattr(result, "figure_profile", "default") == PROFILE:
+            has_structure = any(c.data_contract.get("template_figure") == 4 for c in result.charts)
+            chain_delivery.update(
+                requested=True, engine="reviewed_structure", scope="business_position",
+                status="complete" if has_structure else "failed",
+                reason="五家公司定位可追溯至年报，不表示企业供货关系" if has_structure else "缺少年报业务定位证据",
+            )
+        elif use_chain_v2 and chain_requested and v2_bundle_path.exists():
             from chain_research.models import ChainKnowledgeBundle
             from chain_research.view import compile_chain_view, render_bundle, render_evidence
             from chain_research.evidence_bridge import project_supported_evidence
@@ -1600,7 +1646,7 @@ class FiveAgentsAdapter:
             c.html_uri = str(preview_path.resolve())
         # A3 覆盖对账（方案 5.3 第 7 步）：在 V2 替换、SVG 落盘与图数截断全部完成后，
         # 以实际发布图重新结算；off 模式不触碰既有 question_coverage。
-        if result.question_plan is not None and result.question_plan.mode == "apply":
+        if getattr(result, "figure_profile", "default") == "default" and result.question_plan is not None and result.question_plan.mode == "apply":
             from chart_generator.models import QuestionBrief as _QuestionBrief
             from chart_generator.question_planner import (
                 build_candidate_cards as _build_cards,
@@ -1723,6 +1769,10 @@ class FiveAgentsAdapter:
         with open(chart_path, "r", encoding="utf-8") as f:
             chart_raw = json.load(f)
             chart_res = ChartResult.model_validate(chart_raw)
+        if chart_raw.get("figure_profile") == "a17_nev_2025":
+            from chart_generator.nev_template import template_evidence
+
+            report.evidence_index.update(template_evidence(report))
 
         expert_bg = str(report_raw.get("expert_background") or "").strip()
         if expert_bg:
@@ -1757,8 +1807,15 @@ class FiveAgentsAdapter:
                 event_hub.emit(run_id, "chapter_write", "agent_decision", "7 大核心章节写作技能分配就绪，全并发流式撰写推进中", tool="ChapterPlanner", details=details)
 
         agent = ChapterWriterAgent()
-        writing_options = ChapterWritingOptions()
+        verified_nev = report.data_quality_appendix.get("data_source") == "iwencai_verified_capture"
+        writing_options = ChapterWritingOptions(
+            editorial_profile="a17_nev" if chart_raw.get("figure_profile") == "a17_nev_2025" else "standard",
+            target_length="concise" if verified_nev else "standard",
+        )
         instructions = []
+        if verified_nev:
+            instructions.append("章摘要、节要点和旁注只写有证据支持的定性判断。精确数据、百分比及计算口径优先由已核图表和表格承载。"
+                                "正文重点解释同口径数据的差别。每段只讲一个判断，保留主体和期间，未经披露的机制写作待检验条件。")
         if expert_bg:
             instructions.append(f"【用户补充专家背景知识先验】: {expert_bg}。请在相关章节中针对性深化与体现该产业背景。")
         if feedback:

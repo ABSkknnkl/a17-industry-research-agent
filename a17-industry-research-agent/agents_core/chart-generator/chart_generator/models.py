@@ -214,6 +214,7 @@ class ChartGenerationRequest(BaseModel):
     # A3 用户问题驱动选图（方案 3.1 / 5.5）：后端从执行快照读取模式，
     # 把题面卡以 dict 形式透传，避免与旧 question_ids（行业预设编号）混用。
     question_plan_mode: str = "off"
+    figure_profile: Literal["default", "a17_nev_2025"] = "default"
     question_briefs: list[dict[str, Any]] = Field(default_factory=list)
     # 2026-10-21：用户是否**明确**需要产业链图（见 chart_generator.chain_intent）。
     #   True  → 出产业链图 + 调豆包
@@ -453,6 +454,7 @@ class ChartGenerationResult(BaseModel):
     artifact_dir: str | None = None
     # 附加产物：off / 旧产物不带该字段，A5 不消费（方案 4.3 契约隔离）。
     question_plan: QuestionChartPlan | None = None
+    figure_profile: Literal["default", "a17_nev_2025"] = "default"
 
     @model_validator(mode="after")
     def unique_chart_ids(self) -> "ChartGenerationResult":

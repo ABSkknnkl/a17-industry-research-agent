@@ -661,6 +661,46 @@ def retain_supported_claims(text: str, is_supported: Callable[[str], bool]) -> s
     return "".join(kept).strip()
 
 
+def repair_prose_opening(original: str, retained: str, refs: Sequence[dict[str, Any]]) -> str:
+    """Restore context only when an omitted lead and its records agree."""
+    entities = {
+        ref.get("entity") or ref.get("entity_name")
+        for ref in refs if not ref.get("issues")
+    } - {None, ""}
+    cleaned = retained.strip()
+    display = re.match(r"^(?:图中(?:数据)?|图表)?显示[，,:：\s]*", cleaned)
+    first = _REPORT_CLAUSE_END.split(cleaned, maxsplit=1)[0]
+    if display and any(entity in first for entity in entities):
+        return cleaned[display.end():]
+    dependent = re.match(r"^(同期|同一时期)[，,\s]*", cleaned)
+    cash_flow = re.match(r"^经营(?:活动(?:产生的)?)?现金流", cleaned)
+    if (not dependent and not cash_flow) or cleaned == original.strip():
+        return cleaned
+    offset = original.find(first)
+    if offset <= 0:
+        return "" if dependent else cleaned
+    omitted = original[:offset]
+    owners = {entity for entity in entities if entity in omitted}
+    if len(owners) != 1 or any(entity in first for entity in entities - owners):
+        return ""
+    owner = next(iter(owners))
+    years = sorted(set(re.findall(r"(?<!\d)20\d{2}(?!\d)", first)))
+    if len(years) < 2 and dependent:
+        years = sorted(set(re.findall(r"(?<!\d)20\d{2}(?!\d)", omitted)))
+    annual = {
+        str(ref.get("period"))[:4] for ref in refs
+        if (ref.get("entity") or ref.get("entity_name")) == owner
+        and ref.get("period_type") == "annual" and not ref.get("issues")
+        and (not cash_flow or ref.get("metric") == "operating_cash_flow")
+    }
+    if len(years) < 2 or not {years[0], years[-1]} <= annual:
+        return ""
+    if cash_flow and not dependent:
+        return owner + cleaned
+    return f"{years[0]}—{years[-1]}年，{owner}{cleaned[dependent.end():]}"
+
+
+
 def _claim_clauses(text: str) -> list[tuple[int, int, str]]:
     spans = []
     start = 0

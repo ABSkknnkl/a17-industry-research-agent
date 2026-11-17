@@ -575,7 +575,9 @@ async function onStageDirectEditSubmit(payload: {
             size="small"
             data-testid="chain-certified-badge"
           >
-            已认证 · 完整交付
+            {{
+              chainDelivery?.scope === 'business_position' ? '已核验业务定位' : '已认证 · 完整交付'
+            }}
           </el-tag>
           <el-tag v-else type="warning" size="small" data-testid="chain-partial-badge">
             未认证 · 受限交付

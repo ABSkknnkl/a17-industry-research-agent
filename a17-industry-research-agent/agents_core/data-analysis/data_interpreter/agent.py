@@ -337,6 +337,9 @@ class DataInterpreterAgent:
                 dataset = StructuredResearchDataset.model_validate(dataset)
             else:
                 dataset = StructuredResearchDataset.model_validate(dataset)
+        verified_nev = dataset.quality_summary.get("data_source") == "iwencai_verified_capture"
+        if verified_nev:
+            request = request.model_copy(update={"enable_semantic_analysis": False})
         # DEF-10: 离线用例与主题一致性断言守卫
         if request and request.subject:
             validate_request_consistency(dataset, request.subject)
@@ -503,6 +506,14 @@ class DataInterpreterAgent:
         knowledge_facts: list[KnowledgeFact] = []
         skill_results: list[SkillExecutionResult] = []
         chain_analysis = None
+        if verified_nev:
+            from .nev_findings import build_nev_findings
+
+            executive_summary, knowledge_facts, insights, outline, checks = build_nev_findings(evidence)
+            validations.extend(checks)
+            trace.append(AnalysisTraceEvent(event="nev_facts_bound", details={
+                "facts": len(knowledge_facts), "insights": len(insights), "validated": len(checks),
+            }))
 
         if request.enable_semantic_analysis and self.llm.is_available and evidence:
             # 语义通道的两个产出先置空：except 分支要在失败时如实报告「拓扑有没有拿到」，
@@ -766,6 +777,8 @@ class DataInterpreterAgent:
         data_quality_appendix = self.engine.build_data_quality_appendix(
             dataset, comps_matrix, anomalies, validations, quality
         )
+        if verified_nev:
+            data_quality_appendix["data_source"] = dataset.quality_summary["data_source"]
         if request.sensitivity_scenarios or sensitivity_gaps:
             data_quality_appendix['sensitivity_results'] = sensitivity_results
             data_quality_appendix.setdefault('requested_requirement_coverage', []).extend(sensitivity_gaps)
@@ -804,7 +817,7 @@ class DataInterpreterAgent:
             )
             knowledge_facts = (
                 list(knowledge_facts)
-                + chain_knowledge_facts(chain_facts)
+                + ([] if verified_nev else chain_knowledge_facts(chain_facts))
                 + [
                     KnowledgeFact.model_validate(row)
                     for row in group_comparison["knowledge_facts"]

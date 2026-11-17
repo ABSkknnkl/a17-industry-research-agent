@@ -99,6 +99,7 @@ class ChartResult(BaseModel):
     run_id:str="";charts:list[ChartSpec]=Field(default_factory=list);warnings:list[str]=Field(default_factory=list)
     quality:dict[str,Any]=Field(default_factory=dict)
     question_plan:dict[str,Any]|None=None
+    figure_profile:Literal["default","a17_nev_2025"]="default"
 
 class FusionOptions(BaseModel):
     model_config=ConfigDict(extra="forbid")

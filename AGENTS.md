@@ -9,6 +9,12 @@
 - Report templates/styles live under `agents_core/report-fusion/report_fusion/`; runtime artifacts belong in `data/runs/` or `output/`.
 - Documentation: root `项目全景技术深度解析.md` provides the comprehensive architecture and engineering whitepaper. It is the only project-level document in this workspace.
 
+
+## A17 新能源汽车五问报告出图
+
+- 第 4 图固定使用项目的三列产业链全景图 SVG。发布资产为 `a17-industry-research-agent/agents_core/chart-generator/chart_generator/assets/a17_nev_industry_chain_2025.svg`，与 `A17_新能源汽车产业链全景图_2025.svg` 同源。
+- A3 直接读取该 SVG。A5 的 HTML、PDF 和下载包沿用同一图稿，并保留五家公司的年报证据关联。禁止以简化示意图、自动重绘图或答辩投影候选图替换第 4 图。
+
 ## Build, Test, and Development Commands
 
 Run commands from `a17-industry-research-agent/` unless noted. Use Python 3.11+ and Node.js 22–26 with npm 10+.

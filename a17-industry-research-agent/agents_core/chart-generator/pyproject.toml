@@ -20,7 +20,7 @@ chart-generator = "chart_generator.cli:main"
 include = ["chart_generator*"]
 
 [tool.setuptools.package-data]
-chart_generator = ["skills/*/SKILL.md", "skills/*/_meta.json"]
+chart_generator = ["skills/*/SKILL.md", "skills/*/_meta.json", "assets/*.svg"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

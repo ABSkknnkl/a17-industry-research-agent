@@ -11,6 +11,7 @@ from agents_core.financial_semantics import (
     metric_family,
     quantity_issues,
     retain_supported_claims,
+    repair_prose_opening,
     verified_calculations,
 )
 from agents_core.context_budget import ContextBudgetExceeded, serialize_context
@@ -27,6 +28,9 @@ from typing import Any
 
 
 from chapter_writer.config import Settings
+from chapter_writer.editorial import (
+    EDITORIAL_PROMPT, apply_editorial_briefs, build_editorial_briefs, section_observations,
+)
 from chapter_writer.llm import ChapterLLM, OpenAICompatibleLLM
 from chapter_writer.models import (
     AppliedSkill, ChapterDraft, ChapterQualityReport, ChapterWritingRequest, ChapterWritingResult,
@@ -298,11 +302,15 @@ def _align_chart_reference(section: Any, chart_id: str, chart: Any) -> bool:
     evidence_ids = set(chart.get("evidence_ids", []) if isinstance(chart, dict) else chart.evidence_ids)
     contract = (chart.get("data_contract") if isinstance(chart, dict) else getattr(chart, "data_contract", {})) or {}
     points = contract.get("points") or []
-    families = {metric_family(str(point.get("metric") or "")) for point in points}
+    families = {metric_family(str(point["metric"])) for point in points if point.get("metric")}
     metric_terms = CLAIM_METRICS | {
         "销量": "nev_sales", "出口量": "nev_exports", "出口": "nev_exports",
-        "渗透率": "nev_penetration",
+        "渗透率": "nev_penetration", "研发强度": "rd_expense",
     }
+    if not families and contract.get("template_figure"):
+        title = chart.get("title", "") if isinstance(chart, dict) else chart.title
+        labels = " ".join(map(str, [title, *(contract.get("series_order") or []), *(contract.get("categories") or [])]))
+        families = {family for term, family in metric_terms.items() if term.casefold() in labels.casefold()}
     tag = f"[{chart_id}]"
     matched = []
     for paragraph in section.paragraphs:
@@ -724,6 +732,10 @@ class ChapterWriterAgent:
         """Shared generation, repair and evidence audit for full and targeted writing."""
         allowed_evidence = set(request.report.evidence_index)
         global_facts_prompt = context["global_facts_prompt"]
+        if getattr(request.options, "editorial_profile", "standard") == "a17_nev":
+            briefs = build_editorial_briefs(request.report, request.charts, outline_chapter, context)
+            if briefs:
+                context = apply_editorial_briefs(context, briefs)
         chapter = None
         errors: list[str] = []
         paragraph_warning = None
@@ -744,6 +756,8 @@ class ChapterWriterAgent:
                     }
                     # The model client owns request retries; do not multiply them here.
                     system = SYSTEM_PROMPT
+                    if context.get("section_editorial_briefs"):
+                        system += EDITORIAL_PROMPT
                     if errors:
                         system += (
                             "\n上一版未通过事实核验。保留已有大纲与小节编号。凡上一版包含密集数字，"
@@ -832,6 +846,10 @@ class ChapterWriterAgent:
                                 try:
                                     reason = "audit_failed"
                                     repair_system = SYSTEM_PROMPT + "\n只返回修复后的单个段落 JSON，保持 paragraph_id。"
+                                    section_brief = (context.get("section_editorial_briefs") or {}).get(repair_payload["section_id"])
+                                    if section_brief:
+                                        repair_payload["section_editorial_brief"] = section_brief
+                                        repair_system += "\n沿用小节任务。只修复该段，避免源自行业预设的因果推断。主体、期间和指标应能单独读懂，图号只能放在完整句子后。"
                                     prompt, _, _ = serialize_context(repair_payload, system=repair_system)
                                     raw = await self.llm.generate_json(repair_system, prompt)
                                     replacement = ParagraphDraft.model_validate(raw)
@@ -858,6 +876,7 @@ class ChapterWriterAgent:
                                     assumption_note=original.assumption_note, kind=original.kind,
                                     comparisons=(context.get("analysis_facts") or {}).get("comparisons") or [],
                                 ))
+                                retained = repair_prose_opening(original.text, retained, refs)
                                 trial = chapter.model_copy(deep=True)
                                 if retained and retained != original.text:
                                     trial.sections[si].paragraphs[pi].text = retained
@@ -897,6 +916,15 @@ class ChapterWriterAgent:
                     await record("chapter_attempt_failed", chapter_id=outline_chapter.chapter_id, attempt=attempt + 1, error=errors[0])
                     if isinstance(exc, (ContextBudgetExceeded, httpx.HTTPError, TimeoutError)):
                         break
+        if chapter is not None and context.get("section_editorial_briefs"):
+            replaced = await self._polish_editorial_sections(
+                chapter, outline_chapter, allowed_evidence, ready_charts, context, global_facts, record,
+            )
+            if replaced and paragraph_warning:
+                prefix = f"段落资料缺口：{chapter.chapter_id} "
+                parts = re.split(r"；(?=(?:P-[\w.-]+|SEC-\d{2}-\d{2}) )", paragraph_warning.removeprefix(prefix))
+                remaining = [issue for issue in parts if issue.split(" ", 1)[0] not in replaced]
+                paragraph_warning = prefix + "；".join(remaining) if remaining else None
         fallback_id = None
         warning = paragraph_warning
         if chapter is None:
@@ -907,6 +935,91 @@ class ChapterWriterAgent:
             fb_errors = self._audit_chapter(chapter, outline_chapter, allowed_evidence, ready_charts, context, global_facts, drop_log=drop_log)
             await record("skill_linter_checked", chapter_id=outline_chapter.chapter_id, passed=not fb_errors, issues=fb_errors)
         return chapter, fallback_id, warning
+
+    async def _polish_editorial_sections(
+        self, chapter, outline, allowed_evidence, charts, context, global_facts, record,
+    ) -> set[str]:
+        """Give each template section a small second pass and audit the replacements."""
+        briefs = context["section_editorial_briefs"]
+        evidence = context.get("evidence") or {}
+        system = (
+            "你是证券研究编辑。根据 observations 润色两段正文，每段先给观察或判断，"
+            "再给证据或边界。原样保留每段首句、全部记录编号和图号，"
+            "年份以外的数字全部留在图中。只润色既有内容，不自行计算、不补充结论。"
+            "图表编号放在对应完整句的句号后。缺直接披露时不推断业绩原因。"
+            '只返回 JSON {"paragraphs":[{"kind":"comparison","text":"正文","evidence_ids":["实际记录编号"]}]}。'
+        )
+
+        async def draft(section):
+            brief = briefs[section.section_id]
+            refs = {rid: evidence[rid] for rid in brief["evidence_ids"] if rid in evidence}
+            observations = section_observations(section.section_id, refs, brief["chart_ids"])
+            if not observations:
+                return None, None
+
+            def parse(rows):
+                return [
+                    ParagraphDraft.model_validate({**row, "paragraph_id": f"P-{section.section_id[4:]}-ED-{i}"})
+                    for i, row in enumerate(rows, 1)
+                ]
+
+            grounded = parse(observations)
+            try:
+                prompt, _, _ = serialize_context({
+                    "title": section.title, "task": brief["write"], "observations": observations,
+                }, system=system)
+                response = await self.llm.generate_json(system, prompt)
+                rows = response.get("paragraphs") or []
+                if len(rows) == len(grounded):
+                    polished = parse(rows)
+                    if all(p.text.startswith(source.text.split("。", 1)[0] + "。")
+                           and set(p.evidence_ids) == set(source.evidence_ids)
+                           and set(re.findall(r"\[(CHART-[\w-]+)\]", p.text))
+                           == set(re.findall(r"\[(CHART-[\w-]+)\]", source.text))
+                           for p, source in zip(polished, grounded)):
+                        return polished, grounded
+            except Exception as exc:
+                await record("section_editorial_skipped", section_id=section.section_id, reason=type(exc).__name__)
+            return None, grounded
+
+        targets = [(i, section) for i, section in enumerate(chapter.sections) if section.section_id in briefs]
+        drafts = await asyncio.gather(*(draft(section) for _, section in targets))
+        replaced: set[str] = set()
+        for (i, section), (polished, grounded) in zip(targets, drafts):
+            method = ""
+            for paragraphs, candidate in ((polished, "llm"), (grounded, "verified_observations")):
+                if not paragraphs:
+                    continue
+                baseline = chapter.model_copy(deep=True)
+                existing = set(self._audit_chapter(baseline, outline, allowed_evidence, charts, context, global_facts))
+                trial = chapter.model_copy(deep=True)
+                trial.sections[i].paragraphs = paragraphs
+                trial.sections[i].key_points = []
+                uncovered = [str(row["requirement"].get("label") or row["requirement"].get("requirement_id") or "")
+                             for row in (context.get("requirement_evidence_matrix") or [])
+                             if row.get("section_id") == section.section_id and row.get("requirement")
+                             and not (row.get("coverage") or {}).get("passed")]
+                trial.sections[i].uncertainties = [
+                    note for note in section.uncertainties if any(label and label in note for label in uncovered)
+                ]
+                issues = set(self._audit_chapter(trial, outline, allowed_evidence, charts, context, global_facts))
+                if issues - existing:
+                    await record("section_editorial_candidate_rejected", section_id=section.section_id,
+                                 method=candidate, issues=sorted(issues - existing))
+                else:
+                    chapter.sections[i] = trial.sections[i]
+                    prefix = f"P-{section.section_id[4:]}-"
+                    replaced.update(p.paragraph_id for p in section.paragraphs)
+                    for item in chapter.content_audit:
+                        location = str(item.get("location", ""))
+                        if item.get("section_id") == section.section_id and location.startswith(prefix):
+                            item.update(disposition="repaired", reason="section_editorial_rewrite")
+                            replaced.add(location)
+                    method = candidate
+                    break
+            await record("section_editorial_checked", section_id=section.section_id,
+                         accepted=bool(method), method=method)
+        return replaced
 
     async def _add_numeric_readout(
         self, chapter, outline, allowed_evidence, charts, context, global_facts, record,

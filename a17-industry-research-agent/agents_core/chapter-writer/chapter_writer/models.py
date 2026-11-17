@@ -105,6 +105,7 @@ class ChapterWritingOptions(BaseModel):
     style:Literal["professional","plain_language"]="professional"
     audience:str="证券研究人员"
     target_length:Literal["concise","standard","detailed"]="standard"
+    editorial_profile:Literal["standard","a17_nev"]="standard"
     instruction:str|None=None
     max_repairs:int=Field(default=2,ge=0,le=4)
 
@@ -198,6 +199,7 @@ def validate_request_consistency(dataset: Any, subject: str | None) -> None:
 class WritingQuestion(BaseModel):
     question_id: str
     text: str
+    primary_section_id: str | None = None
     relation_tags: list[str] = Field(default_factory=list)
     requirement_ids: list[str] = Field(default_factory=list)
     chart_ids: list[str] = Field(default_factory=list)

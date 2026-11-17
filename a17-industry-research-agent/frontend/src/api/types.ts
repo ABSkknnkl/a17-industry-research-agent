@@ -764,6 +764,7 @@ export interface UserAnnotation {
 }
 
 export interface ChainDeliveryInfo {
+  scope?: 'business_position'
   requested?: boolean
   status?: 'not_requested' | 'complete' | 'partial' | 'failed'
   reason?: string
