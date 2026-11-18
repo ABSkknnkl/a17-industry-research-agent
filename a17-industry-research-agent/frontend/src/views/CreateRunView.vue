@@ -189,6 +189,7 @@ const form = reactive({
   questionPlannerMode: 'off' as 'off' | 'apply',
   selectedSkills: [...DEFAULT_SELECTED_SKILLS] as string[],
   competitionDelivery: false,
+  autoProbeEnabled: true,
   reviewStages: [
     'data_fetch',
     'data_interpret',
@@ -287,8 +288,8 @@ function validate(): { message: string; openResearchOptions?: true } | null {
   return null
 }
 
-async function submit(): Promise<void> {
-  const problem = validate()
+async function submit(demo = false): Promise<void> {
+  const problem = demo ? null : validate()
   if (problem) {
     if (problem.openResearchOptions && researchOptions.value) {
       researchOptions.value.open = true
@@ -300,7 +301,7 @@ async function submit(): Promise<void> {
     const opt = MARKET_OPTIONS.find((item) => item.value === market)
     return opt != null && opt.availability !== 'full'
   })
-  if (limited.length > 0) {
+  if (!demo && limited.length > 0) {
     ElMessage.info(
       `已选境外市场（${limited.join('、')}），系统将重点对标核心龙头行情与中概对标标的`
     )
@@ -310,15 +311,17 @@ async function submit(): Promise<void> {
   try {
     const payload: RunCreateRequest = {
       project_id: randomProjectId(),
+      ...(demo ? { nev_probe_demo: true } : {}),
       ...(form.competitionDelivery ? { delivery_profile: 'competition' } : {}),
       input_data: {
-        industry_topic: form.industryTopic.trim(),
+        industry_topic: demo ? '新能源汽车' : form.industryTopic.trim(),
         market_scope: form.marketScope,
         security_types: form.securityTypes,
         reporting_currency: 'CNY',
         research_as_of: form.researchAsOf,
         focus_questions: splitLines(form.focusQuestionsText),
         analysis_depth: form.analysisDepth,
+        data_fetch_options: { auto_probe_enabled: form.autoProbeEnabled },
         chart_generate_options: {
           chart_mode: form.chartMode,
           allow_multiple_charts_per_dataset: form.chartMode === 'rich',
@@ -326,7 +329,11 @@ async function submit(): Promise<void> {
         },
         selected_skills: form.selectedSkills,
       },
-      review_stages: form.competitionDelivery ? ['report_fusion'] : form.reviewStages,
+      review_stages: demo
+        ? ['data_fetch', 'report_fusion']
+        : form.competitionDelivery
+          ? ['report_fusion']
+          : form.reviewStages,
     }
     const state = await createRun(payload)
     // 全自动任务（未勾选任何审核门）：打标记，工作台据此在完成后自动跳转下载页
@@ -360,6 +367,9 @@ async function submit(): Promise<void> {
     <header class="home-header">
       <h1 class="page-title home-title">创建行业研究任务</h1>
       <p class="home-lead muted">填写行业主题与研究问题，启动研报生成流程。</p>
+      <el-button plain :disabled="submitting" @click="submit(true)">
+        启动新能源汽车补采演示
+      </el-button>
     </header>
 
     <!-- 表单主体 -->
@@ -545,6 +555,13 @@ async function submit(): Promise<void> {
                       </el-tooltip>
                     </el-radio-group>
                   </el-form-item>
+                  <el-form-item label="关键数据自动补采">
+                    <el-switch v-model="form.autoProbeEnabled" data-testid="auto-probe-switch" />
+                    <p class="muted">
+                      每章最多补 3 个数据点，整轮最多 12
+                      次模型及数据请求。剩余缺口可在审核时手动补采。
+                    </p>
+                  </el-form-item>
                 </el-col>
                 <el-col :xs="24" :sm="12">
                   <el-form-item label="配图密度">
@@ -666,7 +683,7 @@ async function submit(): Promise<void> {
         </div>
 
         <div class="submit-row">
-          <el-button type="primary" size="large" :loading="submitting" @click="submit">
+          <el-button type="primary" size="large" :loading="submitting" @click="submit()">
             创建并启动任务
           </el-button>
           <span class="muted">创建后进入任务工作台查看进度。</span>

@@ -18,6 +18,24 @@ class SupplementalRecordCollision(ValueError):
     """One evidence ID identifies incompatible supplemental records."""
 
 
+def refresh_data_gap_notice(
+    data: dict[str, Any], coverage: list[dict[str, Any]], *, incomplete: bool = False,
+) -> None:
+    failed = {row["requirement_id"] for row in coverage if not row.get("passed")}
+    passes = {row["requirement_id"]: bool(row.get("passed")) for row in coverage}
+    for requirement in data.get("metric_requirements") or []:
+        if requirement["requirement_id"] in passes:
+            requirement["passed"] = passes[requirement["requirement_id"]]
+    data.pop("data_gap_notice", None)
+    data.pop("probe_hint", None)
+    if failed:
+        data["data_gap_notice"] = f"当前数据集仍有 {len(failed)} 项数据需求未满足。"
+    elif incomplete:
+        data["data_gap_notice"] = "主链路取数尚未完成，请查看采集状态。"
+    if "data_gap_notice" in data:
+        data["probe_hint"] = "可点击「探针补采」，按缺口重新取数。"
+
+
 def merge_supplemental_records(dataset: Any, report_dict: dict[str, Any], records: list[Any], as_of: Any) -> list[str]:
     """Merge chart supplements without losing qualifiers or silently trusting stale analysis."""
     from agents_core.financial_semantics import metric_family
@@ -654,6 +672,7 @@ class FiveAgentsAdapter:
         nev_template_run = getattr(_snapshot, "question_planner_mode", None) == "apply" and matches_template(
             industry, list(focus_points or []),
         )
+        demo = getattr(_snapshot, "nev_probe_demo", None)
         _chain_v2 = _snapshot.chain_engine == "evidence_v2" and not nev_template_run
         fetch_chain_requested = getattr(_snapshot, "chain_requested", None)
         if fetch_chain_requested is None:
@@ -672,12 +691,18 @@ class FiveAgentsAdapter:
             if nev_template_run:
                 from data_fetcher.nev_profile import verified_run
 
-                run_res = verified_run(run_id, request.as_of)
+                if demo:
+                    from backend.app.agents.nev_demo import masked_run
+
+                    run_res = masked_run(demo, run_id)
+                else:
+                    run_res = verified_run(run_id, request.as_of)
                 trace_target = storage.get_run_dir(run_id) / "artifacts" / "data_fetch_trace"
                 trace_target.mkdir(parents=True, exist_ok=True)
                 (trace_target / "result.json").write_text(run_res.model_dump_json(indent=2), encoding="utf-8")
+                capture_status = "演示模式已暂扣两条证据，当前归档记录" if demo else "已验收新能源汽车五问的同花顺归档记录"
                 event_hub.emit(run_id, "data_fetch", "info",
-                               f"已验收新能源汽车五问的同花顺归档记录，共 {run_res.dataset.total_record_count} 条",
+                               f"{capture_status}，共 {run_res.dataset.total_record_count} 条",
                                tool="DataFusion", details={"coverage": run_res.coverage.model_dump(mode="json")})
             else:
                 run_res = await DataFetcherAgent().run(request, emit=on_fetch_event, save_artifacts=True)
@@ -696,15 +721,65 @@ class FiveAgentsAdapter:
                 errors=[RunError(stage='execution', message='数值分支失败：'+type(exc).__name__)])
         dataset = run_res.dataset
         dataset.subject = industry
+        auto_probe = {"status": "disabled", "calls_used": 0, "max_calls": 12}
+        if demo:
+            auto_probe["status"] = "manual_demo"
+        elif (getattr(_snapshot, "auto_probe_enabled", False) and not intent_blocked
+              and run_res.status != "failed"
+              and run_res.stop_reason not in ("clarification_needed", "invalid_planner_decision", "planner_blocked")):
+            from backend.app.agents.gap_scan import scan_and_supplement
+            from data_fetcher.models import RequirementCoverage
+
+            async def on_gap_attempt(item: dict[str, Any]) -> None:
+                event_hub.emit(
+                    run_id, "data_fetch", "info",
+                    f"关键缺口自动补采：{item.get('chapter_id')} / 第 {item.get('attempt')} 轮",
+                    tool="GapScan", details=item,
+                )
+
+            event_hub.emit(run_id, "data_fetch", "info", "检查关键数据缺口", tool="GapScan")
+            initial_status, initial_stop_reason = run_res.status, run_res.stop_reason
+            auto_probe = await scan_and_supplement(
+                dataset, request.as_of, storage.get_run_dir(run_id) / "artifacts",
+                context={"research": request.model_dump(mode="json"), "policy": "critical-gap-v1"},
+                on_event=on_gap_attempt,
+            )
+            matrix = dataset.quality_summary.get("requirement_evidence_matrix") or []
+            if matrix and auto_probe.get("status") in ("completed", "budget_exhausted"):
+                checks = [RequirementCoverage.model_validate(row["coverage"]) for row in matrix]
+                domains = run_res.coverage.required_domains
+                covered = [d for d in domains if dataset.records_for(d) or (d == "events" and dataset.events)]
+                complete = all(c.passed for c in checks) and len(covered) == len(domains)
+                run_res.coverage = run_res.coverage.model_copy(update={
+                    "requirement_coverage": checks, "covered_domains": covered,
+                    "missing_domains": [d for d in domains if d not in covered],
+                    "complete": complete, "score": sum(c.passed for c in checks) / len(checks),
+                })
+                if complete:
+                    run_res.status, run_res.stop_reason = "completed", "auto_probe_coverage_complete"
+                elif dataset.total_record_count and run_res.status == "blocked":
+                    run_res.status = "partial"
+            auto_probe.update(initial_status=initial_status, initial_stop_reason=initial_stop_reason)
+            trace_target = storage.get_run_dir(run_id) / "artifacts" / "data_fetch_trace"
+            trace_target.mkdir(parents=True, exist_ok=True)
+            (trace_target / "result.json").write_text(run_res.model_dump_json(indent=2), encoding="utf-8")
+            event_hub.emit(
+                run_id, "data_fetch", "info",
+                f"缺口检查结束，自动补采请求 {auto_probe.get('calls_used', 0)}/12 次",
+                tool="GapScan", details=auto_probe,
+            )
 
         # P0-1: 失败显式上报 —— 将 A1 的 errors/状态透传到前端可见通道（warnings/blocking_issues/error）
         fetch_errors = [
             e for e in run_res.errors
-            if e.stage in ("data_fetch", "execution", "skill_execution", "planning")
+            if e.stage in ("data_fetch", "execution", "skill_execution", "planning",
+                           "skillhub", "task_validation", "configuration")
         ]
-        blocking_issues = [e.message for e in fetch_errors]
+        # task_validation（如预算耗尽）此前被过滤，导致 partial 取数不完整时前端无提示。
+        # 去重并限量，避免逐任务拒绝信息刷屏。
+        blocking_issues = list(dict.fromkeys(e.message for e in fetch_errors))[:8]
         stage_error = None
-        if nev_template_run and not run_res.coverage.complete:
+        if nev_template_run and not demo and not run_res.coverage.complete:
             stage_error = "新能源汽车五问的 A1 数据验收未通过：" + "；".join(blocking_issues)
         elif run_res.stop_reason == "clarification_needed":
             stage_error = next((error.message for error in run_res.errors if error.stage == "intent"),
@@ -782,6 +857,7 @@ class FiveAgentsAdapter:
                 }
 
         data: dict[str, Any] = {
+            "auto_probe": auto_probe,
             "source_records": source_records,
             "chain_research": chain_bundle.quality.model_dump() if chain_bundle else (
                 {'release_status': 'failed', 'error': chain_error} if chain_error else None),
@@ -853,8 +929,31 @@ class FiveAgentsAdapter:
                 revision=1,
             )
         ]
+        auto_probe_path = storage.get_run_dir(run_id) / "artifacts" / "auto_probe.json"
+        if auto_probe_path.is_file():
+            artifacts.append(ArtifactRef(
+                artifact_id="auto_probe_audit", kind="auto_probe_audit",
+                uri=str(auto_probe_path), revision=1,
+            ))
 
         data.update(question_stage_coverage(run_id, dataset.quality_summary.get("requirement_evidence_matrix") or []))
+
+        # 主链路未取全时给出用户可见提示（warning 级，不升级为硬阻塞），并引导到
+        # 人机审核的「大模型动态探针」正式取数路径。白酒实测中 status=partial +
+        # coverage.complete=False 曾完全无声，前端不知道该去补采。
+        coverage_obj = getattr(run_res, "coverage", None)
+        incomplete = (
+            run_res.status in ("partial", "blocked")
+            or not bool(getattr(coverage_obj, "complete", True))
+        )
+        if demo:
+            from backend.app.agents.nev_demo import stage_data
+
+            data.update(stage_data(run_res))
+        else:
+            refresh_data_gap_notice(data, [
+                c.model_dump(mode="json") for c in (getattr(coverage_obj, "requirement_coverage", None) or [])
+            ], incomplete=incomplete)
         return StageResult(
             stage="data_fetch",
             status="waiting_review",
@@ -1046,6 +1145,8 @@ class FiveAgentsAdapter:
                 'evidence': [e.model_dump() for e in cb.evidence]}
         agent = DataInterpreterAgent()
         report = await agent.run(dataset, AnalysisRequest(**analysis_kwargs), emit=on_interpret_event, save_artifacts=False)
+        if dataset.quality_summary.get("auto_probe"):
+            report.data_quality_appendix["auto_probe"] = dataset.quality_summary["auto_probe"]
 
         report_path = run_dir / "artifacts" / "interpretation_report.json"
         report_path.write_text(report.model_dump_json(indent=2), encoding="utf-8")
@@ -1742,7 +1843,9 @@ class FiveAgentsAdapter:
         """阶段 4: 章节撰写智能体 (Chapter Writer)"""
         import backend.app.core.setup_env
         from chapter_writer.agent import ChapterWriterAgent
-        from chapter_writer.models import ChapterWritingRequest, InterpretationReport, ChartResult, ChapterWritingOptions
+        from chapter_writer.models import (
+            ChapterWritingRequest, ChapterWritingResult, InterpretationReport, ChartResult, ChapterWritingOptions,
+        )
 
         logger.info(f"[{run_id}] 启动章节撰写智能体 (7章21节全并发), 挂载技能={selected_skills}")
         event_hub.emit(run_id, "chapter_write", "agent_start", "启动券商深度研报章节撰写智能体，组织 7 章 21 节骨架全并发撰写...", tool="ChapterWriterAgent")
@@ -1806,7 +1909,6 @@ class FiveAgentsAdapter:
             elif evt == "skills_planned":
                 event_hub.emit(run_id, "chapter_write", "agent_decision", "7 大核心章节写作技能分配就绪，全并发流式撰写推进中", tool="ChapterPlanner", details=details)
 
-        agent = ChapterWriterAgent()
         verified_nev = report.data_quality_appendix.get("data_source") == "iwencai_verified_capture"
         writing_options = ChapterWritingOptions(
             editorial_profile="a17_nev" if chart_raw.get("figure_profile") == "a17_nev_2025" else "standard",
@@ -1825,13 +1927,27 @@ class FiveAgentsAdapter:
         if instructions:
             writing_options.instruction = "\n".join(instructions)
 
-        result = await agent.run(ChapterWritingRequest(
-            report=report,
-            selected_skills=selected_skills or [],
-            charts=chart_res,
-            options=writing_options,
-            questions=load_writing_questions(run_id, report, chart_raw, run_dir),
-        ), emit=on_chapter_event, save_artifacts=False)
+        from backend.app.engine.state_machine import load_execution_snapshot
+
+        demo = getattr(load_execution_snapshot(run_id), "nev_probe_demo", None)
+        archived_chapters = None
+        if demo and not feedback:
+            from backend.app.agents.nev_demo import reusable_chapters
+
+            archived_chapters = reusable_chapters(demo, run_dir, chart_raw)
+        if archived_chapters:
+            result = ChapterWritingResult.model_validate_json(archived_chapters).model_copy(update={
+                "run_id": run_id, "source_report_id": report.report_id, "artifact_dir": None,
+            })
+            event_hub.emit(run_id, "chapter_write", "info", "已载入同口径的验收章节", tool="ChapterWriterAgent")
+        else:
+            result = await ChapterWriterAgent().run(ChapterWritingRequest(
+                report=report,
+                selected_skills=selected_skills or [],
+                charts=chart_res,
+                options=writing_options,
+                questions=load_writing_questions(run_id, report, chart_raw, run_dir),
+            ), emit=on_chapter_event, save_artifacts=False)
 
         chapter_result_path = run_dir / "artifacts" / "chapter_result.json"
         chapter_result_path.write_text(result.model_dump_json(indent=2), encoding="utf-8")
@@ -1840,8 +1956,9 @@ class FiveAgentsAdapter:
         for ch in result.chapters:
             event_hub.emit(
                 run_id, "chapter_write", "tool_call",
+                f"载入已验收章节《{ch.title}》" if archived_chapters else
                 f"并发撰写章节《{ch.title}》，动态关联相关客观证据与矢量图表...",
-                tool="DeepSeek-V4-Flash",
+                tool="ChapterWriterAgent" if archived_chapters else "DeepSeek-V4-Flash",
                 details={"chapter_id": ch.chapter_id, "title": ch.title, "sections": len(ch.sections)}
             )
             sec_list = []
@@ -1916,6 +2033,8 @@ class FiveAgentsAdapter:
         }
         if getattr(result, "question_answers", None):
             data["question_answers"] = result.question_answers
+        if archived_chapters:
+            data["verified_chapter_replay"] = True
 
         artifacts = [
             ArtifactRef(
@@ -2026,10 +2145,15 @@ class FiveAgentsAdapter:
                 event_hub.emit(run_id, "report_fusion", "stage_completed", "研报融合结束，正式交付资格以质量门禁结果为准。", tool="ReportFusionAgent", details=details)
 
         from report_fusion.models import FusionOptions
+        from backend.app.engine.state_machine import load_execution_snapshot
+        from types import SimpleNamespace
+
+        demo = getattr(load_execution_snapshot(run_id), "nev_probe_demo", None)
         fusion_options = FusionOptions(
             final_instruction=feedback,
             delivery_profile=delivery_profile,
             source_index_mode="compact",
+            enable_editorial_llm=not demo,
         )
 
         # Retire managed exports before rendering a new version. A failed PDF
@@ -2037,7 +2161,7 @@ class FiveAgentsAdapter:
         for name in ("report.md", "report.html", "report.pdf", "report_view.json", "consistency_report.json", "manifest.json"):
             (run_dir / "artifacts" / name).unlink(missing_ok=True)
 
-        agent = ReportFusionAgent()
+        agent = ReportFusionAgent(llm=SimpleNamespace(is_available=False)) if demo else ReportFusionAgent()
         result = await agent.run(ReportFusionRequest(
             report=report,
             chapters=chapter_res,

@@ -103,6 +103,9 @@ const groupedRisks = computed<RiskGroup[]>(() => {
 })
 
 const hasError = computed(() => Boolean(props.result.error))
+const demoProbePending = computed(
+  () => props.stage === 'data_fetch' && props.result.data.demo_probe_pending === true
+)
 
 // The chapter writer reports content gaps in quality.issues. Only derive
 // guidance from those entries, so timeouts and unrelated errors keep their own recovery path.
@@ -269,7 +272,7 @@ function buildDecisionFields(): Partial<ReviewRequest> {
 }
 
 async function approve(): Promise<void> {
-  if (signoffBlocked.value || hasBlockingRisks.value) return
+  if (signoffBlocked.value || hasBlockingRisks.value || demoProbePending.value) return
   if (decisionPackage.value?.blocking_risk_codes?.length) {
     ElMessage.error('当前阶段存在硬阻塞风险，不能批准或通过接受风险绕过')
     return
@@ -624,7 +627,14 @@ async function onStageDirectEditSubmit(payload: {
       <!-- 阶段专属精准介入按钮组 -->
       <div class="intervention-actions">
         <!-- 阶段专属主通过按钮 -->
-        <template v-if="!signoffBlocked && !hasBlockingRisks && (decisionPackage || !hasError)">
+        <template
+          v-if="
+            !signoffBlocked &&
+            !hasBlockingRisks &&
+            !demoProbePending &&
+            (decisionPackage || !hasError)
+          "
+        >
           <el-button
             v-if="ackRequiredCodes.length === 0 && !hasError"
             type="primary"
@@ -665,9 +675,9 @@ async function onStageDirectEditSubmit(payload: {
             plain
             size="large"
             :disabled="submitting || recoveryBlocked"
-            @click="openStageModal('replenish')"
+            @click="openStageModal('partial_refetch')"
           >
-            增量数据补采
+            定向补采
           </el-button>
         </template>
 

@@ -101,6 +101,21 @@ describe('CreateRunView question_planner_mode', () => {
     wrapper.unmount()
   })
 
+  it('关键数据自动补采默认开启，关闭后随任务保存', async () => {
+    const wrapper = await mountView()
+    await submitForm(wrapper)
+    expect(mocks.createRun.mock.calls[0]?.[0]).toMatchObject({
+      input_data: { data_fetch_options: { auto_probe_enabled: true } },
+    })
+    mocks.createRun.mockClear()
+    await wrapper.get('[data-testid="auto-probe-switch"] input').setValue(false)
+    await submitForm(wrapper)
+    expect(mocks.createRun.mock.calls[0]?.[0]).toMatchObject({
+      input_data: { data_fetch_options: { auto_probe_enabled: false } },
+    })
+    wrapper.unmount()
+  })
+
   it('uses the browser local calendar date instead of the previous UTC day', async () => {
     process.env.TZ = 'Asia/Shanghai'
     vi.useFakeTimers({ toFake: ['Date'] })

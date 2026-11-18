@@ -63,7 +63,7 @@ describe('ReviewActions 差异化人机协同控制区（彻底清理旧通用�
     const wrapper = mountComponent('data_fetch')
     const text = wrapper.text()
     expect(text).toContain('审核确认检索范围与关键词')
-    expect(text).toContain('增量数据补采')
+    expect(text).toContain('定向补采')
     expect(text).not.toContain('脏数据清洗与剔除')
   })
 

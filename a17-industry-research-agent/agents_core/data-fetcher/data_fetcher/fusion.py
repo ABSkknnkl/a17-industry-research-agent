@@ -975,6 +975,11 @@ class DataFusion:
 
                     # 2. 经典金融指标默认单位智能补齐（AB-1：金额类不再被默认为元）
                     if not unit and isinstance(value, (int, float)) and not isinstance(value, bool):
+                        if result.skill_id == "hithink-finance-query" and metric == "rd_ratio":
+                            label = re.sub(r"[\[［].*?[\]］]|\s", "", raw_key_str)
+                            if label == "研发费用/营业收入":
+                                # 问财的公式列返回分数，百分比字段已有来源单位并绕过此换算。
+                                value *= 100
                         unit, unit_provenance = resolve_inferred_unit(metric, raw_key_str, domain=result.domain)
                     if unit_provenance is None:
                         unit_provenance = UNIT_UNKNOWN

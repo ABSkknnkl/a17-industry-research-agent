@@ -17,6 +17,7 @@ import httpx
 
 from data_fetcher.config import Settings
 from data_fetcher.models import Domain, SkillResult, SkillSpec, SkillTask
+from data_fetcher.probe_budget import ProbeBudgetExceeded
 
 _request_observer: ContextVar[Any] = ContextVar('iwencai_request_observer', default=None)
 
@@ -346,6 +347,7 @@ class IwencaiGateway:
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or Settings.from_env()
         self._client: httpx.AsyncClient | None = None
+        self.before_request: Callable[[str, dict[str, Any]], Awaitable[bool]] | None = None
         self._keys: list[str] = list(self.settings.iwencai_api_keys)
         if not self._keys and self.settings.iwencai_api_key:
             self._keys = [self.settings.iwencai_api_key]
@@ -433,6 +435,11 @@ class IwencaiGateway:
             )
 
         for active_index, active_key in candidates:
+            if self.before_request and not await self.before_request(
+                "skill", {"skill_id": spec.skill_id, "query": arguments.get("query"),
+                          "trace_id": trace_id, "call_type": call_type},
+            ):
+                raise ProbeBudgetExceeded("自动补采请求预算已用完")
             headers = {
                 "Authorization": f"Bearer {active_key}",
                 "Content-Type": "application/json",
@@ -594,7 +601,7 @@ class SkillHub:
                     )
                 received_empty = True
                 break
-            except IwencaiAuthenticationError:
+            except (IwencaiAuthenticationError, ProbeBudgetExceeded):
                 raise
             except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPStatusError) as exc:
                 last_error = exc
@@ -654,6 +661,8 @@ class SkillHub:
                             records=records,
                             raw_payload=payload,
                         )
+                except ProbeBudgetExceeded:
+                    raise
                 except Exception as exc:
                     last_error = exc
 

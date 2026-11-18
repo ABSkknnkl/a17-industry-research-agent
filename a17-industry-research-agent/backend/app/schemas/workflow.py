@@ -144,6 +144,7 @@ class RevisionListResponse(BaseModel):
 
 
 class DataFetchOptions(BaseModel):
+    auto_probe_enabled: bool = True
     chain_research_strategy: Literal["profile_guided", "explore"] = "profile_guided"
     chain_profile_id: str | None = None
     keywords: list[str] | None = None
@@ -239,12 +240,16 @@ class RunExecutionSnapshot(BaseModel):
     question_planner_mode: str = "off"
     question_planner_params: dict[str, Any] = Field(default_factory=dict)
     question_contract_sha256: str | None = None
+    nev_probe_demo: dict[str, str] | None = None
+    # Older snapshots retain their original execution policy.
+    auto_probe_enabled: bool = False
     notes: list[str] = Field(default_factory=list)
 
 
 class RunCreateRequest(BaseModel):
     project_id: str
     delivery_profile: Literal["standard", "competition"] = "standard"
+    nev_probe_demo: bool = False
     input_data: ResearchInput
     review_stages: list[StageName] = Field(
         default_factory=lambda: [

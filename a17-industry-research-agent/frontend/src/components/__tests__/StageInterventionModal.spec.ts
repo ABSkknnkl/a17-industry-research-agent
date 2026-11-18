@@ -21,116 +21,152 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
     document.body.innerHTML = ''
   })
 
-  it('data_fetch 阶段支持审核确认检索范围与增量数据补采', async () => {
+  it('data_fetch 阶段：定向补采按点提交 partial_refetch', async () => {
     const wrapper = mount(StageInterventionModal, {
       props: {
         visible: true,
         stage: 'data_fetch',
         revision: 2,
+        initialTab: 'partial_refetch',
         data: {
           source_records: [
-            {
-              record_id: 'REC-01',
-              metric: '研发费用',
-              value: 180,
-              unit: '亿元',
-              entity_name: '宁德时代',
-            },
-            {
-              record_id: 'REC-02',
-              metric: '脏数据噪声',
-              value: -999,
-              unit: '',
-              entity_name: '未知代码',
-            },
+            { record_id: 'REC-01', metric: '研发费用', value: 180, unit: '亿元', entity_name: '宁德时代' },
+            { record_id: 'REC-02', metric: '营业收入', value: 1342, unit: '亿元', entity_name: '比亚迪' },
           ],
         },
       },
       attachTo: document.body,
-      global: {
-        plugins: [ElementPlus],
-      },
+      global: { plugins: [ElementPlus] },
     })
     await flushPromises()
 
     const bodyText = document.body.textContent || ''
     expect(bodyText).toContain('数据获取智能体')
-    expect(bodyText).toContain('审核确认检索范围与关键词')
-    expect(bodyText).toContain('增量数据补采')
-    expect(bodyText).toContain('局部子域重采')
+    expect(bodyText).toContain('定向补采')
+    expect(bodyText).toContain('重点公司财务与盈利指标')
+    // 旧「探针补采」页签已合并进点级清单，正常模式下不再单独出现
+    expect(bodyText).not.toContain('探针补采')
     expect(bodyText).not.toContain('脏数据清洗与剔除')
 
-    // 快捷填入补采
-    const buttons = Array.from(document.body.querySelectorAll('button'))
-    const quickChip = buttons.find((b) => b.textContent?.includes('补充龙头财务与盈利'))
-    expect(quickChip).toBeTruthy()
-    quickChip!.click()
-    await flushPromises()
-
-    // 提交补采
-    const submitBtn = Array.from(document.body.querySelectorAll('button')).find((b) =>
-      b.textContent?.includes('启动定向单点补采')
+    const submit = Array.from(document.body.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('启动定向补采')
     )
-    expect(submitBtn).toBeTruthy()
-    submitBtn!.click()
+    expect(submit).toBeTruthy()
+    submit!.click()
     await flushPromises()
 
-    const emittedRevise = wrapper.emitted('submitRevise')
-    expect(emittedRevise).toBeTruthy()
-    const payload = emittedRevise![0]![0] as {
-      edited_data: { action_type: string; demand: { domain: string; entities: string[] } }
+    const emitted = wrapper.emitted('submitRevise')
+    expect(emitted).toBeTruthy()
+    const payload = emitted![0]![0] as {
+      edited_data: {
+        action_type: string
+        data_point_ids: string[]
+        probe_mode: string
+        entities: string[]
+      }
     }
-    expect(payload.edited_data.action_type).toBe('replenish')
-    expect(payload.edited_data.demand.domain).toBe('financials')
-    expect(payload.edited_data.demand.entities).toContain('宁德时代')
+    expect(payload.edited_data.action_type).toBe('partial_refetch')
+    expect(payload.edited_data.probe_mode).toBe('llm_dynamic')
+    expect(payload.edited_data.data_point_ids.length).toBeGreaterThan(0)
+    expect(payload.edited_data.entities).toContain('宁德时代')
   })
 
-  it('data_fetch 阶段增量数据补采默认填入通用的、自适应行业的投研指令与实体', async () => {
-    mount(StageInterventionModal, {
+  it('演示补采只提交仍缺失且已勾选的真实数据点', async () => {
+    const wrapper = mount(StageInterventionModal, {
       props: {
         visible: true,
         stage: 'data_fetch',
-        revision: 1,
+        revision: 2,
         initialTab: 'replenish',
         data: {
-          industry_topic: '银行业',
-          source_records: [
+          nev_probe_demo: true,
+          demo_probe_points: [
             {
-              record_id: 'REC-01',
-              metric: '不良贷款率',
-              value: 1.25,
-              unit: '%',
-              entity_name: '工商银行 (601398.SH)',
+              id: 'revenue',
+              label: '营业收入',
+              entity: '长安汽车',
+              period: '2025 年度',
+              missing: false,
+              value: '1,639.998 亿元',
             },
             {
-              record_id: 'REC-02',
-              metric: '净息差',
-              value: 1.82,
-              unit: '%',
-              entity_name: '建设银行 (601939.SH)',
+              id: 'cashflow',
+              label: '经营现金流',
+              entity: '长安汽车',
+              period: '2025 年度',
+              missing: true,
+              value: null,
             },
           ],
         },
       },
       attachTo: document.body,
-      global: {
-        plugins: [ElementPlus],
+      global: { plugins: [ElementPlus] },
+    })
+    await flushPromises()
+    expect(document.body.textContent).toContain('模拟首轮未返回')
+    expect(document.body.textContent).toContain('1,639.998 亿元')
+    expect(document.body.textContent).not.toContain('常规单次查询')
+    const submit = Array.from(document.body.querySelectorAll('button')).find((button) =>
+      button.textContent?.includes('补采所选数据点')
+    )
+    expect(submit).toBeTruthy()
+    submit!.click()
+    await flushPromises()
+    expect(wrapper.emitted('submitRevise')?.[0]?.[0]).toMatchObject({
+      edited_data: { action_type: 'partial_refetch', data_point_ids: ['cashflow'] },
+    })
+  })
+
+  it('定向补采：不勾点、只填清单外诉求时走 replenish 契约', async () => {
+    const wrapper = mount(StageInterventionModal, {
+      props: {
+        visible: true,
+        stage: 'data_fetch',
+        revision: 1,
+        initialTab: 'partial_refetch',
+        data: {
+          industry_topic: '银行业',
+          source_records: [
+            { record_id: 'REC-01', metric: '不良贷款率', value: 1.25, unit: '%', entity_name: '工商银行 (601398.SH)' },
+            { record_id: 'REC-02', metric: '净息差', value: 1.82, unit: '%', entity_name: '建设银行 (601939.SH)' },
+          ],
+        },
       },
+      attachTo: document.body,
+      global: { plugins: [ElementPlus] },
     })
     await flushPromises()
 
-    // 验证自适应提取出行业与实体，且内容通用化，不含任何写死的电池/储能字样
-    const inputs = Array.from(document.body.querySelectorAll('input'))
-    const entityInput = inputs.find((i) => i.value.includes('工商银行'))
-    expect(entityInput).toBeTruthy()
-    expect(entityInput!.value).toContain('建设银行')
+    // 清空默认勾选，只保留清单外诉求
+    const clearBtn = Array.from(document.body.querySelectorAll('button')).find((b) =>
+      b.textContent?.trim() === '清空'
+    )
+    expect(clearBtn).toBeTruthy()
+    clearBtn!.click()
+    await flushPromises()
 
-    const textarea = document.body.querySelector('textarea')
-    expect(textarea).toBeTruthy()
-    expect(textarea!.value).toContain('银行业')
-    expect(textarea!.value).toContain('核心龙头企业近3年营业收入')
-    expect(textarea!.value).not.toContain('储能')
-    expect(textarea!.value).not.toContain('宁德时代')
+    const adhoc = document.body.querySelector('.prp-adhoc input') as HTMLInputElement | null
+    expect(adhoc).toBeTruthy()
+    adhoc!.value = '补充 2025 年不良贷款率与净息差'
+    adhoc!.dispatchEvent(new Event('input'))
+    await flushPromises()
+
+    const submit = Array.from(document.body.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('补采清单外诉求')
+    )
+    expect(submit).toBeTruthy()
+    submit!.click()
+    await flushPromises()
+
+    const emitted = wrapper.emitted('submitRevise')
+    expect(emitted).toBeTruthy()
+    const payload = emitted![0]![0] as {
+      edited_data: { action_type: string; demand: { entities: string[]; probe_mode: string } }
+    }
+    expect(payload.edited_data.action_type).toBe('replenish')
+    expect(payload.edited_data.demand.entities).toContain('工商银行')
+    expect(payload.edited_data.demand.probe_mode).toBe('llm_dynamic')
   })
 
   it('chapter_write 阶段支持提出修改意见与补充要求', async () => {
@@ -404,5 +440,45 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
     expect(savedChart.option.radar).toBeDefined()
     expect(savedChart.option.radar?.indicator).toHaveLength(5)
     expect(savedChart.option.series[0].type).toBe('radar')
+  })
+
+  it('定向补采：切到常规单次查询时 probe_mode=static', async () => {
+    const wrapper = mount(StageInterventionModal, {
+      props: {
+        visible: true,
+        stage: 'data_fetch',
+        revision: 2,
+        initialTab: 'partial_refetch',
+        data: { industry_topic: '白酒行业', source_records: [] },
+      },
+      attachTo: document.body,
+      global: { plugins: [ElementPlus] },
+    })
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('补采执行方式')
+
+    const staticRadio = Array.from(document.body.querySelectorAll('.el-radio-button')).find((el) =>
+      el.textContent?.includes('常规单次查询')
+    )
+    expect(staticRadio).toBeTruthy()
+    staticRadio!.querySelector('input')?.click()
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('主链路只发一次查询')
+
+    const submit = Array.from(document.body.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('启动定向补采')
+    )
+    expect(submit).toBeTruthy()
+    submit!.click()
+    await flushPromises()
+
+    const emitted = wrapper.emitted('submitRevise')
+    expect(emitted).toBeTruthy()
+    const payload = emitted![0]![0] as { edited_data: { action_type: string; probe_mode?: string } }
+    expect(payload.edited_data.action_type).toBe('partial_refetch')
+    expect(payload.edited_data.probe_mode).toBe('static')
+    wrapper.unmount()
   })
 })

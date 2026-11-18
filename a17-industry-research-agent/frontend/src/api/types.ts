@@ -146,6 +146,7 @@ export type RiskPreference = 'conservative' | 'balanced' | 'aggressive'
 
 /** DataFetchOptions（workflow.py L132-137），全部字段可选 */
 export interface DataFetchOptions {
+  auto_probe_enabled?: boolean
   keywords?: string[]
   industry_scope?: string[]
   time_range?: string[]
@@ -383,6 +384,7 @@ export interface ResearchInput {
 export interface RunCreateRequest {
   project_id: string
   delivery_profile?: 'standard' | 'competition'
+  nev_probe_demo?: boolean
   input_data: ResearchInput
   review_stages: StageName[]
 }

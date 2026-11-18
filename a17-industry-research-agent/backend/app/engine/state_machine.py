@@ -110,6 +110,11 @@ def assess_stage_progression(result: StageResult, stage: str | None = None) -> t
     if status == "failed":
         return False, error or "阶段执行失败"
 
+    if stage == "data_fetch" and data.get("demo_probe_pending"):
+        from backend.app.agents.nev_demo import GATE_MESSAGE
+
+        return False, GATE_MESSAGE
+
     # 2) 适配器显式上报的 agent 原生状态。
     agent_status = str(data.get("agent_status") or "").strip().lower()
     domains = data.get("domains") if isinstance(data.get("domains"), dict) else {}
@@ -358,6 +363,10 @@ def resolve_execution_snapshot(req: RunCreateRequest) -> RunExecutionSnapshot:
         "completion_budget": int(runtime_settings.CHART_QUESTION_PLANNER_MAX_TOKENS),
     }
     return RunExecutionSnapshot(
+        auto_probe_enabled=(
+            req.input_data.data_fetch_options.auto_probe_enabled
+            if req.input_data.data_fetch_options else True
+        ),
         question_planner_mode=planner_mode,
         question_planner_params=planner_params,
         model_configuration={"model": runtime_settings.LLM_MODEL, "base_url": provider_url,
@@ -632,6 +641,14 @@ class WorkflowEngine:
 
     async def create_run(self, req: RunCreateRequest) -> WorkflowState:
         self._ensure_not_clearing()
+        demo_snapshot = None
+        if req.nev_probe_demo:
+            from backend.app.agents.nev_demo import prepare_request
+
+            try:
+                req, demo_snapshot = prepare_request(req)
+            except (OSError, ValueError) as exc:
+                raise ReviewConflictError(f"新能源汽车演示资源不可用：{exc}") from exc
         run_id = f"run-{datetime.now().strftime('%Y%m%d%H%M%S')}-{secrets.token_hex(6)}"
         now_str = datetime.now().isoformat()
 
@@ -657,6 +674,7 @@ class WorkflowEngine:
         input_file.write_text(req.model_dump_json(indent=2), encoding="utf-8")
         # D3：创建时解析一次执行策略并持久化；后续阶段与 resume 共用
         snapshot = resolve_execution_snapshot(req)
+        snapshot.nev_probe_demo = demo_snapshot
         # A3 用户问题驱动选图（方案 3.1）：启用新路径时先落问题上下文，
         # 再把哈希写进快照，最后才调度 A1；off 不生成任何附加文件。
         if snapshot.question_planner_mode in {"observe", "apply"}:
@@ -1096,26 +1114,64 @@ class WorkflowEngine:
                 invalidated.append(downstream)
         return invalidated
 
+    @staticmethod
+    def _supplement_demand(edits: dict[str, Any]) -> dict[str, Any]:
+        if edits.get("action_type") == "partial_refetch":
+            domains = edits.get("domains") or ["financials"]
+            return {
+                "domain": domains[0],
+                "entities": edits.get("entities") or [],
+                "query_hint": edits.get("query_hint") or f"重新采集{'、'.join(domains)}相关核心指标",
+                "reason": edits.get("reason") or "局部子域重采",
+                "probe_mode": str(edits.get("probe_mode") or "static"),
+            }
+        return edits.get("demand") or {}
+
     async def _prepare_supplement(
         self, req: ReviewRequest, original: WorkflowState, run_dir: Path,
     ) -> tuple[dict[Path, str], dict[str, Any], str] | None:
         """Fetch without a run lock; prepare changes without publishing files."""
         from data_fetcher.agent import DataFetcherAgent
+        from data_fetcher.models import ResearchRecord, ResearchRequirement, StructuredResearchDataset
+        from backend.app.agents.adapters import (
+            merge_supplemental_records, question_stage_coverage, refresh_data_gap_notice,
+        )
 
         edits = req.edited_data or {}
-        demand = edits.get("demand") or {}
-        if edits.get("action_type") == "partial_refetch":
-            domains = edits.get("domains") or ["financials"]
-            demand = {
-                "domain": domains[0], "entities": edits.get("entities") or [],
-                "query_hint": edits.get("query_hint") or f"重新采集{'、'.join(domains)}相关核心指标",
-                "reason": edits.get("reason") or "局部子域重采",
-            }
+        demand = self._supplement_demand(edits)
+        run_id = getattr(req, "run_id", run_dir.name)
+        stage = getattr(req, "stage", "data_fetch")
+        demo = load_execution_snapshot(run_id).nev_probe_demo if hasattr(req, "run_id") else None
+        mode = "archive_replay" if demo else str(demand.get("probe_mode") or "static")
+        probe_meta: dict[str, Any] = {
+            "probe_mode": mode, "probe_status": "", "probe_message": "", "probe_attempts": [], "probe_records": 0,
+        }
+        path = run_dir / "artifacts" / "dataset.json"
+        dataset = None
+
+        async def on_probe_attempt(item: dict[str, Any]) -> None:
+            label = "同花顺归档回放" if demo else "大模型动态探针"
+            event_hub.emit(
+                run_id, stage, "info",
+                f"{label}第 {item.get('attempt')} 次尝试："
+                f"{item.get('skill_id') or '-'} / {str(item.get('query') or '')[:60]}",
+                tool="LLMProbe", details=item,
+            )
+
         input_path = run_dir / "input_data.json"
         input_data = json.loads(input_path.read_text(encoding="utf-8")) if input_path.exists() else {}
         as_of_value = (input_data.get("input_data") or {}).get("research_as_of")
         as_of = date.fromisoformat(as_of_value) if as_of_value else date.today()
-        if demand.get('source_type') == 'official-disclosure':
+        if demo:
+            from backend.app.agents.nev_demo import AS_OF, replay_probe
+
+            if as_of != AS_OF:
+                raise ValueError("新能源汽车演示的研究时点已变化。")
+            dataset = StructuredResearchDataset.model_validate_json(path.read_bytes())
+            outcome = await replay_probe(demo, dataset, edits.get("data_point_ids"), on_probe_attempt)
+            records = outcome.records
+            probe_meta.update(outcome.as_meta(), probe_mode=mode)
+        elif demand.get('source_type') == 'official-disclosure':
             from agents_core.call_ledger import ledger_context
             from data_fetcher.official_filing import fetch_official_chain_record
             topic = str(demand.get('topic') or '').strip()
@@ -1124,8 +1180,6 @@ class WorkflowEngine:
                 or topic != requested_topic or isinstance(demand.get('page_number'), bool)
                 or not isinstance(demand.get('page_number'), int)):
                 raise ValueError('公告资料的领域、研究主题或页码不匹配')
-            run_id = getattr(req, 'run_id', run_dir.name)
-            stage = getattr(req, 'stage', 'data_fetch')
             def emit(item):
                 event_hub.emit(run_id, stage, 'tool_request' if item['kind']=='tool_request' else 'tool_call',
                                '公告原文请求已结束', tool='official-disclosure', details=item)
@@ -1134,27 +1188,45 @@ class WorkflowEngine:
                     published_at=date.fromisoformat(str(demand.get('published_at') or '')),as_of=as_of,
                     page_number=demand['page_number'],excerpt=str(demand.get('excerpt') or ''),topic=topic)
             records = [record]
+        elif mode == "llm_dynamic":
+            from data_fetcher.dynamic_probe import run_dynamic_probe
+
+            outcome = await run_dynamic_probe(demand, as_of, on_attempt=on_probe_attempt)
+            records = outcome.records
+            probe_meta.update(outcome.as_meta())
         else:
-            records = await self._fetch_supplement_with_audit(getattr(req, 'run_id', run_dir.name),
-                                                             getattr(req, 'stage', 'data_fetch'), demand, as_of)
+            records = await self._fetch_supplement_with_audit(run_id, stage, demand, as_of)
+        stage_result = (getattr(original, "stage_results", None) or {}).get(stage)
+        if stage_result is not None:
+            stage_result.data.update(probe_meta)
         if not records:
             return None
-        path = run_dir / "artifacts" / "dataset.json"
-        from backend.app.agents.adapters import merge_supplemental_records, question_stage_coverage
-        from data_fetcher.models import ResearchRecord, ResearchRequirement, StructuredResearchDataset
-
-        dataset = StructuredResearchDataset.model_validate_json(path.read_text(encoding="utf-8"))
+        if dataset is None:
+            dataset = StructuredResearchDataset.model_validate_json(path.read_bytes())
         records = [ResearchRecord.model_validate(record) for record in records]
         original_chain_gaps = set()
-        if demand.get('source_type') == 'official-disclosure':
+        if not demo and demand.get('source_type') == 'official-disclosure':
             for row in dataset.quality_summary.get('requirement_evidence_matrix') or []:
                 requirement = ResearchRequirement.model_validate(row['requirement'])
                 if requirement.domain.value == 'industry_chain' and not DataFetcherAgent._evaluate_requirement(dataset, requirement).passed:
                     original_chain_gaps.add(requirement.requirement_id)
-        added_ids = merge_supplemental_records(dataset, {}, records, as_of)
+        if demo:
+            from data_fetcher.nev_profile import verify_dataset
+
+            dataset.financials.extend(records)
+            demo_result = verify_dataset(run_id, dataset, as_of)
+            added_ids = [record.record_id for record in records]
+        else:
+            added_ids = merge_supplemental_records(dataset, {}, records, as_of)
+            if added_ids:
+                # A1 submission invalidates the analysis and reruns it from the new dataset.
+                dataset.quality_summary["requested_requirement_coverage"] = [
+                    row for row in dataset.quality_summary.get("requested_requirement_coverage", [])
+                    if row.get("requirement_id") != "supplement_analysis_stale"
+                ]
         if not added_ids:
             return None
-        if demand.get('source_type') == 'official-disclosure':
+        if not demo and demand.get('source_type') == 'official-disclosure':
             improved = any(row['requirement']['requirement_id'] in original_chain_gaps
                            and row['coverage'].get('passed')
                            and bool(set(row['coverage'].get('evidence_record_ids') or []) & set(added_ids))
@@ -1173,19 +1245,38 @@ class WorkflowEngine:
             sources.insert(0, {
                 **raw, "domain": domain,
                 "period": str(raw.get("period_end") or ""),
-                "query": demand.get("query_hint", ""), "skill_name": "fetch_supplemental",
+                "query": record.source.query if record.source else demand.get("query_hint", ""),
+                "skill_name": record.source.skill_id if record.source else "fetch_supplemental",
             })
             if isinstance(data.get("domains"), dict):
                 data["domains"][domain] = int(data["domains"].get(domain) or 0) + 1
         data["source_records"] = sources[:120]
-        data["record_count"] = int(data.get("record_count") or 0) + len(records)
-        if "total_records" in data:
-            data["total_records"] = int(data["total_records"] or 0) + len(records)
+        data["record_count"] = data["total_records"] = data["evidence_count"] = dataset.total_record_count
         data["replenishment_status"] = "completed"
-        data.update(question_stage_coverage(
-            req.run_id, dataset.quality_summary.get("requirement_evidence_matrix") or [],
-        ))
-        return {path: dataset.model_dump_json(indent=2)}, data, f"精准数据补采完成，新增 {len(records)} 条有效金融记录"
+        data.update(probe_meta)
+        # 前端展示的是去重后真正并入 dataset 的新增数，不是探针返回的原始行数。
+        if mode in ("llm_dynamic", "archive_replay"):
+            data["probe_records"] = len(records)
+        matrix = dataset.quality_summary.get("requirement_evidence_matrix") or []
+        data.update(question_stage_coverage(run_id, matrix))
+        if matrix:
+            refresh_data_gap_notice(data, [row["coverage"] for row in matrix])
+        if demo:
+            from backend.app.agents.nev_demo import stage_data
+
+            data.update(stage_data(demo_result))
+            if not data["demo_probe_pending"]:
+                data.pop("data_gap_notice", None)
+                data.pop("probe_hint", None)
+            success_message = f"同花顺归档回放完成，补齐 {len(records)} 条有效记录"
+        elif mode == "llm_dynamic":
+            success_message = (
+                f"大模型动态探针取数成功，新增 {len(records)} 条有效记录"
+                f"（{len(probe_meta.get('probe_attempts') or [])} 次尝试）"
+            )
+        else:
+            success_message = f"精准数据补采完成，新增 {len(records)} 条有效金融记录"
+        return {path: dataset.model_dump_json(indent=2)}, data, success_message
 
     async def _prepare_chapter_rewrite(
         self, req: ReviewRequest, original: WorkflowState, run_dir: Path,
@@ -1293,10 +1384,33 @@ class WorkflowEngine:
                                     captured_versions: dict[Path, str | None] | None = None) -> None:
         """Use the existing task registry, cancellation and revision guard for local work."""
         run_dir = storage.get_run_dir(req.run_id)
+        probe_mode = ""
         try:
-            versions = captured_versions if captured_versions is not None else self._intervention_input_versions(run_dir, req.stage)
             if req.stage == "data_fetch":
-                prepared = await self._prepare_supplement(req, original, run_dir)
+                probe_mode = (
+                    "archive_replay" if load_execution_snapshot(req.run_id).nev_probe_demo
+                    else self._supplement_demand(req.edited_data or {}).get("probe_mode", "")
+                )
+            probe_requested = probe_mode in ("llm_dynamic", "archive_replay")
+            probe_label = "同花顺归档回放" if probe_mode == "archive_replay" else "大模型动态探针"
+            if probe_requested:
+                # 用户点击后才走到这里：把「取数中」落到实时状态，前端轮询即可看到。
+                live = storage.load_state(req.run_id)
+                if live is not None and req.stage in live.stage_results:
+                    live.stage_results[req.stage].data.update({
+                        "probe_mode": probe_mode,
+                        "probe_status": "running",
+                        "probe_message": f"{probe_label}取数中…",
+                        "probe_attempts": [],
+                        "probe_records": 0,
+                    })
+                    storage.save_state(live)
+                    event_hub.emit(req.run_id, req.stage, "info",
+                                   f"{probe_label}已启动，开始取数", tool="LLMProbe")
+            versions = captured_versions if captured_versions is not None else self._intervention_input_versions(run_dir, req.stage)
+            prepared_state = original.model_copy(deep=True)
+            if req.stage == "data_fetch":
+                prepared = await self._prepare_supplement(req, prepared_state, run_dir)
             else:
                 prepared = await self._prepare_chapter_rewrite(req, original, run_dir)
             async with self._run_lock(req.run_id):
@@ -1308,17 +1422,27 @@ class WorkflowEngine:
                     return
                 if self._intervention_input_versions(run_dir, req.stage) != versions:
                     result.data['replenishment_status'] = 'discarded_stale_input'
+                    if probe_requested:
+                        result.data.update(probe_status="discarded_stale_input", probe_message="输入已变化，请刷新后重试。")
                     fresh.status = result.status = 'waiting_review'
                     fresh.updated_at = datetime.now().isoformat()
                     storage.save_state(fresh)
                     event_hub.emit(req.run_id, req.stage, 'info', '输入已变化，已丢弃旧输入上的补采结果', tool='DataReplenisher')
                     return
                 if prepared is None:
-                    fresh = original.model_copy(deep=True)
-                    fresh.stage_results[req.stage].data["replenishment_status"] = "no_new_data"
+                    fresh = prepared_state
+                    stage_data = fresh.stage_results[req.stage].data
+                    stage_data["replenishment_status"] = "no_new_data"
+                    notice = "本次补采没有新增数据，保留原版本"
+                    if probe_requested:
+                        if stage_data.get("probe_status") not in ("failed", "no_data"):
+                            stage_data["probe_status"] = "no_data"
+                            stage_data["probe_message"] = f"{probe_label}没有补入新记录。"
+                        stage_data["probe_records"] = 0
+                        notice = str(stage_data.get("probe_message") or notice)
                     fresh.updated_at = datetime.now().isoformat()
                     storage.save_state(fresh)
-                    event_hub.emit(req.run_id, req.stage, "info", "本次补采没有新增数据，保留原版本", tool="DataReplenisher")
+                    event_hub.emit(req.run_id, req.stage, "info", notice, tool="DataReplenisher")
                     return
                 files, data, message = prepared
                 touched: dict[Path, bytes | None] = {}
@@ -1363,6 +1487,11 @@ class WorkflowEngine:
                 if fresh and fresh.status != "cancelled" and fresh.revision == original.revision:
                     fresh.status = fresh.stage_results[req.stage].status = "failed"
                     fresh.stage_results[req.stage].error = str(exc)
+                    if probe_mode in ("llm_dynamic", "archive_replay"):
+                        fresh.stage_results[req.stage].data["probe_status"] = "failed"
+                        fresh.stage_results[req.stage].data["probe_message"] = (
+                            f"{probe_label}取数失败：{type(exc).__name__}: {str(exc)[:160]}"
+                        )
                     fresh.updated_at = datetime.now().isoformat()
                     storage.save_state(fresh)
                     event_hub.emit(req.run_id, req.stage, "error", f"局部修订失败: {exc}", tool="HumanIntervention")
@@ -2318,7 +2447,11 @@ class WorkflowEngine:
                 # S-01：流转前统一识别终止性失败/硬阻塞。
                 # 必须在 review_stages 覆盖状态**之前**判定，否则 failed 会被改写成 approved。
                 allowed, block_reason = assess_stage_progression(result, stage)
-                if not allowed:
+                awaiting_demo_probe = (
+                    stage == "data_fetch" and result.status != "failed"
+                    and (getattr(result, "data", None) or {}).get("demo_probe_pending")
+                )
+                if not allowed and not awaiting_demo_probe:
                     result.status = "failed" if result.status == "failed" else "waiting_review"
                     result.error = result.error or block_reason
                     result.data = {**(result.data or {}), "block_reason": block_reason, "blocked": True}
@@ -2343,7 +2476,7 @@ class WorkflowEngine:
 
                 # 判断下一步流转策略：
                 # 若该阶段在 review_stages 中，则进入 waiting_review 等待人工审核！
-                if stage in review_stages:
+                if stage in review_stages or awaiting_demo_probe:
                     result.status = "waiting_review"
                     state.status = "waiting_review"
                     state.updated_at = datetime.now().isoformat()

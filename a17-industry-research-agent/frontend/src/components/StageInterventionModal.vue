@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { Cpu, View, EditPen, Promotion, Check } from '@element-plus/icons-vue'
 import type { StageName, PeerCompsEntry, PeerCompsMatrix, ReportQualityReport } from '../api/types'
 import { STAGE_LABELS } from '../api/types'
+import PartialRefetchPanel from './PartialRefetchPanel.vue'
 
 interface SourceContextRecord {
   metric?: string
@@ -189,8 +190,16 @@ function handleScopeKeywordsConfirm() {
   emit('update:visible', false)
 }
 
-function handleScopeKeywordsRevise() {
-  const selectedScope = scopeDomains.value.filter((s) => s.checked).map((s) => s.id)
+/** 局部子域重采组件提交：点级清单 + 探针取数方式一并下发 */
+function handlePartialRefetchPanelSubmit(payload: {
+  comment: string
+  edited_data: Record<string, unknown>
+}) {
+  emit('submitRevise', payload)
+  emit('update:visible', false)
+}
+
+function handleScopeKeywordsRevise() {  const selectedScope = scopeDomains.value.filter((s) => s.checked).map((s) => s.id)
   emit('submitRevise', {
     comment: `按人工确认的检索范围[${selectedScope.join(', ')}]与关键词[${activeKeywords.value.join(', ')}]重新检索`,
     edited_data: {
@@ -202,144 +211,54 @@ function handleScopeKeywordsRevise() {
   emit('update:visible', false)
 }
 
-// 1.1 增量数据补采 (Data Replenishment) - 通用且自适应上下文
-const replenishEntity = ref('')
-const replenishDomain = ref('financials')
-const replenishQuery = ref('')
-const replenishReason = ref('')
-
-function getContextTopic(): string {
-  const d = props.data || {}
-  const raw =
-    (d.industry_topic as string) ||
-    (d.topic as string) ||
-    (d.industry as string) ||
-    (d.title as string) ||
-    ((d.metadata as { industry_topic?: string; topic?: string } | undefined)
-      ?.industry_topic as string) ||
-    ((d.metadata as { industry_topic?: string; topic?: string } | undefined)?.topic as string) ||
-    ''
-  if (typeof raw === 'string' && raw.trim()) {
-    const cleaned = raw
-      .replace(/行业研究报告|行业分析报告|深度研究报告|深度报告|行业研报|研究报告/g, '')
-      .trim()
-    if (cleaned) {
-      return cleaned.endsWith('行业') ? cleaned : `${cleaned}行业`
-    }
-  }
-  return '行业'
-}
-
-function getContextEntities(): string[] {
-  const d = props.data || {}
-  const recs = (d.source_records || d.records || []) as SourceContextRecord[]
-  const set = new Set<string>()
-  recs.forEach((r) => {
-    const name = r.entity_name || r.entity || r.name
-    if (name && typeof name === 'string') {
-      const clean = name
-        .replace(/\(.*?\)/g, '')
-        .replace(/（.*?）/g, '')
-        .trim()
-      if (
-        clean &&
-        clean !== '综合行业' &&
-        clean !== '行业大盘' &&
-        clean !== '未知代码' &&
-        !clean.includes('统计') &&
-        !clean.includes('大盘')
-      ) {
-        set.add(clean)
-      }
-    }
-  })
-  return Array.from(set)
-}
-
-function initDataFetchReplenish(forceReset = false) {
-  const topic = getContextTopic()
-  const entities = getContextEntities()
-  const defaultEntity = entities.length > 0 ? entities.slice(0, 2).join(', ') : '行业核心龙头企业'
-
-  if (forceReset || !replenishQuery.value) {
-    replenishDomain.value = 'financials'
-    replenishEntity.value = defaultEntity
-    replenishQuery.value = `查询${topic}核心龙头企业近3年营业收入、净利润、毛利率及研发费用率`
-    replenishReason.value = `下游图表与报告章节缺少${topic}核心龙头财务表现与盈利质量数据`
-  }
-}
-
-function quickFillReplenish(type: string) {
-  const topic = getContextTopic()
-  const entities = getContextEntities()
-
-  if (type === 'finance') {
-    replenishDomain.value = 'financials'
-    replenishEntity.value =
-      entities.length > 0 ? entities.slice(0, 2).join(', ') : '行业核心龙头企业'
-    replenishQuery.value = `查询${topic}核心龙头企业近3年营业收入、净利润、毛利率及研发费用率`
-    replenishReason.value = `下游图表与报告章节缺少${topic}核心龙头财务表现与盈利质量数据`
-  } else if (type === 'chain') {
-    replenishDomain.value = 'industry_chain'
-    replenishEntity.value = '产业链上下游关键环节'
-    replenishQuery.value = `查询${topic}产业链上游原材料/元器件、中游制造与下游应用主要环节代表企业及集中度`
-    replenishReason.value = `补充${topic}产业链各环节核心供需格局与价值分布`
-  } else if (type === 'macro') {
-    replenishDomain.value = 'macro'
-    replenishEntity.value = `${topic}产销与大盘数据`
-    replenishQuery.value = `查询近3年${topic}市场总规模、月度产销增速、进出口数据及核心产业政策`
-    replenishReason.value = `补充宏观经济周期与${topic}大盘增速支撑行业分析论据`
-  } else if (type === 'competitors') {
-    replenishDomain.value = 'competitors'
-    replenishEntity.value =
-      entities.length > 2 ? entities.slice(2, 5).join(', ') : '行业第二梯队重点标的'
-    replenishQuery.value = `查询${topic}主要企业国内市场份额占比、营收规模与行业梯队竞争格局`
-    replenishReason.value = `补充${topic}行业梯队对标与竞争壁垒矩阵数据`
-  }
-}
-
-function handleReplenishSubmit() {
-  const query = replenishQuery.value.trim()
-  if (!query) {
-    ElMessage.warning('请填写补采查询提示词')
-    return
-  }
-  const entities = replenishEntity.value
-    ? replenishEntity.value.split(/[,，、\s]+/).filter(Boolean)
-    : []
-  const demand = {
-    domain: replenishDomain.value,
-    entities,
-    query_hint: query,
-    reason: replenishReason.value.trim() || '分析师人工增量补采',
-  }
-  emit('submitRevise', {
-    comment: `增量补采需求: ${query} (领域: ${replenishDomain.value})`,
-    edited_data: {
-      action_type: 'replenish',
-      demand,
-    },
-  })
-  emit('update:visible', false)
-}
-
 // 1.2 局部子域重采 (Partial Re-collection)
-const selectedDomains = ref<string[]>(['financials'])
-const partialRefetchComment = ref('')
+// 勾选粒度从「子领域整章」下沉到「单个数据点」：默认只预选缺口与低可信项，
+// 时间范围/标的池/财务口径结构化随请求下发，供下次打开时复用。
+interface DemoProbePoint {
+  id: string
+  label: string
+  entity: string
+  period: string
+  value: string | null
+  missing: boolean
+  checked: boolean
+}
+
+const demoProbe = computed(() => props.data.nev_probe_demo === true)
+const refetchPoints = ref<DemoProbePoint[]>([])
+const refetchFilter = ref<'all' | 'gap'>('all')
+const missingRefetchPoints = computed(() => refetchPoints.value.filter((point) => point.missing))
+const visibleRefetchPoints = computed(() =>
+  refetchFilter.value === 'gap' ? missingRefetchPoints.value : refetchPoints.value
+)
+const selectedRefetchPoints = computed(() =>
+  missingRefetchPoints.value.filter((point) => point.checked)
+)
+
+function initRefetchPoints() {
+  const points = props.data.demo_probe_points
+  refetchPoints.value = Array.isArray(points)
+    ? (points as Omit<DemoProbePoint, 'checked'>[]).map((point) => ({
+        ...point,
+        checked: point.missing,
+      }))
+    : []
+  refetchFilter.value = 'all'
+}
+
+function setRefetchSelection(checked: boolean) {
+  for (const point of missingRefetchPoints.value) point.checked = checked
+}
 
 function handlePartialRefetchSubmit() {
-  if (selectedDomains.value.length === 0) {
-    ElMessage.warning('请至少勾选一个需要重新采集的投研子领域')
+  const ids = selectedRefetchPoints.value.map((point) => point.id)
+  if (!ids.length) {
+    ElMessage.warning('请至少勾选一个待补数据点')
     return
   }
   emit('submitRevise', {
-    comment: `局部重采子领域 [${selectedDomains.value.join(', ')}]: ${partialRefetchComment.value || '更新子领域数据'}`,
-    edited_data: {
-      action_type: 'partial_refetch',
-      domains: selectedDomains.value,
-      query_hint: partialRefetchComment.value || '重新采集选定子领域核心指标',
-      reason: '局部子域重采',
-    },
+    comment: `回放同花顺归档，补采 ${ids.length} 个数据点`,
+    edited_data: { action_type: 'partial_refetch', data_point_ids: ids },
   })
   emit('update:visible', false)
 }
@@ -1117,7 +1036,7 @@ watch(
       }
       if (props.stage === 'data_fetch') {
         initScopeKeywords()
-        initDataFetchReplenish(true)
+        initRefetchPoints()
       } else if (props.stage === 'data_interpret') {
         initKnowledgeAndJudgment()
         initCompsData()
@@ -1284,134 +1203,86 @@ const dialogTitle = computed(() => {
           </div>
         </el-tab-pane>
 
-        <!-- Tab 1.1: 增量补采 -->
-        <el-tab-pane label="增量数据补采" name="replenish">
+        <!-- Tab 1.2: 局部子域重采（点级清单 + 大模型探针，独立组件） -->
+        <el-tab-pane label="定向补采" name="partial_refetch" lazy>
           <div class="tab-pane-content">
-            <div class="section-lead">
-              针对当前缺失的重点公司、前沿技术指标或细分业务，执行针对性单点查询并无缝合入数据集：
-            </div>
-
-            <div class="quick-chips">
-              <span class="chip-label">热门补采预设：</span>
-              <el-button size="small" round @click="quickFillReplenish('finance')"
-                >补充龙头财务与盈利</el-button
-              >
-              <el-button size="small" round @click="quickFillReplenish('chain')"
-                >补充产业链关键环节</el-button
-              >
-              <el-button size="small" round @click="quickFillReplenish('macro')"
-                >补充宏观产销与大盘</el-button
-              >
-              <el-button size="small" round @click="quickFillReplenish('competitors')"
-                >补充竞争格局与份额</el-button
-              >
-            </div>
-
-            <el-form label-position="top" size="default">
-              <el-row :gutter="16">
-                <el-col :span="12">
-                  <el-form-item label="补采目标实体（公司代码/企业名/行业细分）">
-                    <el-input
-                      v-model="replenishEntity"
-                      placeholder="例如：行业核心龙头企业名、公司代码或细分板块"
-                    />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="投研数据领域">
-                    <el-select v-model="replenishDomain" style="width: 100%">
-                      <el-option label="财务与盈利表现 (Financials)" value="financials" />
-                      <el-option label="产业链上下游环节 (Industry Chain)" value="industry_chain" />
-                      <el-option label="宏观政策与产销大盘 (Macro)" value="macro" />
-                      <el-option label="竞争格局与市场份额 (Competitors)" value="competitors" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-form-item label="问财精准查询提示词 (Query Hint)">
-                <el-input
-                  v-model="replenishQuery"
-                  type="textarea"
-                  :rows="3"
-                  placeholder="输入针对性查询提示，例如：查询核心龙头企业近3年营业收入、毛利率及研发费用率"
-                />
-              </el-form-item>
-
-              <el-form-item label="补采原因 / 分析诉求">
-                <el-input
-                  v-model="replenishReason"
-                  placeholder="例如：下游定量图表与报告章节缺少核心龙头关键财务指标"
-                />
-              </el-form-item>
-            </el-form>
-
-            <div class="pane-footer">
-              <el-button
-                type="primary"
-                size="large"
-                :loading="submitting"
-                @click="handleReplenishSubmit"
-              >
-                启动定向单点补采并并入数据集
-              </el-button>
-            </div>
+            <PartialRefetchPanel
+              :data="data"
+              :submitting="submitting"
+              @submit="handlePartialRefetchPanelSubmit"
+            />
           </div>
         </el-tab-pane>
 
-        <!-- Tab 1.2: 局部子域重采 -->
-        <el-tab-pane label="局部子域重采" name="partial_refetch">
+        <el-tab-pane v-if="demoProbe" key="archive" label="归档回放补采" name="replenish">
           <div class="tab-pane-content">
-            <div class="section-lead">
-              勾选需要重新采集的投研子领域，其余领域已获取的数据将被完整保留：
+            <div class="coverage-strip">
+              <div class="cov-stat">
+                <span class="cov-num">{{
+                  refetchPoints.length - missingRefetchPoints.length
+                }}</span>
+                <span class="cov-label">已采数据点 / 共 {{ refetchPoints.length }}</span>
+              </div>
+              <div class="cov-stat warn">
+                <span class="cov-num">{{ missingRefetchPoints.length }}</span>
+                <span class="cov-label">缺失待补</span>
+              </div>
+              <div class="cov-actions">
+                <el-button size="small" text @click="setRefetchSelection(true)">只选缺口</el-button>
+                <el-button size="small" text @click="setRefetchSelection(false)">清空</el-button>
+                <el-radio-group v-model="refetchFilter" size="small">
+                  <el-radio-button value="all">全部</el-radio-button>
+                  <el-radio-button value="gap">只看缺口</el-radio-button>
+                </el-radio-group>
+              </div>
             </div>
-
-            <div class="domain-checkboxes">
-              <el-checkbox-group v-model="selectedDomains">
-                <div class="domain-card">
-                  <el-checkbox label="financials">
-                    <span class="d-title">重点公司财务与盈利指标</span>
-                    <span class="d-desc"
-                      >重新抓取样本龙头营业收入、净利润、毛利率、资产负债率等指标</span
-                    >
-                  </el-checkbox>
+            <div class="section-lead">演示模式 · 回放已验收的同花顺归档，补齐勾选的数据点。</div>
+            <div class="point-group">
+              <div class="pg-head">
+                <span class="pg-title">重点公司财务与盈利指标</span>
+              </div>
+              <div class="pt-list">
+                <div
+                  v-for="point in visibleRefetchPoints"
+                  :key="point.id"
+                  class="pt-row"
+                  :class="{ on: point.checked, missing: point.missing }"
+                  @click="point.missing && (point.checked = !point.checked)"
+                >
+                  <el-checkbox
+                    v-model="point.checked"
+                    :disabled="!point.missing"
+                    :aria-label="point.label"
+                    @click.stop
+                  />
+                  <div class="pt-main">
+                    <span class="pt-label">{{ point.label }}</span>
+                    <span class="pt-sub">{{ point.entity }} · {{ point.period }}</span>
+                  </div>
+                  <div class="pt-value" :class="{ empty: point.missing }">
+                    {{ point.value || '缺失' }}
+                  </div>
+                  <div class="pt-gap">
+                    <el-tag v-if="point.missing" size="small" type="warning" effect="light">
+                      模拟首轮未返回
+                    </el-tag>
+                    <span v-else class="pt-ok">已齐</span>
+                  </div>
                 </div>
-                <div class="domain-card">
-                  <el-checkbox label="industry_chain">
-                    <span class="d-title">产业链上下游与供需环节</span>
-                    <span class="d-desc">重新梳理原材料、核心部件、系统总装与终端应用场景</span>
-                  </el-checkbox>
-                </div>
-                <div class="domain-card">
-                  <el-checkbox label="macro">
-                    <span class="d-title">宏观政策驱动与大盘环境</span>
-                    <span class="d-desc">重新采集产业政策规划、行业总装机量与月度产销走势</span>
-                  </el-checkbox>
-                </div>
-                <div class="domain-card">
-                  <el-checkbox label="competitors">
-                    <span class="d-title">竞争格局与市场份额对标</span>
-                    <span class="d-desc">重新评估行业 CR3/CR5 集中度与第二梯队差异化壁垒</span>
-                  </el-checkbox>
-                </div>
-              </el-checkbox-group>
+                <el-empty v-if="!visibleRefetchPoints.length" description="没有待补数据点" />
+              </div>
             </div>
-
-            <div style="margin-top: 16px">
-              <el-input
-                v-model="partialRefetchComment"
-                placeholder="补充重采指导（例如：扩大时间范围至最近5年，限定A股核心标的）"
-              />
-            </div>
-
-            <div class="pane-footer">
+            <div class="refetch-footer">
+              <div class="rf-sum">
+                已选 <strong>{{ selectedRefetchPoints.length }}</strong> 个数据点
+              </div>
               <el-button
                 type="primary"
-                size="large"
                 :loading="submitting"
+                :disabled="!selectedRefetchPoints.length"
                 @click="handlePartialRefetchSubmit"
               >
-                启动所选子领域精准重采
+                补采所选数据点
               </el-button>
             </div>
           </div>
@@ -2096,6 +1967,12 @@ const dialogTitle = computed(() => {
 </template>
 
 <style scoped>
+.probe-mode-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-text-color-secondary);
+}
 .stage-modal :deep(.el-dialog__body) {
   padding: 16px 24px 24px;
 }
@@ -2408,27 +2285,134 @@ const dialogTitle = computed(() => {
   display: flex;
   justify-content: flex-end;
 }
-.domain-checkboxes {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-.domain-card {
+.coverage-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 9px 14px;
+  margin-bottom: 12px;
+  background: var(--el-fill-color-lighter);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 6px;
-  padding: 10px 12px;
-  background: var(--el-bg-color);
 }
-.d-title {
-  font-weight: 600;
-  font-size: 13px;
-  display: block;
+.cov-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
 }
-.d-desc {
-  font-size: 11.5px;
+.cov-num {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--el-text-color-primary);
+  font-variant-numeric: tabular-nums;
+}
+.cov-stat.warn .cov-num {
+  color: var(--el-color-danger);
+}
+.cov-label {
+  font-size: 12px;
   color: var(--el-text-color-secondary);
-  display: block;
-  margin-top: 2px;
+}
+.cov-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.point-group {
+  flex: none;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.pg-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  background: var(--el-fill-color-light);
+}
+.pg-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+.pt-list {
+  display: flex;
+  flex-direction: column;
+}
+.pt-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) minmax(88px, max-content) minmax(72px, max-content);
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--el-border-color-extra-light);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.pt-row:hover {
+  background: var(--el-fill-color-lighter);
+}
+.pt-row.on {
+  background: var(--el-color-primary-light-9);
+}
+.pt-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pt-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pt-sub {
+  font-size: 11px;
+  color: var(--el-text-color-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pt-value {
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.pt-value.empty {
+  color: var(--el-color-danger);
+  font-weight: 500;
+}
+.pt-gap :deep(.el-tag) {
+  max-width: 118px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pt-ok {
+  font-size: 11px;
+  color: var(--el-text-color-placeholder);
+}
+.refetch-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+.rf-sum {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+.rf-sum strong {
+  font-size: 14px;
+  color: var(--el-color-primary);
+  font-variant-numeric: tabular-nums;
 }
 .clean-toolbar {
   display: flex;

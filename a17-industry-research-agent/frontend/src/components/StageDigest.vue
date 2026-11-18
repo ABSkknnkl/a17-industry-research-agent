@@ -59,6 +59,72 @@ const blockingIssues = computed<string[]>(() =>
   asArray<string>(d.value.blocking_issues).map(String)
 )
 
+/** 主链路取数不完整的用户可见提示（warning 级，不升级为硬阻塞） */
+const dataGapNotice = computed(() => String(d.value.data_gap_notice || ''))
+const probeHint = computed(() => String(d.value.probe_hint || ''))
+const autoProbe = computed(
+  () =>
+    d.value.auto_probe as
+      | {
+          status: string
+          calls_used: number
+          max_calls: number
+          remaining_requirements?: number
+          message?: string
+        }
+      | undefined
+)
+const autoProbeNotice = computed(() => {
+  const scan = autoProbe.value
+  if (!scan || ['disabled', 'manual_demo'].includes(scan.status)) return ''
+  if (scan.message) return scan.message
+  return `关键缺口自动检查完成 · 补采请求 ${scan.calls_used}/${scan.max_calls} 次 · 剩余 ${scan.remaining_requirements || 0} 项需求待补`
+})
+
+/** 补采 / 大模型动态探针状态：取数中 · 取数成功 · 取数失败/无数据 */
+const probeMode = computed(() => String(d.value.probe_mode || 'static'))
+const probeStatus = computed(() => {
+  const explicit = String(d.value.probe_status || '')
+  if (explicit) return explicit
+  const legacy = String(d.value.replenishment_status || '')
+  if (legacy === 'completed') return 'success'
+  if (legacy === 'no_new_data') return 'no_data'
+  if (legacy === 'discarded_stale_input') return 'failed'
+  return ''
+})
+const probeMessage = computed(() => String(d.value.probe_message || ''))
+type AlertType = 'success' | 'warning' | 'info' | 'error'
+const probeAlertType = computed<AlertType>(() => {
+  if (probeStatus.value === 'running') return 'info'
+  if (probeStatus.value === 'success') return 'success'
+  if (probeStatus.value === 'failed' || probeStatus.value === 'discarded_stale_input')
+    return 'error'
+  return 'warning'
+})
+const probeTitle = computed(() => {
+  if (probeMode.value === 'archive_replay') {
+    const coverage = d.value.demo_question_coverage as { passed: number; total: number } | undefined
+    if (probeStatus.value === 'running') return '正在回放同花顺归档…'
+    if (probeStatus.value === 'success') {
+      const reached = coverage ? ` · 五问证据覆盖 ${coverage.passed}/${coverage.total}` : ''
+      return `归档回放 · 本次补齐 ${Number(d.value.probe_records || 0)} 条${reached}`
+    }
+    return '归档回放未补入新记录'
+  }
+  const label = probeMode.value === 'llm_dynamic' ? '多轮检索' : '定向补采'
+  const attempts = asArray<unknown>(d.value.probe_attempts).length
+  const added = Number(d.value.probe_records || 0)
+  if (probeStatus.value === 'running') return `${label}取数中…`
+  if (probeStatus.value === 'success') {
+    return attempts
+      ? `取数成功：新增 ${added} 条记录（${attempts} 次尝试）`
+      : '取数成功：已并入数据集'
+  }
+  if (probeStatus.value === 'failed' || probeStatus.value === 'discarded_stale_input')
+    return '取数失败'
+  return '取数失败 / 无数据'
+})
+
 /** data_interpret：维度覆盖 */
 const dimensionCoverage = computed<DimensionCoverage[]>(() =>
   asArray<DimensionCoverage>(d.value.dimension_coverage)
@@ -254,7 +320,36 @@ const scalarEntries = computed(() => {
     </template>
 
     <!-- data_fetch -->
+    <el-alert
+      v-if="dataGapNotice"
+      type="warning"
+      show-icon
+      :closable="false"
+      :title="dataGapNotice"
+      :description="probeHint"
+      style="margin-top: 12px"
+    />
+
+    <el-alert
+      v-if="probeStatus"
+      :type="probeAlertType"
+      show-icon
+      :closable="false"
+      :title="probeTitle"
+      :description="probeMessage"
+      style="margin-top: 12px"
+    />
+
     <template v-if="stage === 'data_fetch'">
+      <el-alert
+        v-if="autoProbeNotice"
+        :type="autoProbe?.remaining_requirements || autoProbe?.message ? 'warning' : 'success'"
+        :title="autoProbeNotice"
+        description="每章最多自动补采 3 个数据点。口径调整和剩余缺口可点击「定向补采」处理。"
+        :closable="false"
+        show-icon
+        style="margin-bottom: 12px"
+      />
       <template v-if="intentPlanEntries.length > 0">
         <h4 class="digest-title">研究问题与数据匹配情况</h4>
         <el-table :data="intentPlanEntries" size="small" border>

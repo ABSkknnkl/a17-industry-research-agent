@@ -7,11 +7,12 @@ import asyncio
 import json
 import logging
 import re
-from typing import Any, Protocol
+from typing import Any, Awaitable, Callable, Protocol
 
 import httpx
 
 from data_fetcher.config import Settings
+from data_fetcher.probe_budget import ProbeBudgetExceeded
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,7 @@ class OpenAICompatibleLLM:
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or Settings.from_env()
         self._client: httpx.AsyncClient | None = None
+        self.before_request: Callable[[str, dict[str, Any]], Awaitable[bool]] | None = None
 
     @property
     def is_available(self) -> bool:
@@ -119,6 +121,10 @@ class OpenAICompatibleLLM:
         max_attempts = 5
         last_err: Exception | None = None
         for attempt in range(max_attempts):
+            if self.before_request and not await self.before_request(
+                "llm", {"model": self.settings.llm_model, "network_attempt": attempt + 1},
+            ):
+                raise ProbeBudgetExceeded("自动补采请求预算已用完")
             try:
                 client = await self._get_client()
                 response = await tracked_post(client, 

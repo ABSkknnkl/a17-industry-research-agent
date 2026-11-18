@@ -275,6 +275,10 @@ def verified_run(run_id: str, as_of: date) -> ResearchRunResult:
         dataset = StructuredResearchDataset.model_validate_json(DATASET_PATH.read_bytes())
     except FileNotFoundError:
         dataset = StructuredResearchDataset(subject="新能源汽车")
+    return verify_dataset(run_id, dataset, as_of)
+
+
+def verify_dataset(run_id: str, dataset: StructuredResearchDataset, as_of: date) -> ResearchRunResult:
     dataset.research_as_of = as_of
     requirements, checks = _verify(dataset, as_of)
     dataset.quality_summary.update(
@@ -284,6 +288,7 @@ def verified_run(run_id: str, as_of: date) -> ResearchRunResult:
             for r, c in zip(requirements, checks)
         ],
         requested_requirement_coverage=[c.model_dump(mode="json") for c in checks],
+        structured_record_count=len(dataset.all_records()),
     )
     complete = all(c.passed for c in checks)
     domains = list(dict.fromkeys(r.domain for r in requirements))

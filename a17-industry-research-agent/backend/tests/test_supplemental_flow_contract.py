@@ -6,6 +6,60 @@ from data_fetcher.agent import DataFetcherAgent
 from data_fetcher.models import ResearchRequirement
 
 
+@pytest.mark.anyio
+async def test_partial_probe_publishes_running_state_and_refreshes_gap(tmp_path, monkeypatch):
+    from backend.app.core.storage import storage
+    from backend.app.engine.state_machine import WorkflowEngine
+    from backend.app.schemas.workflow import ReviewRequest, StageResult, WorkflowState
+    from data_fetcher import dynamic_probe
+
+    monkeypatch.setattr(storage, "base_dir", tmp_path)
+    run_id = "partial-probe-gap"
+    state = WorkflowState(
+        project_id="demo-check", run_id=run_id, current_stage="data_fetch",
+        revision=1, status="waiting_review", stage_results={
+            "data_fetch": StageResult(stage="data_fetch", status="waiting_review", data={
+                "data_gap_notice": "旧的缺口提示", "probe_hint": "旧的入口",
+                "metric_requirements": [{"requirement_id": "annual_revenue", "passed": False}],
+            }),
+        },
+    )
+    storage.save_state(state)
+    requirement = ResearchRequirement(
+        requirement_id="annual_revenue", domain=Domain.FINANCIALS, label="2024 年营业收入",
+        entity_names=["甲公司"], period_ends=[date(2024, 12, 31)], metric_families=["revenue"],
+    )
+    dataset = StructuredResearchDataset(quality_summary={"requirement_evidence_matrix": [{
+        "requirement": requirement.model_dump(mode="json"),
+        "coverage": {"requirement_id": "annual_revenue", "passed": False},
+    }]})
+    run = storage.get_run_dir(run_id)
+    (run / "artifacts" / "dataset.json").write_text(dataset.model_dump_json(), encoding="utf-8")
+    (run / "input_data.json").write_text('{"input_data":{"research_as_of":"2025-12-31"}}', encoding="utf-8")
+    observed_status = []
+
+    async def probe(demand, as_of, **kwargs):
+        observed_status.append(storage.load_state(run_id).stage_results["data_fetch"].data.get("probe_status"))
+        assert demand["probe_mode"] == "llm_dynamic"
+        return dynamic_probe.ProbeOutcome("success", [rec("new", 2024, 120)])
+
+    monkeypatch.setattr(dynamic_probe, "run_dynamic_probe", probe)
+    engine = WorkflowEngine()
+    await engine.handle_review(ReviewRequest(
+        run_id=run_id, stage="data_fetch", action="revise", expected_revision=1,
+        edited_data={"action_type": "partial_refetch", "probe_mode": "llm_dynamic"},
+    ))
+    if task := engine._running_tasks.get(run_id):
+        await task
+    final = storage.load_state(run_id)
+    assert observed_status == ["running"]
+    assert final.revision == 2
+    data = final.stage_results["data_fetch"].data
+    assert data["probe_status"] == "success" and data["probe_records"] == 1
+    assert "data_gap_notice" not in data and "probe_hint" not in data
+    assert data["metric_requirements"][0]["passed"] is True
+
+
 def rec(rid,year,value,unit='元'):
  return ResearchRecord(record_id=rid,domain=Domain.FINANCIALS,entity_name='甲公司',entity_code='000001.SZ',metric='revenue',value=value,unit=unit,period_end=date(year,12,31),period_start=date(year,1,1),period_type='annual',scope='consolidated',currency='CNY',source=SourceRef(task_id=rid,skill_id='hithink-finance-query',skill_version='1',query='q',trace_id=rid,retrieved_at=datetime(2025,1,1,tzinfo=timezone.utc)))
 
