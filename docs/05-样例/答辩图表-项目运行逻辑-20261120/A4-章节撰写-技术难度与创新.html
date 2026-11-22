@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能体4 章节撰写｜技术难度与创新（文档对齐版）</title>
+<style>
+  :root{
+    --paper:#f6f1e7;
+    --paper-2:#efe7d8;
+    --ink:#1d2a25;
+    --muted:#65716a;
+    --green:#123c33;
+    --green-2:#1d5144;
+    --copper:#b07a45;
+    --copper-soft:#d9b48c;
+    --plum:#7b4b6b;
+    --blue:#3f6f8f;
+    --red:#a34b3f;
+    --line:#d9cfbf;
+    --white:#fffdf8;
+    --shadow:0 16px 40px rgba(29,42,37,.08);
+    --radius:18px;
+    --max:1180px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(176,122,69,.10), transparent 30rem),
+      radial-gradient(circle at 88% 18%, rgba(18,60,51,.06), transparent 34rem),
+      var(--paper);
+    color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:rgba(176,122,69,.25);}
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 28px;min-width:0;}
+  .serif{font-family:"Songti SC","Noto Serif SC","SimSun",serif;}
+  .muted{color:var(--muted);}
+  .small{font-size:13px;}
+  .tag{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:12px;letter-spacing:.04em;
+    padding:3px 10px;border:1px solid rgba(176,122,69,.35);
+    border-radius:999px;color:#7d542d;background:rgba(255,253,248,.7);
+    white-space:nowrap;
+  }
+  .tag.blue{border-color:rgba(63,111,143,.32);color:#2d5975;background:rgba(63,111,143,.08);}
+  .tag.green{border-color:rgba(18,60,51,.28);color:#123c33;background:rgba(18,60,51,.07);}
+  .tag.plum{border-color:rgba(123,75,107,.30);color:#633453;background:rgba(123,75,107,.08);}
+  .tag.red{border-color:rgba(163,75,63,.30);color:#8a352b;background:rgba(163,75,63,.08);}
+
+  /* ===== Hero ===== */
+  .hero{
+    position:relative;overflow:hidden;
+    background:
+      radial-gradient(circle at 78% 8%, rgba(217,180,140,.18), transparent 26rem),
+      linear-gradient(135deg, #0f332b 0%, #123c33 52%, #1b4a3d 100%);
+    color:#f8f3e8;
+    padding:64px 0 34px;
+  }
+  .hero::after{
+    content:"A4";
+    position:absolute;right:-10px;bottom:-48px;
+    font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:230px;line-height:1;color:rgba(255,255,255,.045);
+    letter-spacing:-.04em;pointer-events:none;
+  }
+  .hero-grid{
+    display:grid;grid-template-columns:1.35fr .75fr;gap:52px;align-items:start;
+    position:relative;z-index:2;
+  }
+  .eyebrow{
+    font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+    color:#d9b48c;margin-bottom:16px;
+  }
+  .hero h1{
+    margin:0 0 18px;font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:clamp(38px,5vw,66px);line-height:1.12;font-weight:600;
+    letter-spacing:-.02em;
+  }
+  .hero-lead{
+    font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:clamp(22px,2.6vw,32px);line-height:1.45;color:#f4e9d6;
+    margin:0 0 16px;
+  }
+  .hero-sub{
+    max-width:760px;color:rgba(248,243,232,.82);font-size:15.5px;line-height:1.9;
+    margin:0 0 24px;
+  }
+  .hero-tags{display:flex;flex-wrap:wrap;gap:9px;}
+  .hero-tags span{
+    font-size:12.5px;padding:6px 12px;border:1px solid rgba(255,255,255,.16);
+    border-radius:999px;color:#f2dfc7;background:rgba(255,255,255,.04);
+  }
+  .hero-card{
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,253,248,.055);
+    border-radius:16px;padding:22px 22px 18px;
+    backdrop-filter:blur(4px);
+  }
+  .hero-card-label{
+    font-size:11px;letter-spacing:.14em;color:#d9b48c;text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .hero-card p{
+    margin:0 0 12px;font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:17px;line-height:1.7;color:#fbf4e7;
+  }
+  .hero-card-src{font-size:12px;color:rgba(248,243,232,.56);}
+  .stat-row{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
+    margin-top:42px;position:relative;z-index:2;
+  }
+  .stat{
+    border-top:1px solid rgba(255,255,255,.18);
+    padding:16px 2px 0;
+  }
+  .stat strong{
+    display:block;font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:32px;line-height:1.1;color:#f4e9d6;font-weight:600;
+  }
+  .stat span{display:block;font-size:12.5px;color:rgba(248,243,232,.64);margin-top:6px;}
+
+  /* ===== Nav ===== */
+  .toc{
+    position:sticky;top:0;z-index:50;
+    background:rgba(246,241,231,.86);
+    border-bottom:1px solid rgba(217,207,191,.8);
+    backdrop-filter:blur(12px);
+  }
+  .toc .wrap{
+    display:flex;gap:6px;overflow-x:auto;padding-top:10px;padding-bottom:10px;
+    scrollbar-width:none;
+  }
+  .toc::-webkit-scrollbar{display:none;}
+  .toc a{
+    flex:0 0 auto;font-size:12.5px;color:#44524b;
+    padding:7px 11px;border-radius:999px;border:1px solid transparent;
+    transition:.2s;
+  }
+  .toc a:hover{background:rgba(18,60,51,.07);border-color:rgba(18,60,51,.14);}
+
+  /* ===== Sections ===== */
+  .section{padding:64px 0 18px;scroll-margin-top:78px;}
+  .section-head{max-width:930px;margin-bottom:28px;}
+  .kicker{
+    font-size:11.5px;letter-spacing:.16em;color:var(--copper);
+    text-transform:uppercase;margin-bottom:9px;
+  }
+  .h2{
+    margin:0 0 10px;font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:clamp(28px,3.6vw,44px);line-height:1.22;font-weight:600;
+    letter-spacing:-.01em;
+  }
+  .lead{font-size:16.5px;color:#44524b;margin:0;line-height:1.9;max-width:860px;}
+  .doc-quote{
+    margin:22px 0 0;padding:18px 22px;
+    border-left:3px solid var(--copper);
+    background:rgba(255,253,248,.66);
+    font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:17px;line-height:1.75;color:#3b463f;
+  }
+  .doc-quote .doc-src{
+    display:block;margin-top:8px;font-family:"PingFang SC","Noto Sans SC",sans-serif;
+    font-size:12px;color:#8a735d;letter-spacing:.02em;
+  }
+  .note{
+    margin:18px 0 0;padding:14px 18px;border-radius:12px;
+    background:rgba(18,60,51,.06);border:1px solid rgba(18,60,51,.10);
+    font-size:13.5px;color:#3d4b44;line-height:1.8;
+  }
+  .note strong{color:var(--green);}
+
+  /* ===== Pipeline ===== */
+  .pipeline{
+    display:flex;align-items:stretch;gap:8px;margin:10px 0 22px;
+  }
+  .pipe-node{
+    flex:1;min-width:0;padding:14px 12px 12px;
+    border:1px solid var(--line);border-radius:14px;background:rgba(255,253,248,.78);
+    box-shadow:0 6px 18px rgba(29,42,37,.04);
+  }
+  .pipe-node .pipe-stage{
+    display:block;font-size:11px;letter-spacing:.12em;color:#8b6a49;
+    margin-bottom:4px;
+  }
+  .pipe-node strong{display:block;font-size:15px;line-height:1.35;color:var(--ink);}
+  .pipe-node small{display:block;font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.45;}
+  .pipe-node.active{
+    border-color:rgba(123,75,107,.48);
+    background:linear-gradient(180deg, rgba(123,75,107,.10), rgba(255,253,248,.9));
+    box-shadow:0 12px 26px rgba(123,75,107,.10);
+  }
+  .pipe-node.active strong{color:#633453;}
+  .pipe-arrow{
+    align-self:center;flex:0 0 22px;text-align:center;color:#a58d74;font-size:18px;
+  }
+  .info-card,.step,.hard-card,.innovation,.mini,.pit,.script,.hero-card{min-width:0;}
+  .hero-grid > *,.info-grid > *,.steps > *,.hard-grid > *,.innovation-grid > *,.pit-grid > *,.scripts > *{min-width:0;}
+  .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px;}
+  .info-card{
+    background:rgba(255,253,248,.76);border:1px solid var(--line);
+    border-radius:16px;padding:20px 20px 18px;
+  }
+  .info-card h3{
+    margin:0 0 8px;font-size:16px;color:var(--green);
+    display:flex;align-items:center;gap:8px;
+  }
+  .info-card p{margin:0;font-size:13.5px;color:#4a574f;line-height:1.85;}
+  .info-card .mini-list{margin:8px 0 0;padding-left:18px;color:#4a574f;font-size:13px;line-height:1.8;}
+
+  /* ===== Step grid ===== */
+  .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .step{
+    position:relative;background:rgba(255,253,248,.82);
+    border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;
+    min-height:180px;
+  }
+  .step:nth-child(5){grid-column:span 2;}
+  .step:nth-child(6){grid-column:span 2;}
+  .step:nth-child(7){grid-column:span 4;}
+  .step-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px;}
+  .step-num{
+    width:29px;height:29px;border-radius:50%;display:inline-flex;
+    align-items:center;justify-content:center;
+    background:var(--green);color:#f8f3e8;font-size:12px;font-weight:600;
+    flex:0 0 auto;
+  }
+  .step h3{margin:0 0 7px;font-size:15.5px;line-height:1.4;color:var(--ink);}
+  .step p{margin:0;font-size:12.8px;line-height:1.8;color:#4c5a52;}
+  .step-foot{
+    margin-top:12px;padding-top:9px;border-top:1px dashed var(--line);
+    font-size:11.5px;color:#8b6a49;line-height:1.6;
+  }
+  .output-card{
+    margin-top:18px;display:grid;grid-template-columns:1.1fr .9fr;gap:18px;
+    background:linear-gradient(135deg, rgba(18,60,51,.96), rgba(29,81,68,.94));
+    color:#f8f3e8;border-radius:18px;padding:24px 26px;
+  }
+  .output-card h3{margin:0 0 8px;font-family:"Songti SC","Noto Serif SC",serif;font-size:23px;}
+  .output-card p{margin:0;font-size:13.5px;line-height:1.85;color:rgba(248,243,232,.82);}
+  .json-stack{display:grid;gap:8px;align-content:center;}
+  .json-pill{
+    border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);
+    border-radius:10px;padding:9px 12px;font-size:12.5px;color:#f0dfc8;
+  }
+
+  /* ===== Hard part ===== */
+  .big-quote{
+    margin:4px 0 26px;padding:26px 28px;border-radius:18px;
+    background:linear-gradient(135deg, rgba(123,75,107,.10), rgba(255,253,248,.78));
+    border:1px solid rgba(123,75,107,.18);
+  }
+  .big-quote p{
+    margin:0;font-family:"Songti SC","Noto Serif SC",serif;
+    font-size:clamp(20px,2.4vw,28px);line-height:1.65;color:#4a2f42;
+  }
+  .big-quote .doc-src{display:block;margin-top:10px;font-size:12px;color:#8a6b7a;font-family:"PingFang SC","Noto Sans SC",sans-serif;}
+  .hard-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px;}
+  .hard-card{
+    background:rgba(255,253,248,.86);border:1px solid var(--line);
+    border-radius:18px;padding:22px 22px 20px;box-shadow:var(--shadow);
+    display:flex;flex-direction:column;
+  }
+  .hard-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px;}
+  .hard-num{
+    font-family:"Songti SC","Noto Serif SC",serif;font-size:30px;line-height:1;
+    color:var(--copper);font-weight:600;
+  }
+  .hard-card h3{margin:0 0 8px;font-size:20px;line-height:1.35;color:var(--ink);}
+  .hard-card p{margin:0 0 12px;font-size:13.5px;line-height:1.85;color:#4b594f;}
+  .hard-card .chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 12px;}
+  .chips .chip{
+    font-size:11.5px;padding:4px 8px;border-radius:999px;
+    background:rgba(63,111,143,.08);border:1px solid rgba(63,111,143,.18);
+    color:#365e78;
+  }
+  .hard-card .stat-line{
+    margin-top:auto;padding-top:12px;border-top:1px dashed var(--line);
+    font-size:12px;line-height:1.75;color:#6b5745;
+  }
+  .hard-card details{margin-top:10px;}
+  .hard-card details summary{
+    cursor:pointer;font-size:12px;color:#7b542f;list-style:none;
+  }
+  .hard-card details summary::before{content:"＋ ";font-weight:600;}
+  .hard-card details[open] summary::before{content:"− ";}
+  .hard-card details p{margin:8px 0 0;font-size:12.2px;color:#5a655d;}
+
+  .chain{
+    display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    margin:24px 0 10px;padding:18px;border:1px solid var(--line);
+    border-radius:14px;background:rgba(255,253,248,.72);
+  }
+  .chain-node{
+    padding:8px 11px;border-radius:9px;font-size:12.5px;
+    background:rgba(18,60,51,.07);border:1px solid rgba(18,60,51,.12);
+    color:#24483c;
+  }
+  .chain-node.hot{background:rgba(176,122,69,.12);border-color:rgba(176,122,69,.28);color:#7b542f;}
+  .chain-node.end{background:rgba(123,75,107,.10);border-color:rgba(123,75,107,.22);color:#633453;}
+  .chain-arrow{color:#a58d74;font-size:14px;}
+
+  .examples{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px;}
+  .example{
+    border:1px solid var(--line);border-radius:14px;background:rgba(255,253,248,.78);
+    padding:16px 16px 14px;
+  }
+  .example .ex-label{font-size:11px;letter-spacing:.08em;color:#8b6a49;text-transform:uppercase;margin-bottom:7px;}
+  .example strong{display:block;font-family:"Songti SC","Noto Serif SC",serif;font-size:20px;line-height:1.35;color:var(--green);}
+  .example span{display:block;font-size:12.5px;color:#5c6a61;line-height:1.7;margin-top:5px;}
+  .example.bad strong{color:var(--red);}
+  .example.good strong{color:var(--green);}
+  .example.neutral strong{color:var(--blue);}
+
+  .real-strip{
+    display:grid;grid-template-columns:repeat(5,1fr);gap:12px;
+    margin:24px 0 0;padding:18px 18px 14px;border-radius:16px;
+    background:rgba(18,60,51,.06);border:1px solid rgba(18,60,51,.10);
+  }
+  .real-strip div strong{display:block;font-family:"Songti SC","Noto Serif SC",serif;font-size:25px;line-height:1.2;color:var(--green);}
+  .real-strip div span{display:block;font-size:11.5px;color:#5d6b62;margin-top:4px;line-height:1.5;}
+
+  /* ===== Innovation ===== */
+  .innovation-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:20px;}
+  .innovation{
+    background:rgba(255,253,248,.84);border:1px solid var(--line);
+    border-radius:18px;padding:22px 22px 20px;position:relative;overflow:hidden;
+  }
+  .innovation:first-child{grid-column:span 2;}
+  .innovation::after{
+    content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;
+    border-radius:50%;background:rgba(176,122,69,.055);
+  }
+  .innovation-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap;}
+  .innovation h3{margin:0;font-size:20px;line-height:1.35;color:var(--ink);}
+  .innovation .doc-tag{
+    display:inline-block;font-size:11px;color:#8a6a4d;background:rgba(176,122,69,.08);
+    border:1px solid rgba(176,122,69,.18);border-radius:6px;padding:3px 7px;
+    white-space:normal;line-height:1.45;
+  }
+  .innovation .doc-line{
+    margin:10px 0 12px;padding:10px 12px;border-left:2px solid var(--copper-soft);
+    background:rgba(246,241,231,.68);font-size:12.8px;line-height:1.75;color:#5b4a3a;
+  }
+  .innovation p{margin:0;font-size:13.2px;line-height:1.85;color:#4b594f;}
+  .innovation .use{
+    margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);
+    font-size:12.5px;line-height:1.75;color:#3f5c4d;
+  }
+  .innovation .use b{color:var(--green);}
+
+  .mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px;}
+  .mini{
+    background:rgba(18,60,51,.055);border:1px solid rgba(18,60,51,.10);
+    border-radius:14px;padding:16px 16px 14px;
+  }
+  .mini h4{margin:0 0 6px;font-size:14.5px;color:var(--green);}
+  .mini p{margin:0;font-size:12.5px;line-height:1.75;color:#4e5e54;}
+
+  .not-model{
+    margin:22px 0 0;padding:18px 20px;border-radius:14px;
+    background:linear-gradient(135deg, rgba(176,122,69,.10), rgba(255,253,248,.75));
+    border:1px solid rgba(176,122,69,.18);
+    font-size:14px;line-height:1.85;color:#4f4030;
+  }
+  .not-model strong{color:#7b542f;}
+
+  /* ===== Pits ===== */
+  .pit-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:18px;}
+  .pit{
+    background:rgba(255,253,248,.84);border:1px solid var(--line);
+    border-left:4px solid var(--copper);border-radius:14px;padding:20px 20px 18px;
+  }
+  .pit h3{margin:0 0 8px;font-size:17px;line-height:1.4;color:var(--ink);}
+  .pit .before-after{
+    display:grid;gap:8px;margin:10px 0 12px;
+  }
+  .quote-line{
+    padding:9px 11px;border-radius:9px;font-size:12.2px;line-height:1.7;
+  }
+  .quote-line.before{background:rgba(163,75,63,.07);border:1px solid rgba(163,75,63,.14);color:#6e3a32;}
+  .quote-line.after{background:rgba(18,60,51,.06);border:1px solid rgba(18,60,51,.12);color:#2f4b3d;}
+  .pit p{margin:0;font-size:12.8px;line-height:1.8;color:#4b594f;}
+  .pit .fix{margin-top:10px;font-size:12.3px;line-height:1.75;color:#7b542f;}
+
+  /* ===== Defense ===== */
+  .scripts{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;}
+  .script{
+    background:linear-gradient(135deg, rgba(255,253,248,.9), rgba(246,241,231,.75));
+    border:1px solid var(--line);border-radius:16px;padding:22px 22px 20px;
+  }
+  .script h3{margin:0 0 8px;font-family:"Songti SC","Noto Serif SC",serif;font-size:23px;color:var(--green);}
+  .script p{margin:0;font-size:13.2px;line-height:1.9;color:#435148;}
+  .script .script-src{margin-top:10px;font-size:11.5px;color:#8b6a49;}
+  .qa{margin-top:22px;}
+  .qa details{
+    background:rgba(255,253,248,.78);border:1px solid var(--line);
+    border-radius:12px;padding:0 18px;margin-bottom:9px;
+  }
+  .qa details summary{
+    cursor:pointer;list-style:none;padding:14px 0;font-size:13.8px;
+    color:#263c31;display:flex;justify-content:space-between;gap:12px;
+  }
+  .qa details summary::after{content:"＋";color:#9a7a58;font-weight:600;}
+  .qa details[open] summary::after{content:"−";}
+  .qa details p{margin:0 0 16px;font-size:13px;line-height:1.85;color:#4b594f;}
+  .dont{
+    margin-top:20px;padding:18px 20px;border-radius:14px;
+    background:rgba(163,75,63,.055);border:1px solid rgba(163,75,63,.14);
+  }
+  .dont h3{margin:0 0 8px;font-size:14px;color:#8a352b;}
+  .dont ul{margin:0;padding-left:18px;color:#5b4b45;font-size:12.8px;line-height:1.85;}
+
+  /* ===== Numbers ===== */
+  .num-table{
+    width:100%;border-collapse:collapse;margin-top:16px;
+    background:rgba(255,253,248,.78);border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;font-size:12.8px;
+  }
+  .num-table th,.num-table td{
+    padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top;
+    text-align:left;line-height:1.7;
+  }
+  .num-table th{background:rgba(18,60,51,.07);color:#27463a;font-weight:600;}
+  .num-table tr:last-child td{border-bottom:none;}
+  .num-table td strong{color:var(--green);}
+  .num-table th,.num-table td{min-width:0;overflow-wrap:anywhere;word-break:break-word;}
+  .num-note{margin-top:12px;font-size:12.3px;color:#6b5745;line-height:1.8;}
+
+  /* ===== Sources ===== */
+  .sources{
+    margin-top:30px;padding:24px 24px 20px;border-radius:16px;
+    background:rgba(255,253,248,.66);border:1px solid var(--line);
+    min-width:0;overflow-wrap:anywhere;
+  }
+  .sources h2{margin:0 0 12px;font-family:"Songti SC","Noto Serif SC",serif;font-size:26px;}
+  .source-list{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;font-size:12.2px;line-height:1.75;color:#4f5b53;}
+  .source-list div{min-width:0;overflow-wrap:anywhere;word-break:break-word;}
+  .source-list div b{color:var(--green);font-weight:600;}
+  .footer{padding:26px 0 40px;color:#7c817c;font-size:11.5px;line-height:1.8;}
+  .footer .wrap{display:flex;justify-content:space-between;gap:20px;border-top:1px solid var(--line);padding-top:16px;}
+
+  @media (max-width: 980px){
+    .hero-grid{grid-template-columns:1fr;gap:28px;}
+    .hero-card{max-width:620px;}
+    .stat-row{grid-template-columns:repeat(2,1fr);}
+    .pipeline{flex-wrap:wrap;}
+    .pipe-node{flex:1 1 150px;}
+    .pipe-arrow{display:none;}
+    .info-grid{grid-template-columns:1fr;}
+    .steps{grid-template-columns:repeat(2,1fr);}
+    .step:nth-child(5),.step:nth-child(6),.step:nth-child(7){grid-column:span 2;}
+    .hard-grid{grid-template-columns:1fr;}
+    .examples{grid-template-columns:1fr;}
+    .real-strip{grid-template-columns:repeat(2,1fr);}
+    .innovation-grid{grid-template-columns:1fr;}
+    .innovation:first-child{grid-column:span 1;}
+    .mini-grid{grid-template-columns:repeat(2,1fr);}
+    .pit-grid{grid-template-columns:1fr;}
+    .scripts{grid-template-columns:1fr;}
+    .source-list{grid-template-columns:1fr;}
+    .output-card{grid-template-columns:1fr;}
+  }
+  @media (max-width: 560px){
+    .wrap{padding:0 18px;}
+    .hero{padding-top:44px;}
+    .hero h1{font-size:40px;}
+    .hero-lead{font-size:23px;}
+    .stat strong{font-size:28px;}
+    .toc a{font-size:12px;}
+    .section{padding-top:46px;}
+    .real-strip{grid-template-columns:1fr 1fr;}
+  }
+  @media print{
+    .toc{display:none;}
+    body{background:#fff;}
+    .hero{background:#123c33 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    .section{padding-top:34px;}
+    .step,.hard-card,.innovation,.pit,.script{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Hero ===== -->
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">STAGE 4 · CHAPTER WRITER · 文档对齐版</div>
+      <h1>智能体4：章节撰写</h1>
+      <p class="hero-lead">不是让模型写文章，<br>是让每句话都能被审计。</p>
+      <p class="hero-sub">7 章并发、21 节按提纲落位。每个数字要能回到证据，每个图号要对得上图；修不好就标 partial，不静默通过。</p>
+      <div class="hero-tags">
+        <span>证据绑定</span>
+        <span>断言分型</span>
+        <span>精度裁定</span>
+        <span>幂等修复</span>
+      </div>
+    </div>
+    <aside class="hero-card">
+      <div class="hero-card-label">文档里的一句话</div>
+      <p>“提示词里的‘严禁’只有在代码里有对应检查时才成立。”</p>
+      <div class="hero-card-src">《最终版-算法质量重写版》3.5.2</div>
+    </aside>
+  </div>
+  <div class="wrap stat-row">
+    <div class="stat"><strong>7</strong><span>章并发；不是 21 节并发</span></div>
+    <div class="stat"><strong>21</strong><span>节按提纲落位，结构不能改</span></div>
+    <div class="stat"><strong>52</strong><span>段真实验收；47 段带证据</span></div>
+    <div class="stat"><strong>0</strong><span>悬空引用；0 跨章完全重复</span></div>
+  </div>
+</header>
+
+<!-- ===== Nav ===== -->
+<nav class="toc">
+  <div class="wrap">
+    <a href="#overview">一页看懂</a>
+    <a href="#flow">A4 七步</a>
+    <a href="#hard">最难点</a>
+    <a href="#innovation">创新对齐</a>
+    <a href="#pits">踩过的坑</a>
+    <a href="#defense">答辩怎么讲</a>
+    <a href="#numbers">数字口径</a>
+    <a href="#sources">文档索引</a>
+  </div>
+</nav>
+
+<main>
+
+<!-- ===== 01 概览 ===== -->
+<section class="section" id="overview">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">01 / POSITION</div>
+      <h2 class="h2">一页看懂：A4 在流水线的什么位置</h2>
+      <p class="lead">A4 不取数、不算指标、不画图。它只做一件事：把 A2 的事实和 A3 的图，装配成 7 章 21 节的可审计章节。A5 再以整份报告为单位复核、签发。</p>
+    </div>
+
+    <div class="pipeline">
+      <div class="pipe-node">
+        <span class="pipe-stage">A1</span>
+        <strong>数据获取</strong>
+        <small>dataset.json<br>evidence_index</small>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <span class="pipe-stage">A2</span>
+        <strong>数据解读</strong>
+        <small>interpretation_report.json<br>事实、比率、结论</small>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <span class="pipe-stage">A3</span>
+        <strong>图表生成</strong>
+        <small>chart_result.json<br>ready 图 + 点级证据</small>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node active">
+        <span class="pipe-stage">A4</span>
+        <strong>章节撰写</strong>
+        <small>chapter_result.json<br>7 章 21 节</small>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-node">
+        <span class="pipe-stage">A5</span>
+        <strong>报告融合</strong>
+        <small>report.md / .html / .pdf<br>四维审计 + 签发</small>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>大白话：</strong>A4 像装配工。零件必须来自仓库（A2/A3），每个零件有编号（evidence_id），图纸是 7 章 21 节；装错不能自己造一个，只能退回、隔离或标缺口。
+    </div>
+
+    <div class="info-grid">
+      <article class="info-card">
+        <h3>输入：三份契约</h3>
+        <p>A2 的证据白名单、洞察、发现、财务比率、必答题覆盖；A3 的 ready 图、图表和证据映射；7 章 21 节大纲、人工反馈和写作选项。</p>
+        <ul class="mini-list">
+          <li>少一份 JSON 直接报错，不硬编</li>
+          <li>每章一个独立资料袋：≤60 条证据、8 条洞察、25 条发现</li>
+          <li>一张图只能进一个章节</li>
+        </ul>
+      </article>
+      <article class="info-card">
+        <h3>处理：生成—审计—修复</h3>
+        <p>7 章并发主生成；逐段查数字语义、证据 ID、因果、重复、图号、指标卡、对比表、总市值锚点；不合格就修，修不好就隔离或兜底。</p>
+        <ul class="mini-list">
+          <li>每章一次主生成，失败才加修复调用</li>
+          <li>10 份写作规范，技能选择走章节策略</li>
+          <li>21 节是章内结构，不是 21 个并发任务</li>
+        </ul>
+      </article>
+      <article class="info-card">
+        <h3>输出：结构化 JSON</h3>
+        <p>chapter_result.json、每章 JSON、events.jsonl。A5 不读 A4 的“文章”，只读这些落盘文件，才能逐段对证据。</p>
+        <ul class="mini-list">
+          <li>段落：paragraph_id、kind、text、evidence_ids</li>
+          <li>小节：chart_ids、metric_cards、comparison_table、uncertainties</li>
+          <li>质量：passed、evidence_coverage、issues、fallback_chapter_ids</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="note">
+      <strong>框架一句话：</strong>不是 LangGraph、CrewAI、AutoGen，也不是 PiAgent 运行时。项目是 FastAPI + 自研 StateMachine + FiveAgentsAdapter；五个智能体是五个独立 Python 包，只通过 data/runs 里的落盘 JSON 交接。A4 包在 agents_core/chapter-writer，默认 max_concurrency=7；实际模型走 OpenAI 兼容接口，A4 生产配置为 deepseek-v4-flash、温度 0.2、max_tokens 16384。
+    </div>
+  </div>
+</section>
+
+<!-- ===== 02 七步 ===== -->
+<section class="section" id="flow">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">02 / FLOW</div>
+      <h2 class="h2">A4 内部怎么跑：七步</h2>
+      <p class="lead">一句话记：先定每节 purpose，再按章取资料，7 章并发生成，逐段审计，修不好就降级，最后章节质检。</p>
+    </div>
+
+    <div class="steps">
+      <article class="step">
+        <div class="step-top"><span class="step-num">01</span><span class="tag green">输入</span></div>
+        <h3>载入契约</h3>
+        <p>A2 证据、A3 图、7 章 21 节固定大纲、人工反馈和写作选项；章节结构不能改，节内写内容；少一份 JSON 直接报错。</p>
+        <div class="step-foot">文档 3.6 / 表 3.2</div>
+      </article>
+
+      <article class="step">
+        <div class="step-top"><span class="step-num">02</span><span class="tag blue">检索</span></div>
+        <h3>每章资料袋</h3>
+        <p>每节先定 purpose，再做局部检索；按章取相关事实、证据和 ready 图；≤60 条证据、8 条洞察、25 条发现；500KB 上限，必答证据不丢。</p>
+        <div class="step-foot">retriever.py / 文档 3.6</div>
+      </article>
+
+      <article class="step">
+        <div class="step-top"><span class="step-num">03</span><span class="tag plum">并发</span></div>
+        <h3>7 章主生成</h3>
+        <p>Semaphore(7) + gather；每章一次主模型调用。21 节是章内结构，不是 21 个并发任务。</p>
+        <div class="step-foot">config.py / 文档 3.6</div>
+      </article>
+
+      <article class="step">
+        <div class="step-top"><span class="step-num">04</span><span class="tag">写作</span></div>
+        <h3>逐段生成</h3>
+        <p>论点驱动，一段一个判断；图表只放 [CHART-xx] 占位；返回严格 JSON，字段和枚举不能增删。</p>
+        <div class="step-foot">文档 3.5.2 / 表 3.4</div>
+      </article>
+
+      <article class="step">
+        <div class="step-top"><span class="step-num">05</span><span class="tag red">审计</span></div>
+        <h3>逐段审计</h3>
+        <p>数字能否在证据里复算、引用 ID 是否存在、因果有没有独立依据、段落是否重复、图号是否对得上图、指标卡和对比表是否绑证据、总市值是否同锚点。</p>
+        <div class="step-foot">_audit_chapter / quantity_issues / 文档 3.3.1</div>
+      </article>
+
+      <article class="step">
+        <div class="step-top"><span class="step-num">06</span><span class="tag red">修复</span></div>
+        <h3>修复或降级</h3>
+        <p>整章重写或段落定点修复；人工可对单章提反馈，只重跑那一章；段落级精修改一段，不重跑整章；修复先做 trial 复审，不通过就保留有据从句、隔离段落，最后确定性兜底。</p>
+        <div class="step-foot">_generate_audited_chapter / 文档 3.3.3</div>
+      </article>
+
+      <article class="step">
+        <div class="step-top"><span class="step-num">07</span><span class="tag green">质检</span></div>
+        <h3>章节质检与输出</h3>
+        <p>包级再查 7 章 21 节、单图单处、未知证据、跨章量级；不过就标 partial，fallback 章和 issues 如实上报。</p>
+        <div class="step-foot">_audit_package / chapter_result.json</div>
+      </article>
+    </div>
+
+    <div class="doc-quote">
+      “章节写作智能体的提示词 3,211 字符、53 行，是五个智能体里最复杂的一条。它把‘能写什么、不能写什么、返回什么’写成可校验的条款，而不是一段泛泛的写作要求。”
+      <span class="doc-src">《最终版-算法质量重写版》3.5.2</span>
+    </div>
+
+    <div class="output-card">
+      <div>
+        <h3>输出不是一篇散文，是能被 A5 审计的 JSON</h3>
+        <p>章节号、标题、摘要、小节数组；小节含段落、图表编号、不确定性、指标卡、对比表、callout、布局提示；段落含段落号、类型、正文、证据编号、假设说明。字段名、枚举值和嵌套结构都在 schema 里，模型不能增删字段，也不能把数字写成字符串。</p>
+      </div>
+      <div class="json-stack">
+        <div class="json-pill">chapter_result.json · status / quality / issues</div>
+        <div class="json-pill">chapters/CH-01 … CH-07.json · 每章结构化内容</div>
+        <div class="json-pill">events.jsonl · 审计、修复、兜底过程</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 03 最难点 ===== -->
+<section class="section" id="hard">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">03 / HARDEST</div>
+      <h2 class="h2">最难的一块：不是写，是判得准、修得稳</h2>
+      <p class="lead">如果只能选一个智能体，我选 A4。不是因为它代码最多，而是因为文档 3.3 的三条判定链，正好卡在 A4 和 A5 之间：段落连同证据索引进来，出去的是三态判定和裁后文本。</p>
+    </div>
+
+    <div class="note">
+      <strong>直接回答：</strong>如果只能选一个，是 A4；A4 内部最难的是文档 3.3 的三条判定链——断言分型核验、精度裁定、幂等裁剪与修复同源。写作本身不是最难的，难的是写完之后还能被判对、修稳、降级。<br>
+      <strong>为什么是 A4：</strong>A2 难在算得准，A3 难在画得对；A4 难在把前两段的结论写成可判的句子。上游的错会在这里变成“看起来专业”的成稿，所以 A4 是章节阶段的语义闸门。
+    </div>
+
+    <div class="big-quote">
+      <p>“三者分别回答断言是否成立、两个数是否相等、修复结果是否稳定，串起来构成一条可审计的判定链。”</p>
+      <span class="doc-src">《最终版-算法质量重写版》3.3</span>
+    </div>
+
+    <div class="chain">
+      <span class="chain-node">段落</span><span class="chain-arrow">→</span>
+      <span class="chain-node">切子句</span><span class="chain-arrow">→</span>
+      <span class="chain-node">定类型</span><span class="chain-arrow">→</span>
+      <span class="chain-node">配证据标准</span><span class="chain-arrow">→</span>
+      <span class="chain-node hot">三态判定</span><span class="chain-arrow">→</span>
+      <span class="chain-node">裁后文本</span><span class="chain-arrow">→</span>
+      <span class="chain-node end">A5 门禁</span>
+    </div>
+
+    <div class="hard-grid">
+      <article class="hard-card">
+        <div class="hard-card-top">
+          <div class="hard-num">01</div>
+          <span class="tag blue">文档 3.3.1</span>
+        </div>
+        <h3>断言分型核验</h3>
+        <p>数值、方向、因果、排名、预测、情景，六类断言各有证据标准；判不了就 fail-closed，按 ⊥U 拦截，不靠模型“像不像真的”。</p>
+        <div class="chips">
+          <span class="chip">数值</span><span class="chip">方向</span><span class="chip">因果</span>
+          <span class="chip">排名</span><span class="chip">预测</span><span class="chip">情景</span>
+        </div>
+        <div class="stat-line">
+          39 条标注集：应拦 21、应留 18；拦截 17/21（81.0%），漏放 4/21，进稿风险 19.0%；误判 1/18（5.6%）。因果、排名各 6/6。
+        </div>
+        <details>
+          <summary>代码落点</summary>
+          <p>financial_semantics.py 的 quantity_issues；A4 的 _audit_chapter 把数值语义、方向、因果问题逐段落成 issues。</p>
+        </details>
+      </article>
+
+      <article class="hard-card">
+        <div class="hard-card-top">
+          <div class="hard-num">02</div>
+          <span class="tag blue">文档 3.3.2</span>
+        </div>
+        <h3>精度裁定</h3>
+        <p>不用固定百分比容差。从原始披露串反推小数步长，把精细侧按粗侧步长舍入再比；精度不可确认就判 ⊥U，不做猜测。</p>
+        <div class="stat-line">
+          “精度应视为数据属性，而非可随意设定的参数。” 16.17 与 16.2 判等价；1.2 亿元与 12000 万元同步步长后等价。
+        </div>
+        <details>
+          <summary>代码落点</summary>
+          <p>quantity_issues 的舍入容差按显示末位半单位；A4 的数字复算与 A5 的数值闭环审计共用同一口径。</p>
+        </details>
+      </article>
+
+      <article class="hard-card">
+        <div class="hard-card-top">
+          <div class="hard-num">03</div>
+          <span class="tag blue">文档 3.3.3</span>
+        </div>
+        <h3>幂等裁剪与修复同源</h3>
+        <p>裁剪只删除、不新增、不跨句拼接；T(T(x))=T(x)。校验和修复共用同一批判据，修完再用同一判据复验；修不好回退，不把错稿交付。</p>
+        <div class="stat-line">
+          文档的产业链修复七条约束是同一思路：报错集必须落在可修集里；修不好时“回退扁平结构属于合法结果，不是失败”。
+        </div>
+        <details>
+          <summary>代码落点</summary>
+          <p>A4 用 retain_supported_claims 保序保留有据从句，再 repair_prose_opening 补主语；trial 审计通过才接受修复，失败就隔离或兜底。</p>
+        </details>
+      </article>
+    </div>
+
+    <div class="note">
+      <strong>落地边界：</strong>A4 直接跑的是段落级数值、方向、因果审计；排名、预测、情景还要靠写作约束和 A5 终审收口。六类断言是系统级判定链，不要讲成 A4 一个包全包了。
+    </div>
+
+    <div class="examples">
+      <div class="example good">
+        <div class="ex-label">精度裁定 · 等价</div>
+        <strong>16.17 = 16.2</strong>
+        <span>16.17 是 2 位小数，16.2 是 1 位；按 0.1 步长舍入，16.17 → 16.2，判为同一个数。</span>
+      </div>
+      <div class="example bad">
+        <div class="ex-label">精度裁定 · 冲突</div>
+        <strong>16.17 ≠ 16.25</strong>
+        <span>两者都是 2 位小数；差 0.08，大于半个末位 0.005，判冲突，不能放行。</span>
+      </div>
+      <div class="example neutral">
+        <div class="ex-label">跨单位 · 同步步长</div>
+        <strong>1.2 亿元 = 12000 万元</strong>
+        <span>元、万元、亿元按倍率换算；非金额按单位分桶，百分比与倍数不跨桶。</span>
+      </div>
+    </div>
+
+    <div class="real-strip">
+      <div><strong>7</strong><span>章 / 21 节</span></div>
+      <div><strong>52</strong><span>段真实验收</span></div>
+      <div><strong>47/52</strong><span>段带证据</span></div>
+      <div><strong>0</strong><span>悬空引用</span></div>
+      <div><strong>0</strong><span>跨章完全重复</span></div>
+    </div>
+    <div class="num-note">
+      这是 A4 专项验收 run 的记录，不是文档 3.3.1 的 39 条评测集。两组数字口径不同，答辩时不要混着讲。
+    </div>
+
+    <div class="note">
+      <strong>第二层难：工程约束。</strong>7 章并发但要跨章一致；每章 500,000 字节预算，必答证据与用户请求不能裁；一张图只能进一个章节；修完必须用同一判据复验。任一环偷懒，报告就会“看起来专业、其实对不上”。
+    </div>
+  </div>
+</section>
+
+<!-- ===== 04 创新 ===== -->
+<section class="section" id="innovation">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">04 / INNOVATION</div>
+      <h2 class="h2">创新点：文档表 2.2 的五项，A4 用在哪</h2>
+      <p class="lead">文档把创新分成功能和技术两类。五项里，三项直接长在 A4 上；另外两项是 A4 的上游和章节支撑。不是新模型，是契约、判定链、门禁和证据链。</p>
+    </div>
+
+    <div class="innovation-grid">
+      <article class="innovation">
+        <div class="innovation-top">
+          <h3>01 · 产业链全景图谱</h3>
+          <span class="doc-tag">表 2.2 / 2.3.2 / 3.3.3</span>
+        </div>
+        <div class="doc-line">“三列全景图 + 七条结构约束，环节可追溯到披露证据。”</div>
+        <p>固定使用三列全景 SVG，上游、中游、下游分层；节点编号唯一、阶段枚举合法、有且仅有一个核心节点、同一企业只出现在一个环节、实物流方向合规、节点度数不超上限、证据编号真实存在。</p>
+        <div class="use"><b>A4 用在哪：</b>CH-03 产业链章节。图由 A3 提供，A4 只写解读，不自己画图、不自己编图号；章节里的每个图点仍要能回到 A2 证据。</div>
+      </article>
+
+      <article class="innovation">
+        <div class="innovation-top">
+          <h3>02 · 数值勾稽与精度裁定</h3>
+          <span class="doc-tag">表 2.2 / 2.3.3 / 3.3.2</span>
+        </div>
+        <div class="doc-line">“按披露精度判等，16.17 与 16.2 不误判。”</div>
+        <p>财务指标由确定性算子计算，模型只在算好的结果上做解释；判等从原始披露串反推小数步长，不用固定百分比容差。</p>
+        <div class="use"><b>A4 用在哪：</b>数字审计不靠“看起来差不多”；先复算，再判精度；判不了就写缺口。A4 不自己算新数，净现比也只能引用 A2 已核验值。</div>
+      </article>
+
+      <article class="innovation">
+        <div class="innovation-top">
+          <h3>03 · 智能取数探针</h3>
+          <span class="doc-tag">表 2.2 / 2.3.2 / 3.6</span>
+        </div>
+        <div class="doc-line">“静态精确查询 + 规程化动态补采，按点下单。”</div>
+        <p>静态侧解析宏观、行式、宽表序列、分组年度四类 schema；动态侧限定白名单技能，最多 4 次改写，只返回 JSON，按实体、指标、期间、数值四要素校验命中。</p>
+        <div class="use"><b>A4 用在哪：</b>A1 的上游能力。补到的证据才进 A4 的资料袋；A4 不自己查数、不自己补数，补不到就写缺口。</div>
+      </article>
+
+      <article class="innovation">
+        <div class="innovation-top">
+          <h3>04 · 五阶段分级复核台</h3>
+          <span class="doc-tag">表 2.2 / 2.3.2</span>
+        </div>
+        <div class="doc-line">“段落级精修只更新当前段落及其引用关系，不重跑整章。”</div>
+        <p>五个阶段各有一张面向原对象的编辑台。A4 这一站，研究员可以在段落上直接改，不需要通过聊天框描述“哪里不对”。</p>
+        <div class="use"><b>A4 用在哪：</b>CH-05 / SEC-05-03 改一段，保存后重开仍在；只更新该段及引用关系，不重跑整章。演示里 P-05-03-02 从“分位极低”改成带基准日、PB 口径的句子。</div>
+      </article>
+
+      <article class="innovation">
+        <div class="innovation-top">
+          <h3>05 · 证据穿透与底稿溯源</h3>
+          <span class="doc-tag">表 2.2 / 2.3.3 / 3.3.1</span>
+        </div>
+        <div class="doc-line">“唯一编号贯通记录、结论、图表与正文。”</div>
+        <p>每条关键记录生成唯一编号，携带来源、期间、单位、口径与取数时点；结论、图表与正文都引用这个编号。正文按数值、方向、因果、排名、预测、情景六类断言配置不同证据标准。</p>
+        <div class="use"><b>A4 用在哪：</b>每段 evidence_ids；A5 只收录真被引用的记录，生成证据目录和 CSV，排版时才变成读者看到的 [1][2]。</div>
+      </article>
+    </div>
+
+    <div class="mini-grid">
+      <div class="mini">
+        <h4>7 章并发 + 独立资料袋</h4>
+        <p>不是 21 节并发。每章一个资料袋，控 token，也避免章节串味。</p>
+      </div>
+      <div class="mini">
+        <h4>单图单处</h4>
+        <p>一张图只能进一个章节、一个小节；包级再查串章和一图多挂。</p>
+      </div>
+      <div class="mini">
+        <h4>trial 修复</h4>
+        <p>每次修复先深拷贝，重跑同一套审计；不新增问题才接受。</p>
+      </div>
+      <div class="mini">
+        <h4>段落级精修</h4>
+        <p>改一段，只更新该段及引用；保存后重开可复现，不重跑整章。</p>
+      </div>
+    </div>
+
+    <div class="not-model">
+      <strong>创新不是“换了个更大的模型”。</strong> 文档里的五项创新，加上 3.3 的三条判定机制，解决的是同一件事：让模型写出来的自然语言，能被代码逐段判定、逐段修复、逐段降级。模型只是写手，判据、证据、门禁都在代码里。
+    </div>
+  </div>
+</section>
+
+<!-- ===== 05 踩坑 ===== -->
+<section class="section" id="pits">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">05 / WHAT BROKE</div>
+      <h2 class="h2">之前踩过的坑，和怎么修的</h2>
+      <p class="lead">这些不是泛泛而谈，是能对上文档、代码和验收记录的。核心一句：提示词里的“严禁”，只有在代码里有对应检查时才成立。</p>
+    </div>
+
+    <div class="pit-grid">
+      <article class="pit">
+        <h3>坑 1：图号乱挂，图不对文</h3>
+        <div class="before-after">
+          <div class="quote-line before">原：如图 [CHART-06-10DA732C] 所示，中国新能源汽车行业在 2021—2025 年实现规模跃升……</div>
+          <div class="quote-line after">改：删掉图号。这段讲行业规模判断，不是这张图的解读。</div>
+          <div class="quote-line before">原：本节销量、出口量数据为年度累计值口径……（无图号）</div>
+          <div class="quote-line after">改：补“如图 [CHART-02-BD119357] 所示”。这段才真正讨论渗透率图。</div>
+        </div>
+        <p>图号不是装饰。图必须 ready、必须推荐给本章、必须单处挂接；正文必须真的讨论这张图绘制的指标。对不上就撤，没解读就记“暂无与图表证据对应的正文解读”。</p>
+        <div class="fix">代码：_align_chart_reference / strip_chart_tag；记录：chart_reference_reaudit.json。</div>
+      </article>
+
+      <article class="pit">
+        <h3>坑 2：删句后主语丢了</h3>
+        <div class="before-after">
+          <div class="quote-line before">原：……同期经营现金流……</div>
+          <div class="quote-line before">原：……显示……</div>
+          <div class="quote-line after">改：补主体、补期间，只保留能逐句核对的从句；恢复不了就整段隔离。</div>
+        </div>
+        <p>事实核验删掉无证据首句后，后面的从句会失去主体。A4 用 retain_supported_claims 保序保留有据子句，再用 repair_prose_opening 从可核记录补主语；不是让模型再编一句。</p>
+        <div class="fix">记录：A4文字对照与验收.md；代码：retain_supported_claims / repair_prose_opening。</div>
+      </article>
+
+      <article class="pit">
+        <h3>坑 3：同一章三个小节写重</h3>
+        <div class="before-after">
+          <div class="quote-line before">同一段话在三个小节反复出现，报告像复制粘贴。</div>
+          <div class="quote-line after">改：章内 normalized text 重复审计；重复段隔离；夹具用“其一/其二/其三”区分。</div>
+        </div>
+        <p>分章独立生成，模型爱用模板句，章内去重必须在代码里做。跨章重复只登记不改正文，是否阻断交 A5 按严重级别判。</p>
+        <div class="fix">记录：问题及修订清单 P3-OFF-002；代码：_audit_chapter 的重复审计。</div>
+      </article>
+
+      <article class="pit">
+        <h3>坑 4：数字、因果、量级不对</h3>
+        <div class="before-after">
+          <div class="quote-line before">“5 家”“15”“100%”这种派生数被判无依据；22.14 万亿与 2.21 万亿并存。</div>
+          <div class="quote-line after">改：能复算就绑全部操作数；不能就写缺口；总市值按 global_facts 统一锚点。</div>
+        </div>
+        <p>A4 的审计是 fail-closed：光有一个真实证据 ID 不够，还要同实体、同指标、同期间、同单位。假设说明不能给事实数字豁免；指标卡和对比表也必须绑证据。</p>
+        <div class="fix">记录：REAL-A4-001（43 条数值语义、2 条因果、5 条重复）；代码：quantity_issues / global_facts。</div>
+      </article>
+    </div>
+
+    <div class="doc-quote">
+      “提示词里的‘严禁’只有在代码里有对应检查时才成立。”
+      <span class="doc-src">《最终版-算法质量重写版》3.5.2</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 06 答辩 ===== -->
+<section class="section" id="defense">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">06 / DEFENSE</div>
+      <h2 class="h2">答辩怎么讲</h2>
+      <p class="lead">先讲结论，再讲一个真实坑，最后讲边界。不要一上来讲代码。</p>
+    </div>
+
+    <div class="scripts">
+      <article class="script">
+        <h3>30 秒版</h3>
+        <p>如果只能选一个，我选智能体4。A4 不是让模型自由写文章，是让它在 7 章并发、21 节按提纲落位的前提下，把每句话写成可审计的句子。文档 3.3 的三件事最硬：断言分型、精度裁定、幂等修复。我们踩过的坑也很具体：图号乱挂、删句主语丢、同章重复。解决不是靠提示词，是代码审计和 trial 复审；修不好就 partial，绝不静默通过。</p>
+        <div class="script-src">适合开场，控制在 45 秒内。</div>
+      </article>
+
+      <article class="script">
+        <h3>90 秒版</h3>
+        <p>智能体4 是章节编制环节。它拿到的是三份契约：A2 的证据白名单、洞察和财务比率；A3 的就绪图表和图表证据映射；7 章 21 节的标准大纲和人工反馈。每章一个独立资料袋，最多 60 条证据、8 条洞察、25 条发现，一张图只能进一个章节。</p>
+        <p>它真正难的不是写得漂不漂亮，是写得能不能被审计。每一段要挂证据号；每一个数字要能同实体、同指标、同期间、同单位地复算；每一句因果要有独立依据；每一个图号要对得上图实际画的东西。文档 3.3.2 的精度裁定最能说明这一点：16.17 和 16.2 按披露步长判等价，不是按固定百分比容差放水。A4 写完先自审，不合格就定点修，修完再审；修不好就整章重写，再不行段落隔离，最后确定性兜底，状态标 partial。</p>
+        <div class="script-src">适合评委追问“到底难在哪”时展开。</div>
+      </article>
+    </div>
+
+    <div class="qa">
+      <details>
+        <summary>为什么不让一个大模型一口气写完七章？</summary>
+        <p>长文本会退化、章节会串味、token 顶不住。七章并发、每章独立资料袋，控 token 又保证证据定位准；代价是跨章一致性要靠 global_facts 和 A5 印前复检。</p>
+      </details>
+      <details>
+        <summary>七章并发怎么保证一致性？</summary>
+        <p>不靠模型记忆。靠 global_facts 统一总市值等全局数字，靠 _audit_package 查 7 章 21 节、单图单处、跨章量级冲突，最后 A5 再做整份报告的四维审计。</p>
+      </details>
+      <details>
+        <summary>A4 质检没过，为什么还能进 A5？</summary>
+        <p>A4 不过不阻断，是让问题可见；A5 才是签发门。A5 过不了就只出受限草稿；硬阻塞人工也绕不过去。让问题可见，比悄悄停在 A4 更有价值。</p>
+      </details>
+      <details>
+        <summary>修复会不会越修越错？</summary>
+        <p>会，所以每次修复先深拷贝 trial，重跑同一套审计；只有该段问题消失且不新增问题才接受。候选润色新增问题就拒绝；不行就保留有据从句或隔离，最后确定性兜底。</p>
+      </details>
+      <details>
+        <summary>A4 用的是什么框架？是 LangGraph 或 PiAgent 吗？</summary>
+        <p>不是。项目运行时是 FastAPI + 自研 StateMachine + FiveAgentsAdapter，A4 是独立 Python 包 agents_core/chapter-writer，只依赖 httpx、pydantic。PiAgent 更像开发时用的 coding agent，不是交付运行时。</p>
+      </details>
+      <details>
+        <summary>21 节是并发的吗？</summary>
+        <p>不是。代码是 7 章并发，每章一次主模型调用；21 节是章内结构，不是 21 个并发任务。按代码讲更稳。</p>
+      </details>
+      <details>
+        <summary>创新点是不是包装？</summary>
+        <p>不是新模型。文档表 2.2 的五项创新，加上 3.3.1—3.3.3 的三条判定机制，解决的是“自然语言能不能被代码逐段判定、逐段修复、逐段降级”。每一项都能落到代码、验收数字或界面动作。</p>
+      </details>
+    </div>
+
+    <div class="dont">
+      <h3>答辩时别说的四句话</h3>
+      <ul>
+        <li>别说“21 节并发”——代码是 7 章并发，21 节是章内结构。</li>
+        <li>别说“A5 就是排版”——A5 是复核与签发，排版只是最后一步。</li>
+        <li>别说“A4 保证文采”——A4 保证的是有据、可查、可降级。</li>
+        <li>别说“测试全过”——A4 真实验收是 partial，问题被如实标出来。</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 07 数字 ===== -->
+<section class="section" id="numbers">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">07 / NUMBERS</div>
+      <h2 class="h2">数字口径：别把三组数字混着讲</h2>
+      <p class="lead">文档有一套算法评测数字，A4 有一套提示词工程量，项目验收又有一套 run 记录。三组数字各有各的用途，不能拼成一组。</p>
+    </div>
+
+    <table class="num-table">
+      <thead>
+        <tr>
+          <th>口径</th>
+          <th>数字</th>
+          <th>说明</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>文档算法评测</strong><br><span class="small muted">3.3.1 / 39 条标注集</span></td>
+          <td>应拦 21、应留 18；拦截 17/21（81.0%）；漏放 4/21；进稿风险 19.0%；误判 1/18（5.6%）；因果、排名各 6/6。</td>
+          <td>这是六类断言核验的离线评测，不是 A4 的整份报告验收。用它讲“拦截率”，不要用它讲“报告通过率”。</td>
+        </tr>
+        <tr>
+          <td><strong>A4 提示词工程量</strong><br><span class="small muted">3.5.2 / 表 3.3</span></td>
+          <td>3,211 字符、53 行；五个智能体里最复杂的一条；章节写作挂 10 份写作规范。</td>
+          <td>说明 A4 的约束密度，不是模型参数。A4 实际模型走 OpenAI 兼容接口，生产配置 deepseek-v4-flash、温度 0.2、max_tokens 16384。</td>
+        </tr>
+        <tr>
+          <td><strong>A4 专项验收 run</strong><br><span class="small muted">chapter-writer 真实运行</span></td>
+          <td>7 章 21 节 52 段；47/52 段带证据；悬空引用 0；6 个图占位符全对应真实图；跨章完全重复 0；status=partial；43 条数值语义、2 条因果、5 条重复未过。</td>
+          <td>这是“真跑过一次”的记录。现场如果演示另一份报告，数字以现场那份为准；机制不变。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="num-note">
+      还有一个容易讲错的点：A4 的 evidence_coverage 是“被引用证据 / 全库证据”的全库覆盖率，不是“段落带证据比例”。对外讲“47/52 段带证据”更直观，不要把它和 evidence_coverage 混成一个数。
+    </div>
+  </div>
+</section>
+
+<!-- ===== 08 来源 ===== -->
+<section class="section" id="sources">
+  <div class="wrap">
+    <div class="sources">
+      <h2>文档与代码对齐索引</h2>
+      <div class="source-list">
+        <div><b>创新点：</b>《最终版-算法质量重写版》表 2.2、2.3.2、2.3.3。</div>
+        <div><b>判定链：</b>同上，3.3.1 断言分型、3.3.2 精度裁定、3.3.3 幂等裁剪与修复同源。</div>
+        <div><b>A4 提示词与契约：</b>同上，3.5.2、表 3.4、3.6。</div>
+        <div><b>A4 交接口径：</b>A4A5金融岗答辩交接-20261119.md。</div>
+        <div><b>踩坑与验收：</b>output/agent4_refactor_eval/问题及修订清单.md；output/agent4_refactor_eval/real_run/P3_real_run_result.md；output/nev_a4_bugfix_validation_20261113/chart_reference_reaudit.json。</div>
+        <div><b>写作诊断：</b>output/a4-writing-optimization-20261117/A4文字对照与验收.md。</div>
+        <div><b>代码：</b>agents_core/chapter-writer/chapter_writer/agent.py、retriever.py、net_cash_ratio.py、config.py、models.py。</div>
+        <div><b>金融语义：</b>agents_core/financial_semantics.py 的 quantity_issues。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div>本页是答辩讲解页，不是正式报告。创新表述以《最终版-算法质量重写版》原文为准；代码落点用于解释实现。</div>
+    <div>智能体4 · 章节撰写 · 文档对齐版</div>
+  </div>
+</footer>
+
+</body>
+</html>

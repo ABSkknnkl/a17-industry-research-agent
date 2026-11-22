@@ -7,6 +7,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { CloseBold, Download, ArrowDown } from '@element-plus/icons-vue'
 import {
   getRun,
+  getRunEvents,
+  subscribeRunEvents,
   listRevisions,
   cancelRun,
   resumeRun,
@@ -18,7 +20,9 @@ import { showStageError } from '../api/stageStatus'
 import {
   STAGE_LABELS,
   STAGE_ORDER,
+  type AgentTraceEvent,
   type ArtifactRef,
+  type PeerCompsMatrix,
   type ReportFusionData,
   type RevisionListResponse,
   type StageName,
@@ -48,6 +52,11 @@ const router = useRouter()
 const runId = computed(() => String(route.params.runId ?? ''))
 
 const workflow = ref<WorkflowState | null>(null)
+const finalReportReady = computed(() => {
+  const final = workflow.value?.stage_results.report_fusion?.data as ReportFusionData | undefined
+  return final?.delivery_status === 'ready' && final.quality?.passed === true
+})
+
 const loading = ref(false)
 const revisions = ref<RevisionListResponse | null>(null)
 const revisionsVisible = ref(false)
@@ -93,6 +102,87 @@ const currentStageResult = computed<StageResult | null>(() => {
 })
 
 const isRunning = computed(() => workflow.value?.status === 'running')
+const stageDurations = ref<Partial<Record<StageName, number>>>({})
+
+const taskProgress = ref<Partial<Record<StageName, AgentTraceEvent>>>({})
+
+function rememberProgress(event: AgentTraceEvent): void {
+  if (typeof event.details?.progress_kind !== 'string') return
+  const previous = taskProgress.value[event.stage]
+  if (!previous || event.timestamp >= previous.timestamp) {
+    taskProgress.value[event.stage] = event
+  }
+}
+
+watch([runId, isRunning], ([id, running], [previousId], onCleanup) => {
+  if (id !== previousId) taskProgress.value = {}
+  if (id && running) onCleanup(subscribeRunEvents(id, rememberProgress))
+})
+
+const currentProgressLabel = computed(() => {
+  const stage = workflow.value?.current_stage
+  const progress = stage && taskProgress.value[stage]?.details
+  if (!progress || typeof progress.completed !== 'number' || typeof progress.total !== 'number') {
+    return ''
+  }
+  const count = `${progress.completed}/${progress.total}`
+  switch (progress.progress_kind) {
+    case 'fetch_queries':
+      return `已取得 ${count} 项问财结果`
+    case 'analysis_plan':
+      return '正在规划五问的分析口径'
+    case 'analysis_questions':
+      return `已完成 ${count} 题的证据研判`
+    case 'analysis_synthesis':
+      return '正在复核并归纳五问结论'
+    case 'chart_plans':
+      return `已完成 ${count} 题的选图方案`
+    case 'chart_reviews':
+      return `已核验 ${count} 张模板图`
+    case 'chapter_write':
+      return progress.completed < progress.total
+        ? `已完成 ${count} 章 · 正在撰写第 ${progress.completed + 1} 章`
+        : `已完成 ${count} 章 · 正在汇总核验`
+    default:
+      return ''
+  }
+})
+
+watch(
+  [runId, () => workflow.value?.current_stage, () => workflow.value?.status],
+  async ([id], previous, onCleanup) => {
+    if (id !== previous[0]) stageDurations.value = {}
+    if (!id || workflow.value?.run_id !== id) return
+    let stale = false
+    onCleanup(() => {
+      stale = true
+    })
+    try {
+      const events = await getRunEvents(id)
+      if (stale) return
+      const started: Partial<Record<StageName, number>> = {}
+      const durations: Partial<Record<StageName, number>> = {}
+      for (const event of events) {
+        rememberProgress(event)
+        const time = Date.parse(event.timestamp)
+        if (!Number.isFinite(time)) continue
+        if (event.event_type === 'agent_start' && started[event.stage] === undefined) {
+          started[event.stage] = time
+        } else if (event.event_type === 'stage_completed') {
+          const start = started[event.stage]
+          if (start !== undefined && time >= start) {
+            durations[event.stage] = (time - start) / 1000
+            delete started[event.stage]
+          }
+        }
+      }
+      stageDurations.value = durations
+    } catch {
+      // 运行状态仍由任务接口提供。
+    }
+  }
+)
+
 const viewingPastStage = computed(() =>
   Boolean(workflow.value && currentStageName.value !== workflow.value.current_stage)
 )
@@ -271,6 +361,24 @@ const sourceRecords = computed<Record<string, unknown>[]>(() => {
   return Array.isArray(list) ? (list as Record<string, unknown>[]) : []
 })
 
+/**
+ * 跨阶段只读补充数据（供人工介入弹窗回填初值）。
+ *
+ * - 可比公司矩阵由融合阶段产出，A2 的 stage data 里没有 comps_matrix；
+ * - 执行摘要文本在 A2，融合阶段 data 里没有该键。
+ * 显式传入而不是让弹窗兜底样例，避免「读到假数据 / 提交空串覆盖既有内容」。
+ */
+const crossStageData = computed(() => {
+  const stages = workflow.value?.stage_results
+  const fusion = stages?.report_fusion?.data as Record<string, unknown> | undefined
+  const interpret = stages?.data_interpret?.data as Record<string, unknown> | undefined
+  const summary = interpret?.executive_summary
+  return {
+    compsMatrix: (fusion?.comps_matrix ?? null) as PeerCompsMatrix | null,
+    executiveSummary: typeof summary === 'string' ? summary : null,
+  }
+})
+
 async function reload(): Promise<void> {
   try {
     const prevStatus = workflow.value?.status
@@ -287,25 +395,18 @@ async function reload(): Promise<void> {
   await checkAutoJump()
 }
 
-/** 全自动任务的完成后自动跳转：首页「一键通过」创建的任务在 run 终态时直达下载页。 */
+/** 一键生成任务完成后直达下载页。 */
 async function checkAutoJump(): Promise<void> {
-  const key = `autojump:${runId.value}`
-  let flagged = false
+  const state = workflow.value
+  const id = runId.value
+  if (!state || state.run_id !== id || state.status !== 'completed') return
   try {
-    flagged = localStorage.getItem(key) === '1'
+    if (localStorage.getItem(`autojump:${id}`) !== '1') return
+    localStorage.removeItem(`autojump:${id}`)
   } catch {
     return
   }
-  if (!flagged) return
-  const state = workflow.value
-  if (state && (state.status === 'completed' || state.status === 'approved')) {
-    try {
-      localStorage.removeItem(key)
-    } catch {
-      /* 忽略 */
-    }
-    await router.push({ name: 'report-download', params: { runId: runId.value } })
-  }
+  await router.push({ name: 'report-download', params: { runId: id } })
 }
 
 async function reloadWithSpinner(): Promise<void> {
@@ -576,6 +677,9 @@ export default { name: 'ReviewView' }
           <span class="strip-pulse-dot" />
           <span class="strip-lead">正在执行</span>
           <span class="strip-stage">{{ currentStageLabel }}</span>
+          <span v-if="currentProgressLabel" data-testid="current-stage-progress">
+            {{ currentProgressLabel }}
+          </span>
         </div>
         <span class="strip-timer">已执行 {{ formattedLiveElapsed }}</span>
       </div>
@@ -601,6 +705,8 @@ export default { name: 'ReviewView' }
       <el-card class="page-card" shadow="never" v-loading="loading">
         <StageStepper
           :stage-results="workflow?.stage_results ?? {}"
+          :final-report-ready="finalReportReady"
+          :duration-seconds="stageDurations"
           :selected-stage="currentStageName"
           @select="onSelectStage"
         />
@@ -674,6 +780,7 @@ export default { name: 'ReviewView' }
           :result="currentStageResult"
           :revision="workflow!.revision"
           :annotations="currentAnnotations"
+          :cross-stage="crossStageData"
           @submitted="onSubmitted"
           @conflict="reloadWithSpinner"
         />

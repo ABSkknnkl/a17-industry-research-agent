@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能体 3 全貌：不是只画产业链图</title>
+<style>
+:root{
+  --bg:#F2EEE5; --paper:#FCF9F2; --paper2:#F7F1E6; --ink:#17202B;
+  --muted:#67707A; --faint:#8A9199; --line:rgba(23,32,43,.14);
+  --teal:#0E7865; --teal-soft:#E3F0EB; --rust:#B0472C; --rust-soft:#F7E7E0;
+  --indigo:#3C4C86; --indigo-soft:#E8EAF3; --gold:#A3762A; --gold-soft:#F5EDDB;
+  --mono:'SF Mono','Menlo','Consolas',monospace;
+  --sans:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --serif:'Songti SC','STSong','Noto Serif SC',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+body{width:1600px;height:1080px;overflow:hidden;}
+.poster{
+  width:1600px;height:1080px;padding:44px 56px 24px;
+  background:
+    radial-gradient(900px 420px at 92% 0%, rgba(60,76,134,.08), transparent 60%),
+    radial-gradient(700px 360px at 0% 100%, rgba(163,118,42,.08), transparent 60%),
+    linear-gradient(rgba(23,32,43,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23,32,43,.028) 1px, transparent 1px),
+    var(--bg);
+  background-size:auto,auto,32px 32px,32px 32px,auto;
+}
+.head{display:flex;justify-content:space-between;gap:36px;align-items:flex-start}
+.kicker{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;color:var(--teal);margin-bottom:10px}
+h1{font-family:var(--serif);font-size:43px;line-height:1.22;margin:0 0 10px;font-weight:700;letter-spacing:-.01em}
+h1 .accent{color:var(--indigo)}
+.lede{font-size:14px;line-height:1.85;color:var(--muted);max-width:1000px;margin:0}
+.lede b{color:var(--ink);font-weight:600}
+.io{width:380px;flex:none;border:1px solid var(--line);background:rgba(252,249,242,.76);padding:12px 16px;margin-top:4px}
+.io .row{display:flex;gap:12px;align-items:baseline;padding:6px 0;border-top:1px dashed var(--line)}
+.io .row:first-child{border-top:0;padding-top:0}
+.io .row:last-child{padding-bottom:0}
+.io span{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--faint);flex:none}
+.io b{font-family:var(--serif);font-size:13px;font-weight:600}
+.io em{display:block;font-style:normal;font-size:10.5px;line-height:1.6;color:var(--muted);margin-top:2px}
+.band{display:flex;align-items:center;gap:12px;margin:20px 0 18px;padding:9px 14px;border-left:3px solid var(--teal);background:rgba(227,240,235,.58)}
+.band b{font-size:13px;color:var(--teal)}
+.band span{font-size:11.5px;color:var(--muted)}
+.flow{display:flex;align-items:stretch}
+.step{flex:1;min-width:0;background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--teal);padding:15px 16px 13px}
+.step.s2{border-top-color:var(--gold)}
+.step.s3{border-top-color:var(--indigo)}
+.step.s4{border-top-color:var(--rust)}
+.step.s5{border-top-color:#2E6A4D}
+.step .top{display:flex;align-items:baseline;gap:9px;margin-bottom:4px}
+.step .num{font-family:var(--serif);font-size:28px;line-height:1;color:var(--ink)}
+.step .tag{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;color:var(--faint)}
+.step h3{font-family:var(--serif);font-size:19px;font-weight:600;margin:2px 0 4px}
+.step .punch{font-size:11px;line-height:1.65;color:var(--muted);margin:0 0 8px;min-height:36px}
+.step ul{margin:0;padding-left:15px}
+.step li{font-size:11px;line-height:1.72;margin-bottom:4px;color:var(--ink)}
+.step li b{color:var(--teal);font-weight:600}
+.step.s2 li b{color:var(--gold)}
+.step.s3 li b{color:var(--indigo)}
+.step.s4 li b{color:var(--rust)}
+.step.s5 li b{color:#2E6A4D}
+.arrow{width:22px;flex:none;display:flex;align-items:center;justify-content:center;font-size:19px;color:var(--faint);font-family:var(--mono)}
+.bottom{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-top:18px}
+.panel{background:var(--paper);border:1px solid var(--line);padding:14px 17px}
+.panel h3{font-family:var(--serif);font-size:16px;margin:0 0 3px;font-weight:600}
+.panel .sub{font-size:10.5px;line-height:1.65;color:var(--muted);margin:0 0 10px}
+.types{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.type{border:1px solid var(--line);background:var(--paper2);padding:8px 9px;min-height:48px}
+.type b{display:block;font-family:var(--mono);font-size:10.5px;color:var(--ink);letter-spacing:.02em}
+.type span{display:block;font-size:9.5px;line-height:1.5;color:var(--muted);margin-top:2px}
+.type.chain{border:1px solid rgba(14,120,101,.55);background:var(--teal-soft)}
+.type.chain b{color:var(--teal)}
+.type.chain span{color:var(--teal)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px}
+.stat{background:var(--paper2);border:1px solid var(--line);padding:8px 10px}
+.stat b{display:block;font-family:var(--serif);font-size:20px;line-height:1.05}
+.stat span{display:block;font-size:9.5px;line-height:1.55;color:var(--muted);margin-top:2px}
+.note{font-size:11px;line-height:1.75;color:var(--muted);margin:0}
+.note b{color:var(--ink)}
+.note .red{color:var(--rust);font-weight:600}
+.codebar{display:flex;flex-wrap:wrap;gap:7px 16px;margin-top:9px;padding-top:8px;border-top:1px dashed var(--line)}
+.codebar span{font-family:var(--mono);font-size:9px;color:var(--faint)}
+.codebar code{font-family:var(--mono);font-size:9px;color:var(--ink)}
+.footer{display:flex;justify-content:space-between;margin-top:12px;padding-top:8px;border-top:1px solid var(--line);font-family:var(--mono);font-size:9px;color:var(--faint);letter-spacing:.04em}
+@media(max-width:1550px){
+ body{width:100%;height:auto;overflow:auto}
+ .poster{width:100%;height:auto;padding:32px 24px 24px}
+ .head{flex-direction:column;gap:16px}
+ .io{width:100%}
+ h1{font-size:33px}
+ .flow{flex-wrap:wrap;gap:14px;align-items:flex-start}
+ .step{flex:1 1 46%}
+ .arrow{display:none}
+ .bottom{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+ .step{flex:1 1 100%}
+ .types{grid-template-columns:1fr 1fr}
+ .stats{grid-template-columns:1fr 1fr}
+ h1{font-size:27px}
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="head">
+    <div>
+      <div class="kicker">A3 / CHART GENERATION · 全貌</div>
+      <h1>智能体 3 不是“产业链图生成器”，<br><span class="accent">是“图表编译与出版检查器”</span></h1>
+      <p class="lede">它把 A2 的解读报告、证据索引和用户题面，编译成一套<b>按 7 章落位、逐点可追溯、单位同轴、能进 PDF</b>的图。<br>产业链图只是 16 种图型里最特殊的一种，不是 A3 的全部。</p>
+    </div>
+    <div class="io">
+      <div class="row"><span>INPUT</span><div><b>A2 解读报告 + 证据索引</b><em>interpretation_report.json / dataset.json / 题面卡</em></div></div>
+      <div class="row"><span>OUTPUT</span><div><b>一套图，不是一张图</b><em>chart_result.json + 每图 SVG/JSON + preview.html + 抑制/补采清单</em></div></div>
+    </div>
+  </div>
+
+  <div class="band"><b>一句话：</b><span>先判断数据能支撑什么图，再把数据整成同轴同口径的二维表，再逐点挂证据，最后过发布契约与质检；数据不够就不画。</span></div>
+
+  <div class="flow">
+    <div class="step s1">
+      <div class="top"><span class="num">01</span><span class="tag">INTAKE</span></div>
+      <h3>读料与排雷</h3>
+      <p class="punch">先判断这轮到底能不能画，不拿模型记忆补数。</p>
+      <ul>
+        <li><b>输入：</b>A2 报告、证据索引、题面卡、数据集</li>
+        <li><b>先剔源冲突：</b>A1/A2 口径不一致的点，不进入图</li>
+        <li><b>没有数值/产业链证据 → 直接抑制，</b>不为凑数硬画</li>
+        <li><b>按 7 章检查：</b>图该落在 CH-01—CH-07 哪一节</li>
+      </ul>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step s2">
+      <div class="top"><span class="num">02</span><span class="tag">SELECT</span></div>
+      <h3>选型</h3>
+      <p class="punch">不是“有数据就画柱状图”，而是按数据形态选型。</p>
+      <ul>
+        <li><b>时序 → line/area；规模+增速 → combo；截面 → bar/comparison/horizontal</b></li>
+        <li><b>构成 → pie/donut；多维 → radar；二维定位 → scatter/bubble；层级 → treemap；分布 → boxplot</b></li>
+        <li><b>LLM 提候选 + 确定性兜底，</b>避免某次只规划两三张</li>
+        <li><b>技能路由：</b>chart-selection / financial-charting / chart-readability / industry-chain-visualization</li>
+      </ul>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step s3">
+      <div class="top"><span class="num">03</span><span class="tag">FORMULATE</span></div>
+      <h3>数据整形</h3>
+      <p class="punch">先把异源证据压成一张“同轴同口径”的二维表。</p>
+      <ul>
+        <li><b>NormalizedDataTable：</b>类目、系列、单位、点级证据一一对齐</li>
+        <li><b>缺失值写 None，绝不填 0；</b>零轴不截断</li>
+        <li><b>单轴禁止混量纲；</b>金额统一到亿元/万元；比率分子分母同期间同口径</li>
+        <li><b>图有据、点也有据：</b>每个点挂 record_id，不是只挂图级 evidence</li>
+      </ul>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step s4">
+      <div class="top"><span class="num">04</span><span class="tag">COMPILE</span></div>
+      <h3>编译渲染</h3>
+      <p class="punch">一条数据契约，同时喂给网页和 PDF，图不能两副面孔。</p>
+      <ul>
+        <li><b>ECharts option + 原生 SVG/HTML；</b>前端可交互，PDF 可矢量</li>
+        <li><b>publication.py 逐点核对：</b>图上每个值 == 数据契约</li>
+        <li><b>轴名、单位、图例、观察期必须一致；</b>不一致就拦</li>
+        <li><b>presentation.py 只改展示，</b>不改 xAxis/series/evidence</li>
+      </ul>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step s5">
+      <div class="top"><span class="num">05</span><span class="tag">AUDIT</span></div>
+      <h3>质检 / 抑制 / 补采</h3>
+      <p class="punch">能画 ≠ 能发；过不了门禁的图，宁可不发。</p>
+      <ul>
+        <li><b>Linter：</b>证据、零轴、样本量、构成图、雷达维度、混合量纲、多样性、柱图占比</li>
+        <li><b>失败 → 确定性修复 / LLM 修复；仍失败 → 抑制并写原因</b></li>
+        <li><b>硬需求缺数据 → data_demands，</b>回 A1/A2 补采，不凭空补</li>
+        <li><b>产物：</b>chart_result.json / charts/*.svg / preview.html / events.jsonl</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <div class="panel">
+      <h3>16 种图型：产业链只占 1 格</h3>
+      <p class="sub">ChartType 白名单是硬边界；模型不能发明第 17 种图。</p>
+      <div class="types">
+        <div class="type"><b>line</b><span>时序趋势</span></div>
+        <div class="type"><b>bar</b><span>截面排名</span></div>
+        <div class="type"><b>comparison_bar</b><span>多组对比</span></div>
+        <div class="type"><b>horizontal_bar</b><span>长标签排名</span></div>
+        <div class="type"><b>diverging_bar</b><span>正负分化</span></div>
+        <div class="type"><b>combo</b><span>规模 + 增速双轴</span></div>
+        <div class="type"><b>area</b><span>累计趋势</span></div>
+        <div class="type"><b>scatter</b><span>二维定位</span></div>
+        <div class="type"><b>bubble</b><span>三维气泡</span></div>
+        <div class="type"><b>pie</b><span>构成占比</span></div>
+        <div class="type"><b>donut</b><span>环形构成</span></div>
+        <div class="type"><b>radar</b><span>多维能力</span></div>
+        <div class="type"><b>heatmap</b><span>矩阵对比</span></div>
+        <div class="type"><b>boxplot</b><span>分布（≥15 点）</span></div>
+        <div class="type"><b>treemap</b><span>层级（≥8 项）</span></div>
+        <div class="type chain"><b>industry_chain</b><span>产业链拓扑 · 专用 SVG</span></div>
+      </div>
+      <p class="note" style="margin-top:9px"><b>产业链图的特殊之处：</b>它是唯一带“结构/归属”语义的图型，所以单独配了 lane_grid 渲染器和 topology 裁判-修复；其他 15 种走通用数值图流水线。</p>
+    </div>
+    <div class="panel">
+      <h3>真实跑出来的形态</h3>
+      <p class="sub">不是“一张产业链图打天下”，而是一套按题面组织的图。</p>
+      <div class="stats">
+        <div class="stat"><b>15 张</b><span>新能源交付图：1 张产业链 + 14 张数值图</span></div>
+        <div class="stat"><b>5 / 5</b><span>Q1—Q5 题面全覆盖，状态 published</span></div>
+        <div class="stat"><b>2 combo<br>5 line</b><span>另有 2 张对比柱、1 张柱图、4 张横向条形图</span></div>
+        <div class="stat"><b>49 张</b><span>另一次通用真跑：15 张请求，11 张出图，49 个候选被抑制</span></div>
+      </div>
+      <p class="note"><b>质检出局：</b>图型不适配、样本量不足、量纲混轴、点级证据对不上、柱图占比 &gt; 40%、图型少于 3 种，都会被 linter 拦下。<br><span class="red">“抑制”不是失败，是不拿错图充数。</span></p>
+      <div class="codebar">
+        <span>CODE</span>
+        <code>agent.py:412 run()</code>
+        <code>data_formulation.py:166 formulate()</code>
+        <code>linter.py:50 lint()</code>
+        <code>publication.py:20 option_contract_issue()</code>
+        <code>render.py:375 render_svg()</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>A3 OVERVIEW · 依据 chart-generator 当前代码与 2026-11-17 新能源 15 图交付运行</span>
+    <span>选型 · 整形 · 逐点证据 · 发布契约 · 抑制</span>
+  </div>
+</div>
+</body>
+</html>

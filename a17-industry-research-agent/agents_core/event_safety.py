@@ -6,6 +6,8 @@ _ID_FIELDS = {'task_id','call_id','request_id','trace_id','skill_id','operation'
 _NUMBER_FIELDS = {'attempt','attempts','elapsed_ms','http_status','record_count','coverage','new_records',
                   'total_records','conflicts','budget_bytes','before_bytes','after_bytes','accepted','rejected'}
 _BOOL_FIELDS = {'cache_hit','passed'}
+_PROGRESS_KINDS = {"fetch_queries", "analysis_plan", "analysis_questions", "analysis_synthesis",
+                   "chart_plans", "chart_reviews", "chapter_write"}
 _OUTCOMES = {'response','http_error','provider_error','invalid_response','failed','cancelled','success','records','success_empty'}
 
 def safe_event_details(details: dict[str, Any]) -> dict[str, Any]:
@@ -14,6 +16,10 @@ def safe_event_details(details: dict[str, Any]) -> dict[str, Any]:
         if key in _ID_FIELDS and isinstance(value, str) and re.fullmatch(r'[A-Za-z0-9_.:-]{1,128}', value):
             safe[key] = value
         elif key in _NUMBER_FIELDS and isinstance(value, (int, float)) and not isinstance(value, bool):
+            safe[key] = value
+        elif key == "progress_kind" and isinstance(value, str) and value in _PROGRESS_KINDS:
+            safe[key] = value
+        elif key in {"completed", "total"} and type(value) is int and 0 <= value <= 1000:
             safe[key] = value
         elif key in _BOOL_FIELDS and isinstance(value, bool):
             safe[key] = value

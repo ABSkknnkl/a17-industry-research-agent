@@ -809,6 +809,13 @@ class WorkflowEngine:
         if req.stage == "data_fetch":
             self._sync_dataset_artifact(art_dir, cur_data, edited_data, backup)
         elif req.stage == "chapter_write" and "chapters" in edited_data:
+            from agents_core.chart_references import normalize_figure_leads
+
+            for chapter in edited_data["chapters"]:
+                for section in chapter.get("sections", []):
+                    for paragraph in section.get("paragraphs", []):
+                        if isinstance(paragraph.get("text"), str):
+                            paragraph["text"] = normalize_figure_leads(paragraph["text"])
             ch_path = art_dir / "chapter_result.json"
             if ch_path.exists():
                 backup(ch_path)
@@ -923,6 +930,10 @@ class WorkflowEngine:
             if str(spec.get("chart_id")) not in edited_chart_ids:
                 continue
             if spec.get("render_mode") not in ("svg", "generated_image"):
+                continue
+            # 本节只负责产业链图的结构校验与 SVG 重建；普通图表由前面的
+            # ECharts 分支按 chart_type 重新渲染，不能要求它们携带 chain_graph。
+            if spec.get("chart_type") != "industry_chain":
                 continue
 
             # ── 主图：失败直接抛出（由 direct_edit 的 _restore 回滚） ──
@@ -1772,10 +1783,34 @@ class WorkflowEngine:
                 json.dumps(state.stage_results[req.stage].data or {}, ensure_ascii=False, default=str)
             )
             if req.stage == "chart_generate" and "chart_specs" in req.edited_data:
+                cur_specs = (
+                    state.stage_results[req.stage].data or {}
+                ).get("chart_specs") or []
+                existing_by_id = {
+                    str(item.get("chart_id")): item
+                    for item in cur_specs
+                    if isinstance(item, dict) and item.get("chart_id")
+                }
+
+                def _edit_signature(item: dict[str, Any]) -> tuple[Any, ...]:
+                    return (
+                        str(item.get("title") or ""),
+                        str(item.get("chart_type") or ""),
+                        str(item.get("highlight_target") or ""),
+                        str(item.get("benchmark_line") if item.get("benchmark_line") is not None else ""),
+                        str(item.get("emphasis_note") or ""),
+                        bool(item.get("excluded")) or str(item.get("status") or "") == "excluded",
+                    )
+
+                # 前端提交整张样式表，但只有真正改过字段的行才应重渲染；
+                # 把整表都当作 edited 会要求每张 SVG 图都带 chain_graph 并触发误重建。
                 edited_chart_ids = {
                     str(item.get("chart_id"))
                     for item in req.edited_data["chart_specs"]
-                    if isinstance(item, dict) and item.get("chart_id")
+                    if isinstance(item, dict)
+                    and item.get("chart_id")
+                    and _edit_signature(item)
+                    != _edit_signature(existing_by_id.get(str(item.get("chart_id")), {}))
                 }
             else:
                 edited_chart_ids = set()
@@ -1830,6 +1865,19 @@ class WorkflowEngine:
                     from backend.app.core.report_exports import refresh_edited_exports
                     for name in ("report_view.json", "report.md", "report.html", "report.pdf", "manifest.json", "consistency_report.json"):
                         _backup(art_dir / name)
+                    from report_fusion.models import ReportReviewEdits
+
+                    previous_edits = prev_data.get("reviewed_edits") or {}
+                    pending_edits = {
+                        **previous_edits,
+                        **{key: req.edited_data[key] for key in ReportReviewEdits.model_fields
+                           if key in req.edited_data},
+                    }
+                    fusion_data = state.stage_results[req.stage].data
+                    if pending_edits:
+                        fusion_data["reviewed_edits"] = pending_edits
+                    else:
+                        fusion_data.pop("reviewed_edits", None)
                     refresh_edited_exports(state, run_dir, req.edited_data)
                 else:
                     self._invalidate_following_stages(state, req.stage)
@@ -2388,6 +2436,7 @@ class WorkflowEngine:
                     run_id=run_id,
                     feedback=feedback,
                     selected_skills=selected_skills,
+                    analysis_depth=analysis_depth,
                 )
             elif stage == "report_fusion":
                 result = await FiveAgentsAdapter.run_report_fusion(

@@ -1,0 +1,46 @@
+{
+  "input": "/Users/panheng/Desktop/答辩",
+  "output_dir": "/Users/panheng/Desktop/答辩/解析结果",
+  "request_options": {
+    "base_url": "https://somark.cn/api/v1",
+    "output_formats": [
+      "markdown",
+      "json"
+    ],
+    "element_formats": {
+      "image": "url",
+      "formula": "latex",
+      "table": "html",
+      "cs": "image"
+    },
+    "feature_config": {
+      "enable_text_cross_page": false,
+      "enable_table_cross_page": false,
+      "enable_title_level_recognition": false,
+      "enable_inline_image": true,
+      "enable_table_image": true,
+      "enable_image_understanding": true,
+      "keep_header_footer": false
+    }
+  },
+  "results": [
+    {
+      "status": "success",
+      "file": "/Users/panheng/Desktop/答辩/A17_新能源汽车_Agent1合并_保留动图版.pptx",
+      "markdown": "/Users/panheng/Desktop/答辩/解析结果/A17_新能源汽车_Agent1合并_保留动图版.md",
+      "json": "/Users/panheng/Desktop/答辩/解析结果/A17_新能源汽车_Agent1合并_保留动图版.json",
+      "page_count": 35,
+      "token_count": 0,
+      "elapsed_seconds": 242.86
+    },
+    {
+      "status": "success",
+      "file": "/Users/panheng/Desktop/答辩/最终版-算法质量重写版.docx",
+      "markdown": "/Users/panheng/Desktop/答辩/解析结果/最终版-算法质量重写版.md",
+      "json": "/Users/panheng/Desktop/答辩/解析结果/最终版-算法质量重写版.json",
+      "page_count": 37,
+      "token_count": 0,
+      "elapsed_seconds": 54.54
+    }
+  ]
+}

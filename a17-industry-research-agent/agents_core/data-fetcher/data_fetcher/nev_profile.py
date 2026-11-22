@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date, datetime, timezone
 import hashlib
 import json
@@ -75,18 +76,46 @@ def _numeric(value) -> float:
     return result
 
 
-def normalize_captures(folder: Path, audited_positions: dict[str, dict]) -> StructuredResearchDataset:
+def normalize_captures(
+    folder: Path, audited_positions: dict[str, dict], *, issues: list[str] | None = None,
+) -> StructuredResearchDataset:
     records: dict[tuple, ResearchRecord] = {}
+    conflicts: set[tuple] = set()
+
+    def capture(label: str) -> tuple[dict, SourceRef] | None:
+        try:
+            _, raw, source = _capture(folder, label)
+            if not isinstance(raw, dict) or not isinstance(raw.get("datas"), list):
+                raise ValueError("响应缺少数据表")
+            return raw, source
+        except (OSError, KeyError, TypeError, ValueError) as exc:
+            if issues is None:
+                raise
+            issues.append(f"{label}: {type(exc).__name__}")
+            return None
+
+    def reject(message: str) -> None:
+        if issues is None:
+            raise ValueError(message)
+        issues.append(message)
 
     def add(source, entity, code, domain, metric, value, unit, period, period_type, *,
             fields=None, scope="consolidated", published_at=None):
         key = (domain.value, code or entity, metric, period.isoformat(), period_type, scope)
         record_id = "R-" + hashlib.sha256(json.dumps(key, ensure_ascii=False).encode()).hexdigest()[:20]
         previous = records.get(key)
-        amount = _numeric(value)
+        if key in conflicts:
+            return
+        try:
+            amount = _numeric(value)
+        except (ValueError, OverflowError):
+            reject(f"无效数值：{entity} {metric} {period}")
+            return
         if previous:
             if previous.value != amount or previous.unit != unit:
-                raise ValueError(f"同口径记录冲突：{entity} {metric} {period}")
+                reject(f"同口径记录冲突：{entity} {metric} {period}")
+                records.pop(key)
+                conflicts.add(key)
             return
         start = date(period.year, 1, 1) if period_type == "annual" else (
             date(period.year, period.month, 1) if period_type == "month" else period
@@ -100,23 +129,31 @@ def normalize_captures(folder: Path, audited_positions: dict[str, dict]) -> Stru
         )
 
     for label, (metric, expected_unit, period_type) in MARKET_FIELDS.items():
-        _, raw, source = _capture(folder, label)
+        if (entry := capture(label)) is None:
+            continue
+        raw, source = entry
         for i, row in enumerate(raw["datas"]):
             if (row.get("macro_name"), row.get("国家"), row.get("单位")) != (metric, "中国", expected_unit):
                 continue
-            day = _day(row["时间"])
+            try:
+                day = _day(row.get("时间", ""))
+            except (TypeError, ValueError):
+                reject(f"{label}存在无效日期")
+                continue
             if period_type == "annual" and (day.month, day.day) != (12, 31):
                 continue
             add(source.model_copy(update={"raw_record_index": i}), "中国", None, Domain.INDUSTRY,
-                metric, row["指标值"], expected_unit, day, period_type,
-                fields={"index_no": row["macro_id"], "provider_frequency": row.get("周期")})
+                metric, row.get("指标值"), expected_unit, day, period_type,
+                fields={"index_no": row.get("macro_id"), "provider_frequency": row.get("周期")})
 
     for label in [*(f"annual-{slug}" for slug in COMPANIES if slug != "catl"),
                   "catl-2023", "catl-2024", "catl-2025", "roe-debt"]:
-        _, raw, source = _capture(folder, label)
-        columns = {column["key"]: column.get("unit") for column in raw["columns"]}
+        if (entry := capture(label)) is None:
+            continue
+        raw, source = entry
+        columns = {column.get("key"): column.get("unit") for column in raw.get("columns") or []}
         for i, row in enumerate(raw["datas"]):
-            name, code = row["股票简称"], row["股票代码"]
+            name, code = row.get("股票简称"), row.get("股票代码")
             if (name, code) not in COMPANIES.values():
                 continue
             publish = date.fromisoformat(audited_positions[name]["published_at"])
@@ -133,29 +170,39 @@ def normalize_captures(folder: Path, audited_positions: dict[str, dict]) -> Stru
                     published_at=publish if day == YEAR_END else None)
 
     for slug, (name, code) in list(COMPANIES.items())[:3]:
-        _, raw, source = _capture(folder, f"pb-{slug}")
-        months: dict[str, tuple[str, str, float]] = {}
+        if (entry := capture(f"pb-{slug}")) is None:
+            continue
+        raw, source = entry
+        columns = {column.get("key"): column.get("unit") for column in raw.get("columns") or []}
+        months: dict[str, tuple[str, str, str | int | float]] = {}
         for row in raw["datas"]:
             if row.get("股票代码") != code:
                 continue
-            columns = {column["key"]: column.get("unit") for column in raw["columns"]}
             for field, value in row.items():
                 match = re.fullmatch(r"市净率\[(202[1-5]\d{4})\]", field)
                 if not match or columns.get(field) != "倍" or value in (None, "--"):
                     continue
                 day = match[1]
                 if day[:6] not in months or day > months[day[:6]][0]:
-                    months[day[:6]] = (day, field, _numeric(value))
+                    months[day[:6]] = (day, field, value)
         for day, field, value in sorted(months.values()):
-            if value > 0:
+            try:
+                period, amount = _day(day), _numeric(value)
+            except (ValueError, OverflowError):
+                reject(f"{name} {day} 市净率无效")
+                continue
+            if amount > 0:
                 add(source.model_copy(update={"raw_record_index": 0}), name, code, Domain.FINANCIALS,
-                    "pb", value, "倍", _day(day), "point", fields={"source_column": field})
+                    "pb", amount, "倍", period, "point", fields={"source_column": field})
 
     for slug, (name, code) in COMPANIES.items():
-        _, raw, source = _capture(folder, f"segments-{slug}")
-        columns = {column["key"]: column.get("unit") for column in raw["columns"]}
+        if (entry := capture(f"segments-{slug}")) is None:
+            continue
+        raw, source = entry
+        columns = {column.get("key"): column.get("unit") for column in raw.get("columns") or []}
         if any(columns.get(field) != "元" for field in ("业务收入", "业务成本")):
-            raise ValueError(f"{name}分产品金额单位未确认")
+            reject(f"{name}分产品金额单位未确认")
+            continue
         position = audited_positions[name]
         segments = [(i, row) for i, row in enumerate(raw["datas"])
                     if row.get("股票代码") == code and row.get("分类标准") == "产品"
@@ -163,10 +210,13 @@ def normalize_captures(folder: Path, audited_positions: dict[str, dict]) -> Stru
         group_revenue = next((r.value for r in records.values() if r.entity_name == name
                               and r.metric == "revenue" and r.period_end == YEAR_END), None)
         match = next(((i, row) for i, row in segments if row.get("项目名称") == POSITION_PRODUCTS[slug]), None)
-        if match is None or group_revenue is None or not math.isclose(
-            _numeric(match[1]["业务收入"]) / group_revenue * 100, position["value"], abs_tol=1e-5,
-        ):
-            raise ValueError(f"{name}年报定位未通过同花顺收入交叉核对")
+        try:
+            share = _numeric(match[1].get("业务收入")) / group_revenue * 100 if match and group_revenue else None
+        except (ValueError, OverflowError):
+            share = None
+        if share is None or not math.isclose(share, position["value"], abs_tol=1e-5):
+            reject(f"{name}年报定位未通过同花顺收入交叉核对")
+            continue
         fields = {key: position[key] for key in ("source_url", "source_locator", "document_sha256")}
         publish = date.fromisoformat(position["published_at"])
         official = source.model_copy(update={"skill_id": "official-segment", "raw_record_index": match[0]})
@@ -175,17 +225,21 @@ def normalize_captures(folder: Path, audited_positions: dict[str, dict]) -> Stru
             "provider_product": POSITION_PRODUCTS[slug], "cross_validated_group_revenue": group_revenue},
             scope="segment:product", published_at=publish)
         for i, row in segments:
-            product = row["项目名称"]
+            product = row.get("项目名称")
+            if not product:
+                reject(f"{name}出现缺少名称的产品类别")
+                continue
             if slug == "byd":
                 if product not in BYD_PRODUCTS:
-                    raise ValueError(f"比亚迪出现未核对的产品类别：{product}")
+                    reject(f"比亚迪出现未核对的产品类别：{product}")
+                    continue
                 product = BYD_PRODUCTS[product]
             # The provider combines an aggregate automobile line with its component lines for Seres.
             if slug == "seres" and product == "汽车":
                 continue
             for field, metric in (("业务收入", "product_revenue"), ("业务成本", "product_cost")):
                 add(source.model_copy(update={"raw_record_index": i}), name, code, Domain.FINANCIALS,
-                    f"{metric}:{product}", row[field], "元", YEAR_END, "annual",
+                    f"{metric}:{product}", row.get(field), "元", YEAR_END, "annual",
                     fields={**fields, "product": product, "source_column": field},
                     scope="segment:product", published_at=publish)
 
@@ -198,7 +252,7 @@ def normalize_captures(folder: Path, audited_positions: dict[str, dict]) -> Stru
     return dataset
 
 
-def _verify(dataset: StructuredResearchDataset, as_of: date):
+def _eligible_records(dataset: StructuredResearchDataset, as_of: date) -> list[ResearchRecord]:
     expected_units = {metric: unit for metric, unit, _ in MARKET_FIELDS.values()}
     expected_units.update({metric: unit for metric, unit in FINANCIAL_FIELDS.values()})
     expected_units.update(pb="倍", business_composition="%")
@@ -215,6 +269,10 @@ def _verify(dataset: StructuredResearchDataset, as_of: date):
             and (record.metric != "pb" or record.value > 0)
             and (unit != "%" or 0 <= record.value <= 100 or record.metric == "roe"))
 
+    return [record for record in dataset.all_records() if eligible(record)]
+
+
+def _verify(dataset: StructuredResearchDataset, as_of: date):
     def unique_index(pairs):
         result, duplicates = {}, set()
         for key, record in pairs:
@@ -223,7 +281,7 @@ def _verify(dataset: StructuredResearchDataset, as_of: date):
             result[key] = record
         return {key: record for key, record in result.items() if key not in duplicates}
 
-    records = [record for record in dataset.all_records() if eligible(record)]
+    records = _eligible_records(dataset, as_of)
     index = unique_index(((r.entity_name, r.metric, r.period_end), r)
                          for r in records if r.period_type == "annual")
     requirements, results = [], []
@@ -268,6 +326,64 @@ def _verify(dataset: StructuredResearchDataset, as_of: date):
         results.append(RequirementCoverage(requirement_id=key, label=label, domain=domain, hard=True,
             passed=not missing, evidence_count=len(ids), evidence_record_ids=ids, missing=missing))
     return requirements, results
+
+
+def _merge_live_records(
+    live_dataset: StructuredResearchDataset,
+    archive: StructuredResearchDataset,
+    as_of: date,
+) -> StructuredResearchDataset:
+    def point_key(record: ResearchRecord) -> tuple:
+        period = record.period_end.isoformat()
+        if record.period_type == "month" or record.metric == "pb":
+            period = period[:7]
+        return record.entity_code or record.entity_name, record.metric, period, record.period_type, record.scope
+
+    dataset = StructuredResearchDataset(subject=live_dataset.subject)
+    live_records = _eligible_records(live_dataset, as_of)
+    seen = {point_key(record) for record in live_records}
+    sources = {}
+    archive_records = ([record for record in _eligible_records(archive, as_of)
+                        if point_key(record) not in seen] if live_records else [])
+    for origin, records in (("iwencai_live", live_records), ("verified_archive", archive_records)):
+        for record in records:
+            fields = {**record.raw_fields, "capture_origin": origin}
+            dataset.records_for(record.domain).append(record.model_copy(update={"raw_fields": fields}))
+            if record.source:
+                source = record.source
+                sources[(source.trace_id, source.skill_id)] = source.model_copy(update={"raw_record_index": None})
+    dataset.sources = list(sources.values())
+    dataset.quality_summary["live_fetch"] = {
+        "live_observation_count": len(live_records),
+        "archive_supplement_count": len(archive_records),
+        "archive_supplement_record_ids": [record.record_id for record in archive_records],
+    }
+    return dataset
+
+
+async def live_run(
+    run_id: str, as_of: date, trace_dir: Path, emit: Callable[[str, dict], None],
+    questions: list[str], *, retry_empty: bool = False,
+) -> ResearchRunResult:
+    from .nev_captures import capture_queries
+
+    raw_dir = trace_dir / "raw"
+    captures = await capture_queries(raw_dir, emit=emit, questions=questions, retry_empty=retry_empty)
+    anchors = json.loads(DATASET_PATH.with_name("nev_a1_2025_filing_anchors.json").read_bytes())
+    issues: list[str] = []
+    live_dataset = normalize_captures(raw_dir, anchors, issues=issues)
+    try:
+        archive = StructuredResearchDataset.model_validate_json(DATASET_PATH.read_bytes())
+    except FileNotFoundError:
+        archive = StructuredResearchDataset(subject=live_dataset.subject)
+    dataset = _merge_live_records(live_dataset, archive, as_of)
+    dataset.quality_summary["live_fetch"].update(
+        request_count=len(captures),
+        response_count=sum("error" not in capture and bool(capture.get("rows")) for capture in captures),
+        request_errors=[capture for capture in captures if "error" in capture],
+        normalization_issues=issues,
+    )
+    return verify_dataset(run_id, dataset, as_of)
 
 
 def verified_run(run_id: str, as_of: date) -> ResearchRunResult:

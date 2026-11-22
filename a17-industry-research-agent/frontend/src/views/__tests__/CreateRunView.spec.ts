@@ -79,11 +79,11 @@ function payloadChartOptions(): Record<string, unknown> {
 }
 
 describe('CreateRunView question_planner_mode', () => {
-  it('default payload sends question_planner_mode off', async () => {
+  it('default payload enables question-driven charts', async () => {
     const wrapper = await mountView()
     await submitForm(wrapper)
     expect(mocks.createRun).toHaveBeenCalledTimes(1)
-    expect(payloadChartOptions().question_planner_mode).toBe('off')
+    expect(payloadChartOptions().question_planner_mode).toBe('apply')
     wrapper.unmount()
   })
 
@@ -130,13 +130,84 @@ describe('CreateRunView question_planner_mode', () => {
   })
 })
 
-it('比赛交付模式只保留报告终审', async () => {
+it('直接创建任务默认推进到报告终审，页面没有模式开关', async () => {
   const wrapper = await mountView()
-  await wrapper.get('[data-testid="competition-delivery"] input').setValue(true)
+  expect(wrapper.find('[data-testid="competition-delivery"]').exists()).toBe(false)
   await submitForm(wrapper)
   expect(mocks.createRun.mock.calls[0]?.[0]).toMatchObject({
     delivery_profile: 'competition',
     review_stages: ['report_fusion'],
   })
   wrapper.unmount()
+})
+
+it('新能源汽车选题提交正式五问', async () => {
+  const wrapper = await mountView()
+  await wrapper.get('[data-testid="preset-新能源汽车"]').trigger('click')
+  await wrapper
+    .findAll('button')
+    .find((b) => b.text().includes('创建并启动任务'))!
+    .trigger('click')
+  await flushPromises()
+  const payload = mocks.createRun.mock.calls[0]?.[0]
+  expect(payload).not.toHaveProperty('nev_probe_demo')
+  expect(payload.input_data.industry_topic).toBe('新能源汽车')
+  expect(payload.input_data.analysis_depth).toBe('deep')
+  expect(payload.input_data.focus_questions).toHaveLength(5)
+  expect(payload.input_data.focus_questions[2]).toContain('市净率')
+  expect(wrapper.text()).not.toContain('补采演示')
+  wrapper.unmount()
+})
+
+it.each([
+  { keepFinalReview: true, reviewStages: ['report_fusion'] },
+  { keepFinalReview: false, reviewStages: [] },
+])(
+  '仅填新能源汽车时，创建任务携带正式五问及选中的审核阶段',
+  async ({ keepFinalReview, reviewStages }) => {
+    const wrapper = await mountView()
+    try {
+      await wrapper.find('input[type="text"]').setValue('新能源汽车')
+      if (!keepFinalReview) {
+        await wrapper.get('input[type="checkbox"][value="report_fusion"]').setValue(false)
+      }
+      const buttons = wrapper.findAll('button')
+      expect(buttons.some((button) => button.text() === '一键生成报告')).toBe(false)
+      const start = buttons.find((button) => button.text() === '创建并启动任务')
+      await start!.trigger('click')
+      await flushPromises()
+      const request = mocks.createRun.mock.calls[0]?.[0]
+      expect(request.review_stages).toEqual(reviewStages)
+      expect(request.nev_probe_demo).toBeUndefined()
+      expect(request.input_data.focus_questions).toHaveLength(5)
+      expect(request.input_data.analysis_depth).toBe('deep')
+      expect(payloadChartOptions()).toMatchObject({
+        chart_mode: 'standard',
+        question_planner_mode: 'apply',
+      })
+    } finally {
+      wrapper.unmount()
+    }
+  }
+)
+
+it.each(['新能源汽车', '商业航天'])('标准分析可用于 %s', async (topic) => {
+  const wrapper = await mountView()
+  try {
+    await wrapper.get('[data-testid="preset-' + topic + '"]').trigger('click')
+    if (topic === '新能源汽车') {
+      const standard = wrapper
+        .findAll('input[type="radio"]')
+        .find((input) => input.element.closest('label')?.textContent?.trim() === '标准')
+      await standard!.setValue(true)
+    }
+    await wrapper
+      .findAll('button')
+      .find((button) => button.text() === '创建并启动任务')!
+      .trigger('click')
+    await flushPromises()
+    expect(mocks.createRun.mock.calls[0]?.[0].input_data.analysis_depth).toBe('standard')
+  } finally {
+    wrapper.unmount()
+  }
 })

@@ -16,6 +16,10 @@
     </div>
   </div>
 
+  {% if view.investment_rating %}
+  <p class="chapter-summary"><strong>人工确认评级</strong> {{ view.investment_rating }}</p>
+  {% endif %}
+
   <!-- Hero Metric Cards Grid -->
   {% if view.executive_summary.metric_cards %}
   <div class="metric-cards-grid">
@@ -33,7 +37,7 @@
       </div>
       <div class="metric-card-bottom">
         {% if mc.period %}<span class="metric-period">{{ mc.period }}</span>{% endif %}
-        <span class="metric-trend-pill">已核实</span>
+        <span class="metric-trend-pill">{{ mc.change_rate or "已核实" }}</span>
       </div>
     </div>
     {% endfor %}

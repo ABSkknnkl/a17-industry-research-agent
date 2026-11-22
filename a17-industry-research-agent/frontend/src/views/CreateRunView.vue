@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createRun } from '../api/client'
@@ -62,6 +62,17 @@ export interface PresetTopic {
 }
 
 const PRESET_TOPICS: PresetTopic[] = [
+  {
+    topic: '新能源汽车',
+    badge: '新能源',
+    questions: [
+      '2021—2025年中国新能源汽车销量和出口量各年多少、同比如何？缺少上年基数的同比留空。',
+      '2021年2月至2025年12月，新能源乘用车零售渗透率的月度走势有哪些主要台阶和最大回撤？请保留逐月完整序列。',
+      '2025年，比亚迪、长安汽车、赛力斯按合并口径的营收增速、毛利率、加权平均净资产收益率和资产负债率如何分化？并放回2023—2025年序列（营收、毛利率、经营现金流）。三家为本报告研究样本。截至2025年12月末，三家市净率处于各自历史的什么分位？样本取2021—2025年月末市净率，标注有效样本数与基准日。',
+      '宁德时代、亿纬锂能与三家整车企业在新能源汽车产业链的上中下游各处于什么环节、业务定位是什么？按整车与电池分组，两组企业的研发强度、毛利率和现金流差异如何？',
+      '比亚迪2025年营业收入结构由哪些产品类别构成？按年报同一张分产品收入表给出各类别金额和占比，并核对合计是否等于披露总额。',
+    ],
+  },
   {
     topic: '商业航天',
     badge: '硬科技',
@@ -181,22 +192,22 @@ const form = reactive({
   reportingCurrency: 'CNY',
   researchAsOf: todayIso(),
   focusQuestionsText: '',
-  analysisDepth: 'standard' as AnalysisDepth,
   chartMode: 'standard' as ChartMode,
-  // A3 用户问题驱动选图：默认 off 与后端全局默认一致。
-  // observe 档（2026-11-16 删）：产物与 off 逐字节一致且无展示入口，前端只暴露两档；
-  // 后端 API 契约仍接受 observe（高级场景可直连）。
-  questionPlannerMode: 'off' as 'off' | 'apply',
+  questionPlannerMode: 'apply' as 'off' | 'apply',
   selectedSkills: [...DEFAULT_SELECTED_SKILLS] as string[],
-  competitionDelivery: false,
   autoProbeEnabled: true,
-  reviewStages: [
-    'data_fetch',
-    'data_interpret',
-    'chart_generate',
-    'chapter_write',
-    'report_fusion',
-  ] as StageName[],
+  reviewStages: ['report_fusion'] as StageName[],
+})
+
+const isNevTopic = computed(() =>
+  ['新能源汽车', '新能源汽车行业'].includes(form.industryTopic.trim())
+)
+const selectedDepth = ref<AnalysisDepth | null>(null)
+const analysisDepth = computed({
+  get: (): AnalysisDepth => selectedDepth.value ?? (isNevTopic.value ? 'deep' : 'standard'),
+  set: (value: AnalysisDepth) => {
+    selectedDepth.value = value
+  },
 })
 
 function toggleSkill(name: string, checked: boolean): void {
@@ -215,7 +226,7 @@ const REVIEW_STAGE_OPTIONS = Object.entries(STAGE_LABELS).map(([value, label]) =
 function applyPreset(preset: PresetTopic): void {
   form.industryTopic = preset.topic
   form.focusQuestionsText = preset.questions.join('\n')
-  ElMessage.success(`已应用【${preset.topic}】研究范例与 3 个专业问题`)
+  ElMessage.success(`已应用【${preset.topic}】研究范例与 ${preset.questions.length} 个研究问题`)
 }
 
 onMounted(() => {
@@ -288,8 +299,13 @@ function validate(): { message: string; openResearchOptions?: true } | null {
   return null
 }
 
-async function submit(demo = false): Promise<void> {
-  const problem = demo ? null : validate()
+async function submit(): Promise<void> {
+  const topic = form.industryTopic.trim()
+  if (isNevTopic.value && !form.focusQuestionsText.trim()) {
+    const preset = PRESET_TOPICS.find((item) => item.topic === '新能源汽车')
+    if (preset) form.focusQuestionsText = preset.questions.join('\n')
+  }
+  const problem = validate()
   if (problem) {
     if (problem.openResearchOptions && researchOptions.value) {
       researchOptions.value.open = true
@@ -301,7 +317,7 @@ async function submit(demo = false): Promise<void> {
     const opt = MARKET_OPTIONS.find((item) => item.value === market)
     return opt != null && opt.availability !== 'full'
   })
-  if (!demo && limited.length > 0) {
+  if (limited.length > 0) {
     ElMessage.info(
       `已选境外市场（${limited.join('、')}），系统将重点对标核心龙头行情与中概对标标的`
     )
@@ -311,29 +327,24 @@ async function submit(demo = false): Promise<void> {
   try {
     const payload: RunCreateRequest = {
       project_id: randomProjectId(),
-      ...(demo ? { nev_probe_demo: true } : {}),
-      ...(form.competitionDelivery ? { delivery_profile: 'competition' } : {}),
+      delivery_profile: 'competition',
       input_data: {
-        industry_topic: demo ? '新能源汽车' : form.industryTopic.trim(),
+        industry_topic: topic,
         market_scope: form.marketScope,
         security_types: form.securityTypes,
         reporting_currency: 'CNY',
         research_as_of: form.researchAsOf,
         focus_questions: splitLines(form.focusQuestionsText),
-        analysis_depth: form.analysisDepth,
+        analysis_depth: analysisDepth.value,
         data_fetch_options: { auto_probe_enabled: form.autoProbeEnabled },
         chart_generate_options: {
           chart_mode: form.chartMode,
           allow_multiple_charts_per_dataset: form.chartMode === 'rich',
-          question_planner_mode: form.competitionDelivery ? 'apply' : form.questionPlannerMode,
+          question_planner_mode: form.questionPlannerMode,
         },
         selected_skills: form.selectedSkills,
       },
-      review_stages: demo
-        ? ['data_fetch', 'report_fusion']
-        : form.competitionDelivery
-          ? ['report_fusion']
-          : form.reviewStages,
+      review_stages: [...form.reviewStages],
     }
     const state = await createRun(payload)
     // 全自动任务（未勾选任何审核门）：打标记，工作台据此在完成后自动跳转下载页
@@ -367,9 +378,6 @@ async function submit(demo = false): Promise<void> {
     <header class="home-header">
       <h1 class="page-title home-title">创建行业研究任务</h1>
       <p class="home-lead muted">填写行业主题与研究问题，启动研报生成流程。</p>
-      <el-button plain :disabled="submitting" @click="submit(true)">
-        启动新能源汽车补采演示
-      </el-button>
     </header>
 
     <!-- 表单主体 -->
@@ -426,7 +434,7 @@ async function submit(demo = false): Promise<void> {
             研究范围与分析偏好
             <span class="muted options-summary">
               {{ form.marketScope.length }} 个市场 ·
-              {{ form.analysisDepth === 'deep' ? '深度分析' : '标准分析' }}
+              {{ analysisDepth === 'deep' ? '深度分析' : '标准分析' }}
             </span>
           </summary>
           <div class="options-body">
@@ -540,7 +548,7 @@ async function submit(demo = false): Promise<void> {
               <el-row :gutter="16">
                 <el-col :xs="24" :sm="12">
                   <el-form-item label="分析深度">
-                    <el-radio-group v-model="form.analysisDepth">
+                    <el-radio-group v-model="analysisDepth">
                       <el-tooltip
                         content="常规篇幅报告，覆盖核心研究维度，生成速度更快"
                         placement="top"
@@ -595,7 +603,7 @@ async function submit(demo = false): Promise<void> {
                   <el-form-item label="问题驱动选图">
                     <el-radio-group v-model="form.questionPlannerMode">
                       <el-tooltip
-                        content="关闭（默认）：按行业通用选图策略，行为与历史版本一致"
+                        content="关闭：按行业通用选图策略，行为与历史版本一致"
                         placement="top"
                       >
                         <el-radio value="off">关闭</el-radio>
@@ -641,18 +649,9 @@ async function submit(demo = false): Promise<void> {
           <div class="section-head">
             <h2 class="section-title">审核设置</h2>
             <span class="section-line" />
-            <span class="muted"
-              >已选
-              {{ form.competitionDelivery ? 1 : form.reviewStages.length }} 个人工审核阶段</span
-            >
+            <span class="muted">已选 {{ form.reviewStages.length }} 个人工审核阶段</span>
           </div>
-          <el-checkbox v-model="form.competitionDelivery" data-testid="competition-delivery">
-            比赛交付模式
-          </el-checkbox>
-          <p v-if="form.competitionDelivery" class="gate-hint muted">
-            只保留报告终审。图数允许少于目标，核心数据、引用和导出仍须核验。
-          </p>
-          <el-collapse v-else>
+          <el-collapse>
             <el-collapse-item title="选择人工审核阶段" name="gates">
               <p class="gate-hint muted">未勾选的阶段按自动审核规则推进。</p>
               <el-checkbox-group v-model="form.reviewStages">
@@ -683,10 +682,9 @@ async function submit(demo = false): Promise<void> {
         </div>
 
         <div class="submit-row">
-          <el-button type="primary" size="large" :loading="submitting" @click="submit()">
+          <el-button type="primary" size="large" :loading="submitting" @click="submit">
             创建并启动任务
           </el-button>
-          <span class="muted">创建后进入任务工作台查看进度。</span>
         </div>
       </el-form>
     </el-card>

@@ -7,6 +7,8 @@ import { STAGE_LABELS, STAGE_ORDER, type StageName, type StageResult } from '../
 const props = defineProps<{
   stageResults: Partial<Record<string, StageResult>>
   selectedStage?: StageName | null
+  finalReportReady?: boolean
+  durationSeconds?: Partial<Record<StageName, number>>
 }>()
 
 const emit = defineEmits<{ (e: 'select', stage: StageName): void }>()
@@ -17,6 +19,8 @@ interface StepItem {
   status: 'wait' | 'process' | 'finish' | 'error' | 'success'
   /** 执行小结：基于阶段已有产出聚合，只读原始字段 */
   description: string
+  elapsed?: string
+  modelCalls?: number
   clickable: boolean
 }
 
@@ -29,7 +33,7 @@ function summarize(name: StageName, result: StageResult | undefined): string {
   if (isReportSignoffOnHold(result)) return '正式签发暂缓'
   if (result.status === 'running') return '正在执行…'
   if (result.status === 'pending') return '待执行'
-  if (result.error && ['approved', 'completed'].includes(result.status))
+  if (result.error && ['approved', 'completed'].includes(result.status) && name !== 'chapter_write')
     return '已通过，存在质量缺口'
   if (result.status === 'waiting_review' && result.error) return '待审核，需处理问题'
   if (showStageError(result)) return '有异常，查看阶段详情'
@@ -49,7 +53,16 @@ function summarize(name: StageName, result: StageResult | undefined): string {
       const clarifications = asArray<unknown>(
         data.collaboration_requests ?? data.intent_clarifications
       ).length
-      const parts = [`分解 ${plansCount || 9} 个问题`, `采集 ${records} 条来源`]
+      const liveFetch = data.live_fetch as Record<string, unknown> | undefined
+      const liveCount = liveFetch?.live_observation_count
+      const supplements = liveFetch?.archive_supplement_count
+      const parts = [
+        typeof liveCount === 'number' ? `同花顺 ${liveCount} 条` : `采集 ${records} 条来源`,
+      ]
+      if (typeof supplements === 'number' && supplements > 0) {
+        parts.push(`核验补齐 ${supplements} 条`)
+      }
+      if (plansCount > 0) parts.unshift(`分解 ${plansCount} 个问题`)
       if (clarifications > 0) parts.push(`${clarifications} 项待澄清`)
       return parts.join(' · ')
     }
@@ -63,13 +76,17 @@ function summarize(name: StageName, result: StageResult | undefined): string {
           evidenceIds.add(String(id))
         }
       }
-      const dims = asArray<unknown>(data.dimension_coverage).length
+      const dims = asArray<{ status?: string }>(data.dimension_coverage).filter(
+        (dimension) => dimension.status === 'covered'
+      ).length
       const conclCount = items.length || asArray<unknown>(data.knowledge_facts).length
-      return `${conclCount} 条结论 · ${evidenceIds.size} 条证据支撑 · 覆盖 ${dims || 6} 个维度`
+      return `${conclCount} 条结论 · ${evidenceIds.size} 条证据支撑 · 覆盖 ${dims} 个维度`
     }
     case 'chart_generate': {
       const charts = asArray<Record<string, unknown>>(data.charts ?? data.chart_specs)
-      const ready = charts.filter((chart) => chart.status === 'ready' || chart.svg_uri).length
+      const ready = charts.filter(
+        (chart) => chart.status === 'ready' || (!chart.status && chart.svg_uri)
+      ).length
       const label = ready > 0 ? `${ready}/${charts.length} 张就绪` : `${charts.length} 张图表`
       return label
     }
@@ -95,7 +112,13 @@ function summarize(name: StageName, result: StageResult | undefined): string {
           }
         }
       }
-      return `${chapters.length} 章 ${sections} 节 · 约 ${words.toLocaleString()} 字`
+      const count = `${chapters.length} 章 ${sections} 节`
+      if (result.error && ['approved', 'completed'].includes(result.status)) {
+        if (!chapters.length) return '已完成，质量待复核'
+        if (props.finalReportReady) return `${count} · 终审核验通过`
+        return `${count} · 待终审复核`
+      }
+      return `${count} · 约 ${words.toLocaleString()} 字`
     }
     case 'report_fusion': {
       const formats = asArray<unknown>(data.formats)
@@ -134,12 +157,24 @@ const steps = computed<StepItem[]>(() => {
           status = 'wait'
       }
     }
+    const duration = props.durationSeconds?.[name]
+    const elapsed =
+      status === 'success' && duration !== undefined
+        ? duration < 1
+          ? '用时不到 1 秒'
+          : `用时 ${duration.toFixed(1)} 秒`
+        : undefined
+    const modelExecution = result?.data?.model_execution as
+      { successful_requests?: number } | undefined
+    const modelCalls = modelExecution?.successful_requests
     const clickable = Boolean(result) && result?.status !== 'pending'
     return {
       name,
       title: STAGE_LABELS[name],
       status,
       description: summarize(name, result),
+      elapsed,
+      modelCalls,
       clickable,
     }
   })
@@ -156,7 +191,6 @@ function onStepClick(step: StepItem): void {
     <el-step
       v-for="step in steps"
       :key="step.name"
-      :description="step.description"
       :status="step.status"
       :class="{
         'step-clickable': step.clickable,
@@ -177,11 +211,23 @@ function onStepClick(step: StepItem): void {
         </button>
         <span v-else>{{ step.title }}</span>
       </template>
+      <template #description>
+        <div>{{ step.description }}</div>
+        <div v-if="step.elapsed || step.modelCalls" class="step-elapsed">
+          <span v-if="step.elapsed">{{ step.elapsed }}</span>
+          <span v-if="step.elapsed && step.modelCalls"> · </span>
+          <span v-if="step.modelCalls">模型响应 {{ step.modelCalls }} 次</span>
+        </div>
+      </template>
     </el-step>
   </el-steps>
 </template>
 
 <style scoped>
+.step-elapsed {
+  font-variant-numeric: tabular-nums;
+}
+
 .step-clickable {
   cursor: pointer;
 }

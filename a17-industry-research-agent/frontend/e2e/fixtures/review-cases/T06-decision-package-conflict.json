@@ -1,0 +1,35 @@
+{
+  "case_id": "T06",
+  "category": "数据冲突",
+  "title": "决策包失效：decision_id / risk_snapshot_sha256 与服务端不一致",
+  "mock_review_stage": "data_fetch",
+  "state_patch": {
+    "stage_results": {
+      "data_fetch": {
+        "data": {
+          "agent_status": "partial",
+          "warnings": ["部分指标口径与来源披露不一致，需人工确认"]
+        }
+      }
+    }
+  },
+  "review_response": {
+    "when": "req.decision_id != state.stage_results[current_stage].data.decision_package.decision_id",
+    "status": 409,
+    "body": {
+      "detail": "审核决策已更新，请刷新后重新确认"
+    }
+  },
+  "expect": {
+    "ui": [
+      "风险弹窗列出需确认项，标题取自 risks[].title 而非哈希码",
+      "点击「同意并继续」后若决策包已变，提示「审核决策已更新，请刷新后重新确认」并关闭弹窗"
+    ],
+    "buttons": {
+      "btn-risk-notice": "enabled（acknowledgement_required_codes 非空时替代 btn-approve）",
+      "btn-approve": "不存在",
+      "risk-agree": "冲突后恢复 enabled"
+    },
+    "request": "accept_with_risks 请求必须同时携带 decision_id、risk_snapshot_sha256，且 accepted_risk_codes 与 acknowledgement_required_codes 完全相等（排序后逐项比对）"
+  }
+}

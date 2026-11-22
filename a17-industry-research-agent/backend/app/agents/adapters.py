@@ -491,7 +491,14 @@ def _stage_call_ledger(stage):
         @wraps(fn)
         async def wrapped(*args, **kwargs):
             run_id = kwargs.get('run_id') or (args[1] if len(args) > 1 else '')
+            successful_requests: dict[str, dict] = {}
+            completed_calls: set[str] = set()
+
             def emit(item):
+                if item['kind'] == 'request' and item.get('outcome') == 'response' and item.get('http_status') == 200:
+                    successful_requests[item['request_id']] = item
+                elif item['kind'] == 'logical' and item.get('outcome') == 'success' and not item.get('cache_hit'):
+                    completed_calls.add(item['call_id'])
                 if item['kind'] in ('tool_request', 'tool_logical'):
                     event_hub.emit(run_id, stage, 'tool_request' if item['kind'] == 'tool_request' else 'tool_call',
                                    '外部资料请求已结束', tool=item['skill_id'], details=item)
@@ -500,7 +507,24 @@ def _stage_call_ledger(stage):
                                    '模型请求已结束' if item['kind'] == 'request' else '模型调用已结束',
                                    tool='Model', details=item)
             with ledger_context(emit, stage):
-                return await fn(*args, **kwargs)
+                result = await fn(*args, **kwargs)
+            matched_requests = [
+                item for item in successful_requests.values() if item['call_id'] in completed_calls
+            ]
+            if stage == "data_fetch":
+                live_template = bool(result.data.get("live_fetch"))
+            else:
+                state = storage.load_state(run_id)
+                fetch = state.stage_results.get("data_fetch") if state else None
+                live_template = bool(fetch and fetch.data.get("live_fetch"))
+            if live_template and result.status != "failed":
+                if not matched_requests:
+                    raise AgentExecutionError("当前阶段未获得可用的大模型响应，请重试该阶段")
+                result.data["model_execution"] = {
+                    "models": list(dict.fromkeys(item['model'] for item in matched_requests)),
+                    "successful_requests": len(matched_requests),
+                }
+            return result
         return wrapped
     return decorate
 
@@ -689,21 +713,46 @@ class FiveAgentsAdapter:
                 event_hub.emit(run_id, 'data_fetch', 'warn', '产业链研究失败：'+chain_error, tool='ChainResearch')
         try:
             if nev_template_run:
-                from data_fetcher.nev_profile import verified_run
-
+                trace_target = storage.get_run_dir(run_id) / "artifacts" / "data_fetch_trace"
+                trace_target.mkdir(parents=True, exist_ok=True)
                 if demo:
                     from backend.app.agents.nev_demo import masked_run
 
                     run_res = masked_run(demo, run_id)
+                    event_hub.emit(
+                        run_id, "data_fetch", "info",
+                        f"演示模式已暂扣两条证据，当前归档记录共 {run_res.dataset.total_record_count} 条",
+                        tool="DataFusion",
+                    )
                 else:
-                    run_res = verified_run(run_id, request.as_of)
-                trace_target = storage.get_run_dir(run_id) / "artifacts" / "data_fetch_trace"
-                trace_target.mkdir(parents=True, exist_ok=True)
+                    from data_fetcher.nev_profile import live_run
+
+                    def on_capture(event: str, item: dict) -> None:
+                        skill = item["skill_id"]
+                        if event == "started":
+                            level = "tool_call"
+                            message = f"正在调用同花顺：{item['query']}"
+                        elif "error" in item:
+                            level = "warn"
+                            message = f"同花顺查询 {item['id']} 失败：{item['error']}"
+                        else:
+                            level = "tool_result"
+                            message = f"同花顺查询 {item['id']} 返回 {item['rows']} 行，耗时 {item['duration_s']:.2f} 秒"
+                        event_hub.emit(run_id, "data_fetch", level, message, tool=skill, details=item)
+
+                    event_hub.emit(run_id, "data_fetch", "info", "正在调用模型规划五问的同花顺查询", tool="PlannerLLM")
+                    run_res = await live_run(
+                        run_id, request.as_of, trace_target, on_capture, list(focus_points or []),
+                        retry_empty=is_deep,
+                    )
+                    fetch_summary = run_res.dataset.quality_summary["live_fetch"]
+                    event_hub.emit(
+                        run_id, "data_fetch", "info",
+                        f"本次同花顺取数 {fetch_summary['live_observation_count']} 条，"
+                        f"已核验归档补齐 {fetch_summary['archive_supplement_count']} 条",
+                        tool="DataFusion", details=fetch_summary,
+                    )
                 (trace_target / "result.json").write_text(run_res.model_dump_json(indent=2), encoding="utf-8")
-                capture_status = "演示模式已暂扣两条证据，当前归档记录" if demo else "已验收新能源汽车五问的同花顺归档记录"
-                event_hub.emit(run_id, "data_fetch", "info",
-                               f"{capture_status}，共 {run_res.dataset.total_record_count} 条",
-                               tool="DataFusion", details={"coverage": run_res.coverage.model_dump(mode="json")})
             else:
                 run_res = await DataFetcherAgent().run(request, emit=on_fetch_event, save_artifacts=True)
             if run_res.artifact_dir:
@@ -857,6 +906,8 @@ class FiveAgentsAdapter:
                 }
 
         data: dict[str, Any] = {
+            **({"live_fetch": dataset.quality_summary["live_fetch"]}
+               if "live_fetch" in dataset.quality_summary else {}),
             "auto_probe": auto_probe,
             "source_records": source_records,
             "chain_research": chain_bundle.quality.model_dump() if chain_bundle else (
@@ -1074,6 +1125,7 @@ class FiveAgentsAdapter:
             "focus_points": focus_items,
             "max_key_metrics": 30 if is_deep else 20,
             "max_insights": 18 if is_deep else 12,
+            "deep_nev_analysis": is_deep,
         }
         if metric_req_items:
             analysis_kwargs["metric_requirements"] = metric_req_items
@@ -1112,6 +1164,10 @@ class FiveAgentsAdapter:
                 facts = details.get("facts", 0)
                 ins = details.get("insights", 0)
                 event_hub.emit(run_id, "data_interpret", "info", f"方法论技能「{skill}」分析完成: 提炼 {facts} 条事实与 {ins} 条洞察", tool=skill or "AnalysisSkillHub", details=details)
+            elif evt == "nev_deep_progress":
+                event_hub.emit(run_id, "data_interpret", "info", "逐题研究进度", details=details)
+            elif evt == "nev_semantic_started":
+                event_hub.emit(run_id, "data_interpret", "info", "正在调用模型综合研判五问的已核验证据", tool="SemanticFusion")
             elif evt == "semantic_fusion_started":
                 sc = details.get("skills_count", 0)
                 ec = details.get("evidence_count", 0)
@@ -1248,9 +1304,11 @@ class FiveAgentsAdapter:
             "summary": report.executive_summary,
             "chain_analysis": report.chain_analysis,
             "executive_summary": report.executive_summary,
+            "semantic_status": report.semantic_status,
             "knowledge_facts": [f.model_dump() for f in report.knowledge_facts],
             "insights": [ins.model_dump() for ins in report.insights],
             "evidence_digest": _build_evidence_digest(report),
+            "comps_matrix": report.comps_matrix.model_dump(mode="json") if report.comps_matrix else None,
             "evidence_index": ev_index_dict,
             "content_outline": [c.model_dump() for c in report.content_outline],
             "dimension_coverage": dim_coverage,
@@ -1342,6 +1400,10 @@ class FiveAgentsAdapter:
                 event_hub.emit(run_id, "chart_generate", "warn", "检测到图表排版冲突，触发智能自愈修正...", tool="ChartSkillLinter", details=details)
             elif evt == "skill_correction_resolved":
                 event_hub.emit(run_id, "chart_generate", "info", "图表规范自愈修正完成并通过审美审查", tool="ChartSkillLinter", details=details)
+            elif evt == "template_deep_progress":
+                event_hub.emit(run_id, "chart_generate", "info", "逐图核验进度", details=details)
+            elif evt == "template_model_planning_started":
+                event_hub.emit(run_id, "chart_generate", "info", "正在调用模型为五个问题选择主图及解读重点", tool="ChartLLM")
             elif evt == "chart_generation_completed":
                 ready = details.get("ready", 0)
                 suppressed = details.get("suppressed", 0)
@@ -1494,6 +1556,10 @@ class FiveAgentsAdapter:
             figure_profile = PROFILE
         chart_request = ChartGenerationRequest(
             figure_profile=figure_profile or "default",
+            deep_nev_review=analysis_depth == "deep",
+            require_model=bool(
+                raw_dataset_dict and (raw_dataset_dict.get("quality_summary") or {}).get("live_fetch")
+            ),
             report=report,
             input_dataset=raw_dataset_dict,
             preferences=chart_prefs,
@@ -1796,6 +1862,7 @@ class FiveAgentsAdapter:
             "upstream_warnings": result.upstream_warnings,
             "question_coverage": result.question_coverage,
             "question_plan": result.question_plan.model_dump(mode="json") if result.question_plan else None,
+            "template_reviews": result.template_reviews,
             "question_chart_titles": {brief["question_id"]: brief["text"] for brief in plan_briefs},
             "report_tables": result.report_tables,
             # D3：链图交付资格（requested/status/reason）随阶段产物透传，
@@ -1839,6 +1906,7 @@ class FiveAgentsAdapter:
         run_id: str,
         feedback: str | None = None,
         selected_skills: list[str] | None = None,
+        analysis_depth: str = "standard",
     ) -> StageResult:
         """阶段 4: 章节撰写智能体 (Chapter Writer)"""
         import backend.app.core.setup_env
@@ -1847,8 +1915,8 @@ class FiveAgentsAdapter:
             ChapterWritingRequest, ChapterWritingResult, InterpretationReport, ChartResult, ChapterWritingOptions,
         )
 
-        logger.info(f"[{run_id}] 启动章节撰写智能体 (7章21节全并发), 挂载技能={selected_skills}")
-        event_hub.emit(run_id, "chapter_write", "agent_start", "启动券商深度研报章节撰写智能体，组织 7 章 21 节骨架全并发撰写...", tool="ChapterWriterAgent")
+        logger.info(f"[{run_id}] 启动章节撰写智能体 (7章21节), 挂载技能={selected_skills}")
+        event_hub.emit(run_id, "chapter_write", "agent_start", "启动券商深度研报章节撰写智能体，组织 7 章 21 节骨架并开始撰写...", tool="ChapterWriterAgent")
         if selected_skills:
             event_hub.emit(
                 run_id,
@@ -1890,6 +1958,10 @@ class FiveAgentsAdapter:
             details = event_dict.get("details", {})
             if evt == "chapter_writing_started":
                 event_hub.emit(run_id, "chapter_write", "agent_start", "章节撰写智能体启动，初始化 7 章 21 节骨架...", tool="ChapterWriterAgent", details=details)
+            elif evt == "chapter_progress":
+                event_hub.emit(run_id, "chapter_write", "info", "逐章撰写进度", details={
+                    "progress_kind": "chapter_write", **details,
+                })
             elif evt in ("skill_invoked_by_llm", "skill_routed_by_policy", "skill_requested"):
                 cid = details.get("chapter_id", "")
                 skill = details.get("skill", "")
@@ -1901,18 +1973,19 @@ class FiveAgentsAdapter:
             elif evt == "chapter_attempt":
                 cid = details.get("chapter_id", "")
                 att = details.get("attempt", 1)
-                event_hub.emit(run_id, "chapter_write", "llm_thought", f"[{cid}] 正在并发撰写章节内容 (第 {att} 轮生成与事实穿透校对)...", tool="DeepSeek-V4-Flash", details=details)
+                event_hub.emit(run_id, "chapter_write", "llm_thought", f"[{cid}] 正在撰写章节内容 (第 {att} 轮生成与事实穿透校对)...", tool="DeepSeek-V4-Flash", details=details)
             elif evt == "skill_linter_checked":
                 cid = details.get("chapter_id", "")
                 passed = details.get("passed", True)
                 event_hub.emit(run_id, "chapter_write", "info", f"[{cid}] 证据穿透与学术规范质检: {'通过' if passed else '已自愈修正'}", tool="WritingLinter", details=details)
             elif evt == "skills_planned":
-                event_hub.emit(run_id, "chapter_write", "agent_decision", "7 大核心章节写作技能分配就绪，全并发流式撰写推进中", tool="ChapterPlanner", details=details)
+                event_hub.emit(run_id, "chapter_write", "agent_decision", "7 大核心章节写作技能分配就绪", tool="ChapterPlanner", details=details)
 
         verified_nev = report.data_quality_appendix.get("data_source") == "iwencai_verified_capture"
         writing_options = ChapterWritingOptions(
             editorial_profile="a17_nev" if chart_raw.get("figure_profile") == "a17_nev_2025" else "standard",
             target_length="concise" if verified_nev else "standard",
+            sequential_review=verified_nev and analysis_depth == "deep",
         )
         instructions = []
         if verified_nev:
@@ -2161,12 +2234,16 @@ class FiveAgentsAdapter:
         for name in ("report.md", "report.html", "report.pdf", "report_view.json", "consistency_report.json", "manifest.json"):
             (run_dir / "artifacts" / name).unlink(missing_ok=True)
 
+        workflow = storage.load_state(run_id)
+        current_fusion = workflow.stage_results.get("report_fusion") if workflow else None
+        reviewed_edits = (current_fusion.data.get("reviewed_edits") or {}) if current_fusion else {}
         agent = ReportFusionAgent(llm=SimpleNamespace(is_available=False)) if demo else ReportFusionAgent()
         result = await agent.run(ReportFusionRequest(
             report=report,
             chapters=chapter_res,
             charts=chart_res,
             options=fusion_options,
+            reviewed_edits=reviewed_edits,
         ), emit=on_fusion_event, save_artifacts=True)
 
         art_dir = run_dir / "artifacts"
@@ -2323,7 +2400,8 @@ class FiveAgentsAdapter:
 
         data: dict[str, Any] = {
             "report_id": result.report_id or f"rep-{run_id}",
-            "title": f"《{industry}》深度行业研究报告",
+            "title": final_view.get("title") or f"《{industry}》深度行业研究报告",
+            "executive_summary_headline": (final_view.get("executive_summary") or {}).get("headline"),
             "industry_topic": industry,
             "research_as_of": research_as_of or str(report.as_of),
             "market_scope": market_scope or ["中国 A 股", "港股", "美股", "中国 B 股"],
@@ -2361,7 +2439,7 @@ class FiveAgentsAdapter:
             "evidence_catalog": evidence_cat,
             "disclaimer": "本报告由同花顺问财SkillHub五智能体流水线协同生成。数据来源于同花顺官方金融数据生态，内容仅供研究参考，不构成任何投资建议。",
             "methodology_note": "遵循五智能体端到端数据采集、量化解读、图表合成、7章21节投研标准大纲撰写与审校融合机制。",
-            "key_metrics": [km.model_dump(mode="json") if hasattr(km, "model_dump") else km for km in getattr(report, "key_metrics", [])],
+            "key_metrics": final_view.get("key_metrics", report.key_metrics),
             "comps_matrix": getattr(report, "comps_matrix", None).model_dump(mode="json") if hasattr(getattr(report, "comps_matrix", None), "model_dump") else getattr(report, "comps_matrix", None),
         }
 
@@ -2373,6 +2451,11 @@ class FiveAgentsAdapter:
                 data["investment_rating"] = "买入 (Buy) · 强烈推荐"
             elif "技术" in feedback or "破局" in feedback:
                 data["investment_rating"] = "增持 (Overweight) · 创新催化"
+
+        if reviewed_edits:
+            data["reviewed_edits"] = reviewed_edits
+        if "investment_rating" in reviewed_edits:
+            data["investment_rating"] = final_view.get("investment_rating") or ""
 
         artifacts = [
             ArtifactRef(artifact_id=e["artifact_id"], kind=e["kind"], uri=e["uri"], revision=1)

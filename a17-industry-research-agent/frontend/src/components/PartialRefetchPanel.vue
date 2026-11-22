@@ -7,12 +7,13 @@
  * - 后端契约保持不变：action_type=partial_refetch + domains + data_point_ids + entities
  *   + query_hint + probe_mode + calibration
  *
- * 说明：清单里的样例数值来自组件内置演示数据，仅用于展示版式；
- * 真实运行时由后端 source_records 提供。
+ * 清单数据全部来自后端 A1 产出：已采点取 source_records，缺口点取
+ * metric_requirements 中 passed=false 的指标项。组件不再内置任何样例数值。
  */
 import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { PropType } from 'vue'
+import { metricLabel, normalizeMetricAmount, skillLabel } from '../api/labels'
 
 const props = defineProps({
   data: { type: Object as PropType<Record<string, unknown>>, required: true },
@@ -53,11 +54,6 @@ interface PointSpec {
   sourceKind: string
   confidence: number
   gap?: string
-}
-interface GroupSpec {
-  id: string
-  name: string
-  items: PointSpec[]
 }
 
 // ---------------------------------------------------------------- 上下文
@@ -130,231 +126,101 @@ function buildPoint(spec: PointSpec): RefetchPoint {
   }
 }
 
+/** 后端 domain → 分组展示名（未收录回退原文，不丢信息） */
+const DOMAIN_NAMES: Record<string, string> = {
+  financials: '财务与经营质量',
+  industry: '行业规模与景气',
+  industry_chain: '产业链与供给',
+  competitors: '竞争格局与标的',
+  macro: '宏观与政策',
+  news: '事件与催化',
+}
+
+function formatRecordValue(raw: unknown, unit: unknown): string {
+  if (raw === null || raw === undefined || raw === '') return ''
+  const u = String(unit ?? '').trim()
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    const amount = normalizeMetricAmount(raw, u)
+    return [amount.value, amount.unit].filter(Boolean).join(' ')
+  }
+  return [String(raw), u].filter(Boolean).join(' ')
+}
+
+/**
+ * P0-4：清单必须来自 A1 真实产出的 `source_records[]`。
+ *
+ * 历史实现写死 18 个点（F-01…P-04）连同假数值/假可信度，而非演示模式下后端
+ * `_supplement_demand` 只消费 domains / entities / query_hint / reason / probe_mode，
+ * `data_point_ids` 会被静默丢弃 —— 结果是「勾了假点、拿假数值去检索」。
+ *
+ * 现在：
+ *   - 已采点 = source_records，id 用真实 record_id；
+ *   - 缺口点 = metric_requirements 里 passed=false 的指标项（后端权威口径）；
+ *   - 可信度后端未下发，一律留 0（显示「—」），不再编造 96/91/62。
+ */
 function initGroups(): void {
-  const entities = contextEntities.value
-  const e0 = entities[0] || '样本龙头甲'
-  const e1 = entities[1] || '样本龙头乙'
-  const e2 = entities[2] || '第二梯队标的'
+  const records = (props.data?.source_records || props.data?.records || []) as Array<
+    Record<string, unknown>
+  >
+  const requirements = (props.data?.metric_requirements || []) as Array<Record<string, unknown>>
+  const specs = new Map<string, PointSpec[]>()
+  const push = (domain: string, spec: PointSpec) => {
+    const key = domain || 'financials'
+    if (!specs.has(key)) specs.set(key, [])
+    specs.get(key)!.push(spec)
+  }
 
-  const specs: GroupSpec[] = [
-    {
-      id: 'financials',
-      name: '重点公司财务与盈利指标',
-      items: [
-        {
-          id: 'F-01',
-          label: '营业收入',
-          entity: e0,
-          period: 'FY2025Q3',
-          value: '¥1,342 亿',
-          source: '2025 三季报',
-          sourceKind: 'annual_report',
-          confidence: 96,
-        },
-        {
-          id: 'F-02',
-          label: '归母净利润',
-          entity: e0,
-          period: 'FY2025Q3',
-          value: '',
-          source: '季报未披露',
-          sourceKind: 'announcement',
-          confidence: 0,
-          gap: '三季报未取到',
-        },
-        {
-          id: 'F-03',
-          label: '毛利率',
-          entity: e0,
-          period: 'FY2024',
-          value: '21.4%',
-          source: '2024 年报',
-          sourceKind: 'annual_report',
-          confidence: 91,
-        },
-        {
-          id: 'F-04',
-          label: '资产负债率',
-          entity: e1,
-          period: 'FY2024',
-          value: '58.2%',
-          source: '2024 年报',
-          sourceKind: 'annual_report',
-          confidence: 88,
-        },
-        {
-          id: 'F-05',
-          label: '研发费用率',
-          entity: e1,
-          period: 'FY2024',
-          value: '',
-          source: '年报附注',
-          sourceKind: 'annual_report',
-          confidence: 0,
-          gap: '费用明细缺失',
-        },
-        {
-          id: 'F-06',
-          label: '经营性现金流',
-          entity: e2,
-          period: 'FY2024',
-          value: '¥96 亿',
-          source: '2024 年报',
-          sourceKind: 'annual_report',
-          confidence: 62,
-        },
-      ],
-    },
-    {
-      id: 'industry_chain',
-      name: '产业链上下游与供需环节',
-      items: [
-        {
-          id: 'C-01',
-          label: '上游原料均价（月）',
-          entity: '上游环节',
-          period: '2025-10',
-          value: '7.4 万元/吨',
-          source: '行业协会月报',
-          sourceKind: 'association',
-          confidence: 74,
-          gap: '口径待核',
-        },
-        {
-          id: 'C-02',
-          label: '核心部件价格（月）',
-          entity: '中游制造',
-          period: '2025-10',
-          value: '0.42 元/Wh',
-          source: '行业协会月报',
-          sourceKind: 'association',
-          confidence: 86,
-        },
-        {
-          id: 'C-03',
-          label: '产能利用率',
-          entity: '中游制造',
-          period: '2025Q3',
-          value: '',
-          source: '行业协会季报',
-          sourceKind: 'association',
-          confidence: 0,
-          gap: '季报口径缺口',
-        },
-        {
-          id: 'C-04',
-          label: '终端渗透率',
-          entity: '下游应用',
-          period: '2025-10',
-          value: '48.6%',
-          source: '乘联会月度数据',
-          sourceKind: 'association',
-          confidence: 92,
-        },
-      ],
-    },
-    {
-      id: 'macro',
-      name: '宏观政策与产销大盘',
-      items: [
-        {
-          id: 'M-01',
-          label: '行业总销量',
-          entity: '行业大盘',
-          period: '2025Q3',
-          value: '612 万辆',
-          source: '中汽协统计',
-          sourceKind: 'association',
-          confidence: 94,
-        },
-        {
-          id: 'M-02',
-          label: '出口量',
-          entity: '行业大盘',
-          period: '2025-10',
-          value: '',
-          source: '海关总署',
-          sourceKind: 'policy',
-          confidence: 0,
-          gap: '10 月数据未更新',
-        },
-        {
-          id: 'M-03',
-          label: 'CR5 集中度',
-          entity: '行业大盘',
-          period: 'FY2024',
-          value: '61.3%',
-          source: '第三方研报',
-          sourceKind: 'research',
-          confidence: 64,
-        },
-        {
-          id: 'M-04',
-          label: '政策补贴强度',
-          entity: '政策口径',
-          period: '2025',
-          value: '按原文披露',
-          source: '部委文件',
-          sourceKind: 'policy',
-          confidence: 88,
-        },
-      ],
-    },
-    {
-      id: 'competitors',
-      name: '竞争格局与份额对标',
-      items: [
-        {
-          id: 'P-01',
-          label: '国内市场份额',
-          entity: e0,
-          period: 'FY2024',
-          value: '17.8%',
-          source: '第三方研报',
-          sourceKind: 'research',
-          confidence: 71,
-        },
-        {
-          id: 'P-02',
-          label: '海外市占率',
-          entity: e1,
-          period: 'FY2024',
-          value: '',
-          source: '海外机构统计',
-          sourceKind: 'research',
-          confidence: 0,
-          gap: '海外口径未覆盖',
-        },
-        {
-          id: 'P-03',
-          label: '梯队份额差',
-          entity: e2,
-          period: 'FY2024',
-          value: '4.2%',
-          source: '第三方研报',
-          sourceKind: 'research',
-          confidence: 58,
-        },
-        {
-          id: 'P-04',
-          label: '客户集中度',
-          entity: e0,
-          period: 'FY2024',
-          value: '32.5%',
-          source: '2024 年报',
-          sourceKind: 'annual_report',
-          confidence: 90,
-        },
-      ],
-    },
-  ]
+  if (Array.isArray(records)) {
+    records.forEach((r, i) => {
+      const metric = String(r.metric ?? r.name ?? '').trim()
+      if (!metric) return
+      push(String(r.domain ?? 'financials'), {
+        id: String(r.record_id ?? `R-${i + 1}`),
+        label: metricLabel(metric) || metric,
+        entity: cleanName(String(r.entity_name ?? r.entity ?? '')) || topic.value,
+        period: String(r.period ?? ''),
+        value: formatRecordValue(r.value, r.unit),
+        source: skillLabel(String(r.skill_name ?? '')) || '—',
+        sourceKind: String(r.domain ?? ''),
+        confidence: 0,
+        gap: '',
+      })
+    })
+  }
 
-  groups.value = specs.map((g) => ({
-    id: g.id,
-    name: g.name,
-    points: g.items.map(buildPoint),
+  if (Array.isArray(requirements)) {
+    for (const req of requirements) {
+      if (req.passed !== false) continue
+      const terms = Array.isArray(req.metric_terms) ? (req.metric_terms as unknown[]) : []
+      const domain = String(req.domain ?? 'financials')
+      const label = String(req.label ?? req.requirement_id ?? '未满足的取数要求')
+      const termsToShow = terms.length ? terms : [label]
+      termsToShow.forEach((term, i) => {
+        const metric = String(term)
+        push(domain, {
+          id: `REQ:${String(req.requirement_id ?? 'unknown')}:${i}`,
+          label: metricLabel(metric) || metric,
+          entity: topic.value,
+          period: '',
+          value: '',
+          source: '待补采',
+          sourceKind: domain,
+          confidence: 0,
+          gap: label,
+        })
+      })
+    }
+  }
+
+  groups.value = Array.from(specs.entries()).map(([id, items]) => ({
+    id,
+    name: DOMAIN_NAMES[id] ?? id,
+    points: items.map(buildPoint),
   }))
 }
+
+/** 无真实数据点时整表空态，只保留「清单外补充诉求」通路 */
+const hasRealPoints = computed(() => groups.value.some((g) => g.points.length > 0))
 
 initGroups()
 
@@ -466,9 +332,7 @@ function groupOfPoint(pointId: string): string {
 }
 
 function buildQueryHint(): string {
-  const list = selectedPoints.value
-    .map((p) => `${p.entity}·${p.label}(${p.period})`)
-    .join('；')
+  const list = selectedPoints.value.map((p) => `${p.entity}·${p.label}(${p.period})`).join('；')
   const parts = [
     `补采 ${selectedPoints.value.length} 个数据点：${list}`,
     `时间范围：最近 ${timeRangeYears.value} 年`,
@@ -571,8 +435,16 @@ function submit(): void {
 
 <template>
   <div class="prp">
+    <!-- 无真实数据点：整表空态，只保留「清单外补充诉求」通路 -->
+    <el-empty
+      v-if="!hasRealPoints"
+      description="本阶段未回传可补采数据点，可在下方「清单外补充诉求」写明要补的实体、指标与期间"
+      :image-size="80"
+      data-testid="refetch-empty"
+    />
+
     <!-- 覆盖条 -->
-    <div class="prp-coverage">
+    <div v-if="hasRealPoints" class="prp-coverage">
       <div class="prp-stat">
         <span class="prp-num">{{ totalCount - missingCount }}</span>
         <span class="prp-label">已采数据点 / 共 {{ totalCount }}</span>
@@ -590,17 +462,21 @@ function submit(): void {
         <el-button size="small" text @click="clearSelection">清空</el-button>
         <el-radio-group v-model="filter" size="small">
           <el-radio-button value="all">全部 {{ totalCount }}</el-radio-button>
-          <el-radio-button value="gap">只看待处理（{{ missingCount + lowConfCount }}）</el-radio-button>
+          <el-radio-button value="gap"
+            >只看待处理（{{ missingCount + lowConfCount }}）</el-radio-button
+          >
         </el-radio-group>
       </div>
     </div>
 
-    <div class="prp-lead">
-      全部 {{ totalCount }} 个点都列出来，<strong>已采到的不勾</strong>（勾了才会重采、覆盖原值）；只预勾 {{ missingCount }} 个缺口。要按新口径重抓，手动勾上对应的已采项即可。
+    <div v-if="hasRealPoints" class="prp-lead">
+      全部
+      {{ totalCount }} 个点都列出来，<strong>已采到的不勾</strong>（勾了才会重采、覆盖原值）；只预勾
+      {{ missingCount }} 个缺口。要按新口径重抓，手动勾上对应的已采项即可。
     </div>
 
     <!-- 点级清单 -->
-    <div class="prp-groups">
+    <div v-if="hasRealPoints" class="prp-groups">
       <div v-for="group in visibleGroups" :key="group.id" class="prp-group">
         <div class="prp-group-head">
           <div class="prp-group-title">
@@ -613,7 +489,11 @@ function submit(): void {
             class="prp-link"
             @click="toggleGroupGaps(group)"
           >
-            {{ groupGapsAllOn(group) ? '取消本组缺口' : `全选本组缺口（${groupGapPoints(group).length}）` }}
+            {{
+              groupGapsAllOn(group)
+                ? '取消本组缺口'
+                : `全选本组缺口（${groupGapPoints(group).length}）`
+            }}
           </button>
         </div>
         <div class="prp-list">
@@ -633,7 +513,10 @@ function submit(): void {
               {{ point.value || '缺失' }}
             </div>
             <div class="prp-source">
-              <el-tag size="small" :type="point.sourceKind === 'annual_report' ? 'success' : 'info'">
+              <el-tag
+                size="small"
+                :type="point.sourceKind === 'annual_report' ? 'success' : 'info'"
+              >
                 {{ point.source }}
               </el-tag>
             </div>
@@ -641,7 +524,14 @@ function submit(): void {
               <span class="prp-dot" />
               <span>{{ point.confidence ? `${point.confidence}%` : '—' }}</span>
             </div>
-            <div class="prp-gap">{{ point.gap || (point.confidence > 0 && point.confidence < 70 ? '原数据 · 低可信待核' : '原数据可用') }}</div>
+            <div class="prp-gap">
+              {{
+                point.gap ||
+                (point.confidence > 0 && point.confidence < 70
+                  ? '原数据 · 低可信待核'
+                  : '原数据可用')
+              }}
+            </div>
           </div>
         </div>
       </div>
@@ -715,7 +605,8 @@ function submit(): void {
           </li>
         </ol>
         <div class="prp-probe-note">
-          失败兜底：任意一点连续 4 轮未命中即放弃该点，<strong>保留原值并标注</strong>，不会把已有数据抹掉。
+          失败兜底：任意一点连续 4
+          轮未命中即放弃该点，<strong>保留原值并标注</strong>，不会把已有数据抹掉。
         </div>
         <el-input
           v-model="probeHint"
@@ -736,7 +627,9 @@ function submit(): void {
         />
       </div>
       <div class="prp-switches">
-        <el-checkbox v-model="rememberCaliber" size="small">记住这套口径，下次打开自动带入</el-checkbox>
+        <el-checkbox v-model="rememberCaliber" size="small"
+          >记住这套口径，下次打开自动带入</el-checkbox
+        >
         <el-checkbox v-model="attachWorksheet" size="small">
           重采后生成「数据底稿说明」（可贴报告附录 / 合规备查）
         </el-checkbox>
@@ -753,10 +646,14 @@ function submit(): void {
         <template v-if="selectedPoints.length">
           已选 <strong>{{ selectedPoints.length }}</strong> 个数据点
           <span> · 预计新增 {{ estimatedRecords }} 条记录 · 约 {{ estimatedMinutes }} 分钟</span>
-          <span class="prp-keep"> · 未勾的 {{ totalCount - selectedPoints.length }} 条沿用原数据，不覆盖</span>
+          <span class="prp-keep">
+            · 未勾的 {{ totalCount - selectedPoints.length }} 条沿用原数据，不覆盖</span
+          >
         </template>
         <template v-else-if="isAdhocOnly">
-          未勾选数据点 · 将只按「清单外补充诉求」跑一次{{ probeMode === 'llm_dynamic' ? '多轮检索' : '单次查询' }}
+          未勾选数据点 · 将只按「清单外补充诉求」跑一次{{
+            probeMode === 'llm_dynamic' ? '多轮检索' : '单次查询'
+          }}
         </template>
         <template v-else> 已选 <strong>0</strong> 个数据点 </template>
       </div>

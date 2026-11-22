@@ -1,0 +1,49 @@
+{
+  "case_id": "T07",
+  "category": "审核状态异常",
+  "title": "硬阻塞风险：通过按钮必须消失且不可绕过",
+  "mock_review_stage": "data_fetch",
+  "state_patch": {
+    "stage_results": {
+      "data_fetch": {
+        "data": {
+          "risks": [
+            {
+              "code": "EVIDENCE_SOURCE_UNVERIFIED",
+              "title": "核心营收证据缺少可核验来源，无法进入解读",
+              "severity": "high",
+              "blocking": true
+            },
+            {
+              "code": "PERIOD_MISMATCH",
+              "title": "样本期间与研究时点不一致",
+              "severity": "medium",
+              "blocking": false
+            }
+          ]
+        }
+      }
+    }
+  },
+  "review_response": {
+    "when": "req.action in ['approve','accept_with_risks'] and blocking_risk_codes 非空",
+    "status": 409,
+    "body": {
+      "detail": "存在硬阻塞风险，请先处理阻断项"
+    }
+  },
+  "expect": {
+    "ui": [
+      "「待处理的阻断项」区块列出 EVIDENCE_SOURCE_UNVERIFIED 的可读标题",
+      "decision_package.blocking_risk_codes 含且仅含 EVIDENCE_SOURCE_UNVERIFIED",
+      "acknowledgement_required_codes 含 PERIOD_MISMATCH，但不得据此放行进下一阶段"
+    ],
+    "buttons": {
+      "btn-approve": "不存在",
+      "btn-risk-notice": "不存在",
+      "btn-cancel": "enabled",
+      "modal.scope_keywords.submit": "enabled（允许改条件重跑修复）"
+    },
+    "request": "任何路径都不得发出 action=approve 或 accept_with_risks；若被构造发出，服务端 409 且前端提示「存在硬阻塞风险」"
+  }
+}

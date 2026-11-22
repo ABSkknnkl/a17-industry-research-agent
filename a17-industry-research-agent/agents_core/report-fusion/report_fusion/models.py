@@ -42,6 +42,7 @@ class MetricCardDraft(BaseModel):
     unit: str | None = None
     period: str | None = None
     evidence_ids: list[str] = Field(default_factory=list)
+    change_rate: str | None = None
 
 class ComparisonTableDraft(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -115,9 +116,20 @@ class FusionOptions(BaseModel):
     @model_validator(mode="after")
     def unique_formats(self):self.formats=list(dict.fromkeys(self.formats));return self
 
+class ReportReviewEdits(BaseModel):
+    """Human decisions that must survive a new fusion revision."""
+
+    model_config = ConfigDict(extra="forbid")
+    title: str | None = None
+    investment_rating: str | None = None
+    executive_summary: str | None = None
+    key_metrics: list[dict[str, Any]] | None = None
+
+
 class ReportFusionRequest(BaseModel):
     model_config=ConfigDict(extra="forbid")
     report:InterpretationReport;chapters:ChapterResult;charts:ChartResult|None=None;options:FusionOptions=Field(default_factory=FusionOptions)
+    reviewed_edits: ReportReviewEdits = Field(default_factory=ReportReviewEdits)
 
 class ReportConclusion(BaseModel):
     model_config=ConfigDict(extra="forbid")
@@ -174,6 +186,7 @@ class ReportViewModel(BaseModel):
     report_id:str;title:str;subject:str;as_of:date;generated_at:datetime=Field(default_factory=lambda:datetime.now(timezone.utc));tone:str;report_depth:str;visual_style:str;chart_mode:Literal["auto","rich"]="auto";delivery_status:Literal["ready","ready_with_limits"]
     executive_summary:ExecutiveSummary;chapters:list[ChapterDraft];charts:list[EmbeddedChart]=Field(default_factory=list);evidence_catalog:list[EvidenceSource]=Field(default_factory=list);data_quality_appendix:dict[str,Any]=Field(default_factory=dict);warnings:list[str]=Field(default_factory=list);disclaimer:str="本报告基于所列资料生成，仅供研究参考，不构成投资建议。"
     key_metrics:list[dict[str,Any]]=Field(default_factory=list)
+    investment_rating: str | None = None
     comps_matrix:dict[str,Any]|None=None
     quality_issues: list[dict[str, Any]] = Field(default_factory=list)
     fact_audit: dict[str, Any] = Field(default_factory=dict)

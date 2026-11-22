@@ -1,0 +1,31 @@
+{
+  "case_id": "T02",
+  "category": "字段缺失",
+  "title": "阶段一 source_records 缺失，补采清单无真实数据点",
+  "mock_review_stage": "data_fetch",
+  "state_patch": {
+    "stage_results": {
+      "data_fetch": {
+        "data": {
+          "source_records": null,
+          "records": null,
+          "keywords": null
+        }
+      }
+    }
+  },
+  "review_response": null,
+  "expect": {
+    "ui": [
+      "定向补采面板显示「本阶段未回传可补采数据点」空态",
+      "不得出现 F-01/F-02/C-01/M-01/P-01 等硬编码点号与 ¥1,342 亿 / 21.4% 等样例数值",
+      "覆盖条统计显示 0/0，不显示 18 个点"
+    ],
+    "buttons": {
+      "prp.submit": "disabled（未勾选任何真实数据点）",
+      "prp.adhoc_submit": "enabled（填写清单外诉求后走 replenish）",
+      "btn-approve": "enabled"
+    },
+    "request": "填写清单外诉求后提交，edited_data.action_type === 'replenish'，且不含 data_point_ids"
+  }
+}

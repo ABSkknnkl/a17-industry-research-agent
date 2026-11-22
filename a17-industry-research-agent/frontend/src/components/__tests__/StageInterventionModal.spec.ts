@@ -30,8 +30,20 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
         initialTab: 'partial_refetch',
         data: {
           source_records: [
-            { record_id: 'REC-01', metric: '研发费用', value: 180, unit: '亿元', entity_name: '宁德时代' },
-            { record_id: 'REC-02', metric: '营业收入', value: 1342, unit: '亿元', entity_name: '比亚迪' },
+            {
+              record_id: 'REC-01',
+              metric: '研发费用',
+              value: 180,
+              unit: '亿元',
+              entity_name: '宁德时代',
+            },
+            {
+              record_id: 'REC-02',
+              metric: '营业收入',
+              value: 1342,
+              unit: '亿元',
+              entity_name: '比亚迪',
+            },
           ],
         },
       },
@@ -43,10 +55,20 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
     const bodyText = document.body.textContent || ''
     expect(bodyText).toContain('数据获取智能体')
     expect(bodyText).toContain('定向补采')
-    expect(bodyText).toContain('重点公司财务与盈利指标')
+    // P0-4：清单改为按真实 source_records 的 domain 分组，不再有内置样例分组名
+    expect(bodyText).toContain('财务与经营质量')
+    expect(bodyText).not.toContain('重点公司财务与盈利指标')
     // 旧「探针补采」页签已合并进点级清单，正常模式下不再单独出现
     expect(bodyText).not.toContain('探针补采')
     expect(bodyText).not.toContain('脏数据清洗与剔除')
+
+    // 两条记录都已采到值，默认不勾选（勾了才会覆盖原值）；显式勾选第一条再提交
+    const firstPointCheckbox = document.body.querySelector<HTMLInputElement>(
+      '.prp-groups .el-checkbox input'
+    )
+    expect(firstPointCheckbox).toBeTruthy()
+    firstPointCheckbox!.click()
+    await flushPromises()
 
     const submit = Array.from(document.body.querySelectorAll('button')).find((b) =>
       b.textContent?.includes('启动定向补采')
@@ -67,7 +89,8 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
     }
     expect(payload.edited_data.action_type).toBe('partial_refetch')
     expect(payload.edited_data.probe_mode).toBe('llm_dynamic')
-    expect(payload.edited_data.data_point_ids.length).toBeGreaterThan(0)
+    // 点号必须是后端真实 record_id，而不是内置的 F-01 / C-01 之类样例编号
+    expect(payload.edited_data.data_point_ids).toEqual(['REC-01'])
     expect(payload.edited_data.entities).toContain('宁德时代')
   })
 
@@ -128,8 +151,20 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
         data: {
           industry_topic: '银行业',
           source_records: [
-            { record_id: 'REC-01', metric: '不良贷款率', value: 1.25, unit: '%', entity_name: '工商银行 (601398.SH)' },
-            { record_id: 'REC-02', metric: '净息差', value: 1.82, unit: '%', entity_name: '建设银行 (601939.SH)' },
+            {
+              record_id: 'REC-01',
+              metric: '不良贷款率',
+              value: 1.25,
+              unit: '%',
+              entity_name: '工商银行 (601398.SH)',
+            },
+            {
+              record_id: 'REC-02',
+              metric: '净息差',
+              value: 1.82,
+              unit: '%',
+              entity_name: '建设银行 (601939.SH)',
+            },
           ],
         },
       },
@@ -139,8 +174,8 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
     await flushPromises()
 
     // 清空默认勾选，只保留清单外诉求
-    const clearBtn = Array.from(document.body.querySelectorAll('button')).find((b) =>
-      b.textContent?.trim() === '清空'
+    const clearBtn = Array.from(document.body.querySelectorAll('button')).find(
+      (b) => b.textContent?.trim() === '清空'
     )
     expect(clearBtn).toBeTruthy()
     clearBtn!.click()
@@ -449,7 +484,20 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
         stage: 'data_fetch',
         revision: 2,
         initialTab: 'partial_refetch',
-        data: { industry_topic: '白酒行业', source_records: [] },
+        data: {
+          industry_topic: '白酒行业',
+          // P0-4：清单只来自真实记录，空 source_records 会走空态且禁止点级提交
+          source_records: [
+            {
+              record_id: 'REC-BJ-01',
+              metric: '营业收入',
+              value: 170,
+              unit: '亿元',
+              entity_name: '贵州茅台',
+              domain: 'financials',
+            },
+          ],
+        },
       },
       attachTo: document.body,
       global: { plugins: [ElementPlus] },
@@ -466,6 +514,13 @@ describe('StageInterventionModal 阶段差异化专业人机协同工作台', ()
     await flushPromises()
 
     expect(document.body.textContent).toContain('主链路只发一次查询')
+
+    const pointCheckbox = document.body.querySelector<HTMLInputElement>(
+      '.prp-groups .el-checkbox input'
+    )
+    expect(pointCheckbox).toBeTruthy()
+    pointCheckbox!.click()
+    await flushPromises()
 
     const submit = Array.from(document.body.querySelectorAll('button')).find((b) =>
       b.textContent?.includes('启动定向补采')

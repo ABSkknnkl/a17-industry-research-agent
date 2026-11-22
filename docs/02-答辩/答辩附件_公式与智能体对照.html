@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>金融公式与智能体对照 · A17 答辩附件</title>
+<meta name="description" content="同花顺 A17：按 A1—A5 顺序，把文档里的金融公式、判定算法与验收口径对应到智能体，并配算例。">
+<link rel="preconnect" href="https://miaoda.feishu.cn">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+<style>
+  :root{
+    --paper:#f4f1e8; --sheet:#fdfcf8;
+    --ink:#1b2320; --ink-2:#3c4640; --muted:#6d766f;
+    --line:#ddd7c9; --line-2:#c9c1af;
+    --green:#0d5a49; --green-2:#0a4639; --green-soft:#e7f0ea;
+    --copper:#9d6c36; --copper-soft:#f6ecdf;
+    --blue:#24536e; --blue-soft:#e8f0f4;
+    --red:#8c4033; --red-soft:#f7e9e5;
+    --slate:#4d5359; --slate-soft:#eceef0;
+    --amber:#8a6218; --amber-soft:#f8efdd;
+    --olive:#4d5b32; --olive-soft:#eff1e5;
+    --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+    --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;
+    --shadow:0 1px 0 rgba(27,35,32,.04),0 16px 40px -30px rgba(27,35,32,.45);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.8;
+    background-color:var(--paper);
+    background-image:radial-gradient(circle at 1px 1px,rgba(27,35,32,.032) 1px,transparent 0);
+    background-size:24px 24px;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:#cfe3d8;color:var(--ink);}
+  a{color:var(--green);text-decoration:none;}
+  .hero{
+    position:relative;overflow:hidden;color:#f6f2e7;
+    background:
+      radial-gradient(700px 300px at 86% -20%,rgba(157,108,54,.30),transparent 60%),
+      radial-gradient(520px 260px at 8% 120%,rgba(13,90,73,.42),transparent 65%),
+      linear-gradient(135deg,#0e1c17 0%,#16271f 55%,#0b1713 100%);
+  }
+  .hero::after{
+    content:"A1→A5";position:absolute;right:-20px;bottom:-48px;
+    font-family:var(--serif);font-size:150px;font-weight:900;letter-spacing:-.04em;
+    color:rgba(255,255,255,.045);line-height:1;pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:52px 32px 42px;}
+  .eyebrow{display:flex;align-items:center;gap:9px;font-size:10.5px;letter-spacing:.16em;color:#c9c0a9;font-weight:500;}
+  .eyebrow .dot{width:5px;height:5px;border-radius:50%;background:#c79a5d;box-shadow:0 0 0 4px rgba(199,154,93,.14);}
+  h1{font-family:var(--serif);font-size:46px;line-height:1.2;letter-spacing:-.02em;margin:16px 0 10px;color:#fbf8f0;}
+  h1 .thin{font-weight:400;color:#d8cfba;}
+  .lede{max-width:790px;margin:0;color:#cfc7b5;font-size:15px;line-height:1.8;}
+  .lede b{color:#f3ecdc;font-weight:500;}
+  .hero-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;}
+  .hero-meta span{font-size:11px;line-height:1.5;padding:4px 10px;border-radius:999px;
+    border:1px solid rgba(255,255,255,.18);color:#d9d2c0;background:rgba(255,255,255,.045);}
+  .route{
+    position:sticky;top:0;z-index:30;background:rgba(244,241,232,.96);
+    border-bottom:1px solid var(--line);backdrop-filter:blur(8px);
+  }
+  .route-inner{max-width:1120px;margin:0 auto;padding:0 32px;display:flex;align-items:stretch;overflow-x:auto;}
+  .route a{
+    flex:1;min-width:128px;display:flex;align-items:baseline;gap:8px;
+    padding:11px 6px 9px;border-bottom:3px solid transparent;
+    color:var(--ink-2);font-size:11.5px;white-space:nowrap;transition:.15s;
+  }
+  .route a b{font-family:var(--serif);font-size:15px;color:var(--ac);line-height:1;}
+  .route a small{margin-left:auto;font-size:9.5px;color:var(--muted);}
+  .route a:hover{background:rgba(255,255,255,.55);border-bottom-color:var(--ac);}
+  .route i{display:flex;align-items:center;color:var(--line-2);font-style:normal;font-size:12px;padding:0 2px;}
+  .route a:nth-of-type(1){--ac:var(--blue);} .route a:nth-of-type(2){--ac:var(--green);}
+  .route a:nth-of-type(3){--ac:var(--copper);} .route a:nth-of-type(4){--ac:var(--red);}
+  .route a:nth-of-type(5){--ac:var(--slate);}
+  main{max-width:1120px;margin:0 auto;padding:24px 32px 64px;}
+  .brief{
+    border:1px dashed var(--line-2);border-radius:10px;background:rgba(255,255,255,.56);
+    margin:0 0 24px;overflow:hidden;
+  }
+  .brief-row{display:grid;grid-template-columns:78px 1fr;gap:16px;align-items:start;padding:12px 18px;}
+  .brief-row + .brief-row{border-top:1px dashed var(--line);}
+  .brief-row:first-child{background:#f0f5f1;}
+  .brief-row .lab{font-size:9.5px;letter-spacing:.14em;color:var(--green);font-weight:600;padding-top:4px;white-space:nowrap;}
+  .brief-row p{margin:0;font-size:12px;line-height:1.85;color:var(--ink-2);}
+  .brief-row b{color:var(--green-2);font-weight:600;}
+  .agent{
+    background:var(--sheet);border:1px solid var(--line);border-radius:16px;
+    overflow:hidden;box-shadow:var(--shadow);margin-bottom:28px;scroll-margin-top:60px;
+  }
+  .ahead{
+    display:grid;grid-template-columns:88px minmax(0,1fr) auto;gap:20px;align-items:center;
+    padding:20px 26px 17px;border-bottom:2px solid var(--ac);
+    background:linear-gradient(180deg,var(--soft),rgba(255,255,255,0));
+  }
+  .ano{font-family:var(--serif);font-size:50px;font-weight:700;line-height:1;color:var(--ac);letter-spacing:-.03em;}
+  .kicker{font-size:9.5px;letter-spacing:.16em;color:var(--ac);font-weight:600;margin-bottom:4px;}
+  .ahead h2{font-family:var(--serif);font-size:24px;line-height:1.35;margin:0;font-weight:700;color:var(--ink);}
+  .ahead p{margin:4px 0 0;font-size:12px;line-height:1.7;color:var(--muted);max-width:690px;}
+  .acount{text-align:right;}
+  .acount b{display:block;font-family:var(--serif);font-size:28px;line-height:1.1;color:var(--ac);}
+  .acount span{font-size:9.5px;letter-spacing:.06em;color:var(--muted);}
+  .rows{padding:0 26px;}
+  .frow{
+    display:grid;grid-template-columns:180px minmax(0,1fr) 292px;gap:24px;
+    padding:17px 0 18px;border-top:1px dashed var(--line);
+  }
+  .frow:first-child{border-top:0;}
+  .ftop{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:4px;}
+  .fno{font-size:9.5px;letter-spacing:.08em;color:var(--muted);}
+  .kind{font-size:8.5px;line-height:1.5;padding:1px 6px;border-radius:3px;font-weight:500;white-space:nowrap;}
+  .k-calc{color:#0b5f4e;background:#e4efe9;}
+  .k-check{color:#20516c;background:#e6eff4;}
+  .k-rule{color:#8a5f1e;background:#f6ecdc;}
+  .k-conv{color:#8a4726;background:#f7e8dd;}
+  .k-algo{color:#44522d;background:#eef0e3;}
+  .k-ind{color:#7a4a1e;background:#f7eadc;}
+  .fname h3{font-family:var(--serif);font-size:16px;line-height:1.45;font-weight:700;margin:0;color:var(--ink);}
+  .frole{font-size:10.5px;line-height:1.6;color:var(--muted);margin:2px 0 0;}
+  .fmain{min-width:0;}
+  .formula{
+    font-family:var(--serif);font-size:14px;line-height:1.75;color:#233029;
+    background:var(--soft);border-left:3px solid var(--ac);border-radius:0 6px 6px 0;
+    padding:7px 11px;margin:0 0 7px;
+  }
+  .formula + .formula{margin-top:-2px;}
+  .formula sup{font-size:9px;line-height:0;}
+  .how{margin:0;font-size:11.8px;line-height:1.8;color:var(--ink-2);}
+  .how b{color:var(--ac);font-weight:600;margin-right:3px;}
+  .warn{margin:4px 0 0;font-size:10.8px;line-height:1.7;color:var(--amber);}
+  .warn::before{content:"口径提醒 · ";font-weight:600;}
+  .fex{
+    background:#fbf7ee;border:1px solid #eadfc9;border-radius:9px;
+    padding:10px 13px 11px;align-self:start;
+  }
+  .exlabel{font-size:8.5px;letter-spacing:.12em;color:var(--copper);font-weight:600;margin-bottom:5px;}
+  .fex p{margin:0;font-size:11.5px;line-height:1.72;color:#4a4137;}
+  .fex p + p{margin-top:4px;}
+  .fex b{color:var(--green-2);font-size:12px;font-weight:700;}
+  .exnote{color:var(--muted) !important;font-size:10.2px !important;margin-top:5px !important;}
+  .note{
+    margin:13px 0 0;padding:10px 16px;border-top:1px dashed var(--line);
+    font-size:10.8px;line-height:1.8;color:var(--muted);
+  }
+  .note b{color:var(--copper);font-weight:600;letter-spacing:.04em;margin-right:6px;}
+  .agent:nth-of-type(1){--ac:var(--blue);--soft:var(--blue-soft);}
+  .agent:nth-of-type(2){--ac:var(--green);--soft:var(--green-soft);}
+  .agent:nth-of-type(3){--ac:var(--copper);--soft:var(--copper-soft);}
+  .agent:nth-of-type(4){--ac:var(--red);--soft:var(--red-soft);}
+  .agent:nth-of-type(5){--ac:var(--slate);--soft:var(--slate-soft);}
+  .appendix{--ac:#6b5b45;--soft:#f2eee6;}
+  .docmap{
+    margin:30px 0 0;border:1px solid var(--line);border-radius:16px;
+    background:var(--sheet);overflow:hidden;box-shadow:var(--shadow);
+  }
+  .docmap-head{padding:18px 24px 14px;border-bottom:1px solid var(--line);background:#f7f4eb;}
+  .docmap-head .kicker{color:var(--copper);}
+  .docmap-head h2{font-family:var(--serif);font-size:21px;line-height:1.4;margin:0;color:var(--ink);}
+  .docmap-head p{margin:3px 0 0;font-size:11px;line-height:1.7;color:var(--muted);}
+  .map-scroll{overflow-x:auto;}
+  .docmap table{width:100%;border-collapse:collapse;min-width:680px;}
+  .docmap th,.docmap td{padding:8px 12px;border-bottom:1px solid #ece6d9;text-align:left;vertical-align:top;}
+  .docmap th{font-size:9px;letter-spacing:.08em;color:var(--muted);font-weight:600;background:#fbf8f1;}
+  .docmap td{font-size:10.8px;line-height:1.65;color:var(--ink-2);}
+  .docmap td:nth-child(1){font-weight:600;color:var(--ink);width:38%;}
+  .docmap td:nth-child(2){width:15%;color:var(--ac);}
+  .docmap td:nth-child(3){width:47%;}
+  .notclaim{
+    margin:28px 0 0;padding:18px 22px;border-radius:14px;
+    background:#f8eeea;border:1px solid #e8cfc7;
+  }
+  .notclaim h2{font-family:var(--serif);font-size:16px;line-height:1.5;margin:0 0 3px;color:#5f2d24;}
+  .notclaim p{margin:0 0 9px;font-size:11px;line-height:1.75;color:#77574f;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .chips span{font-size:10.2px;line-height:1.5;padding:3px 9px;border-radius:999px;
+    border:1px solid #dfbdb2;color:#6c3a30;background:#fffaf7;white-space:nowrap;}
+  .chips + .chips{margin-top:7px;}
+  footer{
+    margin-top:22px;padding-top:13px;border-top:1px solid var(--line-2);
+    font-size:10.2px;line-height:1.85;color:var(--muted);
+  }
+  footer b{color:var(--ink-2);font-weight:500;}
+  .top{
+    position:fixed;right:24px;bottom:24px;width:38px;height:38px;border-radius:50%;
+    border:1px solid var(--line-2);background:var(--sheet);color:var(--green);
+    font-size:15px;cursor:pointer;box-shadow:0 8px 20px -12px rgba(27,35,32,.6);
+    opacity:0;pointer-events:none;transition:.2s;z-index:40;
+  }
+  .top.show{opacity:1;pointer-events:auto;}
+  .top:hover{background:var(--green);color:#fff;border-color:var(--green);}
+  @media (max-width:980px){
+    .hero-inner{padding:40px 20px 34px;}
+    h1{font-size:34px;}
+    .route-inner{padding:0 16px;}
+    .route a{min-width:108px;font-size:10.5px;}
+    .route a small{display:none;}
+    main{padding:18px 14px 44px;}
+    .brief-row{grid-template-columns:1fr;gap:4px;padding:10px 14px;}
+    .ahead{grid-template-columns:60px 1fr;gap:11px;padding:16px 16px 13px;}
+    .ano{font-size:40px;}
+    .ahead h2{font-size:20px;}
+    .acount{grid-column:2;text-align:left;}
+    .acount b{display:inline;font-size:14px;margin-right:4px;}
+    .rows{padding:0 16px;}
+    .frow{grid-template-columns:1fr;gap:9px;padding:15px 0;}
+    .fex{width:100%;}
+    .hero::after{font-size:92px;bottom:-24px;}
+    .docmap table{min-width:620px;}
+  }
+  @media (max-width:560px){
+    .hero-meta span{font-size:9.5px;}
+    .fname h3{font-size:15px;}
+    .formula{font-size:13px;}
+  }
+  @page{size:A4;margin:13mm 11mm;}
+  @media print{
+    body{background:#fff;background-image:none;font-size:9pt;}
+    .hero{background:#fff;color:var(--ink);border-bottom:2px solid var(--green);}
+    .hero::after{display:none;}
+    .hero-inner{padding:0 0 9px;max-width:none;}
+    .eyebrow{color:var(--muted);} h1{color:var(--ink);font-size:23pt;margin:7px 0 5px;} h1 .thin{color:var(--muted);}
+    .lede{color:var(--ink-2);font-size:8.8pt;}
+    .hero-meta{margin-top:7px;}
+    .hero-meta span{color:var(--ink-2);border-color:var(--line);background:#faf8f2;}
+    .route,.top{display:none;}
+    main{max-width:none;padding:7px 0 0;}
+    .brief{border:1px solid var(--line);background:#faf8f2;margin-bottom:7px;}
+    .brief-row{padding:5px 10px;}
+    .brief-row p{font-size:7.5pt;line-height:1.65;}
+    .agent{box-shadow:none;margin:0 0 4mm;break-inside:auto;}
+    #a4{break-before:page;page-break-before:always;}
+    .ahead{padding:8px 12px 7px;break-inside:avoid;page-break-inside:avoid;break-after:avoid;page-break-after:avoid;}
+    .ano{font-size:30pt;}
+    .ahead h2{font-size:14.5pt;}
+    .ahead p{font-size:7.2pt;}
+    .rows{padding:0 12px;}
+    .frow{grid-template-columns:125px minmax(0,1fr) 210px;gap:11px;padding:5px 0 6px;
+      break-inside:avoid;page-break-inside:avoid;}
+    .fname h3{font-size:9.4pt;}
+    .frole{font-size:6.5pt;}
+    .formula{font-size:8pt;padding:3px 7px;margin-bottom:2px;}
+    .how{font-size:7.3pt;line-height:1.55;}
+    .warn{font-size:6.6pt;}
+    .fex{padding:5px 8px 6px;}
+    .exlabel{font-size:6pt;margin-bottom:2px;}
+    .fex p{font-size:7pt;line-height:1.55;}
+    .fex b{font-size:7.6pt;}
+    .exnote{font-size:6.2pt !important;}
+    .note{font-size:6.8pt;padding:6px 0 0;margin-top:7px;}
+    .docmap{box-shadow:none;margin:4mm 0 0;break-before:page;page-break-before:always;break-inside:avoid;}
+    .docmap-head{padding:9px 12px;}
+    .docmap-head h2{font-size:12pt;}
+    .docmap-head p{font-size:6.8pt;}
+    .docmap table{min-width:0;}
+    .docmap th,.docmap td{padding:3px 6px;}
+    .docmap th{font-size:6.4pt;}
+    .docmap td{font-size:6.8pt;line-height:1.5;}
+    .notclaim{break-inside:avoid;page-break-inside:avoid;margin-top:5mm;padding:10px 12px;}
+    .notclaim h2{font-size:10pt;}
+    .notclaim p{font-size:7pt;}
+    .chips span{font-size:6.4pt;}
+    footer{font-size:6.8pt;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow"><span class="dot"></span> 同花顺 A17 · 答辩附件 · 金融公式与判定算法</div>
+    <h1>金融公式与智能体<span class="thin">对照</span></h1>
+    <p class="lede">按 <b>A1 → A5</b> 的顺序，把文档里的金融公式、判定算法和验收口径放到对应智能体。一条公式，一个算例，一眼看到“谁算、怎么算、算出来是什么”。</p>
+    <div class="hero-meta">
+      <span>5 个智能体</span>
+      <span>30 条智能体公式 / 算法</span>
+      <span>4 条商业测算</span>
+      <span>文档实测与示例数据分开标注</span>
+    </div>
+  </div>
+</header>
+
+<nav class="route" aria-label="智能体导航">
+  <div class="route-inner">
+    <a href="#a1"><b>A1</b>数据获取<small>7 条</small></a><i>→</i>
+    <a href="#a2"><b>A2</b>数据解读<small>9 条</small></a><i>→</i>
+    <a href="#a3"><b>A3</b>图表生成<small>4 条</small></a><i>→</i>
+    <a href="#a4"><b>A4</b>章节撰写<small>5 条</small></a><i>→</i>
+    <a href="#a5"><b>A5</b>报告融合<small>5 条</small></a>
+  </div>
+  </nav>
+
+<main>
+  <div class="brief">
+    <div class="brief-row">
+      <span class="lab">项目是什么</span>
+      <p>同花顺 A17（智研天工）把行业报告的七道工序收成五个可验收阶段：取数、解读、图表、写作、融合；数据来自 iFinD 与问财 SkillHub 的 66 个技能，成品是有底稿、可复核的初稿。<b>当前完整跑通的是新能源汽车行业。</b></p>
+    </div>
+    <div class="brief-row">
+      <span class="lab">怎么读</span>
+      <p>每一节先看智能体负责什么，再看它名下的公式与算法。<b>公式</b>是系统实际执行的写法；<b>算例</b>是示例数据；<b>文档实测</b>是人工标注样本的结果；<b>口径提醒</b>是这条公式的硬约束。</p>
+    </div>
+  </div>
+
+  <section class="agent" id="a1">
+    <div class="ahead">
+      <div class="ano">A1</div>
+      <div>
+        <div class="kicker">第一阶段 · 取数</div>
+        <h2>数据获取</h2>
+        <p>取得到、取得准：把多来源年报、公告与行情数据，统一成可追溯的证据包。四道归一、跨源冲突、精度裁定都在这一段完成。</p>
+      </div>
+      <div class="acount"><b>7</b><span>条公式 / 算法 / 口径</span></div>
+    </div>
+    <div class="rows">
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">01</span><span class="kind k-conv">换算</span></div>
+          <h3>金额单位换算</h3>
+          <p class="frole">先认单位，再谈数值</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">目标单位金额 = 原值 × 单位倍率</div>
+          <p class="how"><b>系统怎么做</b> 只做已登记单位之间的换算（元 / 万元 / 亿元 / 万亿元）；单位缺失或不明时判“单位不可核验”，退出对比，不按数值大小猜。</p>
+          <p class="warn">10 亿可能是 10 亿元，也可能是 10 万元；猜错就是 1 万倍误差。</p>
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>1.23 亿元 = 1.23 × 10,000 万元 = <b>12,300 万元</b>。</p><p>若源数据只写“1.23”没有单位，这条记录不进入对比。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">02</span><span class="kind k-check">校验</span></div>
+          <h3>年报重述对账</h3>
+          <p class="frole">旧值能不能换，先看勾稽</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">重述后金额 = 原披露金额 + 追溯调整额</div>
+          <p class="how"><b>系统怎么做</b> 按年报的追溯调整说明精确对账；成立才替换旧值并重算毛利率；不成立只标“待核”，不把错误调整带进报告。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>原营业成本 800 亿元 + 调整 20 亿元 = <b>820 亿元</b>；与年报重述后的 820 亿元一致 → 替换旧值。</p><p>若重述后写 818 亿元，勾稽不成立，只标待核。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">03</span><span class="kind k-algo">算法</span></div>
+          <h3>多来源差异率 δ</h3>
+          <p class="frole">同一个数，多个来源怎么判</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">δ =（最大值 − 最小值）÷ 分母 × 100%</div><div class="formula">分母取“各来源取值的绝对值”与 1 中的较大值</div>
+          <p class="how"><b>系统怎么做</b> 同一实体、同一指标、同一可比期间、至少 2 个独立来源才交叉验证；δ 超过容差阈值（默认 1%）建立冲突记录。系统不平均、不覆盖、不替模型选源，候选值并列保留，交人工仲裁。</p>
+          <p class="warn">分母加 1 的下限，是防止小基数把差异率放大到失真。</p>
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>来源 A 100.0、来源 B 100.6 → δ = 0.6 ÷ 100.6 = <b>0.60%</b>，低于 1%，不建冲突。</p><p>来源 A 100、来源 B 102 → δ = 2 ÷ 102 = <b>1.96%</b>，超过 1%，建冲突，两个值并列保留。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">04</span><span class="kind k-algo">算法</span></div>
+          <h3>精度裁定</h3>
+          <p class="frole">两个数是不是同一个数</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">步长 s = 10 的（−d）次方；按步长舍入 = 将 v 四舍五入到 s 的整数倍</div>
+          <p class="how"><b>系统怎么做</b> d 为披露串的小数位。把精细侧按粗侧步长舍入：等于粗侧判“通过”，不等判“冲突”，任一侧精度不明判“待核”。方向不可反转；金额先同步单位，非金额按单位分桶，百分比与倍数不跨桶。</p>
+          <p class="warn">精度裁定只判“是不是同一个数”，不纠正事实错误；原始披露串缺失时只能按数值兜底，并降低置信度。</p>
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>16.17（2 位）与 16.2（1 位）→ 16.17 舍入到 0.1 得 16.2 → <b>通过</b>。</p><p>16.17 与 16.25 都是 2 位，差 0.08，大于半个末位 0.005 → <b>冲突</b>；1.2 亿元与 12,000 万元同步单位后 <b>通过</b>。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">05</span><span class="kind k-rule">规则</span></div>
+          <h3>四道归一与证据包</h3>
+          <p class="frole">取数前必须先做的四件事</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">时点对齐 → 实体与指标归一 → 量纲归一 → 编号与去重</div>
+          <p class="how"><b>系统怎么做</b> 四道工序由规则完成，不交给模型。证据包分记录层、来源层、索引层；后续环节按编号取数，不重新猜数。一次采集通常由 3—5 条查询组合；检索按相关度取 8/5/25 条；上下文预算 500KB，超限只裁可选段，必答证据不动。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>同一“营业收入”在年报、公告、行情三处出现：先对齐报告期，再统一主体全名与指标名，再把亿元/万元换算，最后去重编号；四步都过，才进证据包。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">06</span><span class="kind k-algo">算法</span></div>
+          <h3>证据绑定评分</h3>
+          <p class="frole">像不像，变成可复现的分</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">企业全名 3 分 + 简称 2 分 + 片段 1 分；累计 ≥ 2 分才成立</div>
+          <p class="how"><b>系统怎么做</b> 把“像不像”转成可复现关系：同一组记录无论何时重放，得分一致；证据编号必须真实存在；不足 2 分不绑定。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>“比亚迪”全名 3 分 + “BYD”简称 2 分 = <b>5 分</b>，成立；“比亚迪”片段 1 分，不成立。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">07</span><span class="kind k-calc">计算</span></div>
+          <h3>需求覆盖率</h3>
+          <p class="frole">这一轮到底取够了没有</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">覆盖率 = 通过硬性条件的需求数 ÷ 硬性需求总数 × 100%</div>
+          <p class="how"><b>系统怎么做</b> 逐条核对来源、主体、期间、指标、单位、冲突、重述、截止日、时效；全部满足才算通过，剩余为空即进入补采。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>10 条硬性需求，7 条通过 → <b>70%</b>；缺的 3 条进入补采清单，不靠正文“估一个”。</p>
+        </div>
+      </article></div>
+    <p class="note"><b>口径规则</b>报告期不等于取数日：2024 年报在 2025-04-30 取数，报告期仍记 2024 年度，不写成 2025 年数据。</p>
+  </section>
+  <section class="agent" id="a2">
+    <div class="ahead">
+      <div class="ano">A2</div>
+      <div>
+        <div class="kicker">第二阶段 · 解读</div>
+        <h2>数据解读</h2>
+        <p>算得准、说得清：系统算财务指标、勾稽、可比与异常；模型只做解释，不补数。指标公式与证据编号一起交付。</p>
+      </div>
+      <div class="acount"><b>9</b><span>条公式 / 算法 / 口径</span></div>
+    </div>
+    <div class="rows">
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">01</span><span class="kind k-calc">计算</span></div>
+          <h3>净现比</h3>
+          <p class="frole">利润里有多少现金</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">净现比 = 经营活动现金流净额 ÷ 归母净利润</div>
+          <p class="how"><b>系统怎么做</b> 同主体、同期间、同合并范围、同币种才相除；分母锁定归母净利润，系统统一按这一口径计算。</p>
+          <p class="warn">亏损年度标“不适用”；微利 / 微亏标“易除零失真”。</p>
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>1,335 ÷ 403 = <b>3.3 倍</b>；大于 1，说明利润有现金支撑。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">02</span><span class="kind k-calc">计算</span></div>
+          <h3>研发费用率</h3>
+          <p class="frole">研发强度，不是研发增速</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">研发费用率 = 研发费用 ÷ 营业收入 × 100%</div>
+          <p class="how"><b>系统怎么做</b> 同期间、同口径；组内均值用金额加权（研发费用合计 ÷ 营业收入合计），不是把两家公司的比率简单平均。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>542 ÷ 7,771 = <b>7.0%</b>。</p><p>两家公司研发费用 100 与 50，营业收入 1,000 与 400 → 150 ÷ 1,400 = <b>10.7%</b>；简单平均会得到 11.25%，放大轻资产小公司。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">03</span><span class="kind k-check">校验</span><span class="kind k-calc">回退</span></div>
+          <h3>毛利率 / 净利率</h3>
+          <p class="frole">优先取数，缺失才回填</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">毛利率 =（营业收入 − 营业成本）÷ 营业收入</div><div class="formula">净利率 = 净利润 ÷ 营业收入</div>
+          <p class="how"><b>系统怎么做</b> 优先直取源指标；净利率缺失时用“净利润 ÷ 营业收入”回填并记录来源；净利率高于毛利率时只标注“待核”，不改数。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>毛利率（7,771 − 6,264）÷ 7,771 = <b>19.4%</b>；净利率 403 ÷ 7,771 = <b>5.2%</b>；源净利率缺失时回填 5.2%。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">04</span><span class="kind k-check">校验</span></div>
+          <h3>ROE / 资产负债率</h3>
+          <p class="frole">只取单值，不做拆解</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">ROE = 净利润 ÷ 净资产</div><div class="formula">资产负债率 = 总负债 ÷ 总资产</div>
+          <p class="how"><b>系统怎么做</b> 两项都直取源指标并做区间校验（ROE −150%～150%，负债率 0～150%）；不做杜邦拆解、不做杠杆分解。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>ROE 403 ÷ 1,902 = <b>21.2%</b>；负债率 5,584 ÷ 7,486 = <b>74.6%</b>；超出区间即置空，不参与结论。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">05</span><span class="kind k-calc">计算</span></div>
+          <h3>PE 相对溢价</h3>
+          <p class="frole">贵不贵，要看跟谁比</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">PE 溢价 =（个股 PE − 基准 PE）÷ 基准 PE × 100%</div>
+          <p class="how"><b>系统怎么做</b> 基准优先用成熟盈利公司的 PE 中位数，不用全样本；个股 PE ≤ 0 或 > 150 不参与。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>（25 − 18）÷ 18 = <b>38.9%</b>。</p><p>若基准改用全样本 22 倍，溢价只剩 13.6%——基准换了，结论就变了。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">06</span><span class="kind k-calc">计算</span><span class="kind k-rule">规则</span></div>
+          <h3>同比 / 百分点差 / CAGR</h3>
+          <p class="frole">增速与“几个点”别混</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">同比 = 本期 ÷ 上年同期 − 1</div><div class="formula">百分点差 = 本期比率 − 对比期比率</div><div class="formula">CAGR =（末值 ÷ 首值）的（1 ÷ 年数）次方 − 1</div>
+          <p class="how"><b>系统怎么做</b> 基期非正不出同比，改为“方向 + 绝对额”；两个百分率相减写“个百分点”，不写“%”。CAGR 只在正文复核与脚注中使用，不做通用预测。</p>
+          <p class="warn">CAGR 是复核公式，不是系统对外输出的通用计算能力。</p>
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>7,771 ÷ 6,023 − 1 = <b>29.0%</b>；毛利率 20.2% − 19.4% = <b>+0.8 个百分点</b>，不能写成“增长 0.8%”。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">07</span><span class="kind k-algo">算法</span></div>
+          <h3>稳健 Z</h3>
+          <p class="frole">小样本里找异动</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">Z = 0.6745 ×（x − 中位数）÷ MAD</div>
+          <p class="how"><b>系统怎么做</b> 横截面看单个值相对同业中位数的偏离；时序看最新一期变化相对历史相邻期变化的偏离；用中位数和 MAD（中位数绝对偏差）抗极端值。阈值 3.5，超过两倍阈值记高严重度；MAD=0 时按基线缩放，不做除法。筛查只标注，结果交后续核验。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>中位数 19%，MAD 1.2%，某公司 23% → Z = 0.6745 × 4 ÷ 1.2 = <b>2.25</b>，低于 3.5，不标异动。</p><p>若同一算法算出 Z = 7.2，超过 2 × 3.5，标 <b>高严重度</b>，只提示，不直接下经营恶化结论。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">08</span><span class="kind k-calc">计算</span></div>
+          <h3>毛利敏感性</h3>
+          <p class="frole">价格、成本各动一点</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">情景毛利 = 收入 ×（1 + 价格变动）− 成本 ×（1 + 成本变动）</div>
+          <p class="how"><b>系统怎么做</b> 基准收入与成本同主体、同期间、同范围、同币种；假设销量不变；结果是毛利变化，不是净利润预测。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>1,000 × 1.05 − 800 × 1.03 = 1,050 − 824 = <b>226 亿元</b>；原毛利 200 亿元，变化 <b>+13%</b>。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">09</span><span class="kind k-calc">计算</span></div>
+          <h3>分组均值</h3>
+          <p class="frole">等权，还是按规模加权</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">等权平均 = 各公司比率相加 ÷ 公司数</div><div class="formula">金额加权 = 研发费用合计 ÷ 营业收入合计</div>
+          <p class="how"><b>系统怎么做</b> 毛利率用等权平均，研发费用率用金额加权；同一张图必须在脚注写明权重。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>毛利率（20% + 18%）÷ 2 = <b>19%</b>；研发费用率 150 ÷ 1,400 = <b>10.7%</b>。</p>
+        </div>
+      </article></div>
+    <p class="note"><b>解读边界</b>系统算指标、勾稽、可比与异常，模型只做解释；十条方向前六给结论、后四给边界；无证据不结论；每条结论带置信度与证据编号；资料不足给补采请求，不补内容。</p>
+  </section>
+  <section class="agent" id="a3">
+    <div class="ahead">
+      <div class="ano">A3</div>
+      <div>
+        <div class="kicker">第三阶段 · 图表</div>
+        <h2>图表生成</h2>
+        <p>画得对：图型从白名单里选，点和图都要有证据；缺证据标缺口，不补 0，不硬画。</p>
+      </div>
+      <div class="acount"><b>4</b><span>条公式 / 算法 / 口径</span></div>
+    </div>
+    <div class="rows">
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">01</span><span class="kind k-calc">计算</span></div>
+          <h3>指数化</h3>
+          <p class="frole">把不同规模拉到同一起点</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">指数 = 当年值 ÷ 基期值 × 100</div>
+          <p class="how"><b>系统怎么做</b> 统一基期 = 100；脚注写基期年份；指数值只表示相对走势，不当绝对金额读。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>2023 年营收 100，2024 年 129 → 指数 <b>129</b>，表示 2024 年比 2023 年增长 29%。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">02</span><span class="kind k-calc">计算</span></div>
+          <h3>PB 历史分位</h3>
+          <p class="frole">现在的 PB 在历史上贵不贵</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">分位 = 不高于当前 PB 的月末样本数 ÷ 样本总数 × 100%</div>
+          <p class="how"><b>系统怎么做</b> 2021—2025 月末序列，n = 60；脚注写区间与样本数；样本不足不出图。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>当前 PB 2.8，60 个月中 45 个月不高于 2.8 → <b>75% 分位</b>。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">03</span><span class="kind k-calc">计算</span></div>
+          <h3>雷达标准化</h3>
+          <p class="frole">五个维度怎么放到一张图</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">得分 = 100 ×（x − 最小值）÷（最大值 − 最小值）</div>
+          <p class="how"><b>系统怎么做</b> 只在样本内标准化，跨样本、跨期不可比；极值相等时留空。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>样本研发强度最低 10%、最高 30%，某公司 22% → 100 ×（22 − 10）÷（30 − 10）= <b>60 分</b>。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">04</span><span class="kind k-ind">指标</span></div>
+          <h3>点级证据覆盖率</h3>
+          <p class="frole">图上的每个点都要有出处</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">覆盖率 = 有点级证据的数据点 ÷ 总数据点 × 100%</div>
+          <p class="how"><b>系统怎么做</b> 图级与点级证据分开：点级缺失标缺口，图级缺失整图退回；数据不足按确定性阶梯降级；16 类图型，13 类常用，3 类进阶按开关启用，模型不能发明图型。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>50 个数据点，45 个有点级证据 → <b>90%</b>，5 个标缺口；若整张图缺图级证据，整图退回，不硬画。</p>
+        </div>
+      </article></div>
+    <p class="note"><b>出图三查</b>金额和比率用两条轴；缺失的月份留空，不补 0；率、倍数、增速不做占比饼图。</p>
+  </section>
+  <section class="agent" id="a4">
+    <div class="ahead">
+      <div class="ano">A4</div>
+      <div>
+        <div class="kicker">第四阶段 · 写作</div>
+        <h2>章节撰写</h2>
+        <p>写得实：七章二十一节，每节三段式；先有判断，再选数字；所有数字回到证据，判不了就拦截。</p>
+      </div>
+      <div class="acount"><b>5</b><span>条公式 / 算法 / 口径</span></div>
+    </div>
+    <div class="rows">
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">01</span><span class="kind k-check">校验</span></div>
+          <h3>正文数字容差</h3>
+          <p class="frole">写的数和证据差多少算对</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">容差 = 0.5 × 10⁻ⁿ（n = 正文显示的小数位）</div>
+          <p class="how"><b>系统怎么做</b> 正文每个数字必须能在底稿中找到；差异在容差内视为一致，超容差退回改写；具体比较沿用 A1 的精度裁定。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>证据 19.38%，正文 19.4%，显示 1 位小数 → 容差 <b>0.05 个百分点</b>；|19.4 − 19.38| = 0.02 ≤ 0.05 → 通过。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">02</span><span class="kind k-algo">算法</span></div>
+          <h3>数值断言反算</h3>
+          <p class="frole">数字必须能倒推回去</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">数值断言 = 出现数字与单位 → 用同比 / 环比 / CAGR / 占比 / 水平 / 变化反算 → 绝对差 ≤ 允许误差 ε</div>
+          <p class="how"><b>系统怎么做</b> 数值断言不是“看着像”，必须能反算；反算不出或精度不明，判“证据不足”并拦截；六类断言各有证据标准。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>正文“营收同比增长 29.0%”，证据 7,771 与 6,023 → 29.0%，差 0 → 通过。</p><p>若正文写“增长 30%”，差 1 个百分点，超过允许误差 → 拦截。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">03</span><span class="kind k-algo">算法</span></div>
+          <h3>六类断言核验</h3>
+          <p class="frole">一句话能不能进正文</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">数值 / 方向 / 因果 / 排名 / 预测 / 情景 → 通过 / 冲突 / 证据不足</div>
+          <p class="how"><b>系统怎么做</b> 数值看反算；方向看同实体、同指标族、同口径、可比期首尾方向；因果要原文直引或标注“假设/待验证”；排名要有界基期与样本内可比；预测不得用历史观测冒充；情景假设只在自身子句内有效。证据不足按“判不了就拦截”处理；裁后文本只删不增、保序、不跨句拼接，重复裁剪结果不变。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">文档实测 · 人工标注样本</div>
+          <p>39 条六类断言（应拦 21、应留 18）：当前拦截 <b>17/21（81.0%）</b>，漏放 4 条；误判 <b>1/18（5.6%）</b>。</p><p>未启用时 21 条无据断言全部进稿；启用后进稿风险由 100% 降至 19.0%。因果、排名、精度裁定各 6/6。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">04</span><span class="kind k-rule">规则</span></div>
+          <h3>论点句结构</h3>
+          <p class="frole">一段只讲一个判断</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">论点句 = 判断 + 证据 + 含义（每段 1 个判断，至多 1 个关键数字）</div>
+          <p class="how"><b>系统怎么做</b> 禁用“值得关注 / 总体向好 / 显著 / 指数级 / 造血能力优良”；空话改为可核观察；九类段落、六项节后检查。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>原句“毛利率表现值得关注” → 改为“毛利率 <b>19.4%</b>，同比提升 <b>0.8 个百分点</b>，主要来自电池成本回落”。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">05</span><span class="kind k-rule">规则</span></div>
+          <h3>七章二十一节三段式</h3>
+          <p class="frole">每一节都按同一骨架写</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">每节 = 事实与证据 → 解释与比较 → 成立 / 失效条件</div>
+          <p class="how"><b>系统怎么做</b> 七章二十一节；每节三段式；九类段落；六项节后检查；二十一小节按章构建最小上下文分批撰写；段落级修改只更新当前段与引用，不重跑整章。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>第一段写“毛利率 19.4%，同比 +0.8 个百分点”并附证据编号；第二段解释电池成本回落；第三段写“若碳酸锂价格回升，毛利率可能回落”作为失效条件。</p>
+        </div>
+      </article></div>
+    <p class="note"><b>禁用词</b>值得关注 / 总体向好 / 显著 / 指数级 / 造血能力优良；出现即退回改写。</p>
+  </section>
+  <section class="agent" id="a5">
+    <div class="ahead">
+      <div class="ano">A5</div>
+      <div>
+        <div class="kicker">第五阶段 · 融合</div>
+        <h2>报告融合</h2>
+        <p>交得出、交得一致：不重新解释数据，只整理事实视图、重排编号、跑一致性审计与发布门禁。</p>
+      </div>
+      <div class="acount"><b>5</b><span>条公式 / 算法 / 口径</span></div>
+    </div>
+    <div class="rows">
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">01</span><span class="kind k-check">校验</span></div>
+          <h3>必答项覆盖率</h3>
+          <p class="frole">报告该答的，答全了没有</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">覆盖率 = 通过项 ÷ 必答项总数 × 100%</div>
+          <p class="how"><b>系统怎么做</b> 按研究边界逐条对照；缺口落到具体未通过项，不用“某章没检索到”代替全报告结论。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>12 项必答，9 项通过 → <b>75%</b>；剩下 3 项写进交付说明。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">02</span><span class="kind k-ind">指标</span></div>
+          <h3>质量三指标</h3>
+          <p class="frole">验收时看哪三个数</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">关键数字证据覆盖率 = 有有效证据编号的关键数字 ÷ 关键数字总数</div><div class="formula">指标错配率 = 实体 / 指标 / 期间 / 单位不匹配的数字 ÷ 抽查数字总数</div><div class="formula">返工次数 = 同一任务审核驳回并重新执行的次数</div>
+          <p class="how"><b>系统怎么做</b> 三项在同一试点任务上统计；系统自检结果不替代人工验收。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>100 个关键数字，90 个有有效编号 → <b>90%</b>。</p><p>抽查 50 个，2 个错配 → <b>4%</b>；同一任务驳回重跑 3 次 → <b>3 次</b>。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">03</span><span class="kind k-check">校验</span></div>
+          <h3>市值量级漂移</h3>
+          <p class="frole">正文里的市值有没有放大十倍</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">漂移判定 = 正文值 ÷ 标准值<br>接近 10 倍（±20%）即疑似放大十倍</div>
+          <p class="how"><b>系统怎么做</b> 跨章节核对市值；命中即退回改写；标准值为 0 时不计算。这是跨章统一口径表要拦的典型错误。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>标准值 1.2 万亿元，正文写 12 万亿元 → 12 ÷ 1.2 = <b>10 倍</b>，命中，退回。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">04</span><span class="kind k-rule">规则</span></div>
+          <h3>发布门禁四条</h3>
+          <p class="frole">什么时候能正式出</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">发布 = 四条门禁同时通过</div><div class="formula">① 至少一条核心结论有有效证据<br>② 正文、摘要、图表无悬空引用<br>③ 无未消解的高严重度冲突被写成事实<br>④ 无安全问题、无缺项，三种格式、清单、证据目录齐全</div>
+          <p class="how"><b>系统怎么做</b> 先门禁后评分；任一条失败即阻断，停在当前阶段。质量分只用于比较不同修订，不豁免硬条件。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>正文新增一段但未重新质检 → 旧版文件作废。</p><p>出现悬空引用 → <b>阻断</b>，不出正式版。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">05</span><span class="kind k-rule">规则</span></div>
+          <h3>交付分级与三格式</h3>
+          <p class="frole">正式、带提示，还是阻断</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">全部通过 → 正式<br>只有提示性问题 → 带提示 / 受限草稿<br>存在硬阻塞 → 阻断</div>
+          <p class="how"><b>系统怎么做</b> 三种格式同源生成，导出带生成时间、版本号与校验摘要；章节写作结果只读，报告融合的编辑、补写与隔离记入编辑变更清单。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>只有图表缺失提示 → 带提示交付；存在悬空引用 → <b>阻断</b>；正式版必须四条门禁全过。</p>
+        </div>
+      </article></div>
+    <p class="note"><b>融合边界</b>报告融合不重新解释数据；只整理事实视图、重排编号、跑一致性审计与门禁。</p>
+  </section>
+  <section class="agent appendix" id="appendix">
+    <div class="ahead">
+      <div class="ano">附</div>
+      <div>
+        <div class="kicker">附录 · 商业测算</div>
+        <h2>商业测算</h2>
+        <p>文档里的商业测算公式，供答辩追问；它们不参与 A1—A5 的报告生成流程，单独列在这里。</p>
+      </div>
+      <div class="acount"><b>4</b><span>条商业测算</span></div>
+    </div>
+    <div class="rows">
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">01</span><span class="kind k-calc">计算</span></div>
+          <h3>年度 ROI</h3>
+          <p class="frole">投入一年能不能回来</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">ROI =（人工节约 + 新增贡献利润 + 风险损失减少 − 年度总拥有成本）÷ 年度总拥有成本 × 100%</div>
+          <p class="how"><b>系统怎么做</b> 只计可核验部分：未兑现工时单列，新增收入未形成前按零计，风险损失减少只计有历史记录支撑的部分；客户侧 ROI 与项目利润分开。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>人工节约 120 + 新增贡献 30 + 风险减少 10 − 总拥有成本 100 = 60；60 ÷ 100 = <b>60%</b>。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">02</span><span class="kind k-calc">计算</span></div>
+          <h3>单客户贡献利润</h3>
+          <p class="frole">一个客户一年贡献多少</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">贡献利润 = 单客户年收入 − 年度直接变动成本</div>
+          <p class="how"><b>系统怎么做</b> 只算直接变动成本，不摊固定成本；用于判断单客户是否为正贡献。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>单客户年收入 50，年度直接变动成本 20 → <b>30</b>。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">03</span><span class="kind k-calc">计算</span></div>
+          <h3>盈亏平衡客户数</h3>
+          <p class="frole">多少个客户能养活这套系统</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">盈亏平衡客户数 = 年度固定成本 ÷ 单客户年度贡献利润</div>
+          <p class="how"><b>系统怎么做</b> 固定成本含研发维护、运维与基础设施；单客户贡献利润按上一行口径；分母为负或为零时不计算。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>年度固定成本 300，单客户贡献 30 → <b>10 家</b>。</p>
+        </div>
+      </article>
+      <article class="frow">
+        <div class="fname">
+          <div class="ftop"><span class="fno">04</span><span class="kind k-calc">计算</span></div>
+          <h3>单位报告直接成本</h3>
+          <p class="frole">一份报告的变动成本</p>
+        </div>
+        <div class="fmain">
+          <div class="formula">单位报告直接成本 = 模型使用成本 + 数据使用成本 + 人工编制成本</div>
+          <p class="how"><b>系统怎么做</b> 只汇总随任务发生的直接成本，不摊一次性研发投入；数据授权与分发权限以合同为准。</p>
+          
+        </div>
+        <div class="fex">
+          <div class="exlabel">算例 · 示例数据</div>
+          <p>模型 30 + 数据 20 + 人工 50 = <b>100 元/份</b>。</p>
+        </div>
+      </article></div>
+    <p class="note"><b>口径说明</b>这些是商业测算口径，不进入 A1—A5 的金融报告生成流程；答辩时与报告质量指标分开讲。</p>
+  </section>
+
+  <section class="docmap">
+    <div class="docmap-head">
+      <div class="kicker">文档对照</div>
+      <h2>文档里的金融内容落在哪</h2>
+      <p>这一页把文档中的金融口径、判定算法与验收指标逐条落到 A1—A5，答辩时可以按这张表反查。</p>
+    </div>
+    <div class="map-scroll">
+      <table>
+        <thead><tr><th>文档里的金融内容</th><th>对应智能体</th><th>本页落点</th></tr></thead>
+        <tbody><tr><td>研究质量要求：数据准确、口径一致、过程可复核</td><td>A1 / A5</td><td>全篇；发布门禁与质量三指标</td></tr><tr><td>验收三指标：证据覆盖率、指标错配率、返工次数</td><td>A5</td><td>质量三指标</td></tr><tr><td>四道归一与证据包：时点、实体、量纲、编号</td><td>A1</td><td>四道归一与证据包</td></tr><tr><td>跨源冲突：并列保留、人工仲裁</td><td>A1 / A2</td><td>多来源差异率 δ</td></tr><tr><td>数值勾稽与精度裁定：16.17 与 16.2 的判等</td><td>A1</td><td>精度裁定</td></tr><tr><td>稳健 Z：横截面与时序异常筛查</td><td>A2</td><td>稳健 Z</td></tr><tr><td>六类断言：数值、方向、因果、排名、预测、情景</td><td>A4</td><td>六类断言核验</td></tr><tr><td>七章二十一节与每节三段式</td><td>A4</td><td>七章二十一节三段式</td></tr><tr><td>图型白名单与点级证据</td><td>A3</td><td>点级证据覆盖率</td></tr><tr><td>发布门禁四条与三种交付级别</td><td>A5</td><td>发布门禁 / 交付分级</td></tr><tr><td>商业测算：ROI、贡献利润、盈亏平衡</td><td>附录</td><td>商业测算</td></tr><tr><td>五阶段职责与交接物</td><td>A1—A5</td><td>各节导语与阶段交接</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+
+<section class="notclaim">
+  <h2>这些不要当成系统能力讲</h2>
+  <p>文档里出现过的公式，有些是复核口径，不是系统对外输出的能力；答辩时不要把“能检查”说成“能计算”。</p>
+  <div class="chips">
+    <span>杜邦三因子：ROE 只取单值</span>
+    <span>通用 CAGR：只做正文复核 / 脚注</span>
+    <span>CR3 / HHI：系统未实现</span>
+    <span>存货 / 应收周转率、产能利用率：未实现</span>
+    <span>PEG：只是“高 PE + 负增长”告警</span>
+    <span>毛利率、净利率、ROE、负债率：以取值校验为主</span>
+  </div>
+  <div class="chips">
+    <span>投资建议 / 目标价 / 买卖评级 / 收益预测：不输出</span>
+    <span>DCF / 期权 / VaR / 组合 / 仓位 / 回测：未实现</span>
+    <span>系统定位：初稿与底稿生成器，不是投资决策工具</span>
+  </div>
+</section>
+
+
+  <footer>
+    <b>算例说明：</b>标“示例数据”的数字用于演示公式怎么用，不代表任何真实公司、行业或报告结论；标“文档实测”的数字来自文档的人工标注样本，不等于全部真实报告上的准确率。<br>
+    <b>口径依据：</b>《最终版-算法质量重写版》中的项目指标、四道归一、跨源冲突、精度裁定、稳健 Z、六类断言、发布门禁与商业测算；只列文档实际写到的口径，未实现的能力单独标注。
+  </footer>
+</main>
+
+<button class="top" id="toTop" type="button" aria-label="回到顶部">↑</button>
+
+<script>
+(function(){
+  var links = Array.prototype.slice.call(document.querySelectorAll('.route a'));
+  var sections = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  var btn = document.getElementById('toTop');
+  var ticking = false;
+  function update(){
+    var current = sections[0];
+    sections.forEach(function(sec){
+      if (sec.getBoundingClientRect().top <= 120) current = sec;
+    });
+    links.forEach(function(a){
+      var on = current && a.getAttribute('href') === '#' + current.id;
+      a.style.borderBottomColor = on ? 'var(--ac)' : 'transparent';
+      a.style.background = on ? 'rgba(255,255,255,.55)' : 'transparent';
+    });
+    if (btn) btn.classList.toggle('show', window.scrollY > 600);
+    ticking = false;
+  }
+  window.addEventListener('scroll', function(){
+    if (!ticking){ ticking = true; window.requestAnimationFrame(update); }
+  }, {passive:true});
+  update();
+  if (btn) btn.addEventListener('click', function(){
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+})();
+</script>
+</body>
+</html>

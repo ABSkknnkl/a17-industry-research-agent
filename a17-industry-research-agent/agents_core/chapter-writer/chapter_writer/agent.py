@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from agents_core.chart_references import normalize_figure_leads
 from agents_core.financial_semantics import (
     CLAIM_METRICS,
     QUANTITY_RE,
@@ -283,7 +284,7 @@ def has_chart_discussion(text: str) -> bool:
 
 def strip_chart_tag(text: str, chart_id: str) -> str:
     """移除未就绪图表的图号，并清掉只为该图号存在的「如图…所示」引子。"""
-    cleaned = (text or "").replace(f"[{chart_id}]", "")
+    cleaned = normalize_figure_leads(text or "", removed_chart_id=chart_id).replace(f"[{chart_id}]", "")
     cleaned = _CHART_LEAD_RE.sub("", cleaned)
     return cleaned.strip()
 
@@ -335,6 +336,8 @@ def _align_chart_reference(section: Any, chart_id: str, chart: Any) -> bool:
     if not any(tag in paragraph.text for paragraph in matched):
         target = next((paragraph for paragraph in matched if paragraph.kind == "chart_readout"), matched[0])
         target.text = f"如图 {tag} 所示，{target.text}"
+    for paragraph in matched:
+        paragraph.text = normalize_figure_leads(paragraph.text)
     note = f"{chart_id} 暂无与图表证据对应的正文解读。"
     section.uncertainties = [item for item in section.uncertainties if item != note]
     return True
@@ -687,7 +690,14 @@ class ChapterWriterAgent:
                     )
                 return chapter, fallback_id, warning
 
-        chapter_results = await asyncio.gather(*[_write_chapter(c) for c in outline])
+        if request.options.sequential_review:
+            chapter_results = []
+            await record("chapter_progress", completed=0, total=len(outline))
+            for outline_chapter in outline:
+                chapter_results.append(await _write_chapter(outline_chapter))
+                await record("chapter_progress", completed=len(chapter_results), total=len(outline))
+        else:
+            chapter_results = await asyncio.gather(*[_write_chapter(c) for c in outline])
         await record("skills_planned", skills={chapter_id: [skill.name for skill in skills] for chapter_id, skills in selected_by_chapter.items()})
         chapters: list[ChapterDraft] = [item[0] for item in chapter_results]
         net_cash_corrections = apply_net_cash_ratio_guard(chapters, net_cash_policy)
@@ -919,6 +929,7 @@ class ChapterWriterAgent:
         if chapter is not None and context.get("section_editorial_briefs"):
             replaced = await self._polish_editorial_sections(
                 chapter, outline_chapter, allowed_evidence, ready_charts, context, global_facts, record,
+                sequential=request.options.sequential_review,
             )
             if replaced and paragraph_warning:
                 prefix = f"段落资料缺口：{chapter.chapter_id} "
@@ -937,7 +948,7 @@ class ChapterWriterAgent:
         return chapter, fallback_id, warning
 
     async def _polish_editorial_sections(
-        self, chapter, outline, allowed_evidence, charts, context, global_facts, record,
+        self, chapter, outline, allowed_evidence, charts, context, global_facts, record, *, sequential=False,
     ) -> set[str]:
         """Give each template section a small second pass and audit the replacements."""
         briefs = context["section_editorial_briefs"]
@@ -964,6 +975,8 @@ class ChapterWriterAgent:
                 ]
 
             grounded = parse(observations)
+            if section.section_id == "SEC-04-01":
+                return None, grounded
             try:
                 prompt, _, _ = serialize_context({
                     "title": section.title, "task": brief["write"], "observations": observations,
@@ -983,7 +996,10 @@ class ChapterWriterAgent:
             return None, grounded
 
         targets = [(i, section) for i, section in enumerate(chapter.sections) if section.section_id in briefs]
-        drafts = await asyncio.gather(*(draft(section) for _, section in targets))
+        if sequential:
+            drafts = [await draft(section) for _, section in targets]
+        else:
+            drafts = await asyncio.gather(*(draft(section) for _, section in targets))
         replaced: set[str] = set()
         for (i, section), (polished, grounded) in zip(targets, drafts):
             method = ""
@@ -995,6 +1011,11 @@ class ChapterWriterAgent:
                 trial = chapter.model_copy(deep=True)
                 trial.sections[i].paragraphs = paragraphs
                 trial.sections[i].key_points = []
+                # The evidence-linked readout and chart carry the quantitative detail.
+                # Do not retain a model-generated duplicate card or table without evidence.
+                trial.sections[i].metric_cards = [card for card in section.metric_cards if card.evidence_ids]
+                if section.comparison_table and not section.comparison_table.evidence_ids:
+                    trial.sections[i].comparison_table = None
                 uncovered = [str(row["requirement"].get("label") or row["requirement"].get("requirement_id") or "")
                              for row in (context.get("requirement_evidence_matrix") or [])
                              if row.get("section_id") == section.section_id and row.get("requirement")

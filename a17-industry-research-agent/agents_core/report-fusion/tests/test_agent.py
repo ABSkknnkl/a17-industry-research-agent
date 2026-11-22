@@ -374,6 +374,11 @@ def test_competition_rechecks_final_draft_after_optional_isolation(tmp_path, pro
         "disposition": "isolated",
         "location": "SEC-01-01",
         "claim": "非核心指标卡被隔离",
+    }, {
+        "code": "fusion_claim_isolation",
+        "disposition": "partially_retained",
+        "location": "P-01-01-01",
+        "claim": "不受支持的子句已隔离，保留的断言由终稿再次检查",
     }]
     if required_gap:
         report.data_quality_appendix["requested_requirement_coverage"] = [{

@@ -7,7 +7,6 @@ import json
 import logging
 import os
 import tempfile
-from html import escape
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +30,7 @@ def refresh_edited_exports(state: WorkflowState, run_dir: Path, edits: dict[str,
     from pydantic import ValidationError
     from report_fusion.models import ReportViewModel
     from report_fusion.render import render_html, render_markdown
+    from report_fusion.reviewed_metrics import card_from_row
 
     result = state.stage_results["report_fusion"]
     art = run_dir / "artifacts"
@@ -63,21 +63,14 @@ def refresh_edited_exports(state: WorkflowState, run_dir: Path, edits: dict[str,
             raw["executive_summary"] = summary
         if "key_metrics" in edits and isinstance(summary, dict):
             summary["metric_cards"] = [
-                {
-                    "label": str(card.get("label") or card.get("name") or "指标"),
-                    "value": str(card.get("value", "")), "unit": card.get("unit"),
-                    "evidence_ids": card.get("evidence_ids") or card.get("evidence_record_ids") or [],
-                }
+                card_from_row(card).model_dump(mode="json")
                 for card in edits["key_metrics"] if isinstance(card, dict)
             ]
         canonical = {k: v for k, v in raw.items() if k in ReportViewModel.model_fields}
         view = ReportViewModel.model_validate(canonical)
         markdown = render_markdown(view, source_index_mode="compact")
         html = render_html(view, source_index_mode="compact", embedded_preview=True)
-        rating = str(raw.get("investment_rating") or "").strip()
-        if rating:
-            markdown += f"\n\n## 人工确认评级\n\n{rating}\n"
-            html = html.replace("</body>", f"<section><h2>人工确认评级</h2><p>{escape(rating)}</p></section></body>")
+        result.data["executive_summary_headline"] = view.executive_summary.headline
         _replace(art / "report.md", markdown)
         _replace(art / "report.html", html)
         raw.update(view.model_dump(mode="json"))

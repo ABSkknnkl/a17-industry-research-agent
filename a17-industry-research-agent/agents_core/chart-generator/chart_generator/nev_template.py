@@ -9,6 +9,7 @@ from decimal import Decimal
 import hashlib
 import json
 import math
+import re
 from pathlib import Path
 from typing import Any
 
@@ -387,7 +388,110 @@ def matches_template(subject: str, questions: list[str]) -> bool:
     )
 
 
-async def run_template(request, run_id, artifact_dir, record, events):
+async def select_template_leads(llm, briefs: list[dict], charts: list[ChartSpec]) -> dict[str, tuple[str, str]]:
+    from .question_planner import parse_selection
+
+    choices: dict[str, list[ChartSpec]] = {}
+    for chart in charts:
+        qid = QUESTIONS[chart.data_contract["template_figure"]]
+        choices.setdefault(qid, []).append(chart)
+    system = (
+        "你负责新能源汽车研报选图。根据每题的文本和已核验图表，从该题候选中选一张最能回答题目核心的主图。"
+        "其余图仍按模板发布。给每张主图写一句定性的解读目的。不得新增数据、隐去图表或改变图型。"
+        '仅返回 JSON {"selections":[{"question_id":"Q-1","chart_id":"CHART-NEV-01","rationale":"解读目的"}]}。'
+        "每个有候选的题号恰好出现一次。理由请使用 10 至 110 字且不添加数字。"
+    )
+    prompt = json.dumps({
+        "questions": [
+            {"question_id": qid, "text": next((b["text"] for b in briefs if b["question_id"] == qid), qid),
+             "verified_charts": [
+                 {"chart_id": c.chart_id, "title": c.title, "type": c.chart_type, "purpose": c.insight_goal}
+                 for c in options
+             ]}
+            for qid, options in sorted(choices.items())
+        ],
+    }, ensure_ascii=False)
+    for _ in range(2):
+        rows = parse_selection(await llm.select_cards(system, prompt)).get("selections")
+        if isinstance(rows, list) and len(rows) == len(choices) and choices:
+            selected = {}
+            for row in rows:
+                if not isinstance(row, dict):
+                    break
+                qid, cid, rationale = row.get("question_id"), row.get("chart_id"), row.get("rationale")
+                if (not isinstance(qid, str) or qid in selected
+                        or not any(c.chart_id == cid for c in choices.get(qid, []))
+                        or not isinstance(rationale, str) or not 10 <= len(rationale.strip()) <= 110
+                        or re.search(r"[0-9<>\[\]]", rationale)):
+                    break
+                selected[qid] = (cid, rationale.strip())
+            if len(selected) == len(choices):
+                return selected
+        prompt += "\n上次未通过校验。请按题号和候选图的原始 ID 返回，理由中不使用数字。"
+    raise ValueError("图表模型没有返回有效的逐题选图方案，请重试 A3")
+
+
+async def review_template_by_question(llm, request, charts, index, record):
+    from .question_planner import parse_selection
+
+    groups = {}
+    for chart in charts:
+        groups.setdefault(QUESTIONS[chart.data_contract["template_figure"]], []).append(chart)
+
+    async def progress(kind: str, completed: int, total: int):
+        await record("template_deep_progress", progress_kind=kind, completed=completed, total=total)
+
+    leads = {}
+    await progress("chart_plans", 0, len(groups))
+    for completed, group in enumerate(groups.values(), 1):
+        leads.update(await select_template_leads(llm, request.question_briefs, group))
+        await progress("chart_plans", completed, len(groups))
+    await progress("chart_reviews", 0, len(charts))
+    reviewed = 0
+    system = (
+        "你是金融研报图表审校员。根据图表及其数据契约，逐图核对读者能否识别单位、期间及比较口径。"
+        "每张图写一句具体的解读注意点，例如同比基数、分位样本窗口、样本归属或单位差别。"
+        '只返回 JSON {"reviews":{"原始图表ID":"审校要点"}}。'
+        "每个 ID 只能出现一次，每条十至一百二十字。"
+    )
+
+    async def audit(group):
+        nonlocal reviewed
+        for chart in group:
+            issues = validate_template_chart(chart, index, request.report.as_of)
+            if issues:
+                raise ValueError(f"{chart.chart_id}：{'；'.join(issues)}")
+        qid = QUESTIONS[group[0].data_contract["template_figure"]]
+        packet = {
+            "lead_chart": leads[qid][0],
+            "charts": [
+                {"id": c.chart_id, "title": c.title, "layout": c.data_contract["layout"],
+                 "categories": c.data_contract["categories"], "units": c.data_contract["series_units"],
+                 "note": c.footnotes, "sources": len(c.evidence_ids)}
+                for c in group
+            ],
+        }
+        payload = json.dumps(packet, ensure_ascii=False)
+        expected = {c.chart_id for c in group}
+        for _ in range(2):
+            reviews = parse_selection(await llm.select_cards(system, payload)).get("reviews")
+            if isinstance(reviews, dict) and reviews.keys() == expected and all(
+                isinstance(text, str) and 10 <= len(text.strip()) <= 120 and not re.search(r"[<>]", text)
+                for text in reviews.values()
+            ):
+                reviewed += len(reviews)
+                await progress("chart_reviews", reviewed, len(charts))
+                return {key: value.strip() for key, value in reviews.items()}
+            payload += "\n请为每个列表中原始图表 ID 写一条审校要点，完整返回 JSON。"
+        raise ValueError(f"{qid} 模型未返回完整的图表审校")
+
+    reviews = {}
+    for group in groups.values():
+        reviews.update(await audit(group))
+    return leads, reviews
+
+
+async def run_template(request, run_id, artifact_dir, record, events, llm=None):
     from .models import (
         ChartGenerationResult, ChartQualityReport, QuestionChartPlan,
         QuestionCoverageItem, QuestionPlanItem, SuppressedChart,
@@ -399,14 +503,30 @@ async def run_template(request, run_id, artifact_dir, record, events):
     index = {**report.evidence_index, **template_evidence(report)}
     charts, missing = template_charts(index, report.as_of)
     chart_ids = {chart.data_contract["template_figure"]: chart.chart_id for chart in charts}
+    leads, reviews = {}, {}
+    if request.require_model and charts:
+        await record("template_model_planning_started", questions=len(set(QUESTIONS.values())))
+        if request.deep_nev_review:
+            leads, reviews = await review_template_by_question(llm, request, charts, index, record)
+        else:
+            leads = await select_template_leads(llm, request.question_briefs, charts)
+        purposes = {cid: purpose for cid, purpose in leads.values()}
+        for chart in charts:
+            if chart.chart_id in purposes:
+                chart.insight_goal = purposes[chart.chart_id]
+        await record("template_model_planning_completed", questions=len(leads))
     questions, coverage = [], []
     for qid in dict.fromkeys(QUESTIONS.values()):
         numbers = [number for number, owner in QUESTIONS.items() if owner == qid]
         ids = [chart_ids[number] for number in numbers if number in chart_ids]
         gaps = [f"图 {number} {TITLES[number - 1]}" for number in numbers if number in missing]
+        chosen = leads.get(qid)
+        primary = [chosen[0]] if chosen else ids[:1]
         questions.append(QuestionPlanItem(
-            question_id=qid, primary_card_ids=[f"CARD-{cid}" for cid in ids[:1]],
-            supporting_card_ids=[f"CARD-{cid}" for cid in ids[1:]], uncovered=gaps,
+            question_id=qid, primary_card_ids=[f"CARD-{cid}" for cid in primary],
+            supporting_card_ids=[f"CARD-{cid}" for cid in ids if cid not in primary], uncovered=gaps,
+            rationale=chosen[1] if chosen else "",
+            selection_source="llm" if chosen else "deterministic_fallback",
         ))
         coverage.append(QuestionCoverageItem(
             question_id=qid, chart_ids=ids, uncovered=gaps,
@@ -431,7 +551,7 @@ async def run_template(request, run_id, artifact_dir, record, events):
             SuppressedChart(title=TITLES[number - 1], reason_code="template_evidence_gap", reason=why)
             for number, why in missing.items()
         ],
-        warnings=issues, question_plan=plan, question_coverage=legacy_question_coverage(plan),
+        warnings=issues, question_plan=plan, question_coverage=legacy_question_coverage(plan), template_reviews=reviews,
         artifact_dir=str(artifact_dir.resolve()) if artifact_dir else None,
     )
     await record("chart_generation_completed", ready=len(charts), suppressed=len(missing))

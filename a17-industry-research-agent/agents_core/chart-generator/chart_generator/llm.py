@@ -110,6 +110,7 @@ class OpenAICompatibleLLM:
                     continue
                 raise
 
+    @model_call
     async def select_cards(self, system_prompt: str, user_prompt: str) -> str:
         """A3 用户问题驱动选图（方案 5.4）：无工具、结构化 JSON 的单次选卡调用。
 

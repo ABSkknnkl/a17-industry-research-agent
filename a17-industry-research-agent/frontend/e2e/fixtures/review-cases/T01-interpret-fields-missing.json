@@ -1,0 +1,33 @@
+{
+  "case_id": "T01",
+  "category": "字段缺失",
+  "title": "阶段二研判与标的池字段整体缺失",
+  "mock_review_stage": "data_interpret",
+  "state_patch": {
+    "stage_results": {
+      "data_interpret": {
+        "data": {
+          "insights": null,
+          "findings": null,
+          "key_findings": null,
+          "claims": null,
+          "comps_matrix": null
+        }
+      }
+    }
+  },
+  "review_response": null,
+  "expect": {
+    "ui": [
+      "「补充背景知识与修正判断」弹窗研判区显示空态文案，不得出现 J-1「产业处于高景气周期与出海放量红利期」等内置样例",
+      "「标的池与可比公司调整」弹窗表格显示空态，不得出现「样本龙头甲/乙」",
+      "阶段二指标卡「结论主张」「引用证据」显示 0 或 —，不得报错"
+    ],
+    "buttons": {
+      "btn-approve": "enabled（缺失属可确认缺口，不硬阻塞）",
+      "modal.knowledge_judgment.submit": "disabled（无可裁决条目）",
+      "modal.comps.submit": "enabled（空表按空数组提交，兼容既有防编造契约 ReportEditing.contract.spec.ts；仅当存在非法条目时禁用）"
+    },
+    "request": "点击禁用的研判提交按钮不得发出 POST /reviews；空标的池表允许提交，edited_data.comps_matrix.entries === []"
+  }
+}

@@ -515,6 +515,34 @@ class DataInterpreterAgent:
                 "facts": len(knowledge_facts), "insights": len(insights), "validated": len(checks),
             }))
 
+        if verified_nev and dataset.quality_summary.get("live_fetch"):
+            from .nev_findings import interpret_nev_insights, interpret_nev_questions
+
+            trace.append(AnalysisTraceEvent(event="nev_semantic_started"))
+            try:
+                if request.deep_nev_analysis:
+                    def progress(kind: str, done: int, total: int) -> None:
+                        trace.append(AnalysisTraceEvent(
+                            event="nev_deep_progress",
+                            details={"progress_kind": kind, "completed": done, "total": total},
+                        ))
+
+                    question_insights = await interpret_nev_questions(
+                        self.llm, evidence, request.focus_points[:5], requirement_matrix, insights, progress,
+                    )
+                    insights = [*insights, *question_insights]
+                    progress("analysis_synthesis", 0, 1)
+                insights = await interpret_nev_insights(
+                    self.llm, insights, evidence, request.focus_points, deep_review=request.deep_nev_analysis,
+                )
+            finally:
+                if isinstance(self.llm, OpenAICompatibleLLM):
+                    await self.llm.aclose()
+            semantic_status = "completed"
+            trace.append(AnalysisTraceEvent(
+                event="semantic_fusion_completed", details={"validated_insights": len(insights)},
+            ))
+
         if request.enable_semantic_analysis and self.llm.is_available and evidence:
             # 语义通道的两个产出先置空：except 分支要在失败时如实报告「拓扑有没有拿到」，
             # 若等到 try 内赋值再引用，异常路径会直接 NameError 盖掉真实错因。

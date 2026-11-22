@@ -742,7 +742,7 @@
       <div class="hero-fact">
         <span class="hf-value">{{ format_card_value(mc.value, mc.unit) }}</span>
         <span class="hf-name">{{ mc.label }}</span>
-        <span class="hf-entity">{{ mc.period or "" }} {{ research.citations(mc.evidence_ids, lookup, "source-") }}</span>
+        <span class="hf-entity">{{ mc.period or "" }}{% if mc.change_rate %} · {{ mc.change_rate }}{% endif %} {{ research.citations(mc.evidence_ids, lookup, "source-") }}</span>
       </div>
       {% endfor %}
     </div>
@@ -797,7 +797,18 @@
 {% endif %}
     <header class="chapter-heading"><h2>执行摘要与核心研判</h2></header>
       <p class="chapter-summary">{{ view.executive_summary.headline }}</p>
+      {% if view.investment_rating %}
+      <p class="chapter-summary"><strong>人工确认评级</strong> {{ view.investment_rating }}</p>
+      {% endif %}
     </div>
+    {% if view.executive_summary.metric_cards|length > 4 %}
+    <h3>其他核心量化指标</h3>
+    <ul>
+      {% for mc in view.executive_summary.metric_cards[4:] %}
+      <li><strong>{{ mc.label }}</strong>：{{ format_card_value(mc.value, mc.unit) }}（{{ mc.period or '期间见证据' }}{% if mc.change_rate %} · {{ mc.change_rate }}{% endif %}） {{ research.citations(mc.evidence_ids, lookup, "source-") }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
     <h3>核心结论与驱动</h3>
     <ul>
       {% for c in view.executive_summary.conclusions %}

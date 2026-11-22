@@ -27,12 +27,23 @@ const intentPlanCount = computed(() => {
   return plans && typeof plans === 'object' ? Object.keys(plans).length : 0
 })
 
-/** data_interpret：结论引用的证据去重数量 */
+/**
+ * data_interpret：核心研判与其引用的证据去重数量。
+ *
+ * P1-1：A2 真实产出是 `insights[]`（evidence_record_ids），不是 `claims[]`
+ * （evidence_ids）。历史实现读 claims 导致两张卡恒为 0。这里以 insights 为主、
+ * claims 为兼容回退，两种证据字段都收。
+ */
+const insights = computed(() => {
+  const primary = asArray<Record<string, unknown>>(d.value.insights)
+  return primary.length ? primary : asArray<Record<string, unknown>>(d.value.claims)
+})
+
 const evidenceCount = computed(() => {
-  const claims = asArray<Record<string, unknown>>(d.value.claims)
   const ids = new Set<string>()
-  for (const claim of claims) {
-    for (const id of asArray<unknown>(claim.evidence_ids)) ids.add(String(id))
+  for (const insight of insights.value) {
+    const refs = asArray<unknown>(insight.evidence_record_ids ?? insight.evidence_ids)
+    for (const id of refs) ids.add(String(id))
   }
   return ids.size
 })
@@ -110,7 +121,7 @@ const metrics = computed<MetricItem[]>(() => {
       return [
         {
           label: '结论主张',
-          value: String(countOf('claims')),
+          value: String(insights.value.length),
           hint: '分析产出的核心结论',
           tone: 'primary',
         },

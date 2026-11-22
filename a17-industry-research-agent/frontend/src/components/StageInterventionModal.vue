@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { Cpu, View, EditPen, Promotion, Check } from '@element-plus/icons-vue'
 import type { StageName, PeerCompsEntry, PeerCompsMatrix, ReportQualityReport } from '../api/types'
 import { STAGE_LABELS } from '../api/types'
+import { metricLabel, normalizeMetricAmount, formatMetricChange } from '../api/labels'
 import PartialRefetchPanel from './PartialRefetchPanel.vue'
 
 interface SourceContextRecord {
@@ -12,14 +13,6 @@ interface SourceContextRecord {
   entity_name?: string
   entity?: string
   name?: string
-}
-interface FindingSource {
-  id?: string
-  title?: string
-  claim?: string
-  text?: string
-  content?: string
-  description?: string
 }
 type ChartDatum =
   number | string | number[] | null | { name?: string; value?: number | number[] | string | null }
@@ -58,17 +51,42 @@ interface ChartSource extends Record<string, unknown> {
   benchmark_line?: number | null
   emphasis_note?: string
 }
+interface InsightSource extends Record<string, unknown> {
+  insight_id?: string
+  title?: string
+  conclusion?: string
+  significance?: string
+  confidence?: string
+  evidence_record_ids?: string[]
+  review_status?: string
+}
 interface MetricCardSource extends Record<string, unknown> {
   title?: string
   id?: string
   metric_id?: string
   label?: string
   name?: string
-  value?: string | number
-  unit?: string
+  entity?: string
+  value?: string | number | null
+  unit?: string | null
   change_rate?: string
   change?: string
+  change_pct?: number | null
+  percentage_point_change?: number | null
+  evidence_record_ids?: string[]
   tone?: 'up' | 'down' | 'neutral'
+}
+
+/**
+ * 跨阶段只读补充数据。
+ *
+ * 为什么需要：阶段二的可比公司矩阵实际由融合阶段产出（`report_fusion.data.comps_matrix`），
+ * 执行摘要文本在 `data_interpret.data.executive_summary`，而本弹窗只拿到当前阶段的 data。
+ * 由工作台显式传入，避免组件凭空兜底出假数据。
+ */
+interface CrossStageData {
+  compsMatrix?: PeerCompsMatrix | null
+  executiveSummary?: string | null
 }
 
 const props = defineProps<{
@@ -80,6 +98,7 @@ const props = defineProps<{
   submitting?: boolean
   initialTab?: string
   chapterRepair?: { chapters: number[]; instruction: string }
+  crossStage?: CrossStageData
 }>()
 
 const emit = defineEmits<{
@@ -162,6 +181,15 @@ function removeKeyword(idx: number) {
   activeKeywords.value.splice(idx, 1)
 }
 
+/**
+ * P1-3：`data_fetch.keywords` 实际下发的是整段研究问题（可达数百字），
+ * 直接铺进标签云会撑爆布局。这里只截断**展示**，提交仍用全文，不丢信息。
+ */
+function keywordDisplay(kw: string): string {
+  const text = String(kw ?? '')
+  return text.length > 24 ? `${text.slice(0, 24)}…` : text
+}
+
 function addKeyword() {
   const kw = newKeywordInput.value.trim()
   if (kw && !activeKeywords.value.includes(kw)) {
@@ -199,7 +227,8 @@ function handlePartialRefetchPanelSubmit(payload: {
   emit('update:visible', false)
 }
 
-function handleScopeKeywordsRevise() {  const selectedScope = scopeDomains.value.filter((s) => s.checked).map((s) => s.id)
+function handleScopeKeywordsRevise() {
+  const selectedScope = scopeDomains.value.filter((s) => s.checked).map((s) => s.id)
   emit('submitRevise', {
     comment: `按人工确认的检索范围[${selectedScope.join(', ')}]与关键词[${activeKeywords.value.join(', ')}]重新检索`,
     edited_data: {
@@ -268,11 +297,14 @@ function handlePartialRefetchSubmit() {
 // =========================================================================
 // 2.0 补充专家背景知识与修正核心判断 (Knowledge & Judgments)
 const expertBackgroundNotes = ref('')
+const expertBackgroundOriginal = ref('')
 interface JudgmentItem {
   id: string
   title: string
   text: string
   decision: 'confirm' | 'modify' | 'reject'
+  /** 原始 insight 对象，提交时整体透传，保住证据 ID / 置信度 / 关联指标 */
+  raw: InsightSource
 }
 const localJudgments = ref<JudgmentItem[]>([])
 
@@ -289,54 +321,69 @@ function quickFillExpertKnowledge(type: string) {
   }
 }
 
+/**
+ * P0-1：研判来源是 A2 真实产出的 `insights[]`
+ * （insight_id / title / conclusion / significance / evidence_record_ids）。
+ *
+ * 历史实现读 findings / key_findings / claims —— 这三个键后端从不产出，
+ * 于是永远落到两条内置样例研判，用户裁决的是假数据，且提交写的键无人消费。
+ * 现在只读 insights，取不到就空态，绝不兜底样例。
+ */
 function initKnowledgeAndJudgment() {
   expertBackgroundNotes.value = String(
     props.data?.expert_background || props.data?.prior_notes || ''
   )
-  const rawFindings = (props.data?.findings ||
-    props.data?.key_findings ||
-    props.data?.claims ||
-    []) as (FindingSource | string)[]
-  if (Array.isArray(rawFindings) && rawFindings.length > 0) {
-    localJudgments.value = rawFindings.map((value, i) => {
-      const f = typeof value === 'string' ? { text: value } : value
-      return {
-        id: f.id || `J-${i + 1}`,
-        title: f.title || f.claim || `核心研判 #${i + 1}`,
-        text: f.text || f.content || f.description || '',
-        decision: 'confirm',
-      }
-    })
-  } else {
-    localJudgments.value = [
-      {
-        id: 'J-1',
-        title: '产业处于高景气周期与出海放量红利期',
-        text: '行业龙头依托技术代际差与客户黏性享受溢价，海外出海份额持续提升。',
-        decision: 'confirm',
-      },
-      {
-        id: 'J-2',
-        title: '上游供给扩张带动成本曲线优化',
-        text: '原材料价格进入合理平稳区间，中下游制造环节毛利出现修复拐点。',
-        decision: 'confirm',
-      },
-    ]
+  expertBackgroundOriginal.value = expertBackgroundNotes.value
+  const rawInsights = props.data?.insights
+  if (!Array.isArray(rawInsights)) {
+    localJudgments.value = []
+    return
   }
+  localJudgments.value = (rawInsights as InsightSource[]).map((insight, i) => {
+    const conclusion = String(insight.conclusion ?? '')
+    const significance = String(insight.significance ?? '')
+    return {
+      id: String(insight.insight_id || `I-${i + 1}`),
+      title: String(insight.title || `核心研判 #${i + 1}`),
+      text: [conclusion, significance].filter(Boolean).join('\n'),
+      decision: insight.review_status === 'rejected' ? 'reject' : 'confirm',
+      raw: JSON.parse(JSON.stringify(insight)) as InsightSource,
+    }
+  })
 }
 
+/**
+ * 提交只回写 `insights`：后端 `_apply_direct_edit` 会把它合并进
+ * interpretation_report.json，A3/A4/A5 均从此处取结论。
+ *
+ * 剔除采用软标记 `review_status='rejected'`，不物理删除，保证证据链可追溯。
+ */
 function handleKnowledgeAndJudgmentSubmit() {
-  const activeFindings = localJudgments.value
-    .filter((j) => j.decision !== 'reject')
-    .map((j) => ({ id: j.id, title: j.title, text: j.text }))
-
+  if (!localJudgments.value.length) {
+    ElMessage.warning('本阶段没有可裁决的研判条目，请先重新生成数据解读')
+    return
+  }
+  const insights = localJudgments.value.map((j) => {
+    const next: InsightSource = { ...j.raw }
+    next.title = j.title
+    // 编辑框里是「结论 +  significance」合并文本；未修正时保持原字段拆分不变
+    if (j.decision === 'modify') {
+      next.conclusion = j.text
+      next.significance = ''
+    }
+    next.review_status = j.decision === 'reject' ? 'rejected' : 'active'
+    return next
+  })
+  const edited: Record<string, unknown> = { insights }
+  const background = expertBackgroundNotes.value.trim()
+  // 未填写且原本也没有先验时不下发，避免用空串覆盖既有背景知识
+  if (background || expertBackgroundOriginal.value) {
+    edited.expert_background = background
+  }
+  const kept = insights.filter((item) => item.review_status !== 'rejected').length
   emit('submitDirectEdit', {
-    edited_data: {
-      expert_background: expertBackgroundNotes.value.trim(),
-      findings: activeFindings,
-      key_findings: activeFindings,
-    },
-    comment: `补充专家背景知识并修正核心判断（确认 ${activeFindings.length} 条研判论据）`,
+    edited_data: edited,
+    comment: `补充专家背景知识并修正核心判断（保留 ${kept} 条 / 剔除 ${insights.length - kept} 条研判）`,
   })
   emit('update:visible', false)
 }
@@ -353,8 +400,15 @@ interface LocalCompItem extends Record<string, unknown> {
 const localComps = ref<LocalCompItem[]>([])
 let originalCompsMatrix: PeerCompsMatrix = { entries: [] }
 
+/**
+ * P1-2：可比公司矩阵实际由融合阶段产出，A2 的 stage data 里没有 comps_matrix。
+ * 优先用当前阶段的，其次用工作台传入的融合阶段矩阵；都没有就空表（不造样例公司）。
+ */
 function initCompsData() {
-  const matrix = (props.data?.comps_matrix || { entries: [] }) as PeerCompsMatrix
+  const own = props.data?.comps_matrix
+  const matrix = (
+    own && typeof own === 'object' ? own : (props.crossStage?.compsMatrix ?? { entries: [] })
+  ) as PeerCompsMatrix
   originalCompsMatrix = JSON.parse(JSON.stringify(matrix))
   const entries = matrix.entries ?? matrix.comps ?? []
   localComps.value = entries.map((entry) => ({ ...JSON.parse(JSON.stringify(entry)) }))
@@ -374,6 +428,26 @@ function addCompRow() {
 function removeCompRow(idx: number) {
   localComps.value.splice(idx, 1)
 }
+
+/** 数值单元格：留空合法（表示缺失），非空必须可解析为有限数 */
+function numericCellValid(value: unknown): boolean {
+  if (value === undefined || value === null) return true
+  if (typeof value === 'number') return Number.isFinite(value)
+  const text = String(value).trim()
+  if (text === '') return true
+  return Number.isFinite(Number(text))
+}
+
+/** T04：公司名空白或市值/PE 非法时禁用保存；空表按既有契约允许提交空矩阵（不编造公司） */
+const compsEditable = computed(() => localComps.value.length > 0)
+const compsValid = computed(() =>
+  localComps.value.every(
+    (c) =>
+      String(c.company_name ?? '').trim().length > 0 &&
+      numericCellValid(c.market_cap) &&
+      numericCellValid(c.pe_ttm)
+  )
+)
 
 function handleCompsSubmit() {
   const entries: PeerCompsEntry[] = []
@@ -849,7 +923,26 @@ watch(editActiveChapId, (newId) => {
   }
 })
 
+function addReviewParagraph(): void {
+  const section = currentEditSection.value
+  if (!section || section.paragraphs.length) return
+  section.paragraphs.push({
+    paragraph_id: `P-${section.section_id.slice(4)}-99`,
+    kind: 'finding',
+    text: '',
+    evidence_ids: [],
+  })
+}
+
 function handleParagraphEditSubmit() {
+  const added = localChapterList.value
+    .flatMap((chapter) => chapter.sections)
+    .flatMap((section) => section.paragraphs)
+    .find((paragraph) => paragraph.paragraph_id.endsWith('-99') && !paragraph.text.trim())
+  if (added) {
+    ElMessage.warning('请填写补写段落后再保存')
+    return
+  }
   emit('submitDirectEdit', {
     edited_data: {
       chapters: localChapterList.value,
@@ -959,28 +1052,54 @@ function initMetricCards() {
   const rawCards = (props.data?.key_metrics ||
     props.data?.metrics_cards ||
     []) as MetricCardSource[]
-  if (Array.isArray(rawCards) && rawCards.length > 0) {
-    localMetricCards.value = rawCards.map((m, i) => ({
-      ...m,
-      id: m.id || m.metric_id || `M-${i + 1}`,
-      label: m.label || m.name || m.title || `核心指标 ${i + 1}`,
-      value: String(m.value ?? ''),
-      unit: m.unit || '',
-      change_rate: m.change_rate || m.change || '',
-      tone: m.tone || 'neutral',
-    }))
-  } else {
+  if (!Array.isArray(rawCards) || rawCards.length === 0) {
     localMetricCards.value = []
+    return
   }
+  /**
+   * P0-3：真实 key_metrics 是 { name:'revenue', entity:'比亚迪', value:803964958000,
+   * unit:'元', change_pct:0.0345 }，没有 label / change_rate。
+   * 后端 refresh_edited_exports 用 label/value/unit 生成报告指标卡，
+   * 因此这里必须先把英文字段名译成中文、把元归一到亿元、把小数比例转成百分比，
+   * 否则报告里会出现「revenue 803964958000 元」。
+   */
+  localMetricCards.value = rawCards.map((m, i) => {
+    const amount = normalizeMetricAmount(m.value, m.unit)
+    const entity = String(m.entity ?? '').trim()
+    const metric = metricLabel(m.name || m.label || m.title || '')
+    const fallbackLabel = [entity, metric].filter(Boolean).join(' ')
+    return {
+      ...m,
+      id: String(m.id || m.metric_id || `M-${i + 1}`),
+      label: m.label || fallbackLabel || `核心指标 ${i + 1}`,
+      value: m.label ? String(m.value ?? '') : amount.value,
+      unit: m.label ? String(m.unit ?? '') : amount.unit,
+      change_rate:
+        m.change_rate || m.change || formatMetricChange(m.change_pct, m.percentage_point_change),
+      tone: m.tone || 'neutral',
+    }
+  })
 }
 
+/** T03：数值必须可解析（允许千分位）；空表按既有契约允许提交空数组（不编造指标） */
+const metricCardsValid = computed(() =>
+  localMetricCards.value.every((m) => {
+    const text = String(m.value ?? '').trim()
+    if (!text) return false
+    if (!Number.isFinite(Number(text.replace(/,/g, '')))) return false
+    return String(m.label ?? '').trim().length > 0
+  })
+)
+
 function handleMetricCardsSubmit() {
+  if (!metricCardsValid.value) {
+    ElMessage.warning('指标数值无法解析或指标名为空，请修正后再保存')
+    return
+  }
+  // 只回写 key_metrics：metrics_cards 不在 ReportViewModel 字段内，属死键
   emit('submitDirectEdit', {
-    edited_data: {
-      key_metrics: localMetricCards.value,
-      metrics_cards: localMetricCards.value,
-    },
-    comment: '定制开篇核心量化指标卡',
+    edited_data: { key_metrics: localMetricCards.value },
+    comment: `定制开篇核心量化指标卡（共 ${localMetricCards.value.length} 张）`,
   })
   emit('update:visible', false)
 }
@@ -989,30 +1108,69 @@ function handleMetricCardsSubmit() {
 const localReportTitle = ref('')
 const localRating = ref('')
 const localSummaryText = ref('')
+const summaryOriginal = ref('')
+const titleOriginal = ref('')
+const ratingOriginal = ref('')
+/** 取不到任何摘要来源时置只读，避免用空串覆盖报告 headline */
+const summaryEditable = ref(false)
 
 function initFusionSummary() {
   localReportTitle.value = String(props.data?.title || '深度行业研究报告')
   localRating.value = String(props.data?.investment_rating || props.data?.rating || '')
+  titleOriginal.value = localReportTitle.value
+  ratingOriginal.value = localRating.value
+
+  /**
+   * P0-2：融合阶段 data 里没有 executive_summary（摘要对象在 report_view.json，
+   * 文本在 data_interpret）。历史实现读不到就留空，提交时无条件带 ''，
+   * 被后端转成 { headline: '' }，直接清空报告摘要。
+   * 这里按「融合显式 headline → 融合摘要 → 工作台传入的 A2 摘要」取值，
+   * 全都取不到则只读，并且提交时不下发该键。
+   */
   const es = props.data?.executive_summary
-  if (typeof es === 'string') {
-    localSummaryText.value = es
+  let text = ''
+  if (typeof props.data?.executive_summary_headline === 'string') {
+    text = props.data.executive_summary_headline
+  } else if (typeof es === 'string') {
+    text = es
   } else if (Array.isArray(es)) {
-    localSummaryText.value = es.join('\n\n')
+    text = es.join('\n\n')
   } else if (es && typeof es === 'object') {
-    localSummaryText.value = String(
-      ('text' in es && es.text) || ('content' in es && es.content) || JSON.stringify(es)
-    )
+    const obj = es as Record<string, unknown>
+    text = String(obj.headline || obj.text || obj.content || '')
   }
+  if (!text) text = String(props.crossStage?.executiveSummary ?? '')
+  localSummaryText.value = text
+  summaryOriginal.value = text
+  summaryEditable.value = text.length > 0
 }
 
 function handleSummaryRatingSubmit() {
+  const edited: Record<string, unknown> = {
+    title: localReportTitle.value,
+    investment_rating: localRating.value,
+  }
+  const changed: string[] = []
+  if (localReportTitle.value !== titleOriginal.value) changed.push('标题')
+  if (localRating.value !== ratingOriginal.value) changed.push('投资评级')
+  /**
+   * P0-2：摘要是唯一会造成数据丢失的键 —— 融合阶段 data 里本来就没有它，
+   * 无条件带 '' 会被后端转成 { headline: '' } 清空报告摘要。
+   * 因此只有「取到了初值 且 确实改动 且 非空」时才下发。
+   */
+  if (summaryEditable.value && localSummaryText.value !== summaryOriginal.value) {
+    if (!localSummaryText.value.trim()) {
+      ElMessage.warning('执行摘要不能为空，如需保留原摘要请撤销修改')
+      return
+    }
+    edited.executive_summary = localSummaryText.value
+    changed.push('执行摘要')
+  }
   emit('submitDirectEdit', {
-    edited_data: {
-      title: localReportTitle.value,
-      investment_rating: localRating.value,
-      executive_summary: localSummaryText.value,
-    },
-    comment: '完成投资评级确认与执行摘要终审定稿',
+    edited_data: edited,
+    comment: changed.length
+      ? `完成投资评级确认与执行摘要终审定稿（更新：${changed.join('、')}）`
+      : '完成投资评级确认与执行摘要终审定稿',
   })
   emit('update:visible', false)
 }
@@ -1165,9 +1323,10 @@ const dialogTitle = computed(() => {
                 closable
                 size="large"
                 class="kw-tag"
+                :title="kw"
                 @close="removeKeyword(idx)"
               >
-                {{ kw }}
+                {{ keywordDisplay(kw) }}
               </el-tag>
               <div class="kw-add-box">
                 <el-input
@@ -1334,6 +1493,12 @@ const dialogTitle = computed(() => {
               </div>
 
               <div class="judgments-list">
+                <el-empty
+                  v-if="!localJudgments.length"
+                  description="本阶段未回传可裁决的研判条目，请先重新生成数据解读"
+                  :image-size="72"
+                  data-testid="judgments-empty"
+                />
                 <div
                   v-for="j in localJudgments"
                   :key="j.id"
@@ -1382,6 +1547,8 @@ const dialogTitle = computed(() => {
                 type="success"
                 size="large"
                 :loading="submitting"
+                :disabled="submitting || !localJudgments.length"
+                data-testid="save-judgments"
                 @click="handleKnowledgeAndJudgmentSubmit"
               >
                 保存背景知识与判断修正 (就地生效)
@@ -1400,7 +1567,20 @@ const dialogTitle = computed(() => {
               >
             </div>
 
-            <el-table :data="localComps" size="small" height="340px" style="width: 100%" border>
+            <el-empty
+              v-if="!localComps.length"
+              description="本阶段未回传可比公司矩阵，可点击「+ 添加对标企业」手工建立样本池"
+              :image-size="72"
+              data-testid="comps-empty"
+            />
+            <el-table
+              v-else
+              :data="localComps"
+              size="small"
+              height="340px"
+              style="width: 100%"
+              border
+            >
               <el-table-column label="公司名称" min-width="130">
                 <template #default="{ row }">
                   <el-input v-model="row.company_name" size="small" />
@@ -1437,10 +1617,15 @@ const dialogTitle = computed(() => {
             </el-table>
 
             <div class="pane-footer">
+              <span v-if="compsEditable && !compsValid" class="pane-error-hint">
+                公司名称不能为空，市值与 PE 必须为有效数值（留空表示缺失）
+              </span>
               <el-button
                 type="success"
                 size="large"
                 :loading="submitting"
+                :disabled="submitting || !compsValid"
+                data-testid="save-comps"
                 @click="handleCompsSubmit"
               >
                 保存标的池调整 (就地毫秒级生效)
@@ -1672,6 +1857,12 @@ const dialogTitle = computed(() => {
             </div>
 
             <div v-if="currentEditSection" class="paragraphs-list">
+              <el-button
+                v-if="!currentEditSection.paragraphs.length"
+                plain
+                @click="addReviewParagraph"
+                >补写段落</el-button
+              >
               <div
                 v-for="(p, idx) in currentEditSection.paragraphs"
                 :key="p.paragraph_id || idx"
@@ -1684,6 +1875,17 @@ const dialogTitle = computed(() => {
                   }}</el-tag>
                 </div>
                 <el-input v-model="p.text" type="textarea" :rows="3" style="margin-top: 6px" />
+                <el-input
+                  v-if="p.paragraph_id.endsWith('-99')"
+                  :model-value="p.evidence_ids?.join(', ')"
+                  placeholder="已有证据编号，以逗号分隔"
+                  style="margin-top: 6px"
+                  @update:model-value="
+                    p.evidence_ids = String($event)
+                      .split(/[,，、\s]+/)
+                      .filter(Boolean)
+                  "
+                />
               </div>
             </div>
 
@@ -1839,7 +2041,13 @@ const dialogTitle = computed(() => {
               张核心指标卡（可就地修改指标名、数值、单位、变化率与基调色彩）：
             </div>
 
-            <div class="metric-cards-grid">
+            <el-empty
+              v-if="!localMetricCards.length"
+              description="本阶段未回传核心指标，请先重新融合报告"
+              :image-size="72"
+              data-testid="metric-cards-empty"
+            />
+            <div v-else class="metric-cards-grid">
               <div v-for="(m, i) in localMetricCards" :key="m.id || i" class="m-card-item">
                 <div class="m-card-top">
                   <span class="m-idx">#{{ i + 1 }}</span>
@@ -1857,8 +2065,16 @@ const dialogTitle = computed(() => {
                       size="small"
                       placeholder="数值"
                       style="width: 60%"
+                      :class="{
+                        'cell-invalid': !numericCellValid(m.value) || !String(m.value ?? '').trim(),
+                      }"
                     />
-                    <el-input v-model="m.unit" size="small" placeholder="单位" style="width: 38%" />
+                    <el-input
+                      v-model="m.unit"
+                      size="small"
+                      placeholder="单位待确认"
+                      style="width: 38%"
+                    />
                   </div>
                   <el-input
                     v-model="m.change_rate"
@@ -1870,10 +2086,15 @@ const dialogTitle = computed(() => {
             </div>
 
             <div class="pane-footer">
+              <span v-if="localMetricCards.length && !metricCardsValid" class="pane-error-hint">
+                存在无法解析的指标数值或空指标名，请修正后再保存
+              </span>
               <el-button
                 type="success"
                 size="large"
                 :loading="submitting"
+                :disabled="submitting || !metricCardsValid"
+                data-testid="save-metric-cards"
                 @click="handleMetricCardsSubmit"
               >
                 保存 8 张核心指标卡定制 (就地生效)
@@ -1909,8 +2130,21 @@ const dialogTitle = computed(() => {
                   v-model="localSummaryText"
                   type="textarea"
                   :rows="6"
-                  placeholder="精修研报核心结论、投资亮点与估值判断摘要..."
+                  :readonly="!summaryEditable"
+                  data-testid="summary-text"
+                  :placeholder="
+                    summaryEditable
+                      ? '精修研报核心结论、投资亮点与估值判断摘要...'
+                      : '摘要需重新融合后编辑'
+                  "
                 />
+                <div
+                  v-if="!summaryEditable"
+                  class="pane-error-hint"
+                  data-testid="summary-readonly-hint"
+                >
+                  当前版本未取到执行摘要文本，已置为只读，避免保存时清空报告摘要。
+                </div>
               </el-form-item>
             </el-form>
 
@@ -1919,6 +2153,8 @@ const dialogTitle = computed(() => {
                 type="success"
                 size="large"
                 :loading="submitting"
+                :disabled="submitting"
+                data-testid="save-summary-rating"
                 @click="handleSummaryRatingSubmit"
               >
                 保存评级与执行摘要定稿 (就地生效)
@@ -2091,6 +2327,12 @@ const dialogTitle = computed(() => {
 .kw-tag {
   font-size: 12.5px;
   padding: 4px 10px;
+  max-width: 320px;
+}
+.kw-tag :deep(.el-tag__content) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .kw-add-box {
   display: flex;
@@ -2284,6 +2526,16 @@ const dialogTitle = computed(() => {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+.pane-error-hint {
+  color: var(--el-color-danger);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.cell-invalid :deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px var(--el-color-danger) inset;
 }
 .coverage-strip {
   display: flex;

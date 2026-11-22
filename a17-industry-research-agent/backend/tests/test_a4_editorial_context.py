@@ -122,3 +122,68 @@ def test_template_chart_matches_prose_by_series_when_points_have_no_metric():
     assert _align_chart_reference(section, "CHART-NEV-13", chart)
     assert not section.uncertainties
     assert "（见[CHART-NEV-13]）" in section.paragraphs[0].text
+
+
+def test_nev_revenue_share_readout_uses_complete_verified_sample_of_figure_eight():
+    from chapter_writer.editorial import section_observations
+
+    records = {
+        f"R-{i}": {"entity": name, "metric": "revenue", "value": 100 + i, "unit": "亿元",
+                   "scope": "consolidated", "period": "2025-12-31", "period_type": "annual",
+                   "currency": "CNY"}
+        for i, name in enumerate(("比亚迪", "长安汽车", "赛力斯", "宁德时代", "亿纬锂能"))
+    }
+    paragraphs = section_observations("SEC-04-01", records, ["CHART-NEV-08"])
+    assert len(paragraphs) == 2
+    assert "[CHART-NEV-08]" in paragraphs[0]["text"]
+    assert "合并营业收入合计为分母" in paragraphs[0]["text"]
+    assert all(set(p["evidence_ids"]) == records.keys() for p in paragraphs)
+    incomplete = {**records, "R-0": {**records["R-0"], "period": "2024-12-31"}}
+    assert not section_observations("SEC-04-01", incomplete, ["CHART-NEV-08"])
+
+def test_nev_market_readout_binds_each_chart_to_its_own_complete_series():
+    from chapter_writer.editorial import MARKET_VOLUME_METRICS, section_observations
+
+    figures = ["CHART-NEV-01", "CHART-NEV-02"]
+    evidence = {
+        f"{group}-{year}": {
+            "entity": "中国", "metric": metric, "period": f"{year}-12-31",
+            "period_type": "annual", "scope": "consolidated", "currency": "CNY",
+            "unit": "辆", "value": value,
+        }
+        for group, metric, values in (
+            ("sales", MARKET_VOLUME_METRICS[0], [10, 20, 30, 40, 50]),
+            ("exports", MARKET_VOLUME_METRICS[1], [10, 15, 20, 25, 45]),
+        )
+        for year, value in zip(range(2021, 2026), values)
+    }
+
+    sales, exports = section_observations("SEC-02-01", evidence, figures)
+    assert "同比增速低于2024年" in sales["text"] and figures[0] in sales["text"]
+    assert "同比增速高于2024年" in exports["text"] and figures[1] in exports["text"]
+    assert set(sales["evidence_ids"]) == {f"sales-{year}" for year in range(2021, 2026)}
+    assert set(exports["evidence_ids"]) == {f"exports-{year}" for year in range(2021, 2026)}
+    del evidence["exports-2024"]
+    assert not section_observations("SEC-02-01", evidence, figures)
+
+def test_nev_product_readout_requires_income_reconciliation_and_cost_evidence():
+    from chapter_writer.editorial import section_observations
+
+    def row(metric, value, scope):
+        return {"entity": "比亚迪", "metric": metric, "value": value, "scope": scope, "unit": "元",
+                "period": "2025-12-31", "period_type": "annual", "currency": "CNY"}
+
+    evidence = {"total": row("revenue", 100, "consolidated")}
+    for label, name, income, cost in (
+        ("auto", "汽车、汽车相关产品及其他产品", 80, 60),
+        ("phone", "手机部件、组装及其他产品", 19, 18),
+        ("other", "其他", 1, 1),
+    ):
+        evidence[f"{label}-revenue"] = row(f"product_revenue:{name}", income, "segment:product")
+        evidence[f"{label}-cost"] = row(f"product_cost:{name}", cost, "segment:product")
+    figures = ["CHART-NEV-07"]
+    income, gross = section_observations("SEC-03-03", evidence, figures)
+    assert set(income["evidence_ids"]) == {"total", "auto-revenue", "phone-revenue", "other-revenue"}
+    assert set(gross["evidence_ids"]) == evidence.keys() - {"total"}
+    evidence["total"]["value"] = 99
+    assert not section_observations("SEC-03-03", evidence, figures)

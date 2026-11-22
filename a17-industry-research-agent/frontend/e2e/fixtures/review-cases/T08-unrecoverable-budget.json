@@ -1,0 +1,35 @@
+{
+  "case_id": "T08",
+  "category": "审核状态异常",
+  "title": "不可恢复：运行时预算耗尽，重跑类按钮全部禁用",
+  "mock_review_stage": "chart_generate",
+  "state_patch": {
+    "stage_results": {
+      "chart_generate": {
+        "status": "waiting_review",
+        "error": "stage_attempt_limit_exceeded",
+        "data": {
+          "runtime_alert": {
+            "code": "stage_attempt_limit_exceeded",
+            "recoverable": false
+          }
+        }
+      }
+    }
+  },
+  "review_response": null,
+  "expect": {
+    "ui": [
+      "顶部红色告警「该任务已不可恢复（运行时预算耗尽）」可见",
+      "错误指引文案指向「取消任务后重新创建」，不得引导用户继续重试"
+    ],
+    "buttons": {
+      "btn-approve": "不存在",
+      "modal.morph_emphasis.trigger": "disabled",
+      "modal.new_chart.trigger": "disabled",
+      "repair-chapters": "不存在（非 chapter_write 阶段）",
+      "btn-cancel": "enabled"
+    },
+    "request": "禁用按钮点击不得发出 POST /reviews；仅 action=cancel 可发出"
+  }
+}

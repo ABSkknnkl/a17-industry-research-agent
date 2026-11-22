@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>四个算法，四张图看懂</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+<style>
+:root{
+  --paper:#F8F4EA;
+  --card:#FFFDF7;
+  --ink:#211D18;
+  --muted:#6F6457;
+  --brown:#6B4A2B;
+  --gold:#B4842E;
+  --green:#3E7A55;
+  --green-bg:#EAF2EC;
+  --red:#B0452E;
+  --red-bg:#F8E9E4;
+  --amber:#A9772A;
+  --amber-bg:#F6EEDD;
+  --line:rgba(107,74,43,.16);
+  --shadow:0 10px 30px rgba(80,58,30,.07);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(180,132,46,.10), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(107,74,43,.08), transparent 60%),
+    var(--paper);
+  color:var(--ink);
+  font-family:'Noto Sans SC','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  font-weight:400;
+  line-height:1.7;
+}
+.page{max-width:1120px;margin:0 auto;padding:64px 40px 72px}
+
+/* ---------- 头部 ---------- */
+.eyebrow{
+  font-size:12px;letter-spacing:.22em;color:var(--gold);
+  text-transform:uppercase;margin-bottom:18px;
+  display:flex;align-items:center;gap:12px;
+}
+.eyebrow::before{content:"";width:34px;height:1px;background:var(--gold)}
+h1{
+  font-family:'Noto Serif SC','Songti SC',serif;
+  font-weight:900;font-size:clamp(30px,4.4vw,52px);
+  line-height:1.24;margin:0 0 18px;letter-spacing:.01em;
+}
+h1 em{font-style:normal;color:var(--brown);}
+.dek{
+  font-size:clamp(15px,1.6vw,18px);color:var(--muted);
+  max-width:46em;margin:0 0 26px;
+}
+.dek strong{color:var(--ink);font-weight:500}
+.meta{display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;color:var(--muted);}
+.chip{
+  border:1px solid var(--line);border-radius:999px;
+  padding:4px 12px;background:rgba(255,253,247,.7)
+}
+
+/* ---------- 流程带 ---------- */
+.flow{
+  margin:40px 0 44px;padding:26px 24px;
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  box-shadow:var(--shadow);
+}
+.flow-title{font-size:12px;letter-spacing:.18em;color:var(--gold);margin-bottom:18px}
+.flow-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.step{position:relative;padding:14px 14px 12px;border-radius:12px;background:#FBF7EE;border:1px solid var(--line)}
+.step .s1{font-size:12px;color:var(--muted);letter-spacing:.06em}
+.step .s2{font-family:'Noto Serif SC',serif;font-weight:700;font-size:17px;margin:2px 0 4px;color:var(--brown)}
+.step .s3{font-size:12.5px;color:var(--muted);line-height:1.55}
+.step::after{
+  content:"→";position:absolute;right:-14px;top:50%;transform:translateY(-50%);
+  color:var(--gold);font-size:15px;background:var(--card);padding:0 3px;
+}
+.step:last-child::after{display:none}
+
+/* ---------- 卡片 ---------- */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:16px;
+  padding:26px 26px 22px;box-shadow:var(--shadow);
+  display:flex;flex-direction:column;
+  break-inside:avoid;
+}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.num{font-family:'Noto Serif SC',serif;font-weight:700;font-size:12px;color:var(--gold);letter-spacing:.14em}
+.tag{font-size:11.5px;letter-spacing:.08em;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.card h2{
+  font-family:'Noto Serif SC',serif;font-weight:700;
+  font-size:clamp(19px,2.1vw,24px);line-height:1.35;margin:0 0 6px;
+}
+.sub{font-size:13px;color:var(--muted);margin:0 0 16px}
+.viz{
+  background:#FCF9F1;border:1px dashed rgba(107,74,43,.22);border-radius:12px;
+  padding:14px 12px 8px;margin-bottom:16px;
+}
+.viz svg{width:100%;height:auto;display:block}
+.line{
+  margin:0 0 8px;font-size:14.5px;line-height:1.65;
+  padding-left:12px;border-left:2px solid var(--gold);
+}
+.edge{margin:0;font-size:12.5px;color:var(--muted);line-height:1.6;}
+.edge b{color:var(--red);font-weight:500}
+
+/* ---------- 小徽标 ---------- */
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.ok{background:var(--green-bg);color:var(--green);border:1px solid rgba(62,122,85,.25)}
+.no{background:var(--red-bg);color:var(--red);border:1px solid rgba(176,69,46,.22)}
+.warn{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(169,119,42,.25)}
+
+/* ---------- CLA 句块 ---------- */
+.sentence{font-family:'Noto Serif SC',serif;font-size:15px;line-height:1.9;margin-bottom:12px}
+.clauses{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.clause{display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.6;padding:7px 10px;border-radius:9px;border:1px solid transparent}
+.clause .mark{flex:0 0 auto;font-size:11px;letter-spacing:.05em;padding-top:1px}
+.c-keep{background:var(--green-bg);border-color:rgba(62,122,85,.2)}
+.c-drop{background:var(--red-bg);border-color:rgba(176,69,46,.18);opacity:.92}
+.c-assume{background:var(--amber-bg);border-color:rgba(169,119,42,.2)}
+.c-keep .mark{color:var(--green)}
+.c-drop .mark{color:var(--red)}
+.c-assume .mark{color:var(--amber)}
+.parts{display:flex;flex-wrap:wrap;gap:8px}
+.part{font-size:12.5px;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:#FBF7EE;color:var(--muted)}
+.part b{color:var(--ink);font-weight:500}
+.out{margin-top:12px;padding:11px 13px;border-radius:10px;background:#F4EFE2;border-left:3px solid var(--green);font-size:13.5px}
+.out span{color:var(--muted);font-size:11.5px;letter-spacing:.06em;display:block;margin-bottom:3px}
+
+/* ---------- 权重阶梯 ---------- */
+.ladder{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px;font-size:12px}
+.ladder .lv{padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:#FBF7EE}
+.ladder .op{color:var(--gold);font-weight:700}
+.ladder .lv.weak{border-color:rgba(176,69,46,.25);color:var(--red);background:var(--red-bg)}
+.ladder .lv.strong{border-color:rgba(62,122,85,.25);color:var(--green);background:var(--green-bg)}
+
+/* ---------- 收尾 ---------- */
+.closing{
+  margin-top:44px;padding:28px 28px 8px;border-radius:16px;
+  background:linear-gradient(180deg,#FFFDF7,#FBF6EA);
+  border:1px solid var(--line);
+}
+.closing h3{font-family:'Noto Serif SC',serif;font-size:18px;margin:0 0 16px;font-weight:700}
+.closing table{width:100%;border-collapse:collapse;font-size:13px}
+.closing th,.closing td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.closing th{color:var(--muted);font-weight:400;font-size:12px;letter-spacing:.04em}
+.closing td b{color:var(--brown);font-weight:600}
+.footnote{margin-top:18px;font-size:12px;color:var(--muted);line-height:1.7}
+.footnote b{color:var(--ink);font-weight:500}
+
+@media (max-width:900px){
+  .page{padding:44px 20px 56px}
+  .flow-row{grid-template-columns:1fr 1fr}
+  .step:nth-child(2)::after{display:none}
+  .step:nth-child(4)::after{display:none}
+  .grid{grid-template-columns:1fr}
+  .card{padding:22px 18px 18px}
+}
+@media print{
+  body{background:#fff}
+  .page{max-width:none;padding:0}
+  .card,.flow,.closing{box-shadow:none}
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="eyebrow">A17 · 核心算法 · 图解版</div>
+    <h1>看不懂字，<br>就看这<em>四张图</em></h1>
+    <p class="dek">四个算法不是四个功能，是四道<strong>“不许看起来对”</strong>的关卡。每一张图只回答一个问题：它在哪儿、拦住什么、靠什么拦。</p>
+    <div class="meta">
+      <span class="chip">4.1 数据核验与异常检测</span>
+      <span class="chip">4.2 断言核验与产业链拓扑修复</span>
+      <span class="chip">文字完整版：核心算法逆向说明书</span>
+    </div>
+  </header>
+
+  <!-- ================= 流程带 ================= -->
+  <section class="flow">
+    <div class="flow-title">四道关卡在流水线上的位置</div>
+    <div class="flow-row">
+      <div class="step">
+        <div class="s1">A1 取数</div>
+        <div class="s2">先判等</div>
+        <div class="s3">两条记录是不是同一个数<br>DPE 精度判等</div>
+      </div>
+      <div class="step">
+        <div class="s1">A2 解读</div>
+        <div class="s2">再找异常</div>
+        <div class="s3">谁离同业队伍太远<br>稳健 Z</div>
+      </div>
+      <div class="step">
+        <div class="s1">A4 写作</div>
+        <div class="s2">逐句核断言</div>
+        <div class="s3">哪半句有出处<br>CLA 断言核验</div>
+      </div>
+      <div class="step">
+        <div class="s1">A3 / A5 出图</div>
+        <div class="s2">最后修拓扑</div>
+        <div class="s3">判得出的错要修得好<br>RPD 裁判与修复</div>
+      </div>
+    </div>
+  </section>
+
+  <main class="grid">
+
+    <!-- ================= 01 DPE ================= -->
+    <article class="card">
+      <div class="card-head"><span class="num">01 / DPE</span><span class="tag">4.1 · 精度判等</span></div>
+      <h2>两个数，是不是同一个数？</h2>
+      <p class="sub">不判谁对谁错，只判要不要把它们当成吵架。</p>
+
+      <div class="viz">
+        <svg viewBox="0 0 560 210" role="img" aria-label="16.2 的精度覆盖区间与 16.17、16.25 的落点">
+          <rect x="190" y="96" width="200" height="54" fill="#3E7A55" opacity="0.13"/>
+          <line x1="40" y1="150" x2="530" y2="150" stroke="#6B4A2B" stroke-width="1.2"/>
+          <line x1="190" y1="96" x2="190" y2="150" stroke="#3E7A55" stroke-width="1" stroke-dasharray="4 3"/>
+          <line x1="390" y1="96" x2="390" y2="150" stroke="#3E7A55" stroke-width="1" stroke-dasharray="4 3"/>
+          <text x="196" y="86" font-size="11" fill="#3E7A55">这一档覆盖 16.15 — 16.25</text>
+          <g font-size="11" fill="#6F6457" text-anchor="middle">
+            <line x1="90" y1="150" x2="90" y2="158" stroke="#6F6457"/><text x="90" y="176">16.10</text>
+            <line x1="290" y1="150" x2="290" y2="158" stroke="#6F6457"/><text x="290" y="176">16.20</text>
+            <line x1="490" y1="150" x2="490" y2="158" stroke="#6F6457"/><text x="490" y="176">16.30</text>
+          </g>
+          <circle cx="290" cy="150" r="6" fill="#211D18"/>
+          <text x="290" y="196" font-size="12" fill="#211D18" text-anchor="middle" font-weight="500">披露值 16.2</text>
+          <circle cx="230" cy="126" r="5" fill="#3E7A55"/>
+          <text x="230" y="116" font-size="12" fill="#3E7A55" text-anchor="middle">16.17 ✓</text>
+          <circle cx="390" cy="126" r="5" fill="#B0452E"/>
+          <text x="398" y="116" font-size="12" fill="#B0452E" text-anchor="start">16.25 → 16.3</text>
+          <path d="M230 126 Q258 126 286 140" fill="none" stroke="#3E7A55" stroke-width="1.4" stroke-dasharray="3 3"/>
+        </svg>
+      </div>
+
+      <div class="parts" style="margin-bottom:12px">
+        <span class="part"><b>16.2</b> 报到 0.1，覆盖 16.15—16.25</span>
+        <span class="part"><b>16.17</b> 落在里面 → 同一个数</span>
+        <span class="part"><b>16.25</b> 正好出界，进位成 16.3</span>
+      </div>
+
+      <p class="line">精度从原始披露串里读，不设百分比容差；细的向粗的舍入，方向不可反。</p>
+      <p class="edge"><b>它不管：</b>这个数本身对不对。原始串丢了，只能降置信度。</p>
+      <div class="ladder">
+        <span class="lv strong">1.2 亿元 = 12,000 万元 ✓ 先换单位，步长一起换</span>
+      </div>
+    </article>
+
+    <!-- ================= 02 Z ================= -->
+    <article class="card">
+      <div class="card-head"><span class="num">02 / 稳健 Z</span><span class="tag">4.1 · 异常筛查</span></div>
+      <h2>谁站得离队伍太远？</h2>
+      <p class="sub">五到十家公司里，一个极端值就能把平均值带偏。</p>
+
+      <div class="viz">
+        <svg viewBox="0 0 560 220" role="img" aria-label="中位数、MAD 与离群点的位置">
+          <rect x="258" y="46" width="272" height="110" fill="#B0452E" opacity="0.07"/>
+          <text x="300" y="64" font-size="11" fill="#B0452E" text-anchor="start">|Z| ≥ 3.5 的区域</text>
+          <line x1="40" y1="156" x2="530" y2="156" stroke="#6B4A2B" stroke-width="1.2"/>
+          <g font-size="11" fill="#6F6457" text-anchor="middle">
+            <line x1="60" y1="156" x2="60" y2="163" stroke="#6F6457"/><text x="60" y="180">0</text>
+            <line x1="132" y1="156" x2="132" y2="163" stroke="#6F6457"/><text x="132" y="180">5</text>
+            <line x1="204" y1="156" x2="204" y2="163" stroke="#6F6457"/><text x="204" y="180">10</text>
+            <line x1="276" y1="156" x2="276" y2="163" stroke="#6F6457"/><text x="276" y="180">15</text>
+            <line x1="348" y1="156" x2="348" y2="163" stroke="#6F6457"/><text x="348" y="180">20</text>
+            <line x1="420" y1="156" x2="420" y2="163" stroke="#6F6457"/><text x="420" y="180">25</text>
+            <line x1="492" y1="156" x2="492" y2="163" stroke="#6F6457"/><text x="492" y="180">30</text>
+          </g>
+          <line x1="204" y1="56" x2="204" y2="176" stroke="#B4842E" stroke-width="1.2" stroke-dasharray="5 4"/>
+          <text x="204" y="50" font-size="11" fill="#B4842E" text-anchor="middle">中位数 10</text>
+          <rect x="190" y="146" width="29" height="6" fill="#B4842E" opacity="0.35"/>
+          <text x="204" y="200" font-size="10.5" fill="#6F6457" text-anchor="middle">MAD 1＝典型偏离</text>
+          <g fill="#3E7A55">
+            <circle cx="190" cy="134" r="4.5"/><circle cx="190" cy="122" r="4.5"/>
+            <circle cx="204" cy="140" r="4.5"/><circle cx="204" cy="128" r="4.5"/><circle cx="204" cy="116" r="4.5"/>
+            <circle cx="218" cy="134" r="4.5"/>
+          </g>
+          <circle cx="492" cy="100" r="7" fill="#B0452E"/>
+          <circle cx="492" cy="100" r="13" fill="none" stroke="#B0452E" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <text x="478" y="74" font-size="12" fill="#B0452E" text-anchor="end">Z = 13.49</text>
+          <text x="522" y="214" font-size="10.5" fill="#6F6457" text-anchor="end">只有这一个点超出阈值</text>
+        </svg>
+      </div>
+
+      <div class="parts" style="margin-bottom:12px">
+        <span class="part">中心 = <b>中位数</b>，不怕极端值</span>
+        <span class="part">尺子 = <b>MAD</b>，典型偏离</span>
+        <span class="part">分数 = <b>0.6745 × 偏离 ÷ MAD</b></span>
+      </div>
+
+      <p class="line">同组至少 5 个样本、MAD 大于 0；阈值 3.5，两倍记高。只标候选。</p>
+      <p class="edge"><b>它不管：</b>这家公司是不是真的经营恶化。口径不同也会造成大偏离。</p>
+      <div class="ladder">
+        <span class="lv">23% vs 中位数 19%、MAD 1.2% → Z = 2.25，不标</span>
+      </div>
+    </article>
+    <!-- ================= 03 CLA ================= -->
+    <article class="card">
+      <div class="card-head"><span class="num">03 / CLA</span><span class="tag">4.2 · 断言核验</span></div>
+      <h2>一句话里，哪半句能留？</h2>
+      <p class="sub">整段删可惜，整段留危险；所以要切到半句。</p>
+
+      <div class="viz">
+        <p class="sentence">营收同比增长 29%，主要因为电池成本下降，行业第一，若碳酸锂涨价则毛利回落。</p>
+        <div class="clauses">
+          <div class="clause c-keep"><span class="mark">保留</span><span>营收同比增长 29%　<em style="font-style:normal;color:#6F6457">能反算：7,771 与 6,023 算出 29.0%</em></span></div>
+          <div class="clause c-drop"><span class="mark">删除</span><span>主要因为电池成本下降　<em style="font-style:normal;color:#6F6457">因果：原文没有这句话</em></span></div>
+          <div class="clause c-drop"><span class="mark">删除</span><span>行业第一　<em style="font-style:normal;color:#6F6457">排名：没说在哪个样本里比</em></span></div>
+          <div class="clause c-assume"><span class="mark">限本句</span><span>若碳酸锂涨价则毛利回落　<em style="font-style:normal;color:#6F6457">假设：不得拿去支撑别的句子</em></span></div>
+        </div>
+        <div class="out"><span>裁后：只删不增，顺序不变</span>营收同比增长 29%。若碳酸锂涨价则毛利回落。</div>
+      </div>
+
+      <div class="parts" style="margin-bottom:12px">
+        <span class="part">六类：<b>数值 / 方向 / 因果 / 排名 / 预测 / 情景</b></span>
+        <span class="part">每类<b>各配一种证据标准</b></span>
+        <span class="part">判不了 → <b>拦</b></span>
+      </div>
+
+      <p class="line">数值能反算，方向只能靠序列，因果只能原文直引或标假设，排名必须有边界。</p>
+      <p class="edge"><b>它不管：</b>这句话真假。上游证据错了（比如单位差 100 倍），它救不了。</p>
+      <div class="ladder">
+        <span class="lv strong">同一段裁两次，结果逐字相同（幂等）</span>
+      </div>
+    </article>
+
+    <!-- ================= 04 RPD ================= -->
+    <article class="card">
+      <div class="card-head"><span class="num">04 / RPD</span><span class="tag">4.2 · 拓扑修复</span></div>
+      <h2>图上的错，判得出也要修得好</h2>
+      <p class="sub">模型说“是什么”，代码说“对不对”，修完留痕。</p>
+
+      <div class="viz">
+        <svg viewBox="0 0 560 280" role="img" aria-label="节点连线从 17 条删到 16 条">
+          <text x="32" y="34" font-size="12" fill="#6F6457">修前：17 条连线（每根竖条＝一条）</text>
+          <g fill="#6B4A2B">
+            <rect x="40"  y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="60"  y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="80"  y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="100" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="120" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="140" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="160" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="180" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="200" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="220" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="240" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="260" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="280" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="300" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="320" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+            <rect x="340" y="50" width="11" height="54" rx="3" fill="#8A6A45"/>
+          </g>
+          <rect x="360" y="50" width="11" height="54" rx="3" fill="#B0452E" opacity="0.55"/>
+          <text x="392" y="70" font-size="12" fill="#B0452E">回收流：权重 0</text>
+          <text x="392" y="88" font-size="11" fill="#6F6457">先删它</text>
+
+          <line x1="40" y1="132" x2="520" y2="132" stroke="#B4842E" stroke-width="1" stroke-dasharray="6 4"/>
+          <text x="280" y="126" font-size="11.5" fill="#B4842E" text-anchor="middle">超上限（16）→ 删权重最低的那条</text>
+          <path d="M280 138 L280 152" stroke="#B4842E" stroke-width="1.2"/>
+          <path d="M274 148 L280 156 L286 148" fill="none" stroke="#B4842E" stroke-width="1.2"/>
+
+          <text x="32" y="186" font-size="12" fill="#6F6457">修后：16 条，主链一条不动</text>
+          <g fill="#3E7A55">
+            <rect x="40"  y="202" width="11" height="54" rx="3" fill="#5E8F70"/><rect x="60"  y="202" width="11" height="54" rx="3" fill="#5E8F70"/>
+            <rect x="80"  y="202" width="11" height="54" rx="3" fill="#5E8F70"/><rect x="100" y="202" width="11" height="54" rx="3" fill="#5E8F70"/>
+            <rect x="120" y="202" width="11" height="54" rx="3" fill="#5E8F70"/><rect x="140" y="202" width="11" height="54" rx="3" fill="#5E8F70"/>
+            <rect x="160" y="202" width="11" height="54" rx="3" fill="#5E8F70"/><rect x="180" y="202" width="11" height="54" rx="3" fill="#5E8F70"/>
+            <rect x="200" y="202" width="11" height="54" rx="3" fill="#5E8F70"/><rect x="220" y="202" width="11" height="54" rx="3" fill="#5E8F70"/>
+            <rect x="240" y="202" width="11" height="54" rx="3" fill="#5E8F70"/><rect x="260" y="202" width="11" height="54" rx="3" fill="#5E8F70"/>
+            <rect x="280" y="202" width="11" height="54" rx="3" fill="#5E8F70"/><rect x="300" y="202" width="11" height="54" rx="3" fill="#5E8F70"/>
+            <rect x="320" y="202" width="11" height="54" rx="3" fill="#5E8F70"/><rect x="340" y="202" width="11" height="54" rx="3" fill="#5E8F70"/>
+          </g>
+          <line x1="365" y1="202" x2="365" y2="256" stroke="#B0452E" stroke-width="1" stroke-dasharray="3 3"/>
+          <path d="M360 214 L372 226 M372 214 L360 226" stroke="#B0452E" stroke-width="1.4"/>
+          <text x="392" y="226" font-size="11.5" fill="#B0452E">只删这一条</text>
+        </svg>
+      </div>
+
+      <div class="parts" style="margin-bottom:12px">
+        <span class="part">核心 <b>16</b></span>
+        <span class="part">中游非核心 <b>12</b></span>
+        <span class="part">其他 <b>8</b></span>
+        <span class="part">判据 <b>校验与修复共用</b></span>
+      </div>
+
+      <p class="line">删边顺序：回收 0 ＜ 服务 1 ＜ 技术 2 ＜ 实物流 3。先删弱关系，最后才动主链。</p>
+      <p class="edge"><b>它不管：</b>不追求全局最优。这是保主链的加权贪心，可解释比最优更重要。</p>
+    </article>
+  </main>
+
+  <!-- ================= 收尾 ================= -->
+  <section class="closing">
+    <h3>答辩时，一句话怎么讲</h3>
+    <table>
+      <thead>
+        <tr><th style="width:16%">算法</th><th style="width:52%">可以这么说</th><th style="width:32%">不要这么说</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><b>DPE</b></td><td>精度不是参数，是数据属性：从披露串读出报到第几位，再单向舍入判等。</td><td>“就是四舍五入加个阈值”</td></tr>
+        <tr><td><b>稳健 Z</b></td><td>用小样本抗污染的中位数和 MAD 找候选，只提示、不下结论。</td><td>“Z 高就说明经营恶化”</td></tr>
+        <tr><td><b>CLA</b></td><td>先给断言定类型，再给每类配证据标准；判不了就拦，裁完可重复。</td><td>“我们做了事实核查”</td></tr>
+        <tr><td><b>RPD</b></td><td>裁判和修理工共用一套判据，判得出的错必须修得好。</td><td>“我们求了全局最优”</td></tr>
+      </tbody>
+    </table>
+    <p class="footnote"><b>怎么用：</b>要放进 PPT，浏览器整页截图即可，或按 A4 打印成 PDF。文字完整版是同目录下的《核心算法逆向说明书-大白话版》。</p>
+  </section>
+
+</div>
+</body>
+</html>

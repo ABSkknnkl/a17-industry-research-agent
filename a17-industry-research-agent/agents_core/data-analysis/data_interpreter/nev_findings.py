@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date
+import json
+import re
+
+from .llm import SemanticLLM
 
 from .models import ContentSection, CrossValidationFinding, EvidenceRef, Insight, KnowledgeFact
 
@@ -93,3 +98,151 @@ def build_nev_findings(evidence: dict[str, EvidenceRef]):
         key_points=[item.title for item in insights],
         evidence_record_ids=list(dict.fromkeys(rid for item in insights for rid in item.evidence_record_ids)))]
     return summary, facts, insights, outline, validations
+
+async def interpret_nev_insights(
+    llm: SemanticLLM, insights: list[Insight], evidence: dict[str, EvidenceRef], questions: list[str],
+    *, deep_review: bool = False,
+) -> list[Insight]:
+    system = (
+        "你是新能源汽车行业研究分析师。根据题目、经核验的量化发现及其证据，按研究重要性排序，"
+        "并逐条写一句定性研判，说明这条发现支持什么比较或下一步应验证什么。"
+        "不要重复报数，不添加新的数值、外部事实、因果归因或投资建议。"
+        '只返回 JSON {"insights":[{"insight_id":"原始ID","significance":"研判"}]}。'
+        "每条原始 ID 恰好出现一次。每条研判使用 10 至 120 个字符。"
+    )
+    prompt = json.dumps({
+        "questions": questions,
+        "verified_findings": [insight.model_dump(mode="json") for insight in insights],
+        "evidence": {
+            rid: evidence[rid].model_dump(
+                mode="json", include={"entity", "metric", "period", "unit", "value", "scope"},
+            )
+            for rid in dict.fromkeys(rid for insight in insights for rid in insight.evidence_record_ids)
+        },
+    }, ensure_ascii=False)
+    if deep_review:
+        system += "请交叉核对各题的比较范围、财务口径和推论边界，只补充定性的研究意义。"
+    source = {insight.insight_id: insight for insight in insights}
+    for _ in range(2):
+        rows = (await llm.generate_json(system, prompt)).get("insights")
+        if isinstance(rows, list) and (deep_review or len(rows) == len(source)):
+            ranked = {}
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                key, text = row.get("insight_id"), row.get("significance")
+                if (not isinstance(key, str) or key not in source or key in ranked
+                        or not isinstance(text, str) or not 10 <= len(text.strip()) <= 120
+                        or re.search(r"[0-9<>\[\]]", text)):
+                    continue
+                ranked[key] = source[key].model_copy(update={"significance": text.strip()})
+            if len(ranked) == len(source) or (deep_review and ranked):
+                return list({**ranked, **{key: item for key, item in source.items() if key not in ranked}}.values())
+        prompt += "\n上次未通过输出校验。每项用原 ID，每条研判只写定性解读，不使用数字。"
+    raise ValueError("解读模型没有返回完整的证据研判，请重试 A2")
+
+async def interpret_nev_questions(
+    llm: SemanticLLM, evidence: dict[str, EvidenceRef], questions: list[str],
+    matrix: list[dict], reference_insights: list[Insight],
+    progress: Callable[[str, int, int], None],
+) -> list[Insight]:
+    """Plan each question, then interpret its own evidence before cross-question synthesis."""
+    if len(questions) != 5 or len(matrix) != 5:
+        raise ValueError("新能源汽车深度研究需要五问及对应的数据验收结果")
+    tasks = {}
+    for i, (question, item) in enumerate(zip(questions, matrix, strict=True), 1):
+        check = item["coverage"]
+        records = {rid: evidence[rid] for rid in check["evidence_record_ids"] if rid in evidence}
+        if not check["passed"] or not records:
+            raise ValueError(f"第 {i} 题缺少已验收证据")
+        tasks[f"Q-{i}"] = (question, records)
+
+    reference = {item.insight_id: item for item in reference_insights}
+    conclusions = {
+        "Q-1": (
+            reference["I-NEV-01"].conclusion + reference["I-NEV-02"].conclusion,
+            reference["I-NEV-01"].evidence_record_ids + reference["I-NEV-02"].evidence_record_ids,
+        ),
+        "Q-2": (reference["I-NEV-03"].conclusion, reference["I-NEV-03"].evidence_record_ids),
+        "Q-3": (
+            "整车比较限于比亚迪、长安汽车和赛力斯。财务指标采用年度合并口径，"
+            "市净率按各公司独立的月末历史窗口比较。",
+            [rid for rid, ref in tasks["Q-3"][1].items() if ref.metric == "pb" and str(ref.period) == "2025-12-31"],
+        ),
+        "Q-4": (
+            "整车组和动力电池组按已核对的主营业务定位划分。研发强度按组内研发费用合计除以营业收入合计，"
+            "毛利率和经营现金流按组内公司的算术平均值比较。",
+            [rid for rid, ref in tasks["Q-4"][1].items() if ref.metric == "business_composition"],
+        ),
+        "Q-5": (reference["I-NEV-07"].conclusion, reference["I-NEV-07"].evidence_record_ids),
+    }
+
+    progress("analysis_plan", 0, len(tasks))
+    descriptions = {
+        qid: {"question": question, "metrics": sorted({ref.metric for ref in records.values()})}
+        for qid, (question, records) in tasks.items()
+    }
+    plan_prompt = (
+        '根据五题的可用指标写出各题最需要比较的角度、口径和易误读的地方。'
+        '仅返回 JSON {"focus":{"Q-1":"分析任务", "Q-2":"分析任务", "Q-3":"分析任务",'
+        '"Q-4":"分析任务", "Q-5":"分析任务"}}。每项八至一百六十字，无需输出具体数值。'
+    )
+    plan: dict[str, str] = {}
+    plan_input = json.dumps(descriptions, ensure_ascii=False)
+    for attempt in range(2):
+        prompt_suffix = "" if attempt == 0 else "\n请逐项补齐五题，保留 Q-1 至 Q-5 的原始键。"
+        focus = (await llm.generate_json(plan_prompt + prompt_suffix, plan_input)).get("focus")
+        if isinstance(focus, dict):
+            plan.update({
+                qid: value.strip()[:160]
+                for qid, value in focus.items()
+                if qid in tasks and isinstance(value, str) and value.strip()
+            })
+        if len(plan) == len(tasks):
+            break
+
+    # Research questions and evidence were already admitted above. Missing
+    # model guidance for one question cannot remove that question or its data.
+    for qid, (question, _) in tasks.items():
+        plan.setdefault(qid, f"按题面核对比较对象、期间和口径。{question}")
+
+    prompt = (
+        "你是新能源汽车行业分析师。根据题目、已验算的事实结论和数据，写一句定性的研究判断。"
+        "重点说明该结论支持怎样的比较，或还需要验证什么；避免重复结论，不另行计算数值或补充因果。"
+        '仅返回 JSON {"significance":"研判及适用边界", "evidence_ids":["表中短编号"]}。'
+        "用中文表达适用边界，指标数字保留在事实结论中。选两条以上直接支持研判的编号，例如 E1、E4。"
+    )
+    completed = 0
+    progress("analysis_questions", 0, len(tasks))
+
+    async def analyse(qid: str, question: str, records: dict[str, EvidenceRef]) -> Insight:
+        nonlocal completed
+        aliases = {f"E{i}": rid for i, rid in enumerate(records, 1)}
+        rows = []
+        for alias, rid in aliases.items():
+            ref = records[rid]
+            rows.append([alias, ref.entity, ref.metric, str(ref.period), ref.period_type, ref.value, ref.unit, ref.scope])
+        conclusion, facts = conclusions[qid]
+        payload = json.dumps({
+            "question": question, "analysis_plan": plan[qid], "verified_conclusion": conclusion,
+            "columns": ["编号", "主体", "指标", "期间", "频率", "值", "单位", "口径"], "records": rows,
+        }, ensure_ascii=False)
+        for _ in range(3):
+            answer = await llm.generate_json(prompt, payload)
+            significance = str(answer.get("significance") or "").strip()
+            if not isinstance(answer.get("significance"), str):
+                significance = ""
+            aliases_found = re.findall(r"\bE0*(\d+)\b", json.dumps(answer.get("evidence_ids")), re.IGNORECASE)
+            ids = [aliases[f"E{number}"] for number in aliases_found if f"E{number}" in aliases]
+            if len(significance) >= 8 and not re.search(r"[<>]", significance) and ids:
+                break
+            payload += "\n请返回一个研判字符串和表格首列短编号，至少引用一条有效记录。"
+        else:
+            significance, ids = "本题以已验算的结论与源记录为准，模型补充研判待复核。", []
+        completed += 1
+        progress("analysis_questions", completed, len(tasks))
+        return Insight(insight_id=f"I-NEV-{qid}", title=f"研究问题 {qid[2:]} 的证据研判",
+                       conclusion=conclusion, significance=significance[:240], confidence="medium",
+                       evidence_record_ids=list(dict.fromkeys([*facts, *ids])))
+
+    return [await analyse(qid, question, records) for qid, (question, records) in tasks.items()]

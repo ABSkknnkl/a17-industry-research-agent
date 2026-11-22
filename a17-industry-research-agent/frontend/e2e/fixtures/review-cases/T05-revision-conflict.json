@@ -1,0 +1,32 @@
+{
+  "case_id": "T05",
+  "category": "数据冲突",
+  "title": "版本过期：expected_revision 落后于服务端",
+  "mock_review_stage": "data_interpret",
+  "state_patch": {
+    "revision": 5,
+    "stage_results": {
+      "data_interpret": {
+        "revision": 5
+      }
+    }
+  },
+  "review_response": {
+    "when": "req.expected_revision != state.revision",
+    "status": 409,
+    "body": {
+      "detail": "Revision conflict: expected 4, current 5"
+    }
+  },
+  "expect": {
+    "ui": [
+      "ElMessage.warning 文案包含后端原文「Revision conflict」与「请重新操作」",
+      "全局执行遮罩 PipelineOverlay 关闭，不残留 loading"
+    ],
+    "buttons": {
+      "btn-approve": "冲突后恢复 enabled（submitting 归 false）",
+      "modal.*.submit": "冲突后恢复 enabled"
+    },
+    "request": "触发 conflict 事件后自动 GET /runs/{run_id} 刷新；刷新后再次提交携带 expected_revision=5 并成功"
+  }
+}

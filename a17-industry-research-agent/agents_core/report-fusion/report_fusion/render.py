@@ -740,11 +740,14 @@ def render_markdown(view: ReportViewModel, *, source_index_mode: str = "full") -
     ]
     if view.delivery_status == "ready_with_limits":
         lines[6:6] = ["> 受限草稿。核验详情见附录一。", ""]
+    if view.investment_rating:
+        lines += [f"**人工确认评级**：{view.investment_rating}", ""]
     if view.executive_summary.metric_cards:
         lines += ["### 核心量化指标", ""]
         for mc in view.executive_summary.metric_cards:
             val_disp = _format_card_value(mc.value, mc.unit)
-            lines.append(f"- **{mc.label}**：{val_disp} ({mc.period or '最新期'})")
+            change = f" · {mc.change_rate}" if mc.change_rate else ""
+            lines.append(f"- **{mc.label}**：{val_disp} ({mc.period or '最新期'}){change}")
         lines.append("")
 
     lines += ["### 核心结论与驱动", ""]

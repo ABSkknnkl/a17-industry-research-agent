@@ -1,0 +1,36 @@
+{
+  "case_id": "T09",
+  "category": "审核状态异常",
+  "title": "签发挂起：人工编辑后旧质检失效，禁止直接定稿与正式下载",
+  "mock_review_stage": "report_fusion",
+  "state_patch": {
+    "report_download": null,
+    "stage_results": {
+      "report_fusion": {
+        "status": "waiting_review",
+        "data": {
+          "exports_stale": true,
+          "quality_notice": "报告经人工编辑，原质检结论已失效，请重新融合后核验。",
+          "delivery_status": "ready_with_limits",
+          "formats": ["markdown", "html"],
+          "built_at_revision": 1
+        }
+      }
+    }
+  },
+  "review_response": null,
+  "expect": {
+    "ui": [
+      "isReportSignoffOnHold 为真：签发按钮与「发布模式」单选组隐藏",
+      "阶段错误区不重复展示通用 errorGuide（签发挂起走独立提示）",
+      "下载页 classifyReportDownload.level === 'blocked' 或 'exception'，reason 指向重新融合"
+    ],
+    "buttons": {
+      "btn-approve": "不存在",
+      "btn-certify-chain": "按 chain_delivery.certification_available 决定，不得因挂起而误开放",
+      "modal.audit_steering.submit": "enabled（允许重新融合修复）",
+      "download.compact": "disabled 或点击后给出「请重新融合」提示"
+    },
+    "request": "不得发出 action=approve；重新融合走 action=revise/regenerate 并成功"
+  }
+}

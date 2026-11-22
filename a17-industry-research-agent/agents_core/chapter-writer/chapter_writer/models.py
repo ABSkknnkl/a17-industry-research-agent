@@ -107,6 +107,7 @@ class ChapterWritingOptions(BaseModel):
     target_length:Literal["concise","standard","detailed"]="standard"
     editorial_profile:Literal["standard","a17_nev"]="standard"
     instruction:str|None=None
+    sequential_review:bool=False
     max_repairs:int=Field(default=2,ge=0,le=4)
 
 

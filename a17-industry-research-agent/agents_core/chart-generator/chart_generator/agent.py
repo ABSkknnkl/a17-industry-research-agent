@@ -457,7 +457,7 @@ class ChartGeneratorAgent:
 
             if not matches_template(request.report.subject, [brief.text for brief in plan_briefs]):
                 raise ValueError("A17 新能源汽车模板需要对应的五道研究问题")
-            return await run_template(request, run_id, artifact_dir, record, events)
+            return await run_template(request, run_id, artifact_dir, record, events, self.llm)
 
         # Check if we have evidence to work with
         has_evidence = bool(request.report.evidence_index)

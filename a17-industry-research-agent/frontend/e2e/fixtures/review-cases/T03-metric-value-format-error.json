@@ -1,0 +1,48 @@
+{
+  "case_id": "T03",
+  "category": "格式错误",
+  "title": "阶段五核心指标卡数值/涨跌幅/单位格式非法",
+  "mock_review_stage": "report_fusion",
+  "state_patch": {
+    "stage_results": {
+      "report_fusion": {
+        "data": {
+          "key_metrics": [
+            {
+              "metric_id": "K-BAD-01",
+              "name": "revenue",
+              "entity": "比亚迪",
+              "value": "八千零三十九亿",
+              "unit": null,
+              "period": "2025-12-31",
+              "change_pct": "3.4%",
+              "evidence_record_ids": ["R-9bf928f43f8b41459864"]
+            },
+            {
+              "metric_id": "K-BAD-02",
+              "name": "gross_margin",
+              "entity": "长安汽车",
+              "value": null,
+              "unit": "%",
+              "period": "2025-12-31",
+              "change_pct": null,
+              "evidence_record_ids": []
+            }
+          ]
+        }
+      }
+    }
+  },
+  "review_response": null,
+  "expect": {
+    "ui": [
+      "指标卡编辑行对非法数值标红并给出行内错误提示，不显示 NaN / undefined / null",
+      "缺失单位时显示「单位待确认」，不得拼接出「八千零三十九亿 null」"
+    ],
+    "buttons": {
+      "modal.metric_cards.submit": "disabled（存在未修正的非法数值）",
+      "btn-approve": "enabled（编辑校验不阻断审核主流程）"
+    },
+    "request": "非法值未修正时点击提交仅弹 ElMessage.warning，不得发出 POST /reviews；修正为合法数值后提交，edited_data.key_metrics[*].value 为可解析数值字符串"
+  }
+}

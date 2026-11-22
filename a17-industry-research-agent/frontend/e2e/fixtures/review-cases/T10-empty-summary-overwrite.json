@@ -1,0 +1,37 @@
+{
+  "case_id": "T10",
+  "category": "数据冲突",
+  "title": "空摘要覆盖：只改评级不得清空报告执行摘要（数据丢失回归）",
+  "mock_review_stage": "report_fusion",
+  "state_patch": {
+    "stage_results": {
+      "report_fusion": {
+        "data": {
+          "executive_summary": null,
+          "investment_rating": null,
+          "title": "《新能源汽车》深度行业研究报告"
+        },
+        "artifacts_view": {
+          "report_view.json": {
+            "executive_summary": {
+              "headline": "2025 年新能源汽车销量达 1649 万辆，产业链利润向中游电池龙头集中。",
+              "conclusions": ["销量五年复合增速保持高位", "出口成为新增量来源"],
+              "risks": ["价格战压缩整车毛利"]
+            }
+          }
+        }
+      }
+    }
+  },
+  "review_response": null,
+  "expect": {
+    "ui": [
+      "摘要编辑框初值必须回填 report_view.json 的 headline，不得为空",
+      "若确实取不到摘要，编辑框置为只读并提示「摘要需重新融合后编辑」"
+    ],
+    "buttons": {
+      "modal.summary_rating.submit": "enabled（仅评级变更时）"
+    },
+    "request": "只修改投资评级并提交时，edited_data 不得包含 executive_summary 键；若包含则其值必须非空。禁止出现 executive_summary: '' 导致 headline 被清空"
+  }
+}

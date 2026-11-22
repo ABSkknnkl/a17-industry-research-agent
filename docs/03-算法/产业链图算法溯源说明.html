@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>产业链图算法溯源：它是为了解决什么问题被造出来的</title>
+<style>
+  :root{--ink:#2c2c2a;--muted:#5f5e5a;--line:#e3e1dc;--panel:#f7f7f5;--blue:#185fa5;--red:#993c1d;--green:#0f6e56;--amber:#854f0b;--purple:#534ab7;}
+  *{box-sizing:border-box;}
+  body{margin:0 auto;max-width:1000px;padding:40px 32px 80px;background:#fff;color:var(--ink);
+       font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:14px;line-height:1.78;}
+  h1{font-size:24px;font-weight:600;margin:0 0 6px;}
+  h2{font-size:18px;font-weight:600;margin:38px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line);}
+  h3{font-size:15px;font-weight:600;margin:24px 0 8px;color:var(--blue);}
+  p{margin:9px 0;}
+  .sub{color:var(--muted);font-size:12.5px;margin-bottom:20px;}
+  .lead{background:#f1efe8;border-left:4px solid var(--purple);border-radius:8px;padding:16px 20px;margin:20px 0;}
+  .lead strong{color:var(--purple);}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;margin:10px 0;}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;}
+  th{background:var(--panel);font-weight:600;}
+  .t{width:96px;white-space:nowrap;color:var(--muted);}
+  .num{width:34px;text-align:center;color:var(--muted);}
+  .ok{color:var(--green);font-weight:600;}
+  .no{color:var(--red);font-weight:600;}
+  .warn{color:var(--amber);font-weight:600;}
+  .note{background:#faf9f6;border:1px dashed var(--line);border-radius:6px;padding:11px 15px;font-size:13px;color:var(--muted);margin:12px 0;}
+  .quote{border-left:3px solid var(--line);padding-left:14px;color:var(--muted);font-size:13px;margin:12px 0;}
+  .flow{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 18px;font-size:13px;font-family:"SFMono-Regular",Menlo,Consolas,monospace;white-space:pre-wrap;line-height:1.8;}
+  nav{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 18px;font-size:12.5px;}
+  nav a{color:var(--blue);text-decoration:none;margin-right:14px;display:inline-block;}
+  .footer{margin-top:42px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;}
+  @media print{body{padding:0;max-width:none;font-size:11.5px;}h2{break-after:avoid;}tr{break-inside:avoid;}}
+</style>
+</head>
+<body>
+
+<h1>产业链图算法溯源</h1>
+<p class="sub">它是为了解决什么问题被造出来的 · 依据 2026-10-16 ~ 11-12 的 20 余份项目文档与当前代码 · 2026-11-20</p>
+
+<div class="lead">
+<strong>一句话答案：</strong>这不是一个"画图算法"，是一个<strong>分工算法</strong>。<br>
+它要解决的核心问题是：<strong>大模型没法可靠地"决定产业链长什么样"</strong>——它会漏掉没有上市公司的必需环节、把品类词当公司名、把上游厂塞进品牌位、把同行当客户、同一家公司写两种名字、一次只处理前几项。<br>
+所以算法把职责反过来分：<strong>结构、口径、上限、修复规则、缺失怎么显示，全部由代码定死；模型只负责往固定格子里填内容，而且填的每个企业名都必须能在检索片段里找到出处。</strong>
+</div>
+
+<nav>
+<a href="#s1">一、问题是什么</a><a href="#s2">二、时间线</a><a href="#s3">三、关键实验</a><a href="#s4">四、算法原理</a>
+<a href="#s5">五、五层结构</a><a href="#s6">六、问题与机制对照</a><a href="#s7">七、边界</a>
+<a href="#s8">八、当前形态</a><a href="#s9">九、怎么讲</a><a href="#s10">十、文档地图</a><a href="#s11">十一、v2 为什么没落地</a>
+</nav>
+
+<h2 id="s1">一、你当初要解决的是什么问题</h2>
+
+<p>不是"图画得不好看"，是三类<strong>事实性错误</strong>。按严重程度排：</p>
+
+<table>
+<thead><tr><th style="width:110px">错误类型</th><th>具体表现（都是真实运行踩出来的）</th><th style="width:230px">为什么致命</th></tr></thead>
+<tbody>
+<tr><td><strong>结构错</strong></td><td>白酒、创新药、物流全被套成"零部件 → 整机制造"的硬件四段式。白酒的「陈酿 / 勾调 / 制曲」系统性消失，因为这三个环节没有独立上市公司。</td><td>图从第一眼就错。专业观众看到"白酒有整机制造"就知道没入门。</td></tr>
+<tr><td><strong>归属错</strong></td><td>风电品牌卡里出现东方电缆、中天科技（都是海缆厂）；机器人「关节模组与结构件」能力卡里填的是兆威机电、鼎智科技（零部件商）；低空经济「科研与教育」客户格填的是乐聚、智元、银河通用（全是同行整机厂）。</td><td>上下游边界混乱，等于把供应链关系讲反了。</td></tr>
+<tr><td><strong>表达错</strong></td><td>「白酒」被当成一家公司写进品牌卡；「运维服务」「备件供应」这类品类词进了企业位；同一家公司「贵州茅台」和「贵州茅台酒股份有限公司」各占一格；11 个节点描述写着占位语「证据未覆盖」，其中 3 个明明有企业。</td><td>数据没对齐，一页图就能看出是机器拼的。</td></tr>
+</tbody>
+</table>
+
+<div class="note">关键判断：<b>这些不是"模型幻觉"</b>。10-17 的排查结论是——A2 拓扑其实写对了，是 A3 的修复规则把它改坏的（白名单自证循环、企业数主导核心判定、问财召回的是概念股）。所以问题不在"模型乱编"，在"规则没把边界划清"。</div>
+
+<h2 id="s2">二、时间线：问题是怎么一步步暴露的</h2>
+
+<table>
+<thead><tr><th class="t">日期</th><th>发生了什么</th><th style="width:300px">留下的资产</th></tr></thead>
+<tbody>
+<tr><td class="t">10-16</td><td>模板固化，把"硬件制造四段式"写进通用模板，注入 A2。白酒/创新药/物流从此全被套错。</td><td>埋下最大的一个坑</td></tr>
+<tr><td class="t">10-17</td><td>六主题横向测试暴露系统性错误；定下<b>三列目录式</b>版式（不是工艺流程图）；查出品牌卡错位根因。</td><td>三列目录式定稿、公司归属根因排查</td></tr>
+<tr><td class="t">10-19</td><td>第三轮复查；品牌卡为凑数抓上游（写死 5–8 家，实测 8 家整机里 2 家是海缆厂）；中游能力卡填外部供应商。</td><td>品牌卡成员资格规则、中游能力卡清理</td></tr>
+<tr><td class="t">10-20/21</td><td><b>发现骨架"写完了没插电"</b>：新骨架只接进离线脚本，生产链路零调用；旧骨架一直生效。豆包 MCP 启动即失败，联网检索 0 次且静默降级。</td><td>骨架插电、离线降级、额度可观测</td></tr>
+<tr><td class="t">10-21</td><td>下游场景格填同行整机厂；A/B 双版口径混乱（单公司主题品牌卡 1 家其实是对的，却被当缺陷补到 6 家）。</td><td>entity / industry 两个口径轴</td></tr>
+<tr><td class="t">10-22</td><td>企业名归一缺陷；占位语进数据层；兜底"串岗"（白酒中游卡出现"电气设计"，根因是 2-gram 模糊匹配到"造与"）。</td><td>公司名归一、占位语清洗、generic 兜底闸</td></tr>
+<tr><td class="t">10-23</td><td><b>完整复盘</b>：8 条模型能力边界、3 条设计原则、3 道闸、16 个真实事故逐条定位。</td><td>《产业链图优化_经验总结与架构详解》</td></tr>
+<tr><td class="t">10-25</td><td>提出"本体 + 归属 + 验收"三层驱动，指出旧路线根本缺陷：<b>画像同时承担事实与结构两个职责</b>。</td><td>三层驱动方案（方向）</td></tr>
+<tr><td class="t">10-30</td><td>自我批判到最狠的一版：旧路线是"先定槽位、再让模型给名单、最后用规则修名单"，没有把每条"企业属于某环节"绑定到独立证据；提出<b>证据图谱 + 动态行业本体</b>新架构。</td><td>重构方案（<b>未实施</b>，文档自述只写方案）</td></tr>
+<tr><td class="t">11-12</td><td>最终落地选择：<b>从 GitHub 还原原版 lane_grid 渲染器</b>（逐字节一致 + 守门用例），叠加人工审定的产业事实底座。</td><td>生产版：原版模板 + 审定数据</td></tr>
+</tbody>
+</table>
+
+<h2 id="s3">三、关键实验：为什么"换个更强的模型"不是解药</h2>
+
+<p>你当时问过一个很关键的问题：<em>"参考豆包，只联网 + 模型本身就能得到正确答案，为什么我的项目会错？"</em></p>
+<p>于是做了 7 组消融实验，同一个模型、同一套模板，每次只改一个变量。以白酒为例，看上游能分出几大类、陈酿和勾调能不能保住：</p>
+
+<table>
+<thead><tr><th class="num">组</th><th>模型</th><th>给素材</th><th>放开常识</th><th>上游大类</th><th>陈酿</th><th>勾调</th></tr></thead>
+<tbody>
+<tr><td class="num">E1</td><td>flash</td><td>不给</td><td>—</td><td><b>4</b></td><td class="ok">✓</td><td class="no">✗</td></tr>
+<tr><td class="num">E2</td><td>flash</td><td>给</td><td>只用素材</td><td class="no">2</td><td class="no">✗</td><td class="no">✗</td></tr>
+<tr><td class="num">E3</td><td>flash</td><td>给</td><td>放开</td><td>3</td><td class="no">✗</td><td class="ok">✓</td></tr>
+<tr><td class="num">E4</td><td>flash</td><td>给</td><td>放开 + 思考</td><td>4</td><td class="no">✗</td><td class="ok">✓</td></tr>
+<tr><td class="num">E5</td><td><b>pro</b></td><td>给</td><td>只用素材</td><td class="no">1</td><td class="no">✗</td><td class="ok">✓</td></tr>
+<tr><td class="num">E7</td><td><b>pro</b></td><td>不给</td><td>—</td><td>3</td><td class="no">✗</td><td class="no">✗</td></tr>
+</tbody>
+</table>
+
+<p>三条结论，直接决定了算法长什么样：</p>
+<ol>
+<li><strong>给素材反而更差</strong>（4 类 → 2 类）。「陈酿」一给素材就没了。</li>
+<li><strong>换更强的模型更差</strong>（pro 只分出 1 类，flash 还有 2 类）。因为 pro 更"服从"只用素材的指令，更不敢补产业必备环节。</li>
+<li><strong>没有一组是 4/4</strong>。放开常识能找回勾调，开思考能找回酒曲，但凑不齐。</li>
+</ol>
+
+<div class="lead" style="border-left-color:#993c1d;">
+<strong>机制：</strong>检索素材只覆盖"有上市公司的部分"。陈酿、勾调、自研算法这些环节没有独立上市公司 → 搜不到 → 被模型挤掉。<br>
+<strong>宇树的"自研算法" = 白酒的"陈酿"。</strong> 这是同一个结构性缺陷，不是模型不够强。
+</div>
+
+<p>所以算法从"让模型想清楚"改成"<strong>先把格子画好，再让模型填</strong>"。</p>
+
+<h2 id="s4">四、算法的设计原理：一次职责反转</h2>
+
+<table>
+<thead><tr><th style="width:150px">三条原则</th><th>含义</th><th style="width:300px">落在哪里</th></tr></thead>
+<tbody>
+<tr><td><strong>结构给死</strong></td><td>有哪些环节、分几段、谁是核心，由代码常量决定，不由模型决定</td><td>六类结构骨架 + 固定槽位表</td></tr>
+<tr><td><strong>内容放开</strong></td><td>每个槽位里填谁，必须来自检索证据；环节名可来自模板，企业名必须来自片段</td><td>联网取证 + 抽取规则</td></tr>
+<tr><td><strong>缺失显式</strong></td><td>没证据就空着，让渲染层说"暂无"，绝不用常识或问财凑</td><td>数据层不写占位语；空位不画企业行</td></tr>
+</tbody>
+</table>
+
+<p>为了防复发，又加了三道闸：</p>
+<table>
+<thead><tr><th style="width:170px">闸门</th><th>拦住什么</th></tr></thead>
+<tbody>
+<tr><td><strong>骨架槽位表</strong></td><td>结构漂移、维度混杂、必备环节丢失</td></tr>
+<tr><td><strong>兜底硬闸</strong></td><td>通用画像的硬件描述外溢到非制造行业（白酒出现"电气设计"）</td></tr>
+<tr><td><strong>内外一致性绊线</strong></td><td>内置兜底副本与外部画像数据漂移（靠它在 5 分钟内发现过一次误删）</td></tr>
+</tbody>
+</table>
+
+<h2 id="s5">五、算法的五层结构（大白话）</h2>
+
+<div class="flow">① 结构骨架（定"分几段、有哪些格子"）
+      六类：离散制造 / 消费 / 流程 / 医药 / 数字 / 服务
+      ↓
+② 行业画像（定"这个行业的常识"）
+      25 份画像：龙头名单、认证机构、能力卡词表、上下游清单、禁用词
+      ↓
+③ 联网取证（定"每个格子填谁"）
+      按段发 8 条检索 → 片段按槽位归类 → 整组替换，不是只补空
+      ↓
+④ 校验与修复（定"什么算错"）
+      结构校验 → 一组硬规则 → 确定性修复，每条留痕
+      ↓
+⑤ 版式渲染 + 体检（定"怎么画"）
+      三列目录式 → 卡片零连线 → 2 根列间箭头 → 图上不许有数字</div>
+
+<h3>5.1 第一层：六类结构骨架</h3>
+<p>不是所有行业都长成"零部件 → 整机"。代码里写死六类：<strong>离散制造、消费、流程、医药、数字、服务</strong>。每类有自己的列头文案和固定槽位（14–16 个格子），模型只能填、不能增删改。</p>
+<p class="quote">为什么必须写死：白酒的"陈酿/勾调/制曲"、宇树的"自研算法"这类环节，<strong>没有独立上市公司</strong>，靠检索永远搜不出来。如果等模型自己发现，它一定漏。</p>
+
+<h3>5.2 第二层：行业画像</h3>
+<p>25 份画像 JSON，每份给这个行业四样东西：龙头名单、认证/监管机构、中游能力卡词表、上中下游的专属清单。再加一份"禁用词"，防止把别的行业的东西搬过来。</p>
+<p class="quote">为什么需要：光有骨架只知道"有 5 个上游格子"，不知道"这个行业的上游具体是什么"。肖像是把行业常识从模型脑子里搬到可审计的文件里。</p>
+
+<h3>5.3 第三层：联网取证</h3>
+<p>清空所有非核心企业（上一站顺手写的企业名不可靠）→ 按上游/中游/下游/配套四段各发 2 条检索，共 8 条 → 片段按 16 个格子归类 → <strong>某格搜到了就整组替换</strong>，不是"只补空的"。</p>
+<p class="quote">为什么整组替换：如果新旧混着放，一次错误召回会永久留在图里。整组替换保证每一格的企业名单来自同一次、同一批证据。</p>
+
+<h3>5.4 第四层：一组硬规则 + 确定性修复</h3>
+<p>这是最像"算法"的一层，也是你最容易看不懂的地方。它是一条<strong>固定顺序的修复流水线</strong>，每一步只干一件事，改完留痕：</p>
+<table>
+<thead><tr><th style="width:80px">顺序</th><th>规则</th><th style="width:300px">解决什么</th></tr></thead>
+<tbody>
+<tr><td>0.1b</td><td>上游厂商不是客户</td><td>下游"场景"格填的是采购方，不能填同行整机厂</td></tr>
+<tr><td>0.1c</td><td>企业名不得与同节点的品类词重复</td><td>「运维服务」「备件供应」进了企业位</td></tr>
+<tr><td>0.1d</td><td>描述不得是占位语</td><td>「证据未覆盖」写进数据层</td></tr>
+<tr><td>0.15</td><td>泛词环节名具体化</td><td>「其他」「相关环节」这类空壳名</td></tr>
+<tr><td>0.2</td><td>非产业链环节剔除</td><td>股权投资、参股属股东关系，不是产业链环节</td></tr>
+<tr><td>0.25</td><td>知识底座归属裁决（四态）</td><td>只有明确判"不匹配"才改名删名；"查不到"只留痕不删人</td></tr>
+<tr><td>0.4</td><td>企业跨节点唯一化</td><td>同一家公司只能出现一次（当时的设计）</td></tr>
+<tr><td>0.45</td><td>品牌卡上游角色归位</td><td>品牌卡里混进上游零部件商</td></tr>
+<tr><td>0.5</td><td>核心节点归属归一</td><td>多个核心节点 / 核心节点挂错段</td></tr>
+<tr><td>0.56</td><td>品牌卡先角色剪枝、后截断</td><td>先按 2–8 家截断会把真龙头截掉</td></tr>
+<tr><td>3</td><td>配套类节点迁到配套带</td><td>售后/回收/软件被放进下游销售区</td></tr>
+<tr><td>6.5</td><td>企业名不在白名单 → 摘除</td><td>编造企业（真实运行踩坑后补）</td></tr>
+<tr><td>7</td><td>瓶颈标记合规化</td><td>瓶颈只能标上游，全图 1–3 个</td></tr>
+</tbody>
+</table>
+<div class="note"><b>注意一个口径漂移：</b>代码注释写"8 条硬规则"，但正文编号实际到 11 条（前 8 条是原版，9/10/11 是后来补的瓶颈、连线方向、监管职能）。答辩时建议说"一组硬规则"，别说死"8 条"，否则被逐条对会尴尬。</div>
+
+<h3>5.5 第五层：三列目录式渲染</h3>
+<p>这一层是纯几何，跟金融无关，但决定了图的观感：</p>
+<table>
+<thead><tr><th style="width:180px">决策</th><th>定稿</th><th style="width:260px">依据</th></tr></thead>
+<tbody>
+<tr><td>图种</td><td>分层目录图（容器 + 卡片网格），不是工艺流程图</td><td>上游零部件并行供给，没有先后关系</td></tr>
+<tr><td>列数与连线</td><td>三列；<strong>卡片之间零连线</strong>，只有 2 根列间粗箭头</td><td>多对多网状关系画不出来，只留价值方向</td></tr>
+<tr><td>整机位置</td><td>并入中游列顶部大卡（占列高 58%）</td><td>拆成独立一列会暗示不存在的代工分工</td></tr>
+<tr><td>网格规则</td><td>≤3 张卡用 1 列，≥4 张用 2 列</td><td>避免 2×2 右下空一格</td></tr>
+<tr><td>画布</td><td>1600×900（16:9）</td><td>研报插图常用比例</td></tr>
+</tbody>
+</table>
+
+<h3>5.6 出图前体检</h3>
+<p>图上不许出现任何裸数字（份额/产能/营收/价格/型号）；每个环节名和企业名必须逐字出现在图里（防止被裁）；连线样式必须符合语义。<strong>体检不通过就降级，不出图。</strong></p>
+
+<h2 id="s6">六、每一个设计，对应一个真实事故</h2>
+<table>
+<thead><tr><th>当年踩的坑</th><th style="width:340px">现在由哪条机制挡住</th></tr></thead>
+<tbody>
+<tr><td>模型不会补"产业必备但无上市公司载体"的环节</td><td>六类骨架 → 固定槽位表，模型只能填不能增删</td></tr>
+<tr><td>分类维度会被素材分布主导（素材里包材文章多，上游 6 格全被原料包装占满）</td><td>骨架优先、素材只填内容；按段发检索，不是"先搜一批再归类"</td></tr>
+<tr><td>把品类词/主题词当企业名（"白酒"成了一家公司）</td><td>企业名 ∩ 品类词 → 删；等于主题词 → 删</td></tr>
+<tr><td>同一实体多种写法各占一格</td><td>短名 + 法定后缀判定 + 显式别名表，绝不模糊改写</td></tr>
+<tr><td>提示词写"不得增删"，模型照样自创环节</td><td>槽位表 + 显式例外（只有"工序①②③"允许按行业改名）</td></tr>
+<tr><td>一次给 16 个环节，只返回前 5 个</td><td>分批抽取（8 个一批），检索片段按批切</td></tr>
+<tr><td>占位语写进数据层</td><td>提示词点名禁止 + 确定性清洗 + 缺失由渲染层表达</td></tr>
+<tr><td>品牌卡为凑数抓上游厂</td><td>数量由真实整机厂决定（2–8 家），不足就少排，不得补空</td></tr>
+<tr><td>中游能力卡填外部供应商</td><td>删除兜底名单；能力卡不放任何外部主体</td></tr>
+<tr><td>下游场景填同行整机厂</td><td>场景节点出现"机器人/无人机/机械臂"结尾的公司 → 整批清空</td></tr>
+<tr><td>骨架写完了没接进生产</td><td>契约测试断言"A2 和 A3 的骨架同源"</td></tr>
+<tr><td>验证走了旁路（脚本自己拼图，不经过 A2）</td><td>验收必须走生产入口；脚本改名"黄金样本生成器"</td></tr>
+</tbody>
+</table>
+
+<h2 id="s7">七、这套算法的边界（10-30 你自己的批判）</h2>
+<p>这一节很重要——它说明这套算法<strong>不是万能解</strong>，答辩时主动说反而加分。原文的判断是：</p>
+<ol>
+<li><strong>它仍然是"先定槽位、再让模型给名单、最后用规则修名单"。</strong>没有在数据模型里把每一个"企业属于某环节 / 企业供应某客户"的判断绑定到独立证据。</li>
+<li><strong>画像同时承担了"事实"和"结构"两个职责。</strong>缺画像时，两种能力同时下降。</li>
+<li><strong>知识图谱的两张关系表不可靠</strong>（行业上下游表、产品-产品表），没能充当工业底座；实施退化成"知识库校验 + 模型命名"。</li>
+<li><strong>一家公司只许出现一次</strong>——但真实世界一家公司可以同时做品牌、代工、零部件。展示去重不能删掉真实的多重参与关系。</li>
+<li><strong>A2 为填空会从企业最多的阶段搬企业</strong>——这是为了版面完整而做的推断，不是事实归属。</li>
+<li><strong>三列和四段只是一种视图</strong>，不是产业唯一正确的形态。产业也可能是网络、平台生态、服务履约链。</li>
+</ol>
+<p>所以 10-30 提出了一套"证据图谱 + 动态行业本体"的新架构：每条关系都是独立断言（A 供 CPU / CPU 用于笔记本 / A 供货给 B 是三条不同关系），带时间、范围、证据引用，事实状态分 candidate / supported / contradicted / unresolved / expired。<strong>但这份文档明确写着"只写方案，没有修改应用源码"——它没有实施。</strong></p>
+
+<h2 id="s8">八、当前真正在跑的形态</h2>
+<table>
+<thead><tr><th style="width:200px">项</th><th>事实</th></tr></thead>
+<tbody>
+<tr><td>渲染器</td><td>2026-11-12 从 GitHub 仓库 <code>ABSkknnkl/a17-industry-research-agent</code> <strong>逐字节复原</strong>的原版 lane_grid（三列目录式），并写了守门用例「与仓库源码逐字节一致」</td></tr>
+<tr><td>数据来源</td><td>人工审定的产业事实底座 <code>chain_data/vehicle.json</code>（不是让模型实时生成全图）</td></tr>
+<tr><td>当前规模</td><td><strong>20 个环节 / 21 条关系边 / 4 段（上游·中游·下游·配套）/ 51 个企业位 / 53 个细分品类</strong>，版本 2026-11-12.1</td></tr>
+<tr><td>骨架与画像</td><td>六类结构骨架 + 25 份行业画像仍在，供生成与校验使用</td></tr>
+<tr><td>是否还有旧"关系图"版式</td><td>没有。单跑脚本注释明确：已复原为仓库原版唯一 lane_grid，不再使用自行编写的关系图</td></tr>
+</tbody>
+</table>
+
+<div class="note">一句话：<b>算法有两层身份。</b>生成链路（骨架→画像→取证→修复）是"怎么做出一张新行业的图"；当前交付的这张新能源图是"原版渲染器 + 人工审定事实底座"，保证答辩现场稳定、可复现、不依赖模型临场发挥。</div>
+
+<h2 id="s9">九、你该怎么讲（三句话 + 四个追问）</h2>
+
+<h3>9.1 三句话版本</h3>
+<p><strong>第一句（问题）：</strong>"我们最早让大模型自己决定产业链分几段、每段放哪些企业，结果发现它有三个系统性缺陷：没有上市公司的必需环节会漏掉、品类词会被当成公司、上游厂会被塞进品牌位。"</p>
+<p><strong>第二句（解法）：</strong>"所以我把职责反过来了——结构、口径、上限、修复规则全部由代码定死，模型只往固定格子里填内容，而且每个企业名都必须在检索片段里有出处。"</p>
+<p><strong>第三句（边界）：</strong>"这套做法能保证结构和归属不出系统性错误，但它不能证明'这个行业只有这些环节'。所以我们保留了缺口标记和人工审核门，不宣称全自动正确。"</p>
+
+<h3>9.2 四个最可能被追问的问题</h3>
+<table>
+<thead><tr><th style="width:230px">追问</th><th>回答要点</th></tr></thead>
+<tbody>
+<tr><td>这张图是 AI 生成的吗？</td><td>分两层：<b>结构和版式是代码定的</b>，不是 AI 想的；<b>每个格子里填哪几家企业来自检索证据</b>，并且要过白名单和硬规则。AI 负责"填内容"，不负责"设计结构"。</td></tr>
+<tr><td>为什么不用知识图谱直接生成？</td><td>试过。项目审计发现现成的行业上下游关系表、产品关系表<strong>不可靠</strong>，撑不起全行业底座，最后退化成"知识库校验 + 模型命名"。知识图谱不是正确性的裁判。</td></tr>
+<tr><td>换个大模型是不是就好了？</td><td>做过 7 组消融实验：给素材反而更差，换更强的模型更差（上游从 2 类掉到 1 类），没有一组能全对。原因是"素材只覆盖有上市公司的部分"，这是结构性问题，不是模型能力问题。</td></tr>
+<tr><td>这套算法的局限是什么？</td><td>三条：画像是人工资产，新行业要先建画像；企业归属目前绑在节点上，没有做到"每条供货关系一条独立证据"；一家公司只出现一次是展示去重，不等于真实世界里只参与一个环节。</td></tr>
+</tbody>
+</table>
+
+<h2 id="s10">十、文档地图：哪份文档回答哪个问题</h2>
+
+<table>
+<thead><tr><th style="width:300px">文档</th><th>回答什么</th><th style="width:110px">状态</th></tr></thead>
+<tbody>
+<tr><td><strong>产业链图优化_经验总结与架构详解_20261023.md</strong></td><td><b>最核心的一份。</b>8 条模型能力边界、3 条设计原则、3 道闸、16 个事故逐条复盘、9 个模块、数据流、三列版式理由、大白话版九步流程</td><td class="ok">已发生的事实复盘</td></tr>
+<tr><td>产业链图最终改造方案_三列目录式.md</td><td>版式为什么是三列、卡片零连线、整机并入中游、几何常量与配色</td><td class="ok">已实施</td></tr>
+<tr><td>产业链图公司归属错误_根因排查_20261017.md</td><td>品牌卡错位不是模型幻觉；白名单自证循环、核心判定被企业数带偏</td><td class="ok">已定位已修</td></tr>
+<tr><td>产业链图第三轮复查_根因与修改方案_20261019.md</td><td>品牌卡凑数、中游能力卡填供应商</td><td class="ok">已修</td></tr>
+<tr><td>白酒产业链_归因实验_为什么模型不按产业逻辑_20261022.md</td><td><b>E1–E7 消融实验全表</b>，证明换模型无用</td><td class="ok">实验结论</td></tr>
+<tr><td>六大产业链结构模板_20261022.md / 修订版</td><td>六类骨架的判别问句、信号词、14–16 个槽位、检索词</td><td class="ok">已实施</td></tr>
+<tr><td>产业链图AB双版方案_企业专属与行业全景_20261021.md</td><td>单公司主题 vs 行业全景两个口径；A 版核心卡 1 家是标准答案</td><td class="ok">已实施</td></tr>
+<tr><td>产业链图最终方案_本体归属验收三层驱动_20261025.md</td><td>从"提示词驱动"转向"本体 + 归属 + 验收"</td><td class="warn">方向，部分实施</td></tr>
+<tr><td>产业链图最终重构方案_证据图谱与动态行业本体_20261030.md</td><td><b>对旧路线最狠的自我批判</b>；新架构（断言级证据、事实状态机）</td><td class="warn">架构已落地为可选通道，未认证、非默认</td></tr>
+<tr><td>产业链图AI可执行最终实施方案_20261030.md</td><td>把上述架构写成可执行规格</td><td class="no">只写方案，未改源码</td></tr>
+<tr><td>V8严重缺陷修复任务书_20261031/</td><td>缺陷级的修复清单（跨 A1–A5）</td><td class="warn">任务书</td></tr>
+<tr><td>docs/测试数据和没有修复的bug.md</td><td>缺陷台账核实：11 条未修复项、3 条"假修复"、1 条新发现 P0</td><td class="warn">核实记录</td></tr>
+</tbody>
+</table>
+
+<h3>10.1 三份容易被误读的文档，先打个标记</h3>
+<div class="note">
+① <b>“10-30 重构方案”不是现状</b>——它自己写明"没有实施应用代码修改"。别在汇报里把它当成已实现的能力。<br>
+② <b>“8 条硬规则”是旧口径</b>——代码正文编号已到 11 条，答辩说"一组硬规则"更稳。<br>
+③ <b>“6 张图 / 15 张图 / 14 就绪”是三套不同语境</b>——模板门禁要 15 张、某次放行产物 6 张、PPT 统计 14 就绪。讲产业链图时不要顺带把图数说错。
+</div>
+
+<h2 id="s11">十一、补问："证据图谱 + 动态行业本体"为什么没有落地</h2>
+
+<div class="lead" style="border-left-color:#993c1d;">
+<strong>先纠正一个说法：它不是"没实现"。</strong><br>
+2026-10-31 的提交 <code>d63c799</code> 已经建了共享包 <code>chain-research</code>（模型 / 存储 / 取证适配 / 研究服务 / 视图编译），<code>8e5068d</code> 把骨架、画像、检索、诊断接进生产。适配层在 A1 / A2 / A3 都有 v2 分支，设 <code>CHAIN_ENGINE=evidence_v2</code> 就能走。<br>
+包自述原话：<strong>"当前为可运行的生产切片，不代表 T9 或未知行业认证完成。"</strong>
+</div>
+
+<p>所以准确的表述是四句话：<strong>管道实现了，验收没完成，默认没切换，A17 这张图没有用它。</strong>原因分四层，从表到里：</p>
+
+<h3>11.1 第一层：目标是主动降级的，不是没做完</h3>
+<p>10-30 同一天出了两份文档，一份是"证据图谱 + 动态本体"的完整架构，另一份是《比赛版最终修改方案》。后者第一句就写清楚了：</p>
+<p class="quote">"目标：优先交付重点行业结构完整、企业归属合理、可解释、适合比赛展示的产业链图。<strong>允许补专属行业画像，不再以任意陌生行业自动百分之百正确作为本轮完成条件。</strong>"</p>
+<p>也就是说：v2 的核心卖点是"没见过的行业也能冷启动生成"，而比赛只需要一两个重点行业。<strong>为一个比赛用不上的能力，去重做半条链路，投入产出不成立。</strong>这是主动取舍，不是能力不足。</p>
+
+<h3>11.2 第二层：自动启用要求"已审画像"，而现有两份都是草稿</h3>
+<p>创建任务时的路由逻辑是这样的：如果用户没指定引擎、但明确要产业链图，系统会尝试"优先 v2"。触发条件是——<strong>研究策略是 explore，或者匹配到的行业画像状态是 reviewed（已审）</strong>。否则就退回旧路径，并在备注里写"缺少已审画像且未启用开放研究，产业链仅按环节分类呈现"。</p>
+<p>而新版画像目录里只有两份：<strong>笔记本、白酒，都是 draft（草稿）</strong>。包自述："结构与产品映射已整理，但没有声称经过原始资料或人工审定。"</p>
+<p><strong>所以不是代码不跑，是没有"已审画像"给它跑。</strong>画像从草稿变成已审，需要逐条回到原始资料核对、再过人工审阅——这是人的工作量，不是写代码能解决的。</p>
+
+<h3>11.3 第三层：A17 这张图是"模板运行"，代码里显式排除了 v2</h3>
+<p>你答辩用的新能源汽车报告走的是五问模板：<strong>15 张指定图、固定挂在指定小节、每张图有固定契约</strong>。判定条件是"出题模式 = apply 且命中模板"，此时 v2 分支被明确关掉（<code>_chain_v2 = 引擎是 evidence_v2 且 不是模板运行</code>）。</p>
+<p>原因是两套东西的产物契约不同：</p>
+<table>
+<thead><tr><th style="width:210px"></th><th>v2 证据图谱</th><th>A17 模板</th></tr></thead>
+<tbody>
+<tr><td>输出</td><td>通用产业链视图（结构可发现、可 partial）</td><td>15 张固定图 + 固定小节位置</td></tr>
+<tr><td>结构来源</td><td>资料发现 + 已验画像</td><td>人工审定的产业事实底座</td></tr>
+<tr><td>质量状态</td><td>candidate / supported / contradicted / unresolved / expired</td><td>固定契约逐点核验，缺一张即阻断</td></tr>
+<tr><td>适合场景</td><td>陌生行业探索、研究型输出</td><td>比赛演示、可复现交付</td></tr>
+</tbody>
+</table>
+<p>答辩要的是"同一份报告、每次都一样、每张图都能点开证据"。模板 + 审定底座能保证；v2 的输出是概率性的、允许 partial 的，不适合当演示底稿。</p>
+
+<h3>11.4 第四层：没有金标准，就不能宣布"完成"</h3>
+<p>v2 的验收要求比旧路径严得多：每条"企业参与某环节"要是独立断言、能回到原文、标出适用范围和时间；还要拿 20 个没见过的行业做留出测试，冻结评分分母，同时报自动通过率。文档自己承认："<strong>未验证建议门槛可达</strong>。"</p>
+<p>而旧路径的验收是"八行业 + 人工审定 + 逐卡审阅"，标准低得多、可交付。在没有金标准的情况下，v2 只能标 partial —— <strong>一个只能标 partial 的引擎，不能用来替代答辩现场的正式图。</strong></p>
+
+<h3>11.5 如果被问"为什么不做完"，可以这样答</h3>
+<table>
+<thead><tr><th style="width:200px">问法</th><th>回答</th></tr></thead>
+<tbody>
+<tr><td>这套新架构为什么没上线？</td><td>上线了，是可运行的 v2 通道，用开关选择。没做的是三件事：把画像从草稿审成正式、建立跨行业金标准验收、以及适配五问模板的固定图契约。</td></tr>
+<tr><td>是不是做不出来？</td><td>不是。管道和契约层已经跑通，卡点在"人的审阅"和"验收标准"，不在代码。要真正替代旧路径，需要逐行业审画像、逐条核原文，这是工作量问题。</td></tr>
+<tr><td>那现在这版是不是妥协？</td><td>是明确的取舍：比赛阶段优先"稳定、可复现、可解释"，而不是"任意行业全自动"。我在文档里写清楚了边界，没有把 partial 说成 verified。</td></tr>
+</tbody>
+</table>
+
+<div class="note"><b>一句话总结：</b>v2 是"能力上限更高、但验收成本也更高"的方案；A17 是"能力范围更窄、但每次都能稳定交付"的方案。10-30 选择了后者，因为比赛要的是后者。<b>不是没做，是没把它当成这场的交付物。</b></div>
+
+<h2>附：一句话浓缩</h2>
+<div class="lead">
+<strong>这个算法的本质，是把"模型该决定什么"和"代码该决定什么"划清楚。</strong><br>
+结构、口径、契约、兜底、缺失表达全部交给代码；模型只负责往固定槽位里填内容，且填的每个企业名都必须能在检索片段里找到出处。<br>
+<span style="color:#5f5e5a">当年所有事故，最后都归到同一句话——<b>以为模型会自觉，于是没写约束。</b></span>
+</div>
+
+<div class="footer">
+本说明依据：产业链图相关 20 余份项目文档（2026-10-16 ~ 10-31）、当前代码（六类骨架、25 份画像、修复管线、三列渲染）、新能源汽车审定事实底座（20 环节 / 21 边 / 51 企业位 / 53 品类）、GitHub 参考仓库复原记录（2026-11-12）。<br>
+凡文档与代码不一致处，已在正文标注；未标注「未实施」的均为代码已实现或在生产链路中生效。
+</div>
+
+</body>
+</html>

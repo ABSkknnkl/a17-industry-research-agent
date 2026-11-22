@@ -1,0 +1,62 @@
+{
+  "case_id": "T12",
+  "category": "审核状态异常",
+  "title": "新能源演示补采门禁：未补齐前禁止进入解读",
+  "mock_review_stage": "data_fetch",
+  "state_patch": {
+    "stage_results": {
+      "data_fetch": {
+        "data": {
+          "nev_probe_demo": true,
+          "demo_probe_pending": true,
+          "agent_status": "partial",
+          "numeric_status": "partial",
+          "stop_reason": "demo_probe_gaps",
+          "blocked": true,
+          "block_reason": "请补齐新能源汽车演示数据后再进入数据解读。",
+          "data_gap_notice": "演示模式 · 已采集 1180 条 · 2 个数据点待补 · 五问证据覆盖 4/5",
+          "probe_hint": "点击「探针补采」回放同花顺归档。",
+          "demo_question_coverage": { "passed": 4, "total": 5 },
+          "demo_probe_points": [
+            {
+              "id": "changan_2025_revenue",
+              "label": "营业收入",
+              "entity": "长安汽车",
+              "period": "2025 年度 · 合并报表",
+              "value": null,
+              "missing": true,
+              "record_id": null
+            },
+            {
+              "id": "changan_2025_cashflow",
+              "label": "经营活动产生的现金流量净额",
+              "entity": "长安汽车",
+              "period": "2025 年度 · 合并报表",
+              "value": null,
+              "missing": true,
+              "record_id": null
+            }
+          ]
+        }
+      }
+    }
+  },
+  "review_response": {
+    "when": "req.edited_data.action_type == 'partial_refetch' 且 data_point_ids 合法",
+    "status": 200,
+    "body_hint": "补齐后 demo_probe_pending=false、missing=false、value 回填亿元字符串，decision_package 重新计算"
+  },
+  "expect": {
+    "ui": [
+      "演示补采清单只显示 2 个真实缺口点，默认全部勾选",
+      "缺口提示条显示 data_gap_notice 原文与 4/5 覆盖"
+    ],
+    "buttons": {
+      "btn-approve": "不存在（demo_probe_pending 为真）",
+      "btn-risk-notice": "不存在",
+      "modal.partial_refetch.submit": "enabled（已勾选缺口点）",
+      "modal.partial_refetch.submit@未勾选": "点击仅提示「请至少勾选一个待补数据点」，不发请求"
+    },
+    "request": "提交 action=revise，edited_data={action_type:'partial_refetch', data_point_ids:['changan_2025_revenue','changan_2025_cashflow']}；补齐后 btn-approve 出现并可推进"
+  }
+}

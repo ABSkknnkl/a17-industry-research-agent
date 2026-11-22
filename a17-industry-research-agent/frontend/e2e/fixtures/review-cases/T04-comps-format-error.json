@@ -1,0 +1,48 @@
+{
+  "case_id": "T04",
+  "category": "格式错误",
+  "title": "阶段二可比公司市值/PE 非法与公司名空白",
+  "mock_review_stage": "data_interpret",
+  "state_patch": {
+    "stage_results": {
+      "data_interpret": {
+        "data": {
+          "comps_matrix": {
+            "entries": [
+              {
+                "company_name": "比亚迪",
+                "company_code": "002594",
+                "valuation_tier": "profitable",
+                "market_cap": "N/A",
+                "pe_ttm": "亏损",
+                "evidence_record_ids": ["R-9bf928f43f8b41459864"]
+              },
+              {
+                "company_name": "   ",
+                "company_code": null,
+                "valuation_tier": "profitable",
+                "market_cap": "",
+                "pe_ttm": "",
+                "evidence_record_ids": []
+              }
+            ],
+            "currency": "CNY",
+            "total_market_cap": null
+          }
+        }
+      }
+    }
+  },
+  "review_response": null,
+  "expect": {
+    "ui": [
+      "市值/PE 输入框保留原始非法文本并标红，不静默转成 0",
+      "空公司名行标红提示「请填写公司名称」",
+      "弹窗底部显示校验提示「公司名称不能为空，市值与 PE 必须为有效数值（留空表示缺失）」"
+    ],
+    "buttons": {
+      "modal.comps.submit": "disabled（存在非法条目时就地禁用，实测已确认）"
+    },
+    "request": "非法状态点击提交不得发出 POST /reviews；把市值/PE 清空后提交，edited_data.comps_matrix.entries[*].market_cap === null（空串归一为 null，不得为 0 或 NaN）"
+  }
+}

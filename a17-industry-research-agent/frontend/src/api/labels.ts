@@ -110,6 +110,71 @@ const FIELD_LABELS: Record<string, string> = {
 export const fieldLabel = (key: string): string => FIELD_LABELS[key] ?? key
 
 // ------------------------------------------------------------------
+// 财务指标名（key_metrics[].name / insights 关联指标）
+//
+// 后端下发的是内部英文字段名（revenue / parent_net_profit / product_revenue:整车），
+// 直接展示会把内部字段暴露给分析师，且人工编辑后会把英文名写进报告指标卡。
+// 这里只做「英文 → 中文」的展示映射，不改写后端数据本身。
+// ------------------------------------------------------------------
+const METRIC_LABELS: Record<string, string> = {
+  revenue: '营业收入',
+  parent_net_profit: '归母净利润',
+  net_profit: '净利润',
+  gross_margin: '毛利率',
+  net_margin: '净利率',
+  roe: '净资产收益率',
+  debt_ratio: '资产负债率',
+  operating_cash_flow: '经营活动现金流',
+  rd_expense: '研发费用',
+  market_cap: '总市值',
+  pe_ttm: '市盈率(TTM)',
+  pb: '市净率',
+}
+
+/** `product_revenue:动力电池系统` → `分产品营收·动力电池系统`；未收录值回退原文 */
+export function metricLabel(name?: string): string {
+  if (!name) return ''
+  const trimmed = name.trim()
+  if (trimmed.startsWith('product_revenue:')) {
+    return `分产品营收·${trimmed.slice('product_revenue:'.length)}`
+  }
+  return METRIC_LABELS[trimmed] ?? trimmed
+}
+
+/** 金额归一：元 → 亿元（≥1 亿时），返回可直接展示的数值字符串与单位 */
+export function normalizeMetricAmount(
+  value: unknown,
+  unit?: string | null
+): { value: string; unit: string } {
+  const rawUnit = (unit ?? '').trim()
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return { value: '', unit: rawUnit }
+  }
+  if (rawUnit === '元' && Math.abs(value) >= 100_000_000) {
+    return { value: (value / 100_000_000).toFixed(2), unit: '亿元' }
+  }
+  if (rawUnit === '元') {
+    return { value: value.toFixed(2), unit: '元' }
+  }
+  return { value: String(value), unit: rawUnit }
+}
+
+/**
+ * 同比/环比变化：后端 `change_pct` 是**小数比例**（0.0345 表示 +3.45%），
+ * `percentage_point_change` 是百分点。缺失一律显示空串，绝不落到 0。
+ */
+export function formatMetricChange(changePct?: unknown, percentagePointChange?: unknown): string {
+  if (typeof changePct === 'number' && Number.isFinite(changePct)) {
+    const pct = changePct * 100
+    return `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%`
+  }
+  if (typeof percentagePointChange === 'number' && Number.isFinite(percentagePointChange)) {
+    return `${percentagePointChange >= 0 ? '+' : ''}${percentagePointChange.toFixed(2)}pp`
+  }
+  return ''
+}
+
+// ------------------------------------------------------------------
 // 对象状态（EvidenceStatus / ClaimStatus / ChartStatus / ParagraphStatus）
 // 与 ClaimReviewList、EvidenceReviewTable 里既有的翻译保持一致
 // ------------------------------------------------------------------

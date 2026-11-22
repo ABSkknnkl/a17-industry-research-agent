@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能体 3 技术细节：产业链图是怎么被“判”出来的</title>
+<style>
+:root{
+  --bg:#F2EEE5; --paper:#FCF9F2; --paper2:#F7F1E6; --ink:#17202B;
+  --muted:#67707A; --faint:#8A9199; --line:rgba(23,32,43,.14);
+  --teal:#0E7865; --teal-soft:#E3F0EB; --rust:#B0472C; --rust-soft:#F7E7E0;
+  --indigo:#3C4C86; --indigo-soft:#E8EAF3; --gold:#A3762A; --gold-soft:#F5EDDB;
+  --mono:'SF Mono','Menlo','Consolas',monospace;
+  --sans:'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  --serif:'Songti SC','STSong','Noto Serif SC',serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--sans);}
+body{width:1600px;height:1010px;overflow:hidden;}
+.poster{
+  position:relative;width:1600px;height:1010px;padding:46px 56px 24px;
+  background:
+    radial-gradient(900px 420px at 90% 0%, rgba(14,120,101,.07), transparent 60%),
+    radial-gradient(700px 380px at 0% 100%, rgba(163,118,42,.08), transparent 60%),
+    linear-gradient(rgba(23,32,43,.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23,32,43,.028) 1px, transparent 1px),
+    var(--bg);
+  background-size:auto,auto,32px 32px,32px 32px,auto;
+}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--teal);text-transform:uppercase;margin-bottom:12px}
+h1{font-family:var(--serif);font-size:46px;line-height:1.18;font-weight:700;margin:0 0 12px;letter-spacing:-.01em}
+h1 .accent{color:var(--teal)}
+.lede{font-size:15px;line-height:1.9;color:var(--muted);max-width:980px;margin:0}
+.lede b{color:var(--ink);font-weight:600}
+.head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:40px}
+.io{width:390px;flex:none;margin-top:6px;border:1px solid var(--line);background:rgba(252,249,242,.72);padding:14px 18px}
+.io .row{display:flex;gap:14px;align-items:baseline;padding:7px 0;border-top:1px dashed var(--line)}
+.io .row:first-child{border-top:0;padding-top:0}
+.io span{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--faint);flex:none}
+.io b{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--ink)}
+.io em{display:block;font-style:normal;font-size:11px;color:var(--muted);line-height:1.6;margin-top:2px}
+.principles{display:flex;gap:10px;margin:22px 0 22px}
+.principles span{font-size:12px;letter-spacing:.08em;padding:6px 12px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.principles span:nth-child(1){border-color:rgba(14,120,101,.35);color:var(--teal)}
+.principles span:nth-child(2){border-color:rgba(163,118,42,.35);color:var(--gold)}
+.principles span:nth-child(3){border-color:rgba(60,76,134,.3);color:var(--indigo)}
+.principles span:nth-child(4){border-color:rgba(176,71,44,.3);color:var(--rust)}
+.flow{display:flex;align-items:stretch;gap:0;margin-top:2px}
+.step{flex:1;min-width:0;background:var(--paper);border:1px solid var(--line);border-top:4px solid var(--teal);padding:16px 16px 14px;position:relative}
+.step.s2{border-top-color:var(--gold)}
+.step.s3{border-top-color:var(--indigo)}
+.step.s4{border-top-color:var(--rust)}
+.step.s5{border-top-color:#2E6A4D}
+.step .top{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.step .num{font-family:var(--serif);font-size:30px;line-height:1;color:var(--ink)}
+.step .tag{font-family:var(--mono);font-size:9px;letter-spacing:.14em;color:var(--faint)}
+.step h3{font-family:var(--serif);font-size:20px;font-weight:600;margin:2px 0 4px}
+.step .punch{font-size:11.5px;line-height:1.7;color:var(--muted);margin:0 0 10px;min-height:38px}
+.step ul{margin:0;padding-left:16px}
+.step li{font-size:11.5px;line-height:1.75;color:var(--ink);margin:0 0 5px;padding-left:2px}
+.step li b{color:var(--teal);font-weight:600}
+.step.s2 li b{color:var(--gold)}
+.step.s3 li b{color:var(--indigo)}
+.step.s4 li b{color:var(--rust)}
+.step.s5 li b{color:#2E6A4D}
+.arrow{width:24px;flex:none;display:flex;align-items:center;justify-content:center;color:var(--faint);font-size:20px;font-family:var(--mono)}
+.flow-note{display:flex;justify-content:space-between;align-items:center;gap:24px;margin:12px 0 0;font-size:11px;color:var(--muted)}
+.flow-note .left{display:flex;gap:18px;align-items:center}
+.flow-note code{font-family:var(--mono);font-size:10.5px;color:var(--ink)}
+.flow-note .badge{font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:4px 8px;border:1px solid var(--line);color:var(--faint)}
+.bottom{display:grid;grid-template-columns:1.12fr .88fr;gap:18px;margin-top:18px}
+.panel{background:var(--paper);border:1px solid var(--line);padding:16px 18px}
+.panel h3{font-family:var(--serif);font-size:17px;font-weight:600;margin:0 0 4px}
+.panel .sub{font-size:11px;color:var(--muted);line-height:1.7;margin:0 0 10px}
+.paths{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.path{border:1px solid var(--line);background:var(--paper2);padding:12px 12px 10px}
+.path .label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--faint);margin-bottom:4px}
+.path h4{font-family:var(--serif);font-size:14px;font-weight:600;margin:0 0 4px}
+.path p{font-size:11px;line-height:1.7;color:var(--muted);margin:0}
+.path p b{color:var(--ink);font-weight:600}
+.path .mono{font-family:var(--mono);font-size:10px;color:var(--indigo);line-height:1.7;margin-top:5px}
+.boundary{font-size:11.5px;line-height:1.8;color:var(--muted);margin:0}
+.boundary b{color:var(--ink)}
+.boundary .warn{color:var(--rust);font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.stat{background:var(--paper2);border:1px solid var(--line);padding:8px 10px}
+.stat b{display:block;font-family:var(--serif);font-size:20px;line-height:1.1;color:var(--ink)}
+.stat span{display:block;font-size:9.5px;color:var(--muted);line-height:1.5;margin-top:2px}
+.codebar{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line)}
+.codebar span{font-family:var(--mono);font-size:9.5px;color:var(--faint)}
+.codebar code{font-family:var(--mono);font-size:9.5px;color:var(--ink)}
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:10px;border-top:1px solid var(--line);font-size:9.5px;color:var(--faint);font-family:var(--mono);letter-spacing:.06em}
+@media(max-width:1550px){
+  body{width:100%;height:auto;overflow:auto}
+  .poster{width:100%;height:auto;padding:32px 24px 24px}
+  .head-row{flex-direction:column;gap:18px}
+  .io{width:100%}
+  h1{font-size:34px}
+  .lede{font-size:14px}
+  .flow{flex-wrap:wrap;gap:14px;align-items:flex-start}
+  .step{flex:1 1 46%}
+  .arrow{display:none}
+  .bottom{grid-template-columns:1fr}
+  .flow-note{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:700px){
+  .step{flex:1 1 100%}
+  .paths{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  h1{font-size:28px}
+  .principles{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="head-row">
+    <div>
+      <div class="kicker">A3 / CHART GENERATION · 算法 3 · 先固定框架，再填内容</div>
+      <h1>智能体 3：产业链图不是“画”出来的，<span class="accent">是“判”出来的</span></h1>
+      <p class="lede">模型只负责往固定槽位里填<b>有出处的企业</b>；结构、口径、上限、修复规则、版式，全部由代码定死。<br>它解决的不是“图好不好看”，而是<b>图上的产业链关系是不是真的、能不能交</b>。</p>
+    </div>
+    <div class="io">
+      <div class="row"><span>INPUT</span><div><b>A2 拓扑草稿 T</b><em>节点 / 连线 / 企业 / 证据编号，先由模型提</em></div></div>
+      <div class="row"><span>OUTPUT</span><div><b>clean / repaired / fallback</b><em>带证据编号的图，或合法降级；绝不带错图入稿</em></div></div>
+    </div>
+  </div>
+
+  <div class="principles">
+    <span>结构给死</span><span>内容放开</span><span>缺失显式</span><span>修不好降级</span>
+  </div>
+
+  <div class="flow">
+    <div class="step s1">
+      <div class="top"><span class="num">01</span><span class="tag">SKELETON</span></div>
+      <h3>结构骨架</h3>
+      <p class="punch">先决定“分几段、有哪些格子”，再谈填谁。</p>
+      <ul>
+        <li><b>六类骨架：</b>离散制造 / 消费 / 流程 / 医药 / 数字 / 服务</li>
+        <li><b>14—16 个固定槽位：</b>每类有自己的列头和格子</li>
+        <li><b>模型只能填，不能增删改；</b>核心位置、段数、上限写死在常量</li>
+      </ul>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step s2">
+      <div class="top"><span class="num">02</span><span class="tag">PROFILE</span></div>
+      <h3>行业画像</h3>
+      <p class="punch">把“行业常识”从模型脑子里，搬到可审计的文件里。</p>
+      <ul>
+        <li><b>25 份画像 JSON：</b>每份给这个行业四样东西</li>
+        <li><b>龙头名单 / 认证机构 / 能力卡词表 / 上下游清单，</b>另加一份禁用词</li>
+        <li><b>缺画像时，</b>生成和校验会同时降级；不靠模型临场补常识</li>
+      </ul>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step s3">
+      <div class="top"><span class="num">03</span><span class="tag">RETRIEVAL</span></div>
+      <h3>联网取证</h3>
+      <p class="punch">每个格子填谁，必须来自检索片段，不是模型记忆。</p>
+      <ul>
+        <li><b>先清空非核心企业，</b>上一站顺手写的名字不可靠</li>
+        <li><b>4 段 × 2 条 = 8 条检索：</b>上游 / 中游 / 下游 / 配套</li>
+        <li><b>片段按槽位归类；</b>某格有结果就<b>整组替换</b>，不新旧混放</li>
+        <li><b>企业名必须能在片段里找到；</b>找不到就空着，显示“暂无”</li>
+      </ul>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step s4">
+      <div class="top"><span class="num">04</span><span class="tag">JUDGE + REPAIR</span></div>
+      <h3>校验 + 修复</h3>
+      <p class="punch">裁判和修理工共用同一把尺；修不好就合法降级。</p>
+      <ul>
+        <li><b>七条硬约束：</b>编号唯一、阶段合法、唯一核心、企业唯一、实物流不指研发、度数 8/12/16、证据可回查</li>
+        <li><b>validate → repair → 复验；</b>修完再跑同一批判据</li>
+        <li><b>三态输出：</b>clean / repaired / fallback_flat</li>
+        <li><b>修不好退回扁平结构，</b>仍是合法结果，不硬拼</li>
+      </ul>
+    </div>
+    <div class="arrow">→</div>
+    <div class="step s5">
+      <div class="top"><span class="num">05</span><span class="tag">RENDER + CHECK</span></div>
+      <h3>渲染 + 体检</h3>
+      <p class="punch">图怎么画，也是一条硬契约，不是模型随手排版。</p>
+      <ul>
+        <li><b>三列目录式，</b>不是工艺流程图；整机并入中游顶部大卡</li>
+        <li><b>卡片零连线，</b>只留 2 根列间粗箭头；1600×900</li>
+        <li><b>图上不许裸数字；</b>环节名、企业名逐字出现在图里</li>
+        <li><b>体检不过就降级，</b>不出图；体检项包括轴 / 图例 / 单位</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="flow-note">
+    <div class="left">
+      <span class="badge">CORE LOOP</span>
+      <span>草稿 T → <code>validate_topology(T)</code> → 违规 = ∅ ? → 是：clean / 否：<code>repair_topology(T, issues)</code> → 复验 → 仍不过：<code>fallback_flat(T)</code></span>
+    </div>
+    <span class="badge">SAME RULER · NO LLM IN REPAIR</span>
+  </div>
+
+  <div class="bottom">
+    <div class="panel">
+      <h3>两条身份：生成链路 vs 当前交付</h3>
+      <p class="sub">同样是“先固定框架再填内容”，但两张图不是同一条路径产出的。</p>
+      <div class="paths">
+        <div class="path">
+          <div class="label">GENERATION PIPELINE</div>
+          <h4>生成链路（新行业）</h4>
+          <p>骨架 → 画像 → 取证 → 修复 → 渲染。解决“怎么给一个新行业做图”；依赖画像，也保留缺口标记和人工审核门。</p>
+          <div class="mono">六类骨架 / 25 份画像 / 8 条检索</div>
+        </div>
+        <div class="path">
+          <div class="label">CURRENT DELIVERY</div>
+          <h4>当前交付（新能源图）</h4>
+          <p>原版 <b>lane_grid</b> 渲染器 + 人工审定的 <b>chain_data/vehicle.json</b>；答辩现场稳定、可复现，不靠模型临场发挥。</p>
+          <div class="mono">20 环节 / 21 条边 / 4 段 / 51 企业位 / 53 品类</div>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>8 家</b><span>低空整机厂完整上图；6 家标 industry_common 保留，只降信任层</span></div>
+        <div class="stat"><b>16 起</b><span>产业链图真实事故复盘，逐条对应到现在的机制</span></div>
+        <div class="stat"><b>7 组</b><span>E1—E7 消融：补素材 4→2 类，换强模型只到 1 类，无一组 4/4</span></div>
+        <div class="stat"><b>0 张</b><span>带错图入稿；修不好就走 fallback，不硬拼</span></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>边界：答辩时主动说，反而加分</h3>
+      <p class="sub">这套算法不是“万能正确”，它保证的是结构和归属不出系统性错误。</p>
+      <p class="boundary">
+        <b>它保证：</b>有哪些环节、每段放什么、什么算错、错了怎么修，不由模型临时决定。<br>
+        <b>它不保证：</b>“这个行业只有这些环节”。三列四段只是一种视图，产业也可能是网络、平台生态、服务履约链。<br>
+        <b>仍未解：</b>每条“企业属于某环节 / 企业供货给谁”的独立证据，还是 v2 方向；当前更多是“槽位 → 名单 → 规则修名单”。<br>
+        <b>展示去重：</b>“一家公司只出现一次”是为了版面不重复，不等于真实世界它只参与一个环节。<br>
+        <span class="warn">不要把“fallback_flat”说成失败：</span>它是合法降级，宁可扁平，也不带错图。
+      </p>
+      <div class="codebar">
+        <span>CODE</span>
+        <code>chain_topology.py:1206 validate_topology()</code>
+        <code>:1499 repair_topology()</code>
+        <code>:359 degree_limit()</code>
+        <code>:389 core_misplacement()</code>
+        <code>chain_render.py:746 _render_lane_grid()</code>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>A3 TECHNICAL MAP · 依据《产业链图算法溯源说明》与当前代码</span>
+    <span>结构给死 · 内容放开 · 缺失显式 · 修不好降级</span>
+  </div>
+</div>
+</body>
+</html>

@@ -360,6 +360,37 @@ def test_apply_adds_no_planning_or_dedup_model_calls(monkeypatch):
     assert apply_llm.calls == off_llm.calls
 
 
+def test_sequential_review_reports_completed_chapters_in_outline_order():
+    request = _request(_matrix_for_integration())
+    request.options.sequential_review = True
+    events = []
+    active_chapters = set()
+
+    class TrackingLLM(_CountingLLM):
+        async def generate_json(self, system: str, prompt: str) -> dict:
+            chapter_id = json.loads(prompt)["outline"]["chapter_id"]
+            active_chapters.add(chapter_id)
+            try:
+                await asyncio.sleep(0)
+                assert active_chapters == {chapter_id}
+                return await super().generate_json(system, prompt)
+            finally:
+                active_chapters.remove(chapter_id)
+
+    async def emit(event):
+        events.append(event)
+
+    result = asyncio.run(ChapterWriterAgent(llm=TrackingLLM()).run(
+        request, emit=emit, save_artifacts=False,
+    ))
+    assert not any(chapter.used_fallback for chapter in result.chapters)
+    assert [event["details"]["completed"] for event in events if event["event"] == "chapter_progress"] == list(range(8))
+    chapters_started = list(dict.fromkeys(
+        event["details"]["chapter_id"] for event in events if event["event"] == "chapter_attempt"
+    ))
+    assert chapters_started == [chapter.chapter_id for chapter in DEFAULT_OUTLINE]
+
+
 def test_full_run_and_targeted_rewrite_share_one_assignment(monkeypatch):
     """T05: both production entries use the same effective outline and table."""
     monkeypatch.setenv("A4_ASSIGNMENT_MODE", "apply")

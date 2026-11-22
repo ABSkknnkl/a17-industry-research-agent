@@ -1,5 +1,6 @@
 """Editorial fusion, consistency checks and multi-format export."""
 from __future__ import annotations
+from agents_core.chart_references import normalize_figure_leads
 from agents_core.financial_semantics import (
     financial_calculation_rows, measurement_period, metric_family, money_to_yuan, quantity_issues,
     covered_data_gap_filter, repair_prose_opening, retain_supported_claims, verified_calculations,
@@ -51,7 +52,10 @@ def _rewrite(artifact_dir: Path | None, name: str, data: bytes) -> None:
         path.write_bytes(data)
 
 
-def _audit_numeric_components(chapters: list[Any], summary: Any, request: Any, *, sanitize: bool = False) -> list[dict]:
+def _audit_numeric_components(
+    chapters: list[Any], summary: Any, request: Any, *, sanitize: bool = False,
+    bound_reviewed_cards: bool = False,
+) -> list[dict]:
     issues = []
     index = request.report.evidence_index
     ratios = financial_calculation_rows(request.report.financial_ratios, request.report.comps_matrix)
@@ -162,7 +166,11 @@ def _audit_numeric_components(chapters: list[Any], summary: Any, request: Any, *
             summary.conclusions = [item for item in summary.conclusions if item.text.strip()]
         cards = []
         for i, card in enumerate(summary.metric_cards):
-            bad = audit(f"{card.label} {card.period or ''} {card.value}{card.unit or ''}", card.evidence_ids, f"summary.cards[{i}]")
+            # Reviewed values and changes are checked against the exact metric
+            # record, including product scope and display unit. Still audit new
+            # numeric claims in the human-authored label.
+            claim = card.label if bound_reviewed_cards else f"{card.label} {card.period or ''} {card.value}{card.unit or ''}"
+            bad = audit(claim, card.evidence_ids, f"summary.cards[{i}]")
             if not bad or not sanitize:
                 cards.append(card)
         if sanitize:
@@ -553,7 +561,7 @@ def _resolve_answer_chart_links(request: "ReportFusionRequest") -> "ReportFusion
 
 def _check_final_view(
     chapters: list[Any], embedded: list[Any], request: "ReportFusionRequest", summary: Any = None,
-    *, competition_relaxations: list[str] | None = None,
+    *, competition_relaxations: list[str] | None = None, bound_reviewed_cards: bool = False,
 ) -> tuple[list[str], list[str]]:
     """对**最终要导出的对象**做校验，而不是复用编辑前的输入诊断。
 
@@ -710,7 +718,7 @@ def _check_final_view(
                 chart.status = "failed"
             except Exception:
                 pass
-    numeric_issues = _audit_numeric_components(chapters, summary, request)
+    numeric_issues = _audit_numeric_components(chapters, summary, request, bound_reviewed_cards=bound_reviewed_cards)
     blocking.extend(f"{issue['location']} 数值断言无匹配证据：{issue['claim']}" for issue in numeric_issues)
     # P3：读取当前版本 A4 content_audit 的跨章冲突，纳入验收记录但只告警。
     # 最终正文的错数/错期/错口径仍由上面的 numeric_issues 与证据门禁阻断。
@@ -1101,6 +1109,19 @@ class ReportFusionAgent:
             summary.headline = next((item.text for item in summary.conclusions
                                      if item.evidence_ids and len(item.text) <= 100),
                                     "行业研究要点")
+        # Bind human decisions after automatic editorial changes. They still pass
+        # the same final fact audit as automatically generated report content.
+        reviewed = request.reviewed_edits
+        if reviewed.executive_summary is not None:
+            summary.headline = reviewed.executive_summary
+        reviewed_metrics = request.report.key_metrics
+        reviewed_issues: list[str] = []
+        if reviewed.key_metrics is not None:
+            from .reviewed_metrics import bind_reviewed_metrics
+
+            summary.metric_cards, reviewed_metrics, reviewed_issues = bind_reviewed_metrics(
+                reviewed.key_metrics, request.report.key_metrics, request.report.evidence_index,
+            )
         content_audit = [entry for chapter in chapters for entry in chapter.content_audit]
         input_chapter_issues = request.chapters.quality.get("issues") or []
         recovered_chapter_claims = bool(
@@ -1128,7 +1149,9 @@ class ReportFusionAgent:
         final_blocking, final_warnings = _check_final_view(
             chapters, embedded, request, summary,
             competition_relaxations=competition_relaxations if competition else None,
+            bound_reviewed_cards=reviewed.key_metrics is not None,
         )
+        final_blocking.extend(reviewed_issues)
         baseline_ids = {
             row["requirement"]["requirement_id"] for row in requirement_matrix
             if (row.get("requirement") or {}).get("comparison_baseline")
@@ -1288,17 +1311,41 @@ class ReportFusionAgent:
             or answer.get("cash_ratios") or answer.get("revenue_cash_divergence")
         )}
         question_sections = {answer.get("section_id") for answer in request.chapters.question_answers}
+        embedded_by_id = {chart.chart_id: chart for chart in embedded}
+
+        def chapter_issue_is_resolved(issue: str) -> bool:
+            if issue.startswith("段落资料缺口："):
+                return True
+            section_id, separator, reason = issue.partition(" ")
+            if not separator or reason != "图表解读缺少可核验证据":
+                return False
+            section = next((s for chapter in chapters for s in chapter.sections
+                            if s.section_id == section_id), None)
+            if section is None or not section.chart_ids:
+                return False
+            return all(
+                cid in embedded_by_id and any(
+                    paragraph.text.strip() and paragraph.kind != "transition"
+                    and set(paragraph.evidence_ids).intersection(embedded_by_id[cid].evidence_ids)
+                    for paragraph in section.paragraphs
+                )
+                for cid in section.chart_ids
+            )
+
         if (
             competition and _CHAPTER_QUALITY_BLOCK in issues and not final_blocking
             and question_sections <= answered_sections
             and input_chapter_issues
-            and all(str(issue).startswith("段落资料缺口：") for issue in input_chapter_issues)
+            and all(chapter_issue_is_resolved(str(issue)) for issue in input_chapter_issues)
             and content_audit
             and all(
                 (entry.get("code") in {"chapter_claim_repair", "chapter_component_isolation"}
                  and entry.get("disposition") in {"repaired", "isolated", "partially_retained"})
                 or (entry.get("code") == "net_cash_ratio_correction"
                     and entry.get("disposition") in {"corrected", "removed"})
+                or (entry.get("code") == "fusion_claim_repair" and entry.get("disposition") == "repaired")
+                or (entry.get("code") == "fusion_claim_isolation"
+                    and entry.get("disposition") in {"isolated", "partially_retained"})
                 for entry in content_audit
             )
             and not any(chapter.used_fallback for chapter in chapters)
@@ -1336,7 +1383,7 @@ class ReportFusionAgent:
         all_warnings=_deduplicate_warnings([*request.report.warnings,*request.chapters.warnings,*(request.charts.warnings if request.charts else []),*warnings,*issues])
         consistency=ConsistencyReport(passed=not issues,issues=issues,warnings=warnings,accepted_edits=accepted,rejected_edits=rejected,terminology_map=term_map)
         km_list = []
-        for km in getattr(request.report, "key_metrics", []):
+        for km in reviewed_metrics:
             if isinstance(km, dict):
                 km_list.append(km)
             elif hasattr(km, "model_dump"):
@@ -1354,7 +1401,8 @@ class ReportFusionAgent:
         provisional_limits = bool(issues or final_blocking)
         view=ReportViewModel(
             report_id=report_id,
-            title=f"{request.report.subject}行业研究报告",
+            title=reviewed.title or f"{request.report.subject}行业研究报告",
+            investment_rating=reviewed.investment_rating,
             subject=request.report.subject,
             as_of=request.report.as_of,
             tone=request.options.tone,
@@ -2084,7 +2132,7 @@ class ReportFusionAgent:
             text = re.sub(r"([，。、；！？])\s+", r"\1", text)
             text = re.sub(r"([。；，])\s*\1+", r"\1", text)
             text = re.sub(r"^[，,。；]\s*", "", text)
-            return text.strip()
+            return normalize_figure_leads(text).strip()
 
         for ch in chapters:
             if ch.summary:

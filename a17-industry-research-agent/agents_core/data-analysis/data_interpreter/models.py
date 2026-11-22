@@ -225,6 +225,7 @@ class AnalysisRequest(BaseModel):
     metric_requirements: list[str] = Field(default_factory=list, max_length=20)
     as_of: date = Field(default_factory=date.today)
     enable_semantic_analysis: bool = True
+    deep_nev_analysis: bool = False
     max_key_metrics: int = Field(default=20, ge=1, le=100)
     max_insights: int = Field(default=12, ge=1, le=50)
     outlier_threshold: float = Field(default=3.5, ge=2.0, le=10.0)

@@ -25,6 +25,11 @@ const props = defineProps<{
   revision: number
   selectedObjectId?: string | null
   annotations?: UserAnnotation[]
+  /** 跨阶段只读补充：A2 标的池取融合阶段矩阵，A5 摘要回退 A2 文本 */
+  crossStage?: {
+    compsMatrix?: import('../api/types').PeerCompsMatrix | null
+    executiveSummary?: string | null
+  }
 }>()
 
 const emit = defineEmits<{
@@ -750,6 +755,16 @@ async function onStageDirectEditSubmit(payload: {
         <!-- 阶段 5：报告融合 (report_fusion) 专属介入 -->
         <template v-else-if="stage === 'report_fusion'">
           <el-button
+            v-if="result.data.needs_reexport"
+            type="primary"
+            size="large"
+            :disabled="submitting || recoveryBlocked"
+            data-testid="btn-reaudit-edits"
+            @click="run({ action: 'regenerate' })"
+          >
+            重新融合并核验
+          </el-button>
+          <el-button
             type="primary"
             plain
             size="large"
@@ -787,6 +802,7 @@ async function onStageDirectEditSubmit(payload: {
       :revision="revision"
       :data="(result.data as Record<string, unknown>) || {}"
       :annotations="annotations"
+      :cross-stage="crossStage"
       :initial-tab="stageInterventionTab"
       :chapter-repair="
         useChapterRepairSuggestion

@@ -126,3 +126,18 @@ _restore_backup_*/
 /a17-industry-research-agent/data/
 /a17-industry-research-agent/deliverables/
 /a17-industry-research-agent/agents_core/chart-generator/chart_kb/
+
+# ── 视频、录屏与临时备份：不入库（媒体走 Releases 或本地备份） ──
+/智能体1-5视频合集-20261119/
+/A1-A5审核视频-交付-20261120/
+/A1-A5审核视频-交付-20261120.zip
+/A1-数据采集审核-台词版-20261119/
+/A2-数据解读审核-台词版-20261119/
+/A3-图表生成审核-台词版-20261119/
+/A4-章节撰写审核-重录脚本-20261119/
+/A5-报告融合-台词版-20261119/
+/_ref_github/
+/_temp_algo_read/
+/_tmp_algo_read/
+/_restore_backup_*/
+/_frontend-ui-backup-*/
