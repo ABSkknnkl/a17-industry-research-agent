@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>专家评审建议</title>
+<style>
+  :root{
+    --teal:#0F4C5C; --teal2:#12707F; --teal-soft:#E3F0F2;
+    --amber:#E8A33D; --amber-soft:#FBF0DC;
+    --green:#15803D; --green-soft:#E3F4E8;
+    --red:#C0563B; --red-soft:#F9E8E2;
+    --ink:#1F2933; --grey:#5C6B73; --line:#E2E8EA; --bg:#F4F7F8; --card:#FFFFFF; --silver:#E5E9EC;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"PingFang SC","Microsoft YaHei",-apple-system,sans-serif; background:var(--bg); color:var(--ink); line-height:1.55;}
+  .wrap{max-width:1080px; margin:0 auto; padding:18px 20px 60px;}
+  .head{background:linear-gradient(120deg,var(--teal),var(--teal2)); color:#fff; border-radius:14px; padding:22px 26px;}
+  .head .tag{display:inline-block; background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.35); border-radius:999px; font-size:12px; padding:3px 12px; letter-spacing:.5px;}
+  .head h1{font-size:26px; margin-top:10px; font-weight:800;}
+  .head .sub{font-size:13px; opacity:.85; margin-top:4px;}
+  .head .meta{margin-top:12px; font-size:12px; opacity:.75; display:flex; gap:16px; flex-wrap:wrap;}
+  .summary{background:var(--card); border:1px solid var(--line); border-left:5px solid var(--amber); border-radius:12px; padding:14px 18px; margin-top:14px; font-size:14px;}
+  .summary b{color:var(--teal);}
+  .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;}
+  @media(max-width:900px){.grid{grid-template-columns:1fr;}}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px;}
+  .card h2{font-size:15px; color:var(--teal); margin-bottom:12px; display:flex; align-items:center; gap:8px;}
+  .card h2 .num{background:var(--teal); color:#fff; font-size:11px; border-radius:6px; padding:2px 8px;}
+  .radar-wrap{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .radar-wrap svg{flex:none;}
+  .legend{flex:1; min-width:200px; font-size:13px;}
+  .legend .row{display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px dashed var(--line);}
+  .legend .dot{width:10px; height:10px; border-radius:3px; flex:none;}
+  .legend .l-name{font-weight:600; min-width:60px;}
+  .legend .l-score{font-weight:800; color:var(--teal); margin-left:auto;}
+  .scorebar{display:grid; grid-template-columns:90px 1fr 42px; align-items:center; gap:10px; margin-top:9px;}
+  .scorebar .s-name{font-size:13px; font-weight:600;}
+  .scorebar .track{height:10px; background:var(--silver); border-radius:999px; overflow:hidden;}
+  .scorebar .track i{display:block; height:100%; border-radius:999px;}
+  .scorebar .s-val{font-size:13px; font-weight:800; text-align:right; color:var(--teal);}
+  .c-low{background:var(--red);} .c-mid{background:var(--amber);} .c-hi{background:var(--green);} .c-teal{background:var(--teal2);}
+  .weak-badge{display:inline-block; background:var(--red-soft); color:var(--red); font-size:12.5px; font-weight:700; border-radius:999px; padding:4px 14px; margin-top:12px;}
+  .sug{border-radius:10px; padding:12px 14px; margin-top:10px; border:1.5px solid;}
+  .sug.improve{background:var(--red-soft); border-color:var(--red);}
+  .sug.consolidate{background:var(--green-soft); border-color:var(--green);}
+  .sug .s-head{display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px;}
+  .sug .s-tag{font-size:11px; border-radius:999px; padding:1px 9px; background:rgba(255,255,255,.75); color:var(--grey);}
+  .sug.improve .s-head{color:var(--red);} .sug.consolidate .s-head{color:var(--green);}
+  .sug .s-desc{font-size:12.5px; color:var(--ink); margin-top:5px; opacity:.9;}
+  .chal{display:flex; gap:10px; padding:9px 0; border-bottom:1px dashed var(--line); font-size:13px; align-items:flex-start;}
+  .chal .ic{flex:none; width:20px; height:20px; border-radius:50%; background:var(--amber-soft); color:#9A6A16; font-size:12px; display:flex; align-items:center; justify-content:center; font-weight:800;}
+  .values{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+  @media(max-width:900px){.values{grid-template-columns:1fr;}}
+  .val{border:1.5px solid var(--line); border-radius:10px; padding:12px;}
+  .val .v-t{font-size:12px; font-weight:700; color:var(--teal); margin-bottom:5px;}
+  .val .v-d{font-size:12.5px; color:var(--ink);}
+  .actions{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  @media(max-width:900px){.actions{grid-template-columns:1fr;}}
+  .act{border:1.5px solid var(--teal2); border-radius:10px; padding:12px; background:var(--teal-soft);}
+  .act .a-n{font-size:20px; font-weight:800; color:var(--teal2);}
+  .act .a-t{font-size:13px; font-weight:700; margin-top:2px;}
+  .foot-note{margin-top:16px; font-size:12px; color:var(--grey); text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head" id="headBox"></div>
+
+  <div class="summary" id="summaryBox"></div>
+
+  <div class="grid">
+    <div class="card">
+      <h2><span class="num">01</span>五关诊断雷达</h2>
+      <div class="radar-wrap">
+        <svg id="radar" width="330" height="300" viewBox="0 0 330 300"></svg>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div id="weakBox"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="num">02</span>五关评分</h2>
+      <div id="bars"></div>
+      <div id="verdicts" style="margin-top:10px; font-size:12.5px; color:var(--grey);"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2><span class="num">03</span>改进建议 <span style="font-weight:400;font-size:12px;color:var(--grey);margin-left:auto;">改进型 = 影响落地，必须做</span></h2>
+      <div id="improveBox"></div>
+      <h2 style="margin-top:16px;"><span class="num">04</span>巩固建议 <span style="font-weight:400;font-size:12px;color:var(--grey);margin-left:auto;">巩固型 = 锦上添花</span></h2>
+      <div id="consolidateBox"></div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2><span class="num">05</span>评委最可能质疑的点</h2>
+        <div id="chalBox"></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h2><span class="num">06</span>三层价值</h2>
+        <div class="values" id="valBox"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h2><span class="num">07</span>下一步行动</h2>
+    <div class="actions" id="actBox"></div>
+  </div>
+
+  <div class="foot-note">本页为专家评审建议 · 由「青创领航员」专家生成 · 评审结论可随项目进展更新</div>
+</div>
+
+<script>
+window.__VIS__ = {"project": "A17 智研天工 · 深度创新诊断", "subtitle": "基于真实代码与项目记忆的专家评审建议", "date": "2026-11-18", "meta": [{"k": "赛道", "v": "A17 同花顺问财 SkillHub · 浙江省服务外包大赛决赛（11/22）"}, {"k": "诊断依据", "v": "最终版-算法质量重写版.docx 全文 + 项目记忆 11-13～11-18 + codebase-memory 真实代码"}, {"k": "代码范围", "v": "568 Python 文件 / 20,507 节点 / 70,224 边 / 5 个核心簇"}, {"k": "核验方式", "v": "只读静态分析，未修改任何业务代码"}], "summary": "创新不足的根因不是「没有分层」，而是所有创新都押在同一层：单次生成过程的防错。事务、幂等、CAS、哈希、schema、fail-closed、门禁都是软件工程通用手法的场景迁移，任何有工程能力的队伍都能复刻，它构成工程质量而非研究能力差异。更关键的是系统不产生复利：PROFILES 五个行业全部手写、阈值全是代码常量、探针因指标名被解析成 GDP 失败 4 次却没沉淀成词典，168 次真实运行之后第 169 次并不比第 1 次聪明；同时「敢交付」在真实 run 里执行成了「敢不交付」——门禁 passed=false、36 页受限草稿、38 处水印、60 张图被抑制、最后一次试跑停在 A4 未出 PDF。真正的差距不在再加一条规则，而在让系统能反解出一条到可签发的路径、把人工裁决沉淀成跨 run 的口径资产、把分析师判断变成可署名可重估的对象。", "gates": [{"name": "价值关", "score": 58}, {"name": "创新关", "score": 34}, {"name": "专业关", "score": 52}, {"name": "落地关", "score": 46}, {"name": "规模关", "score": 28}], "weakest": "规模关（28）与创新关（34）：知识不随使用增长，换行业要改代码；已有创新全部可复刻", "verdicts": [{"gate": "价值关", "level": "中", "comment": "现状：痛点定义准确（口径敏感、复核成本高），第 4 章有完整成本与商业模式。问题：主张是防守性的，「敢交付」的真实产物是 passed=false 的受限草稿 + 138 条待处理问题；中证协 2025 首次要求 AI 投研内控与署名负责，这块合规价值尚未产品化。改进：把交付物从「一份报告」扩到「一条到可签发的路径 + 可署名的判断卡」。"}, {"gate": "创新关", "level": "弱", "comment": "现状：文档表 2.2 八个创新点、五个核、六张编辑台，工程密度很高。问题：八项里没有一项不是事务/幂等/CAS/哈希/schema/fail-closed 的迁移，属于可靠系统该有的样子，不是研究能力的差异；且全部作用于单次 run。改进：把创新轴从「防错」移到「求解、积累、重估」三件别人没有原料做的事。"}, {"gate": "专业关", "level": "中", "comment": "现状：有商业模式画布、三类客户、ROI 公式与三条口径守则在。问题：方案书 1.3 称 iFinD 写作成稿仍要人接，与同花顺 2026-03-30 已上线自动成稿冲突；表 4.3「12.1 分钟 / 48 条批跑」无对应台账；定价仍按份/订阅，未平移到 11-16 已推出的「按席位/审计日志」。改进：赛前修事实口径，赛后改定价口径。"}, {"gate": "落地关", "level": "中", "comment": "现状：2314 条测试通过、有 669 条证据的真实完整 run、五阶段链可跑。问题：最近一次完整 run 门禁 passed=false、60 issues / 54 条必需要求缺口、降级后仍超 500KB 预算；最后一次试跑停在 A4 未形成 PDF；9 个 chain-research 测试失败未修；评测框架覆盖率 35% 为最低。改进：赛前只做离线产物演示，不改业务代码。"}, {"gate": "规模关", "level": "弱", "comment": "现状：声称可复用到其他研究场景。问题：selection.py:187-262 的 PROFILES 五个行业逐一手写 ChartIntent，含新能源汽车专属指标别名；所有阈值是代码常量、换行业需重新标定；五行业实际只有新能源汽车端到端跑到三格式，白酒是版式夹具、其余三个只有画像与选图规则。改进：用留一法证明归纳出的口径知识能迁移到没见过的行业。"}], "improve": [{"title": "交付可达性求解器：把「不能签发」变成「三步到可签发」", "gate": "价值关 / 落地关", "desc": "痛点：用户拿到的是 passed=false 的 36 页受限草稿和 138 条问题清单，真实研究员不会去读清单，他只想知道先补什么最划算。做法：把覆盖矩阵的必需要求缺口、60 张图的 measurement_contract 抑制原因、ProbeOutcome 的补采成败与预算、门禁 G1–G4 硬条件四份已有结构化数据反向求解，得到「动作 → 解锁哪些章节/图表/证据格」的依赖边，给出最小成本修复路径。赛前形态：对已完成 run 跑离线脚本出一张路径卡，零业务代码改动，直接把最致命的短板变成 headline。验证：按路径回放归档补采看门禁是否 false→true，再删掉路径任一步验证无法通过（最小性）。优先级 P0。"}, {"title": "跨 run 口径知识归纳：让第 169 次比第 1 次聪明", "gate": "规模关 / 创新关", "desc": "痛点：五个行业 PROFILES 手写、阈值常量化；探针因「渗透率被解析成 GDP 同比」连续失败 4 次，这个教训下次照样会犯；金额 unit=None 导致比亚迪 3 年营收明明在库却被判必需缺口。做法：从 168 次运行、feedback_history、修订快照、probe_attempts 中归纳可版本化的指标别名表 / 单位溯源规则 / parser schema 选择规则，并配「知识变更不跑坏旧行业」的回归门。赛前形态：不改代码，出一份离线归纳证据表 + 至少 2 条可直接落库的规则。验证：留一法——用 4 个行业归纳结果预测第 5 个行业的指标别名与期间口径，报命中率；新增知识后 395 条回归与五行业夹具不退化。优先级 P1。"}, {"title": "判断对象结构化与到期重估：责任落在判断，不是数字", "gate": "价值关 / 专业关", "desc": "痛点：系统只对数字做证据绑定，对判断只有「拦截」或「原文直引」两种处理，等于把研究里最值钱的部分外包给人或干脆不写；而中证协 2025 要求分析师署名负责的正是判断。做法：在现有断言三态 verify、accepted_risk_codes、risk_snapshot_sha256、decision_id、actor、certification_bundle_sha256 之上，把「假设—支撑证据—成立条件—失效条件—下次该看哪个指标—谁确认」做成独立对象，数据更新后自动重估。赛前形态：从 31 页修订版挑 3 条核心判断做成判断卡，作为交付物一页。验证：注入一个反例数据，看系统是否按失效条件正确标记；每条判断都能落到真实 record_id 与决策包 actor。优先级 P1（叙事级赛前 P0）。"}, {"title": "修对外事实冲突，别让评委一追就穿", "gate": "专业关", "desc": "三处硬伤：方案书 1.3 与同花顺已上线自动成稿冲突；4.3「12.1 分钟 / 48 条批跑」缺结果台账；五行业只有一个端到端却写成通用可复用。另：你贴的 20 分钟演示节奏与项目记忆里决赛通知实测「合计 15 分钟、含提问 ≤22 分钟」不一致，赛前须以通知 PDF 为准统一。这几处不修，前面三条讲得再好也会被一句追问打断。优先级 P0。"}], "consolidate": [{"title": "交付物三件套：报告 + 到签发路径卡 + 判断卡", "gate": "价值关", "desc": "把「敢交付」从形容词变成可点开的三样东西，且全部可由已完成 run 离线产出，不依赖现场从零跑完。这是三层价值证明包的载体。"}, {"title": "留一法跨行业迁移验证", "gate": "规模关", "desc": "用 4 个行业归纳、第 5 个行业盲测，给出命中率与失败原因分布；比「支持五个行业」的清单式表述更有说服力，且数据可现场核实。"}, {"title": "评测框架覆盖率 35% 补齐", "gate": "落地关", "desc": "当前算法层 79% / 后端 66% / 评测框架 35%，而三条新方向恰恰依赖评测台做归因。赛后优先补这一层，它决定「能不能证明有进步」。"}], "challenges": ["你们说「敢交付」，但最近一次完整 run 门禁 passed=false、36 页全是受限草稿水印、60 张图被抑制，到底交付了什么？", "表 2.2 八个创新点里，哪一个不是事务、幂等、CAS、哈希、schema、fail-closed 这些软件工程通用手法？", "跑了 168 次真实运行、512 条用例，系统比第 1 次聪明在哪？换个新行业是不是还得手改 PROFILES？", "方案书说 iFinD 写作成稿仍要人接，但同花顺 2026-03-30 已上线自动成稿，你们的定位还成立吗？", "五个行业只有新能源汽车端到端，白酒是版式夹具，其余只有画像——怎么证明可复制而不是定制？", "中证协要求分析师署名负责，你们的责任落点是数字还是判断？换模型之后剩下的到底是什么资产？"], "values": {"技术": "从「防错规则」升级为「可求解、可积累、可重估」的研究系统。口径契约库、判断对象与最小修复路径不随模型迭代失效，是模型升级后真正剩下的资产；依据为现有覆盖矩阵、抑制原因、探针预算、决策包四份结构化数据的反向求解，属待实现，标注「待验证」。", "商业": "付费点应从「省时间」平移到「合规留痕」，定价从按份改为按席位 / 审计日志。依据：项目 11-16 联网核查的中证协 2025 报告（超七成券商已用 AI、首次要求建 AI 投研内控、禁直接采信未核验 AI 内容、全流程留痕、分析师署名负责）与同花顺许可协议商业使用限制。具体定价与市场规模需自行核实，不预设数值。", "社会": "让 AI 参与的研究过程可署名、可复核、可回溯到具体的人与具体版本，降低未核验 AI 内容进入投资决策的风险。属价值论证方向，需真实机构试点记录支撑，标注「待验证」。"}, "actions": ["对已完成的 669 证据 run 跑一次离线可达性求解，出一张「三步到可签发」路径卡，并验证删掉任一步即无法通过", "从历史 run 归纳至少 2 条可落库的口径规则（如比亚迪营收单位溯源、渗透率指标别名→月度 schema），用留一法报命中率", "从 31 页修订版挑 3 条核心判断做判断卡，同时修方案书 1.3 竞品表述、4.3 定价口径与五行业完成度表述，统一演示时长口径"]};
+(function(){
+  const D = window.__VIS__;
+  const GATES = D.gates || [];
+
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+  function colorOf(s){ return s<40?'var(--red)':(s<70?'var(--amber)':'var(--green)'); }
+
+  document.getElementById('headBox').innerHTML =
+    '<span class="tag">专家评审建议 · 由「青创领航员」专家生成</span>'+
+    '<h1>'+esc(D.project||'')+'</h1>'+
+    '<div class="sub">'+esc(D.subtitle||'专家评审建议')+'</div>'+
+    '<div class="meta">'+(D.meta||[]).map(m=>'<span>🏷 '+esc(m.k)+'：'+esc(m.v)+'</span>').join('')+
+    (D.date?('<span>📅 '+esc(D.date)+'</span>'):'')+'</div>';
+
+  document.getElementById('summaryBox').innerHTML = '<b>总体诊断：</b>'+esc(D.summary||'');
+  document.title = (D.project||'项目')+' · 专家评审建议';
+
+  // ---- radar ----
+  (function drawRadar(){
+    const svg = document.getElementById('radar');
+    const NS='http://www.w3.org/2000/svg';
+    const cx=165, cy=145, R=105, n=GATES.length;
+    const ang=i=>(-90 + i*360/n)*Math.PI/180;
+    const pt=(i,r)=>[cx+r*Math.cos(ang(i)), cy+r*Math.sin(ang(i))];
+    let out='';
+    for(let l=1;l<=4;l++){
+      const rr=R*l/4;
+      const pts=[]; for(let i=0;i<n;i++) pts.push(pt(i,rr).join(','));
+      out+='<polygon points="'+pts.join(' ')+'" fill="none" stroke="#E2E8EA" stroke-width="1"/>';
+    }
+    for(let i=0;i<n;i++){
+      const p=pt(i,R);
+      out+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0]+'" y2="'+p[1]+'" stroke="#E2E8EA" stroke-width="1"/>';
+      const lab=pt(i,R+18);
+      out+='<text x="'+lab[0]+'" y="'+lab[1]+'" text-anchor="middle" dominant-baseline="middle" font-size="12" fill="#5C6B73" font-weight="600">'+esc(GATES[i].name)+'</text>';
+    }
+    const dataPts=[]; for(let i=0;i<n;i++) dataPts.push(pt(i, R*(Math.min(100,Math.max(0,GATES[i].score||0))/100)).join(','));
+    out+='<polygon points="'+dataPts.join(' ')+'" fill="rgba(18,112,127,.25)" stroke="#12707F" stroke-width="2"/>';
+    for(let i=0;i<n;i++){ const p=pt(i,R*(Math.min(100,Math.max(0,GATES[i].score||0))/100)); out+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4" fill="#12707F"/>'; }
+    svg.innerHTML=out;
+  })();
+
+  document.getElementById('legend').innerHTML = GATES.map(g=>{
+    const s=Math.min(100,Math.max(0,g.score||0));
+    return '<div class="row"><span class="dot" style="background:'+colorOf(s)+'"></span><span class="l-name">'+esc(g.name)+'</span><span class="l-score">'+s+'</span></div>';
+  }).join('');
+
+  if(D.weakest){
+    document.getElementById('weakBox').innerHTML = '<span class="weak-badge">⚠ 最弱关：'+esc(D.weakest)+' —— 优先攻坚</span>';
+  }
+
+  document.getElementById('bars').innerHTML = GATES.map(g=>{
+    const s=Math.min(100,Math.max(0,g.score||0));
+    return '<div class="scorebar"><span class="s-name">'+esc(g.name)+'</span><div class="track"><i style="width:'+s+'%;background:'+colorOf(s)+'"></i></div><span class="s-val">'+s+'</span></div>';
+  }).join('');
+
+  document.getElementById('verdicts').innerHTML = (D.verdicts||[]).map(v=>'<div style="padding:6px 0;border-bottom:1px dashed var(--line);"><b>'+esc(v.gate)+'（'+esc(v.level||'')+'）：</b>'+esc(v.comment||'')+'</div>').join('');
+
+  document.getElementById('improveBox').innerHTML = (D.improve||[]).map(s=>'<div class="sug improve"><div class="s-head">🔧 '+esc(s.title)+'<span class="s-tag">'+esc(s.gate||'')+'</span></div><div class="s-desc">'+esc(s.desc||'')+'</div></div>').join('') || '<div style="color:var(--grey);font-size:13px;">暂无</div>';
+
+  document.getElementById('consolidateBox').innerHTML = (D.consolidate||[]).map(s=>'<div class="sug consolidate"><div class="s-head">✨ '+esc(s.title)+'<span class="s-tag">'+esc(s.gate||'')+'</span></div><div class="s-desc">'+esc(s.desc||'')+'</div></div>').join('') || '<div style="color:var(--grey);font-size:13px;">暂无</div>';
+
+  document.getElementById('chalBox').innerHTML = (D.challenges||[]).map(c=>'<div class="chal"><span class="ic">!</span><span>'+esc(c)+'</span></div>').join('') || '<div style="color:var(--grey);font-size:13px;">暂无</div>';
+
+  const V=D.values||{};
+  document.getElementById('valBox').innerHTML =
+    '<div class="val"><div class="v-t">技术价值</div><div class="v-d">'+esc(V.技术||V.tech||'—')+'</div></div>'+
+    '<div class="val"><div class="v-t">商业价值</div><div class="v-d">'+esc(V.商业||V.biz||'—')+'</div></div>'+
+    '<div class="val"><div class="v-t">社会价值</div><div class="v-d">'+esc(V.社会||V.social||'—')+'</div></div>';
+
+  document.getElementById('actBox').innerHTML = (D.actions||[]).map((a,i)=>'<div class="act"><div class="a-n">'+(i+1)+'</div><div class="a-t">'+esc(a)+'</div></div>').join('');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A17 文档创新点 · 破壁方案</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#fff; --ink:#1a1a1a; --ink2:#4a4f57; --ink3:#8a9099;
+    --line:#e3e6ea; --accent:#0F4C5C; --accent2:#12707F; --accent-soft:#E3F0F2;
+    --p1:#0F4C5C; --p2:#B45309; --p3:#6D28D9;
+    --warn:#b45309; --warn-bg:#fef6e7; --ok:#0f7b52; --ok-bg:#eaf7f1;
+    --red:#C0563B; --red-bg:#F9E8E2; --amber:#E8A33D; --amber-bg:#FBF0DC;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    line-height:1.72;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding:28px 20px 80px}
+  header.top{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:26px 28px;margin-bottom:18px;border-top:4px solid var(--accent)}
+  .eyebrow{font-size:11px;letter-spacing:.16em;color:var(--accent2);font-weight:800;margin-bottom:9px}
+  h1{font-size:25px;margin:0 0 10px;letter-spacing:-.01em;line-height:1.4}
+  .lead{font-size:14px;color:var(--ink2);margin:0}
+  .meta{font-size:12px;color:var(--ink3);margin-top:12px;display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  .badge{display:inline-block;background:var(--accent-soft);color:var(--accent);font-size:11.5px;padding:3px 10px;border-radius:999px;font-weight:700}
+  .badge.grey{background:#eef0f3;color:var(--ink2)}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:18px}
+  h2{font-size:17px;margin:0 0 14px;display:flex;align-items:center;gap:9px}
+  h2 .num{width:23px;height:23px;border-radius:7px;background:var(--accent);color:#fff;font-size:11px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto}
+  h3{font-size:14px;margin:18px 0 8px;color:var(--accent)}
+  p{margin:8px 0;font-size:14px}
+  .muted{color:var(--ink2);font-size:13.5px}
+  .tiny{color:var(--ink3);font-size:12px;line-height:1.65}
+  .reframe{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:760px){.reframe{grid-template-columns:1fr}}
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fbfbfc}
+  .box .lbl{font-size:10.5px;font-weight:800;letter-spacing:.1em;color:var(--ink3);margin-bottom:6px}
+  .assumption{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+  .assumption:last-child{border-bottom:0}
+  .tag{flex:0 0 auto;font-size:10.5px;padding:2px 7px;border-radius:5px;font-weight:800;white-space:nowrap}
+  .tag.fake{background:var(--warn-bg);color:var(--warn)}
+  .tag.real{background:#eef0f3;color:var(--ink2)}
+  .choice{background:var(--ok-bg);border:1px solid #c8e8da;border-radius:10px;padding:12px 14px;margin-top:12px;font-size:13.5px}
+  .path{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden}
+  .path > .head{padding:14px 17px;cursor:pointer;display:flex;align-items:center;gap:11px;user-select:none}
+  .path > .head:hover{background:#fafbfc}
+  .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+  .path-title{font-weight:800;font-size:15px;flex:1}
+  .index{font-size:11.5px;color:var(--ink3);flex:0 0 auto}
+  .path .body{display:none;padding:0 17px 17px;border-top:1px solid var(--line)}
+  .path.open .body{display:block}
+  .path.open .index::after{content:" ▲"}
+  .path:not(.open) .index::after{content:" ▼"}
+  .kv{margin:14px 0}
+  .kv .k{font-size:10.5px;font-weight:800;color:var(--ink3);letter-spacing:.08em;margin-bottom:4px}
+  .kv .v{font-size:13.5px}
+  .chain{border-left:2px solid var(--line);padding-left:15px;margin:8px 0}
+  .chain .step{position:relative;margin-bottom:10px;font-size:13.5px}
+  .chain .step::before{content:"";position:absolute;left:-20px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--accent2)}
+  .chain .step b{display:block;font-size:11px;color:var(--ink3);font-weight:800}
+  .scores{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+  @media(max-width:760px){.scores{grid-template-columns:repeat(2,1fr)}}
+  .score .sv{font-size:11.5px;color:var(--ink2);display:flex;justify-content:space-between}
+  .bar{height:6px;background:#eceef1;border-radius:99px;margin-top:5px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:99px;background:var(--accent2)}
+  .callout{border-radius:9px;padding:11px 13px;font-size:13.5px;margin:11px 0}
+  .callout.risk{background:var(--warn-bg);border:1px solid #f3ddb4}
+  .callout.action{background:var(--ok-bg);border:1px solid #c8e8da}
+  .callout.basis{background:var(--accent-soft);border:1px solid #c9dfe3}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:10.5px;letter-spacing:.05em;color:var(--ink3);background:#fafbfc;font-weight:800}
+  td.c{text-align:center;white-space:nowrap}
+  .grade{display:inline-block;min-width:22px;padding:1px 6px;border-radius:5px;font-weight:800;font-size:11.5px;text-align:center}
+  .g-S{background:#E3F4E8;color:#0f7b52}.g-A{background:#E3F0F2;color:var(--accent)}
+  .g-B{background:var(--amber-bg);color:#9A6A16}.g-C{background:#F9E8E2;color:var(--red)}
+  .src{display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;font-weight:700}
+  .src.old{background:#eef0f3;color:var(--ink2)}
+  .src.new{background:#ece6fb;color:var(--p3)}
+  .quote{background:#fbfbfc;border:1px solid var(--line);border-left:3px solid var(--accent2);border-radius:0 8px 8px 0;padding:11px 13px;margin:9px 0;font-size:13px;line-height:1.8}
+  .quote .loc{font-size:10.5px;font-weight:800;color:var(--accent2);letter-spacing:.05em;margin-bottom:5px}
+  ul.check{list-style:none;padding:0;margin:0}
+  ul.check li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  ul.check li:last-child{border-bottom:0}
+  ul.check input{margin-top:5px;width:15px;height:15px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto}
+  ul.check li.done label{text-decoration:line-through;color:var(--ink3)}
+  a{color:var(--accent2);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .tools{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+  button{font:inherit;font-size:12.5px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+  button:hover{background:#f2f3f5}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .flag{font-size:10px;font-weight:800;padding:1px 6px;border-radius:4px;white-space:nowrap}
+  .flag.f{background:#eaf7f1;color:#0f7b52}
+  .flag.h{background:#fef6e7;color:var(--warn)}
+  .note{background:var(--amber-bg);border:1px solid #f0dcb4;border-radius:9px;padding:11px 13px;font-size:13px;margin-top:12px}
+  footer{text-align:center;color:var(--ink3);font-size:11.5px;margin-top:22px}
+  @media print{body{background:#fff}.wrap{max-width:100%}button{display:none}.path .body{display:block!important}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">BREAKER · 创造力破壁方案</div>
+  <h1>不用写一行新代码，也能让 2.3 从「八个并列创新点」变成「别人复述不出来的一句话」</h1>
+  <p class="lead">你手上最稀缺的创新原料不是新功能，是系统已经在产生、却一直被当成「失败处理」写进边界说明的那批东西：60 张被抑制的图、判为 ⊥U 被删的子句、<code>unit_unknown</code> 不参与比较、探针返回 <code>no_data</code>、门禁 <code>blocked</code> 不出正式稿。把它们从「副作用」重新定性为「一等交付物」，零代码成本，纯文档层操作。</p>
+  <div class="meta">
+    <span class="badge">形态：多路径对比看板</span>
+    <span class="badge grey">选择理由：目标多元（筛选 + 补挖 + 四维排序 + 章节落位 + 可粘贴表述），约束复杂（赛前不改代码、文档 2.3 已有固定结构、偏好逐轮小幅修改），单路径推演装不下</span>
+  </div>
+  <div class="meta"><span>依据：最终版-算法质量重写版.docx 全文 · 项目记忆 11-13～11-18 · codebase-memory 只读代码核验</span><span class="badge grey">2026-11-18</span></div>
+</header>
+
+<!-- 1 问题重构 -->
+<section id="reframe">
+  <h2><span class="num">1</span>问题重构：你被自己设的那堵墙挡住了</h2>
+  <div class="reframe">
+    <div class="box"><div class="lbl">原始问题</div><div>「梳理与同类项目不同的创新点，筛选适合写进文档的内容，补充可挖掘方向，排序，给章节落位和精炼表述」——表述里已经预装了一个解法：创新点是要被「找出来 / 补出来」的东西。</div></div>
+    <div class="box"><div class="lbl">终局目标（剥掉手段）</div><div>11/22 决赛前，让方案书 2.3 节在评委眼里「不可复述、不可照抄」，且每一条都能被现场产物证住——不是让系统多一个功能。</div></div>
+  </div>
+  <h3>隐含假设拆解 <span class="tiny">（分辨真约束 / 假约束）</span></h3>
+  <div class="box">
+    <div class="assumption"><span class="tag fake">假约束</span><span><b>创新点必须是新增的模块或算法。</b>违反它不会导致物理不可能。文档 3.3 / 3.4 里已写透的判定机制，只要换一种定性，就能成为新的创新主张；这是文字层操作，不碰代码。</span></div>
+    <div class="assumption"><span class="tag fake">假约束</span><span><b>赛前不能改代码 ⇒ 赛前不能加创新点。</b>把代码约束误迁移到了文档约束。真约束是「不动业务代码」，文档改动没有这条限制。</span></div>
+    <div class="assumption"><span class="tag fake">假约束</span><span><b>创新点越硬，越要写在「新增了什么」上。</b>这是行业惯例。同类方案（含 A08、iFinD 自动成稿）全部只展示「生成了什么」，没人把「拒绝了什么、为什么拒绝」当作可验收产物——空白恰恰在这里。</span></div>
+    <div class="assumption"><span class="tag real">真约束</span><span>① 11/22 决赛，赛前不发起完整流水线重跑；② 最后一次试跑停在 A4、未形成 PDF，交付演示只能用已完成 run；③ 文档 2.3 已有「一个主张 / 三根支柱 / 两个支撑」固定结构，不做重写；④ 用户明确偏好逐轮小幅修改、不擅改原有表述。</span></div>
+    <div class="assumption"><span class="tag real">真约束</span><span>可论证性：写进方案书的每一条，都必须能落到已有代码、已完成 run 或可现场点开的产物；无台账数字、无实测的方向不能写。</span></div>
+  </div>
+  <h3>重构后的三个问题版本</h3>
+  <div class="box">
+    <p style="margin:4px 0"><b>版本 A（终局）</b>：不是「还有哪些创新点可写」，而是「已有产物里，哪一类是同类方案结构上产不出来的」。</p>
+    <p style="margin:4px 0"><b>版本 B（JTBD）</b>：评委不是雇这份文档来数功能，是雇它回答「凭什么信这套系统」——那么哪些段落现在没在回答这句话？</p>
+    <p style="margin:4px 0"><b>版本 C（约束移除）</b>：假设不能新增任何代码、不能重写 2.3、只能补写若干段与改一张表，能让创新主张变得不可复制吗？</p>
+  </div>
+  <div class="choice"><b>主攻版本 C</b>，用 A 做筛选标准、B 做落位判据。理由：它是唯一同时满足「赛前 4 天 / 零代码 / 不改原有台词 / 可现场验证」四条硬约束的路径；A 与 B 用来判断补哪些句子，而不是铺开新工程。</div>
+</section>
+
+<!-- 2 等级排序 -->
+<section id="ranking">
+  <h2><span class="num">2</span>创新点全量筛选与等级排序</h2>
+  <p class="muted tiny">四维均为 1–5 分，按你要的口径：<b>创新性</b>（是否反常识 / 同类结构上难产出）· <b>项目契合度</b>（是否长在现有五核与证据主线上）· <b>可论证性</b>（有无代码、实测、可现场点开的产物）· <b>文档价值</b>（写进方案书能否直接加分）。综合等级 S / A / B / C；优先级 P0 写入 / P1 作为证据行 / P2 降为实现细节 / — 赛前不写入。<span class="src old">已有</span> 指文档或代码里已存在；<span class="src new">新挖</span> 指本次重新定性或补挖。</p>
+  <table>
+    <thead><tr><th style="width:4%">#</th><th style="width:26%">创新点</th><th class="c">创新性</th><th class="c">契合度</th><th class="c">可论证</th><th class="c">文档价值</th><th class="c">等级</th><th class="c">优先级</th><th style="width:22%">处置判断</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><span class="src new">新挖</span> <b>拒绝产物可验收</b>：把被抑制的图、被拦的断言、未采纳来源、门禁阻断做成与正文同源的一等清单</td><td class="c">5</td><td class="c">5</td><td class="c">5</td><td class="c">5</td><td class="c"><span class="grade g-S">S</span></td><td class="c">P0</td><td>同类只交成稿，无人交「拒绝清单」；60 图抑制 / 38 处受限水印是现成实测</td></tr>
+      <tr><td>2</td><td><span class="src new">新挖</span> <b>署名前的责任界定</b>：定位从「初稿生成器」升为「可签字前复核的研究底稿」</td><td class="c">4</td><td class="c">5</td><td class="c">4</td><td class="c">5</td><td class="c"><span class="grade g-S">S</span></td><td class="c">P0</td><td>顺带修掉 1.3 与 iFinD 已上线自动成稿的事实冲突，改打「能否负责任地成稿」</td></tr>
+      <tr><td>3</td><td><span class="src old">已有</span> <b>断言分型核验</b>：六类断言 / 三态判定 / fail-closed</td><td class="c">4</td><td class="c">5</td><td class="c">5</td><td class="c">5</td><td class="c"><span class="grade g-S">S</span></td><td class="c">P0</td><td>表 2.2 已有但只占一行；建议升格为「拒绝产物」的理论母体，3.3.2 补论证</td></tr>
+      <tr><td>4</td><td><span class="src new">新挖</span> <b>研报的可复现构建</b>：同输入 + 同版本 + 同决策包 ⇒ 产物校验摘要一致</td><td class="c">4</td><td class="c">5</td><td class="c">4</td><td class="c">5</td><td class="c"><span class="grade g-S">S</span></td><td class="c">P0</td><td>决策包 / 快照 / 内容寻址回放 / 5 号文献 PROV-O 与 RFC 8785 均已存在，只差把它定性为创新</td></tr>
+      <tr><td>5</td><td><span class="src old">已有</span> <b>精度裁定</b>：按披露串反推步长，16.17 与 16.2 不误杀</td><td class="c">4</td><td class="c">5</td><td class="c">5</td><td class="c">5</td><td class="c"><span class="grade g-S">S</span></td><td class="c">P0</td><td>一个数就能讲清，评委最好记；保留为 headline</td></tr>
+      <tr><td>6</td><td><span class="src old">已有</span> <b>双通道探针</b>：静态优先 + 动态受限，4/4 与 3/4 实测</td><td class="c">4</td><td class="c">5</td><td class="c">5</td><td class="c">5</td><td class="c"><span class="grade g-S">S</span></td><td class="c">P0</td><td><b>表 2.2 缺这一行</b>；渗透率 4 次全失败仍不宣称全自动，是最硬的诚信证据</td></tr>
+      <tr><td>7</td><td><span class="src old">已有</span> <b>裁判-修复同源 + 七条约束</b>：修不好回退扁平结构</td><td class="c">4</td><td class="c">5</td><td class="c">4</td><td class="c">4</td><td class="c"><span class="grade g-A">A</span></td><td class="c">P1</td><td>须与「幂等裁剪」拆成两行（现表 2.2 误并一行）：一个管正文、一个管产业链图</td></tr>
+      <tr><td>8</td><td><span class="src old">已有</span> <b>事务化审核 / revision CAS</b>：8 状态 8 动作、409 拒绝覆盖</td><td class="c">4</td><td class="c">5</td><td class="c">5</td><td class="c">4</td><td class="c"><span class="grade g-A">A</span></td><td class="c">P1</td><td>懂行的人认；但作为「支撑机制」写，不单列为创新主张</td></tr>
+      <tr><td>9</td><td><span class="src old">已有</span> <b>industry_common 结构保真</b>：证据不足不删也不编，低空 8 家保 8 家</td><td class="c">4</td><td class="c">4</td><td class="c">4</td><td class="c">4</td><td class="c"><span class="grade g-A">A</span></td><td class="c">P1</td><td>反直觉且可演示；并入「拒绝产物」作为「不编」的正面例证</td></tr>
+      <tr><td>10</td><td><span class="src old">已有</span> <b>冲突并列保留、不平均不覆盖</b></td><td class="c">3</td><td class="c">5</td><td class="c">4</td><td class="c">4</td><td class="c"><span class="grade g-A">A</span></td><td class="c">P1</td><td>并入支柱二「证据链」，作为冲突处理的一句</td></tr>
+      <tr><td>11</td><td><span class="src old">已有</span> <b>五阶段五张编辑台</b></td><td class="c">3</td><td class="c">5</td><td class="c">4</td><td class="c">3</td><td class="c"><span class="grade g-B">B</span></td><td class="c">P2</td><td>前台最好讲，但界面形态别人也能做；作为「人机协同证据」写在 2.2，不进创新表</td></tr>
+      <tr><td>12</td><td><span class="src old">已有</span> <b>单位溯源 unit_unknown</b>：金额无来源单位即不参与比较</td><td class="c">3</td><td class="c">5</td><td class="c">5</td><td class="c">3</td><td class="c"><span class="grade g-B">B</span></td><td class="c">P2</td><td>并入「拒绝产物」作类型之一，不单列</td></tr>
+      <tr><td>13</td><td><span class="src old">已有</span> <b>双核量化 / 代码算数</b></td><td class="c">3</td><td class="c">5</td><td class="c">4</td><td class="c">3</td><td class="c"><span class="grade g-B">B</span></td><td class="c">P2</td><td>保留为「三根支柱」之一，不单列创新点——说法易被同类复用</td></tr>
+      <tr><td>14</td><td><span class="src old">已有</span> <b>证据穿透 R- 编号 / 三格式同源 / 幂等裁剪</b></td><td class="c">2</td><td class="c">5</td><td class="c">4</td><td class="c">2</td><td class="c"><span class="grade g-B">B</span></td><td class="c">P2</td><td>降为实现细节：前两者是题面必答题，后者并入 3.3.4 即可</td></tr>
+      <tr><td>15</td><td><span class="src new">新挖</span> <b>交付可达性求解器</b>：反解「补哪三下就能签发」</td><td class="c">5</td><td class="c">4</td><td class="c">2</td><td class="c">2</td><td class="c"><span class="grade g-C">C</span></td><td class="c">—</td><td>创新性最高但<b>无离线台账、无实测</b>；写进方案书会被追问「跑过吗」，赛前不写入，留作赛后</td></tr>
+      <tr><td>16</td><td><span class="src new">新挖</span> <b>跨 run 口径知识归纳 / 判断对象结构化</b></td><td class="c">5</td><td class="c">3</td><td class="c">1</td><td class="c">1</td><td class="c"><span class="grade g-C">C</span></td><td class="c">—</td><td>代码里 <code>PROFILES</code> 仍是五行业手写硬编码，写「系统能自动归纳」与事实相反，属于自曝短板</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>砍掉 15 / 16 的理由要写在明处</b>：它们创新性满分，但可论证性 1–2 分。方案书不是愿景文档，评委一句「现场跑一次」就能击穿。这两条留到赛后做，届时它们才是真正的壁垒。排序规则：先按四维总分降序，可论证性出现 ≤2 直接降到 C 级，不因创新性高而豁免。</div>
+</section>
+
+<!-- 3 路径卡片 -->
+<section id="paths">
+  <h2><span class="num">3</span>三条主路径的推演（点卡片展开）</h2>
+  <p class="muted tiny">三个方法彼此独立、结论不收敛到同一处：概念萃取＋封闭世界（只用系统内已有资源）· 反向假设＋JTBD（从「谁雇用它」倒推）· 类比迁移＋二阶思维（借远端领域已验证的性质）。</p>
+
+  <div class="path" style="border-color:var(--p1)">
+    <div class="head" onclick="this.parentNode.classList.toggle('open')">
+      <span class="dot" style="background:var(--p1)"></span>
+      <span class="path-title">路径 1 · 把「拒绝产物」定性为一等交付物</span>
+      <span class="index">反常识 ★★★</span>
+    </div>
+    <div class="body">
+      <div class="callout basis"><b>理论依据 ·</b> <a href="#m-c2">概念萃取</a> ＋ <a href="#m-e1">封闭世界原则</a>。机制：概念萃取要求去掉领域词，把「60 张图被抑制」抽象成「系统主动不生产某些内容」；封闭世界原则要求解法只用系统内已存在的资源，不引入新模块。两者叠加，直接指向一批已被产生、却被归到「失败处理」章的现成数据——这正是被忽略的免费资源。</div>
+      <div class="kv"><div class="k">核心假设（只有一条）</div><div class="v">「系统拒绝了什么」与「系统交付了什么」对复核者具有同等价值。<span class="flag h">假设</span></div></div>
+      <div class="kv"><div class="k">推演链</div><div class="chain">
+        <div class="step"><b>一阶</b>因为抑制原因码、⊥U 判定、<code>unit_unknown</code>、<code>no_data</code>、<code>blocked</code> 本就随产物落盘，所以不需要新增任何采集逻辑，只需在交付层把它们汇总成一份同源清单。<span class="flag f">事实：代码与 11-16 记忆</span></div>
+        <div class="step"><b>二阶</b>进而读者能区分「未提及」与「已核验后不予写入」，复核动作从「通读 36 页找疑点」变成「按清单逐条裁决」；审核人第一次有了明确的、可穷举的责任对象。</div>
+        <div class="step"><b>三阶</b>长期看，这批带原因码的拒绝记录成为独有的资产：它记录了系统在每个行业、每类口径上「哪里会出错」，这是同类方案结构性产不出的，因为他们没有证据契约层，失败只是一条日志。</div>
+      </div></div>
+      <div class="kv"><div class="k">颠覆点</div><div class="v">击穿「创新＝新增功能」，同时击穿「失败处理只能写在边界说明里」这条行业惯例。A08 与 iFinD 自动成稿都在比产出量，本方案改比「拒绝得是否说得清」。</div></div>
+      <div class="scores">
+        <div class="score"><div class="sv"><span>颠覆度</span><span>5/5</span></div><div class="bar"><i style="width:100%"></i></div></div>
+        <div class="score"><div class="sv"><span>可行性</span><span>5/5</span></div><div class="bar"><i style="width:100%"></i></div></div>
+        <div class="score"><div class="sv"><span>验证成本</span><span>5/5</span></div><div class="bar"><i style="width:100%"></i></div></div>
+        <div class="score"><div class="sv"><span>可逆性</span><span>5/5</span></div><div class="bar"><i style="width:100%"></i></div></div>
+      </div>
+      <div class="callout risk"><b>失效条件 ·</b> 若已完成 run 的抑制原因码只存在内存、未随产物落盘，或清单无法与正文共用同一套证据索引，则「同源」不成立，本路径退化为普通日志导出，应立即放弃该主张。早期预警：导出清单里出现无 <code>record_id</code> 或无原因码的条目。</div>
+      <div class="callout action"><b>最小验证动作（72h）·</b> 从 <code>run-20261114211137-9b19fa127626</code> 离线导出一张「60 张抑制图 + 原因码分布」表，与正文证据目录做一次编号对账。能对上，主张成立；对不上，当场证伪，不写进文档。</div>
+      <div class="tiny"><b>AI 视角：</b>汇总清单与措辞润色 AI 12 个月内全可代劳；必须由人守的是「哪些拒绝算合理、哪条要翻案」的判断，以及为这份判断署名的责任。</div>
+    </div>
+  </div>
+
+  <div class="path" style="border-color:var(--p2)">
+    <div class="head" onclick="this.parentNode.classList.toggle('open')">
+      <span class="dot" style="background:var(--p2)"></span>
+      <span class="path-title">路径 2 · 定位从「生成初稿」改为「署名前的责任界定」</span>
+      <span class="index">反常识 ★★☆</span>
+    </div>
+    <div class="body">
+      <div class="callout basis"><b>理论依据 ·</b> <a href="#m-d1">反向假设法</a> ＋ <a href="#m-e4">Jobs-to-be-Done</a>。机制：反向假设先问「怎样让这套系统彻底没价值」——答案是交一份看起来专业却没人敢署名的报告；把这条反过来，就得到真正的 Job 不是「写报告」而是「在署名前把责任边界划清」。JTBD 的作用是按情境而非按品类重新识别竞争对手，于是竞品不再是「别的写作助手」，而是「分析师自己的核对流程」。</div>
+      <div class="kv"><div class="k">核心假设（只有一条）</div><div class="v">机构客户付费的主要动机是合规留痕，而非节省工时。<span class="flag h">假设</span> 依据：项目 11-16 联网核查的中证协 2025 报告（超七成券商已用 AI，首次要求建 AI 投研内控、禁直接采信未核验内容、全流程留痕、分析师署名负责）与同花顺许可协议商业使用限制。<span class="flag f">事实：已记录</span></div></div>
+      <div class="kv"><div class="k">推演链</div><div class="chain">
+        <div class="step"><b>一阶</b>因为文档 1.3 仍写「iFinD 与 Wind 的写作与成稿仍要人来接」，而同花顺 2026-03-30 已明确自动成稿，所以当前竞品论证站不住；换成「能否负责任地成稿」后，比的是过程可核而非能力有无。</div>
+        <div class="step"><b>二阶</b>进而 4.3 的定价口径必须跟着改：按席位与审计日志计价，而非按报告份数，因为交付价值不随份数线性增长，随可追溯过程的完整度增长。</div>
+        <div class="step"><b>三阶</b>长期看，系统从「一次性生成器」变成「持续复核基座」；这也为赛后判断对象结构化、跨 run 口径归纳留下了自然的落点，而赛前文档完全不需要提到它们。</div>
+      </div></div>
+      <div class="kv"><div class="k">颠覆点</div><div class="v">击穿「我们在和别的研报生成工具竞争」这一自我定位。同时也主动承认自动成稿已不新——把最容易被评委一枪打穿的地方，提前变成自己的论据。</div></div>
+      <div class="scores">
+        <div class="score"><div class="sv"><span>颠覆度</span><span>4/5</span></div><div class="bar"><i style="width:80%"></i></div></div>
+        <div class="score"><div class="sv"><span>可行性</span><span>5/5</span></div><div class="bar"><i style="width:100%"></i></div></div>
+        <div class="score"><div class="sv"><span>验证成本</span><span>4/5</span></div><div class="bar"><i style="width:80%"></i></div></div>
+        <div class="score"><div class="sv"><span>可逆性</span><span>5/5</span></div><div class="bar"><i style="width:100%"></i></div></div>
+      </div>
+      <div class="callout risk"><b>失效条件 ·</b> 若评委追问「有没有真实机构试点」而团队只能答「没有」，本路径的价值论证会被削弱到只剩方向正确。早期预警：Q&A 里出现「谁在用它」类问题却无留痕样例可展示。缓解：只声明定位与定价原则，不给市场规模、ROI 结论数字。</div>
+      <div class="callout action"><b>最小验证动作（72h）·</b> 只改三段文字：1.3 竞品边界、2.1 定位、4.3 定价原则；然后请一位非项目成员读 1.3，问他「这套系统跟 iFinD 智能体的区别是什么」。若答不出「过程可核」，说明改写没到位。</div>
+      <div class="tiny"><b>AI 视角：</b>竞品资料搜集与文案 AI 可做；判断「哪条外部事实会打穿自家论证」以及主动承认它，属于问题定义力与诚信判断，必须由人承担。</div>
+    </div>
+  </div>
+
+  <div class="path" style="border-color:var(--p3)">
+    <div class="head" onclick="this.parentNode.classList.toggle('open')">
+      <span class="dot" style="background:var(--p3)"></span>
+      <span class="path-title">路径 3 · 把「可复现构建」的性质迁到研报上</span>
+      <span class="index">反常识 ★★☆</span>
+    </div>
+    <div class="body">
+      <div class="callout basis"><b>理论依据 ·</b> <a href="#m-c1">类比迁移</a> ＋ <a href="#m-e3">二阶思维</a>。机制：结构相似的远端领域是软件供应链的 Reproducible Builds——同源码、同工具链、同构建环境 ⇒ 产物字节一致，用它证明「没人中途动过手」。研报的对应结构是「同输入、同版本、同决策包 ⇒ 产物校验摘要一致」，且文档 5 号参考文献已列 PROV-O 与 RFC 8785，挂靠点现成。<b>相似维度</b>限于「过程可复算、中间态不可篡改」；差异是研报含 LLM 输出，故承诺必须显式排除逐字一致。</div>
+      <div class="kv"><div class="k">核心假设（只有一条）</div><div class="v">「可复现」是机构愿意为之付费的系统性质，而不只是一项测试指标。<span class="flag h">假设</span></div></div>
+      <div class="kv"><div class="k">推演链</div><div class="chain">
+        <div class="step"><b>一阶</b>因为 <code>build_decision_package</code> 已产出 <code>decision_id</code> / <code>risk_snapshot_sha256</code> / <code>certification_bundle_sha256</code>，且 eval 层有内容寻址快照与归档回放，所以「同输入同版本同决策包 ⇒ 摘要一致」是已有能力，不必新建。<span class="flag f">事实：代码核验</span></div>
+        <div class="step"><b>二阶</b>进而换模型只改模型网关、证据索引与决策包不失效，「模型升级后还剩什么」从辩解变成可用产物哈希直接检验的命题；责任也随之可定位到具体版本与具体审核人。</div>
+        <div class="step"><b>三阶</b>长期看，复现能力把评测框架覆盖率 35% 这块短板变成下一个可量化目标，形成「改一版、回放一遍、比对哈希」的持续回归体系，而不是一次性验收。</div>
+      </div></div>
+      <div class="kv"><div class="k">颠覆点</div><div class="v">击穿「生成式系统天然不可复现」这一默认认知，也击穿「创新必须来自 AI 能力」——这条创新完全来自工程性质，模型越强越不削弱它。</div></div>
+      <div class="scores">
+        <div class="score"><div class="sv"><span>颠覆度</span><span>4/5</span></div><div class="bar"><i style="width:80%"></i></div></div>
+        <div class="score"><div class="sv"><span>可行性</span><span>5/5</span></div><div class="bar"><i style="width:100%"></i></div></div>
+        <div class="score"><div class="sv"><span>验证成本</span><span>4/5</span></div><div class="bar"><i style="width:80%"></i></div></div>
+        <div class="score"><div class="sv"><span>可逆性</span><span>5/5</span></div><div class="bar"><i style="width:100%"></i></div></div>
+      </div>
+      <div class="callout risk"><b>失效条件 ·</b> 若归档回放中出现哈希漂移，或演示时把回放说成「实时大模型」，本路径立刻反噬成诚信问题。早期预警：同一 run 两次导出摘要不一致、或页面未标注「归档回放」。文档里必须写死「不承诺 LLM 逐字相同」。</div>
+      <div class="callout action"><b>最小验证动作（72h）·</b> 取一个已完成 run，同决策包重放两次，比对产物校验摘要；同时把演示页所有回放镜头统一标注「归档回放」。两次一致即可写入 3.4，不一致则删掉这条主张。</div>
+      <div class="tiny"><b>AI 视角：</b>回放与比对全自动；「哪一层状态该进决策包、哪一层属于模型自由发挥」的边界划定，以及对外承诺的措辞分寸，必须由人定。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 章节落位与精炼表述 -->
+<section id="placement">
+  <h2><span class="num">4</span>写入哪些章节 · 可直接粘贴的精炼表述</h2>
+  <div class="note"><b>边界声明：</b>以下是<b>建议新增或替换的句段</b>，我没有改动你的原始文档，也没有改动你已有的台词。全部沿用文档现有的书面语式（「需要说明的是」「本节不主张」），按「补一段 / 加一行 / 改一句」三种最小动作给出，便于逐轮小幅采纳。标注「替换」的两处请自行决定是否采用。</div>
+
+  <h3>P0 · 建议本轮就写入（5 处）</h3>
+  <div class="quote"><div class="loc">① 2.3.2 支柱二「证据链」段末 · 补一段（新挖创新点 1 的主落位）</div>需要说明的是，证据链的作用不止于把结论追回来源，也在于把「没有结论」这件事交代清楚。数值断言判为 ⊥U、候选图不满足点级契约、金额来源单位不可确认时，系统不生成替代表述，而是留下带原因码的拒绝记录。正文与拒绝记录共用同一套证据索引，读者因此能区分「未提及」与「已核验后不予写入」。</div>
+  <div class="quote"><div class="loc">② 表 2.2「八个可验证创新点」· 补一行（并顺手把「幂等裁剪 + 裁判-修复同源」拆成两行）</div>拒绝产物可验收 ｜ 传统做法：只交成稿，缺口静默略过 ｜ 我们的做法：抑制图表、拦截断言、未采纳来源逐条留因，与正文同源生成 ｜ 证据：3.3.2 / 3.6.2<br>双通道探针 ｜ 传统做法：取不到就重试或交模型自由补全 ｜ 我们的做法：静态精确查询优先，动态探针限 5 类白名单技能、最多 4 次、失败回退且不写数据集 ｜ 证据：3.6.1 / 评测台账</div>
+  <div class="quote"><div class="loc">③ 1.3 市场调研与竞品分析 · 补一句（同时修掉与公开事实的冲突）</div>需要说明的是，数据终端的自动成稿能力已于 2026 年陆续上线，本项目的边界不在于「能否自动成稿」，而在于成稿之后能否逐条交代哪些内容被采纳、哪些被拒绝、依据是什么。三类方案与本项目的定位差异因此集中在「过程能不能核」一列。</div>
+  <div class="quote"><div class="loc">④ 3.4 事务化人机协同段末 · 补一段（新挖创新点 4 的主落位）</div>审核事务的产物不止是一个新版本，还有一份可复现的构建凭据。同输入、同版本、同决策包重放，产物校验摘要一致；该承诺不覆盖模型逐字输出。换模型只改模型网关，证据索引与决策包不随之失效，因此「模型升级后系统还剩什么」可由产物哈希直接检验。这一性质借用可复现构建的思路，与参考文献中的 PROV-O、RFC 8785 同源。</div>
+  <div class="quote"><div class="loc">⑤ 1.4 项目价值与建设目标 · 补一句（把「拒绝清单」写进验收口径）</div>验收以交付物为单位，不以功能清单为单位：一次完整任务除报告正文、图表、证据目录与三格式文件外，还须交出一份拒绝清单，列明被抑制的图表、被拦截的断言、未采纳的来源及各自判定依据；清单与正文同源生成，缺一份视为未完成。</div>
+
+  <h3>P1 · 时间允许再写入（3 处）</h3>
+  <div class="quote"><div class="loc">⑥ 2.1 项目概述 · 定位句后补一句（不改动原句）</div>进一步说，它交付的是一份可供署名前复核的研究底稿：结论是否成立由研究人员确认，系统负责把不成立的部分明确排除并说明依据。</div>
+  <div class="quote"><div class="loc">⑦ 3.6.2 表 3.8「三层测试体系」后 · 补一句</div>判据层另设拒绝类判据：构造未知证据、无来源单位与不满足点级契约的候选图，检验系统是否拒绝生成正文、图表与正式导出，并逐条记录原因码；拒绝记录与报告正文同源，可独立对账。</div>
+  <div class="quote"><div class="loc">⑧ 4.3 盈利模式「机构买的是可审计与可复核」后 · 补一句（替换原「按份计费」的隐含口径）</div>定价口径随之调整：按席位与审计日志计价，而非按报告份数，因为交付价值不随份数线性增长，而随可追溯过程的完整度增长。此处仅给出计价原则，具体金额按商务方案确定，本报告不给出结论数字。</div>
+
+  <h3>表格：落位一览</h3>
+  <table>
+    <thead><tr><th style="width:9%">章节</th><th style="width:13%">动作</th><th style="width:20%">服务哪条创新点</th><th>为什么放这里（与原文的自然衔接）</th></tr></thead>
+    <tbody>
+      <tr><td>1.3</td><td>补一句</td><td>署名前责任界定</td><td>紧接原有「三类产品」分析，把竞品维度从「能不能写」平移到「能不能核」，顺带消除事实冲突</td></tr>
+      <tr><td>1.4</td><td>补一句</td><td>拒绝产物可验收</td><td>原文已有「验收以交付物为单位，不以功能清单为单位」，直接续写交付物清单，不新增论证结构</td></tr>
+      <tr><td>2.1</td><td>原句后补一句</td><td>署名前责任界定</td><td>原文已定义「初稿与底稿生成器」及边界，补句只做推进，不改定位句本身</td></tr>
+      <tr><td>2.3.2</td><td>段末补一段</td><td>拒绝产物可验收</td><td>支柱二讲证据链与断言分型，是「拒绝」最自然的理论母体，不必另起支柱</td></tr>
+      <tr><td>表 2.2</td><td>补两行 / 拆一行</td><td>拒绝产物 + 双通道探针</td><td>保持「创新点 / 传统做法 / 我们的做法 / 证据」四列原格式，只加行，不动既有八行文字</td></tr>
+      <tr><td>3.4</td><td>段末补一段</td><td>可复现构建</td><td>原文已写「不可变决策包」与「产物校验值」，补段是把已有机制定性为性质</td></tr>
+      <tr><td>3.6.2</td><td>表后补一句</td><td>拒绝产物可验收</td><td>三层测试原有「输出拒绝机制」判据，补一句把它升格为可验收交付</td></tr>
+      <tr><td>4.3</td><td>补一句</td><td>署名前责任界定</td><td>原文已写「机构买的是可审计与可复核」，定价原则是对这句话的直接推论</td></tr>
+    </tbody>
+  </table>
+  <div class="note" style="margin-top:14px"><b>明确不建议写入的：</b>交付可达性求解器、跨 run 口径知识归纳、判断对象结构化与到期重估。理由见排序表 15 / 16 行：无实测台账，或与 <code>PROFILES</code> 仍为手写硬编码的代码事实相反。它们适合赛后做，不适合赛前写。</div>
+</section>
+
+<!-- 5 72 小时 -->
+<section id="actions">
+  <h2><span class="num">5</span>72 小时行动清单 <span class="tiny">（勾选状态本地保存）</span></h2>
+  <ul class="check" id="ck">
+    <li><input type="checkbox" id="c1"><label for="c1">从已完成 run 离线导出「60 张抑制图 + 原因码分布」，与正文证据目录做编号对账；对得上才写「拒绝产物可验收」</label></li>
+    <li><input type="checkbox" id="c2"><label for="c2">同决策包重放两次，比对产物校验摘要；同时把演示页回放镜头统一标注「归档回放」</label></li>
+    <li><input type="checkbox" id="c3"><label for="c3">把 P0 五处补写句贴进文档副本，请一位非项目成员读 1.3，检验能否复述出「过程可核」这一差异</label></li>
+    <li><input type="checkbox" id="c4"><label for="c4">表 2.2 拆开「幂等裁剪」与「裁判-修复同源」，补入「双通道探针」与「拒绝产物可验收」两行</label></li>
+    <li><input type="checkbox" id="c5"><label for="c5">核对表 4.3「12.1 分钟 / 48 条批跑」是否有结果台账；没有就从文档里撤下该数字，不要等评委问</label></li>
+    <li><input type="checkbox" id="c6"><label for="c6">统一演示时长口径（通知 PDF 实测为合计 15 分钟、含提问 ≤22 分钟，与 20 分钟版本冲突），以通知为准</label></li>
+  </ul>
+</section>
+
+<!-- 6 反常识指数 + 待补信息 -->
+<section id="counter">
+  <h2><span class="num">6</span>反常识指数与落地阻力</h2>
+  <table>
+    <thead><tr><th style="width:30%">路径</th><th class="c">指数</th><th style="width:38%">可能遇到的阻力</th><th>预判</th></tr></thead>
+    <tbody>
+      <tr><td>1 拒绝产物可验收</td><td class="c">★★★</td><td>同行会认为「把失败摆出来是自曝其短」；评委可能问「是不是数据能力不够」</td><td>阻力最大但收益最高。备好 60 张图的抑制原因分布与「不编数」口径，反问即成亮点</td></tr>
+      <tr><td>2 署名前责任界定</td><td class="c">★★☆</td><td>承认自动成稿已不新，等于主动放弃一个卖点</td><td>损失的是本来就守不住的卖点，换来一个竞品无法跟的定位</td></tr>
+      <tr><td>3 可复现构建</td><td class="c">★★☆</td><td>会被误解为「只是哈希校验」，工程味重</td><td>把它绑在「换模型还剩什么」上，就从工程细节变成战略答案</td></tr>
+    </tbody>
+  </table>
+  <div class="note"><b>需要你补充的 3 个关键信息</b>（不编造、不影响先做前四步）：① 评分标准附件一是否拿到，决定「创新性」在评分里的实际权重；② 文档 2.3 是否允许改表 2.2（若完全冻结，则只做段末补写与 1.3 / 1.4 补句）；③ 已完成 run 的抑制原因码是否随产物落盘（决定路径 1 能否成立）。</div>
+  <p class="tiny" style="margin-top:12px"><span class="flag f">事实</span> 标记来自文档全文、项目记忆 11-13～11-18、codebase-memory 只读核验（<code>selection.py:187-262</code> 的 <code>PROFILES</code>、<code>review_decisions.py:21-82</code> 的 <code>build_decision_package</code>、<code>dynamic_probe.py:108-349</code>、eval 层内容寻址快照）。<span class="flag h">假设</span> 标记为推演前提，需按上段三条信息验证。<b>本方案只提高胜率，不保证评审结果</b>；所有数字口径以现场可核实的产物为准，不预设市场测算与 ROI 结论。</p>
+</section>
+
+<!-- 7 方法论出处 -->
+<section id="refs">
+  <h2><span class="num">7</span>方法论出处 <span class="tiny">（点击方法名可跳到对应路径）</span></h2>
+  <table>
+    <thead><tr><th style="width:22%">方法</th><th style="width:42%">核心机制</th><th>本次用在</th></tr></thead>
+    <tbody>
+      <tr id="m-c2"><td><b>C2 概念萃取</b>（迁移类）</td><td>去掉领域词汇，把具体方案抽象成「功能 + 机制」，再从机制找全新实现方式</td><td><a href="#paths">路径 1</a>：把「60 图被抑制」抽象为「主动不生产」</td></tr>
+      <tr id="m-e1"><td><b>E1 封闭世界原则</b>（系统类 / SIT）</td><td>解法只用系统内已存在的资源，逼出被忽略的免费资源</td><td><a href="#paths">路径 1</a>：拒绝记录本就落盘，零新增采集</td></tr>
+      <tr id="m-d1"><td><b>D1 反向假设法</b>（反转类）</td><td>先枚举「怎样必定失败」再反转，失败原因有限且可枚举</td><td><a href="#paths">路径 2</a>：「没人敢署名」→ 真 Job 是责任界定</td></tr>
+      <tr id="m-e4"><td><b>E4 Jobs-to-be-Done</b>（系统类）</td><td>按情境而非品类划分市场，识别真正的竞争对手</td><td><a href="#paths">路径 2</a>：竞品是分析师的核对流程，不是别的写作工具</td></tr>
+      <tr id="m-c1"><td><b>C1 类比迁移</b>（迁移类）</td><td>在结构相似的远端领域找已解决的同构问题，搬运机制骨架并检查差异</td><td><a href="#paths">路径 3</a>：Reproducible Builds → 研报可复现</td></tr>
+      <tr id="m-e3"><td><b>E3 二阶思维</b>（系统类）</td><td>推演「然后呢」至少三层，含各方反应与时间维度</td><td><a href="#paths">路径 3</a> + 全表排序：解释为何砍掉创新性满分但不可论证的两条</td></tr>
+      <tr><td><b>A2 破界三问</b>（拆解类）</td><td>逐条移除约束，分辨社会性约束与物理性约束</td><td><a href="#reframe">问题重构</a>：识别「创新＝新增功能」是假约束</td></tr>
+      <tr><td><b>D3 否定常规</b>（反转类）</td><td>攻击行业「天经地义」的做法，问谁规定必须这样</td><td><a href="#reframe">问题重构</a> + 路径 1：失败处理只能写在边界说明里</td></tr>
+    </tbody>
+  </table>
+  <p class="tiny" style="margin-top:11px">推演按「理论依据 → 核心假设 → 一阶/二阶/三阶 → 颠覆点 → 可观测失效条件 → 72h 可证伪动作」写满；四维评分（颠覆度 / 可行性 / 验证成本 / 可逆性）按颠覆度×可行性为主、验证成本低与可逆优先排序，三条主路径均入选，无远期牌——因为赛前不具备验证条件的高创新性方向已被明确排除。</p>
+</section>
+
+<div class="tools">
+  <button class="primary" onclick="window.print()">打印 / 导出 PDF</button>
+  <button onclick="expandAll(true)">展开全部</button>
+  <button onclick="expandAll(false)">收起全部</button>
+</div>
+
+<footer>破壁人 Breaker · 创造力破壁方案 · A17 文档创新点 · 2026-11-18 · 未改动原始文档</footer>
+</div>
+<script>
+  function expandAll(open){
+    document.querySelectorAll('.path').forEach(function(p){
+      if(open){p.classList.add('open')}else{p.classList.remove('open')}
+    });
+  }
+  var KEY='breaker-a17-doc-innov-20261118';
+  var boxes=document.querySelectorAll('#ck input[type=checkbox]');
+  boxes.forEach(function(b,i){
+    var sk=KEY+'-'+i;
+    if(localStorage.getItem(sk)==='1'){b.checked=true}
+    function sync(){b.parentNode.classList.toggle('done',b.checked)}
+    b.addEventListener('change',function(){localStorage.setItem(sk,b.checked?'1':'0');sync()});
+    sync();
+  });
+  var first=document.querySelector('.path'); if(first){first.classList.add('open')}
+</script>
+</body>
+</html>
